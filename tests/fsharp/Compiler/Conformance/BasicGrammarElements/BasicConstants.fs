@@ -9,7 +9,7 @@ open FSharp.Compiler.SourceCodeServices
 module ``Basic Grammar Element Constants`` =
 
     [<Test>]
-    let `` Basic constants compile `` () =
+    let ``Basic constants compile `` () =
         CompilerAssert.Pass 
             """
 let sbyteConst = 1y
@@ -25,6 +25,8 @@ let uint64Const = 1uL
 let ieee32Const1 = 1.0f
 let ieee32Const2 = 1.0F
 let ieee32Const3 = 0x0000000000000001lf
+let ieee32Const4 = 1F
+let ieee32Const5 = 1f
     
 let ieee64Const1 = 1.0
 let ieee64Const2 = 0x0000000000000001LF
@@ -171,4 +173,19 @@ printfn "%A" x10
 let x14 = 0o5_2
 if x14 <> 0o52 then failwith "Wrong parsing"
 printfn "%A" x14
+            """
+    [<Test>]
+    let ``float without dot``() = 
+        CompilerAssert.CompileExeAndRun
+            """
+let x = 42f
+printfn "%A" x
+            """
+    
+    [<Test>]
+    let ``float with dot``() = 
+        CompilerAssert.CompileExeAndRun
+            """
+let x = 42.f
+printfn "%A" x
             """
