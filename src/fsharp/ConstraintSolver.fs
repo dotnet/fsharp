@@ -14,7 +14,7 @@
 // The constraints are immediately processed into a normal form, in particular
 //   - type equations on inference parameters: 'tp = ty
 //   - type inequations on inference parameters: 'tp :> ty
-//   - other constraints on inference paramaters
+//   - other constraints on inference parameters
 //
 // The state of the inference engine is kept in imperative mutations to inference
 // type variables.
@@ -262,7 +262,7 @@ let MakeConstraintSolverEnv contextInfo css m denv =
     { SolverState = css
       m = m
       eContextInfo = contextInfo
-      // Indicates that when unifiying ty1 = ty2, only type variables in ty1 may be solved 
+      // Indicates that when unifying ty1 = ty2, only type variables in ty1 may be solved 
       MatchingOnly = false
       EquivEnv = TypeEquivEnv.Empty 
       DisplayEnv = denv }
@@ -2190,7 +2190,7 @@ and CanMemberSigsMatchUpToCheck
                 | Some calledArg ->
                     if isArray1DTy g calledArg.CalledArgumentType then 
                         let paramArrayElemTy = destArrayTy g calledArg.CalledArgumentType
-                        let reflArgInfo = calledArg.ReflArgInfo // propgate the reflected-arg info to each param array argument
+                        let reflArgInfo = calledArg.ReflArgInfo // propagate the reflected-arg info to each param array argument
                         match calledMeth.ParamArrayCallerArgs with
                         | Some args ->
                             for callerArg in args do
@@ -2573,9 +2573,9 @@ and ResolveOverloading
                     if c <> 0 then c else
                     0
 
-                let better (candidate: CalledMeth<_>, candidateWarnings, _) (other: CalledMeth<_>, otherwarnings, _) =
+                let better (candidate: CalledMeth<_>, candidateWarnings, _) (other: CalledMeth<_>, otherWarnings, _) =
                     let candidateWarnCount = List.length candidateWarnings
-                    let otherWarnCount = List.length otherwarnings
+                    let otherWarnCount = List.length otherWarnings
                     // Prefer methods that don't give "this code is less generic" warnings
                     // Note: Relies on 'compare' respecting true > false
                     let c = compare (candidateWarnCount = 0) (otherWarnCount = 0)
@@ -2956,10 +2956,10 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
         | Choice1Of5(minfo, methArgTys) -> 
             let argExprs = 
                 // FIX for #421894 - typechecker assumes that coercion can be applied for the trait calls arguments but codegen doesn't emit coercion operations
-                // result - generation of non-verifyable code
+                // result - generation of non-verifiable code
                 // fix - apply coercion for the arguments (excluding 'receiver' argument in instance calls)
 
-                // flatten list of argument types (looks like trait calls with curried arguments are not supported so we can just convert argument list in straighforward way)
+                // flatten list of argument types (looks like trait calls with curried arguments are not supported so we can just convert argument list in straightforward way)
                 let argTypes =
                     minfo.GetParamTypes(amap, m, methArgTys) 
                     |> List.concat 

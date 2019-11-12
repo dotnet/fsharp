@@ -208,8 +208,8 @@ let mkPos l c = pos (l, c)
 #endif
 type range(code1:int64, code2: int64) =
     static member Zero = range(0L, 0L)
-    new (fidx, bl, bc, el, ec) = 
-        let code1 = ((int64 fidx) &&& fileIndexMask)
+    new (fIdx, bl, bc, el, ec) = 
+        let code1 = ((int64 fIdx) &&& fileIndexMask)
                 ||| ((int64 bc        <<< startColumnShift) &&& startColumnMask)
                 ||| ((int64 ec        <<< endColumnShift)  &&& endColumnMask)
         let code2 = 
@@ -217,7 +217,7 @@ type range(code1:int64, code2: int64) =
                 ||| ((int64 (el-bl)   <<< heightShift) &&& heightMask)
         range(code1, code2)
 
-    new (fidx, b:pos, e:pos) = range(fidx, b.Line, b.Column, e.Line, e.Column)
+    new (fIdx, b:pos, e:pos) = range(fIdx, b.Line, b.Column, e.Line, e.Column)
 
     member r.StartLine   = int32((code2 &&& startLineMask)   >>> startLineShift)
 

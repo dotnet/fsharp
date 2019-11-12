@@ -596,10 +596,10 @@ module UntypedParseImpl =
             AstTraversal.Traverse(pos, parseTree, walker)
 
     // Given a cursor position here:
-    //    f(x)   .   iden
+    //    f(x)   .   ident
     //                   ^
     // walk the AST to find the position here:
-    //    f(x)   .   iden
+    //    f(x)   .   ident
     //       ^
     // On success, return Some (thatPos, boolTrueIfCursorIsAfterTheDotButBeforeTheIdentifier)
     // If there's no dot, return None, so for example
