@@ -15,7 +15,7 @@ open System
 
 let (^) (x: int) (y: int) = x + y
 
-if 1 ^ 2 <> 3 then failwith "expected result to be 3"
+if 1 ^ 2 <> 3 then failwithf "expected result to be 3 but got %i" (1 ^ 2)
 Console.WriteLine()
             """
     
@@ -27,8 +27,8 @@ module X
 open System
 
 let (^) (x: int) (y: int) = x + y
-
-if [1;2].[^1..] <> [1;2] then failwith "expected result to be [1;2]"
+let result = [1;2].[^1..]
+if result <> [1;2] then failwithf "expected result to be [1;2] but got %A" result
 Console.WriteLine()
             """
 
