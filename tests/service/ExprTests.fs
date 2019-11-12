@@ -15,9 +15,7 @@ open FsUnit
 open System
 open System.IO
 open System.Collections.Generic
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Service
 open FSharp.Compiler.Service.Tests.Common
 
 let internal exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
@@ -282,7 +280,6 @@ module internal Utils =
 // This project is a smoke test for a whole range of standard and obscure expressions
 
 module internal Project1 = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let base2 = Path.GetTempFileName()
@@ -2669,7 +2666,6 @@ let ``Test Operator Declarations for String`` () =
 // This big list expression was causing us trouble
 
 module internal ProjectStressBigExpressions = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let base2 = Path.GetTempFileName()

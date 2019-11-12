@@ -25,18 +25,14 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     // This is a fresh implementation of pre-existing ideas.
 
     open System
-    open System.Diagnostics
-    open System.Text
     open System.IO
     open System.Reflection
     open System.Globalization
     open System.Collections.Generic
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-    open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Reflection
     open Microsoft.FSharp.Collections
-    open Microsoft.FSharp.Primitives.Basics
 
     [<StructuralEquality; NoComparison>]
     type LayoutTag =
@@ -342,8 +338,6 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
 
     module ReflectUtils = 
-        open System
-        open System.Reflection
 
         [<NoEquality; NoComparison>]
         type TypeInfo =
