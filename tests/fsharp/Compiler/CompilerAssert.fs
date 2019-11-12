@@ -46,6 +46,7 @@ module CompilerAssert =
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <UseFSharpPreview>true</UseFSharpPreview>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
