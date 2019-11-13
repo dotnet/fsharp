@@ -38,6 +38,37 @@ type DependencyManagerLineParserTests() =
         Assert.AreEqual(Some(Some "path/to/file.binlog"), binLogPath)
 
     [<Test>]
+    member __.``Bare binary log argument isn't parsed as a package name: before``() =
+        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ["bl, MyPackage"]
+        Assert.AreEqual("MyPackage", packageReferences.Single().Include)
+        Assert.AreEqual(Some (None: string option), binLogPath)
+
+    [<Test>]
+    member __.``Bare binary log argument isn't parsed as a package name: middle``() =
+        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ["MyPackage, bl, 1.2.3.4"]
+        Assert.AreEqual("MyPackage", packageReferences.Single().Include)
+        Assert.AreEqual("1.2.3.4", packageReferences.Single().Version)
+        Assert.AreEqual(Some (None: string option), binLogPath)
+
+    [<Test>]
+    member __.``Bare binary log argument isn't parsed as a package name: after``() =
+        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ["MyPackage, bl"]
+        Assert.AreEqual("MyPackage", packageReferences.Single().Include)
+        Assert.AreEqual(Some (None: string option), binLogPath)
+
+    [<Test>]
+    member __.``Package named 'bl' can be explicitly referenced``() =
+        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ["Include=bl"]
+        Assert.AreEqual("bl", packageReferences.Single().Include)
+        Assert.AreEqual(None, binLogPath)
+
+    [<Test>]
+    member __.``Package named 'bl' can be explicitly referenced with binary logging``() =
+        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ["Include=bl,bl"]
+        Assert.AreEqual("bl", packageReferences.Single().Include)
+        Assert.AreEqual(Some (None: string option), binLogPath)
+
+    [<Test>]
     member __.``Parse explicitly specified package name``() =
         let pr = parseSingleReference "Include=MyPackage"
         Assert.AreEqual("MyPackage", pr.Include)

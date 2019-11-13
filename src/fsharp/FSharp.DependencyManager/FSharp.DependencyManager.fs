@@ -73,15 +73,23 @@ module FSharpDependencyManager =
                         | Some v when v.ToLowerInvariant() = "false" -> binLogPath <- None // no logging
                         | Some path -> binLogPath <- Some(Some path) // explicit logging location
                         | None ->
-                            // parser shouldn't get here, but if that ever changes, this branch will hit if just the string "bl" was parsed so this is ok
+                            // parser shouldn't get here because unkeyed values follow a different path, but for the sake of completeness and keeping the compiler happy,
+                            // this is fine
                             binLogPath <- Some None // auto-generated logging location
                         parsePackageReferenceOption' rest implicitArgumentCount packageReference
                     | None, Some v ->
-                        match implicitArgumentCount with
-                        | 0 -> addInclude v
-                        | 1 -> setVersion v
-                        | _ -> raise (ArgumentException(sprintf "Unable to apply implicit argument number %d" (implicitArgumentCount + 1))) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
-                        |> parsePackageReferenceOption' rest (implicitArgumentCount + 1)
+                        match v.ToLowerInvariant() with
+                        | "bl" ->
+                            // a bare 'bl' enables binary logging and is NOT interpreted as one of the positional arguments.  On the off chance that the user actually wants
+                            // to reference a package named 'bl' they still have the 'Include=bl' syntax as a fallback.
+                            binLogPath <- Some None // auto-generated logging location
+                            parsePackageReferenceOption' rest implicitArgumentCount packageReference
+                        | _ ->
+                            match implicitArgumentCount with
+                            | 0 -> addInclude v
+                            | 1 -> setVersion v
+                            | _ -> raise (ArgumentException(sprintf "Unable to apply implicit argument number %d" (implicitArgumentCount + 1))) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                            |> parsePackageReferenceOption' rest (implicitArgumentCount + 1)
                     | _ -> parsePackageReferenceOption' rest implicitArgumentCount packageReference
             let options = getOptions line
             parsePackageReferenceOption' options 0 None
