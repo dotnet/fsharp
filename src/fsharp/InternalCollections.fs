@@ -2,7 +2,6 @@
 
 namespace Internal.Utilities.Collections
 open System
-open System.Collections.Generic
 
 [<StructuralEquality; NoComparison>]
 type internal ValueStrength<'T when 'T : not struct> =

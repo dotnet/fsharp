@@ -6,7 +6,6 @@ open System.Collections.Generic
 open System.Text
 open Internal.Utilities
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library

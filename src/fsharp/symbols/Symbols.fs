@@ -781,9 +781,13 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
         checkIsResolved()
         v.Range
 
+    member __.HasFields =
+        if isUnresolved() then false else
+        v.UnionCase.RecdFieldsArray.Length <> 0
+
     member __.UnionCaseFields = 
         if isUnresolved() then makeReadOnlyCollection [] else
-        v.UnionCase.RecdFields |> List.mapi (fun i _ ->  FSharpField(cenv, FSharpFieldData.Union (v, i))) |> makeReadOnlyCollection
+        v.UnionCase.RecdFieldsArray |> Array.mapi (fun i _ ->  FSharpField(cenv, FSharpFieldData.Union (v, i))) |> makeReadOnlyCollection
 
     member __.ReturnType = 
         checkIsResolved()

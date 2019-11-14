@@ -5,6 +5,7 @@ open System.IO
 open System.Collections.Generic
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FsUnit
 
 #if NETCOREAPP2_0
 let readRefs (folder : string) (projectFile: string) =
@@ -76,7 +77,6 @@ let sysLib nm =
 
 [<AutoOpen>]
 module Helpers = 
-    open System
     type DummyType = A | B
     let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharp.Compiler.SourceCodeServices.FSharpChecker>.Assembly.CodeBase).LocalPath), p)
 
@@ -190,13 +190,19 @@ let parseAndCheckScript (file, input) =
 let parseSourceCode (name: string, code: string) =
     let location = Path.Combine(Path.GetTempPath(),"test"+string(hash (name, code)))
     try Directory.CreateDirectory(location) |> ignore with _ -> ()
-    let projPath = Path.Combine(location, name + ".fsproj")
     let filePath = Path.Combine(location, name + ".fs")
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let parseResults = checker.ParseFile(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
     parseResults.ParseTree
+
+open FSharp.Compiler.Ast
+
+let parseSourceCodeAndGetModule (source: string) =
+    match parseSourceCode ("test", source) with
+    | Some (ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, [ moduleOrNamespace ], _))) -> moduleOrNamespace
+    | _ -> failwith "Could not get module decls"
 
 /// Extract range info 
 let tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
@@ -296,6 +302,34 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
              if compGen || not x.IsCompilerGenerated then 
                  yield (x :> FSharpSymbol)
           yield! allSymbolsInEntities compGen e.NestedEntities ]
+
+
+let getSymbolUses (source: string) =
+    let _, typeCheckResults = parseAndCheckScript("/home/user/Test.fsx", source) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+
+let getSymbols (source: string) =
+    getSymbolUses source
+    |> Array.map (fun symbolUse -> symbolUse.Symbol)
+
+
+let getSymbolName (symbol: FSharpSymbol) =
+    match symbol with
+    | :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv.LogicalName
+    | :? FSharpEntity as entity -> Some entity.LogicalName
+    | :? FSharpGenericParameter as parameter -> Some parameter.Name
+    | :? FSharpParameter as parameter -> parameter.Name
+    | :? FSharpStaticParameter as parameter -> Some parameter.Name
+    | :? FSharpActivePatternCase as case -> Some case.Name
+    | :? FSharpUnionCase as case -> Some case.Name
+    | _ -> None
+
+
+let assertContainsSymbolWithName name source =
+    getSymbols source
+    |> Array.choose getSymbolName
+    |> Array.contains name
+    |> shouldEqual true
 
 
 let coreLibAssemblyName =

@@ -26,6 +26,8 @@ stages:
       value: ${{ parameters.insertTeamEmail }}
     - name: InsertTeamName
       value: ${{ parameters.insertTeamName }}
+    - name: InsertPayloadName
+      value: 'F# $(Build.SourceBranchName) $(Build.BuildNumber)'
     steps:
     - task: DownloadBuildArtifacts@0
       displayName: Download Insertion Artifacts

@@ -3,7 +3,6 @@
 namespace Internal.Utilities
 open System
 open System.IO
-open System.Reflection
 open Microsoft.Win32
 open System.Runtime.InteropServices
 

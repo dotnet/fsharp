@@ -2,7 +2,6 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         $CommonMetadataElements$
-        <icon>icon.png</icon>
         <language>en-US</language>
         <dependencies>
             <group targetFramework=".NETStandard2.0" />
@@ -10,8 +9,7 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="FSharp.Core.nuget\$Configuration$\netstandard2.0\icon.png"               target="icon.png" />
-
+        $CommonFileElements$
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"              target="lib\netstandard2.0" />
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.sigdata"          target="lib\netstandard2.0" />
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.optdata"          target="lib\netstandard2.0" />
