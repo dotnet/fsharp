@@ -177,11 +177,15 @@ module Utilities =
             p.ExitCode = 0
         | None -> false
 
-    let buildProject projectPath binLogging =
+    let buildProject projectPath binLogPath =
         let binLoggingArguments =
-            match binLogging with
-            | true -> "/bl"
-            | _ -> ""
+            match binLogPath with
+            | Some(path) ->
+                let path = match path with
+                           | Some path -> path // specific file
+                           | None -> Path.Combine(projectPath, "msbuild.binlog") // auto-generated file
+                sprintf "/bl:\"%s\"" path
+            | None -> ""
 
         let arguments prefix =
             sprintf "%s -restore %s %c%s%c /t:FSI-PackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
