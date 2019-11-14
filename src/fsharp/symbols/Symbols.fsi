@@ -382,6 +382,9 @@ and [<Class>] public FSharpUnionCase =
     /// Get the range of the name of the case 
     member DeclarationLocation : range
 
+    /// Indicates if the union case has field definitions
+    member HasFields: bool
+
     /// Get the data carried by the case. 
     member UnionCaseFields: IList<FSharpField>
 
