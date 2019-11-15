@@ -4,6 +4,7 @@ module internal FSharp.Compiler.Lib
 
 open System.IO
 open System.Collections.Generic
+open System.Runtime.InteropServices
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -518,7 +519,7 @@ module UnmanagedProcessExecutionOptions =
     // Translation of C# from http://swikb/v1/DisplayOnlineDoc.aspx?entryID=826 and copy in bug://5018
     [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert, UnmanagedCode = true)>] 
     let EnableHeapTerminationOnCorruption() =
-        if (System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&  System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
             System.Environment.Version.Major < 3) then // and CLR not 3.0 or higher 
             // "The flag HeapSetInformation sets is available in Windows XP SP3 and later.
             //  The data structure used for heap information is available on earlier versions of Windows.
