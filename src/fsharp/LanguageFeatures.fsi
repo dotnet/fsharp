@@ -15,6 +15,7 @@ type LanguageFeature =
     | NameOf = 6
     | ImplicitYield = 7
     | OpenStaticClasses = 8
+    | DotlessFloat32 = 9
 
 
 /// LanguageVersion management

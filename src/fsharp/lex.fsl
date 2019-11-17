@@ -193,8 +193,8 @@ let floate = digit ((digit | separator)* digit)? ('.' (digit ((digit | separator
 let float = floatp | floate 
 let bignum =  integer ('I'  | 'N' | 'Z' | 'Q' | 'R' | 'G')
 let ieee64 = float
-let ieee32 = (float | integer) ('f' | 'F') 
-let decimal = (float | integer) ('m' | 'M') 
+let ieee32 = (float | integer) ('f' | 'F')
+let decimal = (float | integer) ('m' | 'M')
 let xieee32 = xinteger 'l' 'f'
 let xieee64 = xinteger 'L' 'F'
 let escape_char = ('\\' ( '\\' | "\"" | '\'' | 'a' | 'f' | 'v' | 'n' | 't' | 'b' | 'r'))
@@ -335,8 +335,16 @@ rule token args skip = parse
            UNATIVEINT(uint64 (removeUnderscores (lexemeTrimRight lexbuf 2)))
        with _ ->  fail args lexbuf (FSComp.SR.lexOutsideNativeUnsigned())  (UNATIVEINT(0UL)) }
 
- | ieee32     
-     { IEEE32 (try float32(removeUnderscores (lexemeTrimRight lexbuf 1)) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0f) }
+ | ieee32
+     { let s = lexemeTrimRight lexbuf 1
+       if lexbuf.SupportsFeature LanguageFeature.DotlessFloat32 || s.Contains "." then
+          try
+             IEEE32 (float32 (removeUnderscores s))
+          with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) (IEEE32 0.0f)
+       else
+          fail args lexbuf (FSComp.SR.lexInvalidFloat()) (IEEE32 0.0f)
+     }
+
  | ieee64     
      { IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
 
