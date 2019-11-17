@@ -1,6 +1,8 @@
-framework: net461
+source https://api.nuget.org/v3/index.json
 
-source https://www.nuget.org/api/v2/
+storage: none
+framework: netstandard2.0
 
-nuget FAKE 5.8.4
+nuget FSharp.Core ~> 4.7
+nuget Fake.Core
 nuget FSharp.Formatting
