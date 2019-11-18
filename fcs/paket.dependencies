@@ -14,4 +14,16 @@ nuget Fake.Core.UserInput
 nuget Fake.DotNet.Cli
 nuget Fake.DotNet.Fsi
 nuget Fake.DotNet.Paket
-nuget FSharp.Formatting
+
+group generate
+
+source https://api.nuget.org/v3/index.json
+
+storage: none
+framework: netstandard2.0
+
+nuget FSharp.Core
+nuget Fake.Core
+nuget Fake.IO.FileSystem
+nuget Fake.Core.Trace
+nuget FSharp.Literate

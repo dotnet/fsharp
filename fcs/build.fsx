@@ -79,15 +79,21 @@ Target.create "Test" (fun _ ->
 )
 
 Target.create "NuGet" (fun _ ->
-    runDotnet __SOURCE_DIRECTORY__ "pack" "FSharp.Compiler.Service.sln -v n -c Release"
+    DotNet.pack (fun packOpts ->
+      { packOpts with
+          Configuration = DotNet.BuildConfiguration.Release
+          Common = packOpts.Common |> withDotnetExe |> DotNet.Options.withVerbosity (Some DotNet.Verbosity.Normal)
+          MSBuildParams = { packOpts.MSBuildParams with
+                              Properties = packOpts.MSBuildParams.Properties @ [ "Version", assemblyVersion ] }
+      }) "FSharp.Compiler.Service.sln"
 )
 
 Target.create "GenerateDocsEn" (fun _ ->
-    runDotnet "docsrc/tools" "fsi" "--targetprofile:netstandard generate.fsx"
+    runDotnet "docsrc/tools" "fake" "run generate.fsx"
 )
 
 Target.create "GenerateDocsJa" (fun _ ->
-    runDotnet "docsrc/tools" "fsi" "--targetprofile:netstandard generate.ja.fsx"
+    runDotnet "docsrc/tools" "fake" "run generate.ja.fsx"
 )
 
 Target.create "PublishNuGet" (fun _ ->
