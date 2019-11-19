@@ -231,19 +231,25 @@ let main argv = 0"""
     let TypeCheckSingleError (source: string) (expectedServerity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         TypeCheckWithErrors source [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    let CompileExe (source: string) =
-        compile true [||] source (fun (errors, _) ->
+    let CompileExeWithOptions options (source: string) =
+        compile true options source (fun (errors, _) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
+    
+    let CompileExe (source: string) =
+        CompileExeWithOptions [||] source
+
+    let CompileExeAndRunWithOptions options (source: string) =
+           compile true options source (fun (errors, outputExe) ->
+
+               if errors.Length > 0 then
+                   Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
+
+               executeBuiltApp outputExe
+           )
 
     let CompileExeAndRun (source: string) =
-        compile true [||] source (fun (errors, outputExe) ->
-
-            if errors.Length > 0 then
-                Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
-
-            executeBuiltApp outputExe
-        )
+        CompileExeAndRunWithOptions [||] source
 
     let CompileLibraryAndVerifyILWithOptions options (source: string) (f: ILVerifier -> unit) =
         compile false options source (fun (errors, outputFilePath) ->

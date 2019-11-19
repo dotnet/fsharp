@@ -176,7 +176,7 @@ printfn "%A" x14
             """
     [<Test>]
     let ``float without dot``() = 
-        CompilerAssert.CompileExe
+        CompilerAssert.CompileExeWithOptions [|"--langversion:preview"|]
             """
 let x = 42f
 printfn "%A" x
@@ -184,7 +184,7 @@ printfn "%A" x
     
     [<Test>]
     let ``float with dot``() = 
-        CompilerAssert.CompileExe
+        CompilerAssert.CompileExeWithOptions [|"--langversion:preview"|]
             """
 let x = 42.f
 printfn "%A" x
@@ -192,7 +192,7 @@ printfn "%A" x
     
     [<Test>]
     let ``floats with dot should be equal to floats without dot``() = 
-        CompilerAssert.CompileExeAndRun
+        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:preview"|]
             """
 if 1.0f <> 1f then failwith "1.0f is not equal to 1f" 
             """
