@@ -8,6 +8,7 @@ namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
+open Utils
 
 (*
 [Test Strategy]
@@ -20,6 +21,12 @@ Make sure each method works on:
 
 [<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type Array2Module() =
+
+    let shouldBeEmpty arr = 
+        if Array2D.length2 arr <> 0 
+        && Array2D.length1 arr <> 0 then 
+            Assert.Fail("Array2D is not empty.")
+
     [<Test>]
     member this.Base1() =
         // integer array  
@@ -572,4 +579,99 @@ type Array2Module() =
         let m16 :string[,] = array2D [[null]]
         if m16.[0,0] <> null then Assert.Fail()
 
+
+    [<Test>]
+    member this.SlicingBoundedStartEnd() =
+        let m1 = array2D [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                            [| 10.0;20.0;30.0;40.0;50.0;60.0 |]  |]
+
+        shouldEqual m1.[*,*] m1
+        shouldEqual m1.[0..,*]  (array2D [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                                [| 10.0;20.0;30.0;40.0;50.0;60.0 |]  |])
+        shouldEqual m1.[1..,*]  (array2D [| 
+                                [| 10.0;20.0;30.0;40.0;50.0;60.0 |]  |])
+        shouldEqual m1.[..0,*]  (array2D [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                                |])
+        shouldEqual m1.[*,0..]  (array2D [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                                            [| 10.0;20.0;30.0;40.0;50.0;60.0 |]  
+                                         |])
+        shouldEqual m1.[*,1..]  (array2D [| [| 2.0;3.0;4.0;5.0;6.0 |];
+                                            [| 20.0;30.0;40.0;50.0;60.0 |]  
+                                         |])
+        shouldEqual m1.[*,2..]  (array2D [| [| 3.0;4.0;5.0;6.0 |];
+                                            [| 30.0;40.0;50.0;60.0 |]  
+                                         |])
+        shouldEqual m1.[*,3..]  (array2D [| [| 4.0;5.0;6.0 |];
+                                            [| 40.0;50.0;60.0 |]  
+                                         |])
+        shouldEqual m1.[*,4..]  (array2D [| [| 5.0;6.0 |];
+                                            [| 50.0;60.0 |]  
+                                         |])
+        shouldEqual m1.[*,5..]  (array2D [| [| 6.0 |];
+                                            [| 60.0 |]  
+                                |])
+        shouldEqual m1.[*, 0]  [| 1.0; 10.0 |]
+        shouldEqual m1.[1.., 3]  [| 40.0 |]
+        shouldEqual m1.[1, *]  [| 10.0;20.0;30.0;40.0;50.0;60.0 |]
+        shouldEqual m1.[0, ..3]  [| 1.0;2.0;3.0;4.0 |]
+        
+
+    [<Test>]
+    member this.SlicingUnboundedEnd() = 
+        let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
+
+        shouldEqual arr.[(-1).., *] arr
+        shouldEqual arr.[0.., 1..] (array2D [ [2;3;4;5;6]; [5;4;3;2;1] ])
+        shouldEqual arr.[1.., ..3] (array2D [ [6;5;4;3] ])
+        shouldBeEmpty arr.[2.., 6..] 
+
+
+    [<Test>]
+    member this.SlicingUnboundedStart() = 
+        let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
+
+        shouldBeEmpty arr.[..(-1), *] 
+        shouldEqual arr.[..0, ..4] (array2D [ [1;2;3;4;5] ])
+        shouldEqual arr.[..1, ..3] (array2D [ [1;2;3;4]; [6;5;4;3] ])
+        shouldEqual arr.[..2, ..6] arr
+
+
+    [<Test>]
+    member this.SlicingOutOfBounds() = 
+        let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
+       
+        shouldEqual arr.[*, ..6] arr
+        shouldBeEmpty arr.[*, 6..] 
+        shouldEqual arr.[..2, *] arr
+        shouldBeEmpty arr.[2.., *] 
+
+        shouldBeEmpty arr.[1..0, *] 
+        shouldBeEmpty arr.[1..0, (-1)..0] 
+
+        shouldBeEmpty arr.[0..(-1), *] 
+        shouldBeEmpty arr.[1..(-1), *] 
+        shouldBeEmpty arr.[1..0, *] 
+        shouldEqual arr.[0..6, (-1)..9] arr
+        shouldEqual arr.[*, 1..6] (array2D [ [2;3;4;5;6]; [5;4;3;2;1] ])
+
+        shouldEqual arr.[1, 3..1] [| |] 
+        shouldEqual arr.[3..1, 1] [| |] 
+        shouldEqual arr.[10.., 1] [| |] 
+        shouldEqual arr.[1, 10..] [| |] 
+        shouldEqual arr.[1, .. -1] [| |] 
+        shouldEqual arr.[.. -1, 1] [| |] 
+
+    [<Test>]
+    member this.SlicingMutation() = 
+        let arr2D1 = array2D [| [| 1.; 2.; 3.; 4. |];
+           [| 5.; 6.; 7.; 8. |];
+           [| 9.; 10.; 11.; 12. |] |]
+
+        arr2D1.[0, *] <- [|0.; 0.; 0.; 0.|]
+        shouldEqual arr2D1.[0,*]  [|0.; 0.; 0.; 0.|]
+        arr2D1.[*, 1] <- [|100.; 100.; 100.|]
+        shouldEqual arr2D1.[*,1]  [|100.; 100.; 100.|]
+        shouldEqual arr2D1.[*,*]  (array2D [| [| 0.; 100.; 0.; 0. |];
+                                 [| 5.; 100.; 7.; 8. |];
+                                 [| 9.; 100.; 11.; 12. |] |])
 
