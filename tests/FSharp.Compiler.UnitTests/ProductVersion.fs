@@ -1,4 +1,4 @@
-﻿namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.UnitTests
 
 open System
 open System.IO
@@ -59,6 +59,7 @@ module ProductVersionTest =
     let validValues () =
         let max = System.UInt16.MaxValue
         [ "1.2.3.4", ILVersionInfo(1us,2us,3us,4us)
+          "1.0.3.4", ILVersionInfo(1us,0us,3us,4us)
           "0.0.0.0", ILVersionInfo(0us,0us,0us,0us) 
           "3213.57843.32382.59493", ILVersionInfo(3213us,57843us,32382us,59493us)
           (sprintf "%d.%d.%d.%d" max max max max), ILVersionInfo(max,max,max,max) ]
@@ -68,20 +69,3 @@ module ProductVersionTest =
         for (v, expected) in validValues() do 
             v |> productVersionToILVersionInfo |> Assert.areEqual expected
 
-    let invalidValues () =
-        [ "1.2.3.4", ILVersionInfo(1us,2us,3us,4us)
-          "1.2.3.4a", ILVersionInfo(1us,2us,3us,0us)
-          "1.2.c3.4", ILVersionInfo(1us,2us,0us,0us)
-          "1.2-d.3.4", ILVersionInfo(1us,0us,0us,0us)
-          "1dd.2.3.4", ILVersionInfo(0us,0us,0us,0us)
-          "1dd.2da.d3hj.dd4ds", ILVersionInfo(0us,0us,0us,0us)
-          "1.5.6.7.dasd", ILVersionInfo(1us,5us,6us,7us)
-          "9.3", ILVersionInfo(9us,3us,0us,0us)
-          "", ILVersionInfo(0us,0us,0us,0us)
-          "70000.80000.90000.100000", ILVersionInfo(0us,0us,0us,0us)
-          (sprintf "%d.70000.80000.90000" System.UInt16.MaxValue), ILVersionInfo(System.UInt16.MaxValue,0us,0us,0us) ]
-
-    [<Test>]
-    let ``should zero starting from first invalid version part`` () = 
-        for (v, expected) in  invalidValues() do
-            v |> productVersionToILVersionInfo |> Assert.areEqual expected
