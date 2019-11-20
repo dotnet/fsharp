@@ -841,7 +841,6 @@ module MainModuleBuilder =
         let validParts =
             version.Split('.')
             |> Seq.map parseOrZero
-            |> Seq.takeWhile ((<>) 0us) 
             |> Seq.toList
         match validParts @ [0us; 0us; 0us; 0us] with
         | major :: minor :: build :: rev :: _ -> ILVersionInfo(major, minor, build, rev)
