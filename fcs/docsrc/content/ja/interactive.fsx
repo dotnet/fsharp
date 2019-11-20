@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../artifacts/bin/fcs/net461"
+#I "../../../../artifacts/bin/fcs/netstandard2.0"
 (**
 インタラクティブサービス: F# Interactiveの組み込み
 ==================================================

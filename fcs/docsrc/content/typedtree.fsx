@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../artifacts/bin/fcs/net461"
+#I "../../../artifacts/bin/fcs/netstandard2.0"
 (**
 Compiler Services: Processing typed expression tree
 =================================================
