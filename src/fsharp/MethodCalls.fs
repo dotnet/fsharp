@@ -20,6 +20,7 @@ open FSharp.Compiler.Tastops.DebugPrint
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.AttributeChecking
+open Internal.Utilities
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -151,7 +152,9 @@ let AdjustCalledArgType (infoReader: InfoReader) isConstraint (calledArg: Called
                 mkRefCellTy g (destByrefTy g calledArgTy)  
 
         else 
-            // If the called method argument is a delegate type, then the caller may provide a function 
+            // If the called method argument is a delegate type, and the caller is known to be a function type, then the caller may provide a function 
+            // If the called method argument is an Expression<T> type, and the caller is known to be a function type, then the caller may provide a T
+            // If the called method argument is an [<AutoQuote>] Quotations.Expr<T>, and the caller is not known to be a quoted expression type, then the caller may provide a T
             let calledArgTy = 
                 let adjustDelegateTy calledTy =
                     let (SigOfFunctionForDelegate(_, delArgTys, _, fty)) = GetSigOfFunctionForDelegate infoReader calledTy m  AccessibleFromSomewhere
@@ -178,14 +181,18 @@ let AdjustCalledArgType (infoReader: InfoReader) isConstraint (calledArg: Called
                 else calledArgTy
 
             // Adjust the called argument type to take into account whether the caller's argument is M(?arg=Some(3)) or M(arg=1) 
-            // If the called method argument is optional with type Option<T>, then the caller may provide a T, unless their argument is propagating-optional (i.e. isOptCallerArg) 
+            // If the called method argument is Callee-side optional with type Option<T>, and the caller argument is not explicitly optional (callerArg.IsOptional), then the caller may provide a T
+            // If the called method argument is Caller-side optional with type Nullable<T>, and the caller argument is not explicitly optional (callerArg.IsOptional), then the caller may provide a T
             let calledArgTy = 
                 match calledArg.OptArgInfo with 
-                | NotOptional                    -> calledArgTy
+                | NotOptional -> calledArgTy
                 | CalleeSide when not callerArg.IsOptional && isOptionTy g calledArgTy  -> destOptionTy g calledArgTy
-                | CalleeSide | CallerSide _ -> calledArgTy
-            calledArgTy
-        
+                // This will be added in https://github.com/dotnet/fsharp/pull/7276
+                //| CallerSide _ when not callerArg.IsOptional && isNullableTy g calledArgTy  -> destNullableTy g calledArgTy
+                | CalleeSide 
+                | CallerSide _ -> calledArgTy
+
+            calledArgTy        
 
 //-------------------------------------------------------------------------
 // CalledMeth
@@ -541,6 +548,351 @@ let ExamineMethodForLambdaPropagation (x: CalledMeth<SynExpr>) =
         None
 
 //-------------------------------------------------------------------------
+// Adjust caller arguments as part of building a method call
+//------------------------------------------------------------------------- 
+
+/// Build a call to the System.Object constructor taking no arguments,
+let BuildObjCtorCall (g: TcGlobals) m =
+    let ilMethRef = (mkILCtorMethSpecForTy(g.ilg.typ_Object, [])).MethodRef
+    Expr.Op (TOp.ILCall (false, false, false, false, CtorValUsedAsSuperInit, false, true, ilMethRef, [], [], [g.obj_ty]), [], [], m)
+
+/// Implements the elaborated form of adhoc conversions from functions to delegates at member callsites
+let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, invokeMethInfo: MethInfo, delArgTys, f, fty, m) =
+    let slotsig = invokeMethInfo.GetSlotSig(amap, m)
+    let delArgVals, expr = 
+        let topValInfo = ValReprInfo([], List.replicate (max 1 (List.length delArgTys)) ValReprInfo.unnamedTopArg, ValReprInfo.unnamedRetVal)
+
+        // Try to pull apart an explicit lambda and use it directly 
+        // Don't do this in the case where we're adjusting the arguments of a function used to build a .NET-compatible event handler 
+        let lambdaContents = 
+            if Option.isSome eventInfoOpt then 
+                None 
+            else 
+                tryDestTopLambda g amap topValInfo (f, fty)        
+
+        match lambdaContents with 
+        | None -> 
+        
+            if List.exists (isByrefTy g) delArgTys then
+                    error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(List.length delArgTys), m)) 
+
+            let delArgVals = delArgTys |> List.mapi (fun i argty -> fst (mkCompGenLocal m ("delegateArg" + string i) argty)) 
+            let expr = 
+                let args = 
+                    match eventInfoOpt with 
+                    | Some einfo -> 
+                        match delArgVals with 
+                        | [] -> error(nonStandardEventError einfo.EventName m)
+                        | h :: _ when not (isObjTy g h.Type) -> error(nonStandardEventError einfo.EventName m)
+                        | h :: t -> [exprForVal m h; mkRefTupledVars g m t] 
+                    | None -> 
+                        if isNil delArgTys then [mkUnit g m] else List.map (exprForVal m) delArgVals
+                mkApps g ((f, fty), [], args, m)
+            delArgVals, expr
+            
+        | Some _ -> 
+            let _, _, _, vsl, body, _ = IteratedAdjustArityOfLambda g amap topValInfo f
+            List.concat vsl, body
+            
+    let meth = TObjExprMethod(slotsig, [], [], [delArgVals], expr, m)
+    mkObjExpr(delegateTy, None, BuildObjCtorCall g m, [meth], [], m)
+
+let CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgExpr delegateTy =    
+    let (SigOfFunctionForDelegate(invokeMethInfo, delArgTys, _, _)) = GetSigOfFunctionForDelegate infoReader delegateTy m ad
+    BuildNewDelegateExpr (None, g, amap, delegateTy, invokeMethInfo, delArgTys, callerArgExpr, callerArgTy, m)
+
+// Handle adhoc argument conversions
+let AdjustCallerArgExprForCoercions (g: TcGlobals) amap infoReader ad isOutArg calledArgTy (reflArgInfo: ReflectedArgInfo) callerArgTy m callerArgExpr = 
+
+   if isByrefTy g calledArgTy && isRefCellTy g callerArgTy then 
+       None, Expr.Op (TOp.RefAddrGet false, [destRefCellTy g callerArgTy], [callerArgExpr], m) 
+
+#if IMPLICIT_ADDRESS_OF
+   elif isInByrefTy g calledArgTy && not (isByrefTy g callerArgTy) then 
+       let wrap, callerArgExprAddress, _readonly, _writeonly = mkExprAddrOfExpr g true false NeverMutates callerArgExpr None m
+       Some wrap, callerArgExprAddress
+#endif
+
+   elif isDelegateTy g calledArgTy && isFunTy g callerArgTy then 
+       None, CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgExpr calledArgTy
+
+   elif isLinqExpressionTy g calledArgTy && isDelegateTy g (destLinqExpressionTy g calledArgTy) && isFunTy g callerArgTy then 
+       let delegateTy = destLinqExpressionTy g calledArgTy
+       let expr = CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgExpr delegateTy
+       None, mkCallQuoteToLinqLambdaExpression g m delegateTy (Expr.Quote (expr, ref None, false, m, mkQuotedExprTy g delegateTy))
+
+   // auto conversions to quotations (to match auto conversions to LINQ expressions)
+   elif reflArgInfo.AutoQuote && isQuotedExprTy g calledArgTy && not (isQuotedExprTy g callerArgTy) then 
+       match reflArgInfo with 
+       | ReflectedArgInfo.Quote true -> 
+           None, mkCallLiftValueWithDefn g m calledArgTy callerArgExpr
+       | ReflectedArgInfo.Quote false -> 
+           None, Expr.Quote (callerArgExpr, ref None, false, m, calledArgTy)
+       | ReflectedArgInfo.None -> failwith "unreachable" // unreachable due to reflArgInfo.AutoQuote condition
+
+   // Note: out args do not need to be coerced 
+   elif isOutArg then 
+       None, callerArgExpr
+
+   // Note: not all these casts are reported in quotations 
+   else 
+       None, mkCoerceIfNeeded g calledArgTy callerArgTy callerArgExpr
+
+// Handle CallerSide optional arguments. 
+//
+// CallerSide optional arguments are largely for COM interop, e.g. to PIA assemblies for Word etc.
+// As a result we follow the VB and C# behavior here.
+//
+//   "1. If the parameter is statically typed as System.Object and does not have a value, then there are four cases:
+//       a. The parameter is marked with MarshalAs(IUnknown), MarshalAs(Interface), or MarshalAs(IDispatch). In this case we pass null.
+//       b. Else if the parameter is marked with IUnknownConstantAttribute. In this case we pass new System.Runtime.InteropServices.UnknownWrapper(null)
+//       c. Else if the parameter is marked with IDispatchConstantAttribute. In this case we pass new System.Runtime.InteropServices.DispatchWrapper(null)
+//       d. Else, we will pass Missing.Value.
+//    2. Otherwise, if there is a value attribute, then emit the default value.
+//    3. Otherwise, we emit default(T).
+//    4. Finally, we apply conversions from the value to the parameter type. This is where the nullable conversions take place for VB.
+//    - VB allows you to mark ref parameters as optional. The semantics of this is that we create a temporary 
+//        with type = type of parameter, load the optional value to it, and call the method. 
+//    - VB also allows you to mark arrays with Nothing as the optional value.
+//    - VB also allows you to pass intrinsic values as optional values to parameters 
+//        typed as Object. What we do in this case is we box the intrinsic value."
+//
+let AdjustOptionalCallerArgExprs tcFieldInit eCallerMemberName g (calledMeth: CalledMeth<_>) mItem mMethExpr =
+
+    let assignedNamedArgs = calledMeth.ArgSets |> List.collect (fun argSet -> argSet.AssignedNamedArgs)
+    let unnamedCalledArgs = calledMeth.ArgSets |> List.collect (fun argSet -> argSet.UnnamedCalledArgs)
+    let unnamedCallerArgs = calledMeth.ArgSets |> List.collect (fun argSet -> argSet.UnnamedCallerArgs)
+    let unnamedArgs =
+        (unnamedCalledArgs, unnamedCallerArgs) ||> List.map2 (fun called caller -> 
+            { NamedArgIdOpt = None; CalledArg=called; CallerArg=caller })
+
+    let emptyPreBinder (e: Expr) = e
+
+    // Adjust all the optional arguments that require a default value to be inserted into the call
+    let optArgs, optArgPreBinder = 
+        (emptyPreBinder, calledMeth.UnnamedCalledOptArgs) ||> List.mapFold (fun wrapper calledArg -> 
+            let calledArgTy = calledArg.CalledArgumentType
+            let wrapper2, expr = 
+                match calledArg.OptArgInfo with 
+                | NotOptional -> 
+                    error(InternalError("Unexpected NotOptional", mItem))
+
+                | CallerSide dfltVal ->
+
+                    let rec build currCalledArgTy currDfltVal =
+                        match currDfltVal with
+                        | MissingValue -> 
+                            // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
+                            emptyPreBinder, mkAsmExpr ([ mkNormalLdsfld (fspec_Missing_Value g); AI_nop ], [], [], [currCalledArgTy], mMethExpr)
+
+                        | DefaultValue -> 
+                            emptyPreBinder, mkDefault(mMethExpr, currCalledArgTy)
+
+                        | Constant fieldInit -> 
+                            match currCalledArgTy with
+                            | NullableTy g inst when fieldInit <> ILFieldInit.Null ->
+                                let nullableTy = mkILNonGenericBoxedTy(g.FindSysILTypeRef "System.Nullable`1")
+                                let ctor = mkILCtorMethSpecForTy(nullableTy, [ILType.TypeVar 0us]).MethodRef
+                                let ctorArgs = [Expr.Const (tcFieldInit mMethExpr fieldInit, mMethExpr, inst)]
+                                emptyPreBinder, Expr.Op (TOp.ILCall (false, false, true, true, NormalValUse, false, false, ctor, [inst], [], [currCalledArgTy]), [], ctorArgs, mMethExpr)
+                            | ByrefTy g inst ->
+                                build inst (PassByRef(inst, currDfltVal))
+                            | _ ->
+                                match calledArg.CallerInfo, eCallerMemberName with
+                                | CallerLineNumber, _ when typeEquiv g currCalledArgTy g.int_ty ->
+                                    emptyPreBinder, Expr.Const (Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
+                                | CallerFilePath, _ when typeEquiv g currCalledArgTy g.string_ty ->
+                                    let fileName = mMethExpr.FileName |> FileSystem.GetFullPathShim |> PathMap.apply g.pathMap
+                                    emptyPreBinder, Expr.Const (Const.String fileName, mMethExpr, currCalledArgTy)
+                                | CallerMemberName, Some callerName when (typeEquiv g currCalledArgTy g.string_ty) ->
+                                    emptyPreBinder, Expr.Const (Const.String callerName, mMethExpr, currCalledArgTy)
+                                | _ ->
+                                    emptyPreBinder, Expr.Const (tcFieldInit mMethExpr fieldInit, mMethExpr, currCalledArgTy)
+                                    
+                        | WrapperForIDispatch ->
+                            match g.TryFindSysILTypeRef "System.Runtime.InteropServices.DispatchWrapper" with
+                            | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
+                            | Some tref ->
+                                let ty = mkILNonGenericBoxedTy tref
+                                let mref = mkILCtorMethSpecForTy(ty, [g.ilg.typ_Object]).MethodRef
+                                let expr = Expr.Op (TOp.ILCall (false, false, false, true, NormalValUse, false, false, mref, [], [], [g.obj_ty]), [], [mkDefault(mMethExpr, currCalledArgTy)], mMethExpr)
+                                emptyPreBinder, expr
+
+                        | WrapperForIUnknown ->
+                            match g.TryFindSysILTypeRef "System.Runtime.InteropServices.UnknownWrapper" with
+                            | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
+                            | Some tref ->
+                                let ty = mkILNonGenericBoxedTy tref
+                                let mref = mkILCtorMethSpecForTy(ty, [g.ilg.typ_Object]).MethodRef
+                                let expr = Expr.Op (TOp.ILCall (false, false, false, true, NormalValUse, false, false, mref, [], [], [g.obj_ty]), [], [mkDefault(mMethExpr, currCalledArgTy)], mMethExpr)
+                                emptyPreBinder, expr
+
+                        | PassByRef (ty, dfltVal2) ->
+                            let v, _ = mkCompGenLocal mMethExpr "defaultByrefArg" ty
+                            let wrapper2, rhs = build currCalledArgTy dfltVal2
+                            (wrapper2 >> mkCompGenLet mMethExpr v rhs), mkValAddr mMethExpr false (mkLocalValRef v)
+                    build calledArgTy dfltVal
+
+                | CalleeSide ->
+                    let calledNonOptTy = 
+                        if isOptionTy g calledArgTy then 
+                            destOptionTy g calledArgTy 
+                        else
+                            calledArgTy // should be unreachable
+
+                    match calledArg.CallerInfo, eCallerMemberName with
+                    | CallerLineNumber, _ when typeEquiv g calledNonOptTy g.int_ty ->
+                        let lineExpr = Expr.Const(Const.Int32 mMethExpr.StartLine, mMethExpr, calledNonOptTy)
+                        emptyPreBinder, mkSome g calledNonOptTy lineExpr mMethExpr
+                    | CallerFilePath, _ when typeEquiv g calledNonOptTy g.string_ty ->
+                        let fileName = mMethExpr.FileName |> FileSystem.GetFullPathShim |> PathMap.apply g.pathMap
+                        let filePathExpr = Expr.Const (Const.String(fileName), mMethExpr, calledNonOptTy)
+                        emptyPreBinder, mkSome g calledNonOptTy filePathExpr mMethExpr
+                    | CallerMemberName, Some(callerName) when typeEquiv g calledNonOptTy g.string_ty ->
+                        let memberNameExpr = Expr.Const (Const.String callerName, mMethExpr, calledNonOptTy)
+                        emptyPreBinder, mkSome g calledNonOptTy memberNameExpr mMethExpr
+                    | _ ->
+                        emptyPreBinder, mkNone g calledNonOptTy mMethExpr
+
+            // Combine the variable allocators (if any)
+            let wrapper = (wrapper >> wrapper2)
+            let callerArg = CallerArg(calledArgTy, mMethExpr, false, expr)
+            { NamedArgIdOpt = None; CalledArg = calledArg; CallerArg = callerArg }, wrapper)
+
+    // Adjust all the optional arguments 
+    let wrapOptionalArg (assignedArg: AssignedCalledArg<_>) =
+        let (CallerArg(callerArgTy, m, isOptCallerArg, callerArgExpr)) = assignedArg.CallerArg
+        match assignedArg.CalledArg.OptArgInfo with 
+        | NotOptional -> 
+            if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
+            assignedArg
+        | _ -> 
+            let callerArgExpr2 = 
+                match assignedArg.CalledArg.OptArgInfo with 
+                | CallerSide _ -> 
+                    if isOptCallerArg then 
+                        // M(?x=bopt) when M(A) --> M(?x=bopt.Value) for caller-side
+                        // STRUCT OPTIONS: if we allow struct options as optional arguments then we should take
+                        // the address correctly. 
+                        mkUnionCaseFieldGetUnprovenViaExprAddr (callerArgExpr, mkSomeCase g, [destOptionTy g callerArgTy], 0, m) 
+                    else 
+                        // M(x=b) when M(A) --> M(?x=b) for caller-side
+                        callerArgExpr
+
+                | CalleeSide -> 
+                    if isOptCallerArg then 
+                        // M(?x=bopt) when M(A) --> M(?x=Some(bopt.Value))
+                        callerArgExpr 
+                    else                            
+                        // M(x=b) when M(A) --> M(?x=Some(b :> A))
+                        let calledArgTy = assignedArg.CalledArg.CalledArgumentType
+                        if isOptionTy g calledArgTy then 
+                            let calledNonOptTy = destOptionTy g calledArgTy 
+                            mkSome g calledNonOptTy (mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr) m
+                        else 
+                            callerArgExpr // should be unreachable 
+                            
+                | _ -> failwith "Unreachable"
+            { assignedArg with CallerArg=CallerArg(tyOfExpr g callerArgExpr2, m, isOptCallerArg, callerArgExpr2) }
+
+    let adjustedNormalUnnamedArgs = List.map wrapOptionalArg unnamedArgs
+    let adjustedAssignedNamedArgs = List.map wrapOptionalArg assignedNamedArgs
+
+    optArgs, optArgPreBinder, adjustedNormalUnnamedArgs, adjustedAssignedNamedArgs
+
+/// Adjust any 'out' arguments, passing in the address of a mutable local
+let AdjustOutCallerArgExprs g (calledMeth: CalledMeth<_>) mMethExpr =
+    calledMeth.UnnamedCalledOutArgs |> List.map (fun calledArg -> 
+        let calledArgTy = calledArg.CalledArgumentType
+        let outArgTy = destByrefTy g calledArgTy
+        let outv, outArgExpr = mkMutableCompGenLocal mMethExpr PrettyNaming.outArgCompilerGeneratedName outArgTy // mutable! 
+        let expr = mkDefault (mMethExpr, outArgTy)
+        let callerArg = CallerArg (calledArgTy, mMethExpr, false, mkValAddr mMethExpr false (mkLocalValRef outv))
+        let outArg = { NamedArgIdOpt=None;CalledArg=calledArg;CallerArg=callerArg }
+        outArg, outArgExpr, mkCompGenBind outv expr) 
+        |> List.unzip3
+
+let AdjustParamArrayCallerArgExprs g amap infoReader ad (calledMeth: CalledMeth<_>) mMethExpr =
+    let argSets = calledMeth.ArgSets
+
+    let paramArrayCallerArgs = argSets |> List.collect (fun argSet -> argSet.ParamArrayCallerArgs)
+    match calledMeth.ParamArrayCalledArgOpt with 
+    | None -> 
+        [], []
+    | Some paramArrayCalledArg -> 
+        let paramArrayCalledArgElementType = destArrayTy g paramArrayCalledArg.CalledArgumentType
+
+        let paramArrayPreBinders, es = 
+            paramArrayCallerArgs  
+            |> List.map (fun callerArg -> 
+                let (CallerArg(callerArgTy, m, isOutArg, callerArgExpr)) = callerArg
+                AdjustCallerArgExprForCoercions g amap infoReader ad isOutArg paramArrayCalledArgElementType paramArrayCalledArg.ReflArgInfo callerArgTy m callerArgExpr)
+            |> List.unzip
+
+        let arg = 
+            [ { NamedArgIdOpt = None
+                CalledArg=paramArrayCalledArg
+                CallerArg=CallerArg(paramArrayCalledArg.CalledArgumentType, mMethExpr, false, Expr.Op (TOp.Array, [paramArrayCalledArgElementType], es, mMethExpr)) } ]
+        paramArrayPreBinders, arg
+
+/// Build the argument list for a method call. Adjust for param array, optional arguments, byref arguments and coercions.
+/// For example, if you pass an F# reference cell to a byref then we must get the address of the 
+/// contents of the ref. Likewise lots of adjustments are made for optional arguments etc.
+let AdjustCallerArgExprs tcFieldInit eCallerMemberName g amap infoReader ad (calledMeth: CalledMeth<_>) objArgs lambdaVars mItem mMethExpr =
+    let calledMethInfo = calledMeth.Method
+
+    // Some of the code below must allocate temporary variables or bind other variables to particular values. 
+    // As usual we represent variable allocators by expr -> expr functions 
+    // which we then use to wrap the whole expression. These will either do nothing or pre-bind a variable. It doesn't
+    // matter what order they are applied in as long as they are all composed together.
+    let emptyPreBinder (e: Expr) = e
+    
+    // For unapplied 'e.M' we first evaluate 'e' outside the lambda, i.e. 'let v = e in (fun arg -> v.M(arg))' 
+    let objArgPreBinder, objArgs = 
+        match objArgs, lambdaVars with 
+        | [objArg], Some _ -> 
+            if calledMethInfo.IsExtensionMember && calledMethInfo.ObjArgNeedsAddress(amap, mMethExpr) then
+                error(Error(FSComp.SR.tcCannotPartiallyApplyExtensionMethodForByref(calledMethInfo.DisplayName), mMethExpr))
+            let objArgTy = tyOfExpr g objArg
+            let v, ve = mkCompGenLocal mMethExpr "objectArg" objArgTy
+            (fun body -> mkCompGenLet mMethExpr v objArg body), [ve]
+        | _ -> 
+            emptyPreBinder, objArgs
+
+    // Handle param array and optional arguments
+    let paramArrayPreBinders, paramArrayArgs =
+        AdjustParamArrayCallerArgExprs g amap infoReader ad calledMeth mMethExpr
+
+    let optArgs, optArgPreBinder, adjustedNormalUnnamedArgs, adjustedFinalAssignedNamedArgs = 
+        AdjustOptionalCallerArgExprs tcFieldInit eCallerMemberName g calledMeth mItem mMethExpr
+
+    let outArgs, outArgExprs, outArgTmpBinds =
+        AdjustOutCallerArgExprs g calledMeth mMethExpr
+
+    let allArgs =
+        adjustedNormalUnnamedArgs @
+        adjustedFinalAssignedNamedArgs @
+        paramArrayArgs @
+        optArgs @ 
+        outArgs
+        
+    let allArgs = 
+        allArgs |> List.sortBy (fun x -> x.Position)
+
+    let allArgsPreBinders, allArgsCoerced = 
+        allArgs
+        |> List.map (fun assignedArg -> 
+            let isOutArg = assignedArg.CalledArg.IsOutArg
+            let reflArgInfo = assignedArg.CalledArg.ReflArgInfo
+            let calledArgTy = assignedArg.CalledArg.CalledArgumentType
+            let (CallerArg(callerArgTy, m, _, e)) = assignedArg.CallerArg
+    
+            AdjustCallerArgExprForCoercions g amap infoReader ad isOutArg calledArgTy reflArgInfo callerArgTy m e)
+        |> List.unzip
+
+    objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds
+
+//-------------------------------------------------------------------------
 // Additional helpers for building method calls and doing TAST generation
 //------------------------------------------------------------------------- 
 
@@ -573,27 +925,30 @@ let ComputeConstrainedCallInfo g amap m (objArgs, minfo: MethInfo) =
     | _ -> 
         None
 
-
 /// Adjust the 'this' pointer before making a call 
 /// Take the address of a struct, and coerce to an interface/base/constraint type if necessary 
 let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
     let ccallInfo = ComputeConstrainedCallInfo g amap m (objArgs, minfo)
 
     let wrap, objArgs = 
+
         match objArgs with
         | [objArgExpr] ->
+
             let hasCallInfo = ccallInfo.IsSome
             let mustTakeAddress = hasCallInfo || minfo.ObjArgNeedsAddress(amap, m)
             let objArgTy = tyOfExpr g objArgExpr
-            let wrap, objArgExpr', isReadOnly, _isWriteOnly = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
+
+            let wrap, objArgExprAddr, isReadOnly, _isWriteOnly =
+                mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
             
             // Extension members and calls to class constraints may need a coercion for their object argument
-            let objArgExpr' = 
+            let objArgExprCoerced = 
               if not hasCallInfo &&
                  not (TypeDefinitelySubsumesTypeNoCoercion 0 g amap m minfo.ApparentEnclosingType objArgTy) then 
-                  mkCoerceExpr(objArgExpr', minfo.ApparentEnclosingType, m, objArgTy)
+                  mkCoerceExpr(objArgExprAddr, minfo.ApparentEnclosingType, m, objArgTy)
               else
-                  objArgExpr'
+                  objArgExprAddr
 
             // Check to see if the extension member uses the extending type as a byref.
             //     If so, make sure we don't allow readonly/immutable values to be passed byref from an extension member. 
@@ -605,7 +960,7 @@ let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
                         errorR(Error(FSComp.SR.tcCannotCallExtensionMethodInrefToByref(minfo.DisplayName), m)))
                         
 
-            wrap, [objArgExpr'] 
+            wrap, [objArgExprCoerced] 
 
         | _ -> 
             id, objArgs
@@ -615,11 +970,6 @@ let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
 //-------------------------------------------------------------------------
 // Build method calls.
 //------------------------------------------------------------------------- 
-
-//-------------------------------------------------------------------------
-// Build calls 
-//------------------------------------------------------------------------- 
-
 
 /// Build an expression node that is a call to a .NET method. 
 let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst direct args = 
@@ -637,11 +987,6 @@ let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst di
     let isDllImport = minfo.IsDllImport g
     Expr.Op (TOp.ILCall (useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, isDllImport, ilMethRef, minfo.DeclaringTypeInst, minst, retTy), [], args, m),
     exprTy
-
-/// Build a call to the System.Object constructor taking no arguments,
-let BuildObjCtorCall (g: TcGlobals) m =
-    let ilMethRef = (mkILCtorMethSpecForTy(g.ilg.typ_Object, [])).MethodRef
-    Expr.Op (TOp.ILCall (false, false, false, false, CtorValUsedAsSuperInit, false, true, ilMethRef, [], [], [g.obj_ty]), [], [], m)
 
 
 /// Build a call to an F# method.
@@ -825,55 +1170,6 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                 errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
             mkDefault (m, ty), ty)
 
-//-------------------------------------------------------------------------
-// Build delegate constructions (lambdas/functions to delegates)
-//------------------------------------------------------------------------- 
-
-/// Implements the elaborated form of adhoc conversions from functions to delegates at member callsites
-let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, invokeMethInfo: MethInfo, delArgTys, f, fty, m) =
-    let slotsig = invokeMethInfo.GetSlotSig(amap, m)
-    let delArgVals, expr = 
-        let topValInfo = ValReprInfo([], List.replicate (max 1 (List.length delArgTys)) ValReprInfo.unnamedTopArg, ValReprInfo.unnamedRetVal)
-
-        // Try to pull apart an explicit lambda and use it directly 
-        // Don't do this in the case where we're adjusting the arguments of a function used to build a .NET-compatible event handler 
-        let lambdaContents = 
-            if Option.isSome eventInfoOpt then 
-                None 
-            else 
-                tryDestTopLambda g amap topValInfo (f, fty)        
-
-        match lambdaContents with 
-        | None -> 
-        
-            if List.exists (isByrefTy g) delArgTys then
-                    error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(List.length delArgTys), m)) 
-
-            let delArgVals = delArgTys |> List.mapi (fun i argty -> fst (mkCompGenLocal m ("delegateArg" + string i) argty)) 
-            let expr = 
-                let args = 
-                    match eventInfoOpt with 
-                    | Some einfo -> 
-                        match delArgVals with 
-                        | [] -> error(nonStandardEventError einfo.EventName m)
-                        | h :: _ when not (isObjTy g h.Type) -> error(nonStandardEventError einfo.EventName m)
-                        | h :: t -> [exprForVal m h; mkRefTupledVars g m t] 
-                    | None -> 
-                        if isNil delArgTys then [mkUnit g m] else List.map (exprForVal m) delArgVals
-                mkApps g ((f, fty), [], args, m)
-            delArgVals, expr
-            
-        | Some _ -> 
-            let _, _, _, vsl, body, _ = IteratedAdjustArityOfLambda g amap topValInfo f
-            List.concat vsl, body
-            
-    let meth = TObjExprMethod(slotsig, [], [], [delArgVals], expr, m)
-    mkObjExpr(delegateTy, None, BuildObjCtorCall g m, [meth], [], m)
-
-let CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgExpr delegateTy =    
-    let (SigOfFunctionForDelegate(invokeMethInfo, delArgTys, _, _)) = GetSigOfFunctionForDelegate infoReader delegateTy m ad
-    BuildNewDelegateExpr (None, g, amap, delegateTy, invokeMethInfo, delArgTys, callerArgExpr, callerArgTy, m)
-
 
 //-------------------------------------------------------------------------
 // Import provided expressions
@@ -972,11 +1268,14 @@ module ProvidedMethodCalls =
                         st
         loop inputType
 
-    let convertProvidedExpressionToExprAndWitness tcVal (thisArg: Expr option,
-                                                         allArgs: Exprs,
-                                                         paramVars: Tainted<ProvidedVar>[],
-                                                         g, amap, mut, isProp, isSuperInit, m,
-                                                         expr: Tainted<ProvidedExpr>) = 
+    let convertProvidedExpressionToExprAndWitness
+            tcVal
+            (thisArg: Expr option,
+             allArgs: Exprs,
+             paramVars: Tainted<ProvidedVar>[],
+             g, amap, mut, isProp, isSuperInit, m,
+             expr: Tainted<ProvidedExpr>) = 
+
         let varConv =
             // note: using paramVars.Length as assumed initial size, but this might not 
             // be the optimal value; this wasn't checked before obsoleting Dictionary.ofList

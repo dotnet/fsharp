@@ -24,6 +24,7 @@ type public Fsc () as this =
     let mutable baseAddress : string = null
     let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
+    let mutable checksumAlgorithm: string = null
     let mutable codePage : string = null
     let mutable commandLineArgs : ITaskItem list = []
     let mutable debugSymbols = false
@@ -135,7 +136,7 @@ type public Fsc () as this =
             builder.AppendSwitch("--tailcalls-")
         // PdbFile
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
-        // Platform
+// Platform
         builder.AppendSwitchIfNotNull("--platform:",
             let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
             match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
@@ -144,6 +145,13 @@ type public Fsc () as this =
                 | "ANYCPU",  _, _  -> "anycpu"
                 | "X86",  _, _  -> "x86"
                 | "X64",  _, _  -> "x64"
+                | _ -> null)
+        // checksumAlgorithm
+        builder.AppendSwitchIfNotNull("--checksumalgorithm:",
+            let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
+            match ToUpperInvariant(checksumAlgorithm) with
+                | "SHA1" -> "Sha1"
+                | "SHA256" -> "Sha256"
                 | _ -> null)
         // Resources
         if resources <> null then 
@@ -257,6 +265,11 @@ type public Fsc () as this =
     member fsc.BaseAddress
         with get() = baseAddress 
         and set(s) = baseAddress <- s
+
+    // --checksumalgorithm
+    member fsc.ChecksumAlgorithm
+        with get() = checksumAlgorithm 
+        and set(s) = checksumAlgorithm <- s
 
     // --codepage <int>: Specify the codepage to use when opening source files
     member fsc.CodePage

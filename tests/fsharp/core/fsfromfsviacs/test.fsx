@@ -71,22 +71,53 @@ let _ = test "structunion394b36" (Lib.NestedStructUnionsTests.testPattern3mut(u2
 
 // F# option implicit converter tests
 
-let testFsOpt() =
-    let testOpt (t : 'T option) =
-        test (sprintf "fsimplicitconv (%A)" t) (ApiWrapper.ConsumeOptionalParam<'T>(t) = t)
+module TestConsumeOptionalParameter = 
+    let testFsOpt() =
+        let testOpt (t : 'T option) =
+            test (sprintf "fsimplicitconv (%A)" t) (ApiWrapper.ConsumeOptionalParam<'T>(t) = t)
 
-    testOpt(Option<int>.None)
-    testOpt(Some 42)
+        testOpt(Option<int>.None)
+        testOpt(Some 42)
 
-    // check that implicit conversion of optionals does 
-    // differentiate between 'null' and 'Some null'
-    testOpt(Option<string>.None)
-    testOpt(Option<string>.Some null)
-    testOpt(Some "")
-    testOpt(Some "test")
+        // check that implicit conversion of optionals does 
+        // differentiate between 'null' and 'Some null'
+        testOpt(Option<string>.None)
+        testOpt(Option<string>.Some null)
+        testOpt(Some "")
+        testOpt(Some "test")
 
-testFsOpt()
+    testFsOpt()
 
+module TestConsumeCSharpOptionalParameter = 
+    open System
+    open CSharpOptionalParameters
+    check "csoptional23982f31" (SomeClass.MethodTakingOptionals()) 11
+    check "csoptional23982f32" (SomeClass.MethodTakingOptionals(x = 6)) 14
+    check "csoptional23982f33" (SomeClass.MethodTakingOptionals(y = "aaaaaa")) 14
+    check "csoptional23982f34" (SomeClass.MethodTakingOptionals(d = 8.0)) 14
+
+    check "csoptional23982f41" (SomeClass.MethodTakingNullableOptionalsWithDefaults()) 11
+    check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = Nullable 6)) 14
+    check "csoptional23982f43" (SomeClass.MethodTakingNullableOptionalsWithDefaults(y = "aaaaaa")) 14
+    check "csoptional23982f44" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = Nullable 8.0)) 14
+
+    check "csoptional23982f51" (SomeClass.MethodTakingNullableOptionals()) -3
+    check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionals(x = Nullable 6)) 4
+    check "csoptional23982f53" (SomeClass.MethodTakingNullableOptionals(y = "aaaaaa")) 4
+    check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = Nullable 8.0)) 6
+
+    // These require https://github.com/fsharp/fslang-suggestions/issues/774 to be implemented
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?x = Some 6)) 14
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?y = Some "aaaaaa")) 14
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?d = Some 8.0)) 14
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?x = None)) 11
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?y = None)) 11
+    //check "csoptional23982f3no" (SomeClass.SomeMethod(?d = None)) 11
+
+    //check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = 6)) 14
+    //check "csoptional23982f44" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = 8.0)) 14
+    //check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionals(x = 6)) 4
+    //check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = 8.0)) 6
 
 module NestedStructPatternMatchingAcrossAssemblyBoundaries = 
     open Lib.NestedStructUnionsTests

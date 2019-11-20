@@ -52,8 +52,8 @@ module KindB1 =
     check "coijoiwcnkwle1"  {| a = 1 |} {| a = 1 |}
     check "coijoiwcnkwle2"  {| a = 2 |}  {| a = 2 |}
 
-    check "coijoiwcnkwle3"  (sprintf "%A"  {| X = 10 |}) "{X = 10;}"
-    check "coijoiwcnkwle4"  (sprintf "%A"  {| X = 10; Y = 1 |} |> fun s -> s.Replace("\n","").Replace("\r","")) ("{X = 10; Y = 1;}".Replace("\n","").Replace("\r",""))
+    check "coijoiwcnkwle3"  (sprintf "%A"  {| X = 10 |}) "{ X = 10 }"
+    check "coijoiwcnkwle4"  (sprintf "%A"  {| X = 10; Y = 1 |}) "{ X = 10\n  Y = 1 }"
     check "clekoiew09" (f2 {| X = {| X = 10 |} |}) 10
     check "cewkew0oijew" (f2 {| X = {| X = 20 |} |})  20
 

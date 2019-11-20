@@ -251,14 +251,14 @@
     <Compile Include="..\..\absil\ilread.fs">
       <Link>AbsIL\ilread.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilwrite.fsi">
-      <Link>AbsIL\ilwrite.fsi</Link>
-    </Compile>
     <Compile Include="..\..\absil\ilwritepdb.fsi">
       <Link>AbsIL\ilwritepdb.fsi</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwritepdb.fs">
       <Link>AbsIL\ilwritepdb.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilwrite.fsi">
+      <Link>AbsIL\ilwrite.fsi</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwrite.fs">
       <Link>AbsIL\ilwrite.fs</Link>

@@ -137,6 +137,10 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          Default - mscorlib
 --baseaddress:<address>                  Base address for the library to be
                                          built
+--checksumalgorithm:{SHA1|SHA256}        Specify algorithm for calculating
+                                         source file checksum stored in PDB.
+                                         Supported values are: SHA1 or SHA256
+                                         (default)
 --noframework                            Do not reference the default CLI
                                          assemblies by default
 --standalone                             Statically link the F# library and

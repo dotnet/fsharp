@@ -49,15 +49,7 @@
         <file src="FSharp.Compiler.Private\$Configuration$\netstandard2.0\FSharp.Compiler.Private.dll"    target="lib\netcoreapp2.1" />
         <file src="FSharp.Build\$Configuration$\netcoreapp2.1\FSharp.Build.dll"                           target="lib\netcoreapp2.1" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll"
-                                                                                                                            target="lib\netcoreapp2.1" />
-        <!-- symbols -->
-        <file src="fsc\$Configuration$\netcoreapp2.1\fsc.pdb"                                             target="lib\netcoreapp2.1" />
-        <file src="fsi\$Configuration$\netcoreapp2.1\fsi.pdb"                                             target="lib\netcoreapp2.1" />
-        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.pdb"                            target="lib\netcoreapp2.1" />
-        <file src="FSharp.Compiler.Private\$Configuration$\netstandard2.0\FSharp.Compiler.Private.pdb"    target="lib\netcoreapp2.1" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp2.1\FSharp.Build.pdb"                           target="lib\netcoreapp2.1" />
-        <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\FSharp.Compiler.Interactive.Settings.pdb"
-                                                                                                                            target="lib\netcoreapp2.1" />
+                                                                                                          target="lib\netcoreapp2.1" />
         <!-- additional files -->
         <file src="fsc\$Configuration$\netcoreapp2.1\default.win32manifest"                               target="contentFiles\any\any" />
         <file src="FSharp.Build\$Configuration$\netcoreapp2.1\Microsoft.FSharp.Targets"                   target="contentFiles\any\any" />
@@ -69,9 +61,9 @@
         <!-- resources -->
         <file src="FSharp.Core\$Configuration$\netstandard2.0\**\FSharp.Core.resources.dll"               target="lib\netcoreapp2.1" />
         <file src="FSharp.Compiler.Private\$Configuration$\netstandard2.0\**\FSharp.Compiler.Private.resources.dll"
-                                                                                                                            target="lib\netcoreapp2.1" />
+                                                                                                          target="lib\netcoreapp2.1" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\**\FSharp.Compiler.Interactive.Settings.resources.dll"
-                                                                                                                            target="lib\netcoreapp2.1" />
+                                                                                                          target="lib\netcoreapp2.1" />
         <file src="FSharp.Build\$Configuration$\netcoreapp2.1\**\FSharp.Build.resources.dll"              target="lib\netcoreapp2.1" />
     </files>
 </package>

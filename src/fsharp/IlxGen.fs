@@ -2540,7 +2540,8 @@ and GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel =
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf: FakeUnit -> FakeUnit) =
-    match stripExpr expr with 
+    let expr = stripExpr expr
+    match expr with 
     | LinearOpExpr (TOp.UnionCase c, tyargs, argsFront, argLast, m) ->
         GenExprs cenv cgbuf eenv argsFront
         GenLinearExpr cenv cgbuf eenv SPSuppress argLast Continue (* canProcessSequencePoint *) true (contf << (fun Fake -> 

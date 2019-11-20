@@ -1388,7 +1388,7 @@ val mkVoidPtrTy  : TcGlobals -> TType
 /// Build a single-dimensional array type
 val mkArrayType      : TcGlobals -> TType -> TType
 
-/// Determine is a type is an option type
+/// Determine if a type is an option type
 val isOptionTy     : TcGlobals -> TType -> bool
 
 /// Take apart an option type
@@ -1396,6 +1396,15 @@ val destOptionTy   : TcGlobals -> TType -> TType
 
 /// Try to take apart an option type
 val tryDestOptionTy : TcGlobals -> TType -> ValueOption<TType>
+
+/// Determine is a type is a System.Nullable type
+val isNullableTy : TcGlobals -> TType -> bool
+
+/// Try to take apart a System.Nullable type
+val tryDestNullableTy: TcGlobals -> TType -> ValueOption<TType>
+
+/// Take apart a System.Nullable type
+val destNullableTy: TcGlobals -> TType -> TType
 
 /// Determine if a type is a System.Linq.Expression type
 val isLinqExpressionTy     : TcGlobals -> TType -> bool

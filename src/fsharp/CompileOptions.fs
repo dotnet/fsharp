@@ -9,6 +9,7 @@ open System
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
@@ -523,6 +524,7 @@ let tagFullPDBOnlyPortable = "{full|pdbonly|portable|embedded}"
 let tagWarnList = "<warn;...>"
 let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
+let tagAlgorithm = "{SHA1|SHA256}"
 let tagInt = "<n>"
 let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
@@ -947,6 +949,16 @@ let advancedFlagsFsc tcConfigB =
                   ("baseaddress", tagAddress,
                    OptionString (fun s -> tcConfigB.baseAddress <- Some(int32 s)), None,
                    Some (FSComp.SR.optsBaseaddress()))
+
+        yield CompilerOption
+                  ("checksumalgorithm", tagAlgorithm,
+                   OptionString (fun s ->
+                       tcConfigB.checksumAlgorithm <-
+                        match s.ToUpperInvariant() with
+                        | "SHA1" -> HashAlgorithm.Sha1
+                        | "SHA256" -> HashAlgorithm.Sha256
+                        | _ -> error(Error(FSComp.SR.optsUnknownChecksumAlgorithm s, rangeCmdArgs))), None,
+                        Some (FSComp.SR.optsChecksumAlgorithm()))
 
         yield noFrameworkFlag true tcConfigB
 

@@ -60,7 +60,8 @@ type lexargs =
       applyLineDirectives: bool
       pathMap: PathMap }
 
-/// possible results of lexing a long unicode escape sequence in a string literal, e.g. "\UDEADBEEF"
+/// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
+/// "\U000000E7", or "\UDEADBEEF" returning SurrogatePair, SingleChar, or Invalid, respectively
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
     | SingleChar of uint16
@@ -169,7 +170,9 @@ let unicodeGraphLong (s:string) =
     if high = 0 then SingleChar(uint16 low)
     // invalid encoding
     elif high > 0x10 then Invalid
-    // valid surrogate pair - see http://www.unicode.org/unicode/uni2book/ch03.pdf, section 3.7 *)
+    // valid supplementary character: code points U+10000 to U+10FFFF
+    // valid surrogate pair: see http://www.unicode.org/versions/latest/ch03.pdf , "Surrogates" section
+    // high-surrogate code point (U+D800 to U+DBFF) followed by low-surrogate code point (U+DC00 to U+DFFF)
     else
       let codepoint = high * 0x10000 + low
       let hiSurr = uint16 (0xD800 + ((codepoint - 0x10000) / 0x400))

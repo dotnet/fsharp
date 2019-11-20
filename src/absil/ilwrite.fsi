@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The IL Binary writer.
-module internal FSharp.Compiler.AbstractIL.ILBinaryWriter 
+module internal FSharp.Compiler.AbstractIL.ILBinaryWriter
 
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 
 [<Sealed>]
 type ILStrongNameSigner =
@@ -24,6 +25,7 @@ type options =
    embedAllSource: bool
    embedSourceList: string list
    sourceLink: string
+   checksumAlgorithm: HashAlgorithm
    signer : ILStrongNameSigner option
    emitTailcalls: bool
    deterministic: bool

@@ -113,6 +113,12 @@ jobs:
             PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpFull.vsix'
             ArtifactName: 'Nightly'
           condition: succeeded()
+        - task: PublishBuildArtifacts@1
+          displayName: Publish Artifact Symbols
+          inputs:
+            PathtoPublish: '$(Build.SourcesDirectory)\artifacts\SymStore\$(_BuildConfig)'
+            ArtifactName: 'NativeSymbols'
+          condition: succeeded()
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                     PR builds                                                       #

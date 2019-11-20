@@ -13,4 +13,5 @@ Library1.dll
 
 
 cd.tmp
-
+*.err
+*.vserr

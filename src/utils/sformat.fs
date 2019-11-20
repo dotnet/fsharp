@@ -718,18 +718,14 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         // pprinter: attributes
         // -------------------------------------------------------------------- 
 
-        let makeRecordVerticalL nameXs =
-            let itemL (name,xL) = let labelL = wordL name in ((labelL ^^ wordL Literals.equals)) -- (xL  ^^ (rightL Literals.semicolon))
-            let braceL xs = (leftL Literals.leftBrace) ^^ xs ^^ (rightL Literals.rightBrace)
-            braceL (aboveListL (List.map itemL nameXs))
-
-        // This is a more compact rendering of records - and is more like tuples 
-        let makeRecordHorizontalL nameXs = 
-            let itemL (name,xL) = let labelL = wordL name in ((labelL ^^ wordL Literals.equals)) -- xL
-            let braceL xs = (leftL Literals.leftBrace) ^^ xs ^^ (rightL Literals.rightBrace)
-            braceL (sepListL (rightL Literals.semicolon)  (List.map itemL nameXs))
-
-        let makeRecordL nameXs = makeRecordVerticalL nameXs 
+        let makeRecordL nameXs =
+            let itemL (name,xL) = wordL name ^^ wordL Literals.equals -- xL
+            let braceL xs = (wordL Literals.leftBrace) ^^ xs ^^ (wordL Literals.rightBrace)
+            
+            nameXs
+            |> List.map itemL
+            |> aboveListL
+            |> braceL
 
         let makePropertiesL nameXs =
             let itemL (name,v) = 
