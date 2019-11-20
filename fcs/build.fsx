@@ -137,11 +137,11 @@ open Fake.Core.TargetOperators
   ==> "Release"
 
 "Build"
-  ==> "GenerateDocsEn"
+  // ==> "GenerateDocsEn"
   ==> "GenerateDocs"
 
 "Build"
-  ==> "GenerateDocsJa"
+  // ==> "GenerateDocsJa"
   ==> "GenerateDocs"
 
 "GenerateDocs"
