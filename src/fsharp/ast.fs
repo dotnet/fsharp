@@ -802,9 +802,6 @@ and
     /// 'use x = fixed expr'
     | Fixed of expr: SynExpr * range: range
 
-    /// Reverse index in slices
-    | ReverseIndex of expr: SynExpr * opRange: range * range: range
-
     /// Get the syntactic range of source code covered by this construct.
     member e.Range =
         match e with
@@ -871,7 +868,6 @@ and
         | SynExpr.LetOrUseBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
-        | SynExpr.ReverseIndex (range=m)
         | SynExpr.Fixed (range=m) -> m
         | SynExpr.Ident id -> id.idRange
 
@@ -2427,7 +2423,6 @@ let rec synExprContainsError inpExpr =
           | SynExpr.YieldOrReturnFrom (_, e, _)
           | SynExpr.DoBang (e, _)
           | SynExpr.Fixed (e, _)
-          | SynExpr.ReverseIndex (e, _, _)
           | SynExpr.Paren (e, _, _, _) ->
               walkExpr e
 

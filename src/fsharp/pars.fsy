@@ -3825,7 +3825,9 @@ rangeDeclExpr:
     { $1, false }
 
   | INFIX_AT_HAT_OP declExpr %prec slice_expr
-    { if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
+    { if not (parseState.LexBuffer.SupportsFeature LanguageFeature.FromEndSlicing) then 
+        raiseParseErrorAt (rhs parseState 1) (FSComp.SR.fromEndSlicingRequiresVFive())
+      if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
       $2, true }
 
 /* the start et of atomicExprAfterType must not overlap with the valid postfix tokens of the type syntax, e.g. new List<T>(...) */

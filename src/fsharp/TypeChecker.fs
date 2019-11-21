@@ -5886,9 +5886,6 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.AddressOf (byref, synInnerExpr, opm, m) -> 
         TcExpr cenv overallTy env tpenv (mkSynPrefixPrim opm m (if byref then "~&" else "~&&") synInnerExpr) 
 
-    | SynExpr.ReverseIndex (synInnerExpr, opm, m) -> 
-        TcExpr cenv overallTy env tpenv (mkSynPrefixPrim opm m "~^" synInnerExpr)
-        
     | SynExpr.Upcast (synInnerExpr, _, m) | SynExpr.InferredUpcast (synInnerExpr, m) -> 
         let innerExpr, srcTy, tpenv = TcExprOfUnknownType cenv env tpenv synInnerExpr 
         let tgtTy, tpenv = 
@@ -6353,13 +6350,14 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
             match indexerArg with
             | SynIndexerArg.One(expr, fromEnd, range) -> 
                 [ if fromEnd then rewriteReverseExpr pos expr range else expr ]
-            | SynIndexerArg.Two(
-                                a1,
-                                fromEnd1,
-                                a2,
-                                fromEnd2,
-                                range1,
-                                range2) -> 
+            | SynIndexerArg.Two
+                (
+                    a1,
+                    fromEnd1,
+                    a2,
+                    fromEnd2,
+                    range1,
+                    range2) -> 
                 [
                    if fromEnd1 then rewriteReverseOption a1 pos range1 else a1 ;
                    if fromEnd2 then rewriteReverseOption a2 pos range2 else a2
@@ -9309,7 +9307,6 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | SynExpr.InferredUpcast (synExpr, _) 
             | SynExpr.InferredDowncast (synExpr, _) 
             | SynExpr.AddressOf (_, synExpr, _, _) 
-            | SynExpr.ReverseIndex(synExpr, _, _)
             | SynExpr.Quote (_, _, synExpr, _, _) -> isSimpleArgument synExpr
 
             | SynExpr.Null _

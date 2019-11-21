@@ -1917,6 +1917,7 @@ Microsoft.FSharp.Core.NumericLiterals+NumericLiteralI: T FromString[T](System.St
 Microsoft.FSharp.Core.NumericLiterals+NumericLiteralI: T FromZero[T]()
 Microsoft.FSharp.Core.NumericLiterals: Microsoft.FSharp.Core.NumericLiterals+NumericLiteralI
 Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 String.GetReverseIndex(System.String, Int32, Int32)
+Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 [,,,]`1.GetReverseIndex[T](T[,,,], Int32, Int32)
 Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 [,,]`1.GetReverseIndex[T](T[,,], Int32, Int32)
 Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 [,]`1.GetReverseIndex[T](T[,], Int32, Int32)
 Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 []`1.GetReverseIndex[T](T[], Int32, Int32)

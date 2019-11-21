@@ -205,7 +205,6 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                   | SynExpr.InferredDowncast (e, _)
                   | SynExpr.Lazy (e, _)
                   | SynExpr.TraitCall (_, _, e, _)
-                  | SynExpr.ReverseIndex(e, _, _)
                   | SynExpr.Paren (e, _, _, _) -> 
                       yield! walkExpr false e
 

@@ -27,6 +27,7 @@ type LanguageFeature =
     | ImplicitYield = 7
     | OpenStaticClasses = 8
     | PackageManagement = 9
+    | FromEndSlicing = 11
     | LanguageVersion46 = 0x10046
     | LanguageVersion47 = 0x10047
     | LanguageVersion50 = 0x10050
@@ -60,6 +61,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.ImplicitYield, languageVersion47
         LanguageFeature.OpenStaticClasses, previewVersion
         LanguageFeature.PackageManagement, previewVersion
+        LanguageFeature.FromEndSlicing, previewVersion
         |]
 
     let specified =
