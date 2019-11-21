@@ -33,6 +33,18 @@ Console.WriteLine()
             """
 
     [<Test>]
+    let ``At operator should not be usable in prefix context``() =
+        CompilerAssert.ParseWithErrors
+            """
+module X
+
+let x = @1
+            """
+            [|
+                FSharpErrorSeverity.Error, 10, (4,9,4,10), "parse error Unexpected infix operator in binding"
+            |]
+
+    [<Test>]
     let ``Hat operator should not be overloadable in prefix context``() = 
         CompilerAssert.ParseWithErrors
             """

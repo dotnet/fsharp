@@ -904,7 +904,7 @@ and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     SynIndexerArg =
 
-    | Two of SynExpr * fromEnd1: bool * SynExpr * fromEnd2: bool * range * range
+    | Two of SynExpr * fromEnd1: bool * SynExpr * fromEnd2: bool * range1: range * range2: range
 
     | One of SynExpr * fromEnd: bool * range
 

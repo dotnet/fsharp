@@ -448,7 +448,6 @@ let rangeOfLongIdent(lid:LongIdent) =
 %nonassoc pat_tuple expr_tuple
 %left COMMA
 %nonassoc slice_expr  /* matrix.[e COMMA e] has higher precedence than "e COMMA e" */
-%nonassoc range_decl_expr
 %nonassoc DOT_DOT /* for matrix.[1..2,3..4] the ".." has higher precedence than expression "2 COMMA 3" */
 %nonassoc slice_comma  /* for matrix.[1..2,3..4] the "," has higher precedence than ".." */
 %nonassoc paren_pat_colon
@@ -3776,23 +3775,6 @@ optRange:
           (rhs parseState 1),
           (rhs parseState 3)) }
 
-  // | INFIX_AT_HAT_OP rangeDeclExpr DOT_DOT INFIX_AT_HAT_OP rangeDeclExpr 
-  //     { if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
-  //       if $4 <> "^" then reportParseErrorAt (rhs parseState 4) (FSComp.SR.parsInvalidPrefixOperator())
-  //       let reverseIndex1 = SynExpr.ReverseIndex($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)
-  //       let reverseIndex2 = SynExpr.ReverseIndex($5, rhs parseState 4, unionRanges (rhs parseState 4) $5.Range)
-  //       SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 2) (Some reverseIndex1), mkSynOptionalExpr (rhs parseState 5) (Some reverseIndex2)) }
-
-  // | INFIX_AT_HAT_OP rangeDeclExpr DOT_DOT rangeDeclExpr 
-  //     { if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
-  //       let reverseIndex = SynExpr.ReverseIndex($2, rhs parseState 1, unionRanges (rhs parseState 3) $2.Range)
-  //       SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 2) (Some reverseIndex), mkSynOptionalExpr (rhs parseState 4) (Some $4)) }
-
-  // | rangeDeclExpr DOT_DOT INFIX_AT_HAT_OP rangeDeclExpr 
-  //     { if $3 <> "^" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidPrefixOperator())
-  //       let reverseIndex = SynExpr.ReverseIndex($4, rhs parseState 3, unionRanges (rhs parseState 3) $4.Range)
-  //       SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) (Some $1), mkSynOptionalExpr (rhs parseState 4) (Some reverseIndex)) }
-
    | rangeDeclExpr DOT_DOT 
       { SynIndexerArg.Two(
           mkSynOptionalExpr (rhs parseState 1) (Some (fst $1)), 
@@ -3801,11 +3783,6 @@ optRange:
           false, 
           (rhs parseState 1),
           (rhs parseState 2)) }
-
-  //  | INFIX_AT_HAT_OP rangeDeclExpr DOT_DOT 
-  //     { if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
-  //       let reverseIndex = SynExpr.ReverseIndex($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)
-  //       SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 2) (Some reverseIndex), mkSynOptionalExpr (rhs parseState 3) None) }
 
   | DOT_DOT rangeDeclExpr 
       { SynIndexerArg.Two(
@@ -3816,12 +3793,7 @@ optRange:
           (rhs parseState 2),
           (rhs parseState 1)) }
       
-  // | DOT_DOT INFIX_AT_HAT_OP rangeDeclExpr 
-  //     { if $2 <> "^" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsInvalidPrefixOperator())
-  //       let reverseIndex = SynExpr.ReverseIndex($3, rhs parseState 2, unionRanges (rhs parseState 2) $3.Range)
-  //       SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) None, mkSynOptionalExpr (rhs parseState 3) (Some reverseIndex)) }
-
-  | STAR //%prec range_decl_expr
+  | STAR 
       { SynIndexerArg.Two(
           mkSynOptionalExpr (rhs parseState 1) None, 
           false, 
@@ -3829,11 +3801,6 @@ optRange:
           false, 
           (rhs parseState 1),
           (rhs parseState 1)) }
-
-  // | INFIX_AT_HAT_OP declExpr %prec slice_expr
-  //     { if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
-  //       let reverseIndex = SynExpr.ReverseIndex($2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range)
-  //       SynIndexerArg.One(reverseIndex)}
 
   | rangeDeclExpr
       { SynIndexerArg.One((fst $1), (snd $1), (rhs parseState 1)) }
