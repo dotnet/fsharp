@@ -6365,12 +6365,6 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
                    if fromEnd2 then rewriteReverseOption a2 pos range2 else a2
                 ]
         )
-            //indexerArg.Exprs |> List.collect(fun expr -> 
-            //    match expr with
-            //    | SynExpr.Tuple(_, exprs, _, _) -> exprs |> List.mapi(fun dim expr -> rewriteReverseIndex expr dim)
-            //    | _ -> [rewriteReverseIndex expr pos]
-            //    )
-            //)
         |> List.collect (id)
     
     let MakeIndexParam setSliceArrayOption = 

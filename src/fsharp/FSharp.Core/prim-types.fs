@@ -5705,13 +5705,25 @@ namespace Microsoft.FSharp.Core
 
         [<AutoOpen>]
         module ArrayExtensions =
+            type ``[,,,]``<'T> with
+                member arr.GetReverseIndex(dim: int, offset: int) = 
+                    let len = 
+                        match dim with
+                        | 0 -> Array4DLength1 arr
+                        | 1 -> Array4DLength2 arr
+                        | 2 -> Array4DLength3 arr
+                        | 3 -> Array4DLength4 arr
+                        | _ -> raise (System.IndexOutOfRangeException())
+
+                    len - offset - 1
+
             type ``[,,]``<'T> with
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
                         | 0 -> GetArray3DLength1 arr
                         | 1 -> GetArray3DLength2 arr
-                        | 2 -> GetArray3DLength2 arr
+                        | 2 -> GetArray3DLength3 arr
                         | _ -> raise (System.IndexOutOfRangeException())
 
                     len - offset - 1

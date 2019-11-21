@@ -337,14 +337,14 @@ type Array3Module() =
 
     [<Test>]
     member this.``Slicing with reverse index in all 3 slice expr behaves as expected``()  = 
-        let arr = Array3D.create 5 5 5 1
+        let arr = Array3D.init 5 5 5 (fun i j k -> i*100 + j*10 + k)
 
         Assert.That(arr.[..^1, ^1..^0, ^2..], Is.EquivalentTo(arr.[..3, 3..4, 2..]))
 
     [<Test>]
     member this.``Set slice with reverse index in all 3 slice expr behaves as expected``()  = 
-        let arr1 = Array3D.create 5 5 5 1
-        let arr2 = Array3D.create 5 5 5 1
+        let arr1 = Array3D.init 5 5 5 (fun i j k -> i*100 + j*10 + k)
+        let arr2 = Array3D.init 5 5 5 (fun i j k -> i*100 + j*10 + k)
 
         let setSlice = Array3D.create 2 2 2 0
 

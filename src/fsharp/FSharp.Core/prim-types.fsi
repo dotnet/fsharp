@@ -2748,16 +2748,23 @@ namespace Microsoft.FSharp.Core
 
         [<AutoOpen>]
         module ArrayExtensions = 
+            type ``[,,,]``<'T> with
+                /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+                /// <param name="rank">The rank of the index. This refers to the dimension in the 4d array.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                member GetReverseIndex: rank: int * offset: int -> int
+
             type ``[,,]``<'T> with
                 /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
-                /// <param name="rank">The rank of the index.</param>
+                /// <param name="rank">The rank of the index. This refers to the dimension in the 3d array.</param>
                 /// <param name="offset">The offset from the end.</param>
                 /// <returns>The corresponding index from the start.</returns>
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[,]``<'T> with
                 /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
-                /// <param name="rank">The rank of the index.</param>
+                /// <param name="rank">The rank of the index. This refers to the dimension in the 2d array.</param>
                 /// <param name="offset">The offset from the end.</param>
                 /// <returns>The corresponding index from the start.</returns>
                 member GetReverseIndex: rank: int * offset: int -> int
