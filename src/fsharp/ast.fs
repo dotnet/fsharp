@@ -904,13 +904,13 @@ and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     SynIndexerArg =
 
-    | Two of SynExpr * SynExpr
+    | Two of SynExpr * fromEnd1: bool * SynExpr * fromEnd2: bool * range * range
 
-    | One of SynExpr
+    | One of SynExpr * fromEnd: bool * range
 
-    member x.Range = match x with Two (e1, e2) -> unionRanges e1.Range e2.Range | One e -> e.Range
+    member x.Range = match x with Two (e1, _, e2, _, _, _) -> unionRanges e1.Range e2.Range | One (e, _, _) -> e.Range
 
-    member x.Exprs = match x with Two (e1, e2) -> [e1;e2] | One e -> [e]
+    member x.Exprs = match x with Two (e1, _, e2, _, _, _) -> [e1;e2] | One (e, _, _) -> [e]
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1950,21 +1950,21 @@ let mkSynApp3 f x1 x2 x3 m = mkSynApp1 (mkSynApp2 f x1 x2 m) x3 m
 let mkSynApp4 f x1 x2 x3 x4 m = mkSynApp1 (mkSynApp3 f x1 x2 x3 m) x4 m
 let mkSynApp5 f x1 x2 x3 x4 x5 m = mkSynApp1 (mkSynApp4 f x1 x2 x3 x4 m) x5 m
 let mkSynDotParenSet  m a b c = mkSynTrifix m parenSet a b c
-let mkSynDotBrackGet  m mDot a b   = SynExpr.DotIndexedGet (a, [SynIndexerArg.One b], mDot, m)
+let mkSynDotBrackGet  m mDot a b fromEnd   = SynExpr.DotIndexedGet (a, [SynIndexerArg.One (b, fromEnd, m)], mDot, m)
 let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
 let mkSynDotBrackSliceGet  m mDot arr sliceArg = SynExpr.DotIndexedGet (arr, [sliceArg], mDot, m)
 
 let mkSynDotBrackSeqSliceGet  m mDot arr (argsList: list<SynIndexerArg>) =
     // We want to be able to turn .[1,2,3] into a Tuple(1,2,3) but keep 
     // .[1] as a const 1.
-    let notSliced=[ for arg in argsList do
-                       match arg with
-                       | SynIndexerArg.One x -> yield x
-                       | _ -> () ]
-    if notSliced.Length = argsList.Length && argsList.Length <> 1 then
-        SynExpr.DotIndexedGet (arr, [SynIndexerArg.One (SynExpr.Tuple (false, notSliced, [], unionRanges (List.head notSliced).Range (List.last notSliced).Range))], mDot, m)
-    else
-        SynExpr.DotIndexedGet (arr, argsList, mDot, m)
+    //let notSliced=[ for arg in argsList do
+    //                   match arg with
+    //                   | SynIndexerArg.One (x, _, _) -> yield x
+    //                   | _ -> () ]
+    //if notSliced.Length = argsList.Length && argsList.Length <> 1 then
+    //    SynExpr.DotIndexedGet (arr, [SynIndexerArg.One (SynExpr.Tuple (false, notSliced, [], unionRanges (List.head notSliced).Range (List.last notSliced).Range), false, m)], mDot, m)
+    //else
+    SynExpr.DotIndexedGet (arr, argsList, mDot, m)
 
 let mkSynDotParenGet lhsm dotm a b   =
     match b with

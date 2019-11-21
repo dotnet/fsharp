@@ -791,8 +791,8 @@ module UntypedParseImpl =
             List.tryPick walkBinding bindings
 
         and walkIndexerArg = function
-            | SynIndexerArg.One e -> walkExpr e
-            | SynIndexerArg.Two(e1, e2) -> List.tryPick walkExpr [e1; e2]
+            | SynIndexerArg.One (e, _, _) -> walkExpr e
+            | SynIndexerArg.Two(e1, _, e2, _, _, _) -> List.tryPick walkExpr [e1; e2]
 
         and walkType = function
             | SynType.LongIdent ident -> 

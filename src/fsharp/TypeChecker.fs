@@ -6301,9 +6301,9 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
     
     // Find the first type in the effective hierarchy that either has a DefaultMember attribute OR 
     // has a member called 'Item' 
+    let isIndex = indexArgs |> List.forall( fun x -> match x with SynIndexerArg.One _ -> true | _ -> false)
     let propName = 
-        match indexArgs with 
-        | [SynIndexerArg.One _] -> 
+        if isIndex then
             FoldPrimaryHierarchyOfType (fun ty acc -> 
                 match acc with
                 | None ->
@@ -6322,7 +6322,7 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
               AllowMultiIntfInstantiations.Yes
               e1ty
               None
-        | _ -> Some "GetSlice"
+        else Some "GetSlice"
 
     let isNominal = isAppTy cenv.g e1ty
     
@@ -6332,7 +6332,7 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
     let idxRange = indexArgs |> List.map (fun e -> e.Range) |> List.reduce unionRanges 
 
     // xs.GetReverseIndex dim offset - 1
-    let reverseExpr (dim: int) (offset: SynExpr) (range: range) = 
+    let rewriteReverseExpr (dim: int) (offset: SynExpr) (range: range) = 
         let dimExpr = SynExpr.Const(SynConst.Int32(dim), range)
         let sliceArgs = SynExpr.Paren(SynExpr.Tuple(false, [dimExpr; offset], [], range), range, Some range, range)
         let xsId = e1
@@ -6342,29 +6342,41 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
             sliceArgs
             range
 
-    let rewriteReverseIndex (expr: SynExpr) (dim: int) = 
-        match expr with
-        | SynExpr.App(atomicFlag, isInfix, funcExpr, SynExpr.ReverseIndex(offsetExpr, range, _), outerRange) -> 
-            SynExpr.App(atomicFlag, isInfix, funcExpr, reverseExpr dim offsetExpr range, outerRange)
-        | SynExpr.ReverseIndex(offsetExpr, range, _) ->
-            reverseExpr dim offsetExpr range 
-        | _ -> expr
+    let rewriteReverseOption (app: SynExpr) (dim: int) (range: range) = 
+       match app with
+       | SynExpr.App(atomicFlag, isInfix, funcExpr, e1, outerRange) -> SynExpr.App(atomicFlag, isInfix, funcExpr, rewriteReverseExpr dim e1 range, outerRange)
+       | _ -> app
 
     let expandedIndexArgs = 
         indexArgs 
         |> List.mapi ( fun pos indexerArg ->
-            indexerArg.Exprs |> List.collect(fun expr -> 
-                match expr with
-                | SynExpr.Tuple(_, exprs, _, _) -> exprs |> List.mapi(fun dim expr -> rewriteReverseIndex expr dim)
-                | _ -> [rewriteReverseIndex expr pos]
-                )
-            )
+            match indexerArg with
+            | SynIndexerArg.One(expr, fromEnd, range) -> 
+                [ if fromEnd then rewriteReverseExpr pos expr range else expr ]
+            | SynIndexerArg.Two(
+                                a1,
+                                fromEnd1,
+                                a2,
+                                fromEnd2,
+                                range1,
+                                range2) -> 
+                [
+                   if fromEnd1 then rewriteReverseOption a1 pos range1 else a1 ;
+                   if fromEnd2 then rewriteReverseOption a2 pos range2 else a2
+                ]
+        )
+            //indexerArg.Exprs |> List.collect(fun expr -> 
+            //    match expr with
+            //    | SynExpr.Tuple(_, exprs, _, _) -> exprs |> List.mapi(fun dim expr -> rewriteReverseIndex expr dim)
+            //    | _ -> [rewriteReverseIndex expr pos]
+            //    )
+            //)
         |> List.collect (id)
     
     let MakeIndexParam setSliceArrayOption = 
        match indexArgs with 
        | [] -> failwith "unexpected empty index list"
-       | [SynIndexerArg.One h] -> SynExpr.Paren (rewriteReverseIndex h 0, range0, None, idxRange)
+       | [SynIndexerArg.One _] -> SynExpr.Paren (expandedIndexArgs.Head, range0, None, idxRange)
        | _ -> SynExpr.Paren (SynExpr.Tuple (false, expandedIndexArgs @ Option.toList setSliceArrayOption, [], idxRange), range0, None, idxRange)
 
     let attemptArrayString = 
@@ -6374,13 +6386,13 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
             let sliceOpPath = ["Microsoft";"FSharp";"Core";"Operators";"OperatorIntrinsics"]
             let info = 
                 match isString, isArray, wholeExpr with 
-                | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_]), _, _))], _, _)           -> Some (indexOpPath, "GetArray2D", expandedIndexArgs)
-                | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_]), _, _))], _, _)         -> Some (indexOpPath, "GetArray3D", expandedIndexArgs)
-                | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_;_]), _, _))], _, _)       -> Some (indexOpPath, "GetArray4D", expandedIndexArgs)
+                | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.One _; SynIndexerArg.One _], _, _)           -> Some (indexOpPath, "GetArray2D", expandedIndexArgs)
+                | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _;], _, _)         -> Some (indexOpPath, "GetArray3D", expandedIndexArgs)
+                | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _], _, _)       -> Some (indexOpPath, "GetArray4D", expandedIndexArgs)
                 | false, true, SynExpr.DotIndexedGet (_, [SynIndexerArg.One _], _, _)                                          -> Some (indexOpPath, "GetArray", expandedIndexArgs)
-                | false, true, SynExpr.DotIndexedSet (_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_]), _, _))], e3, _, _, _)     -> Some (indexOpPath, "SetArray2D", (expandedIndexArgs @ [e3]))
-                | false, true, SynExpr.DotIndexedSet (_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_]), _, _))], e3, _, _, _)   -> Some (indexOpPath, "SetArray3D", (expandedIndexArgs @ [e3]))
-                | false, true, SynExpr.DotIndexedSet (_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_;_]), _, _))], e3, _, _, _) -> Some (indexOpPath, "SetArray4D", (expandedIndexArgs @ [e3]))
+                | false, true, SynExpr.DotIndexedSet (_, [SynIndexerArg.One _; SynIndexerArg.One _], e3, _, _, _)     -> Some (indexOpPath, "SetArray2D", (expandedIndexArgs @ [e3]))
+                | false, true, SynExpr.DotIndexedSet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _;], e3, _, _, _)   -> Some (indexOpPath, "SetArray3D", (expandedIndexArgs @ [e3]))
+                | false, true, SynExpr.DotIndexedSet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _], e3, _, _, _) -> Some (indexOpPath, "SetArray4D", (expandedIndexArgs @ [e3]))
                 | false, true, SynExpr.DotIndexedSet (_, [SynIndexerArg.One _], e3, _, _, _)                                       -> Some (indexOpPath, "SetArray", (expandedIndexArgs @ [e3]))
                 | true, false, SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _], _, _)                                            -> Some (sliceOpPath, "GetStringSlice", expandedIndexArgs)
                 | true, false, SynExpr.DotIndexedGet (_, [SynIndexerArg.One _], _, _)                                            -> Some (indexOpPath, "GetString", expandedIndexArgs)
@@ -6436,9 +6448,9 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
                 DelayedDotLookup([ident(nm, mWholeExpr)], mWholeExpr) :: DelayedApp(ExprAtomicFlag.Atomic, MakeIndexParam None, mWholeExpr) :: delayed
             // e1.[e2] <- e3
             | SynExpr.DotIndexedSet (_, _, e3, mOfLeftOfSet, _, _) -> 
-                match indexArgs with 
-                | [SynIndexerArg.One(_)] -> DelayedDotLookup([ident(nm, mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, MakeIndexParam None, mOfLeftOfSet) :: MakeDelayedSet(e3, mWholeExpr) :: delayed
-                | _ -> DelayedDotLookup([ident("SetSlice", mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, MakeIndexParam (Some e3), mWholeExpr) :: delayed
+                match isIndex with 
+                | true -> DelayedDotLookup([ident(nm, mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, MakeIndexParam None, mOfLeftOfSet) :: MakeDelayedSet(e3, mWholeExpr) :: delayed
+                | false -> DelayedDotLookup([ident("SetSlice", mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, MakeIndexParam (Some e3), mWholeExpr) :: delayed
                 
             | _ -> error(InternalError("unreachable", mWholeExpr))
         PropagateThenTcDelayed cenv overallTy env tpenv mDot (MakeApplicableExprNoFlex cenv e1') e1ty ExprAtomicFlag.Atomic delayed 
