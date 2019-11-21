@@ -10,20 +10,10 @@ open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
-open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 
 [<TestFixture>]
 type InteractiveTests() =
-
-    let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpErrorInfo[])) =
-        if errors.Length > 0 then
-            failwith <| sprintf "Evaluation returned %d errors:\r\n\t%s" errors.Length (String.Join("\r\n\t", errors))
-        match value with
-        | Ok(value) -> value
-        | Error ex -> raise ex
-
-    let ignoreValue = getValue >> ignore
 
     [<Test>]
     member __.``Eval object value``() =
