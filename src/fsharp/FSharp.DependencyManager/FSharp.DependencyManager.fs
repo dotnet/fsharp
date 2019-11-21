@@ -39,7 +39,7 @@ module FSharpDependencyManager =
         }
 
     let parsePackageReference (lines: string list) =
-        let mutable binLogging = false
+        let mutable binLogPath = None
         let parsePackageReferenceOption (line: string) =
             let validatePackageName package packageName =
                 if String.Compare(packageName, package, StringComparison.OrdinalIgnoreCase) = 0 then
@@ -67,22 +67,36 @@ module FSharpDependencyManager =
                     | Some "restoresources", Some v -> Some { current with RestoreSources = concat current.RestoreSources v } |> parsePackageReferenceOption' rest implicitArgumentCount
                     | Some "restoresources", None -> raise (ArgumentException(sprintf "%s requires a value" "RestoreSources")) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
                     | Some "script", Some v -> Some { current with Script = v } |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "bl", Some v ->
-                        binLogging <- v.ToLowerInvariant() = "true"
+                    | Some "bl", value ->
+                        match value with
+                        | Some v when v.ToLowerInvariant() = "true" -> binLogPath <- Some None // auto-generated logging location
+                        | Some v when v.ToLowerInvariant() = "false" -> binLogPath <- None // no logging
+                        | Some path -> binLogPath <- Some(Some path) // explicit logging location
+                        | None ->
+                            // parser shouldn't get here because unkeyed values follow a different path, but for the sake of completeness and keeping the compiler happy,
+                            // this is fine
+                            binLogPath <- Some None // auto-generated logging location
                         parsePackageReferenceOption' rest implicitArgumentCount packageReference
                     | None, Some v ->
-                        match implicitArgumentCount with
-                        | 0 -> addInclude v
-                        | 1 -> setVersion v
-                        | _ -> raise (ArgumentException(sprintf "Unable to apply implicit argument number %d" (implicitArgumentCount + 1))) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
-                        |> parsePackageReferenceOption' rest (implicitArgumentCount + 1)
+                        match v.ToLowerInvariant() with
+                        | "bl" ->
+                            // a bare 'bl' enables binary logging and is NOT interpreted as one of the positional arguments.  On the off chance that the user actually wants
+                            // to reference a package named 'bl' they still have the 'Include=bl' syntax as a fallback.
+                            binLogPath <- Some None // auto-generated logging location
+                            parsePackageReferenceOption' rest implicitArgumentCount packageReference
+                        | _ ->
+                            match implicitArgumentCount with
+                            | 0 -> addInclude v
+                            | 1 -> setVersion v
+                            | _ -> raise (ArgumentException(sprintf "Unable to apply implicit argument number %d" (implicitArgumentCount + 1))) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                            |> parsePackageReferenceOption' rest (implicitArgumentCount + 1)
                     | _ -> parsePackageReferenceOption' rest implicitArgumentCount packageReference
             let options = getOptions line
             parsePackageReferenceOption' options 0 None
         lines
         |> List.choose parsePackageReferenceOption
         |> List.distinct
-        |> (fun l -> l, binLogging)
+        |> (fun l -> l, binLogPath)
 
 type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string option) =
 
@@ -122,7 +136,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
     member __.ResolveDependencies(_scriptDir:string, _mainScriptName:string, _scriptName:string, packageManagerTextLines:string seq, tfm: string) : bool * string list * string list =
 
-        let packageReferences, binLogging =
+        let packageReferences, binLogPath =
             packageManagerTextLines
             |> List.ofSeq
             |> FSharpDependencyManager.parsePackageReference
@@ -147,7 +161,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
             writeFile (Path.Combine(scriptsPath, "Library.fs")) generateLibrarySource
             writeFile fsProjectPath generateProjBody
 
-            let succeeded, resultingFsx = buildProject fsProjectPath binLogging
+            let succeeded, resultingFsx = buildProject fsProjectPath binLogPath
             let fsx =
                 match resultingFsx with
                 | Some fsx -> [fsx]

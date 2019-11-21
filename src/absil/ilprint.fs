@@ -2,16 +2,12 @@
 
 module internal FSharp.Compiler.AbstractIL.ILAsciiWriter
 
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open FSharp.Compiler.AbstractIL.Internal.AsciiConstants
 open FSharp.Compiler.AbstractIL.IL
 
-open System.Text
 open System.IO
 open System.Reflection
 

@@ -17,8 +17,6 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler 
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 

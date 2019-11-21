@@ -4997,7 +4997,6 @@ type CodeContext =
     | Compilation  // in fsc.exe
     | Editing // in VS
 
-
 module ScriptPreprocessClosure = 
     open Internal.Utilities.Text.Lexing
     
