@@ -4,6 +4,7 @@ namespace FSharp.Compiler.Scripting
 
 open System
 open System.Threading
+open FSharp.Compiler
 open FSharp.Compiler.Interactive.Shell
 
 type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: string[]) as this =
@@ -49,6 +50,23 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
         match ch with
         | Choice1Of2 v -> Ok(v), errors
         | Choice2Of2 ex -> Error(ex), errors
+
+    /// Get the available completion symbols from the code at the specified location.
+    ///
+    /// <param name="text">The input text on which completions will be calculated</param>
+    /// <param name="line">The 1-based line index</param>
+    /// <param name="column">The 0-based column index</param>
+    member __.GetCompletionSymbols(text: string, line: int, column: int) =
+        async {
+            let! parseResults, checkResults, _projectResults = fsi.ParseAndCheckInteraction(text)
+            let lineText = text.Split('\n').[line - 1]
+            let partialName = QuickParse.GetPartialLongNameEx(lineText, column - 1)
+            let! symbolUses = checkResults.GetDeclarationListSymbols(Some parseResults, line, lineText, partialName)
+            let symbols = symbolUses
+                          |> List.concat
+                          |> List.map (fun s -> s.Symbol)
+            return symbols
+        }
 
     interface IDisposable with
         member __.Dispose() =
