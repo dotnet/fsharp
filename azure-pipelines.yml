@@ -289,14 +289,6 @@ stages:
             clean: true
           - script: fcs\build.cmd TestAndNuget
             displayName: Build / Test
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\log'
-              ArtifactName: 'Windows FCS logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: not(succeeded())
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -306,45 +298,29 @@ stages:
             continueOnError: true
             condition: always()
 
-        #- job: Linux_FCS
-        #  pool:
-        #    vmImage: ubuntu-16.04
-        #  variables:
-        #  - name: _SignType
-        #    value: Test
-        #  steps:
-        #  - checkout: self
-        #    clean: true
-        #  - script: ./fcs/build.sh Build
-        #    displayName: Build
-        #  - task: PublishBuildArtifacts@1
-        #    displayName: Publish Logs
-        #    inputs:
-        #      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log'
-        #      ArtifactName: 'Linux FCS logs'
-        #      publishLocation: Container
-        #    continueOnError: true
-        #    condition: not(succeeded())
-
-        - job: MacOS_FCS
+        - job: Linux_FCS
           pool:
-            vmImage: macOS-10.13
+            vmImage: ubuntu-16.04
           variables:
           - name: _SignType
             value: Test
           steps:
           - checkout: self
             clean: true
-          - script: ./fcs/build.sh Build
+          - script: ./fcs/build.sh
             displayName: Build
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log'
-              ArtifactName: 'Mac FCS logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: not(succeeded())
+
+        # - job: MacOS_FCS
+        #   pool:
+        #     vmImage: macOS-10.13
+        #   variables:
+        #   - name: _SignType
+        #     value: Test
+        #   steps:
+        #   - checkout: self
+        #     clean: true
+        #   - script: ./fcs/build.sh
+        #     displayName: Build
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    Post Build                                                       #
