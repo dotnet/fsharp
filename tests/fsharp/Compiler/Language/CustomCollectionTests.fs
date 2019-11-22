@@ -7,7 +7,7 @@ open FSharp.Compiler.SourceCodeServices
 module CustomCollectionTests =
     [<Test>]
     let ``Custom collection with Item and GetReverseIndex should support reverse index mutation``() =
-        CompilerAssert.CompileExeAndRun
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
 open System
 type foo() = 
@@ -23,7 +23,7 @@ if a.["2"] <> "2 -1" then failwithf "expected 2 -1 but got %A" a.["2"]
 
     [<Test>]
     let ``Custom collection with GetSlice and GetReverseIndex should support reverse index set slicing``() =
-        CompilerAssert.CompileExeAndRun
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
 open System
 type foo() = 
@@ -40,7 +40,7 @@ if a.["2".."1"] <> "2 1 -1" then failwithf "expected 2 1 -1 but got %A" a.["2"..
  
     [<Test>]
     let ``Custom collection with Item and GetReverseIndex should support reverse index indexing``() =
-        CompilerAssert.CompileExeAndRun
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
 open System
 
@@ -55,7 +55,7 @@ if a.[^2] <> 12 then failwith "expected 12"
 
     [<Test>]
     let ``Custom collection with Item and GetReverseIndex should support n-rank reverse index mutation``() =
-        CompilerAssert.CompileExeAndRun
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
 open System
 
@@ -72,7 +72,7 @@ if a.[""] <> "0 1 1 2 3" then failwithf "expected 0 1 1 2 3 but got %A" a.[""]
 
     [<Test>]
     let ``Custom collection with Item and GetReverseIndex should support n-rank reverse index indexing``() =
-        CompilerAssert.CompileExeAndRun
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
 open System
 
@@ -106,7 +106,7 @@ if a.[^2] <> 12 then failwith "expected 12"
 
     [<Test>]
     let ``Custom collection with GetSlice and GetReverseIndex should support reverse index slicing``() =
-        CompilerAssert.CompileExeAndRun
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
 open System
 
@@ -125,7 +125,7 @@ if a.[^2..1] <> 13 then failwith "expected 13"
  
     [<Test>]
     let ``Custom collection without GetReverseIndex should not support reverse index slicing``() =
-        CompilerAssert.TypeCheckSingleError
+        CompilerAssert.TypeCheckSingleErrorWithOptions [| "--langversion:preview" |]
             """
 open System
 

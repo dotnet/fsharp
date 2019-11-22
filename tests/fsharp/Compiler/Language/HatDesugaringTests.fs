@@ -8,7 +8,7 @@ module HatDesugaringTests =
 
     [<Test>]
     let ``Hat operator should be overloadable in infix context``() =
-        CompilerAssert.CompileExeAndRun
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
 module X
 open System
@@ -21,7 +21,7 @@ Console.WriteLine()
     
     [<Test>]
     let ``Reverse slicing should work with overloaded infix hat``() =
-        CompilerAssert.CompileExeAndRun
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
 module X
 open System
@@ -41,7 +41,7 @@ module X
 let x = @1
             """
             [|
-                FSharpErrorSeverity.Error, 10, (4,9,4,10), "parse error Unexpected infix operator in binding"
+                FSharpErrorSeverity.Error, 10, (4,9,4,10), "Unexpected infix operator in binding"
             |]
 
     [<Test>]
