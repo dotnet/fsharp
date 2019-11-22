@@ -5,6 +5,7 @@ namespace FSharp.Compiler.Scripting.UnitTests
 open System
 open System.Diagnostics
 open System.IO
+open System.Reflection
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.Interactive.Shell
@@ -84,6 +85,30 @@ type InteractiveTests() =
         Assert.False(foundAssemblyReference)
 
     [<Test>]
+    member __.``Add include path event successful``() =
+        use script = new FSharpScript()
+        let includePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+        let mutable includePathEventCount = 0
+        let mutable foundIncludePath = false
+        Event.add (fun (inc: string) ->
+            includePathEventCount <- includePathEventCount + 1
+            foundIncludePath <- foundIncludePath || String.Compare(includePath, inc, StringComparison.OrdinalIgnoreCase) = 0)
+            script.IncludePathAdded
+        script.Eval(sprintf "#I @\"%s\"" includePath) |> ignoreValue
+        Assert.AreEqual(1, includePathEventCount)
+        Assert.True(foundIncludePath)
+
+    [<Test>]
+    member __.``Add include path event unsuccessful``() =
+        use script = new FSharpScript()
+        let includePath = Path.Combine("a", "path", "that", "can't", "be", "found")
+        let mutable foundIncludePath = false
+        Event.add (fun _ -> foundIncludePath <- true) script.IncludePathAdded
+        let _result, errors = script.Eval(sprintf "#I @\"%s\"" includePath)
+        Assert.AreEqual(1, errors.Length)
+        Assert.False(foundIncludePath)
+
+    [<Test>]
     member _.``Compilation errors report a specific exception``() =
         use script = new FSharpScript()
         let result, _errors = script.Eval("abc")
@@ -99,6 +124,95 @@ type InteractiveTests() =
         match result with
         | Ok(_) -> Assert.Fail("expected a failure")
         | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
+
+    [<Test>]
+    member __.``Nuget reference fires multiple events``() =
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable assemblyRefCount = 0
+        let mutable includeAddCount = 0
+        Event.add (fun _ -> assemblyRefCount <- assemblyRefCount + 1) script.AssemblyReferenceAdded
+        Event.add (fun _ -> includeAddCount <- includeAddCount + 1) script.IncludePathAdded
+        script.Eval("#r \"nuget:include=NUnitLite, version=3.11.0\"") |> ignoreValue
+        script.Eval("0") |> ignoreValue
+        Assert.GreaterOrEqual(assemblyRefCount, 2)
+        Assert.GreaterOrEqual(includeAddCount, 1)
+
+/// Native dll resolution is not implemented on desktop
+#if NETSTANDARD
+    [<Test>]
+    member __.``ML - use assembly with native dependencies``() =
+        let code = @"
+#r ""nuget:RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json""
+#r ""nuget:Microsoft.ML,version=1.4.0-preview""
+#r ""nuget:Microsoft.ML.AutoML,version=0.16.0-preview""
+#r ""nuget:Microsoft.Data.DataFrame,version=0.1.1-e191008-1""
+
+open System
+open System.IO
+open System.Linq
+open Microsoft.Data
+
+let Shuffle (arr:int[]) =
+    let rnd = Random()
+    for i in 0 .. arr.Length - 1 do
+        let r = i + rnd.Next(arr.Length - i)
+        let temp = arr.[r]
+        arr.[r] <- arr.[i]
+        arr.[i] <- temp
+    arr
+
+let housingPath = ""housing.csv""
+let housingData = DataFrame.ReadCsv(housingPath)
+let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.RowCount) - 1)).ToArray()))
+let testSize = int (float (housingData.RowCount) * 0.1)
+let trainRows = randomIndices.[testSize..]
+let testRows = randomIndices.[..testSize]
+let housing_train = housingData.[trainRows]
+
+open Microsoft.ML
+open Microsoft.ML.Data
+open Microsoft.ML.AutoML
+
+let mlContext = MLContext()
+let experiment = mlContext.Auto().CreateRegressionExperiment(maxExperimentTimeInSeconds = 15u)
+let result = experiment.Execute(housing_train, labelColumnName = ""median_house_value"")
+let details = result.RunDetails
+printfn ""%A"" result
+123
+"
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable assemblyRefCount = 0;
+        Event.add (fun _ -> assemblyRefCount <- assemblyRefCount + 1) script.AssemblyReferenceAdded
+        let opt = script.Eval(code)  |> getValue
+        let value = opt.Value
+        Assert.AreEqual(123, value.ReflectionValue :?> int32)
+#endif
+
+    [<Test>]
+    member __.``Simple pinvoke should not be impacted by native resolver``() =
+        let code = @"
+open System
+open System.Runtime.InteropServices
+
+module Imports =
+    [<DllImport(""kernel32.dll"")>]
+    extern uint32 GetCurrentProcessId()
+
+    [<DllImport(""c"")>]
+    extern uint32 getpid()
+
+// Will throw exception if fails
+if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+    printfn ""Current process: %d"" (Imports.GetCurrentProcessId())
+else
+    printfn ""Current process: %d"" (Imports.getpid())
+123
+"
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable assemblyRefCount = 0;
+        let opt = script.Eval(code)  |> getValue
+        let value = opt.Value
+        Assert.AreEqual(123, value.ReflectionValue :?> int32)
 
     [<Test; Ignore("This timing test fails in different environments. Skipping so that we don't assume an arbitrary CI environment has enough compute/etc. for what we need here.")>]
     member _.``Evaluation can be cancelled``() =

@@ -264,10 +264,6 @@ module Driver =
         if runningOnMono && hasArgument "resident" argv then 
             let argv = stripArgument "resident" argv
 
-            //if not (hasArgument "nologo" argv) then 
-            //    printfn "%s" (FSComp.SR.buildProductName(FSharpEnvironment.FSharpTeamVersionNumber))
-            //    printfn "%s" (FSComp.SR.optsCopyright())
-
             let fscServerExe = typeof<TypeInThisAssembly>.Assembly.Location
             let exitCodeOpt = FSharpResidentCompiler.FSharpCompilationServer.TryCompileUsingServer (fscServerExe, argv)
             match exitCodeOpt with 

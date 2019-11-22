@@ -1677,3 +1677,89 @@ type ArrayModule() =
         // null array
         let nullArr = null:string[]
         CheckThrowsArgumentNullException (fun () -> Array.contains "empty" nullArr |> ignore)
+
+
+    [<Test>] 
+    member this.SlicingUnboundedEnd() = 
+        let arr = [|1;2;3;4;5;6|]
+
+        Assert.AreEqual(arr.[-1..], arr)
+        Assert.AreEqual(arr.[0..], arr)
+        Assert.AreEqual(arr.[1..], [2;3;4;5;6])
+        Assert.AreEqual(arr.[2..], [3;4;5;6])
+        Assert.AreEqual(arr.[5..], [6])
+        Assert.AreEqual(arr.[6..], ([||]: int array))
+        Assert.AreEqual(arr.[7..], ([||]: int array))
+
+    
+    [<Test>] 
+    member this.SlicingUnboundedStart() = 
+        let arr = [|1;2;3;4;5;6|]
+
+        Assert.AreEqual(arr.[..(-1)], ([||]: int array))
+        Assert.AreEqual(arr.[..0], [|1|])
+        Assert.AreEqual(arr.[..1], [|1;2|])
+        Assert.AreEqual(arr.[..2], [|1;2;3|])
+        Assert.AreEqual(arr.[..3], [|1;2;3;4|])
+        Assert.AreEqual(arr.[..4], [|1;2;3;4;5|])
+        Assert.AreEqual(arr.[..5], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[..6], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[..7], [|1;2;3;4;5;6|])
+
+
+    [<Test>]
+    member this.SlicingBoundedStartEnd() =
+        let arr = [|1;2;3;4;5;6|]
+
+        Assert.AreEqual(arr.[*], arr)
+
+        Assert.AreEqual(arr.[0..0], [|1|])
+        Assert.AreEqual(arr.[0..1], [|1;2|])
+        Assert.AreEqual(arr.[0..2], [|1;2;3|])
+        Assert.AreEqual(arr.[0..3], [|1;2;3;4|])
+        Assert.AreEqual(arr.[0..4], [|1;2;3;4;5|])
+        Assert.AreEqual(arr.[0..5], [|1;2;3;4;5;6|])
+
+        Assert.AreEqual(arr.[1..1], [|2|])
+        Assert.AreEqual(arr.[1..2], [|2;3|])
+        Assert.AreEqual(arr.[1..3], [|2;3;4|])
+        Assert.AreEqual(arr.[1..4], [|2;3;4;5|])
+        Assert.AreEqual(arr.[1..5], [|2;3;4;5;6|])
+
+        Assert.AreEqual(arr.[0..1], [|1;2|])
+        Assert.AreEqual(arr.[1..1], [|2|])
+        Assert.AreEqual(arr.[2..1], ([||]: int array))
+        Assert.AreEqual(arr.[3..1], ([||]: int array))
+        Assert.AreEqual(arr.[4..1], ([||]: int array))
+
+
+    [<Test>]
+    member this.SlicingEmptyArray() = 
+
+        let empty : obj array = Array.empty
+        Assert.AreEqual(empty.[*], ([||]: obj array))
+        Assert.AreEqual(empty.[5..3], ([||]: obj array))
+        Assert.AreEqual(empty.[0..], ([||]: obj array))
+        Assert.AreEqual(empty.[0..0], ([||]: obj array))
+        Assert.AreEqual(empty.[0..1], ([||]: obj array))
+        Assert.AreEqual(empty.[3..5], ([||]: obj array))
+
+
+    [<Test>]
+    member this.SlicingOutOfBounds() = 
+        let arr = [|1;2;3;4;5;6|]
+       
+        Assert.AreEqual(arr.[..6], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[6..], ([||]: int array))
+
+        Assert.AreEqual(arr.[0..(-1)], ([||]: int array))
+        Assert.AreEqual(arr.[1..(-1)], ([||]: int array))
+        Assert.AreEqual(arr.[1..0], ([||]: int array))
+        Assert.AreEqual(arr.[0..6], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[1..6], [|2;3;4;5;6|])
+
+        Assert.AreEqual(arr.[-1..1], [|1;2|])
+        Assert.AreEqual(arr.[-3..(-4)], ([||]: int array))
+        Assert.AreEqual(arr.[-4..(-3)], ([||]: int array))
+
+

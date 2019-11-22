@@ -8,6 +8,7 @@ namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
+open Utils
 
 (*
 [Test Strategy]
@@ -21,12 +22,26 @@ Make sure each method works on:
 
 [<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type Array3Module() =
+    let array3d (arrs: 'a array array array ) = Array3D.init arrs.Length arrs.[0].Length arrs.[0].[0].Length  (fun i j k -> arrs.[i].[j].[k])
+
 
     let VerifyDimensions arr x y z =
-        if Array3D.length1 arr <> x then Assert.Fail("Array3D does not have expected dimensions.")
-        if Array3D.length2 arr <> y then Assert.Fail("Array3D does not have expected dimensions.")
-        if Array3D.length3 arr <> z then Assert.Fail("Array3D does not have expected dimensions.")
+        if Array3D.length1 arr <> x then Assert.Fail("Expected length1 to be " + (Array3D.length1 arr).ToString() + " but got " + x.ToString())
+        if Array3D.length2 arr <> y then Assert.Fail("Expected length2 to be " + (Array3D.length2 arr).ToString() + " but got " + x.ToString())
+        if Array3D.length3 arr <> z then Assert.Fail("Expected length3 to be " + (Array3D.length3 arr).ToString() + " but got " + x.ToString())
         ()
+
+    let shouldBeEmpty arr = 
+        if Array3D.length3 arr <> 0 
+        && Array3D.length2 arr <> 0
+        && Array3D.length1 arr <> 0 then 
+            Assert.Fail("Array3D is not empty.")
+
+    let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
 
     [<Test>]
     member this.Create() =
@@ -330,3 +345,142 @@ type Array3Module() =
         CheckThrowsArgumentException(fun () -> Array3D.zeroCreate 1 1 -1 |> ignore)
         
         ()
+
+    [<Test>]
+    member this.SlicingBoundedStartEnd() = 
+        shouldEqual m1.[*,*,*]  m1
+        shouldEqual m1.[0..,*,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+        shouldEqual m1.[0..0,*,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |] |])
+        shouldEqual m1.[1..1,*,*]  
+           (array3d [| 
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+
+        shouldEqual m1.[*,1..1,*]  
+           (array3d [| 
+                     [| [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+        shouldEqual m1.[..1,*,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+        shouldEqual m1.[*,0..0,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];  |] |] )
+        shouldEqual m1.[*,0..1,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+        shouldEqual m1.[*,*,0..0]  
+           (array3d [| 
+                     [| [| 1.0|];
+                        [| 11.0|]  |]
+                     [| [| 10.0|];
+                        [| 100.0 |]  |] |] )
+        shouldEqual m1.[*,*,0..5]  
+           (array3d [|   
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+
+    [<Test>]
+    member this.SlicingOutOfBounds() = 
+        shouldBeEmpty m1.[*,*,7..] 
+        shouldBeEmpty m1.[*,*,.. -1]  
+
+        shouldBeEmpty m1.[*,3..,*]  
+        shouldBeEmpty m1.[*,.. -1,*]
+
+        shouldBeEmpty m1.[3..,*,*] 
+        shouldBeEmpty m1.[.. -1,*,*]  
+
+    member this.SlicingSingleFixed1() =
+        let m1 = (array3d [| 
+                            [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                               [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                            [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                               [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = [|0.; 0.; 0.; 0.; 0. ; 0.;|]
+        m1.[0,0,*] <- newSlice
+        Assert.AreEqual(m1.[1,0,0], 10.0)
+        Assert.AreEqual(m1.[0,0,*], newSlice)
+        
+    [<Test>]
+    member this.SlicingSingleFixed2() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = [|0.; 0.;|]
+        m1.[0,*,0] <- newSlice
+        Assert.AreEqual(m1.[0,0,1], 2.0)
+        Assert.AreEqual(m1.[0,*,0], newSlice)
+
+    [<Test>]
+    member this.SlicingSingleFixed3() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = [|0.; 0.|]
+        m1.[*,0,0] <- newSlice
+        Assert.AreEqual(m1.[0,0,1], 2.0)
+        Assert.AreEqual(m1.[*,0,0], newSlice)
+
+    [<Test>]
+    member this.SlicingDoubleFixed1() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = array2D [| [|0.; 0.; 0.; 0.; 0. ; 0.;|]; [|0.; 0.; 0.; 0.; 0. ; 0.;|] |]
+        m1.[0,*,*] <- newSlice
+        Assert.AreEqual(m1.[1,0,0], 10.0)
+        shouldEqual m1.[0,*,*] newSlice
+        
+    [<Test>]
+    member this.SlicingDoubleFixed2() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = array2D [| [|0.; 0.;|]; [|0.; 0.;|] |]
+        m1.[*,*,0] <- newSlice
+        Assert.AreEqual(m1.[0,0,1], 2.0)
+        shouldEqual m1.[*,*,0] newSlice
+
+    [<Test>]
+    member this.SlicingDoubleFixed3() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = array2D [| [|0.; 0.; 0.; 0.; 0. ; 0.;|]; [|0.; 0.; 0.; 0.; 0. ; 0.;|] |]
+        m1.[*,0,*] <- newSlice
+        Assert.AreEqual(m1.[0,1,0], 11.0)
+        shouldEqual m1.[*,0,*] newSlice
