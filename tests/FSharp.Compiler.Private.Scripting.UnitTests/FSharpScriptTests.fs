@@ -100,7 +100,7 @@ type InteractiveTests() =
         | Ok(_) -> Assert.Fail("expected a failure")
         | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
 
-    [<Test>]
+    [<Test; Ignore("This timing test fails in different environments. Skipping so that we don't assume an arbitrary CI environment has enough compute/etc. for what we need here.")>]
     member _.``Evaluation can be cancelled``() =
         use script = new FSharpScript()
         let sleepTime = 10000
