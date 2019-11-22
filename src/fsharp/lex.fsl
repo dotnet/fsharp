@@ -337,7 +337,7 @@ rule token args skip = parse
 
  | ieee32
      { let s = lexemeTrimRight lexbuf 1
-       if lexbuf.SupportsFeature LanguageFeature.DotlessFloat32 || s.Contains "." then
+       if lexbuf.SupportsFeature LanguageFeature.DotlessFloat32Literal || s.Contains "." then
           try
              IEEE32 (float32 (removeUnderscores s))
           with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) (IEEE32 0.0f)
