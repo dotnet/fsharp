@@ -1293,51 +1293,51 @@ namespace Microsoft.FSharp.Control
                 | Choice1Of2 computations ->
                     ProtectedCode ctxt (fun ctxt ->
                         let ctxtWithSync = DelimitSyncContext ctxt
-                        let count = ref computations.Length
-                        let noneCount = ref 0
-                        let someOrExnCount = ref 0
+                        let mutable count = computations.Length
+                        let mutable noneCount = 0
+                        let mutable someOrExnCount = 0
                         let innerCts = new LinkedSubSource(ctxtWithSync.token)
 
                         let scont (result: 'T option) =
                             let result =
                                 match result with
                                 | Some _ ->
-                                    if Interlocked.Increment someOrExnCount = 1 then
+                                    if Interlocked.Increment &someOrExnCount = 1 then
                                         innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont result)
                                     else
                                         fake()
 
                                 | None ->
-                                    if Interlocked.Increment noneCount = computations.Length then
+                                    if Interlocked.Increment &noneCount = computations.Length then
                                         innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont None)
                                     else
                                         fake()
 
-                            if Interlocked.Decrement count = 0 then
+                            if Interlocked.Decrement &count = 0 then
                                 innerCts.Dispose()
 
                             result
 
                         let econt (exn: ExceptionDispatchInfo) =
                             let result =
-                                if Interlocked.Increment someOrExnCount = 1 then
+                                if Interlocked.Increment &someOrExnCount = 1 then
                                     innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.econt exn)
                                 else
                                     fake()
 
-                            if Interlocked.Decrement count = 0 then
+                            if Interlocked.Decrement &count = 0 then
                                 innerCts.Dispose()
 
                             result
 
                         let ccont (exn: OperationCanceledException) =
                             let result =
-                                if Interlocked.Increment someOrExnCount = 1 then
+                                if Interlocked.Increment &someOrExnCount = 1 then
                                     innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.ccont exn)
                                 else
                                     fake()
 
-                            if Interlocked.Decrement count = 0 then
+                            if Interlocked.Decrement &count = 0 then
                                 innerCts.Dispose()
 
                             result
