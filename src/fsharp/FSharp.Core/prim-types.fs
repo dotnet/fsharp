@@ -380,6 +380,7 @@ namespace Microsoft.FSharp.Core
         let inline not     (b:bool) = (# "ceq" b false : bool #)
         let inline (=)     (x:int)   (y:int)    = (# "ceq" x y : bool #) 
         let inline (<>)    (x:int)   (y:int)    = not(# "ceq" x y : bool #) 
+        let inline (<=)    (x:int)   (y:int)    = not(# "cgt" x y : bool #)
         let inline (>=)    (x:int)   (y:int)    = not(# "clt" x y : bool #)
         let inline (>=.)   (x:int64) (y:int64)  = not(# "clt" x y : bool #)
         let inline (>=...) (x:char)  (y:char)   = not(# "clt" x y : bool #)
@@ -658,6 +659,7 @@ namespace Microsoft.FSharp.Core
                 | _ -> raise (System.IndexOutOfRangeException())
 
             let inline Array2DZeroCreate (n:int) (m:int) = (# "newarr.multi 2 !0" type ('T) n m : 'T[,] #)
+            
             let inline GetArray2DSub (src: 'T[,]) src1 src2 len1 len2 =
                 let len1 = (if len1 < 0 then 0 else len1)
                 let len2 = (if len2 < 0 then 0 else len2)
@@ -2904,7 +2906,7 @@ namespace Microsoft.FSharp.Core
     //-------------------------------------------------------------------------
 
     [<DefaultAugmentation(false)>]
-    [<DebuggerDisplay("Some({Value})")>]
+    [<DebuggerDisplay("{DebugDisplay,nq}")>]
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="Option")>]
     [<StructuralEquality; StructuralComparison>]
@@ -2928,6 +2930,11 @@ namespace Microsoft.FSharp.Core
         static member Some (value) : 'T option = Some(value)
 
         static member op_Implicit (value) : 'T option = Some(value)
+        
+        member private x.DebugDisplay =
+            match x with
+            | None -> "None"
+            | Some _ -> String.Format("Some({0})", anyToStringShowingNull x.Value)
 
         override x.ToString() = 
            // x is non-null, hence Some
@@ -2945,7 +2952,7 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<Struct>]
     [<CompiledName("FSharpValueOption`1")>]
-    [<DebuggerDisplay("ValueSome({Value})")>]
+    [<DebuggerDisplay("{DebugDisplay,nq}")>]
     type ValueOption<'T> =
         | ValueNone : 'T voption
         | ValueSome : 'T -> 'T voption
@@ -2963,11 +2970,17 @@ namespace Microsoft.FSharp.Core
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member x.IsSome = match x with ValueSome _ -> true | _ -> false
 
-        static member op_Implicit (value) : 'T option = Some(value)
+        static member op_Implicit (value) : 'T voption = ValueSome(value)
+        
+        member private x.DebugDisplay =
+            match x with
+            | ValueNone -> "ValueNone"
+            | ValueSome _ -> String.Format("ValueSome({0})", anyToStringShowingNull x.Value)
 
-        override x.ToString() = 
-           // x is non-null, hence ValueSome
-           "ValueSome("^anyToStringShowingNull x.Value^")"
+        override x.ToString() =
+            match x with
+            | ValueNone -> "ValueNone"
+            | ValueSome _ -> anyToStringShowingNull x.Value
 
     and 'T voption = ValueOption<'T>
 
@@ -3109,36 +3122,32 @@ namespace Microsoft.FSharp.Collections
                elif n = 0 then h
                else nth t (n - 1)
 
-        // similar to 'takeFreshConsTail' but with exceptions same as array slicing
         let rec sliceFreshConsTail cons n l =
             if n = 0 then setFreshConsTail cons [] else
             match l with
-            | [] -> outOfRange()
+            | [] -> setFreshConsTail cons []
             | x :: xs ->
                 let cons2 = freshConsNoTail x
                 setFreshConsTail cons cons2
                 sliceFreshConsTail cons2 (n - 1) xs
 
-        // similar to 'take' but with n representing an index, not a number of elements
-        // and with exceptions matching array slicing
         let sliceTake n l =
             if n < 0 then [] else
             match l with
-            | [] -> outOfRange()
+            | [] -> []
             | x :: xs ->
                 let cons = freshConsNoTail x
                 sliceFreshConsTail cons n xs
                 cons
 
-        // similar to 'skip' but with exceptions same as array slicing
         let sliceSkip n l =
-            if n < 0 then outOfRange()
+            let n2 = if n < 0 then 0 else n
             let rec loop i lst =
                 match lst with
                 | _ when i = 0 -> lst
                 | _ :: t -> loop (i-1) t
-                | [] -> outOfRange()
-            loop n l
+                | [] -> []
+            loop n2 l
 
     type List<'T> with
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -3178,7 +3187,8 @@ namespace Microsoft.FSharp.Collections
             | None, Some(j) -> PrivateListHelpers.sliceTake j l
             | Some(i), Some(j) ->
                 if i > j then [] else
-                PrivateListHelpers.sliceTake (j-i) (PrivateListHelpers.sliceSkip i l)
+                let start = if i < 0 then 0 else i
+                PrivateListHelpers.sliceTake (j - start) (PrivateListHelpers.sliceSkip start l)
 
         interface IEnumerable<'T> with
             member l.GetEnumerator() = PrivateListHelpers.mkListEnumerator l
@@ -4890,12 +4900,16 @@ namespace Microsoft.FSharp.Core
             let PowGeneric (one, mul, value: 'T, exponent) = ComputePowerGenericInlined  one mul value exponent 
 
             let inline ComputeSlice bound start finish length =
-                match start, finish with
-                | None, None -> bound, bound + length - 1
-                | None, Some n when n >= bound  -> bound, n
-                | Some m, None when m <= bound + length -> m, bound + length - 1
-                | Some m, Some n -> m, n
-                | _ -> raise (System.IndexOutOfRangeException())
+                let low = 
+                    match start with
+                    | Some n when n >= bound -> n
+                    | _ -> bound
+                let high = 
+                    match finish with 
+                    | Some m when m < bound + length -> m
+                    | _ -> bound + length - 1
+
+                low, high
 
             let inline GetArraySlice (source: _[]) start finish =
                 let start, finish = ComputeSlice 0 start finish source.Length

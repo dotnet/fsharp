@@ -10,7 +10,6 @@ module FSharp.Compiler.Service.Tests.ProjectOptionsTests
 
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
 
-open System
 open System.IO
 open NUnit.Framework
 open FsUnit
@@ -520,7 +519,7 @@ let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
     test "MainBad" [|"MainBad"|] 
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: no project options cracker for .NET Core?")>]
 #endif
 let ``Script load closure project`` () =

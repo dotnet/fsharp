@@ -11,7 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="TestHelpers.fs" />
     <Compile Include="FSharpScriptTests.fs" />
+    <None Include="housing.csv"  CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="CompletionTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

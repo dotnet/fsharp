@@ -8,6 +8,7 @@ namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
+open Utils
 
 (*
 [Test Strategy]
@@ -23,15 +24,36 @@ Make sure each method works on:
 type Array4Module() =
 
     let VerifyDimensions arr x y z u =
-        if Array4D.length1 arr <> x then Assert.Fail("Array3D does not have expected dimensions.")
-        if Array4D.length2 arr <> y then Assert.Fail("Array3D does not have expected dimensions.")
-        if Array4D.length3 arr <> z then Assert.Fail("Array3D does not have expected dimensions.")
+        if Array4D.length1 arr <> x then Assert.Fail("Array4D does not have expected dimensions.")
+        if Array4D.length2 arr <> y then Assert.Fail("Array4D does not have expected dimensions.")
+        if Array4D.length3 arr <> z then Assert.Fail("Array4D does not have expected dimensions.")
         if Array4D.length4 arr <> u then Assert.Fail("Array4D does not have expected dimensions.")
         ()
 
     let array4d (arrs: 'a array array array array) = Array4D.init arrs.Length arrs.[0].Length arrs.[0].[0].Length  arrs.[0].[0].[0].Length  (fun i j k m -> arrs.[i].[j].[k].[m])
 
     let array3d (arrs: 'a array array array ) = Array3D.init arrs.Length arrs.[0].Length arrs.[0].[0].Length  (fun i j k -> arrs.[i].[j].[k])
+    
+    let shouldBeEmpty arr = 
+        if Array4D.length4 arr <> 0 
+        && Array4D.length3 arr <> 0
+        && Array4D.length2 arr <> 0
+        && Array4D.length1 arr <> 0 then 
+            Assert.Fail("Array3D is not empty.")    
+
+    let m1 = array4d 
+               [|
+                 [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |]
+                 [| 
+                        [| [| 19.0;29.0;39.0;49.0;59.0;69.0 |];
+                           [| 119.0;219.0;319.0;419.0;519.0;619.0 |]  |]
+                        [| [| 109.0;209.0;309.0;409.0;509.0;609.0 |];
+                           [| 1009.0;2009.0;3009.0;4009.0;5009.0;6009.0 |]  |] |]
+                |]
 
     [<Test>]
     member this.Create() =
@@ -577,3 +599,95 @@ type Array4Module() =
         m1.[0,*,*,*] <- newSlice
         Assert.AreEqual(m1.[1,0,0,0], 19.0)
         if m1.[0,*,*,*] <> newSlice then Assert.Fail()
+    member this.SlicingBoundedStartEnd() = 
+        shouldEqual m1.[*,*,*,*]  m1
+        shouldEqual m1.[0..,*,*,*]   m1
+        shouldEqual m1.[0..0,*,*,*]  
+           (array4d 
+              [|
+                [| 
+                       [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                          [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                       [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                          [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |]
+               |])
+        shouldEqual m1.[1..1,*,*,*]  
+           (array4d 
+              [|
+                 [| 
+                       [| [| 19.0;29.0;39.0;49.0;59.0;69.0 |];
+                          [| 119.0;219.0;319.0;419.0;519.0;619.0 |]  |]
+                       [| [| 109.0;209.0;309.0;409.0;509.0;609.0 |];
+                          [| 1009.0;2009.0;3009.0;4009.0;5009.0;6009.0 |]  |] |]
+               |])
+    
+        shouldEqual m1.[*,0..0,*,*]  
+           (array4d 
+              [|
+                [| 
+                       [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                          [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                |];
+                [| 
+                       [| [| 19.0;29.0;39.0;49.0;59.0;69.0 |];
+                          [| 119.0;219.0;319.0;419.0;519.0;619.0 |]  |]
+                |]
+               |])
+        shouldEqual m1.[..1,*,*,*]   m1
+        shouldEqual m1.[*,1..,*,*]  
+           (array4d 
+              [|
+                [| 
+                       [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                          [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |]
+                |];
+                [| 
+                       [| [| 109.0;209.0;309.0;409.0;509.0;609.0 |];
+                          [| 1009.0;2009.0;3009.0;4009.0;5009.0;6009.0 |]  |] 
+                |]
+               |])
+        shouldEqual m1.[*,0..1,*,*]   m1
+        shouldEqual m1.[*,*,0..0,*]  
+           (array4d 
+              [|
+                [| 
+                       [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];  |]
+                       [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];  |]
+                |];
+                [| 
+                       [| [| 19.0;29.0;39.0;49.0;59.0;69.0 |];  |]
+                       [| [| 109.0;209.0;309.0;409.0;509.0;609.0 |];  |] |]
+               |])
+        shouldEqual m1.[*,*,*,0..5]  m1
+    
+        shouldEqual m1.[*,*,*,0..4]  
+           (array4d 
+              [|
+                [| 
+                       [| [| 1.0;2.0;3.0;4.0;5.0 |];
+                          [| 11.0;21.0;31.0;41.0;51.0 |]  |]
+                       [| [| 10.0;20.0;30.0;40.0;50.0 |];
+                          [| 100.0;200.0;300.0;400.0;500.0 |]  |]
+                |];
+                [| 
+                       [| [| 19.0;29.0;39.0;49.0;59.0 |];
+                          [| 119.0;219.0;319.0;419.0;519.0 |]  |]
+                       [| [| 109.0;209.0;309.0;409.0;509.0 |];
+                          [| 1009.0;2009.0;3009.0;4009.0;5009.0 |]  |] 
+                |]
+               |])
+
+
+    [<Test>]
+    member this.SlicingOutOfBounds() = 
+        shouldBeEmpty m1.[*,*,*,7..]  
+        shouldBeEmpty m1.[*,*,*,.. -1]  
+    
+        shouldBeEmpty m1.[*,*,3..,*]  
+        shouldBeEmpty m1.[*,*,.. -1,*]  
+    
+        shouldBeEmpty m1.[*,3..,*,*]  
+        shouldBeEmpty m1.[*,.. -1,*,*]  
+    
+        shouldBeEmpty m1.[3..,*,*,*]  
+        shouldBeEmpty m1.[.. -1,*,*,*]  

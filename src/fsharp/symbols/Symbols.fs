@@ -781,9 +781,13 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
         checkIsResolved()
         v.Range
 
+    member __.HasFields =
+        if isUnresolved() then false else
+        v.UnionCase.RecdFieldsArray.Length <> 0
+
     member __.UnionCaseFields = 
         if isUnresolved() then makeReadOnlyCollection [] else
-        v.UnionCase.RecdFields |> List.mapi (fun i _ ->  FSharpField(cenv, FSharpFieldData.Union (v, i))) |> makeReadOnlyCollection
+        v.UnionCase.RecdFieldsArray |> Array.mapi (fun i _ ->  FSharpField(cenv, FSharpFieldData.Union (v, i))) |> makeReadOnlyCollection
 
     member __.ReturnType = 
         checkIsResolved()
@@ -1954,7 +1958,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         // Note, returning "public" is wrong for IL members that are private
         match d with 
         | E e ->  
-            // For IL events, we get an approximate accessiblity that at least reports "internal" as "internal" and "private" as "private"
+            // For IL events, we get an approximate accessibility that at least reports "internal" as "internal" and "private" as "private"
             let access = 
                 match e with 
                 | ILEvent ileinfo -> 
@@ -1965,7 +1969,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             FSharpAccessibility access
 
         | P p ->  
-            // For IL  properties, we get an approximate accessiblity that at least reports "internal" as "internal" and "private" as "private"
+            // For IL  properties, we get an approximate accessibility that at least reports "internal" as "internal" and "private" as "private"
             let access = 
                 match p with 
                 | ILProp ilpinfo -> 
@@ -1977,13 +1981,13 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
         | M m | C m ->  
 
-            // For IL  methods, we get an approximate accessiblity that at least reports "internal" as "internal" and "private" as "private"
+            // For IL  methods, we get an approximate accessibility that at least reports "internal" as "internal" and "private" as "private"
             let access = 
                 match m with 
                 | ILMeth (_, x, _) -> getApproxFSharpAccessibilityOfMember x.DeclaringTyconRef x.RawMetadata.Access 
                 | _ -> taccessPublic
 
-            FSharpAccessibility(access, isProtected=m.IsProtectedAccessiblity)
+            FSharpAccessibility(access, isProtected=m.IsProtectedAccessibility)
 
         | V v -> FSharpAccessibility(v.Accessibility)
 
@@ -2010,7 +2014,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match other with
         |   :? FSharpMemberOrFunctionOrValue as other ->
             match d, other.Data with 
-            | E evt1, E evt2 -> EventInfo.EventInfosUseIdenticalDefintions evt1 evt2 
+            | E evt1, E evt2 -> EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2 
             | P p1, P p2 ->  PropInfo.PropInfosUseIdenticalDefinitions p1 p2
             | M m1, M m2
             | C m1, C m2 ->  MethInfo.MethInfosUseIdenticalDefinitions m1 m2

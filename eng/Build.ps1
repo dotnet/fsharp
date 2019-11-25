@@ -51,6 +51,7 @@ param (
     [switch]$testDependencyManager,
     [switch]$testFSharpCore,
     [switch]$testFSharpQA,
+    [switch]$testScripting,
     [switch]$testVs,
     [switch]$testAll,
     [string]$officialSkipTests = "false",
@@ -88,6 +89,7 @@ function Print-Usage() {
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
     Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
     Write-Host "  -testFSharpQA             Run F# Cambridge tests"
+    Write-Host "  -testScripting            Run Scripting tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
     Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
     Write-Host ""
@@ -151,11 +153,11 @@ function Process-Arguments() {
 
 function Update-Arguments() {
     if ($script:noVisualStudio) {
-        $script:bootstrapTfm = "netcoreapp2.1"
+        $script:bootstrapTfm = "netcoreapp3.0"
         $script:msbuildEngine = "dotnet"
     }
 
-    if ($bootstrapTfm -eq "netcoreapp2.1") {
+    if ($bootstrapTfm -eq "netcoreapp3.0") {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
@@ -259,7 +261,7 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
 }
 
 function BuildCompiler() {
-    if ($bootstrapTfm -eq "netcoreapp2.1") {
+    if ($bootstrapTfm -eq "netcoreapp3.0") {
         $dotnetPath = InitializeDotNetCli
         $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
         $fscProject = "$RepoRoot\src\fsharp\fsc\fsc.fsproj"
@@ -268,10 +270,10 @@ function BuildCompiler() {
         $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
         $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
 
-        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp2.1" + $argNoRestore + $argNoIncremental
+        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
         Exec-Console $dotnetExe $args
 
-        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp2.1" + $argNoRestore + $argNoIncremental
+        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
         Exec-Console $dotnetExe $args
     }
 }
@@ -312,11 +314,6 @@ try {
     if ($ci) {
         Prepare-TempDir
         EnablePreviewSdks
-
-        # enable us to build netcoreapp2.1 product binaries
-        $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
-        InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
-        InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"
     }
 
     if ($bootstrap) {
@@ -364,7 +361,8 @@ try {
         $resultsLog = "test-net40-fsharpqa-results.log"
         $errorLog = "test-net40-fsharpqa-errors.log"
         $failLog = "test-net40-fsharpqa-errors"
-        $perlExe = "$env:USERPROFILE\.nuget\packages\StrawberryPerl64\5.22.2.1\Tools\perl\bin\perl.exe"
+        $perlPackageRoot = "$env:USERPROFILE\.nuget\packages\StrawberryPerl\5.28.0.1";
+        $perlExe = "$perlPackageRoot\bin\perl.exe"
         Create-Directory $resultsRoot
         UpdatePath
         $env:HOSTED_COMPILER = 1
@@ -372,6 +370,7 @@ try {
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
+        $env:PERL5LIB = "$perlPackageRoot\vendor\lib"
         Exec-Console $perlExe """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
         Pop-Location
     }
@@ -402,6 +401,13 @@ try {
             TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
         }
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
+    }
+
+    if ($testScripting) {
+        if (-not $noVisualStudio) {
+            TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        }
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
     if ($testVs -and -not $noVisualStudio) {

@@ -1,61 +1,34 @@
 // --------------------------------------------------------------------------------------
 // FAKE build script
 // --------------------------------------------------------------------------------------
+#r "paket: groupref Main //"
+#load "./.fake/build.fsx/intellisense.fsx"
 
-#I "packages/FAKE/tools"
-#r "packages/FAKE/tools/FakeLib.dll"
 open System
 open System.IO
-open Fake
-open Fake.AppVeyor
-open Fake.ReleaseNotesHelper
+open Fake.BuildServer
+open Fake.Core
+open Fake.DotNet
+open Fake.IO
 
-#if MONO
-// prevent incorrect output encoding (e.g. https://github.com/fsharp/FAKE/issues/1196)
-System.Console.OutputEncoding <- System.Text.Encoding.UTF8
-CleanDir (__SOURCE_DIRECTORY__ + "/../artifacts/TestResults") 
-File.WriteAllText(__SOURCE_DIRECTORY__ + "/../artifacts/TestResults/notestsyet.txt","No tests yet")
-let isMono = true
-#else
-let isMono = false
-#endif
-
+BuildServer.install [ AppVeyor.Installer ]
 // --------------------------------------------------------------------------------------
 // Utilities
 // --------------------------------------------------------------------------------------
 
-let dotnetExePath =
+let withDotnetExe =
     // Build.cmd normally downloads a dotnet cli to: <repo-root>\artifacts\toolset\dotnet
     // check if there is one there to avoid downloading an additional one here
     let pathToCli = Path.Combine(__SOURCE_DIRECTORY__, @"..\artifacts\toolset\dotnet\dotnet.exe")
     if File.Exists(pathToCli) then
-        pathToCli
+        (fun opts -> { opts with DotNet.Options.DotNetCliPath = pathToCli })
     else
-        DotNetCli.InstallDotNetSDK "2.2.105"
+        DotNet.install (fun cliOpts -> { cliOpts with Version = DotNet.CliVersion.GlobalJson })
 
-let runDotnet workingDir args =
-    let result =
-        ExecProcess (fun info ->
-            info.FileName <- dotnetExePath
-            info.WorkingDirectory <- workingDir
-            info.Arguments <- args) TimeSpan.MaxValue
+let runDotnet workingDir command args =
+    let result = DotNet.exec (DotNet.Options.withWorkingDirectory workingDir >> withDotnetExe) command args
 
-    if result <> 0 then failwithf "dotnet %s failed" args
-
-let assertExitCodeZero x = if x = 0 then () else failwithf "Command failed with exit code %i" x
-
-let runCmdIn workDir (exe:string) = Printf.ksprintf (fun (args:string) ->
-#if MONO
-        let exe = exe.Replace("\\","/")
-        let args = args.Replace("\\","/")
-        printfn "[%s] mono %s %s" workDir exe args
-        Shell.Exec("mono", sprintf "%s %s" exe args, workDir)
-#else
-        printfn "[%s] %s %s" workDir exe args
-        Shell.Exec(exe, args, workDir)
-#endif
-        |> assertExitCodeZero
-)
+    if result.ExitCode <> 0 then failwithf "dotnet %s failed with errors: %s" args (result.Errors |> String.concat "\n")
 
 // --------------------------------------------------------------------------------------
 // The rest of the code is standard F# build script
@@ -64,66 +37,68 @@ let runCmdIn workDir (exe:string) = Printf.ksprintf (fun (args:string) ->
 let releaseDir = Path.Combine(__SOURCE_DIRECTORY__, "../artifacts/bin/fcs/Release")
 
 // Read release notes & version info from RELEASE_NOTES.md
-let release = LoadReleaseNotes (__SOURCE_DIRECTORY__ + "/RELEASE_NOTES.md")
-let isAppVeyorBuild = buildServer = BuildServer.AppVeyor
-let isJenkinsBuild = buildServer = BuildServer.Jenkins
+let release = ReleaseNotes.load (__SOURCE_DIRECTORY__ + "/RELEASE_NOTES.md")
+let isAppVeyorBuild = AppVeyor.detect()
 let isVersionTag (tag: string) = Version.TryParse tag |> fst
-let hasRepoVersionTag = isAppVeyorBuild && AppVeyorEnvironment.RepoTag && isVersionTag AppVeyorEnvironment.RepoTagName
-let assemblyVersion = if hasRepoVersionTag then AppVeyorEnvironment.RepoTagName else release.NugetVersion
+let hasRepoVersionTag = isAppVeyorBuild && AppVeyor.Environment.RepoTag && isVersionTag AppVeyor.Environment.RepoTagName
+let assemblyVersion = if hasRepoVersionTag then AppVeyor.Environment.RepoTagName else release.NugetVersion
 
 let buildVersion =
     if hasRepoVersionTag then assemblyVersion
-    else if isAppVeyorBuild then sprintf "%s-b%s" assemblyVersion AppVeyorEnvironment.BuildNumber
+    else if isAppVeyorBuild then sprintf "%s-b%s" assemblyVersion AppVeyor.Environment.BuildNumber
     else assemblyVersion
 
-Target "Clean" (fun _ ->
-    CleanDir releaseDir
+Target.create "Clean" (fun _ ->
+    Shell.cleanDir releaseDir
 )
 
-Target "Restore" (fun _ ->
+Target.create "Restore" (fun _ ->
     // We assume a paket restore has already been run
-    runDotnet __SOURCE_DIRECTORY__ "restore ../src/buildtools/buildtools.proj -v n"
-    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.sln -v n"
+    runDotnet __SOURCE_DIRECTORY__ "restore" "../src/buildtools/buildtools.proj -v n"
+    runDotnet __SOURCE_DIRECTORY__ "restore" "FSharp.Compiler.Service.sln -v n"
 )
 
-Target "BuildVersion" (fun _ ->
+Target.create "BuildVersion" (fun _ ->
     Shell.Exec("appveyor", sprintf "UpdateBuild -Version \"%s\"" buildVersion) |> ignore
 )
 
-Target "Build" (fun _ ->
-    runDotnet __SOURCE_DIRECTORY__ "build ../src/buildtools/buildtools.proj -v n -c Proto"
-    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp2.1/fslex.dll"
-    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp2.1/fsyacc.dll"
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "build FSharp.Compiler.Service.sln -v n -c Release /p:FsLexPath=%s /p:FsYaccPath=%s" fslexPath fsyaccPath)
+Target.create "Build" (fun _ ->
+    runDotnet __SOURCE_DIRECTORY__ "build" "../src/buildtools/buildtools.proj -v n -c Proto"
+    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp3.0/fslex.dll"
+    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp3.0/fsyacc.dll"
+    runDotnet __SOURCE_DIRECTORY__ "build" (sprintf "FSharp.Compiler.Service.sln -v n -c Release /p:FsLexPath=%s /p:FsYaccPath=%s" fslexPath fsyaccPath)
 )
 
-Target "Test" (fun _ ->
+Target.create "Test" (fun _ ->
     // This project file is used for the netcoreapp2.0 tests to work out reference sets
-    runDotnet __SOURCE_DIRECTORY__ "build ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n /restore /p:DisableCompilerRedirection=true"
+    runDotnet __SOURCE_DIRECTORY__ "build" "../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n /restore /p:DisableCompilerRedirection=true"
 
     // Now run the tests
     let logFilePath = Path.Combine(__SOURCE_DIRECTORY__, "..", "artifacts", "TestResults", "Release", "FSharp.Compiler.Service.Test.xml")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --no-restore --no-build -v n -c Release --test-adapter-path . --logger \"nunit;LogFilePath=%s\"" logFilePath)
+    runDotnet __SOURCE_DIRECTORY__ "test" (sprintf "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --no-restore --no-build -v n -c Release --test-adapter-path . --logger \"nunit;LogFilePath=%s\"" logFilePath)
 )
 
-Target "NuGet" (fun _ ->
-    runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service.sln -v n -c Release"
+Target.create "NuGet" (fun _ ->
+    DotNet.pack (fun packOpts ->
+      { packOpts with
+          Configuration = DotNet.BuildConfiguration.Release
+          Common = packOpts.Common |> withDotnetExe |> DotNet.Options.withVerbosity (Some DotNet.Verbosity.Normal)
+          MSBuildParams = { packOpts.MSBuildParams with
+                              Properties = packOpts.MSBuildParams.Properties @ [ "Version", assemblyVersion ] }
+      }) "FSharp.Compiler.Service.sln"
 )
 
-Target "GenerateDocsEn" (fun _ ->
-    executeFSIWithArgs "docsrc/tools" "generate.fsx" [] [] |> ignore
+Target.create "GenerateDocsEn" (fun _ ->
+    runDotnet "docsrc/tools" "fake" "run generate.fsx"
 )
 
-Target "GenerateDocsJa" (fun _ ->
-    executeFSIWithArgs "docsrc/tools" "generate.ja.fsx" [] [] |> ignore
+Target.create "GenerateDocsJa" (fun _ ->
+    runDotnet "docsrc/tools" "fake" "run generate.ja.fsx"
 )
 
-Target "PublishNuGet" (fun _ ->
-    Paket.Push (fun p ->
-        let apikey =
-            match getBuildParam "nuget-apikey" with
-            | s when not (String.IsNullOrWhiteSpace s) -> s
-            | _ -> getUserInput "Nuget API Key: "
+Target.create "PublishNuGet" (fun _ ->
+    let apikey = Environment.environVarOrDefault "nuget-apikey" (UserInput.getUserPassword "Nuget API Key: ")
+    Paket.push (fun p ->
         { p with
             ApiKey = apikey
             WorkingDir = releaseDir })
@@ -132,10 +107,12 @@ Target "PublishNuGet" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
 
-Target "Start" DoNothing
-Target "Release" DoNothing
-Target "GenerateDocs" DoNothing
-Target "TestAndNuGet" DoNothing
+Target.create "Start" ignore
+Target.create "Release" ignore
+Target.create "GenerateDocs" ignore
+Target.create "TestAndNuGet" ignore
+
+open Fake.Core.TargetOperators
 
 "Start"
   =?> ("BuildVersion", isAppVeyorBuild)
@@ -153,21 +130,21 @@ Target "TestAndNuGet" DoNothing
 
 "NuGet"
   ==> "TestAndNuGet"
-  
+
 "Build"
   ==> "NuGet"
   ==> "PublishNuGet"
   ==> "Release"
 
 "Build"
-  ==> "GenerateDocsEn"
+  // ==> "GenerateDocsEn"
   ==> "GenerateDocs"
 
 "Build"
-  ==> "GenerateDocsJa"
+  // ==> "GenerateDocsJa"
   ==> "GenerateDocs"
 
 "GenerateDocs"
   ==> "Release"
 
-RunTargetOrDefault "Build"
+Target.runOrDefaultWithArguments "Build"

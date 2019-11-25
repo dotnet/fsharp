@@ -1139,7 +1139,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
             if minfo.IsClassConstructor then 
                 error (InternalError (minfo.LogicalName + ": cannot call a class constructor", m))
             let useCallvirt = not valu && not direct && minfo.IsVirtual
-            let isProtected = minfo.IsProtectedAccessiblity
+            let isProtected = minfo.IsProtectedAccessibility
             let exprTy = if isCtor then enclTy else minfo.GetFSharpReturnTy(amap, m, minst)
             match TryImportProvidedMethodBaseAsLibraryIntrinsic (amap, m, providedMeth) with 
             | Some fsValRef -> 
@@ -1339,7 +1339,7 @@ module ProvidedMethodCalls =
             | None -> 
             match ea.PApplyOption((function ProvidedNewTupleExpr x -> Some x | _ -> None), m) with
             | Some info -> 
-                let elems = info.PApplyArray(id, "GetInvokerExpresson", m)
+                let elems = info.PApplyArray(id, "GetInvokerExpression", m)
                 let elemsT = elems |> Array.map exprToExpr |> Array.toList
                 let exprT = mkRefTupledNoTypes g m elemsT
                 None, (exprT, tyOfExpr g exprT)
@@ -1348,7 +1348,7 @@ module ProvidedMethodCalls =
             | Some info -> 
                 let ty, elems = info.PApply2(id, m)
                 let tyT = Import.ImportProvidedType amap m ty
-                let elems = elems.PApplyArray(id, "GetInvokerExpresson", m)
+                let elems = elems.PApplyArray(id, "GetInvokerExpression", m)
                 let elemsT = elems |> Array.map exprToExpr |> Array.toList
                 let exprT = Expr.Op (TOp.Array, [tyT], elemsT, m)
                 None, (exprT, tyOfExpr g exprT)
@@ -1419,7 +1419,7 @@ module ProvidedMethodCalls =
             | Some info -> 
                 let delegateTy, boundVars, delegateBodyExpr = info.PApply3(id, m)
                 let delegateTyT = Import.ImportProvidedType amap m delegateTy
-                let vs = boundVars.PApplyArray(id, "GetInvokerExpresson", m) |> Array.toList 
+                let vs = boundVars.PApplyArray(id, "GetInvokerExpression", m) |> Array.toList 
                 let vsT = List.map addVar vs
                 let delegateBodyExprT = exprToExpr delegateBodyExpr
                 List.iter removeVar vs
@@ -1489,7 +1489,7 @@ module ProvidedMethodCalls =
             let (ctor, args) = ne.PApply2(id, m)
             let targetMethInfo = ProvidedMeth(amap, ctor.PApply((fun ne -> upcast ne), m), None, m)
             let objArgs = [] 
-            let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpresson", m) -> exprToExpr ea ]
+            let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpression", m) -> exprToExpr ea ]
             let callExpr = BuildMethodCall tcVal g amap Mutates.PossiblyMutates m false targetMethInfo isSuperInit [] objArgs arguments
             callExpr
 
@@ -1514,7 +1514,7 @@ module ProvidedMethodCalls =
                 | None -> []
                 | Some objExpr -> [exprToExpr objExpr]
 
-            let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpresson", m) -> exprToExpr ea ]
+            let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpression", m) -> exprToExpr ea ]
             let genericArguments = 
                 if meth.PUntaint((fun m -> m.IsGenericMethod), m) then 
                     meth.PApplyArray((fun m -> m.GetGenericArguments()), "GetGenericArguments", m)  
@@ -1638,5 +1638,6 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
 exception FieldNotMutable of DisplayEnv * Tast.RecdFieldRef * range
 
 let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) = 
-    if not rfinfo.RecdField.IsMutable then error (FieldNotMutable(denv, rfinfo.RecdFieldRef, m))
+    if not rfinfo.RecdField.IsMutable then
+        errorR (FieldNotMutable (denv, rfinfo.RecdFieldRef, m))
 

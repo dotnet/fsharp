@@ -11,15 +11,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="TextHelpers.fs" />
-    <Compile Include="FSharpScript.fs" />
-    <Compile Include="FSharp.DependencyManager.UnitTests.fs" />
+    <Compile Include="DependencyManagerInteractiveTests.fs" />
+    <Compile Include="DependencyManagerLineParserTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager\FSharp.DependencyManager.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj" />
   </ItemGroup>
 
 </Project>

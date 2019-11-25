@@ -30,7 +30,6 @@ module Tests.Service.Editor
 open NUnit.Framework
 open FsUnit
 open System
-open System.IO
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
@@ -103,14 +102,14 @@ let ``Intro test`` () =
                ("Concat", ["str0: string"; "str1: string"]);
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"]);
                ("Concat", ["str0: string"; "str1: string"; "str2: string"]);
-#if !NETCOREAPP2_0 // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
+#if !NETCOREAPP // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"; "arg3: obj"]);
 #endif               
                ("Concat", ["str0: string"; "str1: string"; "str2: string"; "str3: string"])]
 
 
 // TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
-#if !INTERACTIVE && !NETCOREAPP2_0 // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
+#if !INTERACTIVE && !NETCOREAPP // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
 [<Test>]
 let ``Basic cancellation test`` () = 
    try 
@@ -162,7 +161,7 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
              ("Concat", [("str0", "string"); ("str1", "string")]);
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string")]);
-#if !NETCOREAPP2_0 // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
+#if !NETCOREAPP // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj"); ("arg3", "obj")]);
 #endif
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string"); ("str3", "string")])]
@@ -1319,3 +1318,40 @@ let ``FSharpField.IsNameGenerated`` () =
      "type U = Case of string * Item2: string * string * Name: string",
         ["Item1", true; "Item2", false; "Item3", true; "Name", false]]
     |> List.iter (fun (source, expected) -> checkFields source |> shouldEqual expected)
+
+
+[<Test>]
+let ``ValNoMutable recovery`` () =
+    let source = """
+let x = 1
+x <-
+    let y = 1
+    y
+"""
+    assertContainsSymbolWithName "y" source
+
+
+[<Test>]
+let ``PropertyCannotBeSet recovery`` () =
+    let source = """
+type T =
+    static member P = 1
+
+T.P <-
+    let y = 1
+    y
+"""
+    assertContainsSymbolWithName "y" source
+
+
+[<Test>]
+let ``FieldNotMutable recovery`` () =
+    let source = """
+type R =
+    { F: int }
+
+{ F = 1 }.F <-
+    let y = 1
+    y
+"""
+    assertContainsSymbolWithName "y" source
