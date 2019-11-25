@@ -2845,7 +2845,11 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         let facades = Path.Combine(frameworkRootVersion, "Facades")
                         if Directory.Exists facades then
                             yield facades
-                  ]                    
+                        match frameworkRefsPackDirectory with
+                        | Some path when Directory.Exists(path) ->
+                            yield path
+                        | _ -> ()
+                  ]
         with e -> 
             errorRecovery e range0; [] 
 

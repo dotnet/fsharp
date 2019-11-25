@@ -10,20 +10,10 @@ open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
-open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 
 [<TestFixture>]
 type InteractiveTests() =
-
-    let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpErrorInfo[])) =
-        if errors.Length > 0 then
-            failwith <| sprintf "Evaluation returned %d errors:\r\n\t%s" errors.Length (String.Join("\r\n\t", errors))
-        match value with
-        | Ok(value) -> value
-        | Error ex -> raise ex
-
-    let ignoreValue = getValue >> ignore
 
     [<Test>]
     member __.``Eval object value``() =
@@ -198,7 +188,6 @@ printfn ""%A"" result
         Assert.AreEqual(123, value.ReflectionValue :?> int32)
 #endif
 
-
     [<Test>]
     member __.``Simple pinvoke should not be impacted by native resolver``() =
         let code = @"
@@ -225,8 +214,7 @@ else
         let value = opt.Value
         Assert.AreEqual(123, value.ReflectionValue :?> int32)
 
-
-    [<Test>]
+    [<Test; Ignore("This timing test fails in different environments. Skipping so that we don't assume an arbitrary CI environment has enough compute/etc. for what we need here.")>]
     member _.``Evaluation can be cancelled``() =
         use script = new FSharpScript()
         let sleepTime = 10000
