@@ -26,14 +26,11 @@ type LanguageFeature =
     | NameOf = 6
     | ImplicitYield = 7
     | OpenStaticClasses = 8
-<<<<<<< HEAD
     | PackageManagement = 9
+    | FixedIndexSlice3d4d = 11
     | LanguageVersion46 = 0x10046
     | LanguageVersion47 = 0x10047
     | LanguageVersion50 = 0x10050
-=======
-    | FixedIndexSlice3d4d = 11
->>>>>>> cb3f00d92... add langversion
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
