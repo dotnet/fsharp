@@ -26,10 +26,14 @@ type LanguageFeature =
     | NameOf = 6
     | ImplicitYield = 7
     | OpenStaticClasses = 8
+<<<<<<< HEAD
     | PackageManagement = 9
     | LanguageVersion46 = 0x10046
     | LanguageVersion47 = 0x10047
     | LanguageVersion50 = 0x10050
+=======
+    | FixedIndexSlice3d4d = 11
+>>>>>>> cb3f00d92... add langversion
 
 
 /// LanguageVersion management
@@ -60,6 +64,7 @@ type LanguageVersion (specifiedVersion) =
         LanguageFeature.ImplicitYield, languageVersion47
         LanguageFeature.OpenStaticClasses, previewVersion
         LanguageFeature.PackageManagement, previewVersion
+        LanguageFeature.FixedIndexSlice3d4d, previewVersion
         |]
 
     let specified =

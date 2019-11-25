@@ -6334,6 +6334,8 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
         | [SynIndexerArg.One h] -> SynExpr.Paren (h, range0, None, idxRange)
         | _ -> SynExpr.Paren (SynExpr.Tuple (false, GetIndexArgs indexArgs @ Option.toList vopt, [], idxRange), range0, None, idxRange)
 
+    let fixedIndex3d4dEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.FixedIndexSlice3d4d
+
     let attemptArrayString = 
         if isArray || isString then 
 

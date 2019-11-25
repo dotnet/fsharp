@@ -14,6 +14,7 @@ type LanguageFeature =
     | ImplicitYield = 7
     | OpenStaticClasses = 8
     | PackageManagement = 9
+    | FixedIndexSlice3d4d = 11
     | LanguageVersion46 = 0x10046
     | LanguageVersion47 = 0x10047
     | LanguageVersion50 = 0x10050
