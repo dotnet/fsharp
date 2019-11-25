@@ -6328,10 +6328,10 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
 
     let idxRange = indexArgs |> List.map (fun e -> e.Range) |> List.reduce unionRanges 
 
-    // xs.GetReverseIndex dim offset - 1
-    let rewriteReverseExpr (dim: int) (offset: SynExpr) (range: range) = 
-        let dimExpr = SynExpr.Const(SynConst.Int32(dim), range)
-        let sliceArgs = SynExpr.Paren(SynExpr.Tuple(false, [dimExpr; offset], [], range), range, Some range, range)
+    // xs.GetReverseIndex rank offset - 1
+    let rewriteReverseExpr (rank: int) (offset: SynExpr) (range: range) = 
+        let rankExpr = SynExpr.Const(SynConst.Int32(rank), range)
+        let sliceArgs = SynExpr.Paren(SynExpr.Tuple(false, [rankExpr; offset], [], range), range, Some range, range)
         let xsId = e1
 
         mkSynApp1
@@ -6339,9 +6339,9 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
             sliceArgs
             range
 
-    let rewriteReverseOption (app: SynExpr) (dim: int) (range: range) = 
+    let rewriteReverseOption (app: SynExpr) (rank: int) (range: range) = 
        match app with
-       | SynExpr.App(atomicFlag, isInfix, funcExpr, e1, outerRange) -> SynExpr.App(atomicFlag, isInfix, funcExpr, rewriteReverseExpr dim e1 range, outerRange)
+       | SynExpr.App(atomicFlag, isInfix, funcExpr, e1, outerRange) -> SynExpr.App(atomicFlag, isInfix, funcExpr, rewriteReverseExpr rank e1 range, outerRange)
        | _ -> app
 
     let expandedIndexArgs = 
