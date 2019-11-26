@@ -1930,6 +1930,12 @@ namespace Microsoft.FSharp.Collections
         /// <param name="endIndex">The end index.</param>
         /// <returns>The sub list specified by the input indices.</returns>
         member GetSlice : startIndex:int option * endIndex:int option -> 'T list  
+
+        /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+        /// <param name="rank">The rank of the index.</param>
+        /// <param name="offset">The offset from the end.</param>
+        /// <returns>The corresponding index from the start.</returns>
+        member GetReverseIndex: rank: int * offset: int -> int
         
         /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
         /// <param name="head">A new head value for the list.</param>
@@ -2739,6 +2745,44 @@ namespace Microsoft.FSharp.Core
         /// <returns>A tuple containing the key and value.</returns>
         [<CompiledName("KeyValuePattern")>]
         val ( |KeyValue| ): keyValuePair:KeyValuePair<'Key,'Value> -> 'Key * 'Value
+
+        [<AutoOpen>]
+        module ArrayExtensions = 
+            type ``[,,,]``<'T> with
+                /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+                /// <param name="rank">The rank of the index. This refers to the dimension in the 4d array.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                member GetReverseIndex: rank: int * offset: int -> int
+
+            type ``[,,]``<'T> with
+                /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+                /// <param name="rank">The rank of the index. This refers to the dimension in the 3d array.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                member GetReverseIndex: rank: int * offset: int -> int
+
+            type ``[,]``<'T> with
+                /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+                /// <param name="rank">The rank of the index. This refers to the dimension in the 2d array.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                member GetReverseIndex: rank: int * offset: int -> int
+
+            type ``[]``<'T> with
+                /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+                /// <param name="rank">The rank of the index.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns> 
+                member GetReverseIndex: rank: int * offset: int -> int
+
+            type System.String with
+                /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+                /// <param name="rank">The rank of the index.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                member GetReverseIndex: rank: int * offset: int -> int
+
 
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges
         /// and dynamic invocations of other F# operators</summary>

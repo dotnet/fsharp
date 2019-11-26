@@ -270,6 +270,43 @@ type Array4Module() =
         ()
 
     [<Test>]
+    member this.``Slicing with reverse index in all slice expr behaves as expected``()  = 
+        let arr = Array4D.init 5 5 5 5 (fun i j k l -> i*1000 + j*100 + k*10 + l)
+
+        Assert.That(arr.[..^1, ^1..^0, ^2.., ^1..], Is.EquivalentTo(arr.[..3, 3..4, 2.., 3..]))
+
+    [<Test>]
+    member this.``Set slice with reverse index in all slice expr behaves as expected``()  = 
+        let arr1 = Array4D.init 5 5 5 5 (fun i j k l -> i*1000 + j*100 + k*10 + l)
+        let arr2 = Array4D.init 5 5 5 5 (fun i j k l -> i*1000 + j*100 + k*10 + l)
+
+        let setSlice = Array4D.create 2 2 2 2 0
+
+        arr1.[^1..^0, ^2..3, 1..^2, ^2..^1] <- setSlice
+        arr2.[3..4, 2..3, 1..2, 2..3] <- setSlice
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    [<Test>]
+    member this.``Indexer with reverse index in one dim behaves as expected``() = 
+        let arr1 = Array4D.init 5 5 5 5 (fun i j k l -> i*1000 + j*100 + k*10 + l) 
+
+        Assert.That(arr1.[^1,0,0,0], Is.EqualTo(3000))
+
+    [<Test>]
+    member this.``Indexer with reverse index in all dim behaves as expected``() = 
+        let arr1 = Array4D.init 5 5 5 5 (fun i j k l -> i*1000 + j*100 + k*10 + l) 
+ 
+        Assert.That(arr1.[^0,^0,^1,^0], Is.EqualTo(4434))
+
+    [<Test>]
+    member this.``Set item with reverse index in all dims behave as expected``() = 
+        let arr1 = Array4D.create 5 5 5 5 2
+
+        arr1.[^1,^0,^0,^0] <- 9
+        Assert.That(arr1.[3,4,4,4], Is.EqualTo(9))
+
+    [<Test>]
     member this.SlicingBoundedStartEnd() = 
         shouldEqual m1.[*,*,*,*]  m1
         shouldEqual m1.[0..,*,*,*]   m1
