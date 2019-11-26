@@ -11,7 +11,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="TestHelpers.fs" />
     <Compile Include="FSharpScriptTests.fs" />
+    <Compile Include="CompletionTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
