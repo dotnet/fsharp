@@ -1,12 +1,12 @@
 module Pos31
 
-let x = 1
+val x : int
 [<Literal>]
-let y = 1
-let z = 1
+val y : int = 1
+val z : int
 [<Literal>]
-let w = "w"
-let q = "q"
+val w : string = "w"
+val q : string
 [<Literal>]
-let u = 
+val u : string = 
  "u"
