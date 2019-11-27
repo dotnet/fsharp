@@ -2043,7 +2043,6 @@ Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedTri
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedTriple2[T](T[,,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Int32, T[])
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedTriple3[T](T[,,,], Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, T[])
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedTriple4[T](T[,,,], Int32, Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[])
-Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice[T](T[], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[])
 Microsoft.FSharp.Core.Operators+Unchecked: Boolean Equals[T](T, T)
 Microsoft.FSharp.Core.Operators+Unchecked: Int32 Compare[T](T, T)
