@@ -599,6 +599,8 @@ type Array4Module() =
         m1.[0,*,*,*] <- newSlice
         Assert.AreEqual(m1.[1,0,0,0], 19.0)
         if m1.[0,*,*,*] <> newSlice then Assert.Fail()
+
+    [<Test>]
     member this.``Slicing with reverse index in all slice expr behaves as expected``()  = 
         let arr = Array4D.init 5 5 5 5 (fun i j k l -> i*1000 + j*100 + k*10 + l)
 
