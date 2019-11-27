@@ -183,6 +183,7 @@ Microsoft.FSharp.Collections.FSharpList`1[T]: Boolean get_IsEmpty()
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 CompareTo(Microsoft.FSharp.Collections.FSharpList`1[T])
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 CompareTo(System.Object)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 CompareTo(System.Object, System.Collections.IComparer)
+Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 GetReverseIndex(Int32, Int32)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 GetHashCode()
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 GetHashCode(System.Collections.IEqualityComparer)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 Length
@@ -1915,6 +1916,11 @@ Microsoft.FSharp.Core.NumericLiterals+NumericLiteralI: T FromOne[T]()
 Microsoft.FSharp.Core.NumericLiterals+NumericLiteralI: T FromString[T](System.String)
 Microsoft.FSharp.Core.NumericLiterals+NumericLiteralI: T FromZero[T]()
 Microsoft.FSharp.Core.NumericLiterals: Microsoft.FSharp.Core.NumericLiterals+NumericLiteralI
+Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 String.GetReverseIndex(System.String, Int32, Int32)
+Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 [,,,]`1.GetReverseIndex[T](T[,,,], Int32, Int32)
+Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 [,,]`1.GetReverseIndex[T](T[,,], Int32, Int32)
+Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 [,]`1.GetReverseIndex[T](T[,], Int32, Int32)
+Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 []`1.GetReverseIndex[T](T[], Int32, Int32)
 Microsoft.FSharp.Core.Operators+Checked: Byte ToByte[T](T)
 Microsoft.FSharp.Core.Operators+Checked: Char ToChar[T](T)
 Microsoft.FSharp.Core.Operators+Checked: Int16 ToInt16[T](T)
@@ -2080,6 +2086,7 @@ Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.FSharpFunc`2[T1,T3] op_Co
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.FSharpOption`1[System.String] FailurePattern(System.Exception)
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.FSharpOption`1[T] TryUnbox[T](System.Object)
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.FSharpRef`1[T] Ref[T](T)
+Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.Operators+ArrayExtensions
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.Operators+Checked
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.Operators+NonStructuralComparison
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.Operators+OperatorIntrinsics
