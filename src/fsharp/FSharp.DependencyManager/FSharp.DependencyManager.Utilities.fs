@@ -183,7 +183,7 @@ module Utilities =
             | Some(path) ->
                 let path = match path with
                            | Some path -> path // specific file
-                           | None -> Path.Combine(projectPath, "msbuild.binlog") // auto-generated file
+                           | None -> Path.Combine(Path.GetDirectoryName(projectPath), "msbuild.binlog") // auto-generated file
                 sprintf "/bl:\"%s\"" path
             | None -> ""
 
