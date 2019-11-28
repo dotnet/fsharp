@@ -1293,35 +1293,54 @@ namespace Microsoft.FSharp.Control
                 | Choice1Of2 computations ->
                     ProtectedCode ctxt (fun ctxt ->
                         let ctxtWithSync = DelimitSyncContext ctxt
-                        let noneCount = ref 0
-                        let exnCount = ref 0
+                        let mutable count = computations.Length
+                        let mutable noneCount = 0
+                        let mutable someOrExnCount = 0
                         let innerCts = new LinkedSubSource(ctxtWithSync.token)
 
                         let scont (result: 'T option) =
-                            match result with
-                            | Some _ ->
-                                if Interlocked.Increment exnCount = 1 then
-                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont result)
-                                else
-                                    fake()
+                            let result =
+                                match result with
+                                | Some _ ->
+                                    if Interlocked.Increment &someOrExnCount = 1 then
+                                        innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont result)
+                                    else
+                                        fake()
 
-                            | None ->
-                                if Interlocked.Increment noneCount = computations.Length then
-                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont None)
-                                else
-                                    fake()
+                                | None ->
+                                    if Interlocked.Increment &noneCount = computations.Length then
+                                        innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont None)
+                                    else
+                                        fake()
+
+                            if Interlocked.Decrement &count = 0 then
+                                innerCts.Dispose()
+
+                            result
 
                         let econt (exn: ExceptionDispatchInfo) =
-                            if Interlocked.Increment exnCount = 1 then
-                                innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.econt exn)
-                            else
-                                fake()
+                            let result =
+                                if Interlocked.Increment &someOrExnCount = 1 then
+                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.econt exn)
+                                else
+                                    fake()
+
+                            if Interlocked.Decrement &count = 0 then
+                                innerCts.Dispose()
+
+                            result
 
                         let ccont (exn: OperationCanceledException) =
-                            if Interlocked.Increment exnCount = 1 then
-                                innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.ccont exn)
-                            else
-                                fake()
+                            let result =
+                                if Interlocked.Increment &someOrExnCount = 1 then
+                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.ccont exn)
+                                else
+                                    fake()
+
+                            if Interlocked.Decrement &count = 0 then
+                                innerCts.Dispose()
+
+                            result
 
                         for c in computations do
                             QueueAsync innerCts.Token scont econt ccont c |> unfake
