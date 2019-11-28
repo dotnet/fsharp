@@ -29,6 +29,8 @@ open Internal.Utilities.Collections
 
 type internal Layout = StructuredFormat.Layout
 
+type PrimaryAssembly = FSharp.Compiler.AbstractIL.IL.PrimaryAssembly
+
 [<AutoOpen>]
 module EnvMisc =
     let braceMatchCacheSize = GetEnvInteger "FCS_BraceMatchCacheSize" 5

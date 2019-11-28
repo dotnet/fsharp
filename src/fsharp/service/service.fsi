@@ -12,10 +12,12 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
 open FSharp.Compiler.Text
-open FSharp.Compiler.AbstractIL.IL
 
 /// <summary>Unused in this API</summary>
 type public UnresolvedReferencesSet
+
+/// <summary>Target profile used in AST compilation</summary>
+type public PrimaryAssembly = FSharp.Compiler.AbstractIL.IL.PrimaryAssembly
 
 /// <summary>A set of information describing a project or script build configuration.</summary>
 type public FSharpProjectOptions =
