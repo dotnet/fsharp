@@ -12,6 +12,7 @@ open System.Reflection
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.AbstractIL.IL
 #if FX_NO_APP_DOMAINS
 open System.Runtime.Loader
 #endif

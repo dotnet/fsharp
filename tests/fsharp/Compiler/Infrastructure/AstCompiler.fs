@@ -22,3 +22,34 @@ module TestModule
         let method = assembly.GetType("TestModule").GetMethod("fib", BindingFlags.Static ||| BindingFlags.Public)
         Assert.NotNull(method)
         Assert.AreEqual(55, method.Invoke(null, [|10|]))
+
+    [<Test>]
+    let ``Compile to Assembly``() =
+        let assembly = 
+            CompilerAssert.CompileOfAst false
+                """
+module LiteralValue
+
+[<Literal>]
+let x = 7
+"""
+
+        (ILVerifier assembly).VerifyIL [
+            """
+.field public static literal int32 x = int32(0x00000007)
+            """
+        ]
+
+    [<Test>]
+    let ``Should resolve correct BCL types``() =
+        let assembly = 
+            CompilerAssert.CompileOfAstToDynamicAssembly
+                """
+module TestModule
+
+    let getStreamingContext() = new System.Runtime.Serialization.StreamingContext()
+"""
+
+        let method = assembly.GetType("TestModule").GetMethod("getStreamingContext", BindingFlags.Static ||| BindingFlags.Public)
+        Assert.NotNull(method)
+        Assert.IsInstanceOf<System.Runtime.Serialization.StreamingContext>(method.Invoke(null, [||]))
