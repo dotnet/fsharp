@@ -1,5 +1,5 @@
 // #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
-// Check thru reflection the set of methods
+// Check through reflection the set of methods
 // Delegate
 //<Expects status="success"></Expects>
 #light

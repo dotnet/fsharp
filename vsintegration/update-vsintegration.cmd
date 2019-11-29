@@ -28,7 +28,7 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-rem Count errors, warnings and succesful copies
+rem Count errors, warnings and successful copies
 set ERRORCOUNT=0
 set WARNCOUNT=0
 set COPYCOUNT=0

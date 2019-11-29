@@ -527,7 +527,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         static internal AbstractPatternMatcher Singleton = new AbstractPatternMatcher(false);
         /// <summary>
         /// Whether case-sensitive matches are preferred. When set to true, this means that
-        /// case-sensitive matches may be prefered over a case insensitive one. For example, if the
+        /// case-sensitive matches may be preferred over a case insensitive one. For example, if the
         /// candidate matches the pattern exactly but case insensitively, it will still lose to a
         /// case-sensitive camel-case match.
         /// </summary>

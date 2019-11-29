@@ -17,7 +17,7 @@ type A2() = class
 [<A1>] 
 let foo ([<A2>]x) = x
 
-// The rest of the code is a mere verification that the compiler thru reflection
+// The rest of the code is a mere verification that the compiler through reflection
 let executingAssembly = System.Reflection.Assembly.GetExecutingAssembly()
 
 // Method 'foo' is wrapped into a type called 'FunctionArg01'

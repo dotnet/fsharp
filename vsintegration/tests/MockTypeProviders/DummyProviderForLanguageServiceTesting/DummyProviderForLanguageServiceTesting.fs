@@ -443,7 +443,7 @@ module RegexTypeProvider =
                                     parameters = [ProvidedParameter("input", typeof<string>)], 
                                     returnType = matchTy, 
                                     InvokeCode = fun args -> <@@ ((%%args.[0]:obj) :?> Regex).Match(%%args.[1]) :> obj @@>)
-                matchMeth.AddXmlDoc "Searches the specified input string for the first occurence of this regular expression"
+                matchMeth.AddXmlDoc "Searches the specified input string for the first occurrence of this regular expression"
             
                 ty.AddMember matchMeth
             

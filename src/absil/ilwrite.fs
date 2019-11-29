@@ -1573,7 +1573,7 @@ module Codebuf =
      // -------------------------------------------------------------------- 
      // Applying branch fixups. Use short versions of instructions
      // wherever possible. Sadly we can only determine if we can use a short
-     // version after we've layed out the code for all other instructions.  
+     // version after we've laid out the code for all other instructions.  
      // This in turn means that using a short version may change 
      // the various offsets into the code.
      // -------------------------------------------------------------------- 

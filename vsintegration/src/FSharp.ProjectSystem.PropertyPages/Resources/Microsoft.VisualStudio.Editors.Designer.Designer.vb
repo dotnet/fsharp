@@ -1174,7 +1174,7 @@ Namespace My.Resources
         End Property
         
         '''<summary>
-        '''  Looks up a localized string similar to The following events are availble for MyApplication:.
+        '''  Looks up a localized string similar to The following events are available for MyApplication:.
         '''</summary>
         Friend Shared ReadOnly Property PPG_Application_AppEventsCommentLine1() As String
             Get

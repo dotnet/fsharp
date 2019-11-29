@@ -475,7 +475,7 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
             // In Visual Studio, when sending a block of text, it  prefixes  with '# <line> "filename"\n'
             // and postfixes with '# 1 "stdin"\n'. To first, get errors filename context,
             // and second to get them back into stdin context (no position stack...).
-            // To find an error line, trim upto the last stdinReset string the syphoned text.
+            // To find an error line, trim up to the last stdinReset string the syphoned text.
             //printf "PrePrune:-->%s<--\n\n" text;
             let rec prune (text:string) =
                 let stdinReset = "# 1 \"stdin\"\n"

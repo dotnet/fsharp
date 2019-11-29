@@ -18,7 +18,7 @@ type CA1 =
 // This is a function that has a custom attribute on the return type.
 let f(x) : [<CA1("A1")>] [<CA1("A2")>] int = x + 1
 
-// The rest of the code is a mere verification that the compiler thru reflection
+// The rest of the code is a mere verification that the compiler through reflection
 let executingAssembly = System.Reflection.Assembly.GetExecutingAssembly()
 
 // Method 'f' is wrapped into a type called 'ReturnType03'

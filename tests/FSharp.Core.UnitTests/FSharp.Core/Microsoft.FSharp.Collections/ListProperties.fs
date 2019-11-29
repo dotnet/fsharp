@@ -15,7 +15,7 @@ let chunkBySize_and_collect<'a when 'a : equality> (xs : 'a list) size =
         b = xs)
 
 [<Test>]
-let ``chunkBySize is reversable with collect`` () =
+let ``chunkBySize is reversible with collect`` () =
     Check.QuickThrowOnFailure chunkBySize_and_collect<int>
     Check.QuickThrowOnFailure chunkBySize_and_collect<string>
     Check.QuickThrowOnFailure chunkBySize_and_collect<NormalFloat>
@@ -98,7 +98,7 @@ let splitInto_and_collect<'a when 'a : equality> (xs : 'a list) count =
         b = xs)
 
 [<Test>]
-let ``splitInto is reversable with collect`` () =
+let ``splitInto is reversible with collect`` () =
     Check.QuickThrowOnFailure splitInto_and_collect<int>
     Check.QuickThrowOnFailure splitInto_and_collect<string>
     Check.QuickThrowOnFailure splitInto_and_collect<NormalFloat>
@@ -110,7 +110,7 @@ let splitAt_and_append<'a when 'a : equality> (xs : 'a list) index =
         b = xs && a1.Length = index)
 
 [<Test>]
-let ``splitAt is reversable with append`` () =
+let ``splitAt is reversible with append`` () =
     Check.QuickThrowOnFailure splitAt_and_append<int>
     Check.QuickThrowOnFailure splitAt_and_append<string>
     Check.QuickThrowOnFailure splitAt_and_append<NormalFloat>

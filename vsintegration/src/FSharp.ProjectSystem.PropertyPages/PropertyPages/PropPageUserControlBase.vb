@@ -1944,7 +1944,7 @@ NextControl:
         ''' </summary>
         ''' <remarks>Properties are only flushed if they are marked as dirty.</remarks>
         Protected Overridable Sub ApplyPageChanges()
-            Debug.Assert(Not Me.MultiProjectSelect, "Apply should not be occuring with multiple projects selected")
+            Debug.Assert(Not Me.MultiProjectSelect, "Apply should not be occurring with multiple projects selected")
             Debug.Assert(Not m_ProjectReloadedDuringCheckout)
             Dim control As System.Windows.Forms.Control = Nothing
             Dim Transaction As DesignerTransaction = Nothing

@@ -101,10 +101,10 @@ let PrintCompilerOption (CompilerOption(_s, _tag, _spec, _, help) as compilerOpt
     // Lines have this form: <flagWidth><space><description>
     //   flagWidth chars - for flags description or padding on continuation lines.
     //   single space    - space.
-    //   description     - words upto but excluding the final character of the line.
+    //   description     - words up to but excluding the final character of the line.
     printf "%-40s" (compilerOptionUsage compilerOption)
     let printWord column (word:string) =
-        // Have printed upto column.
+        // Have printed up to column.
         // Now print the next word including any preceding whitespace.
         // Returns the column printed to (suited to folding).
         if column + 1 (*space*) + word.Length >= lineWidth then // NOTE: "equality" ensures final character of the line is never printed

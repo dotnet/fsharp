@@ -12,7 +12,7 @@
 #MT402040,OS64BIT	test\hoge\piyo (...) -- failed
 #OS32BIT		test\hoge\piyo (...) -- failed
 
-## A bang preceeding a tag means its negation
+## A bang preceding a tag means its negation
 ## The following test will be excluded when running on a machine where NetFx3.5 is not installed
 #!NETFX35	test\hoge\piyo (...) -- failed
 

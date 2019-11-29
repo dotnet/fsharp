@@ -40,7 +40,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     }
 
     /// <summary>
-    /// This class represent a project item (usualy a file) and allow getting and
+    /// This class represent a project item (usually a file) and allow getting and
     /// setting attribute on it.
     /// This class allow us to keep the public details of our items hidden from
     /// our derived classes.

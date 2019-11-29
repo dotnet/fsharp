@@ -106,9 +106,9 @@ type Tables<'tok> =
 exception internal Accept of obj
 exception internal RecoverableParseError
 #else
-/// Indicates an accept action has occured
+/// Indicates an accept action has occurred
 exception Accept of obj
-/// Indicates a parse error has occured and parse recovery is in progress
+/// Indicates a parse error has occurred and parse recovery is in progress
 exception RecoverableParseError
 #endif
 

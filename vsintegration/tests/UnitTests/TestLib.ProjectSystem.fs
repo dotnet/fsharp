@@ -97,7 +97,7 @@ type TheTests() =
             let msg = sprintf "Expected regex '%s' to match '%s'." (r.ToString()) s
             printfn "%s" msg
             Assert.Fail(msg)
-    // Like AssertMatches, but runs for every prefix of regex up to each occurence of 'c'
+    // Like AssertMatches, but runs for every prefix of regex up to each occurrence of 'c'
     // Is helpful so that, if long regex match fails, you see first prefix that fails
     static member HelpfulAssertMatches (c : char) (regexStr : string) (s:string) =
         let mutable i = regexStr.IndexOf(c, 0)

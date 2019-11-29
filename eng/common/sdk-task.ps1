@@ -28,7 +28,7 @@ function Print-Usage() {
   Write-Host "  -prepareMachine         Prepare machine for CI run"
   Write-Host "  -msbuildEngine <value>  Msbuild engine to use to run build ('dotnet', 'vs', or unspecified)."
   Write-Host ""
-  Write-Host "Command line arguments not listed above are passed thru to msbuild."
+  Write-Host "Command line arguments not listed above are passed through to msbuild."
 }
 
 function Build([string]$target) {

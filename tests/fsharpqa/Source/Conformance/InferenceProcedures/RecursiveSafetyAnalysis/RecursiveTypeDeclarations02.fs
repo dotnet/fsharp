@@ -89,7 +89,7 @@ module Example1 =
     and Example1_g x = Example1_f 1
 
 
-// SImilar to Example1 but actually excercise 'f' at multiple types within the recursive group
+// SImilar to Example1 but actually exercise 'f' at multiple types within the recursive group
 module Example1b = 
     let rec Example1b_f x = x
     and Example1b_g x = 
@@ -111,7 +111,7 @@ module Example3 =
     let rec Example3_f x = (Example3_g 1 : int) 
     and Example3_g x = x
 
-// Similar to Example3 but actually excercise 'f' at multiple types within the recursive group
+// Similar to Example3 but actually exercise 'f' at multiple types within the recursive group
 module Example3b = 
     let rec Example3b_f x = (Example3b_g 1 : int) 
     and Example3b_g x = 
@@ -130,7 +130,7 @@ module Example4 =
     and Example4_f2 x = (Example4_g 1 : int) 
     and Example4_g x = x
 
-// Similar to Example4 but actually excercise 'f1' and 'f2' at multiple types within the recursive group
+// Similar to Example4 but actually exercise 'f1' and 'f2' at multiple types within the recursive group
 module Example4b = 
     let rec Example4b_f1 x = Example4b_g 1 
     and Example4b_f2 x = (Example4b_g 1 : int) 
@@ -154,7 +154,7 @@ module Example5 =
     r := [1]
 
 
-// Similar to Example5 but actually excercise 'f' at multiple types within the recursive group
+// Similar to Example5 but actually exercise 'f' at multiple types within the recursive group
 module Example5b = 
     let r = ref []
     let rec Example5b_f x = (Example5b_g r : int), r 

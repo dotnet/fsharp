@@ -294,7 +294,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         SolutionDir,
 
         /// <summary>
-        /// The extension of teh directory. This is the same as the $(SolutionExt) macro.
+        /// The extension of the directory. This is the same as the $(SolutionExt) macro.
         /// </summary>
         SolutionExt,
 

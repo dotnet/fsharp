@@ -709,7 +709,7 @@ type IlxClosureInfo =
       /// ILX view of the lambdas for the closures
       ilCloLambdas: IlxClosureLambdas
 
-      /// The free type parameters occuring in the type of the closure (and not just its body)
+      /// The free type parameters occurring in the type of the closure (and not just its body)
       /// This is used for local type functions, whose contract class must use these types
       ///    type Contract<'fv> =
       ///        abstract DirectInvoke: ty['fv]

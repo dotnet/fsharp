@@ -375,7 +375,7 @@ type internal FsiToolWindow() as this =
     /// Handle "Clear Pane". Clear input and all but the last ReadOnly line (probably the prompt).    
     let onClearPane (sender:obj) (args:EventArgs) =
         lock textLines (fun () ->        
-            // ReadOnly off, then upto the last line and then the input area, then ReadOnly on.
+            // ReadOnly off, then up to the last line and then the input area, then ReadOnly on.
             let span = textStream.ReadOnlyMarkerSpan
             textStream.ResetReadOnlyMarker()
             if span.iEndLine > 0 then

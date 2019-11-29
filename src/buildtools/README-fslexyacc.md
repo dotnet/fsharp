@@ -48,7 +48,7 @@ overly difficult given the declarative nature of `FsLex` tokenization.
 The use of a table-driven LALR(1) parser is more controversial: there is a general feeling that it would be great to
 somehow move on from FsYacc and do parsing some other way. However, it is not at all easy to do that and remain
 fully compatible.  For this reason it is unlikely we will remove the use of FsYacc any time soon. However incremental
-modifications to extract more information from the grammer may yield good results.
+modifications to extract more information from the grammar may yield good results.
 
 ## Why aren't FsLex and FsYacc just ingested into this repo if we depend on them (and even have an exact copy of them for build-from-source)?
 

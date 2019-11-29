@@ -448,7 +448,7 @@ namespace Microsoft.FSharp.Control
         /// thread, but also returns the execution as <c>System.Threading.Tasks.Task</c>
         /// </summary>
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.
-        /// You may prefer using this method if you want to achive a similar behviour to async await in C# as 
+        /// You may prefer using this method if you want to achieve a similar behviour to async await in C# as 
         /// async computation starts on the current thread with an ability to return a result.
         /// </remarks>
         /// <param name="computation">The asynchronous computation to execute.</param>

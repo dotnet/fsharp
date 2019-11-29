@@ -1,7 +1,7 @@
 open System
 open System.IO
 
-// this script is usefull for tests using a .bsl file (baseline) containing expected compiler output
+// this script is useful for tests using a .bsl file (baseline) containing expected compiler output
 // which is matched against .vserr or .err file aside once the test has run
 // the script replaces all the .bsl/.bslpp with either .err or .vserr
 

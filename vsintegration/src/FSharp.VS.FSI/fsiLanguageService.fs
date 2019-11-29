@@ -121,7 +121,7 @@ type internal FsiAuthoringScope(sessions:FsiSessions option,readOnlySpanGetter:u
           if Guids.enable_fsi_intellisense then
             let lines = view.GetBuffer()                   |> throwOnFailure1
             //NOTE:
-            //  There is an issue of how much preceeding text to grab for the intellisense.
+            //  There is an issue of how much preceding text to grab for the intellisense.
             //  Ideally, we want all text from the end of the last executed interaction.
             //  However, we do not have an interactive "scanner" yet.
             //------

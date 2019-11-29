@@ -654,7 +654,7 @@ type Miscellaneous() =
 [<TestFixture>]
 type Utilities() = 
     (*
-        Simulation of the code found in Xaml editor that we were crashing. The relevent code is pasted below.
+        Simulation of the code found in Xaml editor that we were crashing. The relevant code is pasted below.
         Note that they're assuming PKT is eight bytes. This need not be true and we don't enforce it from our
         side. We're just going to make sure to send an even number of characters (two per-byte).
         

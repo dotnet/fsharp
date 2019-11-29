@@ -33,7 +33,7 @@ type internal FSharpGoToDefinitionService
             gtd.FindDefinitionsForPeekTask(document, position, cancellationToken)
 
         /// Invoked with Go to Definition.
-        /// Try to navigate to the definiton of the symbol at the symbolRange in the originDocument
+        /// Try to navigate to the definition of the symbol at the symbolRange in the originDocument
         member __.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
             statusBar.Message(SR.LocatingSymbol())
             use __ = statusBar.Animate()

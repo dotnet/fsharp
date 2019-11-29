@@ -588,7 +588,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Creates an assembly refernce node from a project element.
+        /// Creates an assembly reference node from a project element.
         /// </summary>
         internal virtual AssemblyReferenceNode CreateAssemblyReferenceNode(ProjectElement element, BuildResult buildResult)
         {

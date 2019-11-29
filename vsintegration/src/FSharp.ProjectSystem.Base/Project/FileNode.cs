@@ -627,7 +627,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     this.RenameFileNode(oldName, newFilePath, targetContainer.ID);
                     OnInvalidateItems(oldParent);
                     // This is what othe project systems do; for the purposes of source control, the old file is removed, and a new file is added
-                    // (althought the old file stays on disk!)
+                    // (although the old file stays on disk!)
                     this.ProjectMgr.Tracker.OnItemRemoved(oldName, VSREMOVEFILEFLAGS.VSREMOVEFILEFLAGS_NoFlags);
                     this.ProjectMgr.Tracker.OnItemAdded(newFilePath, VSADDFILEFLAGS.VSADDFILEFLAGS_NoFlags);
                 }

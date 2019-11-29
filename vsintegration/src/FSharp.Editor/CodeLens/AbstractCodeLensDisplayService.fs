@@ -272,7 +272,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
                         ignore e
 #endif
             if not e.VerticalTranslation && e.NewViewState.ViewportHeight <> e.OldViewState.ViewportHeight then
-                self.RelayoutRequested.Enqueue() // Unfortunately zooming requires a relayout too, to ensure that no weird layout happens due to unkown reasons.
+                self.RelayoutRequested.Enqueue() // Unfortunately zooming requires a relayout too, to ensure that no weird layout happens due to unknown reasons.
             if self.RelayoutRequested.Count > 0 then
                 self.RelayoutRequested.Dequeue() |> ignore
                 for lineNumber in visibleLineNumbers do

@@ -100,7 +100,7 @@ let main argv = 0"""
                 cleanUp <- false
                 printfn "%s" output
                 printfn "%s" errors
-                raise (new Exception (sprintf "An error occured getting netcoreapp references: %A" e))
+                raise (new Exception (sprintf "An error occurred getting netcoreapp references: %A" e))
         finally
             if cleanUp then
                 try Directory.Delete(projectDirectory) with | _ -> ()

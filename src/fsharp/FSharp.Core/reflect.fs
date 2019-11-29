@@ -433,7 +433,7 @@ module internal Impl =
         //   Item1, Item2, ..., Item<maxTuple-1>, Rest
         // The PropertyInfo may not come back in order, so ensure ordering here.
 #if !NETSTANDARD
-        assert(maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
+        assert(maxTuple < 10) // Alphasort will only works for up to 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
 #endif
         let props = props |> Array.sortBy (fun p -> p.Name) // they are not always in alphabetic order
 #if !NETSTANDARD
@@ -455,7 +455,7 @@ module internal Impl =
         //   Item1, Item2, ..., Item<maxTuple-1>, Rest
         // The PropertyInfo may not come back in order, so ensure ordering here.
 #if !NETSTANDARD
-        assert(maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
+        assert(maxTuple < 10) // Alphasort will only works for up to 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
 #endif
         let fields = fields |> Array.sortBy (fun fi -> fi.Name) // they are not always in alphabetic order
 #if !NETSTANDARD

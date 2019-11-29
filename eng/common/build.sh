@@ -36,7 +36,7 @@ usage()
   echo "  --nodeReuse <value>      Sets nodereuse msbuild parameter ('true' or 'false')"
   echo "  --warnAsError <value>    Sets warnaserror msbuild parameter ('true' or 'false')"
   echo ""
-  echo "Command line arguments not listed above are passed thru to msbuild."
+  echo "Command line arguments not listed above are passed through to msbuild."
   echo "Arguments can also be passed in with a single hyphen."
 }
 

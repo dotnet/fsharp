@@ -96,7 +96,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         let ParseEnum<'a> (s:string) = 
             Enum.Parse(typeof<'a>, s, true (*ignorecase*)) |> unbox<'a>
 
-        /// A helper to get ther service 'service at interface 'intf from the given service provider
+        /// A helper to get the service 'service at interface 'intf from the given service provider
         let TryGetService2<'service, 'intf>(serviceProvider: System.IServiceProvider) : 'intf option = 
             match serviceProvider.GetService(typeof<'service>) with
             | :? ('intf) as v -> Some(v)

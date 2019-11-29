@@ -12,7 +12,7 @@
 #MT402040,OS64BIT	test\foo\bar (...) -- failed
 #OS32BIT		test\foo\bar (...) -- failed
 
-## A bang preceeding a tag means its negation
+## A bang preceding a tag means its negation
 ## The following test will be excluded when running on a machine where NetFx3.5 is not installed
 #!NETFX35	test\foo\bar (...) -- failed
 

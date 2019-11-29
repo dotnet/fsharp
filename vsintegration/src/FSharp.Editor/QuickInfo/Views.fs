@@ -79,7 +79,7 @@ module internal QuickInfoViewProvider =
                     currentContainerItems.Add(navigableTextRun :> obj)
                 | _ when item.Tag = LineBreak ->
                     flushRuns()
-                    // preserve succesive linebreaks
+                    // preserve successive linebreaks
                     if currentContainerItems.Count = 0 then
                         runsCollection.Add(ClassifiedTextRun(PredefinedClassificationTypeNames.Other, System.String.Empty))
                         flushRuns()

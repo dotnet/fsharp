@@ -503,7 +503,7 @@ type AsyncModule() =
                     do! Async.FromContinuations(fun (k,_,_) -> k())
                     do! f (n-1) 
                 }
-        // 5000 is big enough that does-not-stackoverflow means we are tailcalling thru FromContinuations
+        // 5000 is big enough that does-not-stackoverflow means we are tailcalling through FromContinuations
         f 5000 |> Async.StartImmediate 
         Assert.AreEqual(origTid, !finalTid)
         Assert.AreEqual(5000, !cnt)

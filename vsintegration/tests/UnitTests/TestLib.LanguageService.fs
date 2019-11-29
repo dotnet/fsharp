@@ -145,7 +145,7 @@ type internal Helper =
         let s : string = String.Join("\n",s)
         AssertContainsInOrder(s,cs)
 
-        // Like AssertMatches, but runs for every prefix of regex up to each occurence of 'c'
+        // Like AssertMatches, but runs for every prefix of regex up to each occurrence of 'c'
     // Is helpful so that, if long regex match fails, you see first prefix that fails
     static member AssertMatchesRegex (c : char) (regexStr : string) (s:string) =
         let mutable i = regexStr.IndexOf(c, 0)

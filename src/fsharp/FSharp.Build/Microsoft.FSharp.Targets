@@ -355,7 +355,7 @@ this file.
     MsBuild does some optimisations around CompileInputs
     The project system erroneously uses this to determine whether 
     to notify language services of CommandLine Information changes.
-    C# accidently changes it's file lists every build ... and so 
+    C# accidentally changes its file lists every build ... and so 
     gets the notifications.
     F# doesn't ... so we don't get CL notifications following rebuilds
     or build.

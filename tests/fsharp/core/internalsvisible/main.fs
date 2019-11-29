@@ -16,7 +16,7 @@ printf   "AInternalClass.InternalProperty = %2d\n" LibraryCS.AInternalClass.Inte
 printf   "APrivateClass.InternalProperty  = %2d\n" LibraryCS.APrivateClass.InternalProperty   // for types, private *IS* visible (private is internal)
 //printf "APrivateClass.PrivateProperty   = %2d\n" LibraryCS.APrivateClass.PrivateProperty    // private members are not visible via InternalsVisibleTo
 
-//printf "privateF  2 = %d\n"   (Library.M.privateF  2) // inaccessable
+//printf "privateF  2 = %d\n"   (Library.M.privateF  2) // inaccessible
 
 module internal Repro1332 = 
   let c = LibraryCS.Class1()

@@ -14,7 +14,7 @@ type TestAttribute(x:string) =
 let foo(a) : [<TestAttribute("Attribute on return type!")>] int
    = a + 5
 
-// The rest of the code is a mere verification that the compiler thru reflection
+// The rest of the code is a mere verification that the compiler through reflection
 let executingAssembly = System.Reflection.Assembly.GetExecutingAssembly()
 
 // Method 'foo' is wrapped into a type called 'ReturnType01'

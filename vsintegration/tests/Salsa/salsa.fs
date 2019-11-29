@@ -1165,7 +1165,7 @@ module internal Salsa =
                     System.Diagnostics.Debug.Assert(colIndex > 0, "hm, how did we invoke at start of line?")
                     let colIndex = colIndex - 1 // cursor is just right of the char we want to inspect
                     if lines.[lineIndex].[colIndex] <> '.' then
-                        // there could legally be whitespace or comments to the left, with a '.' left of that, and we have unit tests that do this, so accomodate that case as well, 
+                        // there could legally be whitespace or comments to the left, with a '.' left of that, and we have unit tests that do this, so accommodate that case as well, 
                         // at least in the approximate way unit tests do it
                         if lines.[lineIndex].Substring(0,colIndex+1).EndsWith("*)") && lines.[lineIndex].Contains(".(*") then
                             // ok, this is probably fine, have cases like "System.(*marker*)"

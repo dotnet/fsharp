@@ -7,7 +7,7 @@ using System.Globalization;
 namespace Microsoft.VisualStudio.Shell
 {
     /// <summary>
-    /// This attribute adds a commandline option to devenv for a specfic package 
+    /// This attribute adds a commandline option to devenv for a specific package 
     /// type. 
     /// For Example:
     ///   [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\9.0\AppCommandLine\MyAppCommand

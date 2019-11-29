@@ -2,7 +2,7 @@
 // Regression test for FSHARP1.0:966
 // Verify that we can have properties that takes tuples for arguments
 // Note: the non-curried syntax ((x:decimal, y:decimal)) is expected
-// Run thru fsi
+// Run through fsi
 //<Expects status="success">  type x =</Expects>
 //<Expects status="success">    class</Expects>
 //<Expects status="success">      new : unit -> x</Expects>

@@ -281,7 +281,7 @@ module internal VsOpsUtils =
 
         let compList = AutoCompleteAtCursor(file)
        
-        // Now restore the origional file contents
+        // Now restore the original file contents
         ReplaceFileInMemory file orgFileContents
         
         compList
