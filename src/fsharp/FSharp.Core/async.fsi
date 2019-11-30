@@ -53,7 +53,7 @@ namespace Microsoft.FSharp.Control
         /// <returns>The result of the computation.</returns>
         static member RunSynchronously : computation:Async<'T> * ?timeout : int * ?cancellationToken:CancellationToken-> 'T
         
-        /// <summary>Starts the asynchronous computation in the thread pool. Do not await its result.</summary>
+        /// <summary>Starts the asynchronous computation in the current synchronization context or fallback to the thread pool. Do not await its result.</summary>
         ///
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.</remarks>
         /// <param name="computation">The computation to run asynchronously.</param>
@@ -61,7 +61,15 @@ namespace Microsoft.FSharp.Control
         /// If one is not supplied, the default cancellation token is used.</param>
         static member Start : computation:Async<unit> * ?cancellationToken:CancellationToken -> unit
 
-        /// <summary>Executes a computation in the thread pool.</summary>
+        /// <summary>Starts the asynchronous computation in the thread pool. Do not await its result.</summary>
+        ///
+        /// <remarks>If no cancellation token is provided then the default cancellation token is used.</remarks>
+        /// <param name="computation">The computation to run asynchronously.</param>
+        /// <param name="cancellationToken">The cancellation token to be associated with the computation.
+        /// If one is not supplied, the default cancellation token is used.</param>
+        static member StartInThreadPool : computation:Async<unit> * ?cancellationToken:CancellationToken -> unit
+       
+        /// <summary>Executes a computation in the current synchronization context or fallback to the thread pool.</summary>
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.</remarks>
         /// <returns>A <c>System.Threading.Tasks.Task</c> that will be completed
         /// in the corresponding state once the computation terminates (produces the result, throws exception or gets canceled)</returns>

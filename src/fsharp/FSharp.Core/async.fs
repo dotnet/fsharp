@@ -819,9 +819,9 @@ namespace Microsoft.FSharp.Control
                 System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
 
         [<DebuggerHidden>]
-        let QueueAsync cancellationToken cont econt ccont computation =
+        let PostOrQueueAsync syncCtxt cancellationToken cont econt ccont computation =
             let trampolineHolder = new TrampolineHolder()
-            trampolineHolder.QueueWorkItemWithTrampoline (fun () ->
+            trampolineHolder.PostOrQueueWithTrampoline syncCtxt (fun () ->
                 let ctxt = AsyncActivation.Create cancellationToken trampolineHolder cont econt ccont
                 computation.Invoke ctxt)
 
@@ -838,7 +838,8 @@ namespace Microsoft.FSharp.Control
                     subSource.Token, Some subSource
 
             use resultCell = new ResultCell<AsyncResult<_>>()
-            QueueAsync
+            PostOrQueueAsync
+                    null
                     token
                     (fun res -> resultCell.RegisterResult(AsyncResult.Ok res, reuseThread=true))
                     (fun edi -> resultCell.RegisterResult(AsyncResult.Error edi, reuseThread=true))
@@ -901,7 +902,8 @@ namespace Microsoft.FSharp.Control
 
         [<DebuggerHidden>]
         let Start cancellationToken (computation:Async<unit>) =
-            QueueAsync
+            PostOrQueueAsync
+                SynchronizationContext.Current
                 cancellationToken
                 (fun () -> fake())   // nothing to do on success
                 (fun edi -> edi.ThrowAny())   // raise exception in child
@@ -909,6 +911,17 @@ namespace Microsoft.FSharp.Control
                 computation
             |> unfake
 
+        [<DebuggerHidden>]
+        let StartInThreadPool cancellationToken (computation:Async<unit>) =
+            PostOrQueueAsync
+                null
+                cancellationToken
+                (fun () -> fake())   // nothing to do on success
+                (fun edi -> edi.ThrowAny())   // raise exception in child
+                (fun _ -> fake())    // ignore cancellation in child
+                computation
+            |> unfake
+        
         [<DebuggerHidden>]
         let StartWithContinuations cancellationToken (computation:Async<'T>) cont econt ccont =
             let trampolineHolder = new TrampolineHolder()
@@ -926,7 +939,8 @@ namespace Microsoft.FSharp.Control
             //      a) cancellation signal should always propagate to the computation
             //      b) when the task IsCompleted -> nothing is running anymore
             let task = tcs.Task
-            QueueAsync
+            PostOrQueueAsync
+                SynchronizationContext.Current
                 cancellationToken
                 (fun r -> tcs.SetResult r |> fake)
                 (fun edi -> tcs.SetException edi.SourceException |> fake)
@@ -1156,6 +1170,10 @@ namespace Microsoft.FSharp.Control
         static member Start (computation, ?cancellationToken) =
             let cancellationToken = defaultArg cancellationToken defaultCancellationTokenSource.Token
             AsyncPrimitives.Start cancellationToken computation
+            
+        static member StartInThreadPool (computation, ?cancellationToken) =
+            let cancellationToken = defaultArg cancellationToken defaultCancellationTokenSource.Token
+            AsyncPrimitives.StartInThreadPool cancellationToken computation
 
         static member StartAsTask (computation, ?taskCreationOptions, ?cancellationToken)=
             let cancellationToken = defaultArg cancellationToken defaultCancellationTokenSource.Token
@@ -1238,7 +1256,8 @@ namespace Microsoft.FSharp.Control
                     match maxDegreeOfParallelism with
                     | None ->
                         tasks |> Array.iteri (fun i p ->
-                            QueueAsync
+                            PostOrQueueAsync
+                                    SynchronizationContext.Current
                                     innerCTS.Token
                                     // on success, record the result
                                     (fun res -> recordSuccess i res)
@@ -1269,7 +1288,8 @@ namespace Microsoft.FSharp.Control
                             fake()
                         )
                         for x = 1 to maxDegreeOfParallelism do
-                            QueueAsync
+                            PostOrQueueAsync
+                                SynchronizationContext.Current
                                 innerCTS.Token
                                 (fun _ -> fake())
                                 (fun edi -> recordFailure (Choice1Of2 edi))
@@ -1324,7 +1344,7 @@ namespace Microsoft.FSharp.Control
                                 fake()
 
                         for c in computations do
-                            QueueAsync innerCts.Token scont econt ccont c |> unfake
+                            PostOrQueueAsync SynchronizationContext.Current innerCts.Token scont econt ccont c |> unfake
 
                         fake()))
 
@@ -1638,7 +1658,8 @@ namespace Microsoft.FSharp.Control
                                             | null -> ()
                                             | otherwise -> otherwise.Cancel()),
                                         null)
-                do QueueAsync
+                do PostOrQueueAsync
+                       SynchronizationContext.Current
                        innerCTS.Token
                        // since innerCTS is not ever Disposed, can call reg.Dispose() without a safety Latch
                        (fun res -> ctsRef := null; reg.Dispose(); resultCell.RegisterResult (Ok res, reuseThread=true))
