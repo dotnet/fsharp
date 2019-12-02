@@ -38,6 +38,8 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
 
     member __.AssemblyReferenceAdded = fsi.AssemblyReferenceAdded
 
+    member __.ValueBound = fsi.ValueBound
+
     member __.ProvideInput = stdin.ProvideInput
 
     member __.OutputProduced = outputProduced.Publish
@@ -66,6 +68,8 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
             let! declarationListInfos = checkResults.GetDeclarationListInfo(Some parseResults, line, lineText, partialName)
             return declarationListInfos.Items
         }
+
+    member __.GetIdentifierValueType(identifier: string) = fsi.GetIdentifierValueType identifier
 
     interface IDisposable with
         member __.Dispose() =
