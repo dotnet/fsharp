@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="new">Operation could not be completed due to earlier error</target>
+        <target state="translated">由于早期错误，无法完成操作</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <target state="translated">操作失败。错误文本已在错误流中打印。要返回相应的 FSharpErrorInfo，请使用 EvalInteractionNonThrowing、EvalScriptNonThrowing 或 EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">启动 F# 交互窗口进程时发生问题。此情况可能是由一个已知问题导致的，即某些 Windows 系统上的后台进程控制台不支持启用了 Unicode 的应用程序。请尝试选择“工具”-&gt;“选项”-&gt;“Visual Studio 的 F# 交互窗口”，然后输入“--fsi-server-no-unicode”。</target>
+        <target state="translated">启动 F# 交互进程时出现问题。这可能是由于某些 Windows 系统上启用 Unicode 的应用程序的后台进程控制台支持存在已知问题。请尝试选择“工具”-&gt;“选项”-&gt; "F# Interactive for Visual Studio"，然后输入 "--fsi-server-no-unicode"。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -219,32 +219,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; 已引用“{0}”</target>
+        <target state="translated">-&gt; 引用的“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; 已引用“{0}”(文件可能由 F# 交互窗口进程锁定)</target>
+        <target state="translated">--&gt; 引用的“{0}”(F# 交互进程可能已锁定文件)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">-&gt;引用“{0}”(具有不同时间戳的程序集已经从该位置引用并重置 fsi 以加载更新的程序集)</target>
+        <target state="translated">--&gt; 引用的“{0}”(已从此位置引用具有不同时间戳的程序集，请重置 fsi 以加载更新后的程序集)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; 已将“{0}”添加到库包含路径</target>
+        <target state="translated">--&gt; 已将“{0}”添加到库包括路径</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; 现在已启用计时</target>
+        <target state="translated">-&gt; 计时现在打开</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; 现在已关闭计时</target>
+        <target state="translated">-&gt; 计时现已关闭</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">

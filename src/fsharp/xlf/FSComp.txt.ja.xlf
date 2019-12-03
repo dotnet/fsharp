@@ -7,6 +7,21 @@
         <target state="translated">F# {1} のための {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="fromEndSlicingRequiresVFive">
+        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
+        <target state="new">From the end slicing with requires language version 5.0, use /langversion:preview.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="translated">ストリームは null リソースでは始まらず、'RES' 形式でもありません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="translated">オフセット {0} で始まるリソース ヘッダーの形式に誤りがあります。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">言語バージョンで許可された値を表示し、'最新' や 'プレビュー' などの言語バージョンを指定する</target>
@@ -22,19 +37,14 @@
         <target state="translated">--langversion の値 '{0}' が認識されません。完全なリストについては、--langversion:? を使用してください</target>
         <note />
       </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">メンバー定義に予期しない記号 '.' があります。'with'、'=' またはその他のトークンが必要です。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nativeResourceFormatError">
-        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
-        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nativeResourceHeaderMalformed">
-        <source>Resource header beginning at offset {0} is malformed.</source>
-        <target state="new">Resource header beginning at offset {0} is malformed.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
@@ -49,7 +59,7 @@
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
-        <target state="new">Attributes cannot be applied to type extensions.</target>
+        <target state="translated">属性を型拡張に適用することはできません。</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -7220,6 +7230,26 @@
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
         <target state="translated">無効なパス マップです。マッピングはコンマ区切りの 'path=sourcePath' 形式である必要があります</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsCompilerTool">
+        <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
+        <target state="new">Reference an assembly or directory containing a design time tool (Short form: -t)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerUnknown">
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerError">
+        <source>{0}</source>
+        <target state="new">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotLoadDependencyManagerExtension">
+        <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
+        <target state="new">The dependency manager extension {0} could not be loaded. Message: {1}</target>
         <note />
       </trans-unit>
     </body>
