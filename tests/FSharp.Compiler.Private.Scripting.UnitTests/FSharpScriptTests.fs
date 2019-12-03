@@ -168,15 +168,3 @@ let x =
 "
         script.Eval(code) |> ignoreValue
         Assert.False(foundInner)
-
-    [<Test>]
-    member _.``Retrieve value from runtime``() =
-        use script = new FSharpScript()
-        let code = @"
-let x = 1
-let y = 2
-"
-        script.Eval(code) |> ignoreValue
-        let (value, typ) = (script.GetIdentifierValueType "x").Value
-        Assert.AreEqual(typeof<int>, typ)
-        Assert.AreEqual(1, value :?> int)

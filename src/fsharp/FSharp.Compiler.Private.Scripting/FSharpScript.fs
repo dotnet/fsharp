@@ -69,8 +69,6 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
             return declarationListInfos.Items
         }
 
-    member __.GetIdentifierValueType(identifier: string) = fsi.GetIdentifierValueType identifier
-
     interface IDisposable with
         member __.Dispose() =
             if captureInput then

@@ -950,6 +950,7 @@ type internal FsiDynamicCompiler
     let assemblyName = "FSI-ASSEMBLY"
 
     let assemblyReferenceAddedEvent = Control.Event<string>()
+    let valueBoundEvent = Control.Event<_>()
 
     let mutable fragmentId = 0
     let mutable prevIt : ValRef option = None
@@ -1155,6 +1156,10 @@ type internal FsiDynamicCompiler
                             if v.CompiledName = "it" then
                                 itValue <- fsiValueOpt
 
+                            match fsiValueOpt with
+                            | Some fsiValue -> valueBoundEvent.Trigger(fsiValue.ReflectionValue, fsiValue.ReflectionType, v.CompiledName)
+                            | None -> ()
+
                             let symbol = FSharpSymbol.Create(cenv, v.Item)
                             let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
                             fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
@@ -1172,11 +1177,6 @@ type internal FsiDynamicCompiler
         with _ -> ()
 
         newState, Completed itValue
-
-    member __.GetIdentifierValueType(istate, identifier) =
-        match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem identifier with
-        | NameResolution.Item.Value vref -> istate.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext istate.emEnv, vref.Deref)
-        | _ -> None
 
     /// Evaluate the given expression and produce a new interactive state.
     member fsiDynamicCompiler.EvalParsedExpression (ctok, errorLogger: ErrorLogger, istate, expr: SynExpr) =
@@ -1335,6 +1335,8 @@ type internal FsiDynamicCompiler
         valuePrinter.FormatValue(obj, objTy)
 
     member __.AssemblyReferenceAdded = assemblyReferenceAddedEvent.Publish
+
+    member __.ValueBound = valueBoundEvent.Publish
 
 //----------------------------------------------------------------------------
 // ctrl-c handling
@@ -1708,8 +1710,6 @@ type internal FsiInteractionProcessor
 
     let referencedAssemblies = Dictionary<string, DateTime>()
 
-    let valueBoundEvent = Control.Event<_>()
-
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
@@ -1790,17 +1790,7 @@ type internal FsiInteractionProcessor
             | IDefns ([  SynModuleDecl.DoExpr(_,expr,_)],_) ->
                 fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
             | IDefns (defs,_) -> 
-                let istate, status = fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
-                defs
-                |> List.iter (fun d ->
-                                match d with
-                                | SynModuleDecl.Let (_, SynBinding.Binding(_, _, _, _, _, _, SynValData(_, _, Some ident), _, _, _, _, _) :: _, _)
-                                | SynModuleDecl.Let (_, SynBinding.Binding(_, _, _, _, _, _, _, SynPat.Named(_, ident, _, _, _), _, _, _, _) :: _, _) ->
-                                    match fsiDynamicCompiler.GetIdentifierValueType(istate, ident.idText) with
-                                    | Some (value, typ) -> valueBoundEvent.Trigger (value, typ, ident.idText)
-                                    | _ -> ()
-                                | _ -> ())
-                istate, status
+                fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
@@ -2239,10 +2229,6 @@ type internal FsiInteractionProcessor
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
-    member __.GetIdentifierValueType identifier = fsiDynamicCompiler.GetIdentifierValueType(currState, identifier)
-
-    member __.ValueBound = valueBoundEvent.Publish
-
 //----------------------------------------------------------------------------
 // Server mode:
 //----------------------------------------------------------------------------
@@ -2648,14 +2634,11 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         |> commitResultNonThrowing errorOptions scriptPath errorLogger
         |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
 
-    /// Gets the value and runtime type bound to the specified identifier text.
-    member __.GetIdentifierValueType identifier = fsiInteractionProcessor.GetIdentifierValueType identifier
-
     /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
     member __.AssemblyReferenceAdded = fsiDynamicCompiler.AssemblyReferenceAdded
 
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
-    member __.ValueBound = fsiInteractionProcessor.ValueBound
+    member __.ValueBound = fsiDynamicCompiler.ValueBound
  
     /// Performs these steps:
     ///    - Load the dummy interaction, if any

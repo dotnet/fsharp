@@ -234,9 +234,6 @@ type FsiEvaluationSession =
     /// A host calls this to report an unhandled exception in a standard way, e.g. an exception on the GUI thread gets printed to stderr
     member ReportUnhandledException : exn: exn -> unit
 
-    /// Gets the value and runtime type bound to the specified identifier text.
-    member GetIdentifierValueType : string -> (obj * System.Type) option
-
     /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
     member AssemblyReferenceAdded : IEvent<string>
 
