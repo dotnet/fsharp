@@ -38,6 +38,8 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
 
     member __.AssemblyReferenceAdded = fsi.AssemblyReferenceAdded
 
+    member __.ValueBound = fsi.ValueBound
+
     member __.ProvideInput = stdin.ProvideInput
 
     member __.OutputProduced = outputProduced.Publish
