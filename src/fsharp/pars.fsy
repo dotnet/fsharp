@@ -788,7 +788,7 @@ optLiteralValueSpfn:
   | EQUALS declExpr 
       { Some($2) }
 
-  | EQUALS OBLOCKBEGIN declExpr oblockend 
+  | EQUALS OBLOCKBEGIN declExpr oblockend opt_ODECLEND
       { Some($3) }
   
 
