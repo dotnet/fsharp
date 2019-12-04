@@ -254,6 +254,9 @@ type FsiEvaluationSession =
     /// Event fires at the failure to adding a dependency via the dependency manager.
     member DependencyFailed: IEvent<string * string>
 
+    /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
+    member ValueBound : IEvent<obj * System.Type * string>
+
     /// Load the dummy interaction, load the initial files, and,
     /// if interacting, start the background thread to read the standard input.
     ///

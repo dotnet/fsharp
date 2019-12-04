@@ -957,6 +957,7 @@ type internal FsiDynamicCompiler
     let assemblyName = "FSI-ASSEMBLY"
 
     let assemblyReferenceAddedEvent = Control.Event<string>()
+    let valueBoundEvent = Control.Event<_>()
     let dependencyAddingEvent = Control.Event<string * string>()
     let dependencyAddedEvent = Control.Event<string * string>()
     let dependencyFailedEvent = Control.Event<string * string>()
@@ -1169,6 +1170,10 @@ type internal FsiDynamicCompiler
 
                             if v.CompiledName = "it" then
                                 itValue <- fsiValueOpt
+
+                            match fsiValueOpt with
+                            | Some fsiValue -> valueBoundEvent.Trigger(fsiValue.ReflectionValue, fsiValue.ReflectionType, v.CompiledName)
+                            | None -> ()
 
                             let symbol = FSharpSymbol.Create(cenv, v.Item)
                             let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
@@ -1398,6 +1403,8 @@ type internal FsiDynamicCompiler
         valuePrinter.FormatValue(obj, objTy)
 
     member __.AssemblyReferenceAdded = assemblyReferenceAddedEvent.Publish
+
+    member __.ValueBound = valueBoundEvent.Publish
 
     member __.DependencyAdding = dependencyAddingEvent.Publish
 
@@ -2857,6 +2864,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     [<CLIEvent>]
     /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
     member __.AssemblyReferenceAdded = fsiDynamicCompiler.AssemblyReferenceAdded
+
+    /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
+    member __.ValueBound = fsiDynamicCompiler.ValueBound
 
     [<CLIEvent>]
     /// Event fires every time a path is added to the include search list, e.g., via `#I`.
