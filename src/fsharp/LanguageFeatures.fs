@@ -28,6 +28,7 @@ type LanguageFeature =
     | OpenStaticClasses = 8
     | PackageManagement = 9
     | FromEndSlicing = 11
+    | FixedIndexSlice3d4d = 12
     | LanguageVersion46 = 0x10046
     | LanguageVersion47 = 0x10047
     | LanguageVersion50 = 0x10050
@@ -65,6 +66,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.PackageManagement, previewVersion
+            LanguageFeature.FixedIndexSlice3d4d, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
         ]
 
