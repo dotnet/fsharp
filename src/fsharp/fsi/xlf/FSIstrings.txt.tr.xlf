@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="new">Operation could not be completed due to earlier error</target>
+        <target state="translated">Önceki hata nedeniyle işlem tamamlanamadı</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <target state="translated">İşlem başarısız oldu. Hata metni hata akışında yazdırıldı. İlgili FSharpErrorInfo bilgilerini döndürmek için EvalInteractionNonThrowing, EvalScriptNonThrowing veya EvalExpressionNonThrowing kullanın</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">F# Etkileşimli işlemi başlatılırken bir sorun oluştu. Bu durum, bazı Windows sistemlerindeki Unicode kullanan uygulamalara yönelik arka plan işlemi konsol desteğinde bilinen bir soruna bağlı olabilir. Visual Studio için Araçlar-&gt;Seçenekler-&gt;F# Etkileşimli'yi seçmeyi deneyin ve '--fsi-server-no-unicode' girin.</target>
+        <target state="translated">F# Interactive işlemi başlatılırken br sorun oluştu. Bu, bazı Windows sistemlerinde Unicode etkin uygulamalar için arka planda işleme konsol desteğiyle ilgili bilinen bir sorundan kaynaklanıyor olabilir. Araçlar-&gt;Seçenekler-&gt;Visual Studio için F# Interactive seçeneğini belirleyip '--fsi-server-no-unicode' komutunu girmeyi deneyin.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -219,32 +219,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; '{0}' öğesine başvuruldu</target>
+        <target state="translated">--&gt; Başvurulan '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; '{0}' öğesine başvuruldu (dosya F# Etkileşimli işlemi tarafından kilitlenmiş olabilir)</target>
+        <target state="translated">--&gt; Başvurulan '{0}' (dosya F# Interactive işlemi tarafından kilitlenmiş olabilir)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; Başvurulan '{0}' (farklı bir zaman damgası olan bir bütünleştirilmiş koda bu konumdan zaten başvuruldu; güncelleştirilen bütünleştirilmiş kodu yüklemek için fsi'yi sıfırlayın)</target>
+        <target state="translated">--&gt; Başvurulan '{0}' (bu konumdan farklı bir zaman damgasına sahip bir derlemeye zaten başvurulmuş, güncelleştirilmiş derlemeyi yüklemek için fsi'yi sıfırlayın)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Kitaplık ekleme yoluna '{0}' eklendi</target>
+        <target state="translated">--&gt; '{0}', kitaplık ekleme yoluna eklendi</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; Zamanlama şimdi açık</target>
+        <target state="translated">--&gt; Zamanlama açıldı</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; Zamanlama şimdi kapalı</target>
+        <target state="translated">--&gt; Zamanlama kapatıldı</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
