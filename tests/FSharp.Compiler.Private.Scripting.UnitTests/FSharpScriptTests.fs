@@ -122,3 +122,49 @@ type InteractiveTests() =
         Assert.True(wasCancelled)
         Assert.LessOrEqual(sw.ElapsedMilliseconds, sleepTime)
         Assert.AreEqual(None, result)
+
+    [<Test>]
+    member _.``Values bound at the root trigger an event``() =
+        let mutable foundX = false
+        let mutable foundY = false
+        let mutable foundCount = 0
+        use script = new FSharpScript()
+        script.ValueBound
+        |> Event.add (fun (value, typ, name) ->
+            foundX <- foundX || (name = "x" && typ = typeof<int> && value :?> int = 1)
+            foundY <- foundY || (name = "y" && typ = typeof<int> && value :?> int = 2)
+            foundCount <- foundCount + 1)
+        let code = @"
+let x = 1
+let y = 2
+"
+        script.Eval(code) |> ignoreValue
+        Assert.True(foundX)
+        Assert.True(foundY)
+        Assert.AreEqual(2, foundCount)
+
+    [<Test>]
+    member _.``Values re-bound trigger an event``() =
+        let mutable foundXCount = 0
+        use script = new FSharpScript()
+        script.ValueBound
+        |> Event.add (fun (_value, typ, name) ->
+            if name = "x" && typ = typeof<int> then foundXCount <- foundXCount + 1)
+        script.Eval("let x = 1") |> ignoreValue
+        script.Eval("let x = 2") |> ignoreValue
+        Assert.AreEqual(2, foundXCount)
+
+    [<Test>]
+    member _.``Nested let bindings don't trigger event``() =
+        let mutable foundInner = false
+        use script = new FSharpScript()
+        script.ValueBound
+        |> Event.add (fun (_value, _typ, name) ->
+            foundInner <- foundInner || name = "inner")
+        let code = @"
+let x =
+    let inner = 1
+    ()
+"
+        script.Eval(code) |> ignoreValue
+        Assert.False(foundInner)
