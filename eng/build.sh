@@ -239,8 +239,8 @@ function BuildSolution {
       }
 
     mkdir -p "$bootstrap_dir"
-    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fslex
-    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsyacc
+    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp3.0/publish $bootstrap_dir/fslex
+    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp3.0/publish $bootstrap_dir/fsyacc
   fi
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     MSBuild "$repo_root/proto.proj" \
@@ -252,7 +252,7 @@ function BuildSolution {
         ExitWithExitCode $exit_code
       }
 
-    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsc
+    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp3.0/publish $bootstrap_dir/fsc
   fi
 
   # do real build
@@ -280,11 +280,6 @@ function BuildSolution {
 
 InitializeDotNetCli $restore
 
-# enable us to build netcoreapp2.1 binaries
-if [[ "$source_build" != true ]]; then
-  InstallDotNetSdk $_InitializeDotNetCli 2.1.503
-fi
-
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
@@ -292,6 +287,7 @@ if [[ "$test_core_clr" == true ]]; then
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.LanguageServer.UnitTests/FSharp.Compiler.LanguageServer.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.DependencyManager.UnitTests/FSharp.DependencyManager.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
 fi

@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="new">Operation could not be completed due to earlier error</target>
+        <target state="translated">Impossible d'exécuter l'opération en raison d'une erreur antérieure</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <target state="translated">L'opération a échoué. Le texte d'erreur a été imprimé dans le flux d'erreurs. Pour retourner le FSharpErrorInfo correspondant, utiliser EvalInteractionNonThrowing, EvalScriptNonThrowing ou EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Un problème s'est produit lors du démarrage du processus F# Interactive. Cela peut être dû à un problème connu lié à la prise en charge par la console des processus en arrière-plan pour les applications Unicode sur certains systèmes Windows. Essayez de sélectionner Outils-&gt;Options-&gt;F# Interactive pour Visual Studio, puis entrez '--fsi-server-no-unicode'.</target>
+        <target state="translated">Un problème s'est produit au démarrage du processus F# Interactive. Il s'agit peut-être d'un problème connu avec la prise en charge de la console de processus d'arrière-plan pour les applications Unicode sur certains systèmes Windows. Essayez de sélectionner Outils-&gt;Options-&gt;F# Interactive pour Visual Studio et d'entrer '--fsi-server-no-unicode'.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -219,22 +219,22 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; Référencement de '{0}'</target>
+        <target state="translated">--&gt; '{0}' référencé</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; Référencement de '{0}' (le fichier est peut-être verrouillé par le processus F# Interactive)</target>
+        <target state="translated">--&gt; '{0}' référencé (le fichier est peut-être verrouillé par le processus F# Interactive)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; Référencement de '{0}' (un assembly avec un horodatage différent a déjà été référencé à partir de cet emplacement, réinitialisez fsi pour charger l'assembly mis à jour)</target>
+        <target state="translated">--&gt; '{0}' référencé (un assembly avec un horodatage différent a déjà été référencé à cet emplacement, réinitialiser fsi pour charger l'assembly mis à jour)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Ajout de '{0}' au chemin d'accès Include de la bibliothèque</target>
+        <target state="translated">--&gt; '{0}' ajouté au chemin d'inclusion de bibliothèque</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
