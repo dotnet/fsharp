@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="new">Operation could not be completed due to earlier error</target>
+        <target state="translated">Операция не может быть завершена из-за предыдущей ошибки</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <target state="translated">Не удалось выполнить операцию. Текст ошибки был выведен в потоке ошибок. Чтобы вернуть соответствующие сведения FSharpErrorInfo, используйте EvalInteractionNonThrowing, EvalScriptNonThrowing или EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Возникла проблема при запуске процесса F# Interactive. Это может быть вызвано известной проблемой с поддержкой консоли фонового процесса для приложений с поддержкой Юникода в некоторых системах Windows. Попробуйте выбрать "Сервис" -&gt; "Параметры" -&gt; "F# Interactive для Visual Studio" и ввести "--fsi-server-no-unicode".</target>
+        <target state="translated">Возникла проблема при запуске процесса F# Interactive. Это может быть связано с известной проблемой с поддержкой консоли в фоновых процессах для приложений с поддержкой Unicode на некоторых системах Windows. Выберите "Инструменты"-&gt;"Параметры"-&gt;"F# Interactive" для Visual Studio и введите '--fsi-server-no-unicode'.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -219,32 +219,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; Задана ссылка на "{0}"</target>
+        <target state="translated">--&gt; Добавлена ссылка на "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; Задана ссылка на "{0}" (возможно, файл заблокирован процессом F# Interactive)</target>
+        <target state="translated">--&gt; Добавлена ссылка на "{0}" (файл может быть заблокирован процессом F# Interactive)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; "{0}" с заданной ссылкой (из этого расположения уже задана ссылка на сборку с другой меткой времени, выполните сброс fsi, чтобы загрузить обновленную сборку)</target>
+        <target state="translated">--&gt; Добавлена ссылка на "{0}" (из этого расположения уже указана ссылка на сборку с другой временной отметкой; чтобы загрузить обновленную сборку, сбросьте fsi)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Выполнено добавление "{0}" по пути включения в библиотеку</target>
+        <target state="translated">--&gt; В путь включения библиотеки добавлен "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; Таймер включен</target>
+        <target state="translated">--&gt; Синхронизация включена</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; Таймер отключен</target>
+        <target state="translated">--&gt; Синхронизация отключена</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
