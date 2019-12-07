@@ -27,10 +27,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
-open FSharp.NativeInterop
 open System.Reflection
-
-#nowarn "9"
 
 let checking = false  
 let logging = false
