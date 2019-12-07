@@ -3876,28 +3876,23 @@ let createByteFileChunk opts fileName chunk =
         ByteFile(fileName, bytes) :> BinaryFile
 
 let createMemoryMapFile fileName = 
-    let mmf, stream = 
+    let mmf, accessor, length = 
         let fileStream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)
-        let mmf = MemoryMappedFile.CreateFromFile(fileStream, null, fileStream.Length, MemoryMappedFileAccess.Read, HandleInheritability.None, leaveOpen=false)
-        mmf, mmf.CreateViewStream(0L, fileStream.Length, MemoryMappedFileAccess.Read)
-    let safeHandle = stream.SafeMemoryMappedViewHandle
-    let addr = 
-        let mutable addr = Unchecked.defaultof<_>
-        safeHandle.AcquirePointer &addr
-        addr |> NativePtr.toNativeInt
+        let length = fileStream.Length
+        let mmf = MemoryMappedFile.CreateFromFile(fileStream, null, length, MemoryMappedFileAccess.Read, HandleInheritability.None, leaveOpen=false)
+        mmf, mmf.CreateViewAccessor(0L, fileStream.Length, MemoryMappedFileAccess.Read), length
     let safeHolder =
         { new obj() with
             override x.Finalize() =
                 (x :?> IDisposable).Dispose()
           interface IDisposable with
             member x.Dispose() =
-                GC.SuppressFinalize(x)
-                safeHandle.ReleasePointer()
-                stream.Dispose()
+                GC.SuppressFinalize x
+                accessor.Dispose()
                 mmf.Dispose()
                 stats.memoryMapFileClosedCount <- stats.memoryMapFileClosedCount + 1 }
     stats.memoryMapFileOpenedCount <- stats.memoryMapFileOpenedCount + 1
-    safeHolder, RawMemoryFile(fileName, safeHolder, addr, int stream.Length) :> BinaryFile
+    safeHolder, RawMemoryFile(fileName, safeHolder, accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length) :> BinaryFile
 
 let OpenILModuleReaderFromBytes fileName bytes opts = 
     let pefile = ByteFile(fileName, bytes) :> BinaryFile
