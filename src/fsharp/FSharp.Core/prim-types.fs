@@ -1663,7 +1663,6 @@ namespace Microsoft.FSharp.Core
             let GenericHashWithComparerIntrinsic<'T> (comp : System.Collections.IEqualityComparer) (input : 'T) : int =
                 GenericHashParamObj comp (box input)
                 
-            /// Direct call to GetHashCode on the string type
             let inline HashString (s:string) = 
                  match s with 
                  | null -> 0 
