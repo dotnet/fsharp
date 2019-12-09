@@ -227,12 +227,6 @@ let DoubleInstrs : Lazy<InstrTable<DoubleInstr>> =
     ]
 
 /// Table of parsing and pretty printing data for instructions.
-let MethodSpecInstrs : Lazy<InstrTable<MethodSpecInstr>> =
-    lazy [
-        ["call"], (fun (mspec, y) -> I_call (Normalcall, mspec, y)) 
-    ] 
-
-/// Table of parsing and pretty printing data for instructions.
 let StringInstrs : Lazy<InstrTable<StringInstr>> =
     lazy [
         ["ldstr"], I_ldstr

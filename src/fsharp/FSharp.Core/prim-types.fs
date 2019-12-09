@@ -1667,7 +1667,7 @@ namespace Microsoft.FSharp.Core
             let inline HashString (s:string) = 
                  match s with 
                  | null -> 0 
-                 | _ -> (# "call instance int32 [mscorlib]System.String :: GetHashCode()" s : int #)
+                 | _ -> s.GetHashCode()
                     
             // from mscorlib v4.0.30319
             let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)

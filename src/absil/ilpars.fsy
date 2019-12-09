@@ -75,7 +75,6 @@ let findAssemblyRef nm =
 %token <Int32Int32Instr> INSTR_I32_I32
 %token <Int64Instr> INSTR_I8 
 %token <DoubleInstr> INSTR_R 
-%token <MethodSpecInstr> INSTR_METHOD 
 %token <NoArgInstr> INSTR_NONE 
 %token <StringInstr> INSTR_STRING 
 %token <TokenInstr> INSTR_TOK 
@@ -163,18 +162,6 @@ instrs2:
         { $1 :: $2  } 
    | { [] }
 
-
-
-methodSpecMaybeArrayMethod: 
-     callConv typ typSpec DCOLON methodName opt_actual_tyargs LPAREN sigArgs0 RPAREN
-       { let callee_class_typ : ILType = resolveCurrentMethodSpecScope $3 
-         let gscope = (if isILArrTy callee_class_typ then None else Some callee_class_typ.TypeSpec) 
-         let argtys_n_varargs = resolveFormalMethodSpecScope gscope $8 
-         let (argtys,varargs) = decodeVarargs argtys_n_varargs 
-         let minst = resolveCurrentMethodSpecScope $6 
-         let callee_retty = resolveFormalMethodSpecScope gscope $2 
-         (callee_class_typ, $1, $5, argtys, callee_retty, minst), varargs }
-
 instr: 
      INSTR_NONE                                         
         {  ($1 ()) }
@@ -188,19 +175,6 @@ instr:
         {  ($1 (ILConst.R8 $2)) }
    | INSTR_R int64
         {  ($1 (ILConst.R8 (float $2))) }
-   | INSTR_METHOD methodSpecMaybeArrayMethod 
-        {  
-               let  ((encl_typ, _cc, nm, _argtys, _retty, _minst) as data),varargs = $2 
-               if isILArrTy encl_typ then 
-                   let (shape,ty) = destILArrTy encl_typ 
-                   match nm with
-                   | "Get" -> I_ldelem_any(shape,ty) 
-                   | "Set" ->  I_stelem_any(shape,ty) 
-                   | "Address" ->  I_ldelema(NormalAddress,false,shape,ty) 
-                   | ".ctor" ->   I_newarr(shape,ty) 
-                   | _ -> failwith "bad method on array type"
-               else 
-                   $1 (mkILMethSpecInTy data, varargs) }
    | INSTR_TYPE typSpec                                 
         { $1 (resolveCurrentMethodSpecScope $2) }
    | INSTR_INT_TYPE int32 typSpec                               
