@@ -4,7 +4,6 @@
     "vs": {
       "version": "16.3",
       "components": [
-        "Microsoft.Net.Core.Component.SDK.2.1",
         "Microsoft.VisualStudio.Component.FSharp"
       ]
     }

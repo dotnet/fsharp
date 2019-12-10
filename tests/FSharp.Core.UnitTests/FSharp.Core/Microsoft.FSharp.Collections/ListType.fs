@@ -244,21 +244,23 @@ type ListType() =
         if emptyList <> [2] then Assert.Fail()
         ()
 
-    [<Test>]
-    member this.Slicing() =
+
+    [<Test>] 
+    member this.SlicingUnboundedEnd() = 
         let lst = [1;2;3;4;5;6]
 
-        Assert.AreEqual(lst.[*], lst)
-
-        CheckThrowsIndexOutRangException((fun _ -> lst.[-1 ..] |> ignore))
+        Assert.AreEqual(lst.[-1..], lst)
         Assert.AreEqual(lst.[0..], lst)
         Assert.AreEqual(lst.[1..], [2;3;4;5;6])
         Assert.AreEqual(lst.[2..], [3;4;5;6])
         Assert.AreEqual(lst.[5..], [6])
         Assert.AreEqual(lst.[6..], ([]: int list))
-        CheckThrowsIndexOutRangException((fun _ -> lst.[7..] |> ignore))        
 
-        
+    
+    [<Test>] 
+    member this.SlicingUnboundedStart() = 
+        let lst = [1;2;3;4;5;6]
+
         Assert.AreEqual(lst.[..(-1)], ([]: int list))
         Assert.AreEqual(lst.[..0], [1])
         Assert.AreEqual(lst.[..1], [1;2])
@@ -266,41 +268,60 @@ type ListType() =
         Assert.AreEqual(lst.[..3], [1;2;3;4])
         Assert.AreEqual(lst.[..4], [1;2;3;4;5])
         Assert.AreEqual(lst.[..5], [1;2;3;4;5;6])
-        CheckThrowsIndexOutRangException((fun _ -> lst.[..6] |> ignore)) 
-        
-        Assert.AreEqual(lst.[0..(-1)], ([]: int list))
+
+
+    [<Test>]
+    member this.SlicingBoundedStartEnd() =
+        let lst = [1;2;3;4;5;6]
+
+        Assert.AreEqual(lst.[*], lst)
+
         Assert.AreEqual(lst.[0..0], [1])
         Assert.AreEqual(lst.[0..1], [1;2])
         Assert.AreEqual(lst.[0..2], [1;2;3])
         Assert.AreEqual(lst.[0..3], [1;2;3;4])
         Assert.AreEqual(lst.[0..4], [1;2;3;4;5])
         Assert.AreEqual(lst.[0..5], [1;2;3;4;5;6])
-        CheckThrowsIndexOutRangException((fun _ -> lst.[0..6] |> ignore))  
 
-        Assert.AreEqual(lst.[1..(-1)], ([]: int list))
-        Assert.AreEqual(lst.[1..0], ([]: int list))
         Assert.AreEqual(lst.[1..1], [2])
         Assert.AreEqual(lst.[1..2], [2;3])
         Assert.AreEqual(lst.[1..3], [2;3;4])
         Assert.AreEqual(lst.[1..4], [2;3;4;5])
         Assert.AreEqual(lst.[1..5], [2;3;4;5;6])
-        CheckThrowsIndexOutRangException((fun _ -> lst.[1..6] |> ignore))
 
-        CheckThrowsIndexOutRangException((fun _ -> lst.[-1..1] |> ignore))
         Assert.AreEqual(lst.[0..1], [1;2])
         Assert.AreEqual(lst.[1..1], [2])
         Assert.AreEqual(lst.[2..1], ([]: int list))
         Assert.AreEqual(lst.[3..1], ([]: int list))
         Assert.AreEqual(lst.[4..1], ([]: int list))
 
-        Assert.AreEqual(lst.[-3..(-4)], ([]: int list))
-        CheckThrowsIndexOutRangException((fun _ -> lst.[-4..(-3)] |> ignore))
+
+    [<Test>]
+    member this.SlicingEmptyList() = 
 
         let empty : obj list = List.empty
         Assert.AreEqual(empty.[*], ([]: obj list))
         Assert.AreEqual(empty.[5..3], ([]: obj list))
         Assert.AreEqual(empty.[0..], ([]: obj list))
-        CheckThrowsIndexOutRangException((fun _ -> empty.[..0] |> ignore))
-        CheckThrowsIndexOutRangException((fun _ -> empty.[0..0] |> ignore))
-        CheckThrowsIndexOutRangException((fun _ -> empty.[0..1] |> ignore))
-        CheckThrowsIndexOutRangException((fun _ -> empty.[3..5] |> ignore))
+        Assert.AreEqual(empty.[0..0], ([]: obj list))
+        Assert.AreEqual(empty.[0..1], ([]: obj list))
+        Assert.AreEqual(empty.[3..5], ([]: obj list))
+
+
+    [<Test>]
+    member this.SlicingOutOfBounds() = 
+        let lst = [1;2;3;4;5;6]
+       
+        Assert.AreEqual(lst.[..6], [1;2;3;4;5;6])
+        Assert.AreEqual(lst.[6..], ([]: int list))
+
+        Assert.AreEqual(lst.[0..(-1)], ([]: int list))
+        Assert.AreEqual(lst.[1..(-1)], ([]: int list))
+        Assert.AreEqual(lst.[1..0], ([]: int list))
+        Assert.AreEqual(lst.[0..6], [1;2;3;4;5;6])
+        Assert.AreEqual(lst.[1..6], [2;3;4;5;6])
+
+        Assert.AreEqual(lst.[-1..1], [1;2])
+        Assert.AreEqual(lst.[-3..(-4)], ([]: int list))
+        Assert.AreEqual(lst.[-4..(-3)], ([]: int list))
+

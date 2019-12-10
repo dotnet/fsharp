@@ -12,7 +12,7 @@ open StreamJsonRpc
 type ProtocolTests() =
 
 #if !NETCOREAPP
-    // The `netcoreapp2.1` version of `FSharp.Compiler.LanguageServer.exe` can't be run without a `publish` step so
+    // The `netcoreapp` version of `FSharp.Compiler.LanguageServer.exe` can't be run without a `publish` step so
     // we're artificially restricting this test to the full framework.
     [<Test>]
 #endif
