@@ -357,6 +357,10 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, v
         match visitAppTyOpt with 
         | Some visitAppTy -> visitAppTy (tcref, tinst)
         | None -> ()
+
+        match tcref.TypeAbbrev with
+        | Some tya -> CheckTypeDeep cenv f g env isInner tya
+        | _ -> ()
     | TType_anon (anonInfo, tys) -> 
         RecordAnonRecdInfo cenv anonInfo
         CheckTypesDeep cenv f g env tys
