@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp2.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <DefaultFSharpPackageVersion>4.1.19</DefaultFSharpPackageVersion>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
