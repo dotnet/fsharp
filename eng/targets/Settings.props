@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIconFullPath>$(MSBuildThisFileDirectory)..\..\src\fsharp\icon.png</PackageIconFullPath>
     <PackageTags>Visual F# Compiler FSharp functional programming</PackageTags>
     <NuspecBasePath>$(ArtifactsBinDir)</NuspecBasePath>
   </PropertyGroup>
