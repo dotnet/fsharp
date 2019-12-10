@@ -237,6 +237,9 @@ type FsiEvaluationSession =
     /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
     member AssemblyReferenceAdded : IEvent<string>
 
+    /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
+    member ValueBound : IEvent<obj * System.Type * string>
+
     /// Load the dummy interaction, load the initial files, and,
     /// if interacting, start the background thread to read the standard input.
     ///

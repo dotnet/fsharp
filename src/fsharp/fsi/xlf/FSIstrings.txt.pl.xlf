@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="new">Operation could not be completed due to earlier error</target>
+        <target state="translated">Nie udało się ukończyć operacji z powodu wcześniejszego błędu</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <target state="translated">Operacja nie powiodła się. Tekst błędu został umieszczony w strumieniu błędów. Aby zwrócić odpowiedni element FSharpErrorInfo, użyj elementu EvalInteractionNonThrowing, eEvalScriptNonThrowing lub EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Składnia: {0} &lt;opcje&gt; [script.fsx [&lt;argumenty&gt;]]</target>
+        <target state="translated">Użycie: {0} &lt;opcje&gt; [script.fsx [&lt;argumenty&gt;]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Wystąpił problem podczas uruchamiania procesu narzędzia F# Interactive. Taka sytuacja może być spowodowana znanym problemem z obsługą konsoli procesu w tle dla aplikacji obsługujących kodowanie Unicode w niektórych systemach Windows. Spróbuj wybrać kolejno opcje Narzędzia-&gt;Opcje-&gt;F# Interactive dla Visual Studio i wprowadź „--fsi-server-no-unicode”.</target>
+        <target state="translated">Wystąpił problem podczas uruchamiania procesu narzędzia F# Interactive. Może to być spowodowane znanym problemem z obsługą konsoli procesu w tle dla aplikacji obsługujących standard Unicode w niektórych systemach Windows. Spróbuj wybrać pozycje Narzędzia-&gt;Opcje-&gt;F# Interactive dla programu Visual Studio i wprowadź ciąg „--fsi-server-no-unicode”.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -229,22 +229,22 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; Zestaw „{0}” występujący w odwołaniu (zestaw z inną sygnaturą czasową występuje już w odwołaniu z tej lokalizacji; zresetuj narzędzie fsi, aby załadować zaktualizowany zestaw)</target>
+        <target state="translated">--&gt; Przywołano element „{0}” (z tej lokalizacji przywołano już zestaw z inną sygnaturą czasową, zresetuj narzędzie fsi, aby załadować zaktualizowany zestaw)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Dodano element „{0}” do ścieżki dołączenia biblioteki</target>
+        <target state="translated">--&gt; Dodano element „{0}” do ścieżki dołączania biblioteki</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; Funkcja chronometrażu została włączona</target>
+        <target state="translated">--&gt; Chronometraż jest teraz włączony</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; Funkcja chronometrażu została wyłączona</target>
+        <target state="translated">--&gt; Chronometraż jest teraz wyłączony</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
