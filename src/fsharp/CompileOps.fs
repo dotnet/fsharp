@@ -2447,10 +2447,9 @@ type TcConfigBuilder =
             ri, fileNameOfPath ri, ILResourceAccess.Public 
 
 
-let OpenILBinary(filename, reduceMemoryUsage, ilGlobals, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =
+let OpenILBinary(filename, reduceMemoryUsage, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =
       let opts: ILReaderOptions = 
-          { ilGlobals = ilGlobals
-            metadataOnly = MetadataOnlyFlag.Yes
+          { metadataOnly = MetadataOnlyFlag.Yes
             reduceMemoryUsage = reduceMemoryUsage
             pdbDirPath = pdbDirPath
             tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
@@ -2515,7 +2514,6 @@ type AssemblyResolution =
                 | None -> 
                     let readerSettings: ILReaderOptions = 
                         { pdbDirPath=None
-                          ilGlobals = EcmaMscorlibILGlobals
                           reduceMemoryUsage = reduceMemoryUsage
                           metadataOnly = MetadataOnlyFlag.Yes
                           tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
@@ -3944,8 +3942,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             let tcConfig = tcConfigP.Get ctok
             let ilModule, ilAssemblyRefs = 
                 let opts: ILReaderOptions = 
-                    { ilGlobals = g.ilg 
-                      reduceMemoryUsage = tcConfig.reduceMemoryUsage
+                    { reduceMemoryUsage = tcConfig.reduceMemoryUsage
                       pdbDirPath = None 
                       metadataOnly = MetadataOnlyFlag.Yes
                       tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }
@@ -4038,15 +4035,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             else
                 None
 
-        let ilGlobals =
-            // ILScopeRef.Local can be used only for primary assembly (mscorlib or System.Runtime) itself
-            // Remaining assemblies should be opened using existing ilGlobals (so they can properly locate fundamental types)
-            match ilGlobalsOpt with
-            | None -> mkILGlobals ILScopeRef.Local
-            | Some g -> g
-
         let ilILBinaryReader =
-            OpenILBinary (filename, tcConfig.reduceMemoryUsage, ilGlobals, pdbDirPath, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot)
+            OpenILBinary (filename, tcConfig.reduceMemoryUsage, pdbDirPath, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot)
 
         tcImports.AttachDisposeAction(fun _ -> (ilILBinaryReader :> IDisposable).Dispose())
         ilILBinaryReader.ILModuleDef, ilILBinaryReader.ILAssemblyRefs

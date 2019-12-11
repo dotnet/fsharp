@@ -867,9 +867,6 @@ and GetTypeAsTypeSpecIdx cenv env ty =
 
 and EmitType cenv env bb ty =
     match ty with 
-  // REVIEW: what are these doing here? 
-    | ILType.Value tspec when tspec.Name = "System.String" -> bb.EmitByte et_STRING 
-    | ILType.Value tspec when tspec.Name = "System.Object" -> bb.EmitByte et_OBJECT 
     | ty when isILSByteTy ty -> bb.EmitByte et_I1 
     | ty when isILInt16Ty ty -> bb.EmitByte et_I2 
     | ty when isILInt32Ty ty -> bb.EmitByte et_I4 

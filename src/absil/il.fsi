@@ -1570,6 +1570,29 @@ val isTypeNameForGlobalFunctions: string -> bool
 // e.g. by filling in all appropriate record fields.
 // ==================================================================== *)
 
+[<RequireQualifiedAccess>]
+module ILImplicitTypes =
+
+    val typ_Object: ILType
+    val typ_String: ILType
+    val typ_Type: ILType
+    val typ_Array: ILType
+    val typ_IntPtr: ILType
+    val typ_UIntPtr: ILType
+    val typ_Byte: ILType
+    val typ_Int16: ILType
+    val typ_Int32: ILType
+    val typ_Int64: ILType
+    val typ_SByte: ILType
+    val typ_UInt16: ILType
+    val typ_UInt32: ILType
+    val typ_UInt64: ILType
+    val typ_Single: ILType
+    val typ_Double: ILType
+    val typ_Bool: ILType
+    val typ_Char: ILType
+    val typ_TypedReference: ILType
+
 /// A table of common references to items in primary assembly (System.Runtime or mscorlib).
 /// If a particular version of System.Runtime.dll has been loaded then you should 
 /// reference items from it via an ILGlobals for that specific version built using mkILGlobals. 

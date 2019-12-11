@@ -950,8 +950,7 @@ type PEReader =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ILMetadataReader = 
-  { ilg: ILGlobals
-    sorted: int64
+  { sorted: int64
     mdfile: BinaryFile
     pectxtCaptured: PEReader option // only set when reading full PE including code etc. for static linking
     entryPointToken: TableName * int
@@ -1804,7 +1803,7 @@ and seekReadTypeDefOrRefAsTypeRef (ctxt: ILMetadataReader) (TaggedIndex(tag, idx
     | tag when tag = tdor_TypeRef -> seekReadTypeRef ctxt idx
     | tag when tag = tdor_TypeSpec -> 
         dprintn ("type spec used where a type ref or def is required")
-        ctxt.ilg.typ_Object.TypeRef
+        ILImplicitTypes.typ_Object.TypeRef
     | _ -> failwith "seekReadTypeDefOrRefAsTypeRef_readTypeDefOrRefOrSpec"
 
 and seekReadMethodRefParent (ctxt: ILMetadataReader) mdv numtypars (TaggedIndex(tag, idx)) =
@@ -1922,22 +1921,22 @@ and sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr =
 
 and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr = 
     let b0, sigptr = sigptrGetByte bytes sigptr
-    if b0 = et_OBJECT then ctxt.ilg.typ_Object, sigptr
-    elif b0 = et_STRING then ctxt.ilg.typ_String, sigptr
-    elif b0 = et_I1 then ctxt.ilg.typ_SByte, sigptr
-    elif b0 = et_I2 then ctxt.ilg.typ_Int16, sigptr
-    elif b0 = et_I4 then ctxt.ilg.typ_Int32, sigptr
-    elif b0 = et_I8 then ctxt.ilg.typ_Int64, sigptr
-    elif b0 = et_I then ctxt.ilg.typ_IntPtr, sigptr
-    elif b0 = et_U1 then ctxt.ilg.typ_Byte, sigptr
-    elif b0 = et_U2 then ctxt.ilg.typ_UInt16, sigptr
-    elif b0 = et_U4 then ctxt.ilg.typ_UInt32, sigptr
-    elif b0 = et_U8 then ctxt.ilg.typ_UInt64, sigptr
-    elif b0 = et_U then ctxt.ilg.typ_UIntPtr, sigptr
-    elif b0 = et_R4 then ctxt.ilg.typ_Single, sigptr
-    elif b0 = et_R8 then ctxt.ilg.typ_Double, sigptr
-    elif b0 = et_CHAR then ctxt.ilg.typ_Char, sigptr
-    elif b0 = et_BOOLEAN then ctxt.ilg.typ_Bool, sigptr
+    if b0 = et_OBJECT then ILImplicitTypes.typ_Object, sigptr
+    elif b0 = et_STRING then ILImplicitTypes.typ_String, sigptr
+    elif b0 = et_I1 then ILImplicitTypes.typ_SByte, sigptr
+    elif b0 = et_I2 then ILImplicitTypes.typ_Int16, sigptr
+    elif b0 = et_I4 then ILImplicitTypes.typ_Int32, sigptr
+    elif b0 = et_I8 then ILImplicitTypes.typ_Int64, sigptr
+    elif b0 = et_I then ILImplicitTypes.typ_IntPtr, sigptr
+    elif b0 = et_U1 then ILImplicitTypes.typ_Byte, sigptr
+    elif b0 = et_U2 then ILImplicitTypes.typ_UInt16, sigptr
+    elif b0 = et_U4 then ILImplicitTypes.typ_UInt32, sigptr
+    elif b0 = et_U8 then ILImplicitTypes.typ_UInt64, sigptr
+    elif b0 = et_U then ILImplicitTypes.typ_UIntPtr, sigptr
+    elif b0 = et_R4 then ILImplicitTypes.typ_Single, sigptr
+    elif b0 = et_R8 then ILImplicitTypes.typ_Double, sigptr
+    elif b0 = et_CHAR then ILImplicitTypes.typ_Char, sigptr
+    elif b0 = et_BOOLEAN then ILImplicitTypes.typ_Bool, sigptr
     elif b0 = et_WITH then 
         let b0, sigptr = sigptrGetByte bytes sigptr
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
@@ -1983,8 +1982,7 @@ and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr =
         
     elif b0 = et_VOID then ILType.Void, sigptr
     elif b0 = et_TYPEDBYREF then 
-        let t = mkILNonGenericValueTy(mkILTyRef(ctxt.ilg.primaryAssemblyScopeRef, "System.TypedReference"))
-        t, sigptr
+        ILImplicitTypes.typ_TypedReference, sigptr
     elif b0 = et_CMOD_REQD || b0 = et_CMOD_OPT then 
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
         let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
@@ -3207,7 +3205,7 @@ let getPdbReader pdbDirPath fileName =
 #endif
       
 // Note, pectxtEager and pevEager must not be captured by the results of this function
-let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, pectxtEager: PEReader, pevEager: BinaryView, pectxtCaptured, reduceMemoryUsage, ilGlobals) = 
+let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, pectxtEager: PEReader, pevEager: BinaryView, pectxtCaptured, reduceMemoryUsage) = 
     let mdv = mdfile.GetView()
     let magic = seekReadUInt16AsInt32 mdv metadataPhysLoc
     if magic <> 0x5342 then failwith (fileName + ": bad metadata magic number: " + string magic)
@@ -3513,8 +3511,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
     // Use an initialization hole 
     let ctxtH = ref None
     let ctxt: ILMetadataReader = 
-        { ilg=ilGlobals 
-          sorted=sorted
+        { sorted=sorted
           getNumRows=getNumRows 
           mdfile=mdfile
           dataEndPoints = match pectxtCaptured with None -> notlazy [] | Some pectxt -> getDataEndPointsDelayed pectxt ctxtH
@@ -3792,13 +3789,13 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) =
     let peinfo = (subsys, (subsysMajor, subsysMinor), useHighEnthropyVA, ilOnly, only32, is32bitpreferred, only64, platform, isDll, alignVirt, alignPhys, imageBaseReal)
     (metadataPhysLoc, metadataSize, peinfo, pectxt, pev, pdb)
 
-let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, ilGlobals, noFileOnDisk) = 
+let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, noFileOnDisk) = 
     let (metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb) = openPEFileReader (fileName, pefile, pdbDirPath, noFileOnDisk) 
-    let ilModule, ilAssemblyRefs = openMetadataReader (fileName, pefile, metadataPhysLoc, peinfo, pectxt, pev, Some pectxt, reduceMemoryUsage, ilGlobals)
+    let ilModule, ilAssemblyRefs = openMetadataReader (fileName, pefile, metadataPhysLoc, peinfo, pectxt, pev, Some pectxt, reduceMemoryUsage)
     ilModule, ilAssemblyRefs, pdb
 
-let openPEMetadataOnly (fileName, peinfo, pectxtEager, pev, mdfile: BinaryFile, reduceMemoryUsage, ilGlobals) = 
-    openMetadataReader (fileName, mdfile, 0, peinfo, pectxtEager, pev, None, reduceMemoryUsage, ilGlobals)
+let openPEMetadataOnly (fileName, peinfo, pectxtEager, pev, mdfile: BinaryFile, reduceMemoryUsage) = 
+    openMetadataReader (fileName, mdfile, 0, peinfo, pectxtEager, pev, None, reduceMemoryUsage)
   
 let ClosePdbReader pdb =  
 #if FX_NO_PDB_READER
@@ -3821,7 +3818,6 @@ type ReduceMemoryFlag = Yes | No
 
 type ILReaderOptions =
     { pdbDirPath: string option
-      ilGlobals: ILGlobals
       reduceMemoryUsage: ReduceMemoryFlag
       metadataOnly: MetadataOnlyFlag
       tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
@@ -3843,7 +3839,7 @@ type ILModuleReaderImpl(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRe
         member x.Dispose() = dispose()
     
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
-type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag
+type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * bool * ReduceMemoryFlag * MetadataOnlyFlag
 
 // Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
 type ILModuleReaderCache1LockToken() = interface LockToken
@@ -3893,7 +3889,7 @@ let createMemoryMapFile fileName =
 
 let OpenILModuleReaderFromBytes fileName bytes opts = 
     let pefile = ByteFile(fileName, bytes) :> BinaryFile
-    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals, true)
+    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), true)
     new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
 
 let ClearAllILModuleReaderCache() =
@@ -3902,15 +3898,15 @@ let ClearAllILModuleReaderCache() =
 
 let OpenILModuleReader fileName opts = 
     // Pseudo-normalize the paths.
-    let (ILModuleReaderCacheKey (fullPath,writeStamp,_,_,_,_) as key), keyOk = 
+    let (ILModuleReaderCacheKey (fullPath,writeStamp,_,_,_) as key), keyOk = 
         try 
            let fullPath = FileSystem.GetFullPathShim fileName
            let writeTime = FileSystem.GetLastWriteTimeShim fileName
-           let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
+           let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
            key, true
         with exn -> 
             System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached. Error = %s" fileName (exn.ToString())) 
-            let fakeKey = ILModuleReaderCacheKey(fileName, System.DateTime.UtcNow, ILScopeRef.Local, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
+            let fakeKey = ILModuleReaderCacheKey(fileName, System.DateTime.UtcNow, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
             fakeKey, false
 
     let cacheResult1 = 
@@ -3965,13 +3961,13 @@ let OpenILModuleReader fileName opts =
                         // If tryGetMetadata doesn't give anything, then just read the metadata chunk out of the binary
                         createByteFileChunk opts fullPath (Some (metadataPhysLoc, metadataSize))
 
-                let ilModule, ilAssemblyRefs = openPEMetadataOnly (fullPath, peinfo, pectxtEager, pevEager, mdfile, reduceMemoryUsage, opts.ilGlobals) 
+                let ilModule, ilAssemblyRefs = openPEMetadataOnly (fullPath, peinfo, pectxtEager, pevEager, mdfile, reduceMemoryUsage) 
                 new ILModuleReaderImpl(ilModule, ilAssemblyRefs, ignore)
             else
                 // If we are not doing metadata-only, then just go ahead and read all the bytes and hold them either strongly or weakly
                 // depending on the heuristic
                 let pefile = createByteFileChunk opts fullPath None
-                let ilModule, ilAssemblyRefs, _pdb = openPE (fullPath, pefile, None, reduceMemoryUsage, opts.ilGlobals, false) 
+                let ilModule, ilAssemblyRefs, _pdb = openPE (fullPath, pefile, None, reduceMemoryUsage, false) 
                 new ILModuleReaderImpl(ilModule, ilAssemblyRefs, ignore)
 
         let ilModuleReader = ilModuleReader :> ILModuleReader 
@@ -4000,7 +3996,7 @@ let OpenILModuleReader fileName opts =
                 let disposer = { new IDisposable with member __.Dispose() = () }
                 disposer, pefile
 
-        let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbDirPath, reduceMemoryUsage, opts.ilGlobals, false)
+        let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbDirPath, reduceMemoryUsage, false)
         let ilModuleReader = new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
 
         let ilModuleReader = ilModuleReader :> ILModuleReader 

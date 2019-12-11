@@ -2604,6 +2604,34 @@ let tname_IntPtr = "System.IntPtr"
 [<Literal>]
 let tname_UIntPtr = "System.UIntPtr"
 
+[<Literal>]
+let tname_TypedReference = "System.TypedReference"
+
+[<RequireQualifiedAccess>]
+module ILImplicitTypes =
+
+    let mkSysILTypeRef nm = mkILTyRef (ILScopeRef.Local, nm)
+
+    let typ_Object = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Object))
+    let typ_String = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
+    let typ_Array = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Array))
+    let typ_Type = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Type))
+    let typ_SByte = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_SByte))
+    let typ_Int16 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Int16))
+    let typ_Int32 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Int32))
+    let typ_Int64 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Int64))
+    let typ_Byte = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Byte))
+    let typ_UInt16 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UInt16))
+    let typ_UInt32 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UInt32))
+    let typ_UInt64 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UInt64))
+    let typ_Single = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Single))
+    let typ_Double = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Double))
+    let typ_Bool = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Bool))
+    let typ_Char = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Char))
+    let typ_IntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_IntPtr))
+    let typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UIntPtr))
+    let typ_TypedReference = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_TypedReference)) 
+
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 // This data structure needs an entirely delayed implementation
 type ILGlobals(primaryScopeRef) =
@@ -2701,54 +2729,53 @@ let isILBoxedTy = function ILType.Boxed _ -> true | _ -> false
 
 let isILValueTy = function ILType.Value _ -> true | _ -> false
 
-let isPrimaryAssemblyTySpec (tspec: ILTypeSpec) n =
+let isBuiltInTySpec (tspec: ILTypeSpec) n =
     let tref = tspec.TypeRef
     let scoref = tref.Scope
     (tref.Name = n) &&
     match scoref with
-    | ILScopeRef.Assembly n -> PrimaryAssembly.IsSomePrimaryAssembly n.Name
-    | ILScopeRef.Module _ -> false
     | ILScopeRef.Local -> true
+    | _ -> false
 
-let isILBoxedPrimaryAssemblyTy (ty: ILType) n =
-  isILBoxedTy ty && isPrimaryAssemblyTySpec ty.TypeSpec n
+let isILBoxedBuiltInTy (ty: ILType) n =
+  isILBoxedTy ty && isBuiltInTySpec ty.TypeSpec n
 
-let isILValuePrimaryAssemblyTy (ty: ILType) n =
-  isILValueTy ty && isPrimaryAssemblyTySpec ty.TypeSpec n
+let isILValueBuiltInTy (ty: ILType) n =
+  isILValueTy ty && isBuiltInTySpec ty.TypeSpec n
 
-let isILObjectTy ty = isILBoxedPrimaryAssemblyTy ty tname_Object
+let isILObjectTy ty = isILBoxedBuiltInTy ty tname_Object
 
-let isILStringTy ty = isILBoxedPrimaryAssemblyTy ty tname_String
+let isILStringTy ty = isILBoxedBuiltInTy ty tname_String
 
-let isILTypedReferenceTy ty = isILValuePrimaryAssemblyTy ty "System.TypedReference"
+let isILTypedReferenceTy ty = isILValueBuiltInTy ty "System.TypedReference"
 
-let isILSByteTy ty = isILValuePrimaryAssemblyTy ty tname_SByte
+let isILSByteTy ty = isILValueBuiltInTy ty tname_SByte
 
-let isILByteTy ty = isILValuePrimaryAssemblyTy ty tname_Byte
+let isILByteTy ty = isILValueBuiltInTy ty tname_Byte
 
-let isILInt16Ty ty = isILValuePrimaryAssemblyTy ty tname_Int16
+let isILInt16Ty ty = isILValueBuiltInTy ty tname_Int16
 
-let isILUInt16Ty ty = isILValuePrimaryAssemblyTy ty tname_UInt16
+let isILUInt16Ty ty = isILValueBuiltInTy ty tname_UInt16
 
-let isILInt32Ty ty = isILValuePrimaryAssemblyTy ty tname_Int32
+let isILInt32Ty ty = isILValueBuiltInTy ty tname_Int32
 
-let isILUInt32Ty ty = isILValuePrimaryAssemblyTy ty tname_UInt32
+let isILUInt32Ty ty = isILValueBuiltInTy ty tname_UInt32
 
-let isILInt64Ty ty = isILValuePrimaryAssemblyTy ty tname_Int64
+let isILInt64Ty ty = isILValueBuiltInTy ty tname_Int64
 
-let isILUInt64Ty ty = isILValuePrimaryAssemblyTy ty tname_UInt64
+let isILUInt64Ty ty = isILValueBuiltInTy ty tname_UInt64
 
-let isILIntPtrTy ty = isILValuePrimaryAssemblyTy ty tname_IntPtr
+let isILIntPtrTy ty = isILValueBuiltInTy ty tname_IntPtr
 
-let isILUIntPtrTy ty = isILValuePrimaryAssemblyTy ty tname_UIntPtr
+let isILUIntPtrTy ty = isILValueBuiltInTy ty tname_UIntPtr
 
-let isILBoolTy ty = isILValuePrimaryAssemblyTy ty tname_Bool
+let isILBoolTy ty = isILValueBuiltInTy ty tname_Bool
 
-let isILCharTy ty = isILValuePrimaryAssemblyTy ty tname_Char
+let isILCharTy ty = isILValueBuiltInTy ty tname_Char
 
-let isILSingleTy ty = isILValuePrimaryAssemblyTy ty tname_Single
+let isILSingleTy ty = isILValueBuiltInTy ty tname_Single
 
-let isILDoubleTy ty = isILValuePrimaryAssemblyTy ty tname_Double
+let isILDoubleTy ty = isILValueBuiltInTy ty tname_Double
 
 // --------------------------------------------------------------------
 // Rescoping
