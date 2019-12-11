@@ -235,7 +235,7 @@ let main argv = 0"""
         compile true options source (fun (errors, _) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
-    
+
     let CompileExe (source: string) =
         CompileExeWithOptions [||] source
 
