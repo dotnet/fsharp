@@ -868,24 +868,25 @@ and GetTypeAsTypeSpecIdx cenv env ty =
     FindOrAddSharedRow cenv TableNames.TypeSpec (GetTypeAsTypeSpecRow cenv env ty)
 
 and EmitType cenv env bb ty =
+    let ilg = cenv.ilg
     match ty with 
-    | ty when isILSByteTy ty -> bb.EmitByte et_I1 
-    | ty when isILInt16Ty ty -> bb.EmitByte et_I2 
-    | ty when isILInt32Ty ty -> bb.EmitByte et_I4 
-    | ty when isILInt64Ty ty -> bb.EmitByte et_I8 
-    | ty when isILByteTy ty -> bb.EmitByte et_U1 
-    | ty when isILUInt16Ty ty -> bb.EmitByte et_U2 
-    | ty when isILUInt32Ty ty -> bb.EmitByte et_U4 
-    | ty when isILUInt64Ty ty -> bb.EmitByte et_U8 
-    | ty when isILDoubleTy ty -> bb.EmitByte et_R8 
-    | ty when isILSingleTy ty -> bb.EmitByte et_R4 
-    | ty when isILBoolTy ty -> bb.EmitByte et_BOOLEAN 
-    | ty when isILCharTy ty -> bb.EmitByte et_CHAR 
-    | ty when isILStringTy ty -> bb.EmitByte et_STRING 
-    | ty when isILObjectTy ty -> bb.EmitByte et_OBJECT 
-    | ty when isILIntPtrTy ty -> bb.EmitByte et_I 
-    | ty when isILUIntPtrTy ty -> bb.EmitByte et_U 
-    | ty when isILTypedReferenceTy ty -> bb.EmitByte et_TYPEDBYREF 
+    | ty when isILSByteTy ilg ty -> bb.EmitByte et_I1 
+    | ty when isILInt16Ty ilg ty -> bb.EmitByte et_I2 
+    | ty when isILInt32Ty ilg ty -> bb.EmitByte et_I4 
+    | ty when isILInt64Ty ilg ty -> bb.EmitByte et_I8 
+    | ty when isILByteTy ilg ty -> bb.EmitByte et_U1 
+    | ty when isILUInt16Ty ilg ty -> bb.EmitByte et_U2 
+    | ty when isILUInt32Ty ilg ty -> bb.EmitByte et_U4 
+    | ty when isILUInt64Ty ilg ty -> bb.EmitByte et_U8 
+    | ty when isILDoubleTy ilg ty -> bb.EmitByte et_R8 
+    | ty when isILSingleTy ilg ty -> bb.EmitByte et_R4 
+    | ty when isILBoolTy ilg ty -> bb.EmitByte et_BOOLEAN 
+    | ty when isILCharTy ilg ty -> bb.EmitByte et_CHAR 
+    | ty when isILStringTy ilg ty -> bb.EmitByte et_STRING 
+    | ty when isILObjectTy ilg ty -> bb.EmitByte et_OBJECT 
+    | ty when isILIntPtrTy ilg ty -> bb.EmitByte et_I 
+    | ty when isILUIntPtrTy ilg ty -> bb.EmitByte et_U 
+    | ty when isILTypedReferenceTy ilg ty -> bb.EmitByte et_TYPEDBYREF 
 
     | ILType.Boxed tspec -> EmitTypeSpec cenv env bb (et_CLASS, tspec)
     | ILType.Value tspec -> EmitTypeSpec cenv env bb (et_VALUETYPE, tspec)

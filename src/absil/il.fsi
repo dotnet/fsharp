@@ -1573,31 +1573,6 @@ val isTypeNameForGlobalFunctions: string -> bool
 // e.g. by filling in all appropriate record fields.
 // ==================================================================== *)
 
-[<RequireQualifiedAccess>]
-module ILImplicitTypes =
-
-    val typ_Object: ILType
-    val typ_String: ILType
-    val typ_Type: ILType
-    val typ_Array: ILType
-    val typ_IntPtr: ILType
-    val typ_UIntPtr: ILType
-    val typ_Byte: ILType
-    val typ_Int16: ILType
-    val typ_Int32: ILType
-    val typ_Int64: ILType
-    val typ_SByte: ILType
-    val typ_UInt16: ILType
-    val typ_UInt32: ILType
-    val typ_UInt64: ILType
-    val typ_Single: ILType
-    val typ_Double: ILType
-    val typ_Bool: ILType
-    val typ_Char: ILType
-    val typ_TypedReference: ILType
-
-    val tryFind: nm: string -> ILType voption
-
 /// A table of common references to items in primary assembly (System.Runtime or mscorlib).
 /// If a particular version of System.Runtime.dll has been loaded then you should 
 /// reference items from it via an ILGlobals for that specific version built using mkILGlobals. 
@@ -1624,7 +1599,7 @@ type ILGlobals =
     member typ_Double: ILType
     member typ_Bool: ILType
     member typ_Char: ILType
-
+    member typ_TypedReference: ILType
 
 /// Build the table of commonly used references given functions to find types in system assemblies
 val mkILGlobals: ILScopeRef -> ILGlobals
@@ -1978,23 +1953,23 @@ val instILType: ILGenericArgs -> ILType -> ILType
 val ecmaPublicKey: PublicKey
 
 /// Discriminating different important built-in types.
-val isILObjectTy: ILType -> bool
-val isILStringTy: ILType -> bool
-val isILSByteTy: ILType -> bool
-val isILByteTy: ILType -> bool
-val isILInt16Ty: ILType -> bool
-val isILUInt16Ty: ILType -> bool
-val isILInt32Ty: ILType -> bool
-val isILUInt32Ty: ILType -> bool
-val isILInt64Ty: ILType -> bool
-val isILUInt64Ty: ILType -> bool
-val isILIntPtrTy: ILType -> bool
-val isILUIntPtrTy: ILType -> bool
-val isILBoolTy: ILType -> bool
-val isILCharTy: ILType -> bool
-val isILTypedReferenceTy: ILType -> bool
-val isILDoubleTy: ILType -> bool
-val isILSingleTy: ILType -> bool
+val isILObjectTy: ILGlobals -> ILType -> bool
+val isILStringTy: ILGlobals -> ILType -> bool
+val isILSByteTy: ILGlobals -> ILType -> bool
+val isILByteTy: ILGlobals -> ILType -> bool
+val isILInt16Ty: ILGlobals -> ILType -> bool
+val isILUInt16Ty: ILGlobals -> ILType -> bool
+val isILInt32Ty: ILGlobals -> ILType -> bool
+val isILUInt32Ty: ILGlobals -> ILType -> bool
+val isILInt64Ty: ILGlobals -> ILType -> bool
+val isILUInt64Ty: ILGlobals -> ILType -> bool
+val isILIntPtrTy: ILGlobals -> ILType -> bool
+val isILUIntPtrTy: ILGlobals -> ILType -> bool
+val isILBoolTy: ILGlobals -> ILType -> bool
+val isILCharTy: ILGlobals -> ILType -> bool
+val isILTypedReferenceTy: ILGlobals -> ILType -> bool
+val isILDoubleTy: ILGlobals -> ILType -> bool
+val isILSingleTy: ILGlobals -> ILType -> bool
 
 val sha1HashInt64 : byte[] -> int64
 /// Get a public key token from a public key.

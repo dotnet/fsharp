@@ -994,13 +994,8 @@ and p_ILCallConv (Callconv(x, y)) st = p_tup2 p_ILHasThis p_ILBasicCallConv (x, 
 and p_ILCallSig x st = p_tup3 p_ILCallConv p_ILTypes p_ILType (x.CallingConv, x.ArgTypes, x.ReturnType) st
 
 and p_ILTypeRef (x: ILTypeRef) st = 
-    let scoref =
-        match ILImplicitTypes.tryFind x.Name with
-        | ValueSome typ when typ.TypeRef.Enclosing = x.Enclosing ->
-            st.oglobals.ilg.primaryAssemblyScopeRef
-        | _ -> 
-            x.Scope
-    p_tup3 p_ILScopeRef p_strings p_string (scoref, x.Enclosing, x.Name) st
+    // TODO: Add sanity check.
+    p_tup3 p_ILScopeRef p_strings p_string (x.Scope, x.Enclosing, x.Name) st
 
 and p_ILTypeSpec (a: ILTypeSpec) st = p_tup2 p_ILTypeRef p_ILTypes (a.TypeRef, a.GenericArgs) st
 
@@ -1023,11 +1018,7 @@ let u_ILHasThis st =
 
 let u_ILCallConv st = let a, b = u_tup2 u_ILHasThis u_ILBasicCallConv st in Callconv(a, b)
 
-let u_ILTypeRef st = 
-    let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st
-    match ILImplicitTypes.tryFind c with
-    | ValueSome typ when typ.TypeRef.Enclosing = b -> typ.TypeRef
-    | _ -> ILTypeRef.Create(a, b, c)
+let u_ILTypeRef st = let a, b, c = u_tup3 u_ILScopeRef u_strings u_string st in ILTypeRef.Create(a, b, c)
 
 let u_ILArrayShape = u_wrap (fun x -> ILArrayShape x) (u_list (u_tup2 (u_option u_int32) (u_option u_int32)))
 
