@@ -96,10 +96,13 @@ type ILScopeRef =
     /// A reference to a type in a module in the same assembly
     | Module of ILModuleRef   
     /// A reference to a type in another assembly
-    | Assembly of ILAssemblyRef  
+    | Assembly of ILAssemblyRef
+    /// A reference to a type in the primary assembly
+    | PrimaryAssembly
     member IsLocalRef: bool
     member IsModuleRef: bool
     member IsAssemblyRef: bool
+    member IsPrimaryAssemblyRef: bool
     member ModuleRef: ILModuleRef
     member AssemblyRef: ILAssemblyRef
     member QualifiedName: string
@@ -1593,12 +1596,15 @@ module ILImplicitTypes =
     val typ_Char: ILType
     val typ_TypedReference: ILType
 
+    val tryFind: nm: string -> ILType voption
+
 /// A table of common references to items in primary assembly (System.Runtime or mscorlib).
 /// If a particular version of System.Runtime.dll has been loaded then you should 
 /// reference items from it via an ILGlobals for that specific version built using mkILGlobals. 
 [<NoEquality; NoComparison; Class>]
 type ILGlobals = 
     member primaryAssemblyScopeRef: ILScopeRef
+    member primaryAssemblyRef: ILAssemblyRef
     member primaryAssemblyName: string
     member typ_Object: ILType
     member typ_String: ILType
@@ -2030,6 +2036,6 @@ type ILReferences =
       ModuleReferences: ILModuleRef list }
 
 /// Find the full set of assemblies referenced by a module.
-val computeILRefs: ILModuleDef -> ILReferences
+val computeILRefs: ILGlobals -> ILModuleDef -> ILReferences
 val emptyILRefs: ILReferences
 

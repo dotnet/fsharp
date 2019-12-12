@@ -23,7 +23,7 @@ type internal SymbolEnv =
 
 /// Indicates the accessibility of a symbol, as seen by the F# language
 type public FSharpAccessibility = 
-    internal new: Accessibility * ?isProtected: bool -> FSharpAccessibility
+    internal new: AbstractIL.IL.ILGlobals * Accessibility * ?isProtected: bool -> FSharpAccessibility
 
     /// Indicates the symbol has public accessibility.
     member IsPublic: bool

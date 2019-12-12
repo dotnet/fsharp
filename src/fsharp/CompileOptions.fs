@@ -1827,7 +1827,8 @@ let GenerateIlxCode
 let NormalizeAssemblyRefs (ctok, tcImports:TcImports) scoref =
     match scoref with 
     | ILScopeRef.Local 
-    | ILScopeRef.Module _ -> scoref
+    | ILScopeRef.Module _ 
+    | ILScopeRef.PrimaryAssembly -> scoref
     | ILScopeRef.Assembly aref -> 
         match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
         | Some dllInfo -> dllInfo.ILScopeRef

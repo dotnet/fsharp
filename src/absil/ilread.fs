@@ -3122,6 +3122,7 @@ and seekReadManifestResources (ctxt: ILMetadataReader) (mdv: BinaryView) (pectxt
 
                 | ILScopeRef.Module mref -> ILResourceLocation.File (mref, offset)
                 | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
+                | _ -> failwith "seekReadManifestResources: Invalid ILScopeRef"
 
              let r = 
                { Name= readStringHeap ctxt nameIdx

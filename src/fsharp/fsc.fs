@@ -1197,7 +1197,7 @@ module StaticLinker =
             
             // A rewriter which rewrites scope references to things in dependent assemblies to be local references 
             let rewriteExternalRefsToLocalRefs x = 
-                if assems.Contains (getNameOfScopeRef x) then ILScopeRef.Local else x
+                if assems.Contains (getNameOfScopeRef ilGlobals x) then ILScopeRef.Local else x
 
             let savedManifestAttrs = 
                 [ for (_, depILModule) in dependentILModules do 
@@ -1280,7 +1280,7 @@ module StaticLinker =
           mutable visited: bool }
 
     // Find all IL modules that are to be statically linked given the static linking roots.
-    let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports: TcImports, ilxMainModule) = 
+    let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlobals, ilxMainModule) = 
         if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty then 
             []
         else
@@ -1296,7 +1296,7 @@ module StaticLinker =
             let assumedIndependentSet = set [ "mscorlib";  "System"; "System.Core"; "System.Xml"; "Microsoft.Build.Framework"; "Microsoft.Build.Utilities" ]      
 
             begin 
-                let remaining = ref (computeILRefs ilxMainModule).AssemblyReferences
+                let remaining = ref (computeILRefs ilGlobals ilxMainModule).AssemblyReferences
                 while not (isNil !remaining) do
                     let ilAssemRef = List.head !remaining
                     remaining := List.tail !remaining
@@ -1432,7 +1432,7 @@ module StaticLinker =
             (fun ilxMainModule  ->
               ReportTime tcConfig "Find assembly references"
 
-              let dependentILModules = FindDependentILModulesForStaticLinking (ctok, tcConfig, tcImports, ilxMainModule)
+              let dependentILModules = FindDependentILModulesForStaticLinking (ctok, tcConfig, tcImports, ilGlobals, ilxMainModule)
 
               ReportTime tcConfig "Static link"
 
@@ -1581,7 +1581,7 @@ module StaticLinker =
               let ilxMainModule =
                   let isMscorlib = ilGlobals.primaryAssemblyName = PrimaryAssembly.Mscorlib.Name
                   let validateTargetPlatform (scopeRef : ILScopeRef) = 
-                      let name = getNameOfScopeRef scopeRef
+                      let name = getNameOfScopeRef ilGlobals scopeRef
                       if (not isMscorlib && name = PrimaryAssembly.Mscorlib.Name) then
                           error (Error(FSComp.SR.fscStaticLinkingNoProfileMismatches(), rangeCmdArgs))
                       scopeRef

@@ -490,12 +490,15 @@ type ILScopeRef =
     | Local
     | Module of ILModuleRef
     | Assembly of ILAssemblyRef
+    | PrimaryAssembly
 
     member x.IsLocalRef = match x with ILScopeRef.Local -> true | _ -> false
 
     member x.IsModuleRef = match x with ILScopeRef.Module _ -> true | _ -> false
 
-    member x.IsAssemblyRef= match x with ILScopeRef.Assembly _ -> true | _ -> false
+    member x.IsAssemblyRef = match x with ILScopeRef.Assembly _ -> true | _ -> false
+
+    member x.IsPrimaryAssemblyRef = match x with ILScopeRef.PrimaryAssembly _ -> true | _ -> false
 
     member x.ModuleRef = match x with ILScopeRef.Module x -> x | _ -> failwith "not a module reference"
 
@@ -506,6 +509,7 @@ type ILScopeRef =
         | ILScopeRef.Local -> ""
         | ILScopeRef.Module mref -> "module "+mref.Name
         | ILScopeRef.Assembly aref -> aref.QualifiedName
+        | ILScopeRef.PrimaryAssembly -> ""
 
 type ILArrayBound = int32 option
 
@@ -2610,7 +2614,9 @@ let tname_TypedReference = "System.TypedReference"
 [<RequireQualifiedAccess>]
 module ILImplicitTypes =
 
-    let mkSysILTypeRef nm = mkILTyRef (ILScopeRef.Local, nm)
+    open System.Collections.ObjectModel
+
+    let mkSysILTypeRef nm = mkILTyRef (ILScopeRef.PrimaryAssembly, nm)
 
     let typ_Object = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Object))
     let typ_String = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
@@ -2630,53 +2636,66 @@ module ILImplicitTypes =
     let typ_Char = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Char))
     let typ_IntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_IntPtr))
     let typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UIntPtr))
-    let typ_TypedReference = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_TypedReference)) 
+    let typ_TypedReference = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_TypedReference))
+
+    let typsByName =
+        let tnames = Dictionary()
+        [
+            typ_Object
+            typ_String
+            typ_Array 
+            typ_Type
+            typ_SByte 
+            typ_Int16 
+            typ_Int32 
+            typ_Int64 
+            typ_Byte
+            typ_UInt16
+            typ_UInt32
+            typ_UInt64
+            typ_Single
+            typ_Double
+            typ_Bool
+            typ_Char
+            typ_IntPtr
+            typ_UIntPtr
+            typ_TypedReference
+        ]
+        |> List.iter (fun typ -> 
+            assert typ.TypeRef.Scope.IsPrimaryAssemblyRef
+            tnames.Add (typ.TypeRef.Name, typ))
+        ReadOnlyDictionary tnames
+
+    let tryFind nm =
+        match typsByName.TryGetValue nm with
+        | true, typ -> ValueSome typ
+        | _ -> ValueNone
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 // This data structure needs an entirely delayed implementation
-type ILGlobals(primaryScopeRef) =
+type ILGlobals(primaryScopeRef: ILScopeRef) =
 
-    let m_mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
-
-    let m_typ_Object = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Object))
-    let m_typ_String = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_String))
-    let m_typ_Array = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Array))
-    let m_typ_Type = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Type))
-    let m_typ_SByte = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_SByte))
-    let m_typ_Int16 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int16))
-    let m_typ_Int32 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int32))
-    let m_typ_Int64 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int64))
-    let m_typ_Byte = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Byte))
-    let m_typ_UInt16 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt16))
-    let m_typ_UInt32 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt32))
-    let m_typ_UInt64 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt64))
-    let m_typ_Single = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Single))
-    let m_typ_Double = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Double))
-    let m_typ_Bool = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Bool))
-    let m_typ_Char = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Char))
-    let m_typ_IntPtr = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_IntPtr))
-    let m_typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UIntPtr))
-
-    member x.primaryAssemblyScopeRef = m_typ_Object.TypeRef.Scope
-    member x.primaryAssemblyName = m_typ_Object.TypeRef.Scope.AssemblyRef.Name
-    member x.typ_Object = m_typ_Object
-    member x.typ_String = m_typ_String
-    member x.typ_Array = m_typ_Array
-    member x.typ_Type = m_typ_Type
-    member x.typ_IntPtr = m_typ_IntPtr
-    member x.typ_UIntPtr = m_typ_UIntPtr
-    member x.typ_Byte = m_typ_Byte
-    member x.typ_Int16 = m_typ_Int16
-    member x.typ_Int32 = m_typ_Int32
-    member x.typ_Int64 = m_typ_Int64
-    member x.typ_SByte = m_typ_SByte
-    member x.typ_UInt16 = m_typ_UInt16
-    member x.typ_UInt32 = m_typ_UInt32
-    member x.typ_UInt64 = m_typ_UInt64
-    member x.typ_Single = m_typ_Single
-    member x.typ_Double = m_typ_Double
-    member x.typ_Bool = m_typ_Bool
-    member x.typ_Char = m_typ_Char
+    member _.primaryAssemblyScopeRef = primaryScopeRef
+    member x.primaryAssemblyRef = x.primaryAssemblyScopeRef.AssemblyRef
+    member x.primaryAssemblyName = x.primaryAssemblyScopeRef.AssemblyRef.Name
+    member _.typ_Object = ILImplicitTypes.typ_Object
+    member _.typ_String = ILImplicitTypes.typ_String
+    member _.typ_Array = ILImplicitTypes.typ_Array
+    member _.typ_Type = ILImplicitTypes.typ_Type
+    member _.typ_IntPtr = ILImplicitTypes.typ_IntPtr
+    member _.typ_UIntPtr = ILImplicitTypes.typ_UIntPtr
+    member _.typ_Byte = ILImplicitTypes.typ_Byte
+    member _.typ_Int16 = ILImplicitTypes.typ_Int16
+    member _.typ_Int32 = ILImplicitTypes.typ_Int32
+    member _.typ_Int64 = ILImplicitTypes.typ_Int64
+    member _.typ_SByte = ILImplicitTypes.typ_SByte
+    member _.typ_UInt16 = ILImplicitTypes.typ_UInt16
+    member _.typ_UInt32 = ILImplicitTypes.typ_UInt32
+    member _.typ_UInt64 = ILImplicitTypes.typ_UInt64
+    member _.typ_Single = ILImplicitTypes.typ_Single
+    member _.typ_Double = ILImplicitTypes.typ_Double
+    member _.typ_Bool = ILImplicitTypes.typ_Bool
+    member _.typ_Char = ILImplicitTypes.typ_Char
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2731,11 +2750,7 @@ let isILValueTy = function ILType.Value _ -> true | _ -> false
 
 let isBuiltInTySpec (tspec: ILTypeSpec) n =
     let tref = tspec.TypeRef
-    let scoref = tref.Scope
-    (tref.Name = n) &&
-    match scoref with
-    | ILScopeRef.Local -> true
-    | _ -> false
+    tref.Name = n
 
 let isILBoxedBuiltInTy (ty: ILType) n =
   isILBoxedTy ty && isBuiltInTySpec ty.TypeSpec n
@@ -2747,7 +2762,7 @@ let isILObjectTy ty = isILBoxedBuiltInTy ty tname_Object
 
 let isILStringTy ty = isILBoxedBuiltInTy ty tname_String
 
-let isILTypedReferenceTy ty = isILValueBuiltInTy ty "System.TypedReference"
+let isILTypedReferenceTy ty = isILValueBuiltInTy ty tname_TypedReference
 
 let isILSByteTy ty = isILValueBuiltInTy ty tname_SByte
 
@@ -4041,7 +4056,8 @@ type ILReferences =
       ModuleReferences: ILModuleRef list }
 
 type ILReferencesAccumulator =
-    { refsA: HashSet<ILAssemblyRef>
+    { ilg: ILGlobals
+      refsA: HashSet<ILAssemblyRef>
       refsM: HashSet<ILModuleRef> }
 
 let emptyILRefs =
@@ -4058,6 +4074,7 @@ let refs_of_scoref s x =
     | ILScopeRef.Local -> ()
     | ILScopeRef.Assembly assemblyRef -> refs_of_assemblyRef s assemblyRef
     | ILScopeRef.Module modref -> refs_of_modref s modref
+    | ILScopeRef.PrimaryAssembly -> refs_of_assemblyRef s s.ilg.primaryAssemblyRef
 
 let refs_of_tref s (x: ILTypeRef) = refs_of_scoref s x.Scope
 
@@ -4255,9 +4272,10 @@ and refs_of_manifest s (m: ILAssemblyManifest) =
     refs_of_custom_attrs s m.CustomAttrs
     refs_of_exported_types s m.ExportedTypes
 
-let computeILRefs modul =
+let computeILRefs ilg modul =
     let s =
-      { refsA = HashSet<_>(HashIdentity.Structural)
+      { ilg = ilg
+        refsA = HashSet<_>(HashIdentity.Structural)
         refsM = HashSet<_>(HashIdentity.Structural) }
 
     refs_of_modul s modul

@@ -20,7 +20,7 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.Tastops
 open Internal.Utilities
 
-type FSharpAccessibility(a:Accessibility, ?isProtected) = 
+type FSharpAccessibility(ilg: ILGlobals, a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false
 
     let isInternalCompPath x = 
@@ -46,7 +46,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
     override __.ToString() = 
         let (TAccess paths) = a
-        let mangledTextOfCompPath (CompPath(scoref, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
+        let mangledTextOfCompPath (CompPath(scoref, path)) = getNameOfScopeRef ilg scoref + "/" + textOfPath (List.map fst path)  
         String.concat ";" (List.map mangledTextOfCompPath paths)
 
 type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTy: ModuleOrNamespaceType option, tcImports: TcImports, amapV: Import.ImportMap, infoReaderV: InfoReader) = 
@@ -99,7 +99,7 @@ module Impl =
             invalidOp (sprintf "The entity '%s' does not exist or is in an unresolved assembly." poorQualifiedName)
 
     /// Checking accessibility that arise from different compilations needs more care - this is a duplicate of the F# compiler code for this case
-    let checkForCrossProjectAccessibility (thisCcu2:CcuThunk, ad2) (thisCcu1, taccess1) = 
+    let checkForCrossProjectAccessibility (ilg: ILGlobals) (thisCcu2:CcuThunk, ad2) (thisCcu1, taccess1) = 
         match ad2 with 
         | AccessibleFrom(cpaths2, _) ->
             let nameOfScoRef (thisCcu:CcuThunk) scoref = 
@@ -107,6 +107,7 @@ module Impl =
                 | ILScopeRef.Local -> thisCcu.AssemblyName 
                 | ILScopeRef.Assembly aref -> aref.Name 
                 | ILScopeRef.Module mref -> mref.Name
+                | ILScopeRef.PrimaryAssembly -> ilg.primaryAssemblyName
             let canAccessCompPathFromCrossProject (CompPath(scoref1, cpath1)) (CompPath(scoref2, cpath2)) =
                 let rec loop p1 p2  = 
                     match p1, p2 with 
@@ -328,7 +329,7 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                               if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity] 
                               else Item.UnqualifiedType [entity]), 
                          (fun _this thisCcu2 ad -> 
-                             checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
+                             checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
                              // && AccessibilityLogic.IsEntityAccessible cenv.amap range0 ad entity)
                              )
 
@@ -539,12 +540,12 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
       
 
     member __.Accessibility = 
-        if isUnresolved() then FSharpAccessibility taccessPublic else
-        FSharpAccessibility(getApproxFSharpAccessibilityOfEntity entity) 
+        if isUnresolved() then FSharpAccessibility(cenv.g.ilg, taccessPublic) else
+        FSharpAccessibility(cenv.g.ilg, getApproxFSharpAccessibilityOfEntity entity) 
 
     member __.RepresentationAccessibility = 
-        if isUnresolved() then FSharpAccessibility taccessPublic else
-        FSharpAccessibility(entity.TypeReprAccessibility)
+        if isUnresolved() then FSharpAccessibility(cenv.g.ilg, taccessPublic) else
+        FSharpAccessibility(cenv.g.ilg, entity.TypeReprAccessibility)
 
     member x.DeclaredInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
@@ -757,7 +758,7 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
                                checkEntityIsResolved v.TyconRef
                                Item.UnionCase(UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v), false)), 
                           (fun _this thisCcu2 ad -> 
-                               checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, v.UnionCase.Accessibility)) 
+                               checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, v.UnionCase.Accessibility)) 
                                //&& AccessibilityLogic.IsUnionCaseAccessible cenv.amap range0 ad v)
                                )
 
@@ -813,8 +814,8 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
         v.Attribs |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
 
     member __.Accessibility =  
-        if isUnresolved() then FSharpAccessibility taccessPublic else
-        FSharpAccessibility(v.UnionCase.Accessibility)
+        if isUnresolved() then FSharpAccessibility(cenv.g.ilg, taccessPublic) else
+        FSharpAccessibility(cenv.g.ilg, v.UnionCase.Accessibility)
 
     member private x.V = v
     override x.Equals(other: obj) =
@@ -874,7 +875,7 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
                                 | ILField f -> 
                                     Item.ILField f), 
                           (fun this thisCcu2 ad -> 
-                                checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, (this :?> FSharpField).Accessibility.Contents)) 
+                                checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, (this :?> FSharpField).Accessibility.Contents)) 
                                 //&&
                                 //match d with 
                                 //| Recd v -> AccessibilityLogic.IsRecdFieldAccessible cenv.amap range0 ad v
@@ -1041,13 +1042,13 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         |> makeReadOnlyCollection
 
     member __.Accessibility: FSharpAccessibility =  
-        if isUnresolved() then FSharpAccessibility taccessPublic else 
+        if isUnresolved() then FSharpAccessibility(cenv.g.ilg, taccessPublic) else 
         let access = 
             match d.TryRecdField with 
             | Choice1Of3 r -> r.Accessibility
             | Choice2Of3 _ -> taccessPublic
             | Choice3Of3 _ -> taccessPublic
-        FSharpAccessibility access 
+        FSharpAccessibility(cenv.g.ilg, access) 
 
     member private x.V = d
 
@@ -1366,7 +1367,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                          (fun () -> item), 
                          (fun this thisCcu2 ad -> 
                               let this = this :?> FSharpMemberOrFunctionOrValue 
-                              checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, this.Accessibility.Contents)) 
+                              checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, this.Accessibility.Contents)) 
                               //&& 
                               //match d with 
                               //| E e -> 
@@ -1950,9 +1951,9 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
       /// How visible is this? 
     member this.Accessibility: FSharpAccessibility  = 
-        if isUnresolved() then FSharpAccessibility taccessPublic else 
+        if isUnresolved() then FSharpAccessibility(cenv.g.ilg, taccessPublic) else 
         match fsharpInfo() with 
-        | Some v -> FSharpAccessibility(v.Accessibility)
+        | Some v -> FSharpAccessibility(cenv.g.ilg, v.Accessibility)
         | None ->  
         
         // Note, returning "public" is wrong for IL members that are private
@@ -1966,7 +1967,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     getApproxFSharpAccessibilityOfMember this.DeclaringEntity.Value.Entity ilAccess
                 | _ -> taccessPublic
 
-            FSharpAccessibility access
+            FSharpAccessibility(cenv.g.ilg, access)
 
         | P p ->  
             // For IL  properties, we get an approximate accessibility that at least reports "internal" as "internal" and "private" as "private"
@@ -1977,7 +1978,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     getApproxFSharpAccessibilityOfMember this.DeclaringEntity.Value.Entity  ilAccess
                 | _ -> taccessPublic
 
-            FSharpAccessibility access
+            FSharpAccessibility(cenv.g.ilg, access)
 
         | M m | C m ->  
 
@@ -1987,9 +1988,9 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 | ILMeth (_, x, _) -> getApproxFSharpAccessibilityOfMember x.DeclaringTyconRef x.RawMetadata.Access 
                 | _ -> taccessPublic
 
-            FSharpAccessibility(access, isProtected=m.IsProtectedAccessibility)
+            FSharpAccessibility(cenv.g.ilg, access, isProtected=m.IsProtectedAccessibility)
 
-        | V v -> FSharpAccessibility(v.Accessibility)
+        | V v -> FSharpAccessibility(cenv.g.ilg, v.Accessibility)
 
     member x.IsConstructor =
         match d with

@@ -3836,7 +3836,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #if !NO_EXTENSIONTYPING
         tcImportsWeak.SetDllInfos dllInfos
 #endif
-        dllTable <- NameMap.add (getNameOfScopeRef dllInfo.ILScopeRef) dllInfo dllTable
+        let ilg =
+            // TODO: Since we may have not initialized ILGlobals, this is a placeholder to handle this case.
+            match ilGlobalsOpt with
+            | Some ilg -> ilg
+            | _ -> EcmaMscorlibILGlobals
+
+        dllTable <- NameMap.add (getNameOfScopeRef ilg dllInfo.ILScopeRef) dllInfo dllTable
 
     member tcImports.GetDllInfos() : ImportedBinary list = 
         CheckDisposed()
@@ -4344,10 +4350,15 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #if !NO_EXTENSIONTYPING
         let tcConfig = tcConfigP.Get ctok
 #endif
+        let ilg =
+            match ilGlobalsOpt with
+            | Some ilg -> ilg
+            | _ -> failwith "Unable to import referenced fsharp assembly with no ILGlobals"
+
         let ilModule = dllinfo.RawMetadata 
         let ilScopeRef = dllinfo.ILScopeRef 
-        let ilShortAssemName = getNameOfScopeRef ilScopeRef 
-        if verbose then dprintn ("Converting F# assembly to F# data structures "+(getNameOfScopeRef ilScopeRef))
+        let ilShortAssemName = getNameOfScopeRef ilg ilScopeRef 
+        if verbose then dprintn ("Converting F# assembly to F# data structures "+(getNameOfScopeRef ilg ilScopeRef))
         if verbose then dprintn ("Relinking interface info from F# assembly "+ilShortAssemName)
         let optDataReaders = ilModule.GetRawFSharpOptimizationData(m, ilShortAssemName, filename)
 
@@ -4672,7 +4683,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                     (let scoref = fslibCcuInfo.ILScopeRef
                      match scoref with
                      | ILScopeRef.Assembly aref -> Some aref
-                     | ILScopeRef.Local | ILScopeRef.Module _ -> error(InternalError("not ILScopeRef.Assembly", rangeStartup)))
+                     | ILScopeRef.Local | ILScopeRef.Module _ | ILScopeRef.PrimaryAssembly -> 
+                        error(InternalError("not ILScopeRef.Assembly", rangeStartup)))
                 fslibCcuInfo.FSharpViewOfMetadata
 
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals

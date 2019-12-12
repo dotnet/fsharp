@@ -510,11 +510,12 @@ type ModuleOrNamespaceKind =
     /// Indicates that a 'module' is really a namespace 
     | Namespace
 
-let getNameOfScopeRef sref = 
+let getNameOfScopeRef (ilg: ILGlobals) sref = 
     match sref with 
     | ILScopeRef.Local -> "<local>"
     | ILScopeRef.Module mref -> mref.Name
     | ILScopeRef.Assembly aref -> aref.Name
+    | ILScopeRef.PrimaryAssembly -> ilg.primaryAssemblyName
 
 #if !NO_EXTENSIONTYPING
 let ComputeDefinitionLocationOfProvidedItem (p: Tainted<#IProvidedCustomAttributeProvider>) =

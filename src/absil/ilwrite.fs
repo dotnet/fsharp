@@ -754,6 +754,7 @@ let GetScopeRefAsImplementationElem cenv scoref =
     | ILScopeRef.Local -> (i_AssemblyRef, 0)
     | ILScopeRef.Assembly aref -> (i_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
     | ILScopeRef.Module mref -> (i_File, GetModuleRefAsFileIdx cenv mref)
+    | ILScopeRef.PrimaryAssembly -> (i_AssemblyRef, GetAssemblyRefAsIdx cenv cenv.ilg.primaryAssemblyRef)
  
 // -------------------------------------------------------------------- 
 // Type references, types etc.
@@ -781,6 +782,7 @@ and GetResolutionScopeAsElem cenv (scoref, enc) =
         | ILScopeRef.Local -> (rs_Module, 1) 
         | ILScopeRef.Assembly aref -> (rs_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
         | ILScopeRef.Module mref -> (rs_ModuleRef, GetModuleRefAsIdx cenv mref)
+        | ILScopeRef.PrimaryAssembly -> (rs_AssemblyRef, GetAssemblyRefAsIdx cenv cenv.ilg.primaryAssemblyRef)
     else
         let enc2, n2 = List.frontAndBack enc
         (rs_TypeRef, GetTypeDescAsTypeRefIdx cenv (scoref, enc2, n2))
@@ -3619,6 +3621,7 @@ let writeBinaryAndReportMappings (outfile,
                 match ilg.primaryAssemblyScopeRef with 
                 | ILScopeRef.Local -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Local" 
                 | ILScopeRef.Module(_) -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Module"
+                | ILScopeRef.PrimaryAssembly -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.PrimaryAssembly"
                 | ILScopeRef.Assembly aref ->
                     match aref.Version with
                     | Some version when version.Major = 2us -> parseILVersion "2.0.50727.0"
