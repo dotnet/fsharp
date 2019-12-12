@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
   <PropertyGroup>
-    <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp3.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefaultFSharpPackageVersion>4.1.19</DefaultFSharpPackageVersion>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
@@ -11,7 +11,7 @@
     <IsTestProject>true</IsTestProject>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- Tests won't run without this, at least on OSX, see https://github.com/NuGet/Home/issues/4837#issuecomment-354536302 -->
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
     <DefineConstants>$(DefineConstants);NO_PROJECTCRACKER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
@@ -66,7 +66,7 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\TreeVisitorTests.fs">
       <Link>TreeVisitorTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
       <Link>Program.fs</Link>
     </Compile>
     <NoneSubstituteText Include="App.config">

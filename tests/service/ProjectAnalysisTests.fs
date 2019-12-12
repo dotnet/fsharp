@@ -3189,7 +3189,7 @@ let ``Test Project22 IList properties`` () =
 
     attribsOfSymbol ilistTypeDefn |> shouldEqual ["interface"]
 
-#if !NETCOREAPP2_0 // TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
+#if !NETCOREAPP // TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
     ilistTypeDefn.Assembly.SimpleName |> shouldEqual coreLibAssemblyName
 #endif
 
@@ -3648,7 +3648,7 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore "SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core.">]
 #endif
 let ``Test Project25 whole project errors`` () = 
@@ -3658,7 +3658,7 @@ let ``Test Project25 whole project errors`` () =
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore "SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core.">]
 #endif
 let ``Test Project25 symbol uses of type-provided members`` () = 
@@ -3717,7 +3717,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((5, 8), (5, 25))); ("file1", ((10, 8), (10, 78)))|]
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore "SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core.">]
 #endif
 let ``Test symbol uses of type-provided types`` () = 
@@ -4142,7 +4142,7 @@ let ``Test project31 whole project errors`` () =
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: Fails on .NET Core - DebuggerTypeProxyAttribute and DebuggerDisplayAttribute note being emitted?")>]
 #endif
 let ``Test project31 C# type attributes`` () =
@@ -4185,13 +4185,13 @@ let ``Test project31 C# method attributes`` () =
         |> set
         |> shouldEqual 
               (set [
-#if !NETCOREAPP2_0 
+#if !NETCOREAPP
                    "(SecuritySafeCriticalAttribute, [], [])";
 #endif
                    "(CLSCompliantAttribute, [(type Microsoft.FSharp.Core.bool, false)], [])"])
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: Fails on .NET Core - DebuggerTypeProxyAttribute and DebuggerDisplayAttribute note being emitted?")>]
 #endif
 let ``Test project31 Format C# type attributes`` () =
@@ -4226,7 +4226,7 @@ let ``Test project31 Format C# method attributes`` () =
         |> set
         |> shouldEqual 
               (set ["[<CLSCompliantAttribute (false)>]";
-#if !NETCOREAPP2_0
+#if !NETCOREAPP
                     "[<Security.SecuritySafeCriticalAttribute ()>]";
 #endif
                     ])
@@ -4378,7 +4378,7 @@ let ``Test Project34 whole project errors`` () =
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test project34 should report correct accessibility for System.Data.Listeners`` () =
@@ -4501,7 +4501,7 @@ module internal Project35b =
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
-#if NETCOREAPP2_0
+#if NETCOREAPP
     let projPath = Path.ChangeExtension(fileName1, ".fsproj")
     let dllPath = Path.ChangeExtension(fileName1, ".dll")
     let args = mkProjectCommandLineArgs(dllPath, fileNames)

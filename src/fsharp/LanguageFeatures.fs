@@ -20,14 +20,18 @@ open System
 [<RequireQualifiedAccess>]
 type LanguageFeature =
     | PreviewVersion = 0
-    | LanguageVersion46 = 1
-    | LanguageVersion47 = 2
     | SingleUnderscorePattern = 3
     | WildCardInForLoop = 4
     | RelaxWhitespace = 5
     | NameOf = 6
     | ImplicitYield = 7
     | OpenStaticClasses = 8
+    | PackageManagement = 9
+    | FromEndSlicing = 11
+    | FixedIndexSlice3d4d = 12
+    | LanguageVersion46 = 0x10046
+    | LanguageVersion47 = 0x10047
+    | LanguageVersion50 = 0x10050
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -35,21 +39,23 @@ type LanguageVersion (specifiedVersionAsString) =
     // When we increment language versions here preview is higher than current RTM version
     static let languageVersion46 = 4.6m
     static let languageVersion47 = 4.7m
+    static let languageVersion50 = 5.0m
     static let previewVersion = 9999m                   // Language version when preview specified
-    static let defaultVersion = languageVersion47       // Language version when default specified
+    static let defaultVersion = languageVersion50       // Language version when default specified
     static let latestVersion = defaultVersion           // Language version when latest specified
-    static let latestMajorVersion = languageVersion46   // Language version when latestmajor specified
+    static let latestMajorVersion = languageVersion47   // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
-    static let languageVersions = set [| languageVersion46; languageVersion47 |]
+    static let languageVersions = set [| languageVersion46; languageVersion47; languageVersion50 |]
 
     static let features =
         dict [
             // Add new LanguageVersions here ...
             LanguageFeature.LanguageVersion46, languageVersion46
             LanguageFeature.LanguageVersion47, languageVersion47
+            LanguageFeature.LanguageVersion50, languageVersion50
             LanguageFeature.PreviewVersion, previewVersion
-        
+
             // F# 4.7
             LanguageFeature.SingleUnderscorePattern, languageVersion47
             LanguageFeature.WildCardInForLoop, languageVersion47
@@ -59,6 +65,9 @@ type LanguageVersion (specifiedVersionAsString) =
             // Add new Language Features here...
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
+            LanguageFeature.PackageManagement, previewVersion
+            LanguageFeature.FixedIndexSlice3d4d, previewVersion
+            LanguageFeature.FromEndSlicing, previewVersion
         ]
 
     let specified =
@@ -70,6 +79,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | "latestmajor" -> latestMajorVersion
         | "4.6" -> languageVersion46
         | "4.7" -> languageVersion47
+        | "5.0" -> languageVersion50
         | _ -> 0m
 
     /// Check if this feature is supported by the selected langversion
