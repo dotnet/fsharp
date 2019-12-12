@@ -14,6 +14,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
+open System.IO.MemoryMappedFiles
 open System.Runtime.InteropServices
 open System.Text
 open Internal.Utilities
@@ -183,124 +184,6 @@ type RawMemoryFile(fileName: string, obj: obj, addr: nativeint, length: int) =
     member __.FileName = fileName
     interface BinaryFile with
         override __.GetView() = view :>_
-
-/// Read from memory mapped files.
-module MemoryMapping = 
-
-    type HANDLE = nativeint
-    type ADDR = nativeint
-    type SIZE_T = nativeint
-
-    [<DllImport("kernel32", SetLastError=true)>]
-    extern bool CloseHandle (HANDLE _handler)
-
-    [<DllImport("kernel32", SetLastError=true, CharSet=CharSet.Unicode)>]
-    extern HANDLE CreateFile (string _lpFileName, 
-                              int _dwDesiredAccess, 
-                              int _dwShareMode, 
-                              HANDLE _lpSecurityAttributes, 
-                              int _dwCreationDisposition, 
-                              int _dwFlagsAndAttributes, 
-                              HANDLE _hTemplateFile)
-             
-    [<DllImport("kernel32", SetLastError=true, CharSet=CharSet.Unicode)>]
-    extern HANDLE CreateFileMapping (HANDLE _hFile, 
-                                     HANDLE _lpAttributes, 
-                                     int _flProtect, 
-                                     int _dwMaximumSizeLow, 
-                                     int _dwMaximumSizeHigh, 
-                                     string _lpName) 
-
-    [<DllImport("kernel32", SetLastError=true)>]
-    extern ADDR MapViewOfFile (HANDLE _hFileMappingObject, 
-                               int _dwDesiredAccess, 
-                               int _dwFileOffsetHigh, 
-                               int _dwFileOffsetLow, 
-                               SIZE_T _dwNumBytesToMap)
-
-    [<DllImport("kernel32", SetLastError=true)>]
-    extern bool UnmapViewOfFile (ADDR _lpBaseAddress)
-
-    let INVALID_HANDLE = new IntPtr(-1)
-    let MAP_READ = 0x0004
-    let GENERIC_READ = 0x80000000
-    let NULL_HANDLE = IntPtr.Zero
-    let FILE_SHARE_NONE = 0x0000
-    let FILE_SHARE_READ = 0x0001
-    let FILE_SHARE_WRITE = 0x0002
-    let FILE_SHARE_READ_WRITE = 0x0003
-    let CREATE_ALWAYS = 0x0002
-    let OPEN_EXISTING = 0x0003
-    let OPEN_ALWAYS = 0x0004
-
-/// A view over a raw pointer to memory given by a memory mapped file.
-/// NOTE: we should do more checking of validity here.
-type MemoryMapView(start: nativeint) =
-    inherit BinaryView()
-
-    override m.ReadByte i = 
-        Marshal.ReadByte(start + nativeint i)
-
-    override m.ReadBytes i n = 
-        let res = Bytes.zeroCreate n
-        Marshal.Copy(start + nativeint i, res, 0, n)
-        res
-      
-    override m.ReadInt32 i = 
-        Marshal.ReadInt32(start + nativeint i)
-
-    override m.ReadUInt16 i = 
-        uint16(Marshal.ReadInt16(start + nativeint i))
-
-    override m.CountUtf8String i = 
-        let pStart = start + nativeint i
-        let mutable p = start 
-        while Marshal.ReadByte p <> 0uy do
-            p <- p + 1n
-        int (p - pStart) 
-
-    override m.ReadUTF8String i = 
-        let n = m.CountUtf8String i
-        System.Runtime.InteropServices.Marshal.PtrToStringAnsi(start + nativeint i, n)
-
-/// Memory maps a file and creates a single view over the entirety of its contents. The 
-/// lock on the file is only released when the object is disposed.
-/// For memory mapping we currently take one view and never release it.
-[<DebuggerDisplay("{FileName}")>]
-type MemoryMapFile(fileName: string, view: MemoryMapView, hMap: MemoryMapping.HANDLE, hView: nativeint) =
-
-    do stats.memoryMapFileOpenedCount <- stats.memoryMapFileOpenedCount + 1
-    let mutable closed = false
-    static member Create fileName =
-        let hFile = MemoryMapping.CreateFile (fileName, MemoryMapping.GENERIC_READ, MemoryMapping.FILE_SHARE_READ_WRITE, IntPtr.Zero, MemoryMapping.OPEN_EXISTING, 0, IntPtr.Zero )
-        if hFile.Equals MemoryMapping.INVALID_HANDLE then
-            failwithf "CreateFile(0x%08x)" (Marshal.GetHRForLastWin32Error())
-        let protection = 0x00000002
-        let hMap = MemoryMapping.CreateFileMapping (hFile, IntPtr.Zero, protection, 0, 0, null )
-        ignore(MemoryMapping.CloseHandle hFile)
-        if hMap.Equals MemoryMapping.NULL_HANDLE then
-            failwithf "CreateFileMapping(0x%08x)" (Marshal.GetHRForLastWin32Error())
-
-        let hView = MemoryMapping.MapViewOfFile (hMap, MemoryMapping.MAP_READ, 0, 0, 0n)
-
-        if hView.Equals IntPtr.Zero then
-           failwithf "MapViewOfFile(0x%08x)" (Marshal.GetHRForLastWin32Error())
-
-        let view = MemoryMapView hView 
-
-        MemoryMapFile(fileName, view, hMap, hView)
-
-    member __.FileName = fileName
-
-    member __.Close() = 
-        stats.memoryMapFileClosedCount <- stats.memoryMapFileClosedCount + 1
-        if not closed then 
-            closed <- true
-            MemoryMapping.UnmapViewOfFile hView |> ignore
-            MemoryMapping.CloseHandle hMap |> ignore
-
-    interface BinaryFile with
-        override __.GetView() = (view :> BinaryView)
 
 /// Read file from memory blocks 
 type ByteView(bytes: byte[]) = 
@@ -3989,19 +3872,24 @@ let createByteFileChunk opts fileName chunk =
             | Some (start, length) -> File.ReadBinaryChunk(fileName, start, length)
         ByteFile(fileName, bytes) :> BinaryFile
 
-let tryMemoryMapWholeFile opts fileName = 
-    let file = 
-        try 
-            MemoryMapFile.Create fileName :> BinaryFile
-        with _ ->
-            createByteFileChunk opts fileName None
-    let disposer = 
-        { new IDisposable with 
-           member __.Dispose() = 
-            match file with 
-            | :? MemoryMapFile as m -> m.Close() // Note that the PE file reader is not required after this point for metadata-only reading
-            | _ -> () }
-    disposer, file
+let createMemoryMapFile fileName = 
+    let mmf, accessor, length = 
+        let fileStream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)
+        let length = fileStream.Length
+        let mmf = MemoryMappedFile.CreateFromFile(fileStream, null, length, MemoryMappedFileAccess.Read, HandleInheritability.None, leaveOpen=false)
+        mmf, mmf.CreateViewAccessor(0L, fileStream.Length, MemoryMappedFileAccess.Read), length
+    let safeHolder =
+        { new obj() with
+            override x.Finalize() =
+                (x :?> IDisposable).Dispose()
+          interface IDisposable with
+            member x.Dispose() =
+                GC.SuppressFinalize x
+                accessor.Dispose()
+                mmf.Dispose()
+                stats.memoryMapFileClosedCount <- stats.memoryMapFileClosedCount + 1 }
+    stats.memoryMapFileOpenedCount <- stats.memoryMapFileOpenedCount + 1
+    safeHolder, RawMemoryFile(fileName, safeHolder, accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length) :> BinaryFile
 
 let OpenILModuleReaderFromBytes fileName bytes opts = 
     let pefile = ByteFile(fileName, bytes) :> BinaryFile
@@ -4067,7 +3955,7 @@ let OpenILModuleReader fileName opts =
 
                 // For metadata-only, always use a temporary, short-lived PE file reader, preferably over a memory mapped file.
                 // Then use the metadata blob as the long-lived memory resource.
-                let disposer, pefileEager = tryMemoryMapWholeFile opts fullPath
+                let disposer, pefileEager = createMemoryMapFile fullPath
                 use _disposer = disposer
                 let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fullPath, pefileEager, None, false) 
                 let mdfile = 
@@ -4106,7 +3994,7 @@ let OpenILModuleReader fileName opts =
         // still use an in-memory ByteFile
         let _disposer, pefile = 
             if alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath then 
-                tryMemoryMapWholeFile opts fullPath
+                createMemoryMapFile fullPath
             else
                 let pefile = createByteFileChunk opts fullPath None
                 let disposer = { new IDisposable with member __.Dispose() = () }
