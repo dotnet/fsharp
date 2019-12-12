@@ -62,6 +62,8 @@ function Print-Usage() {
     Write-Host "The above arguments can be shortened as much as to be unambiguous (e.g. -co for configuration, -t for test, etc.)."
 }
 
+. $PSScriptRoot\tools.ps1
+
 function InitializeCustomToolset {
   if (-not $restore) {
     return
