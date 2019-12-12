@@ -95,7 +95,8 @@ function Write-PipelineTaskError {
       [Parameter(Mandatory=$true)]
       [string]$Path,
       [switch]$AsOutput)
-      if($ci) {
+
+      if((Test-Path variable:ci) -And $ci) {
         Write-LoggingCommand -Area 'task' -Event 'prependpath' -Data $Path -AsOutput:$AsOutput
       }
   }
