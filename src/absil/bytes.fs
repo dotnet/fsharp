@@ -42,13 +42,13 @@ type ByteMemory () =
 
     abstract Length: int
 
-    abstract GetBytes: pos: int * count: int -> byte[]
+    abstract ReadBytes: pos: int * count: int -> byte[]
 
-    abstract GetInt32: pos: int -> int
+    abstract ReadInt32: pos: int -> int
 
-    abstract GetUInt16: pos: int -> uint16
+    abstract ReadUInt16: pos: int -> uint16
 
-    abstract GetUtf8String: pos: int * count: int -> string
+    abstract ReadUtf8String: pos: int * count: int -> string
 
     abstract Slice: pos: int * count: int -> ByteMemory
 
@@ -82,16 +82,16 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
 
     override _.Length = length
 
-    override _.GetBytes(pos, count) = 
+    override _.ReadBytes(pos, count) = 
         Array.sub bytes (offset + pos) count
 
-    override _.GetInt32 pos =
+    override _.ReadInt32 pos =
         BitConverter.ToInt32(bytes, offset + pos)
 
-    override _.GetUInt16 pos =
+    override _.ReadUInt16 pos =
         BitConverter.ToUInt16(bytes, offset + pos)
 
-    override _.GetUtf8String(pos, count) =
+    override _.ReadUtf8String(pos, count) =
         System.Text.Encoding.UTF8.GetString(bytes, offset + pos, count)
 
     override _.Slice(pos, count) =
@@ -132,24 +132,24 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
 
     override _.Length = length
 
-    override _.GetUtf8String(pos, count) =
+    override _.ReadUtf8String(pos, count) =
         check pos
         check (pos + count - 1)
         System.Text.Encoding.UTF8.GetString(NativePtr.add addr pos, count)
 
-    override _.GetBytes(pos, count) = 
+    override _.ReadBytes(pos, count) = 
         check pos
         check (pos + count - 1)
         let res = Bytes.zeroCreate count
         Marshal.Copy(NativePtr.toNativeInt addr + nativeint pos, res, 0, count)
         res
 
-    override _.GetInt32 pos =
+    override _.ReadInt32 pos =
         check pos
         check (pos + 3)
         Marshal.ReadInt32(NativePtr.toNativeInt addr + nativeint pos)
 
-    override _.GetUInt16 pos =
+    override _.ReadUInt16 pos =
         check pos
         check (pos + 1)
         uint16(Marshal.ReadInt16(NativePtr.toNativeInt addr + nativeint pos))
@@ -183,26 +183,29 @@ type ReadOnlyByteMemory(bytes: ByteMemory) =
     member _.Length with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = bytes.Length
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member _.GetBytes(pos, count) = bytes.GetBytes(pos, count)
+    member _.ReadBytes(pos, count) = bytes.ReadBytes(pos, count)
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member _.GetInt32 pos = bytes.GetInt32 pos
+    member _.ReadInt32 pos = bytes.ReadInt32 pos
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member _.GetUInt16 pos = bytes.GetUInt16 pos
+    member _.ReadUInt16 pos = bytes.ReadUInt16 pos
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member _.GetUtf8String(pos, count) = bytes.GetUtf8String(pos, count)
+    member _.ReadUtf8String(pos, count) = bytes.ReadUtf8String(pos, count)
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.Slice(pos, count) = bytes.Slice(pos, count) |> ReadOnlyByteMemory
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+    member _.CopyTo stream = bytes.CopyTo stream
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.ToArray() = bytes.ToArray()
 
 type ByteMemory with
 
-    static member CreateMemoryMappedFile(bytes: ByteMemory) =
+    static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
         let length = int64 bytes.Length
         let mmf = 
             let mmf =
@@ -297,7 +300,7 @@ type internal ByteStream =
         b.pos <- b.pos + 1
         res 
     member b.ReadUtf8String n = 
-        let res = b.bytes.GetUtf8String(b.pos,n)  
+        let res = b.bytes.ReadUtf8String(b.pos,n)  
         b.pos <- b.pos + n; res 
       
     static member FromBytes (b: ReadOnlyByteMemory,n,len) = 

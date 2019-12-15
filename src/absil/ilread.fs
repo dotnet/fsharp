@@ -107,7 +107,7 @@ let stats =
 
 let GetStatistics() = stats
 
-type private BinaryView = ByteMemory
+type private BinaryView = ReadOnlyByteMemory
 
 /// An abstraction over how we access the contents of .NET binaries.
 type BinaryFile = 
@@ -118,7 +118,7 @@ type BinaryFile =
 /// the lifetime of this object. 
 type RawMemoryFile(fileName: string, obj: obj, addr: nativeint, length: int) =
     do stats.rawMemoryFileCount <- stats.rawMemoryFileCount + 1
-    let view = ByteMemory.FromUnsafePointer(addr, length, obj)
+    let view = ByteMemory.FromUnsafePointer(addr, length, obj) |> ReadOnlyByteMemory
     member __.HoldObj() = obj // make sure we capture 'obj'
     member __.FileName = fileName
     interface BinaryFile with
@@ -127,7 +127,7 @@ type RawMemoryFile(fileName: string, obj: obj, addr: nativeint, length: int) =
 /// A BinaryFile backed by an array of bytes held strongly as managed memory
 [<DebuggerDisplay("{FileName}")>]
 type ByteFile(fileName: string, bytes: byte[]) = 
-    let view = ByteMemory.FromArray(bytes, 0, bytes.Length)
+    let view = ByteMemory.FromArray(bytes, 0, bytes.Length) |> ReadOnlyByteMemory
     do stats.byteFileCount <- stats.byteFileCount + 1
     member __.FileName = fileName
     interface BinaryFile with
@@ -170,13 +170,13 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
 
                 tg
 
-            ByteMemory.FromArray(strongBytes, 0, strongBytes.Length)
+            ByteMemory.FromArray(strongBytes, 0, strongBytes.Length) |> ReadOnlyByteMemory
 
     
 let seekReadByte (mdv: BinaryView) addr = mdv.[addr]
-let seekReadBytes (mdv: BinaryView) addr len = mdv.GetBytes(addr, len)
-let seekReadInt32 (mdv: BinaryView) addr = mdv.GetInt32 addr
-let seekReadUInt16 (mdv: BinaryView) addr = mdv.GetUInt16 addr
+let seekReadBytes (mdv: BinaryView) addr len = mdv.ReadBytes(addr, len)
+let seekReadInt32 (mdv: BinaryView) addr = mdv.ReadInt32 addr
+let seekReadUInt16 (mdv: BinaryView) addr = mdv.ReadUInt16 addr
     
 let seekReadByteAsInt32 mdv addr = int32 (seekReadByte mdv addr)
   

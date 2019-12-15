@@ -31,13 +31,13 @@ type internal ByteMemory =
 
     abstract Length: int
 
-    abstract GetBytes: pos: int * count: int -> byte[]
+    abstract ReadBytes: pos: int * count: int -> byte[]
 
-    abstract GetInt32: pos: int -> int
+    abstract ReadInt32: pos: int -> int
 
-    abstract GetUInt16: pos: int -> uint16
+    abstract ReadUInt16: pos: int -> uint16
 
-    abstract GetUtf8String: pos: int * count: int -> string
+    abstract ReadUtf8String: pos: int * count: int -> string
 
     abstract Slice: pos: int * count: int -> ByteMemory
 
@@ -51,8 +51,33 @@ type internal ByteMemory =
     /// Disposing this will not free up any of the backing memory.
     abstract AsStream: unit -> Stream
 
+[<Struct;NoEquality;NoComparison>]
+type internal ReadOnlyByteMemory =
+
+    new: ByteMemory -> ReadOnlyByteMemory
+
+    member Item: int -> byte with get
+
+    member Length: int
+
+    member ReadBytes: pos: int * count: int -> byte[]
+
+    member ReadInt32: pos: int -> int
+
+    member ReadUInt16: pos: int -> uint16
+
+    member ReadUtf8String: pos: int * count: int -> string
+
+    member Slice: pos: int * count: int -> ReadOnlyByteMemory
+
+    member CopyTo: Stream -> unit
+
+    member ToArray: unit -> byte[]
+
+type ByteMemory with
+
     /// Create another ByteMemory object that has a backing memory mapped file based on another ByteMemory's contents.
-    static member CreateMemoryMappedFile: ByteMemory -> ByteMemory
+    static member CreateMemoryMappedFile: ReadOnlyByteMemory -> ByteMemory
 
     /// Creates a ByteMemory object that has a backing memory mapped file from a file on-disk.
     static member FromFile: path: string * FileAccess * ?canShadowCopy: bool -> ByteMemory
@@ -63,27 +88,6 @@ type internal ByteMemory =
 
     /// Creates a ByteMemory object that is backed by a byte array with the specified offset and length.
     static member FromArray: bytes: byte[] * offset: int * length: int -> ByteMemory
-
-[<Struct;NoEquality;NoComparison>]
-type internal ReadOnlyByteMemory =
-
-    new: ByteMemory -> ReadOnlyByteMemory
-
-    member Item: int -> byte with get
-
-    member Length: int
-
-    member GetBytes: pos: int * count: int -> byte[]
-
-    member GetInt32: pos: int -> int
-
-    member GetUInt16: pos: int -> uint16
-
-    member GetUtf8String: pos: int * count: int -> string
-
-    member Slice: pos: int * count: int -> ReadOnlyByteMemory
-
-    member ToArray: unit -> byte[]
 
 /// Imperative buffers and streams of byte[]
 [<Sealed>]
