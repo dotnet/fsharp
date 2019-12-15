@@ -1372,10 +1372,10 @@ module Shim =
     //
     // This is not run on the UI thread for VS but it is on a thread that must be stopped before Intellisense
     // can return any result except for pending.
-    let retryDelayMilliseconds = 50
-    let numRetries = 60
+    let private retryDelayMilliseconds = 50
+    let private numRetries = 60
 
-    let getReader (filename, codePage: int option, retryLocked: bool) =
+    let private getReader (filename, codePage: int option, retryLocked: bool) =
         // Retry multiple times since other processes may be writing to this file.
         let rec getSource retryNumber =
           try 
