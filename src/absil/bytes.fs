@@ -86,10 +86,17 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         Array.sub bytes (offset + pos) count
 
     override _.ReadInt32 pos =
-        BitConverter.ToInt32(bytes, offset + pos)
+        let finalOffset = offset + pos
+        (uint32 bytes.[finalOffset]) |||
+        ((uint32 bytes.[finalOffset + 1]) <<< 8) |||
+        ((uint32 bytes.[finalOffset + 2]) <<< 16) |||
+        ((uint32 bytes.[finalOffset + 3]) <<< 24)
+        |> int
 
     override _.ReadUInt16 pos =
-        BitConverter.ToUInt16(bytes, offset + pos)
+        let finalOffset = offset + pos
+        (uint16 bytes.[finalOffset]) |||
+        ((uint16 bytes.[finalOffset + 1]) <<< 8)
 
     override _.ReadUtf8String(pos, count) =
         System.Text.Encoding.UTF8.GetString(bytes, offset + pos, count)
