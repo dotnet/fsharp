@@ -464,7 +464,7 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
 let AccessInternalsVisibleToAsInternal thisCompPath internalsVisibleToPaths access =
     // Each internalsVisibleToPath is a compPath for the internals of some assembly.
     // Replace those by the compPath for the internals of this assembly.
-    // This makes those internals visible here, but still internal. Bug://3737bui
+    // This makes those internals visible here, but still internal. Bug://3737
     (access, internalsVisibleToPaths) ||> List.fold (fun access internalsVisibleToPath -> 
         accessSubstPaths (thisCompPath, internalsVisibleToPath) access)
     
