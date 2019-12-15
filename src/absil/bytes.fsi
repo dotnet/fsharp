@@ -93,6 +93,7 @@ type internal ByteBuffer =
     member EmitIntsAsBytes : int[] -> unit
     member EmitByte : byte -> unit
     member EmitBytes : byte[] -> unit
+    member EmitByteMemory : ByteMemory -> unit
     member EmitInt32 : int32 -> unit
     member EmitInt64 : int64 -> unit
     member FixupInt32 : pos: int -> value: int32 -> unit
