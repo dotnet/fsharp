@@ -118,7 +118,7 @@ type BinaryFile =
 /// the lifetime of this object. 
 type RawMemoryFile(fileName: string, obj: obj, addr: nativeint, length: int) =
     do stats.rawMemoryFileCount <- stats.rawMemoryFileCount + 1
-    let view = ByteMemory.FromUnsafePointer(addr, length, obj) |> ReadOnlyByteMemory
+    let view = ByteMemory.FromUnsafePointer(addr, length, obj).AsReadOnly()
     member __.HoldObj() = obj // make sure we capture 'obj'
     member __.FileName = fileName
     interface BinaryFile with
@@ -127,7 +127,7 @@ type RawMemoryFile(fileName: string, obj: obj, addr: nativeint, length: int) =
 /// A BinaryFile backed by an array of bytes held strongly as managed memory
 [<DebuggerDisplay("{FileName}")>]
 type ByteFile(fileName: string, bytes: byte[]) = 
-    let view = ByteMemory.FromArray(bytes, 0, bytes.Length) |> ReadOnlyByteMemory
+    let view = ByteMemory.FromArray(bytes).AsReadOnly()
     do stats.byteFileCount <- stats.byteFileCount + 1
     member __.FileName = fileName
     interface BinaryFile with
@@ -170,7 +170,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
 
                 tg
 
-            ByteMemory.FromArray(strongBytes, 0, strongBytes.Length) |> ReadOnlyByteMemory
+            ByteMemory.FromArray(strongBytes).AsReadOnly()
 
     
 let seekReadByte (mdv: BinaryView) addr = mdv.[addr]
@@ -3032,8 +3032,8 @@ and seekReadManifestResources (ctxt: ILMetadataReader) canReduceMemory (mdv: Bin
                         if canReduceMemory then
                             ByteMemory.CreateMemoryMappedFile bytes
                         else
-                            ByteMemory.FromArray(bytes.ToArray(), 0, bytes.Length)
-                    ILResourceLocation.Local bytes
+                            ByteMemory.FromArray(bytes.ToArray())
+                    ILResourceLocation.Local(bytes.AsReadOnly())
 
                 | ILScopeRef.Module mref -> ILResourceLocation.File (mref, offset)
                 | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref

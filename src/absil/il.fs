@@ -2208,7 +2208,7 @@ type ILResourceAccess =
 
 [<RequireQualifiedAccess>]
 type ILResourceLocation =
-    | Local of ByteMemory
+    | Local of ReadOnlyByteMemory
     | File of ILModuleRef * int32
     | Assembly of ILAssemblyRef
 

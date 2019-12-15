@@ -2689,7 +2689,7 @@ and GenEventPass3 cenv env (md: ILEventDef) =
 
 let rec GetResourceAsManifestResourceRow cenv r = 
     let data, impl = 
-        let embedManagedResources (bytes: ByteMemory) = 
+        let embedManagedResources (bytes: ReadOnlyByteMemory) = 
             // Embedded managed resources must be word-aligned. However resource format is  
             // not specified in ECMA. Some mscorlib resources appear to be non-aligned - it seems it doesn't matter..  
             let offset = cenv.resources.Position 

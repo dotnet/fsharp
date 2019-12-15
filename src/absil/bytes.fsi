@@ -72,9 +72,13 @@ type internal ReadOnlyByteMemory =
 
     member CopyTo: Stream -> unit
 
+    member Copy: srcOffset: int * dest: byte[] * destOffset: int * count: int -> unit
+
     member ToArray: unit -> byte[]
 
 type ByteMemory with
+
+    member AsReadOnly: unit -> ReadOnlyByteMemory
 
     /// Create another ByteMemory object that has a backing memory mapped file based on another ByteMemory's contents.
     static member CreateMemoryMappedFile: ReadOnlyByteMemory -> ByteMemory
@@ -89,6 +93,9 @@ type ByteMemory with
     /// Creates a ByteMemory object that is backed by a byte array with the specified offset and length.
     static member FromArray: bytes: byte[] * offset: int * length: int -> ByteMemory
 
+    /// Creates a ByteMemory object that is backed by a byte array.
+    static member FromArray: bytes: byte[] -> ByteMemory
+
 /// Imperative buffers and streams of byte[]
 [<Sealed>]
 type internal ByteBuffer = 
@@ -97,7 +104,7 @@ type internal ByteBuffer =
     member EmitIntsAsBytes : int[] -> unit
     member EmitByte : byte -> unit
     member EmitBytes : byte[] -> unit
-    member EmitByteMemory : ByteMemory -> unit
+    member EmitByteMemory : ReadOnlyByteMemory -> unit
     member EmitInt32 : int32 -> unit
     member EmitInt64 : int64 -> unit
     member FixupInt32 : pos: int -> value: int32 -> unit

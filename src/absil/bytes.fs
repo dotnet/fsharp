@@ -208,9 +208,14 @@ type ReadOnlyByteMemory(bytes: ByteMemory) =
     member _.CopyTo stream = bytes.CopyTo stream
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+    member _.Copy(srcOffset, dest, destOffset, count) = bytes.Copy(srcOffset, dest, destOffset, count)
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.ToArray() = bytes.ToArray()
 
 type ByteMemory with
+
+    member x.AsReadOnly() = ReadOnlyByteMemory x
 
     static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
         let length = int64 bytes.Length
@@ -297,6 +302,9 @@ type ByteMemory with
     static member FromArray(bytes, offset, length) =
         ByteArrayMemory(bytes, offset, length) :> ByteMemory
 
+    static member FromArray bytes =
+        ByteArrayMemory.FromArray(bytes, 0, bytes.Length)
+
 type internal ByteStream = 
     { bytes: ReadOnlyByteMemory
       mutable pos: int 
@@ -377,7 +385,7 @@ type internal ByteBuffer =
         Bytes.blit i 0 buf.bbArray buf.bbCurrent n
         buf.bbCurrent <- newSize 
 
-    member buf.EmitByteMemory (i:ByteMemory) = 
+    member buf.EmitByteMemory (i:ReadOnlyByteMemory) = 
         let n = i.Length 
         let newSize = buf.bbCurrent + n 
         buf.Ensure newSize

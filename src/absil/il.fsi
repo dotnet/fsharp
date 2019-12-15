@@ -1408,7 +1408,7 @@ type ILResourceAccess =
 type ILResourceLocation = 
     internal
     /// Represents a manifest resource that can be read or written to a PE file
-    | Local of ByteMemory
+    | Local of ReadOnlyByteMemory
 
     /// Represents a manifest resource in an associated file
     | File of ILModuleRef * int32
@@ -1428,7 +1428,7 @@ type ILResource =
       MetadataIndex: int32 }
 
     /// Read the bytes from a resource local to an assembly. Will fail for non-local resources.
-    member internal GetBytes : unit -> ByteMemory
+    member internal GetBytes : unit -> ReadOnlyByteMemory
 
     member CustomAttrs: ILAttributes
 
