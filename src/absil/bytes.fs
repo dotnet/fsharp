@@ -54,6 +54,8 @@ type ByteMemory () =
 
     abstract CopyTo: Stream -> unit
 
+    abstract Copy: srcOffset: int * dest: byte[] * destOffset: int * count: int -> unit
+
     abstract ToArray: unit -> byte[]
 
     abstract AsStream: unit -> Stream
@@ -61,10 +63,6 @@ type ByteMemory () =
 [<Sealed>]
 type ByteArrayMemory(bytes: byte[], offset, length) =
     inherit ByteMemory()
-
-    let check i =
-        if i < 0 || i >= length then 
-            failwith "out of range"
 
     do
         if offset < 0 then
@@ -78,10 +76,8 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
     
     override _.Item 
         with get i = 
-            check i
             bytes.[offset + i]
-        and set i v  =
-            check i
+        and set i v =
             bytes.[offset + i] <- v
 
     override _.Length = length
@@ -104,6 +100,9 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
     override _.CopyTo stream =
         stream.Write(bytes, offset, length)
 
+    override _.Copy(srcOffset, dest, destOffset, count) =
+        Array.blit bytes (offset + srcOffset) dest destOffset count
+
     override _.ToArray() =
         Array.sub bytes offset length
 
@@ -117,6 +116,10 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
     let check i =
         if i < 0 || i >= length then 
             failwith "out of range"
+
+    do
+        if length <= 0 then
+            failwith "length is less than or equal to zero"
 
     override _.Item 
         with get i = 
@@ -159,6 +162,10 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
     override x.CopyTo stream =
         use stream2 = x.AsStream()
         stream2.CopyTo stream
+
+    override x.Copy(srcOffset, dest, destOffset, count) =
+        check srcOffset
+        Marshal.Copy(NativePtr.toNativeInt addr + nativeint srcOffset, dest, destOffset, count)
 
     override _.ToArray() =
         let res = Array.zeroCreate<byte> length
@@ -358,6 +365,13 @@ type internal ByteBuffer =
         let newSize = buf.bbCurrent + n 
         buf.Ensure newSize
         Bytes.blit i 0 buf.bbArray buf.bbCurrent n
+        buf.bbCurrent <- newSize 
+
+    member buf.EmitBytes (i:ByteMemory) = 
+        let n = i.Length 
+        let newSize = buf.bbCurrent + n 
+        buf.Ensure newSize
+        i.Copy(0, buf.bbArray, buf.bbCurrent, n)
         buf.bbCurrent <- newSize 
 
     member buf.EmitInt32AsUInt16 n = 

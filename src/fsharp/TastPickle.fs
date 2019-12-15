@@ -284,9 +284,12 @@ let u_int32 st =
         assert(b0 = 0xFF)
         prim_u_int32 st
 
-let u_bytes st =
+let u_byte_memory st =
     let n =  (u_int32 st)
     st.is.ReadBytes n
+
+let u_bytes st =
+    (u_byte_memory st).ToArray()
 
 let u_prim_string st =
     let len =  (u_int32 st)
@@ -858,7 +861,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
             (u_array u_encoded_pubpath)
             (u_array u_encoded_nleref)
             (u_array u_encoded_simpletyp)
-            u_bytes
+            u_byte_memory
             st2
     let ccuTab       = new_itbl "iccus"       (Array.map (CcuThunk.CreateDelayed) ccuNameTab)
     let stringTab    = new_itbl "istrings"    (Array.map decode_string stringTab)
@@ -923,8 +926,8 @@ let p_ILScopeRef x st =
 let u_ILPublicKey st =
     let tag = u_byte st
     match tag with
-    | 0 -> (u_bytes st).ToArray() |> PublicKey
-    | 1 -> (u_bytes st).ToArray() |> PublicKeyToken
+    | 0 -> u_bytes st |> PublicKey
+    | 1 -> u_bytes st |> PublicKeyToken
     | _ -> ufailwith st "u_ILPublicKey"
 
 let u_ILVersion st = 
@@ -933,14 +936,14 @@ let u_ILVersion st =
 
 let u_ILModuleRef st =
     let (a, b, c) = u_tup3 u_string u_bool (u_option u_bytes) st
-    ILModuleRef.Create(a, b, c |> Option.map (fun x -> x.ToArray()))
+    ILModuleRef.Create(a, b, c)
 
 let u_ILAssemblyRef st =
     let tag = u_byte st
     match tag with
     | 0 ->
         let a, b, c, d, e, f = u_tup6 u_string (u_option u_bytes) (u_option u_ILPublicKey) u_bool (u_option u_ILVersion) (u_option u_string) st
-        ILAssemblyRef.Create(a, b |> Option.map (fun x -> x.ToArray()), c, d, e, f)
+        ILAssemblyRef.Create(a, b, c, d, e, f)
     | _ -> ufailwith st "u_ILAssemblyRef"
 
 // IL scope references are rescoped as they are unpickled.  This means
@@ -2537,7 +2540,7 @@ and u_op st =
     | 20 -> TOp.While (NoSequencePointAtWhileLoop, NoSpecialWhileLoopMarker)
     | 21 -> let dir = match u_int st with 0 -> FSharpForLoopUp | 1 -> CSharpForLoopUp | 2 -> FSharpForLoopDown | _ -> failwith "unknown for loop"
             TOp.For (NoSequencePointAtForLoop, dir)
-    | 22 -> TOp.Bytes ((u_bytes st).ToArray())
+    | 22 -> TOp.Bytes (u_bytes st)
     | 23 -> TOp.TryCatch (NoSequencePointAtTry, NoSequencePointAtWith)
     | 24 -> TOp.TryFinally (NoSequencePointAtTry, NoSequencePointAtFinally)
     | 25 -> let a = u_rfref st

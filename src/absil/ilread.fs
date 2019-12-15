@@ -1410,7 +1410,7 @@ let rvaToData (ctxt: ILMetadataReader) (pectxt: PEReader) nm rva =
 
 let isSorted (ctxt: ILMetadataReader) (tab: TableName) = ((ctxt.sorted &&& (int64 1 <<< tab.Index)) <> int64 0x0) 
 
-// Note, pectxtEager must not be captured by the results of this function
+// Note, pectxtEager and pevEager must not be captured by the results of this function
 let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PEReader) pevEager peinfo ilMetadataVersion idx =
     let (subsys, subsysversion, useHighEntropyVA, ilOnly, only32, is32bitpreferred, only64, platform, isDll, alignVirt, alignPhys, imageBaseReal) = peinfo
     let mdv = ctxt.mdfile.GetView()
@@ -3012,6 +3012,7 @@ and sigptrGetILNativeType ctxt bytes sigptr =
     else (ILNativeType.Empty, sigptr)
 
 // Note, pectxtEager and pevEager must not be captured by the results of this function
+// As a result, reading the resource offsets in the physical file is done eagerly to avoid holding on to any resources
 and seekReadManifestResources (ctxt: ILMetadataReader) canReduceMemory (mdv: BinaryView) (pectxtEager: PEReader) (pevEager: BinaryView) = 
     mkILResources
         [ for i = 1 to ctxt.getNumRows TableNames.ManifestResource do

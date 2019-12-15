@@ -43,6 +43,8 @@ type internal ByteMemory =
 
     abstract CopyTo: Stream -> unit
 
+    abstract Copy: srcOffset: int * dest: byte[] * destOffset: int * count: int -> unit
+
     abstract ToArray: unit -> byte[]
 
     abstract AsStream: unit -> Stream
@@ -50,7 +52,7 @@ type internal ByteMemory =
     /// Create another ByteMemory object that has a backing memory mapped file based on another ByteMemory's contents.
     static member CreateMemoryMappedFile: ByteMemory -> ByteMemory
 
-    /// Creates a ByteMemory object that has a backing memory mapped file.
+    /// Creates a ByteMemory object that has a backing memory mapped file from a file on-disk.
     static member FromFile: path: string * FileAccess * ?canShadowCopy: bool -> ByteMemory
 
     /// Creates a ByteMemory object that is backed by a raw pointer.
