@@ -86,13 +86,13 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         Array.sub bytes (offset + pos) count
 
     override _.GetInt32 pos =
-        BitConverter.ToInt32(bytes, pos)
+        BitConverter.ToInt32(bytes, offset + pos)
 
     override _.GetUInt16 pos =
-        BitConverter.ToUInt16(bytes, pos)
+        BitConverter.ToUInt16(bytes, offset + pos)
 
     override _.GetUtf8String(pos, count) =
-        System.Text.Encoding.UTF8.GetString(bytes, pos, count)
+        System.Text.Encoding.UTF8.GetString(bytes, offset + pos, count)
 
     override _.Slice(pos, count) =
         ByteArrayMemory(bytes, offset + pos, count) :> ByteMemory
