@@ -47,6 +47,8 @@ type internal ByteMemory =
 
     abstract ToArray: unit -> byte[]
 
+    /// Get a stream representation of the backing memory.
+    /// Disposing this will not free up any of the backing memory.
     abstract AsStream: unit -> Stream
 
     /// Create another ByteMemory object that has a backing memory mapped file based on another ByteMemory's contents.

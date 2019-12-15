@@ -444,7 +444,8 @@ let EncodeInterfaceData(tcConfig: TcConfig, tcGlobals, exportRemapping, generate
             let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
             let bytes = resource.GetBytes()
             use fileStream = File.Create(sigDataFileName, bytes.Length)
-            bytes.AsStream().CopyTo(fileStream)
+            use stream = bytes.AsStream()
+            stream.CopyTo(fileStream)
         let resources = 
             [ resource ]
         let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
