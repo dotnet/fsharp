@@ -158,14 +158,26 @@ module Utilities =
             None
 #endif
 
+    let drainStreamToFile (stream: StreamReader) filename =
+        use file = File.OpenWrite(filename)
+        use writer = new StreamWriter(file)
+        let rec copyLines () =
+            match stream.ReadLine() with
+            | null -> ()
+            | line ->
+                writer.WriteLine(line)
+                copyLines ()
+        copyLines ()
+
     let executeBuild pathToExe arguments workingDir =
         match pathToExe with
         | Some path ->
+
             let psi = ProcessStartInfo()
             psi.FileName <- path
             psi.WorkingDirectory <- workingDir
-            psi.RedirectStandardOutput <- false
-            psi.RedirectStandardError <- false
+            psi.RedirectStandardOutput <- true
+            psi.RedirectStandardError <- true
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
             psi.UseShellExecute <- false
@@ -173,8 +185,13 @@ module Utilities =
             use p = new Process()
             p.StartInfo <- psi
             p.Start() |> ignore
+
+            drainStreamToFile p.StandardOutput (Path.Combine(workingDir, "StandardOutput.txt"))
+            drainStreamToFile p.StandardError (Path.Combine(workingDir, "StandardError.txt"))
+
             p.WaitForExit()
             p.ExitCode = 0
+
         | None -> false
 
     let buildProject projectPath binLogPath =
