@@ -60,6 +60,8 @@ type ByteMemory () =
 
     abstract AsStream: unit -> Stream
 
+    abstract AsReadOnlyStream: unit -> Stream
+
 [<Sealed>]
 type ByteArrayMemory(bytes: byte[], offset, length) =
     inherit ByteMemory()
@@ -115,6 +117,9 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
 
     override _.AsStream() =
         new MemoryStream(bytes, offset, length) :> Stream
+
+    override _.AsReadOnlyStream() =
+        new MemoryStream(bytes, offset, length, false) :> Stream
 
 [<Sealed>]
 type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
@@ -182,6 +187,9 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
     override _.AsStream() =
         new UnmanagedMemoryStream(addr, int64 length) :> Stream
 
+    override _.AsReadOnlyStream() =
+        new UnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read) :> Stream
+
 [<Struct;NoEquality;NoComparison>]
 type ReadOnlyByteMemory(bytes: ByteMemory) =
 
@@ -212,6 +220,8 @@ type ReadOnlyByteMemory(bytes: ByteMemory) =
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.ToArray() = bytes.ToArray()
+
+    member _.AsStream() = bytes.AsReadOnlyStream()
 
 type ByteMemory with
 

@@ -51,6 +51,11 @@ type internal ByteMemory =
     /// Disposing this will not free up any of the backing memory.
     abstract AsStream: unit -> Stream
 
+    /// Get a stream representation of the backing memory.
+    /// Disposing this will not free up any of the backing memory.
+    /// Stream cannot be written to.
+    abstract AsReadOnlyStream: unit -> Stream
+
 [<Struct;NoEquality;NoComparison>]
 type internal ReadOnlyByteMemory =
 
@@ -75,6 +80,8 @@ type internal ReadOnlyByteMemory =
     member Copy: srcOffset: int * dest: byte[] * destOffset: int * count: int -> unit
 
     member ToArray: unit -> byte[]
+
+    member AsStream: unit -> Stream
 
 type ByteMemory with
 
