@@ -367,7 +367,7 @@ type internal ByteBuffer =
         Bytes.blit i 0 buf.bbArray buf.bbCurrent n
         buf.bbCurrent <- newSize 
 
-    member buf.EmitMemory (i:ByteMemory) = 
+    member buf.EmitByteMemory (i:ByteMemory) = 
         let n = i.Length 
         let newSize = buf.bbCurrent + n 
         buf.Ensure newSize
