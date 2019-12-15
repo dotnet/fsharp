@@ -3,6 +3,7 @@
 /// Blobs of bytes, cross-compiling 
 namespace FSharp.Compiler.AbstractIL.Internal
 
+open System.IO
 open Internal.Utilities
 
 open FSharp.Compiler.AbstractIL 
@@ -22,6 +23,63 @@ module internal Bytes =
     val stringAsUnicodeNullTerminated: string -> byte[]
     val stringAsUtf8NullTerminated: string -> byte[]
 
+/// May be backed by managed or unmanaged memory, or memory mapped file.
+[<AbstractClass>]
+type internal ByteMemory =
+
+    abstract Item: int -> byte with get
+
+    abstract Length: int
+
+    abstract GetBytes: pos: int * count: int -> byte[]
+
+    abstract GetInt32: pos: int -> int
+
+    abstract GetUInt16: pos: int -> uint16
+
+    abstract GetUtf8String: pos: int * count: int -> string
+
+    abstract Slice: pos: int * count: int -> ByteMemory
+
+    abstract CopyTo: Stream -> unit
+
+    abstract ToArray: unit -> byte[]
+
+    abstract AsStream: unit -> Stream
+
+    /// Create another ByteMemory object that has a backing memory mapped file based on another ByteMemory's contents.
+    static member CreateMemoryMappedFile: ByteMemory -> ByteMemory
+
+    /// Creates a ByteMemory object that has a backing memory mapped file.
+    static member FromFile: path: string * FileAccess * ?canShadowCopy: bool -> ByteMemory
+
+    /// Creates a ByteMemory object that is backed by a raw pointer.
+    /// Use with care.
+    static member FromUnsafePointer: addr: nativeint * length: int * hold: obj -> ByteMemory
+
+    /// Creates a ByteMemory object that is backed by a byte array with the specified offset and length.
+    static member FromArray: bytes: byte[] * offset: int * length: int -> ByteMemory
+
+[<Struct;NoEquality;NoComparison>]
+type internal ReadOnlyByteMemory =
+
+    new: ByteMemory -> ReadOnlyByteMemory
+
+    member Item: int -> byte with get
+
+    member Length: int
+
+    member GetBytes: pos: int * count: int -> byte[]
+
+    member GetInt32: pos: int -> int
+
+    member GetUInt16: pos: int -> uint16
+
+    member GetUtf8String: pos: int * count: int -> string
+
+    member Slice: pos: int * count: int -> ReadOnlyByteMemory
+
+    member ToArray: unit -> byte[]
 
 /// Imperative buffers and streams of byte[]
 [<Sealed>]
@@ -44,10 +102,10 @@ type internal ByteBuffer =
 [<Sealed>]
 type internal ByteStream =
     member ReadByte : unit -> byte
-    member ReadBytes : int -> byte[]
+    member ReadBytes : int -> ReadOnlyByteMemory
     member ReadUtf8String : int -> string
     member Position : int 
-    static member FromBytes : byte[] * start:int * length:int -> ByteStream
+    static member FromBytes : ReadOnlyByteMemory * start:int * length:int -> ByteStream
     
 #if LAZY_UNPICKLE
     member CloneAndSeek : int -> ByteStream

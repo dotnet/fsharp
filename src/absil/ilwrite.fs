@@ -2702,8 +2702,7 @@ let rec GetResourceAsManifestResourceRow cenv r =
             Data (alignedOffset, true), (i_File, 0)  
 
         match r.Location with 
-        | ILResourceLocation.LocalIn _ -> embedManagedResources (r.GetBytes())
-        | ILResourceLocation.LocalOut bytes -> embedManagedResources bytes 
+        | ILResourceLocation.Local bytes -> embedManagedResources (bytes.ToArray()) // TODO:
         | ILResourceLocation.File (mref, offset) -> ULong offset, (i_File, GetModuleRefAsFileIdx cenv mref) 
         | ILResourceLocation.Assembly aref -> ULong 0x0, (i_AssemblyRef, GetAssemblyRefAsIdx cenv aref) 
 
