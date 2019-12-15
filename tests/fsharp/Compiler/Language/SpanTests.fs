@@ -54,7 +54,7 @@ test ()
 
 
     [<Test>]
-    let ``Should fail to compile on a type abbreviation``() =
+    let ``Invalid usage of type abbreviated span should fail to compile``() =
         CompilerAssert.TypeCheckWithErrors """
 open System
 
@@ -91,7 +91,7 @@ let test () =
             |]
 
     [<Test>]
-    let ``Should fail to compile on a type abbreviation 2``() =
+    let ``Type abbreviation that boxes a span should fail to compile``() =
         CompilerAssert.TypeCheckWithErrors """
 open System
 
