@@ -510,9 +510,7 @@ let p_option f x st =
 // OSGN nodes.
 let private p_lazy_impl p v st =
     // We fix these up after
-    let fixupArr = Array.zeroCreate<int32> 7
-    let fixup = st.os.Reserve (fixupArr.Length * sizeof<int32>)
-    st.os.EmitInt32s fixupArr
+    let fixup = st.os.Reserve (7 * sizeof<int32>)
     let idx1 = st.os.Position
     let otyconsIdx1 = st.oentities.Size
     let otyparsIdx1 = st.otypars.Size
@@ -525,14 +523,13 @@ let private p_lazy_impl p v st =
     let otyconsIdx2 = st.oentities.Size
     let otyparsIdx2 = st.otypars.Size
     let ovalsIdx2 = st.ovals.Size
-    fixupArr.[0] <- (idx2-idx1)
-    fixupArr.[1] <- otyconsIdx1
-    fixupArr.[2] <- otyconsIdx2
-    fixupArr.[3] <- otyparsIdx1
-    fixupArr.[4] <- otyparsIdx2
-    fixupArr.[5] <- ovalsIdx1
-    fixupArr.[6] <- ovalsIdx2
-    fixup.WriteInt32s fixupArr
+    fixup.WriteInt32 (0, (idx2-idx1))
+    fixup.WriteInt32 (4, otyconsIdx1)
+    fixup.WriteInt32 (8, otyconsIdx2)
+    fixup.WriteInt32 (12, otyparsIdx1)
+    fixup.WriteInt32 (16, otyparsIdx2)
+    fixup.WriteInt32 (20, ovalsIdx1)
+    fixup.WriteInt32 (24, ovalsIdx2)
 
 let p_lazy p x st =
     p_lazy_impl p (Lazy.force x) st

@@ -440,32 +440,31 @@ module List =
 type SpanExtensions =
 
     [<System.Runtime.CompilerServices.Extension>]
-    static member inline WriteByte(data: Span<byte>, value: byte) =
-        data.[0] <- byte value
+    static member inline WriteByte(data: Span<byte>, offset, value: byte) =
+        data.[0 + offset] <- byte value
 
     [<System.Runtime.CompilerServices.Extension>]
-    static member inline WriteUInt16(data: Span<byte>, value: uint16) =
-        data.[0] <- byte value
-        data.[1] <- byte (value >>> 8)
+    static member inline WriteUInt16(data: Span<byte>, offset, value: uint16) =
+        data.[0 + offset] <- byte value
+        data.[1 + offset] <- byte (value >>> 8)
 
     [<System.Runtime.CompilerServices.Extension>]
-    static member inline WriteUInt32(data: Span<byte>, value: uint32) =
-        data.[0] <- byte value
-        data.[1] <- byte (value >>> 8)
-        data.[2] <- byte (value >>> 16)
-        data.[3] <- byte (value >>> 24)
+    static member inline WriteUInt32(data: Span<byte>, offset, value: uint32) =
+        data.[0 + offset] <- byte value
+        data.[1 + offset] <- byte (value >>> 8)
+        data.[2 + offset] <- byte (value >>> 16)
+        data.[3 + offset] <- byte (value >>> 24)
 
     [<System.Runtime.CompilerServices.Extension>]
-    static member inline WriteInt32AsUInt16(data: Span<byte>, value: int32) =
-        data.[0] <- byte value
-        data.[1] <- byte (value >>> 8)
+    static member inline WriteInt32(data: Span<byte>, offset, value: int32) =
+        data.WriteUInt32(offset, uint32 value)
 
     [<System.Runtime.CompilerServices.Extension>]
-    static member inline WriteInt32s(data: Span<byte>, values: int32 []) =
-        let mutable data = data
-        for value in values do
-            data.WriteUInt32 (uint32 value)
-            data <- data.Slice 4
+    static member inline WriteInt32AsUInt16(data: Span<byte>, offset, value: int32) =
+        data.[0 + offset] <- byte value
+        data.[1 + offset] <- byte (value >>> 8)
+
+    
 
 /// Not thread safe.
 /// Loosely based on StringBuilder/BlobBuilder

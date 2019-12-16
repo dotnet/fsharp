@@ -65,7 +65,9 @@ type internal ByteBuffer =
     { mutable bbArray: ChunkedArrayBuilder<byte> 
       mutable bbCurrent: int }
 
-    member buf.Reserve length = buf.bbArray.Reserve length
+    member buf.Reserve length = 
+        buf.bbCurrent <- buf.bbCurrent + length
+        buf.bbArray.Reserve length
 
     member buf.Close () = buf.bbArray.ToChunkedArray().ToArray()
 
@@ -73,7 +75,7 @@ type internal ByteBuffer =
         buf.EmitByte (byte i)
 
     member buf.EmitByte (b:byte) =
-        (buf.bbArray.Reserve 1).WriteByte b
+        (buf.bbArray.Reserve 1).WriteByte (0, b)
         buf.bbCurrent <- buf.bbCurrent + 1
 
     member buf.EmitIntsAsBytes (arr:int[]) = 
@@ -87,7 +89,7 @@ type internal ByteBuffer =
             buf.EmitInt32 arr.[i]
 
     member buf.EmitInt32 n = 
-        (buf.bbArray.Reserve 4).WriteUInt32(uint32 n)
+        (buf.bbArray.Reserve 4).WriteUInt32(0, uint32 n)
         buf.bbCurrent <- buf.bbCurrent + 4
 
     member buf.EmitBytes (i:byte[]) = 
@@ -95,7 +97,7 @@ type internal ByteBuffer =
         buf.bbCurrent <- buf.bbCurrent + i.Length
 
     member buf.EmitInt32AsUInt16 n = 
-        (buf.bbArray.Reserve 2).WriteInt32AsUInt16 n
+        (buf.bbArray.Reserve 2).WriteInt32AsUInt16 (0, n)
         buf.bbCurrent <- buf.bbCurrent + 2
     
     member buf.EmitBoolAsByte (b:bool) = buf.EmitIntAsByte (if b then 1 else 0)
