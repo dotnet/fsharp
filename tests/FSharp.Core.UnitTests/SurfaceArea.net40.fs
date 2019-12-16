@@ -3195,7 +3195,7 @@ Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: UIntPtr op_Modulus(UI
 Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: UIntPtr op_Multiply(UIntPtr, UIntPtr)
 Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: UIntPtr op_RightShift(UIntPtr, Int32)
 Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: UIntPtr op_Subtraction(UIntPtr, UIntPtr)
-Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesse)
+Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses
 Microsoft.FSharp.Core.LanguagePrimitives: T DivideByInt$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], T, Int32)
 Microsoft.FSharp.Core.LanguagePrimitives: T GenericOne$W[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
 Microsoft.FSharp.Core.LanguagePrimitives: T GenericZero$W[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T])
