@@ -9,6 +9,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
 open FSharp.Compiler.AccessibilityLogic
@@ -147,16 +148,19 @@ let AdjustCalledArgTypeForLinqExpressionsAndAutoQuote (infoReader: InfoReader) c
     else calledArgTy
 
 /// Adjust the called argument type to take into account whether the caller's argument is CSharpMethod(?arg=Some(3)) or CSharpMethod(arg=1) 
-let AdjustCalledArgTypeForOptionals g enforceNullableOptionalsKnownTypes (calledArg: CalledArg) calledArgTy (callerArg: CallerArg<_>) =
+let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnownTypes (calledArg: CalledArg) calledArgTy (callerArg: CallerArg<_>) =
 
     if callerArg.IsExplicitOptional then 
         match calledArg.OptArgInfo with 
         // CSharpMethod(?x = arg), optional C#-style argument, may have nullable type
-        | CallerSide _ ->
-            if isNullableTy g calledArgTy then
-                mkOptionTy g (destNullableTy g calledArgTy)
+        | CallerSide _ -> 
+            if g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop then
+                if isNullableTy g calledArgTy then
+                    mkOptionTy g (destNullableTy g calledArgTy)
+                else
+                    mkOptionTy g calledArgTy
             else
-                mkOptionTy g calledArgTy
+                calledArgTy
 
         // FSharpMethod(?x = arg), optional F#-style argument
         | CalleeSide ->
@@ -175,7 +179,7 @@ let AdjustCalledArgTypeForOptionals g enforceNullableOptionalsKnownTypes (called
         // CSharpMethod(x = arg), optional C#-style argument, may have type Nullable<ty>. 
         // The arg should have type ty. However for backwards compat, we also allow arg to have type Nullable<ty>
         | CallerSide _ ->
-            if isNullableTy g calledArgTy then 
+            if isNullableTy g calledArgTy  && g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop  then 
                 // If inference has worked out it's a nullable then use this
                 if isNullableTy g callerArg.CallerArgumentType then
                     calledArgTy

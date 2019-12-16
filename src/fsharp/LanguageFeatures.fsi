@@ -15,7 +15,7 @@ type LanguageFeature =
     | NameOf = 6
     | ImplicitYield = 7
     | OpenStaticClasses = 8
-
+    | NullableOptionalInterop = 1075 // number is RFC
 
 /// LanguageVersion management
 type LanguageVersion =

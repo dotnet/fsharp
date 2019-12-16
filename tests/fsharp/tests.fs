@@ -642,21 +642,33 @@ module CoreTests =
 
         csc cfg """/nologo /target:library /r:"%s" /out:lib3.dll  /langversion:7.2""" cfg.FSCOREDLLPATH ["lib3.cs"]
 
-        fsc cfg "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        // some features missing in 4.6, 4.7 etc
+        for version in ["4.6"; "4.7"; "latest"] do
+            let outFile = "compilation.langversion.old.output.txt" 
+            let expectedFile = "compilation.langversion.old.output.bsl" 
+            fscBothToOutExpectFail cfg outFile "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --nologo --langversion:%s" cfg.fsc_flags version ["test.fsx"]
+
+            let diffs = fsdiff cfg outFile expectedFile 
+            match diffs with
+            | "" -> ()
+            | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outFile expectedFile diffs)
+
+        // all features available in preview
+        fsc cfg "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
 
         // Same with library references the other way around
-        fsc cfg "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
 
         // Same without the reference to lib.dll - testing an incomplete reference set, but only compiling a subset of the code
-        fsc cfg "%s -r:System.Runtime.dll --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -r:System.Runtime.dll --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 

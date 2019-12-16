@@ -28,6 +28,7 @@ type LanguageFeature =
     | NameOf = 6
     | ImplicitYield = 7
     | OpenStaticClasses = 8
+    | NullableOptionalInterop = 1075 // number is RFC
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -59,6 +60,7 @@ type LanguageVersion (specifiedVersionAsString) =
             // Add new Language Features here...
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
+            LanguageFeature.NullableOptionalInterop, previewVersion
         ]
 
     let specified =
