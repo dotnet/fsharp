@@ -436,6 +436,141 @@ module List =
 
     let mapiFoldSquared f z xss = mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i, j, x)))
 
+[<System.Runtime.CompilerServices.Extension;AbstractClass;Sealed>]
+type SpanExtensions =
+
+    [<System.Runtime.CompilerServices.Extension>]
+    static member inline WriteByte(data: Span<byte>, value: byte) =
+        data.[0] <- byte value
+
+    [<System.Runtime.CompilerServices.Extension>]
+    static member inline WriteUInt16(data: Span<byte>, value: uint16) =
+        data.[0] <- byte value
+        data.[1] <- byte (value >>> 8)
+
+    [<System.Runtime.CompilerServices.Extension>]
+    static member inline WriteUInt32(data: Span<byte>, value: uint32) =
+        data.[0] <- byte value
+        data.[1] <- byte (value >>> 8)
+        data.[2] <- byte (value >>> 16)
+        data.[3] <- byte (value >>> 24)
+
+    [<System.Runtime.CompilerServices.Extension>]
+    static member inline WriteInt32AsUInt16(data: Span<byte>, value: int32) =
+        data.[0] <- byte value
+        data.[1] <- byte (value >>> 8)
+
+    [<System.Runtime.CompilerServices.Extension>]
+    static member inline WriteInt32s(data: Span<byte>, values: int32 []) =
+        let mutable data = data
+        for value in values do
+            data.WriteUInt32 (uint32 value)
+            data <- data.Slice 4
+
+/// Not thread safe.
+/// Loosely based on StringBuilder/BlobBuilder
+[<Sealed>]
+type internal ChunkedArrayBuilder<'T> private (minChunkSize: int, buffer: 'T []) =
+
+    let mutable buffer = buffer
+
+    member _.Buffer
+        with get () = buffer
+        and set v = buffer <- v
+
+    member val ChunkLength = 0 with get, set
+    member val NextOrPrevious = Unchecked.defaultof<ChunkedArrayBuilder<'T>> with get, set
+    member val private Position = 0 with get, set
+    member val private IsFrozen = false with get, set
+
+    // [1:first]->[2]->[3:last]<-[4:head]
+    //     ^_______________|
+    member x.FirstChunk = x.NextOrPrevious.NextOrPrevious
+
+    member x.Reserve dataLength =
+        if dataLength + x.Position > x.Buffer.Length then
+            let newChunk = ChunkedArrayBuilder<'T>(minChunkSize, Array.zeroCreate<'T> (Math.Max(dataLength, minChunkSize)), IsFrozen = true)
+            let newBuffer = newChunk.Buffer
+
+            match box x.NextOrPrevious with
+            | null -> ()
+            | _ ->
+                match box x.FirstChunk with
+                | null ->
+                    let firstChunk = x.NextOrPrevious
+                    firstChunk.NextOrPrevious <- newChunk
+                    newChunk.NextOrPrevious <- firstChunk
+                | _ ->
+                    let firstChunk = x.FirstChunk
+                    let lastChunk = x.NextOrPrevious
+                    lastChunk.NextOrPrevious <- newChunk
+                    newChunk.NextOrPrevious <- firstChunk
+
+            newChunk.ChunkLength <- x.ChunkLength
+            newChunk.Buffer <- x.Buffer
+            x.Buffer <- newBuffer
+            x.NextOrPrevious <- newChunk
+            x.ChunkLength <- 0
+            x.Position <- 0
+        let reserved = Span(x.Buffer, x.Position, dataLength)
+        x.ChunkLength <- x.ChunkLength + dataLength
+        x.Position <- x.ChunkLength
+        reserved
+
+    member x.Write(data: ReadOnlySpan<'T>) =
+        if x.IsFrozen then
+            failwith "Chunked array builder is frozen and cannot be written to"
+
+        let reserved = x.Reserve data.Length
+        data.CopyTo(reserved)
+
+    static member Create(minChunkSize, startingCapacity) =
+        ChunkedArrayBuilder(minChunkSize, Array.zeroCreate<'T> (Math.Max(startingCapacity, minChunkSize)))
+                
+[<Sealed>]
+type internal ChunkedArray<'T>(builder: ChunkedArrayBuilder<'T>) =
+
+    let chunkIter f =
+        match box builder.NextOrPrevious with
+        | null -> ()
+        | _ ->
+            match box builder.FirstChunk with
+            | null ->
+                f builder.NextOrPrevious.Buffer builder.NextOrPrevious.ChunkLength
+            | _ ->
+                let firstChunk = builder.FirstChunk
+                f firstChunk.Buffer firstChunk.ChunkLength
+                let mutable chunk = firstChunk.NextOrPrevious
+                while chunk <> firstChunk do
+                    f chunk.Buffer chunk.ChunkLength
+                    chunk <- chunk.NextOrPrevious
+
+        if builder.ChunkLength > 0 then
+            f builder.Buffer builder.ChunkLength
+
+    let lazyLength =
+        lazy
+            let mutable total = 0
+            chunkIter (fun _ length -> total <- total + length)
+            total
+
+    member _.Length = lazyLength.Value
+
+    member x.ToArray() =
+        let arr = Array.zeroCreate<'T> x.Length
+        let mutable total = 0
+        chunkIter (fun buffer length -> 
+            Array.Copy(buffer, 0, arr, total, length)
+            total <- total + length)
+        arr
+
+type internal ChunkedArrayBuilder<'T> with
+
+    member x.ToChunkedArray() = 
+        x.IsFrozen <- true
+        ChunkedArray x
+
+
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.

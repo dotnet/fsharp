@@ -3,10 +3,12 @@
 /// Blobs of bytes, cross-compiling 
 namespace FSharp.Compiler.AbstractIL.Internal
 
+open System
 open Internal.Utilities
 
 open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.Library 
 
 
 module internal Bytes = 
@@ -26,19 +28,20 @@ module internal Bytes =
 /// Imperative buffers and streams of byte[]
 [<Sealed>]
 type internal ByteBuffer = 
+    member Reserve : int -> Span<byte>
     member Close : unit -> byte[] 
     member EmitIntAsByte : int -> unit
     member EmitIntsAsBytes : int[] -> unit
+    member EmitInt32s : int32[] -> unit
     member EmitByte : byte -> unit
     member EmitBytes : byte[] -> unit
     member EmitInt32 : int32 -> unit
     member EmitInt64 : int64 -> unit
-    member FixupInt32 : pos: int -> value: int32 -> unit
     member EmitInt32AsUInt16 : int32 -> unit
     member EmitBoolAsByte : bool -> unit
     member EmitUInt16 : uint16 -> unit
     member Position : int
-    static member Create : int -> ByteBuffer
+    static member Create : startingCapacity: int -> ByteBuffer
 
 
 [<Sealed>]

@@ -3,7 +3,10 @@
 /// Byte arrays
 namespace FSharp.Compiler.AbstractIL.Internal
 
-
+open System
+open System.Runtime.CompilerServices
+open FSharp.NativeInterop
+open FSharp.Compiler.AbstractIL.Internal.Library 
 
 module internal Bytes = 
     let b0 n =  (n &&& 0xFF)
@@ -59,61 +62,41 @@ type internal ByteStream =
 
 
 type internal ByteBuffer = 
-    { mutable bbArray: byte[] 
+    { mutable bbArray: ChunkedArrayBuilder<byte> 
       mutable bbCurrent: int }
 
-    member buf.Ensure newSize = 
-        let oldBufSize = buf.bbArray.Length 
-        if newSize > oldBufSize then 
-            let old = buf.bbArray 
-            buf.bbArray <- Bytes.zeroCreate (max newSize (oldBufSize * 2))
-            Bytes.blit old 0 buf.bbArray 0 buf.bbCurrent
+    member buf.Reserve length = buf.bbArray.Reserve length
 
-    member buf.Close () = Bytes.sub buf.bbArray 0 buf.bbCurrent
+    member buf.Close () = buf.bbArray.ToChunkedArray().ToArray()
 
     member buf.EmitIntAsByte (i:int) = 
-        let newSize = buf.bbCurrent + 1 
-        buf.Ensure newSize
-        buf.bbArray.[buf.bbCurrent] <- byte i
-        buf.bbCurrent <- newSize 
+        buf.EmitByte (byte i)
 
-    member buf.EmitByte (b:byte) = buf.EmitIntAsByte (int b)
+    member buf.EmitByte (b:byte) =
+        (buf.bbArray.Reserve 1).WriteByte b
+        buf.bbCurrent <- buf.bbCurrent + 1
 
     member buf.EmitIntsAsBytes (arr:int[]) = 
         let n = arr.Length
-        let newSize = buf.bbCurrent + n 
-        buf.Ensure newSize
-        let bbArr = buf.bbArray
-        let bbBase = buf.bbCurrent
         for i = 0 to n - 1 do 
-            bbArr.[bbBase + i] <- byte arr.[i] 
-        buf.bbCurrent <- newSize 
+            buf.EmitByte (byte arr.[i])
 
-    member bb.FixupInt32 pos n = 
-        bb.bbArray.[pos] <- (Bytes.b0 n |> byte)
-        bb.bbArray.[pos + 1] <- (Bytes.b1 n |> byte)
-        bb.bbArray.[pos + 2] <- (Bytes.b2 n |> byte)
-        bb.bbArray.[pos + 3] <- (Bytes.b3 n |> byte)
+    member buf.EmitInt32s (arr: int32[]) =
+        let n = arr.Length
+        for i = 0 to n - 1 do 
+            buf.EmitInt32 arr.[i]
 
     member buf.EmitInt32 n = 
-        let newSize = buf.bbCurrent + 4 
-        buf.Ensure newSize
-        buf.FixupInt32 buf.bbCurrent n
-        buf.bbCurrent <- newSize 
+        (buf.bbArray.Reserve 4).WriteUInt32(uint32 n)
+        buf.bbCurrent <- buf.bbCurrent + 4
 
     member buf.EmitBytes (i:byte[]) = 
-        let n = i.Length 
-        let newSize = buf.bbCurrent + n 
-        buf.Ensure newSize
-        Bytes.blit i 0 buf.bbArray buf.bbCurrent n
-        buf.bbCurrent <- newSize 
+        buf.bbArray.Write(ReadOnlySpan i)
+        buf.bbCurrent <- buf.bbCurrent + i.Length
 
     member buf.EmitInt32AsUInt16 n = 
-        let newSize = buf.bbCurrent + 2 
-        buf.Ensure newSize
-        buf.bbArray.[buf.bbCurrent] <- (Bytes.b0 n |> byte)
-        buf.bbArray.[buf.bbCurrent + 1] <- (Bytes.b1 n |> byte)
-        buf.bbCurrent <- newSize 
+        (buf.bbArray.Reserve 2).WriteInt32AsUInt16 n
+        buf.bbCurrent <- buf.bbCurrent + 2
     
     member buf.EmitBoolAsByte (b:bool) = buf.EmitIntAsByte (if b then 1 else 0)
 
@@ -125,8 +108,14 @@ type internal ByteBuffer =
 
     member buf.Position = buf.bbCurrent
 
-    static member Create sz = 
-        { bbArray=Bytes.zeroCreate sz 
+    static member Create startingCapacity = 
+        let maxStartingCapacity = 1024 * 8 // 8k
+        let startingCapacity =
+            if startingCapacity > maxStartingCapacity then
+                maxStartingCapacity
+            else
+                startingCapacity
+        { bbArray = ChunkedArrayBuilder.Create(16, startingCapacity)  
           bbCurrent = 0 }
 
 
