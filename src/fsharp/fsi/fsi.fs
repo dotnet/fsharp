@@ -950,6 +950,7 @@ type internal FsiDynamicCompiler
     let assemblyName = "FSI-ASSEMBLY"
 
     let assemblyReferenceAddedEvent = Control.Event<string>()
+    let valueBoundEvent = Control.Event<_>()
 
     let mutable fragmentId = 0
     let mutable prevIt : ValRef option = None
@@ -1155,6 +1156,10 @@ type internal FsiDynamicCompiler
                             if v.CompiledName = "it" then
                                 itValue <- fsiValueOpt
 
+                            match fsiValueOpt with
+                            | Some fsiValue -> valueBoundEvent.Trigger(fsiValue.ReflectionValue, fsiValue.ReflectionType, v.CompiledName)
+                            | None -> ()
+
                             let symbol = FSharpSymbol.Create(cenv, v.Item)
                             let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
                             fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
@@ -1330,6 +1335,8 @@ type internal FsiDynamicCompiler
         valuePrinter.FormatValue(obj, objTy)
 
     member __.AssemblyReferenceAdded = assemblyReferenceAddedEvent.Publish
+
+    member __.ValueBound = valueBoundEvent.Publish
 
 //----------------------------------------------------------------------------
 // ctrl-c handling
@@ -1670,8 +1677,8 @@ type internal FsiStdinLexerProvider
         CreateLexerForLexBuffer (Lexhelp.stdinMockFilename, lexbuf, errorLogger)
 
     // Create a new lexer to read an "included" script file
-    member __.CreateIncludedScriptLexer (sourceFileName, errorLogger) =
-        let lexbuf = UnicodeLexing.UnicodeFileAsLexbuf(isFeatureSupported, sourceFileName, tcConfigB.inputCodePage, (*retryLocked*)false)
+    member __.CreateIncludedScriptLexer (sourceFileName, reader, errorLogger) =
+        let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(isFeatureSupported, reader)
         CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
 
     // Create a new lexer to read a string
@@ -2030,7 +2037,8 @@ type internal FsiInteractionProcessor
         WithImplicitHome (tcConfigB, directoryName sourceFile)  (fun () ->
               // An included script file may contain maybe several interaction blocks.
               // We repeatedly parse and process these, until an error occurs.
-                let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, errorLogger)
+                use reader = File.OpenReaderAndRetry (sourceFile, tcConfigB.inputCodePage, (*retryLocked*)false)
+                let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, reader, errorLogger)
                 let rec run istate =
                     let istate,cont = processor.ParseAndExecOneSetOfInteractionsFromLexbuf ((fun f istate -> f ctok istate), istate, tokenizer, errorLogger)
                     match cont with Completed _ -> run istate | _ -> istate,cont 
@@ -2221,7 +2229,6 @@ type internal FsiInteractionProcessor
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
-
 
 //----------------------------------------------------------------------------
 // Server mode:
@@ -2630,6 +2637,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
     member __.AssemblyReferenceAdded = fsiDynamicCompiler.AssemblyReferenceAdded
+
+    /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
+    member __.ValueBound = fsiDynamicCompiler.ValueBound
  
     /// Performs these steps:
     ///    - Load the dummy interaction, if any

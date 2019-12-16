@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
-        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <target state="translated">Il flusso non inizia con una risorsa Null e non è in formato '.RES'.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
-        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <target state="translated">L'intestazione di risorsa che inizia a partire dall'offset {0} non è valida.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
-        <target state="new">Attributes cannot be applied to type extensions.</target>
+        <target state="translated">Gli attributi non possono essere applicati a estensioni di tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">

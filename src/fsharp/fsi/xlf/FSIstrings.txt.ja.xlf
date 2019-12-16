@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="new">Operation could not be completed due to earlier error</target>
+        <target state="translated">以前のエラーが原因で操作を完了できませんでした</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <target state="translated">操作に失敗しました。エラー テキストがエラー ストリームで印刷されました。対応する FSharpErrorInfo を戻すには、EvalInteractionNonThrowing、EvalScriptuNonThrowing、または EvalExpressionNonThrowing を使用します</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">使い方: {0} &lt;オプション&gt; [script.fsx [&lt;引数&gt;]]</target>
+        <target state="translated">使用状況: {0} &lt;オプション&gt; [script.fsx [&lt;引数&gt;]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">F# インタラクティブのプロセスの開始中に問題が発生しました。この原因は、一部の Windows システム上での Unicode 対応アプリケーションのバックグラウンド プロセス コンソールのサポートに関する既知の問題にある可能性があります。[ツール]5D; の [オプション]5D; から [F# Interactive for Visual Studio]5D; を選択し、「--fsi-server-no-unicode」と入力してください。</target>
+        <target state="translated">F# 対話型プロセスの開始で問題が発生しました。これは、一部の Windows システムで Unicode 対応アプリケーションのバックグラウンド プロセス コンソールのサポートに関する既知の問題が原因である可能性があります。Visual Studio で ツール-&gt;オプション-&gt;F# インタラクティブを選択し、「-fsi-server-no-unicode」と入力します。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -219,17 +219,17 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; '{0}' を参照しました</target>
+        <target state="translated">--&gt; 参照済み '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; '{0}' を参照しました (ファイルが F# インタラクティブのプロセスによってロックされている可能性があります)</target>
+        <target state="translated">--&gt; 参照済み '{0}' (ファイルは F# 対話型プロセスによってロックされている可能性があります)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; 参照された '{0}' (タイムスタンプが異なるアセンブリが既にこの場所から参照されています。fsi をリセットして更新されたアセンブリを読み込んでください)</target>
+        <target state="translated">--&gt; 参照済み '{0}' (異なるタイムスタンプを持つアセンブリがこの場所から既に参照されています、更新されたアセンブリを読み込むには fsi をリセットします)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
@@ -239,12 +239,12 @@
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; 現在タイミングはオンです</target>
+        <target state="translated">--&gt; 今すぐタイミング オン</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; 現在タイミングはオフです</target>
+        <target state="translated">--&gt; 今すぐタイミング オフ</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">

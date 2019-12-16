@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="new">Operation could not be completed due to earlier error</target>
+        <target state="translated">因為先前發生錯誤，所以無法完成作業</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <target state="translated">作業失敗。錯誤文字已列印在錯誤資料流中。若要傳回相對應的 FSharpErrorInfo，請使用 EvalInteractionNonThrowing、EvalScriptNonThrowing 或 EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">使用方式: {0} &lt;選項&gt; [script.fsx [&lt;引數&gt;]]</target>
+        <target state="translated">用法: {0} &lt;選項&gt; [script.fsx [&lt;引數&gt;]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">啟動 F# 互動處理序時發生問題。這可能是因為背景處理序主控台對於支援某些 Windows 系統上具備 Unicode 支援功能之應用程式的已知問題所造成。請嘗試選取 [工具] -&gt; [選項] -&gt; [F# Interactive for Visual Studio]，然後輸入 '--fsi-server-no-unicode'。</target>
+        <target state="translated">啟動 F# Interactive 處理序時發生錯誤。這可能是某些 Windows 系統上可使用 Unicode 之應用程式的背景處理序主控台支援發生已知錯誤所致。請嘗試選取 [工具]-&gt;[選項]-&gt;[適用於 Visual Studio 的 F# Interactive] 並輸入 '--fsi-server-no-unicode’。</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -219,32 +219,32 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; 參考的 '{0}'</target>
+        <target state="translated">--&gt; 已參考 '{0}’</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; 參考的 '{0}' (檔案可能已被 F# 互動處理序鎖定)</target>
+        <target state="translated">--&gt; 已參考 '{0}' (F# Interactive 處理序可能鎖定了檔案)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; 已參考 '{0}' (已經從這個位置參考有不同時間戳記的組件，請重設 fsi 以載入更新的組件)</target>
+        <target state="translated">--&gt; 已參考 '{0}' (已從此位置參考具有不同時間戳記的組件，請重設 fsi 以載入更新的組件)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; 已將 '{0}' 加入程式庫 Include 路徑</target>
+        <target state="translated">--&gt; 已將 '{0}' 新增到程式庫 include 路徑</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">
         <source>--&gt; Timing now on</source>
-        <target state="translated">--&gt; 計時現已開啟</target>
+        <target state="translated">--&gt; 計時現在已開啟</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOff">
         <source>--&gt; Timing now off</source>
-        <target state="translated">--&gt; 計時現已關閉</target>
+        <target state="translated">--&gt; 計時現在已關閉</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiUnexpectedThreadAbortException">
