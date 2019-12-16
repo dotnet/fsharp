@@ -821,7 +821,7 @@ namespace Microsoft.FSharp.Core
 
                    // Use Ordinal comparison for strings
                    | (:? string as x),(:? string as y) ->
-                       String.CompareOrdinal(x, y)
+                       System.String.CompareOrdinal(x, y)
 
                    // Permit structural comparison on arrays
                    | (:? System.Array as arr1),_ -> 
@@ -1022,10 +1022,10 @@ namespace Microsoft.FSharp.Core
                                      else GenericComparisonWithComparerIntrinsic comp x y
                  when 'T : char   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
                  when 'T : string = 
-                     // NOTE: we don't have to null check here because String.CompareOrdinal
+                     // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     String.CompareOrdinal((# "" x : string #),(# "" y : string #))
-                 when 'T : decimal     = Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+                     System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
+                 when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
 
             /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
@@ -1100,10 +1100,10 @@ namespace Microsoft.FSharp.Core
                                      else (# "ceq" x x : int #)
                  when 'T : char   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
                  when 'T : string = 
-                     // NOTE: we don't have to null check here because String.CompareOrdinal
+                     // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     String.CompareOrdinal((# "" x : string #),(# "" y : string #))
-                 when 'T : decimal     = Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+                     System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
+                 when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
             /// Generic less-than with static optimizations for some well-known cases.
             let inline GenericLessThanFast (x:'T) (y:'T) = 
@@ -1122,7 +1122,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float  = (# "clt" x y : bool #) 
                 when 'T : float32= (# "clt" x y : bool #) 
                 when 'T : char   = (# "clt" x y : bool #)
-                when 'T : decimal     = Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
               
             /// Generic greater-than with static optimizations for some well-known cases.
             let inline GenericGreaterThanFast (x:'T) (y:'T) = 
@@ -1141,7 +1141,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = (# "cgt" x y : bool #) 
                 when 'T : float32    = (# "cgt" x y : bool #) 
                 when 'T : char       = (# "cgt" x y : bool #)
-                when 'T : decimal     = Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
 
             /// Generic less-than-or-equal with static optimizations for some well-known cases.
             let inline GenericLessOrEqualFast (x:'T) (y:'T) = 
@@ -1160,7 +1160,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = not (# "cgt.un" x y : bool #) 
                 when 'T : float32    = not (# "cgt.un" x y : bool #) 
                 when 'T : char       = not(# "cgt" x y : bool #)
-                when 'T : decimal     = Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
 
             /// Generic greater-than-or-equal with static optimizations for some well-known cases.
             let inline GenericGreaterOrEqualFast (x:'T) (y:'T) = 
@@ -1179,7 +1179,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = not (# "clt.un" x y : bool #) 
                 when 'T : float32    = not (# "clt.un" x y : bool #)
                 when 'T : char       = not (# "clt" x y : bool #)
-                when 'T : decimal     = Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
 
 
             //-------------------------------------------------------------------------
@@ -1295,7 +1295,7 @@ namespace Microsoft.FSharp.Core
                  | null,null -> true
                  | null,_ -> false
                  | _,null -> false
-                 | (:? string as xs),(:? string as ys) -> String.Equals(xs,ys)
+                 | (:? string as xs),(:? string as ys) -> System.String.Equals(xs,ys)
                  // Permit structural equality on arrays
                  | (:? System.Array as arr1),_ -> 
                      match arr1,yobj with 
@@ -1461,8 +1461,8 @@ namespace Microsoft.FSharp.Core
                     else
                         not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #)
                   when 'T : char    = (# "ceq" x y : bool #)
-                  when 'T : string  = String.Equals((# "" x : string #),(# "" y : string #))
-                  when 'T : decimal     = Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
+                  when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                                
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
@@ -1483,8 +1483,8 @@ namespace Microsoft.FSharp.Core
                   when 'T : char    = (# "ceq" x y : bool #)
                   when 'T : nativeint  = (# "ceq" x y : bool #)
                   when 'T : unativeint  = (# "ceq" x y : bool #)
-                  when 'T : string  = String.Equals((# "" x : string #),(# "" y : string #))
-                  when 'T : decimal     = Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
+                  when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                   
             /// A compiler intrinsic generated during optimization of calls to GenericEqualityIntrinsic on tuple values.
             //
@@ -1509,8 +1509,8 @@ namespace Microsoft.FSharp.Core
                   when 'T : char    = (# "ceq" x y : bool #)
                   when 'T : nativeint  = (# "ceq" x y : bool #)
                   when 'T : unativeint  = (# "ceq" x y : bool #)
-                  when 'T : string  = String.Equals((# "" x : string #),(# "" y : string #))                  
-                  when 'T : decimal     = Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))                  
+                  when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                   
 
             let inline GenericInequalityFast (x:'T) (y:'T) = (not(GenericEqualityFast x y) : bool)
@@ -2861,6 +2861,7 @@ namespace Microsoft.FSharp.Core
             static member inline DivideByInt (x: float32, n:int) = (# "div" x ((# "conv.r4" n  : float32 #)) : float32 #)
 #endif
 
+        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
         type GenericZeroDynamicImplTable<'T>() = 
             static let result : 'T = 
                 // The dynamic implementation
@@ -2883,6 +2884,7 @@ namespace Microsoft.FSharp.Core
                    unboxPrim<'T> (pinfo.GetValue(null,null))
             static member Result : 'T = result
                    
+        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
         type GenericOneDynamicImplTable<'T>() = 
             static let result : 'T = 
                 // The dynamic implementation
@@ -2928,6 +2930,7 @@ namespace Microsoft.FSharp.Core
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
             when ^T : ^T = (^T : (static member Zero : ^T) ())
+
 
         let inline GenericOne< ^T when ^T : (static member One : ^T) > : ^T =
             GenericOneDynamic<(^T)>()
@@ -3890,8 +3893,8 @@ namespace Microsoft.FSharp.Core
              when ^T : char        and ^U : char       = (# "conv.u2" (# "add" x y : uint32 #) : char #)
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "add" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "add" x y : uint32 #) : byte #)
-             when ^T : string      and ^U : string     = (# "" (String.Concat((# "" x : string #),(# "" y : string #))) : ^T #)
-             when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Addition((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             when ^T : string      and ^U : string     = (# "" (System.String.Concat((# "" x : string #),(# "" y : string #))) : ^T #)
+             when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Addition((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (+) : ^T * ^U -> ^V) (x,y))
@@ -3910,7 +3913,7 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16      and ^U : uint16     = (# "conv.u2" (# "sub" x y : uint32 #) : uint16 #)
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "sub" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "sub" x y : uint32 #) : byte #)
-             when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Subtraction((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Subtraction((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (-) : ^T * ^U -> ^V) (x,y))
@@ -3929,7 +3932,7 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16      and ^U : uint16     = (# "conv.u2" (# "mul" x y : uint32 #) : uint16 #)
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "mul" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "mul" x y : uint32 #) : byte #)
-             when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Multiply((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Multiply((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (*) : ^T * ^U -> ^V) (x,y))
@@ -3948,7 +3951,7 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16      and ^U : uint16     = (# "conv.u2" (# "div.un" x y : uint32 #) : uint16 #)
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "div" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "div.un" x y : uint32 #) : byte #)
-             when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Division((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Division((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (/) : ^T * ^U -> ^V) (x,y))
@@ -3967,7 +3970,7 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16      and ^U : uint16     = (# "conv.u2" (# "rem.un" x y : uint32 #) : uint16 #)
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "rem"    x y : int32  #) : sbyte  #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "rem.un" x y : uint32 #) : byte   #)
-             when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Modulus((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Modulus((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (%) : ^T * ^U -> ^V) (x,y))
@@ -4488,8 +4491,8 @@ namespace Microsoft.FSharp.Core
                 when ^T : float  = (# "clt" x y : bool #) 
                 when ^T : float32= (# "clt" x y : bool #) 
                 when ^T : char   = (# "clt" x y : bool #)
-                when ^T : decimal     = Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = (# "clt" (String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+                when ^T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
                 // According to the somewhat subtle rules of static optimizations,
                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
                 when ^T : ^T = ((^T or ^U): (static member (<) : ^T * ^U -> bool) (x,y))
@@ -4511,8 +4514,8 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = (# "cgt" x y : bool #) 
                 when 'T : float32    = (# "cgt" x y : bool #) 
                 when 'T : char       = (# "cgt" x y : bool #)
-                when 'T : decimal     = Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = (# "cgt" (String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+                when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
                 // According to the somewhat subtle rules of static optimizations,
                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
                 when ^T : ^T = ((^T or ^U): (static member (>) : ^T * ^U -> bool) (x,y))
@@ -4534,8 +4537,8 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = not (# "cgt.un" x y : bool #) 
                 when 'T : float32    = not (# "cgt.un" x y : bool #) 
                 when 'T : char       = not (# "cgt" x y : bool #)
-                when 'T : decimal     = Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = not (# "cgt" (String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+                when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = not (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
                 // According to the somewhat subtle rules of static optimizations,
                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
                 when ^T : ^T = ((^T or ^U): (static member (<=) : ^T * ^U -> bool) (x,y))
@@ -4557,8 +4560,8 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = not (# "clt.un" x y : bool #) 
                 when 'T : float32    = not (# "clt.un" x y : bool #)
                 when 'T : char       = not (# "clt" x y : bool #)
-                when 'T : decimal     = Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
-                when ^T : string     = not (# "clt" (String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+                when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = not (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
                 // According to the somewhat subtle rules of static optimizations,
                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
                 when ^T : ^T = ((^T or ^U): (static member (>=) : ^T * ^U -> bool) (x,y))
@@ -4600,8 +4603,8 @@ namespace Microsoft.FSharp.Core
                 when ^T : char    = not (# "ceq" x y : bool #)
                 when ^T : nativeint  = not (# "ceq" x y : bool #)
                 when ^T : unativeint  = not (# "ceq" x y : bool #)
-                when ^T : string  = not (String.Equals((# "" x : string #),(# "" y : string #)))
-                when ^T : decimal     = Decimal.op_Inequality((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string  = not (System.String.Equals((# "" x : string #),(# "" y : string #)))
+                when ^T : decimal     = System.Decimal.op_Inequality((# "" x:decimal #), (# "" y:decimal #))
                 when ^T : ^T = (^T : (static member (<>) : ^T * ^T -> bool) (x,y))
 
             // static comparison (ER mode) with static optimizations for some well-known cases
@@ -4633,8 +4636,8 @@ namespace Microsoft.FSharp.Core
                  when ^T : string = 
                      // NOTE: we don't have to null check here because String.CompareOrdinal
                      // gives reliable results on null values.
-                     String.CompareOrdinal((# "" e1 : string #),(# "" e2 : string #))
-                 when ^T : decimal     = Decimal.Compare((# "" e1:decimal #), (# "" e2:decimal #))
+                     System.String.CompareOrdinal((# "" e1 : string #),(# "" e2 : string #))
+                 when ^T : decimal     = System.Decimal.Compare((# "" e1:decimal #), (# "" e2:decimal #))
 
             [<CompiledName("Max")>]
             let inline max (e1: ^T) (e2: ^T) = 
@@ -4771,8 +4774,8 @@ namespace Microsoft.FSharp.Core
                  when ^T : char        and ^U : char       = (# "conv.ovf.u2.un" (# "add.ovf.un" x y : uint32 #) : char #)
                  when ^T : sbyte       and ^U : sbyte      = (# "conv.ovf.i1" (# "add.ovf" x y : int32 #) : sbyte #)
                  when ^T : byte        and ^U : byte       = (# "conv.ovf.u1.un" (# "add.ovf.un" x y : uint32 #) : byte #)
-                 when ^T : string      and ^U : string     = (# "" (String.Concat((# "" x : string #),(# "" y : string #))) : ^T #)
-                 when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Addition((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+                 when ^T : string      and ^U : string     = (# "" (System.String.Concat((# "" x : string #),(# "" y : string #))) : ^T #)
+                 when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Addition((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
                  // According to the somewhat subtle rules of static optimizations,
                  // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
                  when ^T : ^T = ((^T or ^U): (static member (+) : ^T * ^U -> ^V) (x,y))
@@ -4791,7 +4794,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : uint16      and ^U : uint16     = (# "conv.ovf.u2.un" (# "sub.ovf.un" x y : uint32 #) : uint16 #)
                  when ^T : sbyte       and ^U : sbyte      = (# "conv.ovf.i1" (# "sub.ovf" x y : int32 #) : sbyte #)
                  when ^T : byte        and ^U : byte       = (# "conv.ovf.u1.un" (# "sub.ovf.un" x y : uint32 #) : byte #)
-                 when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Subtraction((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+                 when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Subtraction((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
                  // According to the somewhat subtle rules of static optimizations,
                  // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
                  when ^T : ^T = ((^T or ^U): (static member (-) : ^T * ^U -> ^V) (x,y))
@@ -4805,7 +4808,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : int16     = (# "sub.ovf" 0s value  : int16 #)
                  when ^T : nativeint = (# "sub.ovf" 0n value  : nativeint #)
                  when ^T : sbyte     = (# "sub.ovf" 0y value  : sbyte #)
-                 when ^T : decimal   = (# "" (Decimal.op_UnaryNegation((# "" value : decimal #))) : ^T #)
+                 when ^T : decimal   = (# "" (System.Decimal.op_UnaryNegation((# "" value : decimal #))) : ^T #)
                  // According to the somewhat subtle rules of static optimizations,
                  // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
                  when ^T : ^T = (^T : (static member (~-) : ^T -> ^T) (value))
@@ -4825,9 +4828,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : float      and ^U : float      = (# "mul" x y : float #)
                  when ^T : float32    and ^U : float32    = (# "mul" x y : float32 #)
                  when ^T : decimal     and ^U : decimal    = (# "" (Decimal.op_Multiply((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = ((^T or ^U): (static member (*) : ^T * ^U -> ^V) (x,y))
 
             [<CompiledName("ToByte")>]
@@ -4847,9 +4847,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u1.un" value  : byte #)
                  when ^T : unativeint = (# "conv.ovf.u1.un" value  : byte #)
                  when ^T : byte     = (# "conv.ovf.u1.un" value  : byte #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> byte) (value))
 
             [<CompiledName("ToSByte")>]
@@ -4869,9 +4866,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i1.un" value  : sbyte #)
                  when ^T : unativeint = (# "conv.ovf.i1.un" value  : sbyte #)
                  when ^T : byte     = (# "conv.ovf.i1.un" value  : sbyte #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> sbyte) (value))
 
             [<CompiledName("ToUInt16")>]
@@ -4891,9 +4885,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u2.un" value  : uint16 #)
                  when ^T : unativeint = (# "conv.ovf.u2.un" value  : uint16 #)
                  when ^T : byte       = (# "conv.ovf.u2.un" value  : uint16 #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> uint16) (value))
 
             [<CompiledName("ToChar")>]
@@ -4913,9 +4904,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u2.un" value  : char #)
                  when ^T : unativeint = (# "conv.ovf.u2.un" value  : char #)
                  when ^T : byte       = (# "conv.ovf.u2.un" value  : char #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> char) (value))
 
             [<CompiledName("ToInt16")>]
@@ -4935,9 +4923,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i2.un" value  : int16 #)
                  when ^T : unativeint = (# "conv.ovf.i2.un" value  : int16 #)
                  when ^T : byte     = (# "conv.ovf.i2.un" value  : int16 #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> int16) (value))
 
             [<CompiledName("ToUInt32")>]
@@ -4957,9 +4942,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u4.un" value  : uint32 #)
                  when ^T : unativeint = (# "conv.ovf.u4.un" value  : uint32 #)
                  when ^T : byte     = (# "conv.ovf.u4.un" value  : uint32 #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> uint32) (value))
 
             [<CompiledName("ToInt32")>]
@@ -4979,9 +4961,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i4.un" value  : int32 #)
                  when ^T : unativeint = (# "conv.ovf.i4.un" value  : int32 #)
                  when ^T : byte     = (# "conv.ovf.i4.un" value  : int32 #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> int32) (value))
 
             [<CompiledName("ToInt")>]
@@ -5004,9 +4983,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u8.un" value  : uint64 #)
                  when ^T : unativeint = (# "conv.ovf.u8.un" value  : uint64 #)
                  when ^T : byte     = (# "conv.ovf.u8.un" value  : uint64 #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> uint64) (value))
 
             [<CompiledName("ToInt64")>]
@@ -5026,9 +5002,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i8.un" value  : int64 #)
                  when ^T : unativeint = (# "conv.ovf.i8.un" value  : int64 #)
                  when ^T : byte     = (# "conv.ovf.i8.un" value  : int64 #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> int64) (value))
 
             [<CompiledName("ToUIntPtr")>]
@@ -5048,9 +5021,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u.un" value  : unativeint #)
                  when ^T : unativeint = (# "conv.ovf.u.un" value  : unativeint #)
                  when ^T : byte     = (# "conv.ovf.u.un" value  : unativeint #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> unativeint) (value))
 
             [<CompiledName("ToIntPtr")>]
@@ -5070,9 +5040,6 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i.un" value  : nativeint #)
                  when ^T : unativeint = (# "conv.ovf.i.un" value  : nativeint #)
                  when ^T : byte     = (# "conv.ovf.i.un" value  : nativeint #)
-                 // According to the somewhat subtle rules of static optimizations,
-                 // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
-                 // That is, not in the generic implementation of '*'
                  when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
         module OperatorIntrinsics =
@@ -5604,13 +5571,11 @@ namespace Microsoft.FSharp.Core
                  when ^T : float32     = let x : float32   = retype x in System.Math.Abs(x)
                  when ^T : int64       = let x : int64     = retype x in System.Math.Abs(x)
                  when ^T : nativeint   = 
-                   (let x : nativeint = retype x 
-                    if x >= 0n then 
-                        x 
-                    else 
-                        let res = -x 
-                        if res < 0n then raise (System.OverflowException(ErrorStrings.NoNegateMinValueString))
-                        res)
+                    let x : nativeint = retype x 
+                    if x >= 0n then x else 
+                    let res = -x in
+                    if res < 0n then raise (System.OverflowException(ErrorStrings.NoNegateMinValueString))
+                    res
                  when ^T : int16       = let x : int16     = retype x in System.Math.Abs(x)
                  when ^T : sbyte       = let x : sbyte     = retype x in System.Math.Abs(x)
                  when ^T : decimal     = System.Math.Abs(retype x : decimal) 

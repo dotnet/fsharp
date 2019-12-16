@@ -4918,7 +4918,7 @@ let decideStaticOptimizationConstraint g c haveWitnesses =
 let rec DecideStaticOptimizations g cs haveWitnesses = 
     match cs with 
     | [] -> StaticOptimizationAnswer.Yes
-    | h::t -> 
+    | h :: t -> 
         let d = decideStaticOptimizationConstraint g h haveWitnesses
         if d = StaticOptimizationAnswer.No then StaticOptimizationAnswer.No 
         elif d = StaticOptimizationAnswer.Yes then DecideStaticOptimizations g t haveWitnesses

@@ -84,20 +84,20 @@ type Expr =
     /// <param name="functionExpr">The function to apply.</param>
     /// <param name="arguments">The list of lists of arguments to the function.</param>
     /// <returns>The resulting expression.</returns>
-    static member Applications: functionExpr:Expr * arguments:list<Expr list> -> Expr
+    static member Applications: functionExpr:Expr * arguments:list<list<Expr>> -> Expr
     
     /// <summary>Builds an expression that represents a call to an static method or module-bound function</summary>
     /// <param name="methodInfo">The MethodInfo describing the method to call.</param>
     /// <param name="arguments">The list of arguments to the method.</param>
     /// <returns>The resulting expression.</returns>
-    static member Call : methodInfo:MethodInfo * arguments:Expr list -> Expr
+    static member Call : methodInfo:MethodInfo * arguments:list<Expr> -> Expr
 
     /// <summary>Builds an expression that represents a call to an instance method associated with an object</summary>
     /// <param name="obj">The input object.</param>
     /// <param name="methodInfo">The description of the method to call.</param>
     /// <param name="arguments">The list of arguments to the method.</param>
     /// <returns>The resulting expression.</returns>
-    static member Call : obj:Expr * methodInfo: MethodInfo * arguments:Expr list -> Expr
+    static member Call : obj:Expr * methodInfo:MethodInfo * arguments:list<Expr> -> Expr
 
     /// <summary>Builds an expression that represents a call to an static method or module-bound function</summary>
     /// <param name="methodInfo">The MethodInfo describing the method to call.</param>
@@ -387,7 +387,7 @@ type Expr =
     /// <param name="spliceExprs">The spliced expressions to replace references to spliced expressions.</param>
     /// <param name="bytes">The serialized form of the quoted expression.</param>
     /// <returns>The resulting expression.</returns>
-    static member Deserialize : qualifyingType:System.Type * spliceTypes:list<System.Type> * spliceExprs:Expr list * bytes:byte[] -> Expr
+    static member Deserialize : qualifyingType:System.Type * spliceTypes:list<System.Type> * spliceExprs:list<Expr> * bytes:byte[] -> Expr
     
     /// <summary>This function is called automatically when quotation syntax (&lt;@ @&gt;) and other sources of
     /// quotations are used. </summary>
@@ -793,7 +793,7 @@ module DerivedPatterns =
     /// instance method), the generic type instantiation (non-empty if the target is a generic
     /// instantiation), and the arguments to the function or method.</returns>
     [<CompiledName("SpecificCallPattern")>]
-    val (|SpecificCall|_|)  : templateParameter:Expr -> (Expr -> (Expr option * list<Type> * Expr list) option)
+    val (|SpecificCall|_|)  : templateParameter:Expr -> (Expr -> (Expr option * list<Type> * list<Expr>) option)
 
     /// <summary>An active pattern to recognize methods that have an associated ReflectedDefinition</summary>
     /// <param name="methodBase">The description of the method.</param>
@@ -823,7 +823,7 @@ module ExprShape =
     [<CompiledName("ShapePattern")>]
     val (|ShapeVar|ShapeLambda|ShapeCombination|) : 
             input:Expr -> Choice<Var,                // Var
-                                 (Var * Expr),       // Lambda
+                                 (obj * list<Expr>)> // ConstApp
                                  (obj * Expr list)> // ConstApp
 
     /// <summary>Re-build combination expressions. The first parameter should be an object
@@ -831,4 +831,4 @@ module ExprShape =
     /// <param name="shape">The input shape.</param>
     /// <param name="arguments">The list of arguments.</param>
     /// <returns>The rebuilt expression.</returns>
-    val RebuildShapeCombination  : shape:obj * arguments:Expr list -> Expr
+    val RebuildShapeCombination  : shape:obj * arguments:list<Expr> -> Expr

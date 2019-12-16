@@ -241,8 +241,8 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>]
     member x.DebugText = x.ToString(false)
 
     member x.GetLayout long =
-        let expr (e: Expr) = e.GetLayout(long)
-        let exprs (es: Expr list) = es |> List.map expr
+        let expr (e:Expr ) = e.GetLayout long
+        let exprs (es:Expr list) = es |> List.map expr
         let parens ls = bracketL (commaListL ls)
         let pairL l1 l2 = bracketL (l1 ^^ sepL Literals.comma ^^ l2)
         let listL ls = squareBracketL (commaListL ls)
@@ -256,7 +256,7 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>]
         let (|E|) (e: Expr) = e.Tree
         let (|Lambda|_|) (E x) = match x with LambdaTerm(a, b) -> Some (a, b) | _ -> None
         let (|IteratedLambda|_|) (e: Expr) = qOneOrMoreRLinear (|Lambda|_|) e
-        let ucaseL (unionCase: UnionCaseInfo) = (if long then objL unionCase else wordL (tagUnionCase unionCase.Name))
+        let ucaseL (unionCase:UnionCaseInfo) = (if long then objL unionCase else wordL (tagUnionCase unionCase.Name))
         let minfoL (minfo: MethodInfo) = if long then objL minfo else wordL (tagMethod minfo.Name)
         let cinfoL (cinfo: ConstructorInfo) = if long then objL cinfo else wordL (tagMethod cinfo.DeclaringType.Name)
         let pinfoL (pinfo: PropertyInfo) = if long then objL pinfo else wordL (tagProperty pinfo.Name)
@@ -334,6 +334,8 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>]
         | CombTerm(QuoteOp _, args) -> combL "Quote" (exprs args)
         | _ -> failwithf "Unexpected term in layout %A" x.Tree
 
+
+
 and [<CompiledName("FSharpExpr`1")>]
     Expr<'T>(term:Tree, attribs) =
     inherit Expr(term, attribs)
@@ -374,7 +376,7 @@ module Patterns =
     let ES ts = List.map E ts
 
     let (|E|) (e: Expr) = e.Tree
-    let (|ES|) (es: Expr list) = es |> List.map (fun e -> e.Tree)
+    let (|ES|) (es: list<Expr>) = es |> List.map (fun e -> e.Tree)
     let (|FrontAndBack|_|) es =
         let rec loop acc xs = match xs with [] -> None | [h] -> Some (List.rev acc, h) | h :: t -> loop (h :: acc) t
         loop [] es
@@ -545,7 +547,7 @@ module Patterns =
         | E(CombTerm(NewObjectOp ty, e)) -> Some(ty, e) | _ -> None
 
     [<CompiledName("CallPattern")>]
-    let (|Call|_|)          input =
+    let (|Call|_|) input =
         match input with
         | E(CombTerm(StaticMethodCallOp minfo, args)) -> Some(None, minfo, args)
 
@@ -563,7 +565,7 @@ module Patterns =
         | _ -> None
 
     [<CompiledName("CallWithWitnessesPattern")>]
-    let (|CallWithWitnesses|_|)          input =
+    let (|CallWithWitnesses|_|) input =
         match input with
         | E(CombTerm(StaticMethodCallWOp (minfo, minfoW, nWitnesses), args)) ->
             if args.Length >= nWitnesses then
@@ -736,7 +738,7 @@ module Patterns =
         if (not (assignableFrom expectedType receivedType)) then
           invalidArg "receivedType" (String.Format(threeHoleSR, name, expectedType, receivedType))
 
-    let checkArgs (paramInfos: ParameterInfo[]) (args:Expr list) =
+    let checkArgs (paramInfos: ParameterInfo[]) (args:list<Expr>) =
         if (paramInfos.Length <> args.Length) then invalidArg "args" (SR.GetString(SR.QincorrectNumArgs))
         List.iter2
             ( fun (p:ParameterInfo) a -> checkTypesWeakSR p.ParameterType (typeOf a) "args" (SR.GetString(SR.QtmmInvalidParam)))
@@ -827,7 +829,7 @@ module Patterns =
         mkFE1 (TupleGetOp (ty, n)) x
 
     // Records
-    let mkNewRecord (ty, args:Expr list) =
+    let mkNewRecord (ty, args:list<Expr>) =
         let mems = FSharpType.GetRecordFields(ty, publicOrPrivateBindingFlags)
         if (args.Length <> mems.Length) then invalidArg  "args" (SR.GetString(SR.QincompatibleRecordLength))
         List.iter2 (fun (minfo:PropertyInfo) a -> checkTypesSR minfo.PropertyType (typeOf a) "recd" (SR.GetString(SR.QtmmIncorrectArgForRecord))) (Array.toList mems) args
@@ -835,7 +837,7 @@ module Patterns =
 
 
     // Discriminated unions
-    let mkNewUnionCase (unionCase:UnionCaseInfo, args:Expr list) =
+    let mkNewUnionCase (unionCase:UnionCaseInfo, args:list<Expr>) =
         if Unchecked.defaultof<UnionCaseInfo> = unionCase then raise (new ArgumentNullException())
         let sargs = unionCase.GetFields()
         if (args.Length <> sargs.Length) then invalidArg  "args" (SR.GetString(SR.QunionNeedsDiffNumArgs))
@@ -878,7 +880,7 @@ module Patterns =
         | true -> mkFE1 (StaticFieldSetOp finfo) value
         | false -> invalidArg  "finfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkInstanceFieldSet (obj, finfo: FieldInfo, value: Expr) =
+    let mkInstanceFieldSet (obj, finfo:FieldInfo, value:Expr) =
         if Unchecked.defaultof<FieldInfo> = finfo then raise (new ArgumentNullException())
         checkTypesSR (typeOf value) finfo.FieldType "value" (SR.GetString(SR.QtmmBadFieldType))
         match finfo.IsStatic with
@@ -887,15 +889,15 @@ module Patterns =
             mkFE2 (InstanceFieldSetOp finfo) (obj, value)
         | true -> invalidArg  "finfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkCtorCall (ci: ConstructorInfo, args: Expr list) =
+    let mkCtorCall (ci:ConstructorInfo, args:list<Expr>) =
         if Unchecked.defaultof<ConstructorInfo> = ci then raise (new ArgumentNullException())
         checkArgs (ci.GetParameters()) args
         mkFEN (NewObjectOp ci) args
 
-    let mkDefaultValue (ty: Type) =
+    let mkDefaultValue (ty:Type) =
         mkFE0 (DefaultValueOp ty)
 
-    let mkStaticPropGet (pinfo:PropertyInfo, args:Expr list) =
+    let mkStaticPropGet (pinfo:PropertyInfo, args:list<Expr>) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanRead) then invalidArg  "pinfo" (SR.GetString(SR.QreadingSetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -903,7 +905,7 @@ module Patterns =
         | true -> mkFEN (StaticPropGetOp  pinfo) args
         | false -> invalidArg  "pinfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkInstancePropGet (obj, pinfo:PropertyInfo, args:Expr list) =
+    let mkInstancePropGet (obj, pinfo:PropertyInfo, args:list<Expr>) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanRead) then invalidArg  "pinfo" (SR.GetString(SR.QreadingSetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -913,7 +915,7 @@ module Patterns =
             mkFEN (InstancePropGetOp pinfo) (obj :: args)
         | true -> invalidArg  "pinfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkStaticPropSet (pinfo:PropertyInfo, args:Expr list, value:Expr) =
+    let mkStaticPropSet (pinfo:PropertyInfo, args:list<Expr>, value:Expr) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanWrite) then invalidArg  "pinfo" (SR.GetString(SR.QwritingGetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -921,7 +923,7 @@ module Patterns =
         | true -> mkFEN (StaticPropSetOp pinfo) (args@[value])
         | false -> invalidArg  "pinfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkInstancePropSet (obj, pinfo:PropertyInfo, args:Expr list, value:Expr) =
+    let mkInstancePropSet (obj, pinfo:PropertyInfo, args:list<Expr>, value:Expr) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanWrite) then invalidArg  "pinfo" (SR.GetString(SR.QwritingGetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -931,7 +933,7 @@ module Patterns =
             mkFEN (InstancePropSetOp pinfo) (obj :: (args@[value]))
         | true -> invalidArg  "pinfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkInstanceMethodCall (obj, minfo: MethodInfo, args: Expr list) =
+    let mkInstanceMethodCall (obj, minfo:MethodInfo, args:list<Expr>) =
         if Unchecked.defaultof<MethodInfo> = minfo then raise (new ArgumentNullException())
         checkArgs (minfo.GetParameters()) args
         match minfo.IsStatic with
@@ -949,7 +951,7 @@ module Patterns =
             mkFEN (InstanceMethodCallWOp (minfo, minfoW, nWitnesses)) (obj::args)
         | true -> invalidArg  "minfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkStaticMethodCall (minfo: MethodInfo, args: Expr list) =
+    let mkStaticMethodCall (minfo:MethodInfo, args:list<Expr>) =
         if Unchecked.defaultof<MethodInfo> = minfo then raise (new ArgumentNullException())
         checkArgs (minfo.GetParameters()) args
         match minfo.IsStatic with
@@ -982,7 +984,7 @@ module Patterns =
         mkFE1 (NewDelegateOp ty) e
 
     let mkLet (v, e, b) =
-        checkBind (v, e);
+        checkBind (v, e)
         mkLetRaw (e, mkLambda(v, b))
 
     //let mkLambdas(vs, b) = mkRLinear mkLambdaRaw (vs, (b:>Expr))
@@ -992,7 +994,7 @@ module Patterns =
         | [x] -> mkApplication (f, x)
         | _ -> mkApplication (f, mkNewTuple args)
 
-    let mkApplications(f: Expr, es:list<Expr list>) = mkLLinear mkTupledApplication (f, es)
+    let mkApplications(f: Expr, es:list<list<Expr>>) = mkLLinear mkTupledApplication (f, es)
 
     let mkIteratedLambdas(vs, b) = mkRLinear  mkLambda (vs, b)
 
@@ -1058,7 +1060,7 @@ module Patterns =
                 res
             // return MethodInfo for (generic) type's (generic) method
             match List.tryFind select methInfos with    
-            | None -> raise <| System.InvalidOperationException (SR.GetString SR.QcannotBindToMethod)
+            | None          -> raise <| System.InvalidOperationException (SR.GetString SR.QcannotBindToMethod)
             | Some methInfo -> methInfo
 
     let bindMethodHelper (parentT: Type, nm, marity, argtys, rty) =
@@ -1385,8 +1387,8 @@ module Patterns =
         | _ -> invalidArg "tys" (SR.GetString(SR.QexpectedOneType))
 
     let mkNamedTycon (tcName, assembly:Assembly) =
-        match assembly.GetType(tcName) with
-        | null ->
+        match assembly.GetType tcName with
+        | null  ->
             // For some reason we can get 'null' returned here even when a type with the right name exists... Hence search the slow way...
             match (assembly.GetTypes() |> Array.tryFind (fun a -> a.FullName = tcName)) with
             | Some ty -> ty
@@ -1435,7 +1437,7 @@ module Patterns =
     let rec u_dtype st : (int -> Type) -> Type =
         let tag = u_byte_as_int st
         match tag with
-        | 0 -> u_int st |> (fun x env -> env x)
+        | 0 -> u_int st |> (fun x env     -> env x)
         | 1 -> u_tup2 u_tyconstSpec (u_list u_dtype) st |> (fun (a, b) env -> a (appL b env))
         | _ -> failwith "u_dtype"
 
@@ -1573,7 +1575,7 @@ module Patterns =
             match u_ModuleDefn None st with
             | Unique (StaticMethodCallOp minfo) -> (minfo :> MethodBase)
             | Unique (StaticPropGetOp pinfo) -> (pinfo.GetGetMethod(true) :> MethodBase)
-            | Ambiguous _ -> raise (System.Reflection.AmbiguousMatchException())
+            | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | 1 ->
             let ((tc, _, _, methName, _) as data) = u_MethodInfoData st
@@ -2231,7 +2233,7 @@ module ExprShape =
             | InstanceFieldSetOp finfo, [obj;v] -> mkInstanceFieldSet(obj, finfo, v)
             | StaticFieldSetOp finfo, [v] -> mkStaticFieldSet(finfo, v)
             | NewObjectOp minfo, _ -> mkCtorCall(minfo, arguments)
-            | DefaultValueOp ty, _ -> mkDefaultValue(ty)
+            | DefaultValueOp ty, _ -> mkDefaultValue ty
             | StaticMethodCallOp minfo, _ -> mkStaticMethodCall(minfo, arguments)
             | InstanceMethodCallOp minfo, obj::args -> mkInstanceMethodCall(obj, minfo, args)
             | StaticMethodCallWOp (minfo, minfoW, n), _ -> mkStaticMethodCallW(minfo, minfoW, n, arguments)

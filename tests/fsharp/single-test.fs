@@ -285,8 +285,16 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
                 executeFsc compilerType targetFramework
                 if buildOnly then verifyResults (findFirstSourceFile pc) buildOutputFile
             else
-                execBothToOut cfg directory buildOutputFile cfg.DotNetExe "build /t:RunFSharpScript"
-                testOkFile.CheckExists()
+                let executeFsi testCompilerVersion targetFramework =
+                    let propsBody = generateProps testCompilerVersion cfg.BUILD_CONFIG
+                    emitFile propsFileName propsBody
+                    let projectBody = generateProjectArtifacts pc outputType  targetFramework cfg.BUILD_CONFIG languageVersion
+                    emitFile projectFileName projectBody
+                    use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
+                    let cfg = { cfg with Directory = directory }
+                    execBothToOut cfg directory buildOutputFile cfg.DotNetExe "build /t:RunFSharpScript"
+                    testOkFile.CheckExists()
+                executeFsi compilerType targetFramework
             result <- true
         finally
             if result <> false then

@@ -225,7 +225,7 @@ type cenv =
       /// The ImportMap for reading IL
       amap: ImportMap
       
-      /// A callback for tcVal in the typechecker.  Used to generalize values when finding witnesses. 
+      /// A callback for TcVal in the typechecker.  Used to generalize values when finding witnesses. 
       /// It is unfortunate this is needed but it is until we supply witnesses through the compilation.
       tcVal: ConstraintSolver.TcValF
       
@@ -3105,14 +3105,14 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
   match (f, tyargs, curriedArgs) with
   // Look for tailcall to turn into branch 
   | (Expr.Val (v, _, _), _, _) when
-        match ListAssoc.tryFind cenv.g.valRefEq v eenv.innerVals with
+        match ListAssoc.tryFind g.valRefEq v eenv.innerVals with
         | Some (kind, _) ->
            (not v.IsConstructor &&
             // when branch-calling methods we must have the right type parameters
             (match kind with
              | BranchCallClosure _ -> true
              | BranchCallMethod (_, _, tps, _, _, _) ->
-                  (List.lengthsEqAndForall2 (fun ty tp -> typeEquiv cenv.g ty (mkTyparTy tp)) tyargs tps)) &&
+                  (List.lengthsEqAndForall2 (fun ty tp -> typeEquiv g ty (mkTyparTy tp)) tyargs tps)) &&
             // must be exact #args, ignoring tupling - we untuple if needed below
             (let arityInfo =
                match kind with
@@ -3254,7 +3254,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
           // For instance method calls chop off some type arguments, which are already
           // carried by the class.  Also work out if it's a virtual call.
-          let _, virtualCall, newobj, isSuperInit, isSelfInit, _, _, _ = GetMemberCallInfo cenv.g (vref, valUseFlags)
+          let _, virtualCall, newobj, isSuperInit, isSelfInit, _, _, _ = GetMemberCallInfo g (vref, valUseFlags)
 
           // numEnclILTypeArgs will include unit-of-measure args, unfortunately. For now, just cut-and-paste code from GetMemberCallInfo
           // @REVIEW: refactor this
@@ -6040,8 +6040,8 @@ and GenMethodForBinding
 
         | _ ->
             // Replace the body of ValInline.PseudoVal "must inline" methods with a 'throw'
-            // For witness-passing methods, don't do this is `isLegacy` flag specified
-            // on the attribute. 
+            // For witness-passing methods, don't do this if `isLegacy` flag specified
+            // on the attribute. Older compilers
             let bodyExpr =
                 let attr = TryFindFSharpBoolAttributeAssumeFalse cenv.g cenv.g.attrib_NoDynamicInvocationAttribute v.Attribs
                 if (not hasWitnessArgs && attr.IsSome) ||
@@ -7899,7 +7899,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
         | [] -> []
         | _ ->
             // TODO: generate witness parameters for reflected definitions
-            let qscope = QuotationTranslator.QuotationGenerationScope.Create (cenv.g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.Yes)
+            let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.Yes)
             let defns =
               reflectedDefinitions |> List.choose (fun ((methName, v), e) ->
                     try

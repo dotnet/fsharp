@@ -460,7 +460,8 @@ module TypedTest = begin
         test "check AddressOf rebuild"      (try rebuild <@ let mutable a = 10 in increment(&a) @> |> ignore; true with _ -> false)
         test "check AddressOf argument"     (<@ let mutable a = 10 in increment(&a) @> |> function Let(_, _, Call(None, _, [AddressOf(_)])) -> true | _ -> false)
         test "check AddressOf type"         (<@ let mutable a = 10 in increment(&a) @> |> function Let(_, _, Call(None, _, [AddressOf(_) as e])) -> (try e.Type = typeof<int>.MakeByRefType() with _ -> false) | _ -> false)
-    
+
+
     // Test basic expression splicing
     let f8383 (x:int) (y:string) = 0
     let test2 =   
@@ -552,7 +553,6 @@ module TypedTest = begin
         end
 #endif
 
-        
 end
 
 (*
@@ -3160,7 +3160,7 @@ module TestMatchBang =
             | expr -> Error "Delay is incorrect")
             (Ok ())
 
-    testSimpleMatchBang()        
+    testSimpleMatchBang()
     
 module WitnessTests = 
     open FSharp.Data.UnitSystems.SI.UnitSymbols
