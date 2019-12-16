@@ -823,8 +823,8 @@ module ExprShape =
     [<CompiledName("ShapePattern")>]
     val (|ShapeVar|ShapeLambda|ShapeCombination|) : 
             input:Expr -> Choice<Var,                // Var
+                                 (Var * Expr),       // Lambda
                                  (obj * list<Expr>)> // ConstApp
-                                 (obj * Expr list)> // ConstApp
 
     /// <summary>Re-build combination expressions. The first parameter should be an object
     /// returned by the <c>ShapeCombination</c> case of the active pattern in this module.</summary>

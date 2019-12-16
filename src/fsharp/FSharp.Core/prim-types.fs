@@ -5571,11 +5571,11 @@ namespace Microsoft.FSharp.Core
                  when ^T : float32     = let x : float32   = retype x in System.Math.Abs(x)
                  when ^T : int64       = let x : int64     = retype x in System.Math.Abs(x)
                  when ^T : nativeint   = 
-                    let x : nativeint = retype x 
+                   (let x : nativeint = retype x 
                     if x >= 0n then x else 
                     let res = -x in
                     if res < 0n then raise (System.OverflowException(ErrorStrings.NoNegateMinValueString))
-                    res
+                    res)
                  when ^T : int16       = let x : int16     = retype x in System.Math.Abs(x)
                  when ^T : sbyte       = let x : sbyte     = retype x in System.Math.Abs(x)
                  when ^T : decimal     = System.Math.Abs(retype x : decimal) 
