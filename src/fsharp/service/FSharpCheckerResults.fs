@@ -128,6 +128,88 @@ type SemanticClassificationType =
     | Operator
     | Disposable
     
+
+type ExternalDiagnostics(fileName: string) = 
+
+    static let mutable watcherKeepAlive : FileSystemWatcher option = None
+
+    let shortFileName = Path.GetFileName fileName
+    let infoDir = Path.Combine(Path.GetDirectoryName fileName, ".fsharp")
+    let editFile = Path.Combine(infoDir, shortFileName + ".edit")
+    let infoFile = Path.Combine(infoDir, shortFileName + ".info")
+    let lockFile = Path.Combine(infoDir, shortFileName + ".info.lock")
+
+    member __.GetInfoFileStamp() = 
+        try 
+            if Directory.Exists(infoDir) && File.Exists infoFile then 
+                Some (File.GetLastWriteTime(infoFile)) 
+            else 
+                None
+         with _ -> None
+
+    member __.WriteEditFileAndWatchForChangesToInfoFile(source: string, callback) =
+
+        if not (Directory.Exists infoDir) then 
+            Directory.CreateDirectory(infoDir) |> ignore
+
+        if not (File.Exists(editFile)) || File.ReadAllText(editFile) <> source then 
+
+            let watcher = new FileSystemWatcher(infoDir, Path.GetFileName(infoFile))
+            watcher.NotifyFilter <- NotifyFilters.Attributes ||| NotifyFilters.CreationTime ||| NotifyFilters.FileName ||| NotifyFilters.LastAccess ||| NotifyFilters.LastWrite ||| NotifyFilters.Size ||| NotifyFilters.Security;
+
+            // Only invoke the callback if the watcher hasn't been replaced by a new edit
+            let changed (_msg: string) _ = 
+               match watcherKeepAlive with 
+               | Some w2 when Object.ReferenceEquals(watcher, w2) ->callback() 
+               | _ -> ()
+
+            watcher.Changed.Add (changed "Changed")
+            watcher.Created.Add (changed "Created")
+            watcher.Deleted.Add (changed "Deleted")
+            watcher.Renamed.Add (changed "Renamed")
+            watcher.EnableRaisingEvents <- true
+
+            // Dispose the previous watcher 
+            match watcherKeepAlive with 
+            | Some w -> 
+                w.EnableRaisingEvents <- false
+                (w :> IDisposable).Dispose()
+            | None -> ()
+
+            watcherKeepAlive <- Some watcher
+
+            File.WriteAllText(editFile, source)
+
+    member __.ReadExternalDiagnostics () = 
+        [|  if FileSystem.SafeExists infoFile && not (FileSystem.SafeExists lockFile) then
+                let infoLines = File.ReadAllLines infoFile
+                for infoLine in infoLines do 
+                    if infoLine.StartsWith("Error") then 
+                        let fragments = infoLine.Split([| "\t" |], StringSplitOptions.RemoveEmptyEntries) 
+                        let (|Int32|_|) (s:string) = match Int32.TryParse s with true,res -> Some res | _ -> None
+                        let (|Severity|_|) (s:string) = match s with "warning" -> Some FSharpErrorSeverity.Warning | "error" -> Some FSharpErrorSeverity.Error | _ -> None
+                        match fragments with 
+                        | [| _; Int32 startPosLine; Int32 startPosChar; Int32 endPosLine; Int32 endPosChar; Severity severity; message; Int32 errorNum |] -> 
+                            let errorInfo = FSharpErrorInfo(fileName, mkPos startPosLine startPosChar, mkPos endPosLine endPosChar, severity, message, BuildPhaseSubcategory.TypeCheck, errorNum)   
+                            yield errorInfo 
+                        | _ -> () |]
+
+    // range is the range of the symbol use
+    member __.ReadExternalToolTips (range: range) = 
+        [   if FileSystem.SafeExists infoFile && not (FileSystem.SafeExists lockFile) then
+                let infoLines = File.ReadAllLines infoFile
+                for infoLine in infoLines do 
+                    if infoLine.StartsWith("ToolTip") then 
+                        let fragments = infoLine.Split([| "\t" |], StringSplitOptions.RemoveEmptyEntries) 
+                        let (|Int32|_|) (s:string) = match Int32.TryParse s with true,res -> Some res | _ -> None
+                        match fragments with 
+                        | [| _; Int32 startPosLine; Int32 startPosChar; Int32 endPosLine; Int32 endPosChar; message |] -> 
+                            let range2 = mkRange fileName (mkPos startPosLine startPosChar) (mkPos endPosLine endPosChar)
+                            if posEq range.Start range2.Start && rangeContainsRange range2 range then 
+                                let messages = message.Split('~') // special new-line character
+                                yield! messages
+                        | _ -> () ]
+
 /// A TypeCheckInfo represents everything we get back from the typecheck of a file.
 /// It acts like an in-memory database about the file.
 /// It is effectively immutable and not updated: when we re-typecheck we just drop the previous
@@ -1053,10 +1135,24 @@ type internal TypeCheckInfo
         let Compute() = 
             ErrorScope.Protect Range.range0 
                 (fun () -> 
-                    match GetDeclItemsForNamesAtPosition(ctok, None,Some(names),None,None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.Yes,(fun() -> []),fun _ -> false) with
-                    | None -> FSharpToolTipText []
-                    | Some(items, denv, _, m) ->
-                         FSharpToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader m denv x.ItemWithInst)))
+                    FSharpToolTipText 
+                      [ match GetDeclItemsForNamesAtPosition(ctok, None,Some(names),None,None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.Yes,(fun() -> []),fun _ -> false) with
+                        | None -> ()
+                        | Some(items, denv, _, m) ->
+                            let itemsL = [| for item in items -> FormatStructuredDescriptionOfItem false infoReader m denv item.ItemWithInst |]
+                            let extraLines = 
+                                // reduce the range to just cover the name.
+                                let m = mkRange m.FileName m.Start (mkPos m.StartLine colAtEndOfNames)
+                                ExternalDiagnostics(mainInputFileName).ReadExternalToolTips(m) 
+                                |> List.map (FSharp.Compiler.Layout.TaggedTextOps.tagText >> wordL)
+                                |> Layout.aboveListL
+                            match Array.toList itemsL with 
+                            | FSharpStructuredToolTipElement.Group(a :: rest) :: rest2 ->
+                                let a2 = { a with Remarks = (match a.Remarks with None -> Some extraLines | Some l -> Some (Layout.aboveL l extraLines)) }
+                                yield FSharpStructuredToolTipElement.Group(a2 :: rest)
+                                yield! rest2
+                            | els -> 
+                                yield! els])
                 (fun err -> 
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
                     FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
@@ -1747,7 +1843,11 @@ module internal ParseAndCheckFile =
                     return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [NewEmptyModuleOrNamespaceType Namespace]), tcState)
             }
                 
-        let errors = errHandler.CollectedDiagnostics
+        let primaryErrors = errHandler.CollectedDiagnostics
+
+        let extraExternalToolErrors = ExternalDiagnostics(mainInputFileName).ReadExternalDiagnostics ()
+
+        let errors = Array.append primaryErrors extraExternalToolErrors        
                 
         let res = 
             match resOpt with

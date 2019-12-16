@@ -419,3 +419,7 @@ module internal FSharpCheckerResultsSettings =
     val defaultFSharpBinariesDir: string
 
     val maxTimeShareMilliseconds : int64
+
+type ExternalDiagnostics =
+    new : filename: string -> ExternalDiagnostics
+    member GetInfoFileStamp : unit -> System.DateTime option
