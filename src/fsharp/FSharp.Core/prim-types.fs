@@ -410,7 +410,7 @@ namespace Microsoft.FSharp.Core
         let inline (+..)   (x:uint64) (y:uint64) = (# "add" x y : uint64 #)
         let inline ( *. )  (x:int64)  (y:int64)  = (# "mul" x y : int64 #)
         let inline ( *.. ) (x:uint64) (y:uint64) = (# "mul" x y : uint64 #)
-        let inline (^)     (x:string) (y:string) = String.Concat(x,y)
+        let inline (^)     (x:string) (y:string) = System.String.Concat(x,y)
         let inline (<<<)   (x:int)    (y:int)    = (# "shl" x y : int #)
         let inline ( * )   (x:int)    (y:int)    = (# "mul" x y : int #)
         let inline (-)     (x:int)    (y:int)    = (# "sub" x y : int #)
@@ -2879,11 +2879,10 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<float>)      then unboxPrim<'T> (box 0.0)
                 elif aty.Equals(typeof<float32>)    then unboxPrim<'T> (box 0.0f)
                 else 
-                   let pinfo = aty.GetTypeInfo().GetProperty("Zero")
+                   let pinfo = aty.GetProperty("Zero")
                    unboxPrim<'T> (pinfo.GetValue(null,null))
             static member Result : 'T = result
                    
-        // TODO: rationalise these
         type GenericOneDynamicImplTable<'T>() = 
             static let result : 'T = 
                 // The dynamic implementation
@@ -2903,7 +2902,7 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<float>)      then unboxPrim<'T> (box 1.0)
                 elif aty.Equals(typeof<float32>)    then unboxPrim<'T> (box 1.0f)
                 else 
-                   let pinfo = aty.GetTypeInfo().GetProperty("One")
+                   let pinfo = aty.GetProperty("One")
                    unboxPrim<'T> (pinfo.GetValue(null,null))
 
             static member Result : 'T = result
@@ -2911,7 +2910,6 @@ namespace Microsoft.FSharp.Core
         let GenericZeroDynamic<'T>() : 'T = GenericZeroDynamicImplTable<'T>.Result
         let GenericOneDynamic<'T>() : 'T = GenericOneDynamicImplTable<'T>.Result
 
-        // TODO: rationalise these
         let inline GenericZero< ^T when ^T : (static member Zero : ^T) > : ^T =
             GenericZeroDynamic<(^T)>()
             when ^T : int32       = 0
@@ -2931,7 +2929,6 @@ namespace Microsoft.FSharp.Core
              // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
             when ^T : ^T = (^T : (static member Zero : ^T) ())
 
-        // TODO: rationalise these
         let inline GenericOne< ^T when ^T : (static member One : ^T) > : ^T =
             GenericOneDynamic<(^T)>()
             when ^T : int32       = 1
@@ -3494,6 +3491,10 @@ namespace Microsoft.FSharp.Core
 
 namespace Microsoft.FSharp.Collections
 
+    //-------------------------------------------------------------------------
+    // Lists
+    //-------------------------------------------------------------------------
+
     open System
     open System.Collections.Generic
     open System.Diagnostics
@@ -3553,6 +3554,10 @@ namespace Microsoft.FSharp.Collections
            member x._FullList = items (count l 0 ListDebugViewMaxFullLength)
 
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
+
+    //-------------------------------------------------------------------------
+    // List (augmentation)
+    //-------------------------------------------------------------------------
 
     module PrivateListHelpers = 
 
@@ -3663,7 +3668,7 @@ namespace Microsoft.FSharp.Collections
            let n = l.Length
            let txt = 
                if n > 1000 then "Length > 1000"
-               else String.Concat( [| "Length = "; n.ToString() |])
+               else System.String.Concat( [| "Length = "; n.ToString() |])
            txt
 
         member l.Head   = match l with a :: _ -> a | [] -> raise (System.InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
@@ -3847,7 +3852,7 @@ namespace Microsoft.FSharp.Core
 
         let inline (<<) func2 func1 x = func2 (func1 x)
 
-        let (^) (s1: string) (s2: string) = String.Concat(s1, s2)
+        let (^) (s1: string) (s2: string) = System.String.Concat(s1, s2)
 
         [<CompiledName("DefaultArg")>]
         let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v

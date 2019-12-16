@@ -246,12 +246,12 @@ module LeafExpressionConverter =
     let (|LessEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x <= y))
     let (|NotEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x <> y))
 
-    let (|StaticEqualsQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(=) x y))
-    let (|StaticGreaterQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(>) x y))
-    let (|StaticGreaterEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(>=) x y))
-    let (|StaticLessQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<) x y))
-    let (|StaticLessEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<=) x y))
-    let (|StaticNotEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<>) x y))
+    let (|StaticEqualsQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int, y:int) -> NonStructuralComparison.(=) x y))
+    let (|StaticGreaterQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int, y:int) -> NonStructuralComparison.(>) x y))
+    let (|StaticGreaterEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int, y:int) -> NonStructuralComparison.(>=) x y))
+    let (|StaticLessQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int, y:int) -> NonStructuralComparison.(<) x y))
+    let (|StaticLessEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int, y:int) -> NonStructuralComparison.(<=) x y))
+    let (|StaticNotEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int, y:int) -> NonStructuralComparison.(<>) x y))
 
     let (|NullableEqualsQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> NullableOperators.( ?=  ) x y))
     let (|NullableNotEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> NullableOperators.( ?<> ) x y))
@@ -274,7 +274,7 @@ module LeafExpressionConverter =
     let (|LessNullableQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> NullableOperators.( <?  ) x y))
     let (|LessEqNullableQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> NullableOperators.( <=? ) x y))
 
-    let (|MakeDecimalQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (a1,a2,a3,a4,a5) -> LanguagePrimitives.IntrinsicFunctions.MakeDecimal a1 a2 a3 a4 a5))
+    let (|MakeDecimalQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (a1, a2, a3, a4, a5) -> LanguagePrimitives.IntrinsicFunctions.MakeDecimal a1 a2 a3 a4 a5))
 
 
     let (|NullablePlusQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> NullableOperators.( ?+ ) x y))
@@ -300,7 +300,7 @@ module LeafExpressionConverter =
     let (|NotQ|_|) =  (|SpecificCallToMethod|_|) (methodhandleof (fun x -> not x))
     let (|NegQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int) -> -x))
     let (|PlusQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x + y))
-    let (|DivideQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x / y)) 
+    let (|DivideQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x / y))
     let (|MinusQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x - y))
     let (|MultiplyQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x * y))
     let (|ModuloQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x % y))
@@ -320,7 +320,6 @@ module LeafExpressionConverter =
     let (|ConvFloatQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Operators.float x))
     let (|ConvFloat32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Operators.float32 x))
     let (|ConvSByteQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Operators.sbyte x))
-
 
     let (|ConvInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Operators.int16 x))
     let (|ConvInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Operators.int32 x))
@@ -508,51 +507,51 @@ module LeafExpressionConverter =
                 Expression.New(ctor, argsR, [| for p in props -> (p :> MemberInfo) |]) |> asExpr
     
             // Do the same thing as C# compiler for string addition 
-            | PlusQ (_, [ty1;ty2;ty3],[x1;x2]) when (ty1 = typeof<string>) && (ty2 = typeof<string>)  && (ty3 = typeof<string>) ->
+            | PlusQ (_, [ty1; ty2; ty3],[x1; x2]) when (ty1 = typeof<string>) && (ty2 = typeof<string>) && (ty3 = typeof<string>) ->
                  Expression.Add(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2, StringConcat) |> asExpr
 
             | GenericEqualityQ _ 
-            | EqualsQ    _ -> transBinOp env false args false Expression.Equal              
-            | NotEqQ     _ -> transBinOp env false args false Expression.NotEqual           
-            | GreaterQ   _ -> transBinOp env false args false Expression.GreaterThan        
-            | GreaterEqQ _ -> transBinOp env false args false Expression.GreaterThanOrEqual 
-            | LessQ      _ -> transBinOp env false args false Expression.LessThan           
-            | LessEqQ    _ -> transBinOp env false args false Expression.LessThanOrEqual    
-            | NotQ       (_, _, [x1])   -> Expression.Not(ConvExprToLinqInContext env x1)                                   |> asExpr
+            | EqualsQ _ -> transBinOp env false args false Expression.Equal
+            | NotEqQ _ -> transBinOp env false args false Expression.NotEqual
+            | GreaterQ _ -> transBinOp env false args false Expression.GreaterThan
+            | GreaterEqQ _ -> transBinOp env false args false Expression.GreaterThanOrEqual
+            | LessQ _ -> transBinOp env false args false Expression.LessThan
+            | LessEqQ _ -> transBinOp env false args false Expression.LessThanOrEqual
+            | NotQ (_, _, [x1])   -> Expression.Not(ConvExprToLinqInContext env x1) |> asExpr
 
-            | StaticEqualsQ    _ -> transBinOp env false args false Expression.Equal              
-            | StaticNotEqQ     _ -> transBinOp env false args false Expression.NotEqual           
-            | StaticGreaterQ   _ -> transBinOp env false args false Expression.GreaterThan        
-            | StaticGreaterEqQ _ -> transBinOp env false args false Expression.GreaterThanOrEqual 
-            | StaticLessQ      _ -> transBinOp env false args false Expression.LessThan           
-            | StaticLessEqQ    _ -> transBinOp env false args false Expression.LessThanOrEqual    
+            | StaticEqualsQ _ -> transBinOp env false args false Expression.Equal
+            | StaticNotEqQ _ -> transBinOp env false args false Expression.NotEqual
+            | StaticGreaterQ _ -> transBinOp env false args false Expression.GreaterThan
+            | StaticGreaterEqQ _ -> transBinOp env false args false Expression.GreaterThanOrEqual
+            | StaticLessQ _ -> transBinOp env false args false Expression.LessThan
+            | StaticLessEqQ _ -> transBinOp env false args false Expression.LessThanOrEqual
 
-            | NullableEqualsQ            _ -> transBinOp env false args true Expression.Equal              
-            | NullableNotEqQ             _ -> transBinOp env false args true Expression.NotEqual           
-            | NullableGreaterQ           _ -> transBinOp env false args true Expression.GreaterThan        
-            | NullableGreaterEqQ         _ -> transBinOp env false args true Expression.GreaterThanOrEqual 
-            | NullableLessQ              _ -> transBinOp env false args true Expression.LessThan           
-            | NullableLessEqQ            _ -> transBinOp env false args true Expression.LessThanOrEqual    
+            | NullableEqualsQ _ -> transBinOp env false args true Expression.Equal
+            | NullableNotEqQ _ -> transBinOp env false args true Expression.NotEqual
+            | NullableGreaterQ _ -> transBinOp env false args true Expression.GreaterThan
+            | NullableGreaterEqQ _ -> transBinOp env false args true Expression.GreaterThanOrEqual
+            | NullableLessQ  _ -> transBinOp env false args true Expression.LessThan
+            | NullableLessEqQ _ -> transBinOp env false args true Expression.LessThanOrEqual
 
-            | EqualsNullableQ            _ -> transBinOp env true args false Expression.Equal              
-            | NotEqNullableQ             _ -> transBinOp env true args false Expression.NotEqual           
-            | GreaterNullableQ           _ -> transBinOp env true args false Expression.GreaterThan        
-            | GreaterEqNullableQ         _ -> transBinOp env true args false Expression.GreaterThanOrEqual 
-            | LessNullableQ              _ -> transBinOp env true args false Expression.LessThan           
-            | LessEqNullableQ            _ -> transBinOp env true args false Expression.LessThanOrEqual    
+            | EqualsNullableQ _ -> transBinOp env true args false Expression.Equal              
+            | NotEqNullableQ _ -> transBinOp env true args false Expression.NotEqual           
+            | GreaterNullableQ _ -> transBinOp env true args false Expression.GreaterThan        
+            | GreaterEqNullableQ _ -> transBinOp env true args false Expression.GreaterThanOrEqual 
+            | LessNullableQ  _ -> transBinOp env true args false Expression.LessThan           
+            | LessEqNullableQ _ -> transBinOp env true args false Expression.LessThanOrEqual    
 
-            | NullableEqualsNullableQ    _ -> transBinOp env false args false Expression.Equal
-            | NullableNotEqNullableQ     _ -> transBinOp env false args false Expression.NotEqual
-            | NullableGreaterNullableQ   _ -> transBinOp env false args false Expression.GreaterThan
+            | NullableEqualsNullableQ _ -> transBinOp env false args false Expression.Equal
+            | NullableNotEqNullableQ _ -> transBinOp env false args false Expression.NotEqual
+            | NullableGreaterNullableQ _ -> transBinOp env false args false Expression.GreaterThan
             | NullableGreaterEqNullableQ _ -> transBinOp env false args false Expression.GreaterThanOrEqual
-            | NullableLessNullableQ      _ -> transBinOp env false args false Expression.LessThan
-            | NullableLessEqNullableQ    _ -> transBinOp env false args false Expression.LessThanOrEqual
+            | NullableLessNullableQ _ -> transBinOp env false args false Expression.LessThan
+            | NullableLessEqNullableQ _ -> transBinOp env false args false Expression.LessThanOrEqual
             
             // Detect the F# quotation encoding of decimal literals
             | MakeDecimalQ (_, _, [Int32 lo; Int32 med; Int32 hi; Bool isNegative; Byte scale]) -> 
                 Expression.Constant(new System.Decimal(lo,med,hi,isNegative,scale)) |> asExpr
 
-            | NegQ (_, _, [x1])    -> Expression.Negate(ConvExprToLinqInContext env x1)                                |> asExpr
+            | NegQ (_, _, [x1])    -> Expression.Negate(ConvExprToLinqInContext env x1) |> asExpr
             | PlusQ _ -> transBinOp env false args false Expression.Add
             | DivideQ _ -> transBinOp env false args false Expression.Divide
             | MinusQ _ -> transBinOp env false args false Expression.Subtract
@@ -571,25 +570,25 @@ module LeafExpressionConverter =
             | CheckedMinusQ _ -> transBinOp env false args false Expression.SubtractChecked
             | CheckedMultiplyQ _ -> transBinOp env false args false Expression.MultiplyChecked
             
-            | NullablePlusQ            _ -> transBinOp env false args true Expression.Add
-            | PlusNullableQ            _ -> transBinOp env true args false Expression.Add
-            | NullablePlusNullableQ    _ -> transBinOp env false args false Expression.Add
+            | NullablePlusQ _ -> transBinOp env false args true Expression.Add
+            | PlusNullableQ _ -> transBinOp env true args false Expression.Add
+            | NullablePlusNullableQ _ -> transBinOp env false args false Expression.Add
             
-            | NullableMinusQ            _ -> transBinOp env false args true Expression.Subtract
-            | MinusNullableQ            _ -> transBinOp env true args false Expression.Subtract
-            | NullableMinusNullableQ    _ -> transBinOp env false args false Expression.Subtract
+            | NullableMinusQ _ -> transBinOp env false args true Expression.Subtract
+            | MinusNullableQ _ -> transBinOp env true args false Expression.Subtract
+            | NullableMinusNullableQ _ -> transBinOp env false args false Expression.Subtract
             
-            | NullableMultiplyQ            _ -> transBinOp env false args true Expression.Multiply
-            | MultiplyNullableQ            _ -> transBinOp env true args false Expression.Multiply
-            | NullableMultiplyNullableQ    _ -> transBinOp env false args false Expression.Multiply
+            | NullableMultiplyQ _ -> transBinOp env false args true Expression.Multiply
+            | MultiplyNullableQ _ -> transBinOp env true args false Expression.Multiply
+            | NullableMultiplyNullableQ _ -> transBinOp env false args false Expression.Multiply
             
-            | NullableDivideQ            _ -> transBinOp env false args true Expression.Divide
-            | DivideNullableQ            _ -> transBinOp env true args false Expression.Divide
-            | NullableDivideNullableQ    _ -> transBinOp env false args false Expression.Divide
+            | NullableDivideQ _ -> transBinOp env false args true Expression.Divide
+            | DivideNullableQ _ -> transBinOp env true args false Expression.Divide
+            | NullableDivideNullableQ _ -> transBinOp env false args false Expression.Divide
             
-            | NullableModuloQ            _ -> transBinOp env false args true Expression.Modulo
-            | ModuloNullableQ            _ -> transBinOp env true args false Expression.Modulo
-            | NullableModuloNullableQ    _ -> transBinOp env false args false Expression.Modulo
+            | NullableModuloQ _ -> transBinOp env false args true Expression.Modulo
+            | ModuloNullableQ _ -> transBinOp env true args false Expression.Modulo
+            | NullableModuloNullableQ _ -> transBinOp env false args false Expression.Modulo
 
             | ConvNullableCharQ    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<char>>) |> asExpr
             | ConvNullableDecimalQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<decimal>>) |> asExpr
