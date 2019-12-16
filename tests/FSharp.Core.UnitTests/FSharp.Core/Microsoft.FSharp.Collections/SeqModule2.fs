@@ -99,7 +99,57 @@ type SeqModule2() =
         // null Seq
         let nullSeq:seq<'a> = null
         CheckThrowsArgumentNullException (fun () ->Seq.last nullSeq) 
+                
+        
+        // ------ Test for Array -----
+        let IntArr = Array.ofSeq IntSeq                     
+        if Seq.last IntArr <> 9 then Assert.Fail()
+                 
+        // string Array
+        let strArr = Array.ofSeq strSeq 
+        if Seq.last strArr <> "third" then Assert.Fail()
+         
+        // Empty Array
+        let emptyArr = [| |]
+        CheckThrowsArgumentException ( fun() -> Seq.last emptyArr)
+      
+        // null Array
+        let nullArr: array<'a> = null
+        CheckThrowsArgumentNullException (fun () ->Seq.last nullArr) 
+        
+        // ---- Test for IList -----
+        let IntRarr = ResizeArray(IntSeq)
+        if Seq.last IntRarr <> 9 then Assert.Fail()
+                 
+        // string IList
+        let strRarr = ResizeArray(strSeq) 
+        if Seq.last strRarr <> "third" then Assert.Fail()
+         
+        // Empty IList
+        let emptyRarr = ResizeArray<unit>()
+        CheckThrowsArgumentException ( fun() -> Seq.last emptyRarr)
+      
+        // null IList
+        let nullRarr: ResizeArray<unit> = null
+        CheckThrowsArgumentNullException (fun () ->Seq.last nullRarr) 
+        
+        // ---- Test for list -----
+        let Intlist = List.ofSeq(IntSeq)
+        if Seq.last Intlist <> 9 then Assert.Fail()
+                 
+        // string list
+        let strlist = List.ofSeq(strSeq) 
+        if Seq.last strlist <> "third" then Assert.Fail()
+         
+        // Empty list
+        let emptylist: list<unit> = []
+        CheckThrowsArgumentException ( fun() -> Seq.last emptylist)
+      
+        // null list
+        let nullList: list<unit> = Unchecked.defaultof<list<unit>>
+        CheckThrowsArgumentNullException (fun () ->Seq.last nullList) 
         () 
+        
 
     [<Test>]
     member this.TryLast() =
@@ -120,8 +170,63 @@ type SeqModule2() =
       
         // null Seq
         let nullSeq:seq<'a> = null
-        CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullSeq |> ignore) 
+        CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullSeq |> ignore)
+
+        // ------ Test for Array -----
+        let IntArr = Array.ofSeq IntSeq                     
+        let intResult = Seq.tryLast IntArr
+        Assert.AreEqual(9, intResult.Value)
+                 
+        // string Array
+        let strResult = Seq.tryLast (Array.ofSeq (["first"; "second";  "third"]))
+        Assert.AreEqual("third", strResult.Value)
+         
+        // Empty Array
+        let emptyResult = Seq.tryLast Array.empty
+        Assert.IsTrue(emptyResult.IsNone)
+      
+        // null Array
+        let nullArr:array<unit> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.tryLast nullArr |> ignore) 
+
+
+        // ------ Test for IList -----
+        let IntRarr = ResizeArray( IntSeq )
+        let intResult = Seq.tryLast IntRarr
+        Assert.AreEqual(9, intResult.Value)
+                 
+        // string IList
+        let strResult = Seq.tryLast (ResizeArray (["first"; "second";  "third"]))
+        Assert.AreEqual("third", strResult.Value)
+         
+        // Empty IList
+        let emptyResult = Seq.tryLast (ResizeArray<unit>())
+        Assert.IsTrue(emptyResult.IsNone)
+      
+        // null IList
+        let nullRarr:ResizeArray<unit> = null
+        CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullRarr |> ignore) 
+        
+        // ------ Test for list -----
+        let Intlist= List.ofSeq( IntSeq )
+        let intResult = Seq.tryLast Intlist
+        Assert.AreEqual(9, intResult.Value)
+                 
+        // string list
+        let strResult = Seq.tryLast ["first"; "second";  "third"]
+        Assert.AreEqual("third", strResult.Value)
+         
+        // Empty list
+        let emptylist: list<unit> = []
+        let emptyResult = Seq.tryLast emptylist
+        Assert.IsTrue(emptyResult.IsNone)
+      
+        // null list
+        let nullList: list<unit> = Unchecked.defaultof<list<unit>>
+        CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullList |> ignore) 
         () 
+
+
         
     [<Test>]
     member this.ExactlyOne() =

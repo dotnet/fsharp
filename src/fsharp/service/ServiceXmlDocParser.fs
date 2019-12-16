@@ -2,7 +2,6 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Text
 

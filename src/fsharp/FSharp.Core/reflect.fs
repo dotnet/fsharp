@@ -353,7 +353,7 @@ module internal Impl =
         //
         // Historically the FSharp.Core reflection utilities get used on implementations of
         // System.Type that don't have functionality such as .IsEnum and .FullName fully implemented.
-        // This happens particularly over TypeBuilderInstantiation types in the ProvideTypes implementation of System.TYpe
+        // This happens particularly over TypeBuilderInstantiation types in the ProvideTypes implementation of System.Type
         // used in F# type providers.
         typ.IsGenericType &&
         typ.Namespace = "System" &&

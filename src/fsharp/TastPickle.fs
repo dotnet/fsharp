@@ -6,7 +6,6 @@ open System.Collections.Generic
 open System.Text
 open Internal.Utilities
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -582,8 +581,7 @@ let u_array_ext extraf f st =
     extraItem, arr
 
 let u_list_core f n st =
-    [ for _ in 1..n do
-         yield f st ]
+    List.init n (fun _ -> f st)
 
 let u_list f st =
     let n = u_int st
@@ -1306,11 +1304,23 @@ let u_ILInstr st =
 // Pickle/unpickle for F# types and module signatures
 //---------------------------------------------------------------------------
 
-let p_Map pk pv = p_wrap Map.toList (p_list (p_tup2 pk pv))
+let p_Map_core pk pv xs st =
+    xs |> Map.iter (fun k v -> pk k st; pv v st)
+
+let p_Map pk pv x st =
+    p_int (Map.count x) st
+    p_Map_core pk pv x st
+
 let p_qlist pv = p_wrap QueueList.toList (p_list pv)
 let p_namemap p = p_Map p_string p
 
-let u_Map uk uv = u_wrap Map.ofList (u_list (u_tup2 uk uv))
+let u_Map_core uk uv n st =
+    Map.ofSeq (seq { for _ in 1..n -> (uk st, uv st) })
+
+let u_Map uk uv st = 
+    let n = u_int st
+    u_Map_core uk uv n st
+
 let u_qlist uv = u_wrap QueueList.ofList (u_list uv)
 let u_namemap u = u_Map u_string u
 
@@ -1368,7 +1378,7 @@ let p_tys = (p_list p_ty)
 let fill_p_attribs, p_attribs = p_hole()
 
 // In F# 4.5, the type of the "this" pointer for structs is considered to be inref for the purposes of checking the implementation
-// of the struct.  However for backwards compat reaons we can't serialize this as the type.
+// of the struct.  However for backwards compat reasons we can't serialize this as the type.
 let checkForInRefStructThisArg st ty =
     let g = st.oglobals
     let _, tauTy = tryDestForallTy g ty
@@ -2163,7 +2173,7 @@ and u_entity_spec_data st : Entity =
                        entity_xmldoc= defaultArg x15 XmlDoc.Empty
                        entity_xmldocsig = System.String.Empty
                        entity_tycon_abbrev = x8
-                       entity_accessiblity = x4a
+                       entity_accessibility = x4a
                        entity_tycon_repr_accessibility = x4b
                        entity_exn_info = x14 }
     }

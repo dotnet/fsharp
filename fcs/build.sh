@@ -1,22 +1,17 @@
 #!/bin/bash
-if test "$OS" = "Windows_NT"
-then
-  # use .Net
-  cmd fcs/build.cmd $@ 
-else
-  cd fcs
 
-  # use mono
-  if [[ ! -e ~/.config/.mono/certs ]]; then
-    mozroots --import --sync --quiet
-  fi
+# bail out as soon as any single command errors
+set -e
 
-  ./download-paket.sh
-  mono .paket/paket.exe restore
-  exit_code=$?
-  if [ $exit_code -ne 0 ]; then
-    exit $exit_code
-  fi
-  
-  mono packages/FAKE/tools/FAKE.exe $@ --fsiargs -d:MONO build.fsx
-fi
+start_pwd=$PWD
+
+# dotnet tools look in certain paths by default that Just Work when we're in the fcs dir,
+# so let's force that here:
+cd $(dirname ${BASH_SOURCE[0]})
+
+dotnet tool restore
+dotnet paket restore
+dotnet fake build -t $@
+
+# but we'll be nice and go back to the start dir at the end
+cd $start_pwd

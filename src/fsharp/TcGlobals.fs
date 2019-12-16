@@ -26,7 +26,7 @@ open FSharp.Compiler.Features
 
 open Internal.Utilities
 
-let internal DummyFileNameForRangesWithoutASpecificLocation = "startup"
+let internal DummyFileNameForRangesWithoutASpecificLocation = startupFileName
 let private envRange = rangeN DummyFileNameForRangesWithoutASpecificLocation 0
 
 /// Represents an intrinsic value from FSharp.Core known to the compiler

@@ -7,12 +7,15 @@
 
   <ItemGroup>
     <Compile Include="..\..\..\core\state-machines\sync.fs" Link="sync.fs" />
+<!--
+
     <Compile Include="..\..\..\core\state-machines\avalue.fs" Link="avalue.fs" />
     <Compile Include="..\..\..\core\state-machines\seq2.fs" />
     <Compile Include="..\..\..\core\state-machines\list.fs" />
     <Compile Include="..\..\..\core\state-machines\taskSeq.fs" />
     <Compile Include="TaskBuilder.fs" />
     <Compile Include="TaskPerf.fs" />
+-->
     <ProjectReference Include="..\CS\TaskPerfCSharp.csproj" />
     <ProjectReference Include="..\..\..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.11.5" />

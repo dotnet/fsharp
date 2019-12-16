@@ -65,6 +65,7 @@ module internal List =
     val splitAt : int -> 'T list -> ('T list * 'T list)
     val transpose : 'T list list -> 'T list list
     val truncate : int -> 'T list -> 'T list
+    val tryLastV : 'T list -> 'T ValueOption
 
 module internal Array =
     // The input parameter should be checked by callers if necessary
@@ -101,3 +102,6 @@ module internal Array =
     val stableSortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T[] -> unit
 
     val stableSortInPlace: array:'T[] -> unit when 'T : comparison 
+
+module internal Seq =
+    val tryLastV : 'T seq -> 'T ValueOption

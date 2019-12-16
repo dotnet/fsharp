@@ -1809,6 +1809,7 @@ Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueO
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] ValueNone
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] get_None()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] get_ValueNone()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] op_Implicit(T)
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: System.String ToString()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: T Item
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: T Value
