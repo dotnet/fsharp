@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
-        <target state="new">Operation could not be completed due to earlier error</target>
+        <target state="translated">Operaci nešlo dokončit z důvodu dřívější chyby.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
         <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="new">Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</target>
+        <target state="translated">Operace nebyla úspěšná. Text chyby se vytiskl do streamu chyb. Pokud chcete vrátit odpovídající FSharpErrorInfo, použijte EvalInteractionNonThrowing, EvalScriptNonThrowing nebo EvalExpressionNonThrowing.</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Použití: {0} &lt;parametry&gt; [skript.fsx [&lt;argumenty&gt;]]</target>
+        <target state="translated">Použití: {0} &lt;možnosti&gt; [script.fsx [&lt;argumenty&gt;]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">Při spuštění procesu F# Interactive se vyskytl problém. Ten mohly způsobit známé potíže s podporou konzoly procesu na pozadí pro aplikace umožňující kódování Unicode v některých systémech Windows. V případě sady Visual Studio zkuste vybrat Nástroje-&gt;Možnosti-&gt;F# Interactive a zadat: --fsi-server-no-unicode.</target>
+        <target state="translated">Při spouštění procesu F# Interactive došlo k potížím. Může to být způsobené známým problémem s podporou procesů na pozadí v konzole pro aplikace podporující Unicode v některých systémech Windows. Zkuste vybrat Nástroje -&gt; Možnosti -&gt; F# Interactive pro Visual Studio a zadat --fsi-server-no-unicode.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -219,22 +219,22 @@
       </trans-unit>
       <trans-unit id="fsiDidAHashr">
         <source>--&gt; Referenced '{0}'</source>
-        <target state="translated">--&gt; Odkazovaný soubor {0}</target>
+        <target state="translated">--&gt; Odkazovalo se na: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithLockWarning">
         <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
-        <target state="translated">--&gt; Odkazovaný soubor {0} (Soubor musí být procesem F# Interactive uzamčený.)</target>
+        <target state="translated">--&gt; Odkazovalo se na: {0} (soubor může být zamknutý procesem F# Interactive)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashrWithStaleWarning">
         <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
-        <target state="translated">--&gt; Odkazováno {0} (na sestavení s odlišným časovým razítkem se už z tohoto umístění odkazovalo, pro načtení aktualizovaného sestavení obnovte soubor fsi)</target>
+        <target state="translated">--&gt; Odkazovalo se na: {0} (Z tohoto umístění se už odkazovalo na sestavení s jiným časovým razítkem. Je třeba resetovat fsi, aby se načetlo aktualizované sestavení.)</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiDidAHashI">
         <source>--&gt; Added '{0}' to library include path</source>
-        <target state="translated">--&gt; Soubory přidané do knihovny ({0}) zahrnují cestu.</target>
+        <target state="translated">--&gt; Přidali jsme {0} do cesty pro zahrnutí do knihovny</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiTurnedTimingOn">

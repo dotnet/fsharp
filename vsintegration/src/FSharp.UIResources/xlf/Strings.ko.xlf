@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="Diagnostics">
         <source>Diagnostics</source>
-        <target state="new">Diagnostics</target>
+        <target state="translated">진단</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">

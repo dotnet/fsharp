@@ -4,7 +4,6 @@ namespace FSharp.Compiler
 
 
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Threading
@@ -18,7 +17,6 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
-open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeChecker
@@ -253,9 +251,9 @@ module internal IncrementalBuild =
         static member OfSize size = ResultVector(size, DateTime.MinValue, Map.empty)
         member rv.Size = size
         member rv.Get slot = get slot
-        member rv.Resize newsize = 
-            if size<>newsize then 
-                ResultVector(newsize, zeroElementTimestamp, map |> Map.filter(fun s _ -> s < newsize))
+        member rv.Resize newSize = 
+            if size<>newSize then 
+                ResultVector(newSize, zeroElementTimestamp, map |> Map.filter(fun s _ -> s < newSize))
             else rv
 
         member rv.Set(slot, value) = 
@@ -266,7 +264,7 @@ module internal IncrementalBuild =
             ResultVector(size, zeroElementTimestamp, Map.add slot value map)
 
         member rv.MaxTimestamp() =
-            let maximize (lasttimestamp: DateTime) (_, result: Result) =  max lasttimestamp result.Timestamp
+            let maximize (lastTimestamp: DateTime) (_, result: Result) =  max lastTimestamp result.Timestamp
             List.fold maximize zeroElementTimestamp (asList.Force())
 
         member rv.Signature() =
@@ -416,16 +414,16 @@ module internal IncrementalBuild =
     /// Get the maximum build stamp for an output.
     let MaxTimestamp(bt: PartialBuild, id) = 
         match bt.Results.TryFind id with
-        | Some resultset -> 
-            match resultset with 
+        | Some resultSet -> 
+            match resultSet with 
             | ScalarResult rs -> rs.Timestamp
             | VectorResult rv -> rv.MaxTimestamp()
         | None -> DateTime.MaxValue
         
     let Signature(bt: PartialBuild, id) =
         match bt.Results.TryFind id with
-        | Some resultset -> 
-            match resultset with 
+        | Some resultSet -> 
+            match resultSet with 
             | ScalarResult rs -> rs.InputSignature
             | VectorResult rv -> rv.Signature()
         | None -> UnevaluatedInput               
@@ -515,9 +513,9 @@ module internal IncrementalBuild =
                 seen.[id] <- true
                 false
                  
-        let shouldEvaluate(bt, currentsig: InputSignature, id) =
-            if currentsig.IsEvaluated then 
-                currentsig <> Signature(bt, id)
+        let shouldEvaluate(bt, currentSig: InputSignature, id) =
+            if currentSig.IsEvaluated then 
+                currentSig <> Signature(bt, id)
             else false
             
         /// Make sure the result vector saved matches the size of expr
@@ -555,20 +553,20 @@ module internal IncrementalBuild =
 
                                 let inputResult = GetVectorExprResult (bt, inputExpr, slot)
                                 match accumulatorResult, inputResult with 
-                                | Available (accumulator, accumulatortimesamp, _accumulatorInputSig), Available (input, inputtimestamp, _inputSig) ->
-                                    let inputtimestamp = max inputtimestamp accumulatortimesamp
-                                    let prevoutput = GetVectorExprResult (bt, ve, slot)
-                                    let outputtimestamp = prevoutput.Timestamp
+                                | Available (accumulator, accumulatorTimestamp, _accumulatorInputSig), Available (input, inputTimestamp, _inputSig) ->
+                                    let inputTimestamp = max inputTimestamp accumulatorTimestamp
+                                    let prevOutput = GetVectorExprResult (bt, ve, slot)
+                                    let outputTimestamp = prevOutput.Timestamp
                                     let scanOpOpt = 
-                                        if inputtimestamp <> outputtimestamp then
+                                        if inputTimestamp <> outputTimestamp then
                                             Some (fun ctok -> func ctok accumulator input)
-                                        elif prevoutput.ResultIsInProgress then
-                                            Some prevoutput.GetInProgressContinuation
+                                        elif prevOutput.ResultIsInProgress then
+                                            Some prevOutput.GetInProgressContinuation
                                         else 
                                             // up-to-date and complete, no work required
                                             None
                                     match scanOpOpt with 
-                                    | Some scanOp -> Some (actionFunc (IndexedAction(id, taskname, slot, cardinality, inputtimestamp, scanOp)) acc)
+                                    | Some scanOp -> Some (actionFunc (IndexedAction(id, taskname, slot, cardinality, inputTimestamp, scanOp)) acc)
                                     | None -> None
                                 | _ -> None                            
                                 
@@ -584,19 +582,19 @@ module internal IncrementalBuild =
                         | Some cardinality ->       
                             if cardinality=0 then
                                 // For vector length zero, just propagate the prior timestamp.
-                                let inputtimestamp = MaxTimestamp(bt, inputExpr.Id)
-                                let outputtimestamp = MaxTimestamp(bt, id)
-                                if inputtimestamp <> outputtimestamp then
-                                    actionFunc (VectorAction(id, taskname, inputtimestamp, EmptyTimeStampedInput inputtimestamp, fun _ -> cancellable.Return [||])) acc
+                                let inputTimestamp = MaxTimestamp(bt, inputExpr.Id)
+                                let outputTimestamp = MaxTimestamp(bt, id)
+                                if inputTimestamp <> outputTimestamp then
+                                    actionFunc (VectorAction(id, taskname, inputTimestamp, EmptyTimeStampedInput inputTimestamp, fun _ -> cancellable.Return [||])) acc
                                 else acc
                             else                                                
                                 let MapResults acc slot =
-                                    let inputtimestamp = GetVectorExprResult(bt, inputExpr, slot).Timestamp
-                                    let outputtimestamp = GetVectorExprResult(bt, ve, slot).Timestamp
-                                    if inputtimestamp <> outputtimestamp then
+                                    let inputTimestamp = GetVectorExprResult(bt, inputExpr, slot).Timestamp
+                                    let outputTimestamp = GetVectorExprResult(bt, ve, slot).Timestamp
+                                    if inputTimestamp <> outputTimestamp then
                                         let OneToOneOp ctok =
                                             Eventually.Done (func ctok (GetVectorExprResult(bt, inputExpr, slot).GetAvailable()))
-                                        actionFunc (IndexedAction(id, taskname, slot, cardinality, inputtimestamp, OneToOneOp)) acc
+                                        actionFunc (IndexedAction(id, taskname, slot, cardinality, inputTimestamp, OneToOneOp)) acc
                                     else acc
                                 match optSlot with 
                                 | None ->
@@ -615,20 +613,20 @@ module internal IncrementalBuild =
                         | Some cardinality ->    
                             if cardinality=0 then
                                 // For vector length zero, just propagate the prior timestamp.
-                                let inputtimestamp = MaxTimestamp(bt, inputExpr.Id)
-                                let outputtimestamp = MaxTimestamp(bt, id)
-                                if inputtimestamp <> outputtimestamp then
-                                    actionFunc (VectorAction(id, taskname, inputtimestamp, EmptyTimeStampedInput inputtimestamp, fun _ -> cancellable.Return [||])) acc
+                                let inputTimestamp = MaxTimestamp(bt, inputExpr.Id)
+                                let outputTimestamp = MaxTimestamp(bt, id)
+                                if inputTimestamp <> outputTimestamp then
+                                    actionFunc (VectorAction(id, taskname, inputTimestamp, EmptyTimeStampedInput inputTimestamp, fun _ -> cancellable.Return [||])) acc
                                 else acc
                             else                 
                                 let checkStamp acc slot = 
-                                    let inputresult = GetVectorExprResult (bt, inputExpr, slot)
-                                    match inputresult with
+                                    let inputResult = GetVectorExprResult (bt, inputExpr, slot)
+                                    match inputResult with
                                     | Available (ires, _, _) ->
-                                        let oldtimestamp = GetVectorExprResult(bt, ve, slot).Timestamp
-                                        let newtimestamp = func cache ctok ires
-                                        if newtimestamp <> oldtimestamp then 
-                                            actionFunc (IndexedAction(id, taskname, slot, cardinality, newtimestamp, fun _ -> Eventually.Done ires)) acc
+                                        let oldTimestamp = GetVectorExprResult(bt, ve, slot).Timestamp
+                                        let newTimestamp = func cache ctok ires
+                                        if newTimestamp <> oldTimestamp then 
+                                            actionFunc (IndexedAction(id, taskname, slot, cardinality, newTimestamp, fun _ -> Eventually.Done ires)) acc
                                         else acc
                                     | _ -> acc
                                 match optSlot with 
@@ -642,11 +640,11 @@ module internal IncrementalBuild =
                 | VectorMultiplex(id, taskname, inputExpr, func) -> 
                     let acc = 
                         match GetScalarExprResult (bt, inputExpr) with
-                         | Available (inp, inputtimestamp, inputsig) ->
-                           let outputtimestamp = MaxTimestamp(bt, id)
-                           if inputtimestamp <> outputtimestamp then
+                         | Available (inp, inputTimestamp, inputsig) ->
+                           let outputTimestamp = MaxTimestamp(bt, id)
+                           if inputTimestamp <> outputTimestamp then
                                let MultiplexOp ctok =  func ctok inp |> cancellable.Return
-                               actionFunc (VectorAction(id, taskname, inputtimestamp, inputsig, MultiplexOp)) acc
+                               actionFunc (VectorAction(id, taskname, inputTimestamp, inputsig, MultiplexOp)) acc
                            else acc
                          | _ -> acc
                     visitScalar inputExpr acc
@@ -659,16 +657,16 @@ module internal IncrementalBuild =
                 | ScalarDemultiplex (id, taskname, inputExpr, func) ->
                     let acc = 
                         match GetVectorExprResultVector (bt, inputExpr) with
-                        | Some inputresult ->   
-                            let currentsig = inputresult.Signature()
-                            if shouldEvaluate(bt, currentsig, id) then
-                                let inputtimestamp = MaxTimestamp(bt, inputExpr.Id)
+                        | Some inputResult ->   
+                            let currentSig = inputResult.Signature()
+                            if shouldEvaluate(bt, currentSig, id) then
+                                let inputTimestamp = MaxTimestamp(bt, inputExpr.Id)
                                 let DemultiplexOp ctok = 
                                  cancellable {
                                     let input = AvailableAllResultsOfExpr bt inputExpr |> List.toArray
                                     return! func ctok input
                                  }
-                                actionFunc (ScalarAction(id, taskname, inputtimestamp, currentsig, DemultiplexOp)) acc
+                                actionFunc (ScalarAction(id, taskname, inputTimestamp, currentSig, DemultiplexOp)) acc
                             else acc
                         | None -> acc
 
@@ -677,11 +675,11 @@ module internal IncrementalBuild =
                 | ScalarMap (id, taskname, inputExpr, func) ->
                     let acc = 
                         match GetScalarExprResult (bt, inputExpr) with
-                        | Available (inp, inputtimestamp, inputsig) ->
-                           let outputtimestamp = MaxTimestamp(bt, id)
-                           if inputtimestamp <> outputtimestamp then
+                        | Available (inp, inputTimestamp, inputsig) ->
+                           let outputTimestamp = MaxTimestamp(bt, id)
+                           if inputTimestamp <> outputTimestamp then
                                let MapOp ctok = func ctok inp |> cancellable.Return
-                               actionFunc (ScalarAction(id, taskname, inputtimestamp, inputsig, MapOp)) acc
+                               actionFunc (ScalarAction(id, taskname, inputTimestamp, inputsig, MapOp)) acc
                            else acc
                         | _ -> acc
                     
@@ -782,10 +780,10 @@ module internal IncrementalBuild =
             if gen>5000 then failwith "Infinite loop in incremental builder?"
             #endif
 
-            let worklist = CollectActions cache target bt 
+            let workList = CollectActions cache target bt 
             
             let! newBt = 
-              (bt, worklist) ||> Cancellable.fold (fun bt action -> 
+              (bt, workList) ||> Cancellable.fold (fun bt action -> 
                      if injectCancellationFault then 
                          Cancellable.canceled() 
                      else 
@@ -800,9 +798,9 @@ module internal IncrementalBuild =
       cancellable {
         // REVIEW: we're building up the whole list of actions on the fringe of the work tree, 
         // executing one thing and then throwing the list away. What about saving the list inside the Build instance?
-        let worklist = CollectActions cache target bt 
+        let workList = CollectActions cache target bt 
             
-        match worklist with 
+        match workList with 
         | action :: _ -> 
             let! res = ExecuteApply ctok save action bt
             return Some res
@@ -822,8 +820,8 @@ module internal IncrementalBuild =
 
     /// Check if an output is up-to-date and ready
     let IsReady cache target bt = 
-        let worklist = CollectActions cache target bt 
-        worklist.IsEmpty
+        let workList = CollectActions cache target bt 
+        workList.IsEmpty
         
     /// Check if an output is up-to-date and ready
     let MaxTimeStampInDependencies cache ctok target bt = 
@@ -972,7 +970,7 @@ module internal IncrementalBuild =
 
         
 
-// Record the most recent IncrementalBuilder events, so we can more easily unittest/debug the 
+// Record the most recent IncrementalBuilder events, so we can more easily unit test/debug the 
 // 'incremental' behavior of the product.
 module IncrementalBuilderEventTesting = 
 
@@ -1054,7 +1052,7 @@ type TypeCheckAccumulator =
 /// Global service state
 type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list * (*fsharpBinaries*)string * (*langVersion*)decimal
 
-/// Represents a cache of 'framework' references that can be shared betweeen multiple incremental builds
+/// Represents a cache of 'framework' references that can be shared between multiple incremental builds
 type FrameworkImportsCache(keepStrongly) = 
 
     // Mutable collection protected via CompilationThreadToken 
@@ -1087,7 +1085,7 @@ type FrameworkImportsCache(keepStrongly) =
                         tcConfig.primaryAssembly.Name,
                         tcConfig.GetTargetFrameworkDirectories(),
                         tcConfig.fsharpBinariesDir,
-                        tcConfig.langVersion.SpecifiedVerson)
+                        tcConfig.langVersion.SpecifiedVersion)
 
             match frameworkTcImportsCache.TryGet (ctok, key) with
             | Some res -> return res
@@ -1141,7 +1139,7 @@ type PartialCheckResults =
 
       LatestImplementationFile: TypedImplFile option 
 
-      LastestCcuSigForFile: ModuleOrNamespaceType option }
+      LatestCcuSigForFile: ModuleOrNamespaceType option }
 
     member x.TcErrors  = Array.concat (List.rev x.TcErrorsRev)
     member x.TcSymbolUses  = List.rev x.TcSymbolUsesRev
@@ -1161,7 +1159,7 @@ type PartialCheckResults =
           ModuleNamesDict = tcAcc.tcModuleNamesDict
           TimeStamp = timestamp 
           LatestImplementationFile = tcAcc.latestImplFile 
-          LastestCcuSigForFile = tcAcc.latestCcuSigForFile }
+          LatestCcuSigForFile = tcAcc.latestCcuSigForFile }
 
 
 [<AutoOpen>]
@@ -1722,9 +1720,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             /// Create a type-check configuration
             let tcConfigB, sourceFilesNew = 
 
-                let getSwitchValue switchstring =
-                    match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWithOrdinal switchstring) with
-                    | Some idx -> Some(commandLineArgs.[idx].Substring(switchstring.Length))
+                let getSwitchValue switchString =
+                    match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWithOrdinal switchString) with
+                    | Some idx -> Some(commandLineArgs.[idx].Substring(switchString.Length))
                     | _ -> None
 
                 // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
@@ -1810,7 +1808,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
                 [ for r in nonFrameworkResolutions do
                     let fileName = r.resolvedPath
-                    yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) _ctokk -> cache.GetFileTimeStamp fileName))  
+                    yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) _ctok -> cache.GetFileTimeStamp fileName))  
 
                   for pr in projectReferences  do
                     yield Choice2Of2 pr, (fun (cache: TimeStampCache) ctok -> cache.GetProjectReferenceTimeStamp (pr, ctok)) ]

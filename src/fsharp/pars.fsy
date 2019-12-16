@@ -788,7 +788,7 @@ optLiteralValueSpfn:
   | EQUALS declExpr 
       { Some($2) }
 
-  | EQUALS OBLOCKBEGIN declExpr oblockend 
+  | EQUALS OBLOCKBEGIN declExpr oblockend opt_ODECLEND
       { Some($3) }
   
 
@@ -1623,21 +1623,23 @@ classDefnMemberGetSetElement:
 /* The core of a member definition */
 memberCore:  
   /* Methods and simple getter properties */
-  | opt_inline bindingPattern  opt_topReturnTypeWithTypeConstraints EQUALS typedSeqExprBlock  
-     {  let mRhs = $5.Range 
-        let mWhole = unionRanges (rhs2 parseState 3 4) mRhs 
-        let optReturnType = $3 
-        let bindingBuilder,mBindLhs = $2 
-        (fun vis memFlagsBuilder attrs -> 
-             [ SynMemberDefn.Member (bindingBuilder (vis,$1,false,mBindLhs,NoSequencePointAtInvisibleBinding,optReturnType,$5,mRhs,[],attrs,Some(memFlagsBuilder MemberKind.Member)),unionRanges mWhole mBindLhs) ]) }
+  | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints EQUALS typedSeqExprBlock  
+     { let mRhs = $5.Range 
+       let optReturnType = $3 
+       let bindingBuilder, mBindLhs = $2 
+       (fun vis memFlagsBuilder attrs rangeStart ->
+            let memberFlags = Some (memFlagsBuilder MemberKind.Member)
+            let binding = bindingBuilder (vis, $1, false, mBindLhs, NoSequencePointAtInvisibleBinding, optReturnType, $5, mRhs, [], attrs, memberFlags)
+            let memberRange = unionRanges rangeStart mRhs
+            [ SynMemberDefn.Member (binding, memberRange) ]) }
 
   /* Properties with explicit get/set, also indexer properties */
-  | opt_inline bindingPattern  opt_topReturnTypeWithTypeConstraints classDefnMemberGetSet  
+  | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints classDefnMemberGetSet  
      { let mWhole = (rhs parseState 2, $4) ||> unionRangeWithListBy (fun (_,_,_,_,_,m2) -> m2) 
-       let propertyNameBindingBuilder,_ = $2 
+       let propertyNameBindingBuilder, _ = $2 
        let optPropertyType = $3 
        let isMutable = false
-       (fun visNoLongerUsed memFlagsBuilder attrs -> 
+       (fun visNoLongerUsed memFlagsBuilder attrs rangeStart -> 
              let hasGet = ref false
              let hasSet = ref false
 
@@ -1665,21 +1667,21 @@ memberCore:
                                    | SynPat.Attrib (p,_,_) ->  go p
                                    | _ -> raiseParseErrorAt mBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
                                go pv 
-                         if getset = "get" then (
+                         if getset = "get" then
                              if !hasGet then 
                                  reportParseErrorAt mBindLhs (FSComp.SR.parsGetAndOrSetRequired())
                                  None
                              else
                                  hasGet := true
                                  Some MemberKind.PropertyGet
-                         ) else if getset = "set" then (
+                         else if getset = "set" then
                              if !hasSet then 
                                  reportParseErrorAt mBindLhs (FSComp.SR.parsGetAndOrSetRequired())
                                  None
                              else
                                  hasSet := true
                                  Some MemberKind.PropertySet
-                         ) else 
+                         else
                              raiseParseErrorAt mBindLhs (FSComp.SR.parsGetAndOrSetRequired())
 
                    match memberKind with
@@ -1697,7 +1699,7 @@ memberCore:
                    
                    let optReturnType = 
                        match (memberKind, optReturnType) with 
-                       | MemberKind.PropertySet,_ -> optReturnType
+                       | MemberKind.PropertySet, _ -> optReturnType
                        | _, None -> optPropertyType
                        | _ -> optReturnType 
 
@@ -1719,35 +1721,39 @@ memberCore:
                            | _ -> SynInfo.unnamedTopArg
 
                        match memberKind, valSynInfo, memFlags.IsInstance with 
-                       | MemberKind.PropertyGet,SynValInfo ([],_ret),         false
-                       | MemberKind.PropertyGet,SynValInfo ([_],_ret), true  -> 
+                       | MemberKind.PropertyGet, SynValInfo ([], _ret), false
+                       | MemberKind.PropertyGet, SynValInfo ([_], _ret), true  -> 
                            raiseParseErrorAt mBindLhs (FSComp.SR.parsGetterMustHaveAtLeastOneArgument()) 
 
-                       | MemberKind.PropertyGet,SynValInfo (thisArg :: indexOrUnitArgs :: rest,ret), true  -> 
-                           if not rest.IsEmpty then reportParseErrorAt mBindLhs (FSComp.SR.parsGetterAtMostOneArgument())
-                           SynValInfo ([thisArg; indexOrUnitArgs],ret)
+                       | MemberKind.PropertyGet, SynValInfo (thisArg :: indexOrUnitArgs :: rest, ret), true  -> 
+                           if not rest.IsEmpty then
+                               reportParseErrorAt mBindLhs (FSComp.SR.parsGetterAtMostOneArgument ())
+                           SynValInfo ([thisArg; indexOrUnitArgs], ret)
 
-                       | MemberKind.PropertyGet,SynValInfo (indexOrUnitArgs :: rest,ret),          false ->
-                           if not rest.IsEmpty then reportParseErrorAt mBindLhs (FSComp.SR.parsGetterAtMostOneArgument())
-                           SynValInfo ([indexOrUnitArgs],ret)
+                       | MemberKind.PropertyGet, SynValInfo (indexOrUnitArgs :: rest,ret), false ->
+                           if not rest.IsEmpty then
+                               reportParseErrorAt mBindLhs (FSComp.SR.parsGetterAtMostOneArgument ())
+                           SynValInfo ([indexOrUnitArgs], ret)
 
-                       | MemberKind.PropertySet,SynValInfo ([thisArg;valueArg],ret),                 true  -> 
-                           SynValInfo ([thisArg; adjustValueArg valueArg],ret)
+                       | MemberKind.PropertySet, SynValInfo ([thisArg;valueArg], ret), true  -> 
+                           SynValInfo ([thisArg; adjustValueArg valueArg], ret)
 
-                       | MemberKind.PropertySet,SynValInfo (thisArg :: indexArgs :: valueArg :: rest,ret), true  -> 
-                           if not rest.IsEmpty then reportParseErrorAt mBindLhs (FSComp.SR.parsSetterAtMostTwoArguments())
-                           SynValInfo ([thisArg; indexArgs @ adjustValueArg valueArg],ret)
+                       | MemberKind.PropertySet, SynValInfo (thisArg :: indexArgs :: valueArg :: rest, ret), true  -> 
+                           if not rest.IsEmpty then
+                               reportParseErrorAt mBindLhs (FSComp.SR.parsSetterAtMostTwoArguments ())
+                           SynValInfo ([thisArg; indexArgs @ adjustValueArg valueArg], ret)
 
-                       | MemberKind.PropertySet,SynValInfo ([valueArg],ret),                         false -> 
-                           SynValInfo ([adjustValueArg valueArg],ret)
+                       | MemberKind.PropertySet, SynValInfo ([valueArg], ret), false -> 
+                           SynValInfo ([adjustValueArg valueArg], ret)
 
-                       | MemberKind.PropertySet,SynValInfo (indexArgs :: valueArg :: rest,ret),          _     -> 
-                           if not rest.IsEmpty then reportParseErrorAt mBindLhs (FSComp.SR.parsSetterAtMostTwoArguments())
-                           SynValInfo ([indexArgs @ adjustValueArg valueArg],ret)
+                       | MemberKind.PropertySet, SynValInfo (indexArgs :: valueArg :: rest,ret), _ -> 
+                           if not rest.IsEmpty then
+                               reportParseErrorAt mBindLhs (FSComp.SR.parsSetterAtMostTwoArguments ())
+                           SynValInfo ([indexArgs @ adjustValueArg valueArg], ret)
 
                        | _ -> 
                            // should be unreachable, cover just in case
-                           raiseParseErrorAt mBindLhs (FSComp.SR.parsInvalidProperty())
+                           raiseParseErrorAt mBindLhs (FSComp.SR.parsInvalidProperty ())
 
                    let valSynData = SynValData(Some(memFlags), valSynInfo,None) 
 
@@ -1808,7 +1814,9 @@ memberCore:
 
                        go pv,PreXmlDoc.Merge doc2 doc
 
-                   Some <| SynMemberDefn.Member (Binding (vis, NormalBinding, isInline, isMutable, attrs, xmlDocAdjusted, valSynData, bindingPatAdjusted, rhsRetInfo, rhsExpr, mBindLhs, spBind),mWhole)))
+                   let binding = Binding (vis, NormalBinding, isInline, isMutable, attrs, xmlDocAdjusted, valSynData, bindingPatAdjusted, rhsRetInfo, rhsExpr, mBindLhs, spBind)
+                   let memberRange = unionRanges rangeStart mWhole
+                   Some (SynMemberDefn.Member (binding, memberRange))))
        }
 
 
@@ -1827,10 +1835,12 @@ classDefnMember:
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
        [mkClassMemberLocalBindings(true,Some (rhs parseState 3),$1,$2,$4)] }
               
-  | opt_attributes opt_declVisibility memberFlags memberCore  opt_ODECLEND
-     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-       let _,flags = $3
-       $4 $2 flags $1 }
+  | opt_attributes opt_declVisibility memberFlags memberCore opt_ODECLEND
+     { let rangeStart = rhs parseState 1
+       if Option.isSome $2 then
+           errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+       let _, flags = $3
+       $4 $2 flags $1 rangeStart }
        
   | opt_attributes opt_declVisibility interfaceMember appType opt_interfaceImplDefn  
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesAreNotPermittedOnInterfaceImplementations(),rhs parseState 1))
@@ -1869,9 +1879,11 @@ classDefnMember:
         $4 (Some (rhs parseState 3)) $1 true  }
 
   | opt_attributes opt_declVisibility memberFlags autoPropsDefnDecl opt_ODECLEND
-     {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-        let isStatic, flags = $3
-        $4 $1 isStatic flags }
+     { let rangeStart = rhs parseState 1 
+       if Option.isSome $2 then
+           errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
+       let isStatic, flags = $3
+       $4 $1 isStatic flags rangeStart }
 
   | opt_attributes opt_declVisibility NEW  atomicPattern optAsSpec EQUALS typedSeqExprBlock opt_ODECLEND
      {  let m = unionRanges (rhs2 parseState 3 6) $7.Range 
@@ -1903,12 +1915,13 @@ valDefnDecl:
 /* An auto-property definition in an object type definition */
 autoPropsDefnDecl:
   | VAL opt_mutable opt_access ident opt_typ EQUALS typedSeqExprBlock classMemberSpfnGetSet
-     {  let doc = grabXmlDoc(parseState,5)
-        let mValDecl = unionRanges (rhs parseState 1) $7.Range
-        let mGetSetOpt, getSet = $8
-        if $2 then errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet(),rhs parseState 3))
-        (fun attribs isStatic flags -> 
-            [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, flags, doc, $3, $7, mGetSetOpt, mValDecl) ]) }
+     { let doc = grabXmlDoc(parseState, 5)
+       let mGetSetOpt, getSet = $8
+       if $2 then
+           errorR (Error (FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
+       (fun attribs isStatic flags rangeStart ->
+           let memberRange = unionRanges rangeStart $7.Range
+           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, flags, doc, $3, $7, mGetSetOpt, memberRange) ]) }
 
 
 /* An optional type on an auto-property definition */
@@ -2022,10 +2035,12 @@ objectImplementationMembers:
 /* One member in an object expression or interface implementation */
 objectImplementationMember: 
   | opt_attributes memberOrOverride memberCore opt_ODECLEND
-     { $3 None OverrideMemberFlags $1 }
+     { let rangeStart = rhs parseState 1
+       $3 None OverrideMemberFlags $1 rangeStart }
 
   | opt_attributes memberOrOverride autoPropsDefnDecl opt_ODECLEND
-     { $3 $1 false OverrideMemberFlags }
+     { let rangeStart = rhs parseState 1
+       $3 $1 false OverrideMemberFlags rangeStart }
 
   | opt_attributes memberOrOverride error 
       { [] } 

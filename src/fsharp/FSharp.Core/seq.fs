@@ -1377,29 +1377,21 @@ namespace Microsoft.FSharp.Collections
                       invalidArg "source" (SR.GetString(SR.notEnoughElements))
                   while e.MoveNext() do
                       yield e.Current }
-
+                           
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
             checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if e.MoveNext() then
-                let mutable res = e.Current
-                while (e.MoveNext()) do res <- e.Current
-                res
-            else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-
+            match Microsoft.FSharp.Primitives.Basics.Seq.tryLastV source with
+            | ValueSome x -> x
+            | ValueNone -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+        
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
             checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if e.MoveNext() then
-                let mutable res = e.Current
-                while (e.MoveNext()) do res <- e.Current
-                Some res
-            else
-                None
-
+            match Microsoft.FSharp.Primitives.Basics.Seq.tryLastV source with
+            | ValueSome x -> Some x
+            | ValueNone -> None
+            
         [<CompiledName("ExactlyOne")>]
         let exactlyOne (source : seq<_>) =
             checkNonNull "source" source

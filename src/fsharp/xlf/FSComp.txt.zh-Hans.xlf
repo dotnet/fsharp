@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
-        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <target state="translated">流应以空资源开头并且应采用 .RES 格式。</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
-        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <target state="translated">以偏移量 {0} 开始的资源标头格式不正确。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
-        <target state="new">Attributes cannot be applied to type extensions.</target>
+        <target state="translated">属性不可应用于类型扩展。</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">

@@ -2,13 +2,10 @@
 
 #if !NETSTANDARD
 open System.Runtime.Serialization.Json
-open System.Runtime
-open System.Diagnostics
 #endif
 open System.Text
 open System.IO
 open System
-open System.Xml
 
 module Utils =
 
