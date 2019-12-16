@@ -67,20 +67,15 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
     inherit ByteMemory()
 
     do
-        if offset < 0 then
-            failwith "offset is less than zero"
+        if length <= 0 || length > bytes.Length then
+            raise (ArgumentOutOfRangeException("length"))
 
-        if length <= 0 then
-            failwith "length is less than or equal to zero"
-
-        if (offset + length) > bytes.Length then
-            failwith "span larger than byte array"
+        if offset < 0 || (offset + length) > bytes.Length then
+            raise (ArgumentOutOfRangeException("offset"))
     
     override _.Item 
-        with get i = 
-            bytes.[offset + i]
-        and set i v =
-            bytes.[offset + i] <- v
+        with get i = bytes.[offset + i]
+        and set i v = bytes.[offset + i] <- v
 
     override _.Length = length
 
@@ -127,11 +122,11 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
 
     let check i =
         if i < 0 || i >= length then 
-            failwith "out of range"
+            raise (ArgumentOutOfRangeException("i"))
 
     do
         if length <= 0 then
-            failwith "length is less than or equal to zero"
+            raise (ArgumentOutOfRangeException("length"))
 
     override _.Item 
         with get i = 
@@ -221,6 +216,7 @@ type ReadOnlyByteMemory(bytes: ByteMemory) =
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.ToArray() = bytes.ToArray()
 
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.AsStream() = bytes.AsReadOnlyStream()
 
 type ByteMemory with
