@@ -595,7 +595,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
                 let testexpr =
                     match discrim with
                     | DecisionTreeTest.ArrayLength(n, _)       ->
-                        let _v, vExpr, bind = mkCompGenLocalAndInvisbleBind g "testExpr" m testexpr
+                        let _v, vExpr, bind = mkCompGenLocalAndInvisibleBind g "testExpr" m testexpr
                         mkLetBind m bind (mkLazyAnd g m (mkNonNullTest g m vExpr) (mkILAsmCeq g m (mkLdlen g m vExpr) (mkInt g m n)))
                     | DecisionTreeTest.Const (Const.String _ as c)  ->
                         mkCallEqualsOperator g m g.string_ty testexpr (Expr.Const (c, m, g.string_ty))
@@ -951,7 +951,7 @@ let CompilePatternBasic
              Some vExpr, Some(mkInvisibleBind v appExpr)
 
           // Any match on a struct union must take the address of its input.
-          // We can shortcut the addrof when the original input is a deref of a byref value.
+          // We can shortcut the addrOf when the original input is a deref of a byref value.
          | EdgeDiscrim(_i', (DecisionTreeTest.UnionCase (ucref, _)), _) :: _rest
                  when isNil origInputValTypars && ucref.Tycon.IsStructRecordOrUnionTycon ->
 
@@ -1030,7 +1030,7 @@ let CompilePatternBasic
                                                           (isNil origInputValTypars &&
                                                            not origInputVal.IsMemberOrModuleBinding &&
                                                            not ucref.Tycon.IsStructRecordOrUnionTycon  &&
-                                                           ucref.UnionCase.RecdFields.Length >= 1 &&
+                                                           ucref.UnionCase.RecdFieldsArray.Length >= 1 &&
                                                            ucref.Tycon.UnionCasesArray.Length > 1) ->
 
                        let v, vExpr = mkCompGenLocal m "unionCase" (mkProvenUnionCaseTy ucref tinst)

@@ -28,10 +28,10 @@ type LanguageFeature =
     | NameOf = 6
     | ImplicitYield = 7
     | OpenStaticClasses = 8
-    | NullnessChecking = 9
+    | NullnessChecking = 18
 
 /// LanguageVersion management
-type LanguageVersion (specifiedVersion) =
+type LanguageVersion (specifiedVersionAsString) =
 
     // When we increment language versions here preview is higher than current RTM version
     static let languageVersion46 = 4.6m
@@ -44,31 +44,35 @@ type LanguageVersion (specifiedVersion) =
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
     static let languageVersions = set [| languageVersion46; languageVersion47 |]
 
-    static let features = dict [|
-        // Add new LanguageVersions here ...
-        LanguageFeature.LanguageVersion46, languageVersion46
-        LanguageFeature.LanguageVersion47, languageVersion47
-        LanguageFeature.PreviewVersion, previewVersion
-        LanguageFeature.SingleUnderscorePattern, languageVersion47
-        LanguageFeature.WildCardInForLoop, languageVersion47
-        LanguageFeature.RelaxWhitespace, languageVersion47
-        LanguageFeature.NameOf, previewVersion
-        LanguageFeature.ImplicitYield, languageVersion47
-        LanguageFeature.OpenStaticClasses, previewVersion
-        LanguageFeature.NullnessChecking, languageVersion47 // currently always on because requires FSharp.Core build
-        |]
+    static let features =
+        dict [
+            // Add new LanguageVersions here ...
+            LanguageFeature.LanguageVersion46, languageVersion46
+            LanguageFeature.LanguageVersion47, languageVersion47
+            LanguageFeature.PreviewVersion, previewVersion
+        
+            // F# 4.7
+            LanguageFeature.SingleUnderscorePattern, languageVersion47
+            LanguageFeature.WildCardInForLoop, languageVersion47
+            LanguageFeature.RelaxWhitespace, languageVersion47
+            LanguageFeature.ImplicitYield, languageVersion47
+
+            // Add new Language Features here...
+            LanguageFeature.NameOf, previewVersion
+            LanguageFeature.OpenStaticClasses, previewVersion
+            LanguageFeature.NullnessChecking, languageVersion47 // currently always on because requires FSharp.Core build
+        ]
 
     let specified =
-        match specifiedVersion with
+        match specifiedVersionAsString with
         | "?" -> 0m
         | "preview" -> previewVersion
         | "default" -> defaultVersion
         | "latest" -> latestVersion
         | "latestmajor" -> latestMajorVersion
-        | _ ->
-            match Decimal.TryParse(specifiedVersion) with
-            | true, v -> v
-            | _ -> 0m
+        | "4.6" -> languageVersion46
+        | "4.7" -> languageVersion47
+        | _ -> 0m
 
     /// Check if this feature is supported by the selected langversion
     member __.SupportsFeature featureId =
@@ -80,10 +84,7 @@ type LanguageVersion (specifiedVersion) =
     member __.ContainsVersion version =
         match version with
         | "?" | "preview" | "default" | "latest" | "latestmajor" -> true
-        | _ -> 
-            match Decimal.TryParse(specifiedVersion) with
-            | true, v -> languageVersions.Contains v
-            | _ -> false
+        | _ -> languageVersions.Contains specified
 
     /// Get a list of valid strings for help text
     member __.ValidOptions = validOptions
@@ -96,4 +97,4 @@ type LanguageVersion (specifiedVersion) =
             |]
 
     /// Get the specified LanguageVersion
-    member __.SpecifiedVerson = specified
+    member __.SpecifiedVersion = specified

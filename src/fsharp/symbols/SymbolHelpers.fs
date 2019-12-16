@@ -8,7 +8,6 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System
-open System.Collections.Generic
 open System.IO
 
 open Microsoft.FSharp.Core.Printf
@@ -117,7 +116,7 @@ type ErrorScope()  =
     /// may hit internal compiler failures.
     ///
     /// In some calling cases, we get a chance to report the error as part of user text. For example
-    /// if there is a "msising assembly" error while formatting the text of the description of an
+    /// if there is a "missing assembly" error while formatting the text of the description of an
     /// autocomplete, then the error message is shown in replacement of the text (rather than crashing Visual
     /// Studio, or swallowing the exception completely)
     static member Protect<'a> (m: range) (f: unit->'a) (err: string->'a): 'a = 
@@ -212,7 +211,7 @@ type FSharpXmlDoc =
 type FSharpToolTipElementData<'T> = 
     { MainDescription:  'T 
       XmlDoc: FSharpXmlDoc
-      /// typar insantiation text, to go after xml
+      /// typar instantiation text, to go after xml
       TypeMapping: 'T list
       Remarks: 'T option
       ParamName : string option }
@@ -762,7 +761,7 @@ module internal SymbolHelpers =
               | Item.Property(_, pi1s), Item.Property(_, pi2s) -> 
                   List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Item.Event evt1, Item.Event evt2 -> 
-                  EventInfo.EventInfosUseIdenticalDefintions evt1 evt2
+                  EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
               | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
                  Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
@@ -1301,7 +1300,7 @@ module internal SymbolHelpers =
 
 #endif
 
-    /// Get the "F1 Keyword" associated with an item, for looking up documentatio help indexes on the web
+    /// Get the "F1 Keyword" associated with an item, for looking up documentation help indexes on the web
     let rec GetF1Keyword (g: TcGlobals) item = 
 
         let getKeywordForMethInfo (minfo : MethInfo) =

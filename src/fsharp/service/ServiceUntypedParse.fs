@@ -17,8 +17,6 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler 
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 
@@ -596,10 +594,10 @@ module UntypedParseImpl =
             AstTraversal.Traverse(pos, parseTree, walker)
 
     // Given a cursor position here:
-    //    f(x)   .   iden
+    //    f(x)   .   ident
     //                   ^
     // walk the AST to find the position here:
-    //    f(x)   .   iden
+    //    f(x)   .   ident
     //       ^
     // On success, return Some (thatPos, boolTrueIfCursorIsAfterTheDotButBeforeTheIdentifier)
     // If there's no dot, return None, so for example

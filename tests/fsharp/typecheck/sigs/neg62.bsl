@@ -15,15 +15,15 @@ neg62.fs(22,5,22,14): typecheck error FS0960: 'let' and 'do' bindings must come 
 
 neg62.fs(28,5,28,18): typecheck error FS0960: 'let' and 'do' bindings must come before member and interface definitions in type definitions
 
-neg62.fs(31,19,31,32): typecheck error FS3133: 'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.
+neg62.fs(31,5,31,32): typecheck error FS3133: 'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.
 
-neg62.fs(31,19,31,32): typecheck error FS0902: Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.
+neg62.fs(31,5,31,32): typecheck error FS0902: Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.
 
-neg62.fs(34,12,34,25): typecheck error FS3133: 'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.
+neg62.fs(34,5,34,25): typecheck error FS3133: 'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.
 
 neg62.fs(49,6,49,26): typecheck error FS0081: Implicit object constructors for structs must take at least one argument
 
-neg62.fs(50,12,50,21): typecheck error FS0901: Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type.
+neg62.fs(50,5,50,21): typecheck error FS0901: Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type.
 
 neg62.fs(54,26,54,34): typecheck error FS3135: To indicate that this property can be set, use 'member val PropertyName = expr with get,set'.
 

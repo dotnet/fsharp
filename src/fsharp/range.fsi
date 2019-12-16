@@ -44,6 +44,10 @@ val mkPos : line:int -> column:int -> pos
 /// Ordering on positions
 val posOrder : IComparer<pos>
 
+val unknownFileName: string
+val startupFileName: string
+val commandLineArgsFileName: string
+
 /// Represents a range within a known file
 [<Struct; CustomEquality; NoComparison>]
 type range =

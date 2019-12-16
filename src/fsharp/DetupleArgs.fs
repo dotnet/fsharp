@@ -199,7 +199,7 @@ module GlobalUsageAnalysis =
          TopLevelBindings = Zset.empty valOrder
          IterationIsAtTopLevel      = true }
 
-    /// Log the use of a value with a particular tuple chape at a callsite
+    /// Log the use of a value with a particular tuple shape at a callsite
     /// Note: this routine is called very frequently
     let logUse (f: Val) tup z =
        {z with Uses = 

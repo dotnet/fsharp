@@ -1,5 +1,4 @@
 ﻿// Open the namespace with InteractiveChecker type
-open System
 open FSharp.Compiler.SourceCodeServices
 
 

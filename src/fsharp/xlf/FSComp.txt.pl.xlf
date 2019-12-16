@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
-        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <target state="translated">Strumień nie zaczyna się od zasobu o wartości null i nie jest w formacie „.RES”.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
-        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <target state="translated">Nagłówek zasobu rozpoczynający się od przesunięcia {0} jest nieprawidłowo sformułowany.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
-        <target state="new">Attributes cannot be applied to type extensions.</target>
+        <target state="translated">Atrybutów nie można stosować do rozszerzeń typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">

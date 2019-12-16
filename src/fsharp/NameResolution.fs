@@ -534,7 +534,7 @@ let ExtensionPropInfosOfTypeInScope collectionSettings (infoReader:InfoReader) (
         extMemsDangling 
     else
         let extMemsFromHierarchy =
-            infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes, m, ty)
+            infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
             |> List.collect (fun ty ->
                  if isAppTy g ty then
                     let tcref = tcrefOfAppTy g ty
@@ -598,7 +598,7 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings:ResultCollectionSettings
         extMemsDangling
     else
         let extMemsFromHierarchy =
-            infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes, m, ty)
+            infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
             |> List.collect (fun ty ->
                 let g = infoReader.g
                 if isAppTy g ty then
@@ -654,11 +654,11 @@ let AddValRefToExtensionMembers pri (eIndexedExtensionMembers: TyconRefMultiMap<
         eIndexedExtensionMembers
 
 
-/// This entrypoint is used to add some extra items to the environment for Visual Studio, e.g. static members
+/// This entry point is used to add some extra items to the environment for Visual Studio, e.g. static members
 let AddFakeNamedValRefToNameEnv nm nenv vref =
     {nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.Add (nm, Item.Value vref) }
 
-/// This entrypoint is used to add some extra items to the environment for Visual Studio, e.g. record members
+/// This entry point is used to add some extra items to the environment for Visual Studio, e.g. record members
 let AddFakeNameToNameEnv nm nenv item =
     {nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.Add (nm, item) }
 
@@ -1350,7 +1350,7 @@ let MakeNestedType (ncenv: NameResolver) (tinst: TType list) m (tcrefNested: Tyc
 /// Get all the accessible nested types of an existing type.
 let GetNestedTypesOfType (ad, ncenv: NameResolver, optFilter, staticResInfo, checkForGenerated, m) ty =
     let g = ncenv.g
-    ncenv.InfoReader.GetPrimaryTypeHierachy(AllowMultiIntfInstantiations.Yes, m, ty) |> List.collect (fun ty ->
+    ncenv.InfoReader.GetPrimaryTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty) |> List.collect (fun ty ->
         match ty with
         | AppTy g (tcref, tinst) ->
             let tycon = tcref.Deref
@@ -1609,7 +1609,7 @@ let ItemsAreEffectivelyEqual g orig other =
         name1 = name2 && tyconRefDefnEq g tcref1 tcref2
 
     | EventUse evt1, EventUse evt2 ->
-        EventInfo.EventInfosUseIdenticalDefintions evt1 evt2  ||
+        EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2  ||
         // Allow for equality up to signature matching
         match evt1.ArbitraryValRef, evt2.ArbitraryValRef with
         | Some vref1, Some vref2 -> valRefDefnEq g vref1 vref2
@@ -3281,8 +3281,8 @@ let FreshenRecdFieldRef (ncenv: NameResolver) m (rfref: RecdFieldRef) =
 // QUERY (instantiationGenerator cleanup): it would be really nice not to flow instantiationGenerator to here.
 let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Ident) rest findFlag =
     let typeNameResInfo = TypeNameResolutionInfo.Default
-    let adhoctDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m ad id rest findFlag typeNameResInfo ty)
-    match adhoctDotSearchAccessible with
+    let adhocDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m ad id rest findFlag typeNameResInfo ty)
+    match adhocDotSearchAccessible with
     | Exception _ ->
         // If the dot is not resolved by adhoc overloading then look for a record field
         // that can resolve the name.
@@ -3305,7 +3305,7 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
         |> AtMostOneResult m
         |> ForceRaise
     | _ ->
-        ForceRaise adhoctDotSearchAccessible
+        ForceRaise adhocDotSearchAccessible
 
 let ComputeItemRange wholem (lid: Ident list) rest =
     match rest with
@@ -4106,7 +4106,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
                  | _ -> [], false
              | _ -> [], false)
 
-        let staticSometingInType =
+        let staticSomethingInType =
             [ if not isItemVal then
                 // type.lookup: lookup a static something in a type
                 for tcref in LookupTypeNameInEnvNoArity OpenQualified id nenv do
@@ -4114,7 +4114,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
                     let ty = FreshenTycon ncenv m tcref
                     yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest ty ]
 
-        namespaces @ values @ staticSometingInType
+        namespaces @ values @ staticSomethingInType
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
 let ResolvePartialLongIdent ncenv nenv isApplicableMeth m ad plid allowObsolete =

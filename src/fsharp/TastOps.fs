@@ -401,7 +401,7 @@ let mkTyconInst (tycon: Tycon) tinst = mkTyparInst tycon.TyparsNoRange tinst
 let mkTyconRefInst (tcref: TyconRef) tinst = mkTyconInst tcref.Deref tinst
 
 //---------------------------------------------------------------------------
-// Basic equalites
+// Basic equalities
 //---------------------------------------------------------------------------
 
 let tyconRefEq (g: TcGlobals) tcref1 tcref2 = primEntityRefEq g.compilingFslib g.fslibCcu tcref1 tcref2
@@ -727,7 +727,7 @@ let rec stripTyEqnsA g canShortcut ty =
             let reducedTy2 = addNullnessToTy nullness reducedTy
             stripTyEqnsA g canShortcut reducedTy2
         | None -> 
-            // This is the point where we get to add additional coditional normalizing equations 
+            // This is the point where we get to add additional conditional normalizing equations 
             // into the type system. Such power!
             // 
             // Add the equation byref<'T> = byref<'T, ByRefKinds.InOut> for when using sufficient FSharp.Core
@@ -4346,14 +4346,14 @@ let isPublicTycon (tcref: Tycon) = (tcref.Accessibility = taccessPublic)
 let freeVarsAllPublic fvs = 
     // Are any non-public items used in the expr (which corresponded to the fvs)?
     // Recall, taccess occurs in:
-    //      EntityData has ReprAccessibility and Accessiblity
+    //      EntityData has ReprAccessibility and Accessibility
     //      UnionCase has Accessibility
     //      RecdField has Accessibility
     //      ValData has Accessibility
     // The freevars and FreeTyvars collect local constructs.
     // Here, we test that all those constructs are public.
     //
-    // CODEREVIEW:
+    // CODE REVIEW:
     // What about non-local vals. This fix assumes non-local vals must be public. OK?
     Zset.forall isPublicVal fvs.FreeLocals &&
     Zset.forall isPublicUnionCase fvs.FreeUnionCases &&
@@ -4452,6 +4452,10 @@ let bindLhs opts (bind: Binding) fvs = boundLocalVal opts bind.Var fvs
 
 let freeVarsCacheCompute opts cache f = if opts.canCache then cached cache f else f()
 
+let tryGetFreeVarsCacheValue opts cache =
+    if opts.canCache then tryGetCacheValue cache
+    else ValueNone
+
 let rec accBindRhs opts (TBind(_, repr, _)) acc = accFreeInExpr opts repr acc
           
 and accFreeInSwitchCases opts csl dflt (acc: FreeVars) =
@@ -4549,13 +4553,16 @@ and accFreeInExpr (opts: FreeVarOptions) x acc =
 and accFreeInExprLinear (opts: FreeVarOptions) x acc contf =   
     // for nested let-bindings, we need to continue after the whole let-binding is processed 
     match x with
-    | Expr.Let (bind, e, _, cache) -> 
-        let contf = contf << (fun free ->
-          unionFreeVars (freeVarsCacheCompute opts cache (fun () -> bindLhs opts bind (accBindRhs opts bind free))) acc )
-        accFreeInExprLinear opts e emptyFreeVars contf
+    | Expr.Let (bind, e, _, cache) ->
+        match tryGetFreeVarsCacheValue opts cache with
+        | ValueSome free -> contf (unionFreeVars free acc)
+        | _ ->
+            accFreeInExprLinear opts e emptyFreeVars (contf << (fun free ->
+              unionFreeVars (freeVarsCacheCompute opts cache (fun () -> bindLhs opts bind (accBindRhs opts bind free))) acc
+            ))
     | _ -> 
-      // No longer linear expr
-      accFreeInExpr opts x acc |> contf
+        // No longer linear expr
+        contf (accFreeInExpr opts x acc)
     
 and accFreeInExprNonLinear opts x acc =
     match x with
@@ -5812,7 +5819,7 @@ let isExpansiveUnderInstantiation g fty0 tyargs pargs argsl =
          | _ :: t -> not (isFunTy g fty) || loop (rangeOfFunTy g fty) t
      loop fty1 argsl)
     
-let rec mkExprApplAux g f fty argsl m =
+let rec mkExprAppAux g f fty argsl m =
   match argsl with 
   | [] -> f
   | _ -> 
@@ -5847,7 +5854,7 @@ let rec mkAppsAux g f fty tyargsl argsl m =
         let arfty = applyForallTy g fty tyargs
         mkAppsAux g (primMkApp (f, fty) tyargs [] m) arfty rest argsl m
   | [] -> 
-      mkExprApplAux g f fty argsl m
+      mkExprAppAux g f fty argsl m
       
 let mkApps g ((f, fty), tyargsl, argl, m) = mkAppsAux g f fty tyargsl argl m
 
@@ -6741,7 +6748,7 @@ let mkNil (g: TcGlobals) m ty = mkUnionCaseExpr (g.nil_ucref, [ty], [], m)
 
 let mkCons (g: TcGlobals) ty h t = mkUnionCaseExpr (g.cons_ucref, [ty], [h;t], unionRanges h.Range t.Range)
 
-let mkCompGenLocalAndInvisbleBind g nm m e = 
+let mkCompGenLocalAndInvisibleBind g nm m e = 
     let locv, loce = mkCompGenLocal m nm (tyOfExpr g e)
     locv, loce, mkInvisibleBind locv e 
 
@@ -7296,7 +7303,7 @@ let AdjustArityOfLambdaBody g arity (vs: Val list) body =
 
 let MultiLambdaToTupledLambda g vs body = 
     match vs with 
-    | [] -> failwith "MultiLambdaToTupledLambda: expected some argments"
+    | [] -> failwith "MultiLambdaToTupledLambda: expected some arguments"
     | [v] -> v, body 
     | vs -> 
         let tupledv, untupler = untupledToRefTupled g vs
@@ -7309,7 +7316,7 @@ let (|RefTuple|_|) expr =
 
 let MultiLambdaToTupledLambdaIfNeeded g (vs, arg) body = 
     match vs, arg with 
-    | [], _ -> failwith "MultiLambdaToTupledLambda: expected some argments"
+    | [], _ -> failwith "MultiLambdaToTupledLambda: expected some arguments"
     | [v], _ -> [(v, arg)], body 
     | vs, RefTuple args when args.Length = vs.Length -> List.zip vs args, body
     | vs, _ -> 
@@ -7370,7 +7377,7 @@ let rec MakeApplicationAndBetaReduceAux g (f, fty, tyargsl: TType list list, arg
                let argvs2, args2 = List.unzip (List.concat pairs)
                mkLetsBind m (mkCompGenBinds argvs2 args2) body
           | _ -> 
-              mkExprApplAux g f fty argsl m 
+              mkExprAppAux g f fty argsl m 
 
       | [] -> 
           f
@@ -8630,7 +8637,7 @@ let isCompiledConstraint cx =
     
 // Is a value a first-class polymorphic value with .NET constraints? 
 // Used to turn off TLR and method splitting
-let IsGenericValWithGenericContraints g (v: Val) = 
+let IsGenericValWithGenericConstraints g (v: Val) = 
     isForallTy g v.Type && 
     v.Type |> destForallTy g |> fst |> List.exists (fun tp -> List.exists isCompiledConstraint tp.Constraints)
 

@@ -1250,31 +1250,28 @@ namespace Microsoft.FSharp.Control
                                 |> unfake)
                     | Some maxDegreeOfParallelism ->
                         let mutable i = -1
-                        let worker = MakeAsync (fun _ ->
-                            while i < tasks.Length do
+                        let rec worker (trampolineHolder : TrampolineHolder) =
+                            if i < tasks.Length then
                                 let j = Interlocked.Increment &i
                                 if j < tasks.Length then
-                                    let trampolineHolder = new TrampolineHolder()
-                                    trampolineHolder.ExecuteWithTrampoline (fun () ->
-                                        let ctxt =
+                                    if innerCTS.Token.IsCancellationRequested then
+                                        let cexn = new OperationCanceledException (innerCTS.Token)
+                                        recordFailure (Choice2Of2 cexn) |> unfake
+                                        worker trampolineHolder |> unfake
+                                    else
+                                        let taskCtxt =
                                             AsyncActivation.Create
                                                 innerCTS.Token
                                                 trampolineHolder
-                                                (fun res -> recordSuccess j res)
-                                                (fun edi -> recordFailure (Choice1Of2 edi))
-                                                (fun cexn -> recordFailure (Choice2Of2 cexn))
-                                        tasks.[j].Invoke ctxt
-                                    )
-                                    |> unfake
+                                                (fun res -> recordSuccess j res |> unfake; worker trampolineHolder)
+                                                (fun edi -> recordFailure (Choice1Of2 edi) |> unfake; worker trampolineHolder)
+                                                (fun cexn -> recordFailure (Choice2Of2 cexn) |> unfake; worker trampolineHolder)
+                                        tasks.[j].Invoke taskCtxt |> unfake
                             fake()
-                        )
                         for x = 1 to maxDegreeOfParallelism do
-                            QueueAsync
-                                innerCTS.Token
-                                (fun _ -> fake())
-                                (fun edi -> recordFailure (Choice1Of2 edi))
-                                (fun cexn -> recordFailure (Choice2Of2 cexn))
-                                worker
+                            let trampolineHolder = new TrampolineHolder()
+                            trampolineHolder.QueueWorkItemWithTrampoline (fun () ->
+                                worker trampolineHolder)
                             |> unfake
 
                     fake()))
@@ -1293,35 +1290,54 @@ namespace Microsoft.FSharp.Control
                 | Choice1Of2 computations ->
                     ProtectedCode ctxt (fun ctxt ->
                         let ctxtWithSync = DelimitSyncContext ctxt
-                        let noneCount = ref 0
-                        let exnCount = ref 0
+                        let mutable count = computations.Length
+                        let mutable noneCount = 0
+                        let mutable someOrExnCount = 0
                         let innerCts = new LinkedSubSource(ctxtWithSync.token)
 
                         let scont (result: 'T option) =
-                            match result with
-                            | Some _ ->
-                                if Interlocked.Increment exnCount = 1 then
-                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont result)
-                                else
-                                    fake()
+                            let result =
+                                match result with
+                                | Some _ ->
+                                    if Interlocked.Increment &someOrExnCount = 1 then
+                                        innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont result)
+                                    else
+                                        fake()
 
-                            | None ->
-                                if Interlocked.Increment noneCount = computations.Length then
-                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont None)
-                                else
-                                    fake()
+                                | None ->
+                                    if Interlocked.Increment &noneCount = computations.Length then
+                                        innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont None)
+                                    else
+                                        fake()
+
+                            if Interlocked.Decrement &count = 0 then
+                                innerCts.Dispose()
+
+                            result
 
                         let econt (exn: ExceptionDispatchInfo) =
-                            if Interlocked.Increment exnCount = 1 then
-                                innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.econt exn)
-                            else
-                                fake()
+                            let result =
+                                if Interlocked.Increment &someOrExnCount = 1 then
+                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.econt exn)
+                                else
+                                    fake()
+
+                            if Interlocked.Decrement &count = 0 then
+                                innerCts.Dispose()
+
+                            result
 
                         let ccont (exn: OperationCanceledException) =
-                            if Interlocked.Increment exnCount = 1 then
-                                innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.ccont exn)
-                            else
-                                fake()
+                            let result =
+                                if Interlocked.Increment &someOrExnCount = 1 then
+                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.ccont exn)
+                                else
+                                    fake()
+
+                            if Interlocked.Decrement &count = 0 then
+                                innerCts.Dispose()
+
+                            result
 
                         for c in computations do
                             QueueAsync innerCts.Token scont econt ccont c |> unfake
