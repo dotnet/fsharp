@@ -10,6 +10,7 @@
     </metadata>
     <files>
         $CommonFileElements$
+
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"              target="lib\netstandard2.0" />
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.sigdata"          target="lib\netstandard2.0" />
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.optdata"          target="lib\netstandard2.0" />
