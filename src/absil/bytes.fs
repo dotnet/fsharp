@@ -60,6 +60,18 @@ type internal ByteStream =
     member b.Skip = b.pos <- b.pos + n
 #endif
 
+[<RequireQualifiedAccess>]
+module ByteBufferConstants =
+
+    // From System.Reflection.Metadata.BlobBuilder as the DefaultChunkSize.
+    [<Literal>]
+    let MaxStartingCapacity = 256
+
+    // From System.Reflection.Metadata.BlobBuilder
+    // Reasoning was the smallest atomic data was a Guid.
+    // Therefore, it should be a reasonable minimum value.
+    [<Literal>]
+    let MinChunkSize = 16
 
 type internal ByteBuffer = 
     { mutable bbArray: ChunkedArrayBuilder<byte> 
@@ -111,13 +123,12 @@ type internal ByteBuffer =
     member buf.Position = buf.bbCurrent
 
     static member Create startingCapacity = 
-        let maxStartingCapacity = 1024 * 8 // 8k
         let startingCapacity =
-            if startingCapacity > maxStartingCapacity then
-                maxStartingCapacity
+            if startingCapacity > ByteBufferConstants.MaxStartingCapacity then
+                ByteBufferConstants.MaxStartingCapacity
             else
                 startingCapacity
-        { bbArray = ChunkedArrayBuilder.Create(16, startingCapacity)  
+        { bbArray = ChunkedArrayBuilder.Create(ByteBufferConstants.MinChunkSize, startingCapacity)  
           bbCurrent = 0 }
 
 

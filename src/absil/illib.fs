@@ -436,30 +436,30 @@ module List =
 
     let mapiFoldSquared f z xss = mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i, j, x)))
 
-[<System.Runtime.CompilerServices.Extension;AbstractClass;Sealed>]
+[<Extension;AbstractClass;Sealed>]
 type SpanExtensions =
 
-    [<System.Runtime.CompilerServices.Extension>]
+    [<Extension>]
     static member inline WriteByte(data: Span<byte>, offset, value: byte) =
         data.[0 + offset] <- byte value
 
-    [<System.Runtime.CompilerServices.Extension>]
+    [<Extension>]
     static member inline WriteUInt16(data: Span<byte>, offset, value: uint16) =
         data.[0 + offset] <- byte value
         data.[1 + offset] <- byte (value >>> 8)
 
-    [<System.Runtime.CompilerServices.Extension>]
+    [<Extension>]
     static member inline WriteUInt32(data: Span<byte>, offset, value: uint32) =
         data.[0 + offset] <- byte value
         data.[1 + offset] <- byte (value >>> 8)
         data.[2 + offset] <- byte (value >>> 16)
         data.[3 + offset] <- byte (value >>> 24)
 
-    [<System.Runtime.CompilerServices.Extension>]
+    [<Extension>]
     static member inline WriteInt32(data: Span<byte>, offset, value: int32) =
         data.WriteUInt32(offset, uint32 value)
 
-    [<System.Runtime.CompilerServices.Extension>]
+    [<Extension>]
     static member inline WriteInt32AsUInt16(data: Span<byte>, offset, value: int32) =
         data.[0 + offset] <- byte value
         data.[1 + offset] <- byte (value >>> 8)

@@ -523,13 +523,13 @@ let private p_lazy_impl p v st =
     let otyconsIdx2 = st.oentities.Size
     let otyparsIdx2 = st.otypars.Size
     let ovalsIdx2 = st.ovals.Size
-    fixup.WriteInt32 (0, (idx2-idx1))
-    fixup.WriteInt32 (4, otyconsIdx1)
-    fixup.WriteInt32 (8, otyconsIdx2)
-    fixup.WriteInt32 (12, otyparsIdx1)
-    fixup.WriteInt32 (16, otyparsIdx2)
-    fixup.WriteInt32 (20, ovalsIdx1)
-    fixup.WriteInt32 (24, ovalsIdx2)
+    fixup.WriteInt32 (0                , (idx2-idx1))
+    fixup.WriteInt32 (1 * sizeof<int32>, otyconsIdx1)
+    fixup.WriteInt32 (2 * sizeof<int32>, otyconsIdx2)
+    fixup.WriteInt32 (3 * sizeof<int32>, otyparsIdx1)
+    fixup.WriteInt32 (4 * sizeof<int32>, otyparsIdx2)
+    fixup.WriteInt32 (5 * sizeof<int32>, ovalsIdx1)
+    fixup.WriteInt32 (6 * sizeof<int32>, ovalsIdx2)
 
 let p_lazy p x st =
     p_lazy_impl p (Lazy.force x) st
