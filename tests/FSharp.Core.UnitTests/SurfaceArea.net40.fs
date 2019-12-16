@@ -7,7 +7,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 
 type SurfaceAreaTest() =
     [<Test>]
-    member this.VerifyArea(): unit =
+    member this.VerifyArea() =
         let expected = @"
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
@@ -183,6 +183,7 @@ Microsoft.FSharp.Collections.FSharpList`1[T]: Boolean get_IsEmpty()
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 CompareTo(Microsoft.FSharp.Collections.FSharpList`1[T])
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 CompareTo(System.Object)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 CompareTo(System.Object, System.Collections.IComparer)
+Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 GetReverseIndex(Int32, Int32)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 GetHashCode()
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 GetHashCode(System.Collections.IEqualityComparer)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 Length
@@ -1915,6 +1916,11 @@ Microsoft.FSharp.Core.NumericLiterals+NumericLiteralI: T FromOne[T]()
 Microsoft.FSharp.Core.NumericLiterals+NumericLiteralI: T FromString[T](System.String)
 Microsoft.FSharp.Core.NumericLiterals+NumericLiteralI: T FromZero[T]()
 Microsoft.FSharp.Core.NumericLiterals: Microsoft.FSharp.Core.NumericLiterals+NumericLiteralI
+Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 String.GetReverseIndex(System.String, Int32, Int32)
+Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 [,,,]`1.GetReverseIndex[T](T[,,,], Int32, Int32)
+Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 [,,]`1.GetReverseIndex[T](T[,,], Int32, Int32)
+Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 [,]`1.GetReverseIndex[T](T[,], Int32, Int32)
+Microsoft.FSharp.Core.Operators+ArrayExtensions: Int32 []`1.GetReverseIndex[T](T[], Int32, Int32)
 Microsoft.FSharp.Core.Operators+Checked: Byte ToByte[T](T)
 Microsoft.FSharp.Core.Operators+Checked: Char ToChar[T](T)
 Microsoft.FSharp.Core.Operators+Checked: Int16 ToInt16[T](T)
@@ -1990,6 +1996,12 @@ Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T2 Atan2Dynamic[T1,T2](T1, T
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T2 SqrtDynamic[T1,T2](T1)
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,,,] GetArraySlice4D[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,,] GetArraySlice3D[T](T[,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,] GetArraySlice3DFixedSingle1[T](T[,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,] GetArraySlice3DFixedSingle2[T](T[,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,] GetArraySlice3DFixedSingle3[T](T[,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32)
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[] GetArraySlice3DFixedDouble1[T](T[,,], Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[] GetArraySlice3DFixedDouble2[T](T[,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32)
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[] GetArraySlice3DFixedDouble3[T](T[,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Int32)
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,] GetArraySlice2D[T](T[,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[] GetArraySlice2DFixed1[T](T[,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[] GetArraySlice2DFixed2[T](T[,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32)
@@ -2002,7 +2014,41 @@ Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice2DFixed1[T
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice2DFixed2[T](T[,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, T[])
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice2D[T](T[,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[,])
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice3D[T](T[,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[,,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice3DFixedDouble1[T](T[,,], Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice3DFixedDouble2[T](T[,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, T[])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice3DFixedDouble3[T](T[,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Int32, T[])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice3DFixedSingle1[T](T[,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice3DFixedSingle2[T](T[,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice3DFixedSingle3[T](T[,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, T[,])
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4D[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[,,,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,,] GetArraySlice4DFixedSingle1[T](T[,,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,,] GetArraySlice4DFixedSingle2[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,,] GetArraySlice4DFixedSingle3[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,,] GetArraySlice4DFixedSingle4[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32)
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,] GetArraySlice4DFixedDouble1[T](T[,,,], Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,] GetArraySlice4DFixedDouble2[T](T[,,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,] GetArraySlice4DFixedDouble3[T](T[,,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32)
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,] GetArraySlice4DFixedDouble4[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,] GetArraySlice4DFixedDouble5[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32)
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[,] GetArraySlice4DFixedDouble6[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Int32)
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[] GetArraySlice4DFixedTriple1[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Int32, Int32)
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[] GetArraySlice4DFixedTriple2[T](T[,,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Int32)
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[] GetArraySlice4DFixedTriple3[T](T[,,,], Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32)
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: T[] GetArraySlice4DFixedTriple4[T](T[,,,], Int32, Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedDouble1[T](T[,,,], Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedDouble2[T](T[,,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedDouble3[T](T[,,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, T[,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedDouble4[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedDouble5[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, T[,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedDouble6[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Int32, T[,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedSingle1[T](T[,,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[,,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedSingle2[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[,,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedSingle3[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[,,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedSingle4[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, T[,,])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedTriple1[T](T[,,,], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Int32, Int32, T[])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedTriple2[T](T[,,,], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, Int32, T[])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedTriple3[T](T[,,,], Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Int32, T[])
+Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice4DFixedTriple4[T](T[,,,], Int32, Int32, Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[])
 Microsoft.FSharp.Core.Operators+OperatorIntrinsics: Void SetArraySlice[T](T[], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32], T[])
 Microsoft.FSharp.Core.Operators+Unchecked: Boolean Equals[T](T, T)
 Microsoft.FSharp.Core.Operators+Unchecked: Int32 Compare[T](T, T)
@@ -2040,6 +2086,7 @@ Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.FSharpFunc`2[T1,T3] op_Co
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.FSharpOption`1[System.String] FailurePattern(System.Exception)
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.FSharpOption`1[T] TryUnbox[T](System.Object)
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.FSharpRef`1[T] Ref[T](T)
+Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.Operators+ArrayExtensions
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.Operators+Checked
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.Operators+NonStructuralComparison
 Microsoft.FSharp.Core.Operators: Microsoft.FSharp.Core.Operators+OperatorIntrinsics
@@ -2701,8 +2748,8 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()"
 #if CROSS_PLATFORM_COMPILER
-        // disabled because of slight order and GetMember discrepencies
         ()
+        // disabled because of slight order and GetMember discrepencies
 #else
         SurfaceArea.verify expected "net40" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))
 #endif
