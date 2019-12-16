@@ -7455,7 +7455,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
           // do not emit serialization related members if target framework lacks SerializationInfo or StreamingContext
           match g.iltyp_SerializationInfo, g.iltyp_StreamingContext with
           | Some serializationInfoType, Some streamingContextType ->
-            let ilCtorDefForSerialziation =
+            let ilCtorDefForSerialization =
                 mkILCtor(ILMemberAccess.Family,
                         [mkILParamNamed("info", serializationInfoType); mkILParamNamed("context", streamingContextType)],
                         mkMethodBody

@@ -15,7 +15,7 @@ type LanguageFeature =
     | NameOf = 6
     | ImplicitYield = 7
     | OpenStaticClasses = 8
-    | NullnessChecking = 9
+    | NullnessChecking = 18
 
 
 /// LanguageVersion management
