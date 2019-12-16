@@ -3475,7 +3475,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
         if verbose then dprintn ("Parsed "+shortFilename)
         Some input 
     with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None 
-            
+
             
 let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
     try 
@@ -3484,7 +3484,8 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
             if not(FileSystem.SafeExists filename) then
                 error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
             let isFeatureSupported featureId = tcConfig.langVersion.SupportsFeature featureId
-            let lexbuf = UnicodeLexing.UnicodeFileAsLexbuf(isFeatureSupported, filename, tcConfig.inputCodePage, retryLocked) 
+            use reader = File.OpenReaderAndRetry (filename, tcConfig.inputCodePage, retryLocked)
+            let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(isFeatureSupported, reader)
             ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
        else error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
     with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None 

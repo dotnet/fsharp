@@ -1876,8 +1876,8 @@ type internal FsiStdinLexerProvider
         CreateLexerForLexBuffer (Lexhelp.stdinMockFilename, lexbuf, errorLogger)
 
     // Create a new lexer to read an "included" script file
-    member __.CreateIncludedScriptLexer (sourceFileName, errorLogger) =
-        let lexbuf = UnicodeLexing.UnicodeFileAsLexbuf(isFeatureSupported, sourceFileName, tcConfigB.inputCodePage, (*retryLocked*)false)
+    member __.CreateIncludedScriptLexer (sourceFileName, reader, errorLogger) =
+        let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(isFeatureSupported, reader)
         CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
 
     // Create a new lexer to read a string
@@ -2258,7 +2258,8 @@ type internal FsiInteractionProcessor
         WithImplicitHome (tcConfigB, directoryName sourceFile)  (fun () ->
               // An included script file may contain maybe several interaction blocks.
               // We repeatedly parse and process these, until an error occurs.
-                let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, errorLogger)
+                use reader = File.OpenReaderAndRetry (sourceFile, tcConfigB.inputCodePage, (*retryLocked*)false)
+                let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, reader, errorLogger)
                 let rec run istate =
                     let istate,cont = processor.ParseAndExecOneSetOfInteractionsFromLexbuf ((fun f istate -> f ctok istate), istate, tokenizer, errorLogger)
                     match cont with Completed _ -> run istate | _ -> istate,cont 
