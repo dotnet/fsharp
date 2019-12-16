@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
-        <target state="translated">F# {1} の {0}</target>
+        <target state="translated">F# {1} のための {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="toolpathUnknown">

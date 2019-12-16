@@ -14,7 +14,7 @@
 // The constraints are immediately processed into a normal form, in particular
 //   - type equations on inference parameters: 'tp = ty
 //   - type inequations on inference parameters: 'tp :> ty
-//   - other constraints on inference paramaters
+//   - other constraints on inference parameters
 //
 // The state of the inference engine is kept in imperative mutations to inference
 // type variables.
@@ -260,7 +260,7 @@ let MakeConstraintSolverEnv contextInfo css m denv =
     { SolverState = css
       m = m
       eContextInfo = contextInfo
-      // Indicates that when unifiying ty1 = ty2, only type variables in ty1 may be solved 
+      // Indicates that when unifying ty1 = ty2, only type variables in ty1 may be solved 
       MatchingOnly = false
       EquivEnv = TypeEquivEnv.Empty 
       DisplayEnv = denv }
@@ -2113,7 +2113,7 @@ and CanMemberSigsMatchUpToCheck
                 | Some calledArg ->
                     if isArray1DTy g calledArg.CalledArgumentType then 
                         let paramArrayElemTy = destArrayTy g calledArg.CalledArgumentType
-                        let reflArgInfo = calledArg.ReflArgInfo // propgate the reflected-arg info to each param array argument
+                        let reflArgInfo = calledArg.ReflArgInfo // propagate the reflected-arg info to each param array argument
                         match calledMeth.ParamArrayCallerArgs with
                         | Some args ->
                             for callerArg in args do
@@ -2496,9 +2496,9 @@ and ResolveOverloading
                     if c <> 0 then c else
                     0
 
-                let better (candidate: CalledMeth<_>, candidateWarnings, _) (other: CalledMeth<_>, otherwarnings, _) =
+                let better (candidate: CalledMeth<_>, candidateWarnings, _) (other: CalledMeth<_>, otherWarnings, _) =
                     let candidateWarnCount = List.length candidateWarnings
-                    let otherWarnCount = List.length otherwarnings
+                    let otherWarnCount = List.length otherWarnings
                     // Prefer methods that don't give "this code is less generic" warnings
                     // Note: Relies on 'compare' respecting true > false
                     let c = compare (candidateWarnCount = 0) (otherWarnCount = 0)
@@ -2733,8 +2733,25 @@ let UndoIfFailed f =
         ReportWarnings warns
         true
 
+let UndoIfFailedOrWarnings f =
+    let trace = Trace.New()
+    let res = 
+        try 
+            f trace 
+            |> CheckNoErrorsAndGetWarnings
+        with e -> None
+    match res with 
+    | Some [] -> 
+        true
+    | _ -> 
+        trace.Undo()
+        false
+
 let AddCxTypeEqualsTypeUndoIfFailed denv css m ty1 ty2 =
     UndoIfFailed (fun trace -> SolveTypeEqualsTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) ty1 ty2)
+
+let AddCxTypeEqualsTypeUndoIfFailedOrWarnings denv css m ty1 ty2 =
+    UndoIfFailedOrWarnings (fun trace -> SolveTypeEqualsTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) ty1 ty2)
 
 let AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 =
     let csenv = { MakeConstraintSolverEnv ContextInfo.NoContext css m denv with MatchingOnly = true }

@@ -238,16 +238,16 @@ module AssemblyContentProvider =
         |> Seq.filter (fun x -> not x.IsInstanceMember && not x.IsPropertyGetterMethod && not x.IsPropertySetterMethod)
         |> Seq.collect (fun func ->
             let processIdents fullName idents = 
-                let cleanedIdentes = parent.FixParentModuleSuffix idents
+                let cleanedIdents = parent.FixParentModuleSuffix idents
                 { FullName = fullName
-                  CleanedIdents = cleanedIdentes
+                  CleanedIdents = cleanedIdents
                   Namespace = ns
                   NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
                   TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
                   AutoOpenParent = autoOpenParent
                   Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
-                  UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanedIdentes fullName }
+                  UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName }
 
             [ yield! func.TryGetFullDisplayName() 
                      |> Option.map (fun fullDisplayName -> processIdents func.FullName (fullDisplayName.Split '.'))
@@ -491,8 +491,6 @@ type OpenStatementInsertionPoint =
     | Nearest
 
 module ParsedInput =
-    open FSharp.Compiler
-    open FSharp.Compiler.Ast
 
     /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
     let rec (|Sequentials|_|) = function
@@ -948,8 +946,8 @@ module ParsedInput =
                 let fullIdent = parent @ ident
                 addModule (fullIdent, range)
                 if range.EndLine >= currentLine then
-                    let moduleBodyIdentation = getMinColumn decls |> Option.defaultValue (range.StartColumn + 4)
-                    doRange NestedModule fullIdent range.StartLine moduleBodyIdentation
+                    let moduleBodyIndentation = getMinColumn decls |> Option.defaultValue (range.StartColumn + 4)
+                    doRange NestedModule fullIdent range.StartLine moduleBodyIndentation
                     List.iter (walkSynModuleDecl fullIdent) decls
             | SynModuleDecl.Open (_, range) -> doRange OpenDeclaration [] range.EndLine (range.StartColumn - 5)
             | SynModuleDecl.HashDirective (_, range) -> doRange HashDirective [] range.EndLine range.StartColumn
@@ -1008,9 +1006,9 @@ module ParsedInput =
                 if ctx.Pos.Line > 1 then
                     // it's an implicit module without any open declarations    
                     let line = getLineStr (ctx.Pos.Line - 2)
-                    let isImpliciteTopLevelModule =
+                    let isImplicitTopLevelModule =
                         not (line.StartsWithOrdinal("module") && not (line.EndsWithOrdinal("=")))
-                    if isImpliciteTopLevelModule then 1 else ctx.Pos.Line
+                    if isImplicitTopLevelModule then 1 else ctx.Pos.Line
                 else 1
             | ScopeKind.Namespace ->
                 // for namespaces the start line is start line of the first nested entity

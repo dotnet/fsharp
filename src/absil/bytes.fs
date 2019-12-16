@@ -3,11 +3,7 @@
 /// Byte arrays
 namespace FSharp.Compiler.AbstractIL.Internal
 
-open System.IO
-open Internal.Utilities
 
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
 
 module internal Bytes = 
     let b0 n =  (n &&& 0xFF)
@@ -87,10 +83,10 @@ type internal ByteBuffer =
         let n = arr.Length
         let newSize = buf.bbCurrent + n 
         buf.Ensure newSize
-        let bbarr = buf.bbArray
-        let bbbase = buf.bbCurrent
+        let bbArr = buf.bbArray
+        let bbBase = buf.bbCurrent
         for i = 0 to n - 1 do 
-            bbarr.[bbbase + i] <- byte arr.[i] 
+            bbArr.[bbBase + i] <- byte arr.[i] 
         buf.bbCurrent <- newSize 
 
     member bb.FixupInt32 pos n = 

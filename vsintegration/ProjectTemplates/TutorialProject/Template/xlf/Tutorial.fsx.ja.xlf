@@ -1324,7 +1324,7 @@
       </trans-unit>
       <trans-unit id="ShippingCalculator-Line1">
         <source>Next, define an interface type that represents an object to compute the shipping zone for the customer's zip code,</source>
-        <target state="translated">他に多くのリストの組み合わせがあります。次の二乗和をコンピューティングします:</target>
+        <target state="translated">次に、オブジェクトを表すインターフェイスの型を定義して、顧客の郵便番号の出荷ゾーンをコンピューティングし、</target>
         <note />
       </trans-unit>
       <trans-unit id="ShippingCalculator-Line2">

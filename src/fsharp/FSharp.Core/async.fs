@@ -17,10 +17,6 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
-#if FX_RESHAPED_REFLECTION
-    open ReflectionAdapters
-#endif
-
     type LinkedSubSource(cancellationToken: CancellationToken) =
 
         let failureCTS = new CancellationTokenSource()
@@ -168,13 +164,11 @@ namespace Microsoft.FSharp.Control
                 let f = unbox<(unit -> AsyncReturn)> o
                 this.ExecuteWithTrampoline f |> unfake)
 
-#if !FX_NO_PARAMETERIZED_THREAD_START
         // Preallocate this delegate and keep it in the trampoline holder.
         let threadStartCallbackForStartThreadWithTrampoline =
             ParameterizedThreadStart (fun o ->
                 let f = unbox<(unit -> AsyncReturn)> o
                 this.ExecuteWithTrampoline f |> unfake)
-#endif
 
         /// Execute an async computation after installing a trampoline on its synchronous stack.
         [<DebuggerHidden>]
@@ -196,22 +190,10 @@ namespace Microsoft.FSharp.Control
             | null -> this.QueueWorkItemWithTrampoline f
             | _ -> this.PostWithTrampoline syncCtxt f
 
-#if FX_NO_PARAMETERIZED_THREAD_START
-        // This should be the only call to Thread.Start in this library. We must always install a trampoline.
-        member this.StartThreadWithTrampoline (f: unit -> AsyncReturn) =
-#if FX_NO_THREAD
-            this.QueueWorkItemWithTrampoline f
-#else
-            (new Thread((fun _ -> this.Execute f |> unfake), IsBackground=true)).Start()
-            fake()
-#endif
-
-#else
         // This should be the only call to Thread.Start in this library. We must always install a trampoline.
         member __.StartThreadWithTrampoline (f: unit -> AsyncReturn) =
             (new Thread(threadStartCallbackForStartThreadWithTrampoline, IsBackground=true)).Start(f|>box)
             fake()
-#endif
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member inline __.OnExceptionRaised econt =
@@ -731,12 +713,7 @@ namespace Microsoft.FSharp.Control
                         match resEvent with
                         | null -> ()
                         | ev ->
-#if FX_NO_EVENTWAITHANDLE_IDISPOSABLE
-                            ev.Dispose()
-                            System.GC.SuppressFinalize ev
-#else
                             ev.Close()
-#endif
                             resEvent <- null)
 
             interface IDisposable with
@@ -824,15 +801,7 @@ namespace Microsoft.FSharp.Control
                     | None ->
                         // OK, let's really wait for the Set signal. This may block.
                         let timeout = defaultArg timeout Threading.Timeout.Infinite
-#if FX_NO_EXIT_CONTEXT_FLAGS
-#if FX_NO_WAITONE_MILLISECONDS
-                        let ok = resHandle.WaitOne(TimeSpan(int64 timeout*10000L))
-#else
-                        let ok = resHandle.WaitOne(millisecondsTimeout= timeout)
-#endif
-#else
                         let ok = resHandle.WaitOne(millisecondsTimeout= timeout, exitContext=true)
-#endif
                         if ok then
                             // Now the result really must be available
                             result
@@ -1196,7 +1165,13 @@ namespace Microsoft.FSharp.Control
             async { let! cancellationToken = cancellationTokenAsync
                     return AsyncPrimitives.StartAsTask cancellationToken computation taskCreationOptions }
 
-        static member Parallel (computations: seq<Async<'T>>) =
+        static member Parallel (computations: seq<Async<'T>>) = Async.Parallel(computations, ?maxDegreeOfParallelism=None)
+
+        static member Parallel (computations: seq<Async<'T>>, ?maxDegreeOfParallelism: int) =
+            match maxDegreeOfParallelism with
+            | Some x when x < 1 -> raise(System.ArgumentException(String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), x), "maxDegreeOfParallelism"))
+            | _ -> ()
+
             MakeAsync (fun ctxt ->
                 let tasks, result =
                     try
@@ -1251,18 +1226,57 @@ namespace Microsoft.FSharp.Control
                         | _ -> ()
                         finishTask(Interlocked.Decrement &count)
 
-                    tasks |> Array.iteri (fun i p ->
-                        QueueAsync
-                                innerCTS.Token
-                                // on success, record the result
-                                (fun res -> recordSuccess i res)
-                                // on exception...
-                                (fun edi -> recordFailure (Choice1Of2 edi))
-                                // on cancellation...
-                                (fun cexn -> recordFailure (Choice2Of2 cexn))
-                                p
-                            |> unfake)
+                    // If maxDegreeOfParallelism is set but is higher then the number of tasks we have we set it back to None to fall into the simple
+                    // queue all items branch
+                    let maxDegreeOfParallelism =
+                        match maxDegreeOfParallelism with
+                        | None -> None
+                        | Some maxDegreeOfParallelism -> if maxDegreeOfParallelism >= tasks.Length then None else Some maxDegreeOfParallelism
+
+                    // Simple case (no maxDegreeOfParallelism) just queue all the work, if we have maxDegreeOfParallelism set we start that many workers
+                    // which will make progress on the actual computations
+                    match maxDegreeOfParallelism with
+                    | None ->
+                        tasks |> Array.iteri (fun i p ->
+                            QueueAsync
+                                    innerCTS.Token
+                                    // on success, record the result
+                                    (fun res -> recordSuccess i res)
+                                    // on exception...
+                                    (fun edi -> recordFailure (Choice1Of2 edi))
+                                    // on cancellation...
+                                    (fun cexn -> recordFailure (Choice2Of2 cexn))
+                                    p
+                                |> unfake)
+                    | Some maxDegreeOfParallelism ->
+                        let mutable i = -1
+                        let rec worker (trampolineHolder : TrampolineHolder) =
+                            if i < tasks.Length then
+                                let j = Interlocked.Increment &i
+                                if j < tasks.Length then
+                                    if innerCTS.Token.IsCancellationRequested then
+                                        let cexn = new OperationCanceledException (innerCTS.Token)
+                                        recordFailure (Choice2Of2 cexn) |> unfake
+                                        worker trampolineHolder |> unfake
+                                    else
+                                        let taskCtxt =
+                                            AsyncActivation.Create
+                                                innerCTS.Token
+                                                trampolineHolder
+                                                (fun res -> recordSuccess j res |> unfake; worker trampolineHolder)
+                                                (fun edi -> recordFailure (Choice1Of2 edi) |> unfake; worker trampolineHolder)
+                                                (fun cexn -> recordFailure (Choice2Of2 cexn) |> unfake; worker trampolineHolder)
+                                        tasks.[j].Invoke taskCtxt |> unfake
+                            fake()
+                        for x = 1 to maxDegreeOfParallelism do
+                            let trampolineHolder = new TrampolineHolder()
+                            trampolineHolder.QueueWorkItemWithTrampoline (fun () ->
+                                worker trampolineHolder)
+                            |> unfake
+
                     fake()))
+
+        static member Sequential (computations: seq<Async<'T>>) = Async.Parallel(computations, maxDegreeOfParallelism=1)
 
         static member Choice(computations: Async<'T option> seq) : Async<'T option> =
             MakeAsync (fun ctxt ->
@@ -1276,35 +1290,54 @@ namespace Microsoft.FSharp.Control
                 | Choice1Of2 computations ->
                     ProtectedCode ctxt (fun ctxt ->
                         let ctxtWithSync = DelimitSyncContext ctxt
-                        let noneCount = ref 0
-                        let exnCount = ref 0
+                        let mutable count = computations.Length
+                        let mutable noneCount = 0
+                        let mutable someOrExnCount = 0
                         let innerCts = new LinkedSubSource(ctxtWithSync.token)
 
                         let scont (result: 'T option) =
-                            match result with
-                            | Some _ ->
-                                if Interlocked.Increment exnCount = 1 then
-                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont result)
-                                else
-                                    fake()
+                            let result =
+                                match result with
+                                | Some _ ->
+                                    if Interlocked.Increment &someOrExnCount = 1 then
+                                        innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont result)
+                                    else
+                                        fake()
 
-                            | None ->
-                                if Interlocked.Increment noneCount = computations.Length then
-                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont None)
-                                else
-                                    fake()
+                                | None ->
+                                    if Interlocked.Increment &noneCount = computations.Length then
+                                        innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont None)
+                                    else
+                                        fake()
+
+                            if Interlocked.Decrement &count = 0 then
+                                innerCts.Dispose()
+
+                            result
 
                         let econt (exn: ExceptionDispatchInfo) =
-                            if Interlocked.Increment exnCount = 1 then
-                                innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.econt exn)
-                            else
-                                fake()
+                            let result =
+                                if Interlocked.Increment &someOrExnCount = 1 then
+                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.econt exn)
+                                else
+                                    fake()
+
+                            if Interlocked.Decrement &count = 0 then
+                                innerCts.Dispose()
+
+                            result
 
                         let ccont (exn: OperationCanceledException) =
-                            if Interlocked.Increment exnCount = 1 then
-                                innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.ccont exn)
-                            else
-                                fake()
+                            let result =
+                                if Interlocked.Increment &someOrExnCount = 1 then
+                                    innerCts.Cancel(); ctxtWithSync.trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.ccont exn)
+                                else
+                                    fake()
+
+                            if Interlocked.Decrement &count = 0 then
+                                innerCts.Dispose()
+
+                            result
 
                         for c in computations do
                             QueueAsync innerCts.Token scont econt ccont c |> unfake
@@ -1385,15 +1418,7 @@ namespace Microsoft.FSharp.Control
             let millisecondsTimeout = defaultArg millisecondsTimeout Threading.Timeout.Infinite
             if millisecondsTimeout = 0 then
                 async.Delay(fun () ->
-#if FX_NO_EXIT_CONTEXT_FLAGS
-#if FX_NO_WAITONE_MILLISECONDS
-                    let ok = waitHandle.WaitOne(TimeSpan 0L)
-#else
-                    let ok = waitHandle.WaitOne 0
-#endif
-#else
                     let ok = waitHandle.WaitOne(0, exitContext=false)
-#endif
                     async.Return ok)
             else
                 CreateDelimitedUserCodeAsync(fun ctxt ->
@@ -1683,12 +1708,7 @@ namespace Microsoft.FSharp.Control
             member stream.AsyncRead(buffer: byte[], ?offset, ?count) =
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
-#if FX_NO_BEGINEND_READWRITE
-                // use combo CreateDelimitedUserCodeAsync + taskContinueWith instead of AwaitTask so we can pass cancellation token to the ReadAsync task
-                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith (stream.ReadAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
-#else
                 Async.FromBeginEnd (buffer, offset, count, stream.BeginRead, stream.EndRead)
-#endif
 
             [<CompiledName("AsyncReadBytes")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member stream.AsyncRead count =
@@ -1705,12 +1725,7 @@ namespace Microsoft.FSharp.Control
             member stream.AsyncWrite(buffer:byte[], ?offset:int, ?count:int) =
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
-#if FX_NO_BEGINEND_READWRITE
-                // use combo CreateDelimitedUserCodeAsync + taskContinueWithUnit instead of AwaitTask so we can pass cancellation token to the WriteAsync task
-                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit (stream.WriteAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
-#else
                 Async.FromBeginEnd (buffer, offset, count, stream.BeginWrite, stream.EndWrite)
-#endif
 
         type IObservable<'Args> with
 
@@ -1745,8 +1760,6 @@ namespace Microsoft.FSharp.Control
                         Some (Async.BindResult(AsyncResult.Canceled (OperationCanceledException webExn.Message)))
                     | _ ->
                         None)
-
-#if !FX_NO_WEB_CLIENT
 
         type System.Net.WebClient with
             member inline private this.Download(event: IEvent<'T, _>, handler: _ -> 'T, start, result) =
@@ -1799,5 +1812,3 @@ namespace Microsoft.FSharp.Control
                     start   = (fun userToken -> this.DownloadFileAsync(address, fileName, userToken)),
                     result  = (fun _         -> ())
                 )
-#endif
-

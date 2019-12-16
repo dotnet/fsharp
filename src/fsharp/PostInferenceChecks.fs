@@ -285,7 +285,8 @@ let GetLimitValByRef cenv env m v =
     { scope = scope; flags = flags }
 
 let LimitVal cenv (v: Val) limit = 
-    cenv.limitVals.[v.Stamp] <- limit
+    if not v.IgnoresByrefScope then
+        cenv.limitVals.[v.Stamp] <- limit
 
 let BindVal cenv env (v: Val) = 
     //printfn "binding %s..." v.DisplayName
@@ -563,7 +564,7 @@ let mkArgsForAppliedVal isBaseCall (vref: ValRef) argsl =
     | Some topValInfo -> 
         let argArities = topValInfo.AritiesOfArgs
         let argArities = if isBaseCall && argArities.Length >= 1 then List.tail argArities else argArities
-        // Check for partial applications: arguments to partial applciations don't get to use byrefs
+        // Check for partial applications: arguments to partial applications don't get to use byrefs
         if List.length argsl >= argArities.Length then 
             List.map mkArgsPermit argArities
         else
@@ -642,7 +643,7 @@ let CheckTypePermitSpanLike (cenv: cenv) env m ty = CheckType PermitByRefType.Sp
 /// Check types occurring in TAST but allow all byrefs.  Only used on internally-generated types
 let CheckTypePermitAllByrefs (cenv: cenv) env m ty = CheckType PermitByRefType.All cenv env m ty
 
-/// Check types ocurring in TAST but disallow inner types to be byref or byref-like types.
+/// Check types occurring in TAST but disallow inner types to be byref or byref-like types.
 let CheckTypeNoInnerByrefs cenv env m ty = CheckType PermitByRefType.NoInnerByRefLike cenv env m ty
 
 let CheckTypeInstNoByrefs cenv env m tyargs =
@@ -700,6 +701,7 @@ and CheckValRef (cenv: cenv) (env: env) v m (context: PermitByRefExpr) =
         if isSpliceOperator cenv.g v then errorR(Error(FSComp.SR.chkNoFirstClassSplicing(), m))
         if valRefEq cenv.g v cenv.g.addrof_vref  then errorR(Error(FSComp.SR.chkNoFirstClassAddressOf(), m))
         if valRefEq cenv.g v cenv.g.reraise_vref then errorR(Error(FSComp.SR.chkNoFirstClassRethrow(), m))
+        if valRefEq cenv.g v cenv.g.nameof_vref then errorR(Error(FSComp.SR.chkNoFirstClassNameOf(), m))
 
         // ByRefLike-typed values can only occur in permitting contexts 
         if context.Disallow && isByrefLikeTy cenv.g m v.Type then 
@@ -825,7 +827,7 @@ and CheckCallLimitArgs cenv env m returnTy limitArgs (context: PermitByRefExpr) 
                 errorR(Error(FSComp.SR.chkNoByrefAddressOfValueFromExpression(), m))
 
         // You cannot call a function that takes a byref of a span-like (not stack referring) and 
-        //     either a stack referring spanlike or a local-byref of a stack referring span-like.
+        //     either a stack referring span-like or a local-byref of a stack referring span-like.
         let isCallLimited =  
             HasLimitFlag LimitFlags.ByRefOfSpanLike limitArgs && 
             (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs || 
@@ -1142,7 +1144,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
     let ctorLimitedZoneCheck() = 
         if env.ctorLimitedZone then errorR(Error(FSComp.SR.chkObjCtorsCantUseExceptionHandling(), m))
 
-    // Ensure anonynous record type requirements are recorded
+    // Ensure anonymous record type requirements are recorded
     match op with
     | TOp.AnonRecdGet (anonInfo, _) 
     | TOp.AnonRecd anonInfo -> 
@@ -1321,7 +1323,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
 
         // C# applies a rule where the APIs to struct types can't return the addresses of fields in that struct.
         // There seems no particular reason for this given that other protections in the language, though allowing
-        // it would mean "readonly" on a struct doesn't imply immutabality-of-contents - it only implies 
+        // it would mean "readonly" on a struct doesn't imply immutability-of-contents - it only implies 
         if context.PermitOnlyReturnable && (match obj with Expr.Val (vref, _, _) -> vref.BaseOrThisInfo = MemberThisVal | _ -> false) && isByrefTy g (tyOfExpr g obj) then
             errorR(Error(FSComp.SR.chkStructsMayNotReturnAddressesOfContents(), m))
 

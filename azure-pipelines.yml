@@ -307,20 +307,20 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./fcs/build.sh Build
+          - script: ./fcs/build.sh
             displayName: Build
 
-        - job: MacOS_FCS
-          pool:
-            vmImage: macOS-10.13
-          variables:
-          - name: _SignType
-            value: Test
-          steps:
-          - checkout: self
-            clean: true
-          - script: ./fcs/build.sh Build
-            displayName: Build
+        # - job: MacOS_FCS
+        #   pool:
+        #     vmImage: macOS-10.13
+        #   variables:
+        #   - name: _SignType
+        #     value: Test
+        #   steps:
+        #   - checkout: self
+        #     clean: true
+        #   - script: ./fcs/build.sh
+        #     displayName: Build
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    Post Build                                                       #
@@ -330,3 +330,16 @@ stages:
     parameters:
       # Symbol validation is not entirely reliable as of yet, so should be turned off until https://github.com/dotnet/arcade/issues/2871 is resolved.
       enableSymbolValidation: false
+      # SourceLink improperly looks for generated files.  See https://github.com/dotnet/arcade/issues/3069
+      enableSourceLinkValidation: false
+
+#---------------------------------------------------------------------------------------------------------------------#
+#                                                   VS Insertion                                                      #
+#---------------------------------------------------------------------------------------------------------------------#
+- ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
+  - template: eng/release/insert-into-vs.yml
+    parameters:
+      componentBranchName: refs/heads/release/dev16.4
+      insertTargetBranch: rel/d16.4
+      insertTeamEmail: fsharpteam@microsoft.com
+      insertTeamName: 'F#'

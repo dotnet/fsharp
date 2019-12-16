@@ -19,14 +19,9 @@ open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.ILAsciiWriter 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
 open FSharp.Core.Printf
-
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
 let codeLabelOrder = ComparisonIdentity.Structural<ILCodeLabel>
 
@@ -314,10 +309,8 @@ let convAssemblyRef (aref: ILAssemblyRef) =
        asmName.Version <- System.Version (int32 version.Major, int32 version.Minor, int32 version.Build, int32 version.Revision)
     Option.iter setVersion aref.Version
     //  asmName.ProcessorArchitecture <- System.Reflection.ProcessorArchitecture.MSIL
-#if !FX_RESHAPED_GLOBALIZATION
     //Option.iter (fun name -> asmName.CultureInfo <- System.Globalization.CultureInfo.CreateSpecificCulture name) aref.Locale
     asmName.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture
-#endif
     asmName
 
 /// The global environment.
@@ -665,9 +658,6 @@ let TypeBuilderInstantiationT =
     ty
 
 let typeIsNotQueryable (ty: Type) = 
-#if FX_RESHAPED_REFLECTION
-    let ty = ty.GetTypeInfo()
-#endif
     (ty :? TypeBuilder) || ((ty.GetType()).Equals(TypeBuilderInstantiationT))
 //----------------------------------------------------------------------------
 // convFieldSpec
@@ -796,11 +786,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) =
               parentT.GetMethod(mref.Name, cconv ||| BindingFlags.Public ||| BindingFlags.NonPublic, 
                                 null, 
                                 argTs, 
-#if FX_RESHAPED_REFLECTION
-                                (null: obj[]))
-#else
                                 (null: ParameterModifier[]))
-#endif
             // This can fail if there is an ambiguity w.r.t. return type 
             with _ -> null
         if (isNonNull methInfo && equalTypes resT methInfo.ReturnType) then 
@@ -1436,11 +1422,7 @@ let buildGenParamsPass1 _emEnv defineGenericParameters (gps: ILGenericParameterD
 
 
 let buildGenParamsPass1b cenv emEnv (genArgs: Type array) (gps: ILGenericParameterDefs) = 
-#if FX_RESHAPED_REFLECTION
-    let genpBs = genArgs |> Array.map (fun x -> (x.GetTypeInfo() :?> GenericTypeParameterBuilder)) 
-#else
     let genpBs = genArgs |> Array.map (fun x -> (x :?> GenericTypeParameterBuilder)) 
-#endif
     gps |> List.iteri (fun i (gp: ILGenericParameterDef) ->
         let gpB = genpBs.[i]
         // the Constraints are either the parent (base) type or interfaces.
@@ -1741,7 +1723,7 @@ let buildMethodImplsPass3 cenv _tref (typB: TypeBuilder) emEnv (mimpl: IL.ILMeth
 // typeAttributesOf*
 //----------------------------------------------------------------------------
 
-let typeAttrbutesOfTypeDefKind x = 
+let typeAttributesOfTypeDefKind x = 
     match x with 
     // required for a TypeBuilder
     | ILTypeDefKind.Class -> TypeAttributes.Class
@@ -1750,14 +1732,14 @@ let typeAttrbutesOfTypeDefKind x =
     | ILTypeDefKind.Enum -> TypeAttributes.Class
     | ILTypeDefKind.Delegate -> TypeAttributes.Class
 
-let typeAttrbutesOfTypeAccess x =
+let typeAttributesOfTypeAccess x =
     match x with 
     | ILTypeDefAccess.Public -> TypeAttributes.Public
     | ILTypeDefAccess.Private -> TypeAttributes.NotPublic
     | ILTypeDefAccess.Nested macc -> 
         match macc with
         | ILMemberAccess.Assembly -> TypeAttributes.NestedAssembly
-        | ILMemberAccess.CompilerControlled -> failwith "Nested compiler controled."
+        | ILMemberAccess.CompilerControlled -> failwith "Nested compiler controlled."
         | ILMemberAccess.FamilyAndAssembly -> TypeAttributes.NestedFamANDAssem
         | ILMemberAccess.FamilyOrAssembly -> TypeAttributes.NestedFamORAssem
         | ILMemberAccess.Family -> TypeAttributes.NestedFamily
@@ -1946,7 +1928,7 @@ let rec getTypeRefsInType (allTypes: CollectTypes) ty acc =
         | CollectTypes.ValueTypesOnly -> acc 
         | CollectTypes.All -> getTypeRefsInType allTypes eltType acc
     | ILType.Value tspec -> 
-        // We usee CollectTypes.All because the .NET type loader appears to always eagerly require all types
+        // We use CollectTypes.All because the .NET type loader appears to always eagerly require all types
         // referred to in an instantiation of a generic value type
         tspec.TypeRef :: List.foldBack (getTypeRefsInType CollectTypes.All) tspec.GenericArgs acc
     | ILType.Boxed tspec -> 

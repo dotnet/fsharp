@@ -7,14 +7,49 @@
         <target state="translated">{0} per F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="translated">Il flusso non inizia con una risorsa Null e non è in formato '.RES'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="translated">L'intestazione di risorsa che inizia a partire dall'offset {0} non è valida.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">Visualizza i valori consentiti per la versione del linguaggio. Specificare la versione del linguaggio, ad esempio 'latest' o 'preview'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">Versioni del linguaggio supportate:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">Valore '{0}' non riconosciuto per --langversion. Per l'elenco completo usare --langversion:?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">Simbolo '.' imprevisto nella definizione di membro. È previsto 'with', '=' o un altro token.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
         <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
-        <target state="new">Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</target>
+        <target state="translated">Consente di specificare l'algoritmo per calcolare il checksum del file di origine archiviato nel file PDB. I valori supportati sono SHA1 e SHA256 (predefinito).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
-        <target state="new">Algorithm '{0}' is not supported</target>
+        <target state="translated">L'algoritmo '{0}' non è supportato</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="translated">Gli attributi non possono essere applicati a estensioni di tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -230,11 +265,6 @@
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
         <target state="translated">Impostazione di privacy '{0}' non riconosciuta per una risorsa gestita. Le opzioni valide sono 'public' e 'private'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">Non sono consentiti più riferimenti a '{0}.dll'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -1964,7 +1994,7 @@
       </trans-unit>
       <trans-unit id="parsSyntaxError">
         <source>Syntax error</source>
-        <target state="translated">errore di sintassi</target>
+        <target state="translated">Errore di sintassi</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAugmentationsIllegalOnDelegateType">
@@ -2279,12 +2309,12 @@
       </trans-unit>
       <trans-unit id="parsSyntaxModuleStructEndDeprecated">
         <source>The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'</source>
-        <target state="translated">La sintassi 'module ... = struct .. end' non è utilizzata nel codice F#. Provare a utilizzare 'module ... = begin .. end'</target>
+        <target state="translated">La sintassi 'module ... = struct .. end' non è usata nel codice F#. Provare a usare 'module ... = begin .. end'</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSyntaxModuleSigEndDeprecated">
         <source>The syntax 'module ... : sig .. end' is not used in F# code. Consider using 'module ... = begin .. end'</source>
-        <target state="translated">La sintassi 'module ... : sig .. end' non è utilizzata nel codice F#. Provare a utilizzare 'module ... = begin .. end'</target>
+        <target state="translated">La sintassi 'module ... : sig .. end' non è usata nel codice F#. Provare a usare 'module ... = begin .. end'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStaticFieldUsedWhenInstanceFieldExpected">
@@ -2654,7 +2684,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidPropertyType">
         <source>This property has an invalid type. Properties taking multiple indexer arguments should have types of the form 'ty1 * ty2 -&gt; ty3'. Properties returning functions should have types of the form '(ty1 -&gt; ty2)'.</source>
-        <target state="translated">La proprietà contiene un tipo non valido. Le proprietà che usano più argomenti di indicizzatore devono avere tipi nel formato 'ty1 * ty2 -&gt; ty3'.. Le proprietà che restituiscono funzioni devono avere tipi nel formato '(ti1 -&gt; ti2)'.</target>
+        <target state="translated">La proprietà contiene un tipo non valido. Le proprietà che usano più argomenti di indicizzatore devono avere tipi nel formato 'ty1 * ty2 -&gt; ty3'. Le proprietà che restituiscono funzioni devono avere tipi nel formato '(ti1 -&gt; ti2)'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpectedUnitOfMeasureMarkWithAttribute">
@@ -2799,7 +2829,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidPattern">
         <source>This is not a valid pattern</source>
-        <target state="translated">Criterio non valido</target>
+        <target state="translated">Questo non è un criterio valido</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUseWhenPatternGuard">
@@ -3274,7 +3304,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidActivePatternName">
         <source>This is not a valid name for an active pattern</source>
-        <target state="translated">Il nome non è valido per un criterio attivo</target>
+        <target state="translated">Questo non è un nome valido per un criterio attivo</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEntryPointAttributeRequiresFunctionInModule">
@@ -5292,11 +5322,6 @@
         <target state="translated">I binding DLLImport devono essere membri statici in una classe o definizioni di funzione in un modulo</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll or FSharp.Core.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="translated">Quando si fa riferimento in modo esplicito a mscorlib.dll o FSharp.Core.dll è necessario passare anche l'opzione {0}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">Il file FSharp.Core.sigdata non è stato trovato con FSharp.Core. Il file deve trovarsi in {0}. Provare a eseguire l'aggiornamento a una versione più recente di FSharp.Core, in cui questo file non è più obbligatorio.</target>
@@ -7170,6 +7195,16 @@
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
         <target state="translated">Non è stata specificata alcuna implementazione per tali membri (alcuni risultati sono stati omessi): {0}. Si noti che tutti i membri dell'interfaccia devono essere implementati ed elencati in una dichiarazione 'interface' appropriata, ad esempio 'interface ... with member ...'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">L'espressione non ha un nome.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">L'operatore 'nameof' non è consentito come valore di funzione di prima classe.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPathMap">

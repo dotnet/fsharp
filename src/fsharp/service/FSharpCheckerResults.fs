@@ -21,6 +21,7 @@ open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Parser
@@ -716,8 +717,9 @@ type internal TypeCheckInfo
                            | None | Some [] ->
                                let globalItems = 
                                    allSymbols() 
-                                   |> List.filter (fun x -> not x.Symbol.IsExplicitlySuppressed)
-                                   |> List.filter (fun x -> 
+                                   |> List.filter (fun x ->
+                                        not x.Symbol.IsExplicitlySuppressed &&
+
                                         match x.Symbol with
                                         | :? FSharpMemberOrFunctionOrValue as m when m.IsConstructor && filterCtors = ResolveTypeNamesToTypeRefs -> false 
                                         | _ -> true)
@@ -849,7 +851,12 @@ type internal TypeCheckInfo
             | Some(CompletionContext.OpenDeclaration) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
-                    items |> List.filter (fun x -> match x.Item with Item.ModuleOrNamespaces _ -> true | _ -> false), denv, m)
+                    items 
+                    |> List.filter (fun x ->
+                        match x.Item with
+                        | Item.ModuleOrNamespaces _ -> true
+                        | Item.Types (_, tcrefs) when tcrefs |> List.exists (fun ty -> isAppTy g ty && isStaticClass g (tcrefOfAppTy g ty)) -> true
+                        | _ -> false), denv, m)
             
             // Completion at '(x: ...)"
             | Some (CompletionContext.PatternType) ->
@@ -1276,9 +1283,8 @@ type internal TypeCheckInfo
                valRefEq g g.reraise_vref vref ||
                valRefEq g g.typeof_vref vref ||
                valRefEq g g.typedefof_vref vref ||
-               valRefEq g g.sizeof_vref vref 
-               // TODO uncomment this after `nameof` operator is implemented
-               // || valRefEq g g.nameof_vref vref
+               valRefEq g g.sizeof_vref vref ||
+               valRefEq g g.nameof_vref vref
             then Some()
             else None
         
@@ -1347,7 +1353,7 @@ type internal TypeCheckInfo
             | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.ComputationExpression)
             // types get colored as types when they occur in syntactic types or custom attributes
-            // typevariables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
+            // type variables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
             | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None
             | CNR(_, Item.CtorGroup(_, [MethInfo.FSMeth(_, OptionalArgumentAttribute, _, _)]), LegitTypeOccurence, _, _, _, _) -> None
             | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isInterfaceTy g) -> 
@@ -1440,7 +1446,7 @@ type FSharpParsingOptions =
           CompilingFsLib = tcConfig.compilingFslib
           IsExe = tcConfig.target.IsExe }
 
-    static member FromTcConfigBuidler(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
+    static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
         {
           SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfigB.conditionalCompilationDefines
@@ -1525,8 +1531,12 @@ module internal ParseAndCheckFile =
         let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         tokenizer.Lexer
 
-    let createLexbuf sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(sourceText)
+    // Public callers are unable to answer LanguageVersion feature support questions.
+    // External Tools including the VS IDE will enable the default LanguageVersion 
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+
+    let createLexbuf sourceText isFeatureSupported =
+        UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText)
 
     let matchBraces(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         let delayedLogger = CapturingErrorLogger("matchBraces")
@@ -1541,7 +1551,7 @@ module internal ParseAndCheckFile =
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         
         let matchingBraces = new ResizeArray<_>()
-        Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+        Lexhelp.usingLexbufForParsing(createLexbuf sourceText isFeatureSupported, fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
@@ -1577,7 +1587,7 @@ module internal ParseAndCheckFile =
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
-            Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+            Lexhelp.usingLexbufForParsing(createLexbuf sourceText isFeatureSupported, fileName) (fun lexbuf ->
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
@@ -2094,7 +2104,7 @@ type FSharpCheckProjectResults
         let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
-    member __.TypedImplementionFiles =
+    member __.TypedImplementationFiles =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
         let mimpls = 
@@ -2199,7 +2209,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
             
             let backgroundDiagnostics = [| |]
             let reduceMemoryUsage = ReduceMemoryFlag.Yes
-            let assumeDotNetFramework = true
+            let assumeDotNetFramework = tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib
 
             let applyCompilerOptions tcConfigB  = 
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 

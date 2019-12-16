@@ -1,0 +1,56 @@
+parameters:
+  componentBranchName: ''
+  insertBuildPolicy: 'CloudBuild - Request RPS'
+  insertTargetBranch: ''
+  insertTeamEmail: ''
+  insertTeamName: ''
+  dependsOn: [build]
+
+stages:
+- stage: insert
+  dependsOn: build
+  displayName: Insert into VS
+  jobs:
+  - job: Insert_VS
+    pool:
+      vmImage: vs2017-win2016
+    variables:
+    - group: DotNet-VSTS-Infra-Access
+    - name: InsertAccessToken
+      value: $(dn-bot-devdiv-build-rw-code-rw-release-rw)
+    - name: InsertBuildPolicy
+      value: ${{ parameters.insertBuildPolicy }}
+    - name: InsertTargetBranch
+      value: ${{ parameters.insertTargetBranch }}
+    - name: InsertTeamEmail
+      value: ${{ parameters.insertTeamEmail }}
+    - name: InsertTeamName
+      value: ${{ parameters.insertTeamName }}
+    - name: InsertPayloadName
+      value: 'F# $(Build.SourceBranchName) $(Build.BuildNumber)'
+    steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: Download Insertion Artifacts
+      inputs:
+        buildType: current
+        artifactName: VSSetup
+    - task: PowerShell@2
+      displayName: Get Publish URLs
+      inputs:
+        filePath: $(Build.SourcesDirectory)/eng/release/scripts/GetPublishUrls.ps1
+        arguments: -accessToken $(System.AccessToken) -buildId $(Build.BuildId) -insertionDir $(Build.ArtifactStagingDirectory)\VSSetup
+    - task: PowerShell@2
+      displayName: Get versions for default.config
+      inputs:
+        filePath: $(Build.SourcesDirectory)/eng/release/scripts/GetDefaultConfigVersions.ps1
+        arguments: -packagesDir $(Build.ArtifactStagingDirectory)\VSSetup\DevDivPackages
+    - task: PowerShell@2
+      displayName: Get versions for AssemblyVersions.tt
+      inputs:
+        filePath: $(Build.SourcesDirectory)/eng/release/scripts/GetAssemblyVersions.ps1
+        arguments: -assemblyVersionsPath $(Build.ArtifactStagingDirectory)\VSSetup\DevDivPackages\DependentAssemblyVersions.csv
+    - task: ms-vseng.MicroBuildShipTasks.55100717-a81d-45ea-a363-b8fe3ec375ad.MicroBuildInsertVsPayload@3
+      displayName: 'Insert VS Payload'
+      inputs:
+        LinkWorkItemsToPR: false
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], '${{ parameters.componentBranchName }}'))

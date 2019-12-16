@@ -8,7 +8,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
 
 // set to the proper value at CompileOps.fs (BuildFrameworkTcImports)
-// Only reelvant when compiling FSharp.Core.dll
+// Only relevant when compiling FSharp.Core.dll
 let parseILGlobals = ref EcmaMscorlibILGlobals
 
 /// Table of parsing and pretty printing data for instructions.

@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
-open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open FSharp.Compiler.PrettyNaming
 open System.Collections.Generic
@@ -203,7 +202,7 @@ module UnusedOpens =
     let filterOpenStatements (symbolUses1: FSharpSymbolUse[], symbolUses2: FSharpSymbolUse[]) openStatements =
         async {
             // the key is a namespace or module, the value is a list of FSharpSymbolUse range of symbols defined in the 
-            // namespace or module. So, it's just symbol uses ranges groupped by namespace or module where they are _defined_. 
+            // namespace or module. So, it's just symbol uses ranges grouped by namespace or module where they are _defined_. 
             let symbolUsesRangesByDeclaringEntity = Dictionary<FSharpEntity, range list>(entityHash)
             for symbolUse in symbolUses1 do
                 match symbolUse.Symbol with

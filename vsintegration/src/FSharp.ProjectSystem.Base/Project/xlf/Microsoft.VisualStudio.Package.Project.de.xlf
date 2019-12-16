@@ -64,7 +64,7 @@
       </trans-unit>
       <trans-unit id="ConfirmExtensionChange">
         <source>If you change a file name extension, the file may become unusable. Are you sure you want to change it?</source>
-        <target state="translated">Wenn Sie eine Dateinamenerweiterung ändern, wird die Datei möglicherweise unbrauchbar. Möchten Sie sie wirklich ändern?</target>
+        <target state="translated">Wenn Sie eine Dateinamenerweiterung ändern, wird die Datei möglicherweise unbrauchbar. Möchten Sie sie ändern?</target>
         <note />
       </trans-unit>
       <trans-unit id="CannotAddFileThatIsOpenInEditor">
@@ -129,10 +129,10 @@
 - contain only '.'
 - have any of the following characters: / ? : &amp;  \ * " &lt; &gt; | # %</source>
         <target state="translated">Für Dateien und Ordner gilt Folgendes:
-- Sie dürfen keine leeren Zeichenfolgen sein. 
-- Sie dürfen keine für das System reservierten Namen aufweisen, einschließlich "CON", "AUX", PRN", "COM1" oder "LPT2". 
-- Sie dürfen nicht nur "." enthalten.
-- Sie dürfen folgende Zeichen nicht aufweisen: / ? : &amp;  \ * " &lt; &gt; | # %</target>
+– Sie dürfen keine leeren Zeichenfolgen sein. 
+– Sie dürfen keine für das System reservierten Namen aufweisen, einschließlich "CON", "AUX", PRN", "COM1" oder "LPT2". 
+– Sie dürfen nicht ausschließlich "." enthalten.
+– Sie dürfen folgende Zeichen nicht aufweisen: / ? : &amp;  \ * " &lt; &gt; | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">
@@ -252,22 +252,22 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">minimal</target>
+        <target state="translated">Minimal</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
         <source>Misc</source>
-        <target state="translated">Verschiedenes</target>
+        <target state="translated">Verschiedene</target>
         <note />
       </trans-unit>
       <trans-unit id="None">
         <source>None</source>
-        <target state="translated">NONE</target>
+        <target state="translated">Keine</target>
         <note />
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">NORMAL</target>
+        <target state="translated">Normal</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -802,7 +802,7 @@
       </trans-unit>
       <trans-unit id="Version">
         <source>Version</source>
-        <target state="translated">VERSION</target>
+        <target state="translated">Version</target>
         <note />
       </trans-unit>
       <trans-unit id="CopyOf">

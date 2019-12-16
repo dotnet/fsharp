@@ -13,6 +13,7 @@
               DisabledWarnings="$(NoWarn)"
               DotnetFsiCompilerPath="$(DotnetFsiCompilerPath)"
               FsiExec="@(FsiExec)"
+              LangVersion="$(LangVersion)"
               LCID="$(LCID)"
               LoadSources="@(LoadSource)"
               NoFramework="false"

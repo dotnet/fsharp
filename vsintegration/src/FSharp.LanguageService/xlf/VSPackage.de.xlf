@@ -29,12 +29,12 @@
       </trans-unit>
       <trans-unit id="FSharpInterfaceFile">
         <source>F# Interface File (*.fsi)</source>
-        <target state="translated">F# Schnittstellendatei (*.fsi)</target>
+        <target state="translated">F#-Schnittstellendatei (*.fsi)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSXFile">
         <source>F# Script File (*.fsx)</source>
-        <target state="translated">F# Skriptdatei (*.fsx)</target>
+        <target state="translated">F#-Skriptdatei (*.fsx)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpScriptFile">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="Number">
         <source>Number</source>
-        <target state="translated">Anzahl</target>
+        <target state="translated">Zahl</target>
         <note />
       </trans-unit>
       <trans-unit id="String">
