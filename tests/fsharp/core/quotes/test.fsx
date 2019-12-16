@@ -3171,7 +3171,7 @@ module WitnessTests =
             | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
                 minfo1.Name = "op_Addition" && 
                 minfo1.GetParameters().Length = 2 && 
-                minfo2.Name = "op_AdditionWithWitnesses" &&
+                minfo2.Name = "op_Addition$W" &&
                 minfo2.GetParameters().Length = 3 && 
                 (printfn "checking witnessArgs.Length = %d... args.Length"; true) &&
                 witnessArgs.Length = 1 &&
@@ -3194,7 +3194,7 @@ module WitnessTests =
                 minfo1.Name = "op_Addition" && 
                 (printfn "checking minfo1.GetParameters().Length..."; true) &&
                 minfo1.GetParameters().Length = 2 && 
-                minfo2.Name = "op_AdditionWithWitnesses" &&
+                minfo2.Name = "op_Addition$W" &&
                 (printfn "checking minfo2.GetParameters().Length..."; true) &&
                 minfo2.GetParameters().Length = 3 && 
                 (printfn "checking witnessArgs.Length..."; true) &&
@@ -3246,7 +3246,7 @@ module WitnessTests =
                 (printfn "checking minfo1.GetParameters().Length..."; true) &&
                 minfo1.GetParameters().Length = 2 && 
                 minfo2.IsStatic && 
-                minfo2.Name = "StaticAddWithWitnesses" &&
+                minfo2.Name = "StaticAdd$W" &&
                 (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
                 minfo2.GetParameters().Length = 3 && 
                 (printfn "checking witnessArgs.Length..."; true) &&
@@ -3271,7 +3271,7 @@ module WitnessTests =
                 (printfn "checking minfo1.GetParameters().Length..."; true) &&
                 minfo1.GetParameters().Length = 2 && 
                 not minfo2.IsStatic && 
-                minfo2.Name = "InstanceAddWithWitnesses" &&
+                minfo2.Name = "InstanceAdd$W" &&
                 (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
                 minfo2.GetParameters().Length = 3 && 
                 (printfn "checking witnessArgs.Length..."; true) &&
@@ -3552,7 +3552,7 @@ module WitnessTests =
             | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
                 minfo1.IsStatic && 
                 minfo2.IsStatic && 
-                minfo2.Name = minfo1.Name + "WithWitnesses" &&
+                minfo2.Name = minfo1.Name + "$W" &&
     (*
                 (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
                 minfo2.GetParameters().Length = 3 && 

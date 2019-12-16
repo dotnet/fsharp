@@ -699,4 +699,4 @@ module public FSharp.Compiler.PrettyNaming
 
     let outArgCompilerGeneratedName = "outArg"
 
-    let ExtraWitnessMethodName nm = nm + "WithWitnesses"
+    let ExtraWitnessMethodName nm = nm + "$W"

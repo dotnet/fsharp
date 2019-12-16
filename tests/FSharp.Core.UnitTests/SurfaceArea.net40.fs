@@ -2700,26 +2700,26 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String ToString()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
-Microsoft.FSharp.Collections.ArrayModule: T AverageWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T[]
-Microsoft.FSharp.Collections.ArrayModule: T SumWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T[]
-Microsoft.FSharp.Collections.ArrayModule: TResult AverageByWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], T[]
-Microsoft.FSharp.Collections.ArrayModule: TResult SumByWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], T[]
-Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.IComparer`1[T] NonStructuralWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]]
-Microsoft.FSharp.Collections.HashIdentity: System.Collections.Generic.IEqualityComparer`1[T] NonStructuralWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]]
-Microsoft.FSharp.Collections.ListModule: T AverageWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], Microsoft.FSharp.Collections.FSharpList`1[T]
-Microsoft.FSharp.Collections.ListModule: T SumWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], Microsoft.FSharp.Collections.FSharpList`1[T]
-Microsoft.FSharp.Collections.ListModule: TResult AverageByWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], Microsoft.FSharp.Collections.FSharpList`1[T]
-Microsoft.FSharp.Collections.ListModule: TResult SumByWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], Microsoft.FSharp.Collections.FSharpList`1[T]
-Microsoft.FSharp.Collections.SeqModule: T AverageWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], System.Collections.Generic.IEnumerable`1[T]
-Microsoft.FSharp.Collections.SeqModule: T SumWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], System.Collections.Generic.IEnumerable`1[T]
-Microsoft.FSharp.Collections.SeqModule: TResult AverageByWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], System.Collections.Generic.IEnumerable`1[T]
-Microsoft.FSharp.Collections.SeqModule: TResult SumByWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], System.Collections.Generic.IEnumerable`1[T]
-Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked: Byte ToByteWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], T
-Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked: SByte ToSByteWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], T
-Microsoft.FSharp.Core.ExtraTopLevelOperators: Byte ToByteWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], T
-Microsoft.FSharp.Core.ExtraTopLevelOperators: Double ToDoubleWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Double], T
-Microsoft.FSharp.Core.ExtraTopLevelOperators: SByte ToSByteWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], T
-Microsoft.FSharp.Core.ExtraTopLevelOperators: Single ToSingleWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Single], T
+Microsoft.FSharp.Collections.ArrayModule: T Average$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T[]
+Microsoft.FSharp.Collections.ArrayModule: T Sum$W[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T[]
+Microsoft.FSharp.Collections.ArrayModule: TResult AverageBy$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], T[]
+Microsoft.FSharp.Collections.ArrayModule: TResult SumBy$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], T[]
+Microsoft.FSharp.Collections.ComparisonIdentity: System.Collections.Generic.IComparer`1[T] NonStructural$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]]
+Microsoft.FSharp.Collections.HashIdentity: System.Collections.Generic.IEqualityComparer`1[T] NonStructural$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]]
+Microsoft.FSharp.Collections.ListModule: T Average$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], Microsoft.FSharp.Collections.FSharpList`1[T]
+Microsoft.FSharp.Collections.ListModule: T Sum$W[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], Microsoft.FSharp.Collections.FSharpList`1[T]
+Microsoft.FSharp.Collections.ListModule: TResult AverageBy$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], Microsoft.FSharp.Collections.FSharpList`1[T]
+Microsoft.FSharp.Collections.ListModule: TResult SumBy$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], Microsoft.FSharp.Collections.FSharpList`1[T]
+Microsoft.FSharp.Collections.SeqModule: T Average$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], System.Collections.Generic.IEnumerable`1[T]
+Microsoft.FSharp.Collections.SeqModule: T Sum$W[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], System.Collections.Generic.IEnumerable`1[T]
+Microsoft.FSharp.Collections.SeqModule: TResult AverageBy$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], System.Collections.Generic.IEnumerable`1[T]
+Microsoft.FSharp.Collections.SeqModule: TResult SumBy$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Core.FSharpFunc`2[TResult,TResult]], Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], System.Collections.Generic.IEnumerable`1[T]
+Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked: Byte ToByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], T
+Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked: SByte ToSByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], T
+Microsoft.FSharp.Core.ExtraTopLevelOperators: Byte ToByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], T
+Microsoft.FSharp.Core.ExtraTopLevelOperators: Double ToDouble$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Double], T
+Microsoft.FSharp.Core.ExtraTopLevelOperators: SByte ToSByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], T
+Microsoft.FSharp.Core.ExtraTopLevelOperators: Single ToSingle$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Single], T
 Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: Boolean op_Equality(Boolean, Boolean
 Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: Boolean op_Equality(Byte, Byte
 Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: Boolean op_Equality(Char, Char
@@ -3196,9 +3196,9 @@ Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: UIntPtr op_Multiply(U
 Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: UIntPtr op_RightShift(UIntPtr, Int32
 Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: UIntPtr op_Subtraction(UIntPtr, UIntPtr
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesse
-Microsoft.FSharp.Core.LanguagePrimitives: T DivideByIntWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], T, Int32
-Microsoft.FSharp.Core.LanguagePrimitives: T GenericOneWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T]
-Microsoft.FSharp.Core.LanguagePrimitives: T GenericZeroWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T]
+Microsoft.FSharp.Core.LanguagePrimitives: T DivideByInt$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], T, Int32
+Microsoft.FSharp.Core.LanguagePrimitives: T GenericOne$W[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T]
+Microsoft.FSharp.Core.LanguagePrimitives: T GenericZero$W[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T]
 Microsoft.FSharp.Core.LanguagePrimitives: TResult CheckedSubtractionDynamic[T1,T2,TResult](T1, T2
 Microsoft.FSharp.Core.LanguagePrimitives: TResult CheckedUnaryNegationDynamic[T,TResult](T
 Microsoft.FSharp.Core.LanguagePrimitives: TResult DivisionDynamic[T1,T2,TResult](T1, T2
@@ -3219,121 +3219,121 @@ Microsoft.FSharp.Core.LanguagePrimitives: TResult OpRightShiftDynamic[T1,T2,TRes
 Microsoft.FSharp.Core.LanguagePrimitives: TResult SubtractionDynamic[T1,T2,TResult](T1, T2
 Microsoft.FSharp.Core.LanguagePrimitives: TResult UnaryNegationDynamic[T,TResult](T
 Microsoft.FSharp.Core.NoDynamicInvocationAttribute: Void .ctor(Boolean
-Microsoft.FSharp.Core.Operators+Checked: Byte ToByteWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], T
-Microsoft.FSharp.Core.Operators+Checked: Char ToCharWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Char], T
-Microsoft.FSharp.Core.Operators+Checked: Int16 ToInt16WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int16], T
-Microsoft.FSharp.Core.Operators+Checked: Int32 ToInt32WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], T
-Microsoft.FSharp.Core.Operators+Checked: Int32 ToIntWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], T
-Microsoft.FSharp.Core.Operators+Checked: Int64 ToInt64WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int64], T
-Microsoft.FSharp.Core.Operators+Checked: IntPtr ToIntPtrWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.IntPtr], T
-Microsoft.FSharp.Core.Operators+Checked: SByte ToSByteWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], T
-Microsoft.FSharp.Core.Operators+Checked: T op_UnaryNegationWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators+Checked: T3 op_AdditionWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
-Microsoft.FSharp.Core.Operators+Checked: T3 op_MultiplyWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
-Microsoft.FSharp.Core.Operators+Checked: T3 op_SubtractionWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
-Microsoft.FSharp.Core.Operators+Checked: UInt16 ToUInt16WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt16], T
-Microsoft.FSharp.Core.Operators+Checked: UInt32 ToUInt32WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt32], T
-Microsoft.FSharp.Core.Operators+Checked: UInt64 ToUInt64WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt64], T
-Microsoft.FSharp.Core.Operators+Checked: UIntPtr ToUIntPtrWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UIntPtr], T
-Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_EqualityWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], T, T
-Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_GreaterThanOrEqualWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TResult,System.Boolean]], T, TResult
-Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_GreaterThanWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TResult,System.Boolean]], T, TResult
-Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_InequalityWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], T, T
-Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_LessThanOrEqualWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TResult,System.Boolean]], T, TResult
-Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_LessThanWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TResult,System.Boolean]], T, TResult
-Microsoft.FSharp.Core.Operators+NonStructuralComparison: Int32 CompareWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], T, T
-Microsoft.FSharp.Core.Operators+NonStructuralComparison: T MaxWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], T, T
-Microsoft.FSharp.Core.Operators+NonStructuralComparison: T MinWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], T, T
-Microsoft.FSharp.Core.Operators: Byte ToByteWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], T
-Microsoft.FSharp.Core.Operators: Char ToCharWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Char], T
-Microsoft.FSharp.Core.Operators: Double ToDoubleWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Double], T
-Microsoft.FSharp.Core.Operators: Int16 ToInt16WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int16], T
-Microsoft.FSharp.Core.Operators: Int32 SignWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], T
-Microsoft.FSharp.Core.Operators: Int32 ToInt32WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], T
-Microsoft.FSharp.Core.Operators: Int32 ToIntWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], T
-Microsoft.FSharp.Core.Operators: Int64 ToInt64WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int64], T
-Microsoft.FSharp.Core.Operators: IntPtr ToIntPtrWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.IntPtr], T
-Microsoft.FSharp.Core.Operators: SByte ToSByteWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], T
-Microsoft.FSharp.Core.Operators: Single ToSingleWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Single], T
-Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_RangeStepWithWitnesses[T,TStep](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TStep,T]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TStep], T, TStep, T
-Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_RangeWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T, T
-Microsoft.FSharp.Core.Operators: System.Decimal ToDecimalWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Decimal], T
-Microsoft.FSharp.Core.Operators: T AbsWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T AcosWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T AsinWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T AtanWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T CeilingWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T CosWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T CoshWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T ExpWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T FloorWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T Log10WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T LogWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T PowIntegerWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T, Int32
-Microsoft.FSharp.Core.Operators: T RoundWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T SinWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T SinhWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T TanWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T TanhWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T TruncateWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T op_BitwiseAndWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T, T
-Microsoft.FSharp.Core.Operators: T op_BitwiseOrWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T, T
-Microsoft.FSharp.Core.Operators: T op_ExclusiveOrWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T, T
-Microsoft.FSharp.Core.Operators: T op_ExponentiationWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TResult,T]], T, TResult
-Microsoft.FSharp.Core.Operators: T op_LeftShiftWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], T, Int32
-Microsoft.FSharp.Core.Operators: T op_LogicalNotWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T op_RightShiftWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], T, Int32
-Microsoft.FSharp.Core.Operators: T op_UnaryNegationWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T op_UnaryPlusWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
-Microsoft.FSharp.Core.Operators: T2 Atan2WithWitnesses[T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T1,T2]], T1, T1
-Microsoft.FSharp.Core.Operators: T3 op_AdditionWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
-Microsoft.FSharp.Core.Operators: T3 op_DivisionWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
-Microsoft.FSharp.Core.Operators: T3 op_ModulusWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
-Microsoft.FSharp.Core.Operators: T3 op_MultiplyWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
-Microsoft.FSharp.Core.Operators: T3 op_SubtractionWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
-Microsoft.FSharp.Core.Operators: TResult SqrtWithWitnesses[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], T
-Microsoft.FSharp.Core.Operators: UInt16 ToUInt16WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt16], T
-Microsoft.FSharp.Core.Operators: UInt32 ToUInt32WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt32], T
-Microsoft.FSharp.Core.Operators: UInt64 ToUInt64WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt64], T
-Microsoft.FSharp.Core.Operators: UIntPtr ToUIntPtrWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UIntPtr], T
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToByteWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToUInt8WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Char] ToCharWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Char], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Decimal] ToDecimalWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Decimal], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Double] ToDoubleWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Double], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Double] ToFloatWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Double], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int16] ToInt16WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int16], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int32] ToInt32WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int32] ToIntWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int64] ToInt64WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int64], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.IntPtr] ToIntPtrWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.IntPtr], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.SByte] ToInt8WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.SByte] ToSByteWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Single] ToFloat32WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Single], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Single] ToSingleWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Single], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt16] ToUInt16WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt16], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt32] ToUInt32WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt32], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt64] ToUInt64WithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt64], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UIntPtr] ToUIntPtrWithWitnesses[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UIntPtr], System.Nullable`1[T]
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_DivideQmarkWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, System.Nullable`1[T2]
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_MinusQmarkWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, System.Nullable`1[T2]
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_MultiplyQmarkWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, System.Nullable`1[T2]
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_PercentQmarkWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, System.Nullable`1[T2]
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_PlusQmarkWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, System.Nullable`1[T2]
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkDivideQmarkWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], System.Nullable`1[T2]
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkDivideWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], T2
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkMinusQmarkWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], System.Nullable`1[T2]
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkMinusWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], T2
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkMultiplyQmarkWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], System.Nullable`1[T2]
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkMultiplyWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], T2
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkPercentQmarkWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], System.Nullable`1[T2]
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkPercentWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], T2
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkPlusQmarkWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], System.Nullable`1[T2]
-Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkPlusWithWitnesses[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], T2
-Microsoft.FSharp.Linq.QueryBuilder: System.Nullable`1[TValue] AverageByNullableWithWitnesses[T,Q,TValue](Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,TValue]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TValue], Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[TValue,TValue]], Microsoft.FSharp.Linq.QuerySource`2[T,Q], Microsoft.FSharp.Core.FSharpFunc`2[T,System.Nullable`1[TValue]]
-Microsoft.FSharp.Linq.QueryBuilder: System.Nullable`1[TValue] SumByNullableWithWitnesses[T,Q,TValue](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TValue], Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[TValue,TValue]], Microsoft.FSharp.Linq.QuerySource`2[T,Q], Microsoft.FSharp.Core.FSharpFunc`2[T,System.Nullable`1[TValue]]
-Microsoft.FSharp.Linq.QueryBuilder: TValue AverageByWithWitnesses[T,Q,TValue](Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,TValue]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TValue], Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[TValue,TValue]], Microsoft.FSharp.Linq.QuerySource`2[T,Q], Microsoft.FSharp.Core.FSharpFunc`2[T,TValue]
-Microsoft.FSharp.Linq.QueryBuilder: TValue SumByWithWitnesses[T,Q,TValue](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TValue], Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[TValue,TValue]], Microsoft.FSharp.Linq.QuerySource`2[T,Q], Microsoft.FSharp.Core.FSharpFunc`2[T,TValue]
+Microsoft.FSharp.Core.Operators+Checked: Byte ToByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], T
+Microsoft.FSharp.Core.Operators+Checked: Char ToChar$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Char], T
+Microsoft.FSharp.Core.Operators+Checked: Int16 ToInt16$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int16], T
+Microsoft.FSharp.Core.Operators+Checked: Int32 ToInt32$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], T
+Microsoft.FSharp.Core.Operators+Checked: Int32 ToInt$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], T
+Microsoft.FSharp.Core.Operators+Checked: Int64 ToInt64$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int64], T
+Microsoft.FSharp.Core.Operators+Checked: IntPtr ToIntPtr$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.IntPtr], T
+Microsoft.FSharp.Core.Operators+Checked: SByte ToSByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], T
+Microsoft.FSharp.Core.Operators+Checked: T op_UnaryNegation$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators+Checked: T3 op_Addition$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
+Microsoft.FSharp.Core.Operators+Checked: T3 op_Multiply$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
+Microsoft.FSharp.Core.Operators+Checked: T3 op_Subtraction$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
+Microsoft.FSharp.Core.Operators+Checked: UInt16 ToUInt16$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt16], T
+Microsoft.FSharp.Core.Operators+Checked: UInt32 ToUInt32$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt32], T
+Microsoft.FSharp.Core.Operators+Checked: UInt64 ToUInt64$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt64], T
+Microsoft.FSharp.Core.Operators+Checked: UIntPtr ToUIntPtr$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UIntPtr], T
+Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_Equality$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], T, T
+Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_GreaterThanOrEqual$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TResult,System.Boolean]], T, TResult
+Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_GreaterThan$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TResult,System.Boolean]], T, TResult
+Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_Inequality$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], T, T
+Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_LessThanOrEqual$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TResult,System.Boolean]], T, TResult
+Microsoft.FSharp.Core.Operators+NonStructuralComparison: Boolean op_LessThan$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TResult,System.Boolean]], T, TResult
+Microsoft.FSharp.Core.Operators+NonStructuralComparison: Int32 Compare$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], T, T
+Microsoft.FSharp.Core.Operators+NonStructuralComparison: T Max$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], T, T
+Microsoft.FSharp.Core.Operators+NonStructuralComparison: T Min$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], T, T
+Microsoft.FSharp.Core.Operators: Byte ToByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], T
+Microsoft.FSharp.Core.Operators: Char ToChar$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Char], T
+Microsoft.FSharp.Core.Operators: Double ToDouble$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Double], T
+Microsoft.FSharp.Core.Operators: Int16 ToInt16$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int16], T
+Microsoft.FSharp.Core.Operators: Int32 Sign$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], T
+Microsoft.FSharp.Core.Operators: Int32 ToInt32$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], T
+Microsoft.FSharp.Core.Operators: Int32 ToInt$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], T
+Microsoft.FSharp.Core.Operators: Int64 ToInt64$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int64], T
+Microsoft.FSharp.Core.Operators: IntPtr ToIntPtr$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.IntPtr], T
+Microsoft.FSharp.Core.Operators: SByte ToSByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], T
+Microsoft.FSharp.Core.Operators: Single ToSingle$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Single], T
+Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_RangeStep$W[T,TStep](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TStep,T]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TStep], T, TStep, T
+Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_Range$W[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T, T
+Microsoft.FSharp.Core.Operators: System.Decimal ToDecimal$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Decimal], T
+Microsoft.FSharp.Core.Operators: T Abs$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Acos$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Asin$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Atan$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Ceiling$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Cos$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Cosh$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Exp$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Floor$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Log10$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Log$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T PowInteger$W[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T, Int32
+Microsoft.FSharp.Core.Operators: T Round$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Sin$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Sinh$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Tan$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Tanh$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T Truncate$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T op_BitwiseAnd$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T, T
+Microsoft.FSharp.Core.Operators: T op_BitwiseOr$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T, T
+Microsoft.FSharp.Core.Operators: T op_ExclusiveOr$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T, T
+Microsoft.FSharp.Core.Operators: T op_Exponentiation$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TResult,T]], T, TResult
+Microsoft.FSharp.Core.Operators: T op_LeftShift$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], T, Int32
+Microsoft.FSharp.Core.Operators: T op_LogicalNot$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T op_RightShift$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T]], T, Int32
+Microsoft.FSharp.Core.Operators: T op_UnaryNegation$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T op_UnaryPlus$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T
+Microsoft.FSharp.Core.Operators: T2 Atan2$W[T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T1,T2]], T1, T1
+Microsoft.FSharp.Core.Operators: T3 op_Addition$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
+Microsoft.FSharp.Core.Operators: T3 op_Division$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
+Microsoft.FSharp.Core.Operators: T3 op_Modulus$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
+Microsoft.FSharp.Core.Operators: T3 op_Multiply$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
+Microsoft.FSharp.Core.Operators: T3 op_Subtraction$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, T2
+Microsoft.FSharp.Core.Operators: TResult Sqrt$W[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], T
+Microsoft.FSharp.Core.Operators: UInt16 ToUInt16$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt16], T
+Microsoft.FSharp.Core.Operators: UInt32 ToUInt32$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt32], T
+Microsoft.FSharp.Core.Operators: UInt64 ToUInt64$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt64], T
+Microsoft.FSharp.Core.Operators: UIntPtr ToUIntPtr$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UIntPtr], T
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToUInt8$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Char] ToChar$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Char], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Decimal] ToDecimal$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Decimal], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Double] ToDouble$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Double], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Double] ToFloat$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Double], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int16] ToInt16$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int16], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int32] ToInt32$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int32] ToInt$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int64] ToInt64$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int64], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.IntPtr] ToIntPtr$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.IntPtr], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.SByte] ToInt8$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.SByte] ToSByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Single] ToFloat32$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Single], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Single] ToSingle$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Single], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt16] ToUInt16$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt16], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt32] ToUInt32$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt32], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt64] ToUInt64$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UInt64], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UIntPtr] ToUIntPtr$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.UIntPtr], System.Nullable`1[T]
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_DivideQmark$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, System.Nullable`1[T2]
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_MinusQmark$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, System.Nullable`1[T2]
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_MultiplyQmark$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, System.Nullable`1[T2]
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_PercentQmark$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, System.Nullable`1[T2]
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_PlusQmark$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], T1, System.Nullable`1[T2]
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkDivideQmark$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], System.Nullable`1[T2]
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkDivide$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], T2
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkMinusQmark$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], System.Nullable`1[T2]
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkMinus$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], T2
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkMultiplyQmark$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], System.Nullable`1[T2]
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkMultiply$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], T2
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkPercentQmark$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], System.Nullable`1[T2]
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkPercent$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], T2
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkPlusQmark$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], System.Nullable`1[T2]
+Microsoft.FSharp.Linq.NullableOperators: System.Nullable`1[T3] op_QmarkPlus$W[T1,T2,T3](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,T3]], System.Nullable`1[T1], T2
+Microsoft.FSharp.Linq.QueryBuilder: System.Nullable`1[TValue] AverageByNullable$W[T,Q,TValue](Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,TValue]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TValue], Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[TValue,TValue]], Microsoft.FSharp.Linq.QuerySource`2[T,Q], Microsoft.FSharp.Core.FSharpFunc`2[T,System.Nullable`1[TValue]]
+Microsoft.FSharp.Linq.QueryBuilder: System.Nullable`1[TValue] SumByNullable$W[T,Q,TValue](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TValue], Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[TValue,TValue]], Microsoft.FSharp.Linq.QuerySource`2[T,Q], Microsoft.FSharp.Core.FSharpFunc`2[T,System.Nullable`1[TValue]]
+Microsoft.FSharp.Linq.QueryBuilder: TValue AverageBy$W[T,Q,TValue](Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,TValue]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TValue], Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[TValue,TValue]], Microsoft.FSharp.Linq.QuerySource`2[T,Q], Microsoft.FSharp.Core.FSharpFunc`2[T,TValue]
+Microsoft.FSharp.Linq.QueryBuilder: TValue SumBy$W[T,Q,TValue](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TValue], Microsoft.FSharp.Core.FSharpFunc`2[TValue,Microsoft.FSharp.Core.FSharpFunc`2[TValue,TValue]], Microsoft.FSharp.Linq.QuerySource`2[T,Q], Microsoft.FSharp.Core.FSharpFunc`2[T,TValue]
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr CallWithWitnesses(Microsoft.FSharp.Quotations.FSharpExpr, System.Reflection.MethodInfo, System.Reflection.MethodInfo, Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr]
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr CallWithWitnesses(System.Reflection.MethodInfo, System.Reflection.MethodInfo, Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr]
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpExpr],System.Reflection.MethodInfo,System.Reflection.MethodInfo,Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr],Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr]]] CallWithWitnessesPattern(Microsoft.FSharp.Quotations.FSharpExpr)"
