@@ -1950,9 +1950,14 @@ type FSharpCheckFileResults
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> 
-                [| for symbolUse in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) do
-                     if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
-                        yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
+                let res = ResizeArray()
+                scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) 
+                |> ChunkedArray.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range)
+                |> ChunkedArray.iter (fun symbolUse ->
+                    if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
+                        res.Add(FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range))
+                )
+                res.ToArray())
          |> async.Return 
 
     member __.GetVisibleNamespacesAndModulesAtPoint(pos: pos) = 
@@ -2150,24 +2155,28 @@ type FSharpCheckProjectResults
         let (tcGlobals, _tcImports, _thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
 
         tcSymbolUses
-        |> Seq.collect (fun r -> r.GetUsesOfSymbol symbol.Item)
-        |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) 
-        |> Seq.filter (fun symbolUse -> symbolUse.ItemOccurence <> ItemOccurence.RelatedText) 
-        |> Seq.map (fun symbolUse -> FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)) 
-        |> Seq.toArray
+        |> Seq.map (fun r -> r.GetUsesOfSymbol symbol.Item)
+        |> ChunkedArray.concat
+        |> ChunkedArray.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) 
+        |> ChunkedArray.filter (fun symbolUse -> symbolUse.ItemOccurence <> ItemOccurence.RelatedText) 
+        |> ChunkedArray.map (fun symbolUse -> FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)) 
+        |> ChunkedArray.toArray
         |> async.Return
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member __.GetAllUsesOfAllSymbols() = 
         let (tcGlobals, tcImports, thisCcu, ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
         let cenv = SymbolEnv(tcGlobals, thisCcu, Some ccuSig, tcImports)
+        let res = ResizeArray()
 
-        [| for r in tcSymbolUses do
-             for symbolUseChunk in r.AllUsesOfSymbols do
-                for symbolUse in symbolUseChunk do
+        tcSymbolUses
+        |> List.iter (fun r ->
+            r.AllUsesOfSymbols
+            |> ChunkedArray.iter (fun symbolUse ->
                 if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
                   let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
-                  yield FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |]
+                  res.Add(FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range))))
+        res.ToArray()
         |> async.Return
 
     member __.ProjectContext = 

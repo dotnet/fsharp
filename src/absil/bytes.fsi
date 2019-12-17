@@ -64,6 +64,10 @@ module internal ChunkedArray =
 
     val choose: ('T -> 'U option) -> ChunkedArray<'T> -> ChunkedArray<'U>
 
+    val distinctBy: ('T -> 'Key) -> ChunkedArray<'T> -> ChunkedArray<'T> when 'Key : equality
+
+    val concat: ChunkedArray<'T> seq -> ChunkedArray<'T>
+
     val toArray: ChunkedArray<'T> -> 'T[]
 
     val toReversedList: ChunkedArray<'T> -> 'T list

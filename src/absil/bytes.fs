@@ -247,6 +247,23 @@ module ChunkedArray =
                     | _ -> ())
             res.ToChunkedArray()
 
+    let distinctBy projection (chunkedArr: ChunkedArray<_>) =
+        if chunkedArr.IsEmpty then ChunkedArray<_>.Empty
+        else
+            let hashSet = Collections.Generic.HashSet<_>(HashIdentity.Structural<_>)
+            let res = ChunkedArrayBuilder<_>.Create(MinChunkSize, DefaultChunkSize)
+            chunkedArr.ForEachChunk(fun chunk ->
+                for item in chunk do
+                    if hashSet.Add(projection item) then
+                        res.Add item)
+            res.ToChunkedArray()
+
+    let concat (chunkedArrs: ChunkedArray<_> seq) =
+        let res = ChunkedArrayBuilder<_>.Create(MinChunkSize, DefaultChunkSize)
+        chunkedArrs
+        |> Seq.iter (fun chunkedArr -> chunkedArr |> iter res.Add)
+        res.ToChunkedArray()
+
     let toArray (chunkedArr: ChunkedArray<_>) =
         chunkedArr.ToArray()
 
