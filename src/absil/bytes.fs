@@ -144,6 +144,7 @@ type SafeUnmanagedMemoryStream =
         base.Dispose disposing
         if not x.isDisposed then
             x.hold <- null // Null out so it can be collected.
+            x.isDisposed <- true
 
 [<Sealed>]
 type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
