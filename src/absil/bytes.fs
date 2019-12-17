@@ -102,7 +102,8 @@ type ChunkedArrayBuilder<'T> private (minChunkSize: int, buffer: 'T []) =
         data.CopyTo(reserved)
 
     member x.Add(data: 'T) =
-        x.AddSpan(ReadOnlySpan(Unsafe.AsPointer(&Unsafe.AsRef(&data)), 1))
+        let reserved = x.Reserve 1
+        reserved.[0] <- data
 
     member x.ForEachBuilder f =
         match box x.NextOrPrevious with
