@@ -212,7 +212,7 @@ let main argv = 0"""
                 typeCheckResults.Errors
                 |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
 
-            Assert.AreEqual(Array.length expectedTypeErrors, errors.Length, sprintf "Type check errors: %A" typeCheckResults.Errors)
+            Assert.AreEqual(Array.length expectedTypeErrors, errors.Length, sprintf "Type check errors: %A" errors)
 
             Array.zip errors expectedTypeErrors
             |> Array.iter (fun (info, expectedError) ->

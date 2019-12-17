@@ -1893,9 +1893,9 @@ type IRawFSharpAssemblyData =
     /// in the language service
     abstract TryGetILModuleDef: unit -> ILModuleDef option
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
+    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
+    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
     /// The identity of the module
@@ -3629,7 +3629,7 @@ let IsReflectedDefinitionsResource (r: ILResource) =
 
 let MakeILResource rName bytes = 
     { Name = rName
-      Location = ILResourceLocation.LocalOut bytes
+      Location = ILResourceLocation.Local(ByteMemory.FromArray(bytes).AsReadOnly())
       Access = ILResourceAccess.Public
       CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
       MetadataIndex = NoMetadataIdx }
@@ -3638,7 +3638,7 @@ let PickleToResource inMem file (g: TcGlobals) scope rName p x =
     let file = PathMap.apply g.pathMap file
 
     { Name = rName
-      Location = (let bytes = pickleObjWithDanglingCcus inMem file g scope p x in ILResourceLocation.LocalOut bytes)
+      Location = (let bytes = pickleObjWithDanglingCcus inMem file g scope p x in ILResourceLocation.Local(ByteMemory.FromArray(bytes).AsReadOnly()))
       Access = ILResourceAccess.Public
       CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
       MetadataIndex = NoMetadataIdx }
@@ -3696,7 +3696,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     let sigFileName = Path.ChangeExtension(filename, "sigdata")
                     if not (FileSystem.SafeExists sigFileName) then 
                         error(Error(FSComp.SR.buildExpectedSigdataFile (FileSystem.GetFullPathShim sigFileName), m))
-                    [ (ilShortAssemName, fun () -> FileSystem.ReadAllBytesShim sigFileName)]
+                    [ (ilShortAssemName, fun () -> ByteMemory.FromFile(sigFileName, FileAccess.Read, canShadowCopy=true).AsReadOnly())]
                 else
                     sigDataReaders
             sigDataReaders
@@ -3711,7 +3711,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     let optDataFile = Path.ChangeExtension(filename, "optdata")
                     if not (FileSystem.SafeExists optDataFile) then 
                         error(Error(FSComp.SR.buildExpectedFileAlongSideFSharpCore(optDataFile, FileSystem.GetFullPathShim optDataFile), m))
-                    [ (ilShortAssemName, (fun () -> FileSystem.ReadAllBytesShim optDataFile))]
+                    [ (ilShortAssemName, (fun () -> ByteMemory.FromFile(optDataFile, FileAccess.Read, canShadowCopy=true).AsReadOnly()))]
                 else
                     optDataReaders
             optDataReaders
