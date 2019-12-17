@@ -19,12 +19,20 @@ module internal Bytes =
     val stringAsUnicodeNullTerminated: string -> byte[]
     val stringAsUtf8NullTerminated: string -> byte[]
 
-[<Sealed>]
+type ChunkedArrayForEachDelegate<'T> = delegate of Span<'T> -> unit
+
+[<Struct;NoEquality;NoComparison>]
 type ChunkedArray<'T> =
 
     member Length: int
 
+    member ForEachChunk: ChunkedArrayForEachDelegate<'T> -> unit
+
     member ToArray: unit -> 'T[]
+
+    member IsEmpty: bool
+
+    static member Empty: ChunkedArray<'T>
 
 /// Not thread safe.
 [<Sealed>]
@@ -32,12 +40,33 @@ type ChunkedArrayBuilder<'T> =
 
     member Reserve: length: int -> Span<'T>
 
-    member Write: data: ReadOnlySpan<'T> -> unit
+    member AddSpan: data: ReadOnlySpan<'T> -> unit
+
+    member Add: data: 'T -> unit
+
+    member RemoveAll: predicate: ('T -> bool) -> unit
+
+    member ForEachChunk: ChunkedArrayForEachDelegate<'T> -> unit
 
     /// When the builder is turned into a chunked array, it is considered frozen.
     member ToChunkedArray: unit -> ChunkedArray<'T>
 
     static member Create: minChunkSize: int * startingCapacity: int -> ChunkedArrayBuilder<'T>
+
+[<RequireQualifiedAccess>]
+module ChunkedArray =
+
+    val iter: ('T -> unit) -> ChunkedArray<'T> -> unit
+
+    val map: ('T -> 'U) -> ChunkedArray<'T> -> ChunkedArray<'U>
+
+    val filter: ('T -> bool) -> ChunkedArray<'T> -> ChunkedArray<'T>
+
+    val choose: ('T -> 'U option) -> ChunkedArray<'T> -> ChunkedArray<'U>
+
+    val toArray: ChunkedArray<'T> -> 'T[]
+
+    val toReversedList: ChunkedArray<'T> -> 'T list
 
 /// May be backed by managed or unmanaged memory, or memory mapped file.
 [<AbstractClass>]

@@ -12,6 +12,7 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Text
@@ -297,10 +298,10 @@ type internal TcResolutions =
     member CapturedExpressionTypings : ResizeArray<pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range>
 
     /// Exact name resolutions
-    member CapturedNameResolutions : ResizeArray<CapturedNameResolution>
+    member CapturedNameResolutions : ChunkedArray<CapturedNameResolution>
 
     /// Represents all the resolutions of names to groups of methods.
-    member CapturedMethodGroupResolutions : ResizeArray<CapturedNameResolution>
+    member CapturedMethodGroupResolutions : ChunkedArray<CapturedNameResolution>
 
     /// Represents the empty set of resolutions 
     static member Empty : TcResolutions
@@ -318,10 +319,10 @@ type TcSymbolUseData =
 type internal TcSymbolUses = 
 
     /// Get all the uses of a particular item within the file
-    member GetUsesOfSymbol : Item -> TcSymbolUseData[]
+    member GetUsesOfSymbol : Item -> ChunkedArray<TcSymbolUseData>
 
     /// All the uses of all items within the file
-    member AllUsesOfSymbols : TcSymbolUseData[][]
+    member AllUsesOfSymbols : ChunkedArray<TcSymbolUseData>
 
     /// Get the locations of all the printf format specifiers in the file
     member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]

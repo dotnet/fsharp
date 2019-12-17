@@ -36,6 +36,8 @@ module internal Bytes =
     let stringAsUnicodeNullTerminated (s:string) = 
         Array.append (System.Text.Encoding.Unicode.GetBytes s) (ofInt32Array [| 0x0;0x0 |])
 
+type ChunkedArrayForEachDelegate<'T> = delegate of Span<'T> -> unit
+
 /// Not thread safe.
 /// Loosely based on StringBuilder/BlobBuilder
 [<Sealed>]
@@ -46,16 +48,23 @@ type ChunkedArrayBuilder<'T> private (minChunkSize: int, buffer: 'T []) =
     member val private NextOrPrevious = Unchecked.defaultof<ChunkedArrayBuilder<'T>> with get, set
     member val private Position = 0 with get, set
     member val private IsFrozen = false with get, set
+    member val private ChunkCount = 1 with get, set
 
     // [1:first]->[2]->[3:last]<-[4:head]
     //     ^_______________|
     member private x.FirstChunk = x.NextOrPrevious.NextOrPrevious
+    
+    member private x.CheckIsFrozen() =
+        if x.IsFrozen then
+            invalidOp "Chunked array builder is frozen and cannot add or remove items."
+
+    member x.IsEmpty = x.ChunkCount = 1 && x.ChunkLength = 0
 
     member x.Reserve length =
-        if x.IsFrozen then
-            invalidOp "Chunked array builder is frozen and cannot reserve anymore memory."
+        x.CheckIsFrozen()
 
         if length + x.Position > x.Buffer.Length then
+            x.ChunkCount <- x.ChunkCount + 1
             let newChunk = 
                 ChunkedArrayBuilder<'T>(
                     minChunkSize, 
@@ -88,57 +97,164 @@ type ChunkedArrayBuilder<'T> private (minChunkSize: int, buffer: 'T []) =
         x.Position <- x.ChunkLength
         reserved
 
-    member x.Write(data: ReadOnlySpan<'T>) =
+    member x.AddSpan(data: ReadOnlySpan<'T>) =
         let reserved = x.Reserve data.Length
         data.CopyTo(reserved)
 
-    member x.ForEachChunk f =
+    member x.Add(data: 'T) =
+        x.AddSpan(ReadOnlySpan(Unsafe.AsPointer(&Unsafe.AsRef(&data)), 1))
+
+    member x.ForEachBuilder f =
         match box x.NextOrPrevious with
         | null -> ()
         | _ ->
             match box x.FirstChunk with
             | null ->
-                f x.NextOrPrevious.Buffer x.NextOrPrevious.ChunkLength
+                f x.NextOrPrevious
             | _ ->
                 let firstChunk = x.FirstChunk
-                f firstChunk.Buffer firstChunk.ChunkLength
+                f firstChunk
                 let mutable chunk = firstChunk.NextOrPrevious
                 while chunk <> firstChunk do
-                    f chunk.Buffer chunk.ChunkLength
+                    f chunk
                     chunk <- chunk.NextOrPrevious
 
         if x.ChunkLength > 0 then
-            f x.Buffer x.ChunkLength
+            f x
+
+    member x.ForEachChunk (f: ChunkedArrayForEachDelegate<'T>) =
+        x.ForEachBuilder (fun builder -> 
+            // Note: This could happen due to removing items. 
+            //       It might be better to remove the node itself instead of checking for the length in the for loop.
+            if builder.ChunkLength > 0 then
+                f.Invoke(Span(builder.Buffer, 0, builder.ChunkLength)))
+
+    member x.RemoveAll predicate =
+        x.CheckIsFrozen()
+        x.ForEachBuilder(fun builder ->
+            let removeQueue = Collections.Generic.Queue()
+
+            for i = 0 to builder.ChunkLength - 1 do
+                let item = builder.Buffer.[i]
+                if predicate item then
+                    removeQueue.Enqueue i
+
+            while removeQueue.Count > 0 do
+                let indexToRemove = removeQueue.Dequeue()
+
+                if indexToRemove = builder.ChunkLength - 1 then
+                    builder.Buffer.[indexToRemove] <- Unchecked.defaultof<_>
+                else
+                    for i = indexToRemove to builder.ChunkLength - 2 do
+                        builder.Buffer.[i] <- builder.Buffer.[i + 1]
+                    builder.Buffer.[builder.ChunkLength - 1] <- Unchecked.defaultof<_>
+
+                builder.ChunkLength <- builder.ChunkLength - 1
+              
+            assert (builder.ChunkLength >= 0)
+
+            if builder.ChunkLength = 0 then
+                x.ChunkCount <- x.ChunkCount - 1)
 
     static member Create(minChunkSize, startingCapacity) =
         ChunkedArrayBuilder(
             minChunkSize, 
             Array.zeroCreate<'T> (Math.Max(startingCapacity, minChunkSize)))
                 
-[<Sealed>]
+[<Struct;NoEquality;NoComparison>]
 type ChunkedArray<'T>(builder: ChunkedArrayBuilder<'T>) =
 
-    let lazyLength =
-        lazy
+    member _.Length =
+        match box builder with
+        | null -> 0
+        | _ ->
             let mutable total = 0
-            builder.ForEachChunk (fun _ length -> total <- total + length)
+            builder.ForEachChunk (fun chunk -> total <- total + chunk.Length)
             total
 
-    member _.Length = lazyLength.Value
+    member _.ForEachChunk f = 
+        match box builder with
+        | null -> ()
+        | _ ->
+            builder.ForEachChunk f
 
     member x.ToArray() =
-        let arr = Array.zeroCreate<'T> x.Length
-        let mutable total = 0
-        builder.ForEachChunk (fun buffer length -> 
-            Array.Copy(buffer, 0, arr, total, length)
-            total <- total + length)
-        arr
+        match box builder with
+        | null -> [||]
+        | _ ->
+            let arr = Array.zeroCreate<'T> x.Length
+            let mutable total = 0
+            builder.ForEachChunk (fun chunk -> 
+                chunk.CopyTo(Span(arr, total, chunk.Length))
+                total <- total + chunk.Length)
+            arr
+
+    member x.IsEmpty =
+        match box builder with
+        | null -> true
+        | _ -> builder.IsEmpty
+
+    static member Empty =
+        ChunkedArray<'T> Unchecked.defaultof<_>
 
 type ChunkedArrayBuilder<'T> with
 
     member x.ToChunkedArray() = 
         x.IsFrozen <- true
         ChunkedArray x
+
+[<RequireQualifiedAccess>]
+module ChunkedArray =
+
+    [<Literal>]
+    let MinChunkSize = 16
+
+    [<Literal>]
+    let DefaultChunkSize = 256
+
+    let iter f (chunkedArr: ChunkedArray<_>) =
+        chunkedArr.ForEachChunk(fun chunk ->
+            for item in chunk do
+                f item)
+
+    let map f (chunkedArr: ChunkedArray<_>) =
+        if chunkedArr.IsEmpty then ChunkedArray<_>.Empty
+        else
+            let res = ChunkedArrayBuilder<_>.Create(MinChunkSize, DefaultChunkSize)
+            chunkedArr.ForEachChunk(fun chunk ->
+                for item in chunk do
+                    res.Add (f item))
+            res.ToChunkedArray()
+
+    let filter predicate (chunkedArr: ChunkedArray<_>) =
+        if chunkedArr.IsEmpty then ChunkedArray<_>.Empty
+        else
+            let res = ChunkedArrayBuilder<_>.Create(MinChunkSize, DefaultChunkSize)
+            chunkedArr.ForEachChunk(fun chunk ->
+                for item in chunk do
+                    if predicate item then
+                        res.Add item)
+            res.ToChunkedArray()
+
+    let choose chooser (chunkedArr: ChunkedArray<_>) =
+        if chunkedArr.IsEmpty then ChunkedArray<_>.Empty
+        else
+            let res = ChunkedArrayBuilder<_>.Create(MinChunkSize, DefaultChunkSize)
+            chunkedArr.ForEachChunk(fun chunk ->
+                for item in chunk do
+                    match chooser item with
+                    | Some mappedItem -> res.Add mappedItem
+                    | _ -> ())
+            res.ToChunkedArray()
+
+    let toArray (chunkedArr: ChunkedArray<_>) =
+        chunkedArr.ToArray()
+
+    let toReversedList (chunkedArr: ChunkedArray<_>) =
+        let mutable res = []
+        chunkedArr
+        |> iter (fun item -> res <- item :: res)
+        res
 
 [<AbstractClass>]
 type ByteMemory () =
@@ -507,7 +623,7 @@ type internal ByteBuffer =
         buf.EmitByteSpan(ReadOnlySpan i)
 
     member buf.EmitByteSpan (span: ReadOnlySpan<byte>) =
-        buf.bbArray.Write span
+        buf.bbArray.AddSpan span
         buf.bbCurrent <- buf.bbCurrent + span.Length
 
     member buf.EmitInt32AsUInt16 n = 

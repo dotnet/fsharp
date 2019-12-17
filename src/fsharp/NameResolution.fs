@@ -1655,10 +1655,10 @@ type CapturedNameResolution(p: pos, i: Item, tpinst, io: ItemOccurence, de: Disp
 type TcResolutions
     (capturedEnvs: ResizeArray<range * NameResolutionEnv * AccessorDomain>,
      capturedExprTypes: ResizeArray<pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range>,
-     capturedNameResolutions: ResizeArray<CapturedNameResolution>,
-     capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>) =
+     capturedNameResolutions: ChunkedArray<CapturedNameResolution>,
+     capturedMethodGroupResolutions: ChunkedArray<CapturedNameResolution>) =
 
-    static let empty = TcResolutions(ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0)
+    static let empty = TcResolutions(ResizeArray 0, ResizeArray 0, ChunkedArray<_>.Empty, ChunkedArray<_>.Empty)
 
     member this.CapturedEnvs = capturedEnvs
     member this.CapturedExpressionTypings = capturedExprTypes
@@ -1679,24 +1679,16 @@ type TcSymbolUseData =
 /// This is a memory-critical data structure - allocations of this data structure and its immediate contents
 /// is one of the highest memory long-lived data structures in typical uses of IDEs. Not many of these objects
 /// are allocated (one per file), but they are large because the allUsesOfAllSymbols array is large.
-type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) =
-
-    // Make sure we only capture the information we really need to report symbol uses
-    let allUsesOfSymbols =
-        capturedNameResolutions
-        |> ResizeArray.mapToSmallArrayChunks (fun cnr -> { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range })
-
-    let capturedNameResolutions = ()
-    do ignore capturedNameResolutions // don't capture this!
+type TcSymbolUses(g, allUsesOfSymbols: ChunkedArray<TcSymbolUseData>, formatSpecifierLocations: (range * int)[]) =
 
     member this.GetUsesOfSymbol item =
-        // This member returns what is potentially a very large array, which may approach the size constraints of the Large Object Heap.
-        // This is unlikely in practice, though, because we filter down the set of all symbol uses to those specifically for the given `item`.
-        // Consequently we have a much lesser chance of ending up with an array large enough to be promoted to the LOH.
-        [| for symbolUseChunk in allUsesOfSymbols do
-            for symbolUse in symbolUseChunk do
+        let usesBuilder = ChunkedArrayBuilder<_>.Create(64, 128)
+        allUsesOfSymbols.ForEachChunk(fun chunk ->
+            for symbolUse in chunk do
                 if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.Item) then
-                    yield symbolUse |]
+                    usesBuilder.Add(symbolUse) 
+        )
+        usesBuilder.ToChunkedArray()
 
     member this.AllUsesOfSymbols = allUsesOfSymbols
 
@@ -1706,7 +1698,7 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
 type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
     let capturedEnvs = ResizeArray<_>()
     let capturedExprTypings = ResizeArray<_>()
-    let capturedNameResolutions = ResizeArray<_>()
+    let capturedNameResolutionsBuilder = ChunkedArrayBuilder<_>.Create(64, 128)
     let capturedFormatSpecifierLocations = ResizeArray<_>()
 
     let capturedNameResolutionIdentifiers =
@@ -1721,7 +1713,7 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
                     member __.GetHashCode ((m, _)) = hash m
                     member __.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual g item1 item2 } )
 
-    let capturedMethodGroupResolutions = ResizeArray<_>()
+    let capturedMethodGroupResolutionsBuilder = ChunkedArrayBuilder<_>.Create(64, 128)
     let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
     let allowedRange (m: range) = not m.IsSynthetic
 
@@ -1741,11 +1733,26 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
                 { SourceText = sourceText
                   LineStartPositions = positions })
 
+    let capturedNameResolutions =
+        lazy capturedNameResolutionsBuilder.ToChunkedArray()
+
+    let capturedMethodGroupResolutions =
+        lazy capturedMethodGroupResolutionsBuilder.ToChunkedArray()
+
     member this.GetResolutions() =
-        TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
+        TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions.Value, capturedMethodGroupResolutions.Value)
 
     member this.GetSymbolUses() =
-        TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
+        // Make sure we only capture the information we really need to report symbol uses
+        let allUsesOfSymbols =
+            let mappedBuilder = ChunkedArrayBuilder<_>.Create(64, 128)
+            capturedNameResolutions.Value.ForEachChunk(fun chunk ->
+                for cnr in chunk do
+                    mappedBuilder.Add { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range }
+            )
+            mappedBuilder.ToChunkedArray()
+
+        TcSymbolUses(g, allUsesOfSymbols, capturedFormatSpecifierLocations.ToArray())
 
     member this.GetOpenDeclarations() =
         capturedOpenDeclarations |> Seq.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) |> Seq.toArray
@@ -1765,8 +1772,8 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
             // for the same identifier at the same location.
             if allowedRange m then
                 if replace then
-                    capturedNameResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
-                    capturedMethodGroupResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
+                    capturedNameResolutionsBuilder.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
+                    capturedMethodGroupResolutionsBuilder.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
                 else
                     let alreadyDone =
                         match item with
@@ -1784,8 +1791,8 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
                             | _ -> false
 
                     if not alreadyDone then
-                        capturedNameResolutions.Add(CapturedNameResolution(endPos, item, tpinst, occurenceType, denv, nenv, ad, m))
-                        capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos, itemMethodGroup, [], occurenceType, denv, nenv, ad, m))
+                        capturedNameResolutionsBuilder.Add(CapturedNameResolution(endPos, item, tpinst, occurenceType, denv, nenv, ad, m))
+                        capturedMethodGroupResolutionsBuilder.Add(CapturedNameResolution(endPos, itemMethodGroup, [], occurenceType, denv, nenv, ad, m))
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) =
             capturedFormatSpecifierLocations.Add((m, numArgs))

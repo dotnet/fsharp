@@ -40,6 +40,7 @@ open FSharp.Compiler.SourceCodeServices.SymbolHelpers
 
 open Internal.Utilities
 open Internal.Utilities.Collections
+open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 
 [<AutoOpen>]
@@ -257,7 +258,7 @@ type internal TypeCheckInfo
             | ResolveOverloads.Yes -> sResolutions.CapturedNameResolutions 
             | ResolveOverloads.No -> sResolutions.CapturedMethodGroupResolutions
 
-        let quals = quals |> ResizeArray.filter (fun cnr ->  posEq cnr.Pos endOfNamesPos)
+        let quals = quals |> ChunkedArray.filter (fun cnr ->  posEq cnr.Pos endOfNamesPos)
         
         quals
 
@@ -268,7 +269,7 @@ type internal TypeCheckInfo
         let endOfNamesPos = mkPos line colAtEndOfNames
 
         // Logic below expects the list to be in reverse order of resolution
-        let cnrs = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
+        let cnrs = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ChunkedArray.toReversedList
 
         match cnrs, membersByResidue with 
         
@@ -325,7 +326,7 @@ type internal TypeCheckInfo
     
     let TryGetTypeFromNameResolution(line, colAtEndOfNames, membersByResidue, resolveOverloads) = 
         let endOfNamesPos = mkPos line colAtEndOfNames
-        let items = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
+        let items = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ChunkedArray.toReversedList
         
         match items, membersByResidue with 
         | CNR(_,Item.Types(_,(ty::_)),_,_,_,_,_)::_, Some _ -> Some ty
@@ -347,7 +348,7 @@ type internal TypeCheckInfo
         )
 
     let GetNamedParametersAndSettableFields endOfExprPos hasTextChangedSinceLastTypecheck =
-        let cnrs = GetCapturedNameResolutions endOfExprPos ResolveOverloads.No |> ResizeArray.toList |> List.rev
+        let cnrs = GetCapturedNameResolutions endOfExprPos ResolveOverloads.No |> ChunkedArray.toReversedList
         let result =
             match cnrs with
             | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
@@ -1300,9 +1301,9 @@ type internal TypeCheckInfo
             match range with
             | Some range ->
                 sResolutions.CapturedNameResolutions
-                |> Seq.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
+                |> ChunkedArray.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
             | None -> 
-                sResolutions.CapturedNameResolutions :> seq<_>
+                sResolutions.CapturedNameResolutions
 
         let isDisposableTy (ty: TType) =
             protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
@@ -1323,7 +1324,7 @@ type internal TypeCheckInfo
             || Tastops.isRefCellTy g rfinfo.RecdField.FormalType
 
         resolutions
-        |> Seq.choose (fun cnr ->
+        |> ChunkedArray.choose (fun cnr ->
             match cnr with
             // 'seq' in 'seq { ... }' gets colored as keywords
             | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
@@ -1383,7 +1384,7 @@ type internal TypeCheckInfo
             | CNR(_, (Item.ActivePatternCase _ | Item.UnionCase _ | Item.ActivePatternResult _), _, _, _, _, m) ->
                 Some (m, SemanticClassificationType.UnionCase)
             | _ -> None)
-        |> Seq.toArray
+        |> ChunkedArray.toArray
         |> Array.append (sSymbolUses.GetFormatSpecifierLocationsAndArity() |> Array.map (fun m -> fst m, SemanticClassificationType.Printf))
        ) 
        (fun msg -> 
@@ -1935,11 +1936,14 @@ type FSharpCheckFileResults
             (fun () -> [| |])
             (fun scope ->
                 let cenv = scope.SymbolEnv
-                [| for symbolUseChunk in scope.ScopeSymbolUses.AllUsesOfSymbols do
-                    for symbolUse in symbolUseChunk do
+                let res = ResizeArray()
+                scope.ScopeSymbolUses.AllUsesOfSymbols
+                |> ChunkedArray.iter (fun symbolUse ->
                     if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
                         let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
-                        yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
+                        FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)
+                        |> res.Add)
+                res.ToArray())
          |> async.Return 
 
     member __.GetUsesOfSymbolInFile(symbol:FSharpSymbol) = 
