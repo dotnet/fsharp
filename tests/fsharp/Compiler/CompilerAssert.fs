@@ -46,6 +46,7 @@ module CompilerAssert =
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <UseFSharpPreview>true</UseFSharpPreview>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
@@ -211,7 +212,7 @@ let main argv = 0"""
                 typeCheckResults.Errors
                 |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
 
-            Assert.AreEqual(Array.length expectedTypeErrors, errors.Length, sprintf "Type check errors: %A" typeCheckResults.Errors)
+            Assert.AreEqual(Array.length expectedTypeErrors, errors.Length, sprintf "Type check errors: %A" errors)
 
             Array.zip errors expectedTypeErrors
             |> Array.iter (fun (info, expectedError) ->
@@ -236,14 +237,17 @@ let main argv = 0"""
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
+    let CompileExeAndRunWithOptions options (source: string) =
+      compile true options source (fun (errors, outputExe) ->
+
+          if errors.Length > 0 then
+              Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
+
+          executeBuiltApp outputExe
+      )
+
     let CompileExeAndRun (source: string) =
-        compile true [||] source (fun (errors, outputExe) ->
-
-            if errors.Length > 0 then
-                Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
-
-            executeBuiltApp outputExe
-        )
+        CompileExeAndRunWithOptions [||] source
 
     let CompileLibraryAndVerifyILWithOptions options (source: string) (f: ILVerifier -> unit) =
         compile false options source (fun (errors, outputFilePath) ->
@@ -258,7 +262,7 @@ let main argv = 0"""
     let CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
         CompileLibraryAndVerifyILWithOptions [||] source f
 
-    let RunScript (source: string) (expectedErrorMessages: string list) =
+    let RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =
         lock gate <| fun () ->
             // Intialize output and input streams
             use inStream = new StringReader("")
@@ -268,10 +272,11 @@ let main argv = 0"""
             // Build command line arguments & start FSI session
             let argv = [| "C:\\fsi.exe" |]
     #if !NETCOREAPP
-            let allArgs = Array.append argv [|"--noninteractive"|]
+            let args = Array.append argv [|"--noninteractive"|]
     #else
-            let allArgs = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
+            let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
     #endif
+            let allArgs = Array.append args options
 
             let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
             use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
@@ -293,6 +298,8 @@ let main argv = 0"""
                 ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
                     Assert.AreEqual(expectedErrorMessage, errorMessage)
             )
+
+    let RunScript source expectedErrorMessages = RunScriptWithOptions [||] source expectedErrorMessages
 
     let ParseWithErrors (source: string) expectedParseErrors =
         let sourceFileName = "test.fs"

@@ -15,5 +15,7 @@
         <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.Compiler.Private.Scripting.xml" target="lib\netstandard2.0" />
         <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.Compiler.Private.dll" target="lib\netstandard2.0" />
         <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.Compiler.Private.xml" target="lib\netstandard2.0" />
+        <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.DependencyManager.dll" target="lib\netstandard2.0" />
+        <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.DependencyManager.xml" target="lib\netstandard2.0" />
     </files>
 </package>

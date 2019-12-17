@@ -7,7 +7,7 @@ open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FsUnit
 
-#if NETCOREAPP2_0
+#if NETCOREAPP
 let readRefs (folder : string) (projectFile: string) =
     let runProcess (workingDir: string) (exePath: string) (args: string) =
         let psi = System.Diagnostics.ProcessStartInfo()
@@ -65,7 +65,7 @@ let getBackgroundCheckResultsForScriptText (input) =
 
 
 let sysLib nm = 
-#if !NETCOREAPP2_0
+#if !NETCOREAPP
     if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
         let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
         programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\" + nm + ".dll"
@@ -84,7 +84,7 @@ let fsCoreDefaultReference() =
     PathRelativeToTestAssembly "FSharp.Core.dll"
 
 let mkStandardProjectReferences () = 
-#if NETCOREAPP2_0
+#if NETCOREAPP
             let file = "Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj"
             let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0")
             readRefs projDir file
@@ -124,7 +124,7 @@ let mkProjectCommandLineArgs (dllName, fileNames) =
   printfn "dllName = %A, args = %A" dllName args
   args
 
-#if NETCOREAPP2_0
+#if NETCOREAPP
 let mkProjectCommandLineArgsForScript (dllName, fileNames) = 
     [|  yield "--simpleresolution" 
         yield "--noframework" 
@@ -165,7 +165,7 @@ let parseAndCheckFile fileName source options =
 
 let parseAndCheckScript (file, input) = 
 
-#if NETCOREAPP2_0
+#if NETCOREAPP
     let dllName = Path.ChangeExtension(file, ".dll")
     let projName = Path.ChangeExtension(file, ".fsproj")
     let args = mkProjectCommandLineArgsForScript (dllName, [file])
@@ -333,7 +333,7 @@ let assertContainsSymbolWithName name source =
 
 
 let coreLibAssemblyName =
-#if NETCOREAPP2_0
+#if NETCOREAPP
     "System.Runtime"
 #else
     "mscorlib"
