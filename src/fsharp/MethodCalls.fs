@@ -1642,6 +1642,19 @@ let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) =
         errorR (FieldNotMutable (denv, rfinfo.RecdFieldRef, m))
 
 
+/// Generate a witness for the given (solved) constraint.  Five possiblilities are taken
+/// into account.
+///   1. The constraint is solved by a .NET-declared method or an F#-declared method
+///   2. The constraint is solved by an F# record field
+///   3. The constraint is solved by an F# anonymous record field
+///   4. The constraint is considered solved by a "built in" solution
+///   5. The constraint is solved by a closed expression given by a provided method from a type provider
+/// 
+/// In each case an expression is returned where the method is applied to the given arguments, or the
+/// field is dereferenced.
+/// 
+/// None is returned in the cases where the trait has not been solved (e.g. is part of generic code)
+/// or there is an unexpected mismatch of some kind.
 let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
     let sln = 
@@ -1666,10 +1679,10 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                    Choice2Of5  (tinst, rfref, isSetProp)
               | FSAnonRecdFieldSln(anonInfo, tinst, i) -> 
                    Choice3Of5  (anonInfo, tinst, i)
-              | BuiltInSln -> 
-                   Choice5Of5 ()
               | ClosedExprSln expr -> 
                    Choice4Of5 expr
+              | BuiltInSln -> 
+                   Choice5Of5 ()
 
     match sln with
     | Choice1Of5(minfo, methArgTys) -> 
@@ -1748,6 +1761,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             // These are called as F# methods not F# functions
             tryMkCallBuiltInWitness g traitInfo argExprs m
         
+/// Generate a lambda expression for the given solved trait.
 let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
     let witnessInfo = traitInfo.TraitKey
     let argtysl = GenWitnessArgTys g witnessInfo
@@ -1761,5 +1775,6 @@ let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
         //assert ("A constraint witness could not be found for a built-in constraint solution" |> ignore; false)
         //mkOne g m
 
-let GenNonGenericWitnessArgs amap g m (traitInfos: TraitConstraintInfo list) =
+/// Generate the arguments passed for a set of (solved) traits in non-generic code
+let GenWitnessArgs amap g m (traitInfos: TraitConstraintInfo list) =
     [ for traitInfo in traitInfos -> GenWitnessExprLambda amap g m traitInfo ]

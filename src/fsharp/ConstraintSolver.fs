@@ -2824,31 +2824,34 @@ let AddCxTypeIsDelegate denv css m trace ty aty bty =
          (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let CreateCodegenState tcVal g amap = 
-    { g = g
-      amap = amap
-      TcVal = tcVal
-      ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-      InfoReader = new InfoReader(g, amap)
-      codegen = true }
-
+/// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
 let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
-    let css = CreateCodegenState tcVal g amap
+    let css =
+        { g = g
+          amap = amap
+          TcVal = tcVal
+          ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
+          InfoReader = new InfoReader(g, amap)
+          codegen = true }
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let! _res = SolveMemberConstraint csenv true true 0 m NoTrace traitInfo
     let sln = GenWitnessExpr amap g m traitInfo argExprs
     return sln
   }
 
+/// Generate the arguments passed when using a generic construct that accepts traits witnesses
 let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let ftps, _renaming, tinst = FreshenTypeInst m typars
     let cxs = GetTraitConstraintInfosOfTypars g ftps 
     do! SolveTypeEqualsTypeEqns csenv 0 m NoTrace None tinst tyargs
-    return MethodCalls.GenNonGenericWitnessArgs amap g m cxs
+    return MethodCalls.GenWitnessArgs amap g m cxs
   }
 
+/// For some code like "let f() = ([] = [])", a free choice is made for a type parameter
+/// for an interior type variable.  This chooses a solution for a type parameter subject
+/// to its constraints and applies that solution by using a constraint.
 let ChooseTyparSolutionAndSolve css denv tp =
     let g = css.g
     let amap = css.amap
@@ -2857,7 +2860,6 @@ let ChooseTyparSolutionAndSolve css denv tp =
     TryD (fun () -> SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) max)
          (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
     |> RaiseOperationResult
-
 
 let CheckDeclaredTypars denv css m typars1 typars2 = 
     TryD (fun () -> 
