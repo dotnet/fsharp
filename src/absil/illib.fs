@@ -464,112 +464,6 @@ type SpanExtensions =
         data.[0 + offset] <- byte value
         data.[1 + offset] <- byte (value >>> 8)
 
-    
-
-/// Not thread safe.
-/// Loosely based on StringBuilder/BlobBuilder
-[<Sealed>]
-type internal ChunkedArrayBuilder<'T> private (minChunkSize: int, buffer: 'T []) =
-
-    let mutable buffer = buffer
-
-    member _.Buffer
-        with get () = buffer
-        and set v = buffer <- v
-
-    member val ChunkLength = 0 with get, set
-    member val NextOrPrevious = Unchecked.defaultof<ChunkedArrayBuilder<'T>> with get, set
-    member val private Position = 0 with get, set
-    member val private IsFrozen = false with get, set
-
-    // [1:first]->[2]->[3:last]<-[4:head]
-    //     ^_______________|
-    member x.FirstChunk = x.NextOrPrevious.NextOrPrevious
-
-    member x.Reserve dataLength =
-        if dataLength + x.Position > x.Buffer.Length then
-            let newChunk = ChunkedArrayBuilder<'T>(minChunkSize, Array.zeroCreate<'T> (Math.Max(dataLength, minChunkSize)), IsFrozen = true)
-            let newBuffer = newChunk.Buffer
-
-            match box x.NextOrPrevious with
-            | null -> ()
-            | _ ->
-                match box x.FirstChunk with
-                | null ->
-                    let firstChunk = x.NextOrPrevious
-                    firstChunk.NextOrPrevious <- newChunk
-                    newChunk.NextOrPrevious <- firstChunk
-                | _ ->
-                    let firstChunk = x.FirstChunk
-                    let lastChunk = x.NextOrPrevious
-                    lastChunk.NextOrPrevious <- newChunk
-                    newChunk.NextOrPrevious <- firstChunk
-
-            newChunk.ChunkLength <- x.ChunkLength
-            newChunk.Buffer <- x.Buffer
-            x.Buffer <- newBuffer
-            x.NextOrPrevious <- newChunk
-            x.ChunkLength <- 0
-            x.Position <- 0
-        let reserved = Span(x.Buffer, x.Position, dataLength)
-        x.ChunkLength <- x.ChunkLength + dataLength
-        x.Position <- x.ChunkLength
-        reserved
-
-    member x.Write(data: ReadOnlySpan<'T>) =
-        if x.IsFrozen then
-            failwith "Chunked array builder is frozen and cannot be written to"
-
-        let reserved = x.Reserve data.Length
-        data.CopyTo(reserved)
-
-    static member Create(minChunkSize, startingCapacity) =
-        ChunkedArrayBuilder(minChunkSize, Array.zeroCreate<'T> (Math.Max(startingCapacity, minChunkSize)))
-                
-[<Sealed>]
-type internal ChunkedArray<'T>(builder: ChunkedArrayBuilder<'T>) =
-
-    let chunkIter f =
-        match box builder.NextOrPrevious with
-        | null -> ()
-        | _ ->
-            match box builder.FirstChunk with
-            | null ->
-                f builder.NextOrPrevious.Buffer builder.NextOrPrevious.ChunkLength
-            | _ ->
-                let firstChunk = builder.FirstChunk
-                f firstChunk.Buffer firstChunk.ChunkLength
-                let mutable chunk = firstChunk.NextOrPrevious
-                while chunk <> firstChunk do
-                    f chunk.Buffer chunk.ChunkLength
-                    chunk <- chunk.NextOrPrevious
-
-        if builder.ChunkLength > 0 then
-            f builder.Buffer builder.ChunkLength
-
-    let lazyLength =
-        lazy
-            let mutable total = 0
-            chunkIter (fun _ length -> total <- total + length)
-            total
-
-    member _.Length = lazyLength.Value
-
-    member x.ToArray() =
-        let arr = Array.zeroCreate<'T> x.Length
-        let mutable total = 0
-        chunkIter (fun buffer length -> 
-            Array.Copy(buffer, 0, arr, total, length)
-            total <- total + length)
-        arr
-
-type internal ChunkedArrayBuilder<'T> with
-
-    member x.ToChunkedArray() = 
-        x.IsFrozen <- true
-        ChunkedArray x
-
-
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.
@@ -1495,7 +1389,45 @@ module Shim =
                 directory.Contains("packages\\") || 
                 directory.Contains("lib/mono/")
 
-    let mutable FileSystem = DefaultFileSystem() :> IFileSystem 
+    let mutable FileSystem = DefaultFileSystem() :> IFileSystem
+
+    // The choice of 60 retries times 50 ms is not arbitrary. The NTFS FILETIME structure 
+    // uses 2 second resolution for LastWriteTime. We retry long enough to surpass this threshold 
+    // plus 1 second. Once past the threshold the incremental builder will be able to retry asynchronously based
+    // on plain old timestamp checking.
+    //
+    // The sleep time of 50ms is chosen so that we can respond to the user more quickly for Intellisense operations.
+    //
+    // This is not run on the UI thread for VS but it is on a thread that must be stopped before Intellisense
+    // can return any result except for pending.
+    let private retryDelayMilliseconds = 50
+    let private numRetries = 60
+
+    let private getReader (filename, codePage: int option, retryLocked: bool) =
+        // Retry multiple times since other processes may be writing to this file.
+        let rec getSource retryNumber =
+          try 
+            // Use the .NET functionality to auto-detect the unicode encoding
+            let stream = FileSystem.FileStreamReadShim(filename) 
+            match codePage with 
+            | None -> new  StreamReader(stream,true)
+            | Some n -> new  StreamReader(stream,System.Text.Encoding.GetEncoding(n))
+          with 
+              // We can get here if the file is locked--like when VS is saving a file--we don't have direct
+              // access to the HRESULT to see that this is EONOACCESS.
+              | :? System.IO.IOException as err when retryLocked && err.GetType() = typeof<System.IO.IOException> -> 
+                   // This second check is to make sure the exception is exactly IOException and none of these for example:
+                   //   DirectoryNotFoundException 
+                   //   EndOfStreamException 
+                   //   FileNotFoundException 
+                   //   FileLoadException 
+                   //   PathTooLongException
+                   if retryNumber < numRetries then 
+                       System.Threading.Thread.Sleep (retryDelayMilliseconds)
+                       getSource (retryNumber + 1)
+                   else 
+                       reraise()
+        getSource 0
 
     type File with 
 
@@ -1507,4 +1439,7 @@ module Shim =
             while n < len do 
                 n <- n + stream.Read(buffer, n, len-n)
             buffer
+
+        static member OpenReaderAndRetry (filename, codepage, retryLocked)  =
+            getReader (filename, codepage, retryLocked)
 
