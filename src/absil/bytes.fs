@@ -117,6 +117,35 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         new MemoryStream(bytes, offset, length, false) :> Stream
 
 [<Sealed>]
+type SafeUnmanagedMemoryStream =
+    inherit UnmanagedMemoryStream
+
+    val mutable private hold: obj
+    val mutable private isDisposed: bool
+
+    new (addr, length, hold) =
+        {
+            inherit UnmanagedMemoryStream(addr, length)
+            hold = hold
+            isDisposed = false
+        }
+
+    new (addr: nativeptr<byte>, length: int64, capacity: int64, access: FileAccess, hold) =
+        {
+            inherit UnmanagedMemoryStream(addr, length, capacity, access)
+            hold = hold
+            isDisposed = false
+        }
+
+    override x.Finalize() =
+        x.Dispose false
+
+    override x.Dispose disposing =
+        base.Dispose disposing
+        if not x.isDisposed then
+            x.hold <- null // Null out so it can be collected.
+
+[<Sealed>]
 type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
     inherit ByteMemory ()
 
@@ -170,7 +199,7 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         use stream2 = x.AsStream()
         stream2.CopyTo stream
 
-    override x.Copy(srcOffset, dest, destOffset, count) =
+    override _.Copy(srcOffset, dest, destOffset, count) =
         check srcOffset
         Marshal.Copy(NativePtr.toNativeInt addr + nativeint srcOffset, dest, destOffset, count)
 
@@ -180,10 +209,10 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         res
 
     override _.AsStream() =
-        new UnmanagedMemoryStream(addr, int64 length) :> Stream
+        new SafeUnmanagedMemoryStream(addr, int64 length, hold) :> Stream
 
     override _.AsReadOnlyStream() =
-        new UnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read) :> Stream
+        new SafeUnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read, hold) :> Stream
 
 [<Struct;NoEquality;NoComparison>]
 type ReadOnlyByteMemory(bytes: ByteMemory) =
