@@ -2698,7 +2698,7 @@ let rec GetResourceAsManifestResourceRow cenv r =
             let resourceSize = bytes.Length 
             cenv.resources.EmitPadding pad 
             cenv.resources.EmitInt32 resourceSize 
-            cenv.resources.EmitByteSpan bytes.Span 
+            cenv.resources.EmitByteMemory bytes 
             Data (alignedOffset, true), (i_File, 0)  
 
         match r.Location with 

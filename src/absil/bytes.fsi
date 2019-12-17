@@ -19,10 +19,10 @@ module internal Bytes =
     val stringAsUnicodeNullTerminated: string -> byte[]
     val stringAsUtf8NullTerminated: string -> byte[]
 
-type ChunkedArrayForEachDelegate<'T> = delegate of Span<'T> -> unit
+type internal ChunkedArrayForEachDelegate<'T> = delegate of Span<'T> -> unit
 
 [<Struct;NoEquality;NoComparison>]
-type ChunkedArray<'T> =
+type internal ChunkedArray<'T> =
 
     member Length: int
 
@@ -36,7 +36,7 @@ type ChunkedArray<'T> =
 
 /// Not thread safe.
 [<Sealed>]
-type ChunkedArrayBuilder<'T> =
+type internal ChunkedArrayBuilder<'T> =
 
     member Reserve: length: int -> Span<'T>
 
@@ -54,7 +54,7 @@ type ChunkedArrayBuilder<'T> =
     static member Create: minChunkSize: int * startingCapacity: int -> ChunkedArrayBuilder<'T>
 
 [<RequireQualifiedAccess>]
-module ChunkedArray =
+module internal ChunkedArray =
 
     val iter: ('T -> unit) -> ChunkedArray<'T> -> unit
 
@@ -76,10 +76,6 @@ type internal ByteMemory =
 
     abstract Length: int
 
-    abstract Span: Span<byte>
-
-    abstract ReadOnlySpan: ReadOnlySpan<byte>
-
     abstract ReadBytes: pos: int * count: int -> byte[]
 
     abstract ReadInt32: pos: int -> int
@@ -91,6 +87,8 @@ type internal ByteMemory =
     abstract Slice: pos: int * count: int -> ByteMemory
 
     abstract CopyTo: Stream -> unit
+
+    abstract CopyTo: Span<byte> -> unit
 
     abstract Copy: srcOffset: int * dest: byte[] * destOffset: int * count: int -> unit
 
@@ -114,8 +112,6 @@ type internal ReadOnlyByteMemory =
 
     member Length: int
 
-    member Span: ReadOnlySpan<byte>
-
     member ReadBytes: pos: int * count: int -> byte[]
 
     member ReadInt32: pos: int -> int
@@ -128,6 +124,8 @@ type internal ReadOnlyByteMemory =
 
     member CopyTo: Stream -> unit
 
+    member CopyTo: Span<byte> -> unit
+
     member Copy: srcOffset: int * dest: byte[] * destOffset: int * count: int -> unit
 
     member ToArray: unit -> byte[]
@@ -137,7 +135,7 @@ type internal ReadOnlyByteMemory =
     /// Stream cannot be written to.
     member AsStream: unit -> Stream
 
-type ByteMemory with
+type internal ByteMemory with
 
     member AsReadOnly: unit -> ReadOnlyByteMemory
 
@@ -167,7 +165,7 @@ type internal ByteBuffer =
     member EmitInt32s : int32[] -> unit
     member EmitByte : byte -> unit
     member EmitBytes : byte[] -> unit
-    member EmitByteSpan : ReadOnlySpan<byte> -> unit
+    member EmitByteMemory : ReadOnlyByteMemory -> unit
     member EmitInt32 : int32 -> unit
     member EmitInt64 : int64 -> unit
     member EmitInt32AsUInt16 : int32 -> unit

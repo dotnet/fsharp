@@ -263,10 +263,6 @@ type ByteMemory () =
 
     abstract Length: int
 
-    abstract Span: Span<byte>
-
-    abstract ReadOnlySpan: ReadOnlySpan<byte>
-
     abstract ReadBytes: pos: int * count: int -> byte[]
 
     abstract ReadInt32: pos: int -> int
@@ -278,6 +274,8 @@ type ByteMemory () =
     abstract Slice: pos: int * count: int -> ByteMemory
 
     abstract CopyTo: Stream -> unit
+
+    abstract CopyTo: Span<byte> -> unit
 
     abstract Copy: srcOffset: int * dest: byte[] * destOffset: int * count: int -> unit
 
@@ -304,10 +302,6 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
 
     override _.Length = length
 
-    override _.Span = Span(bytes, offset, length)
-
-    override _.ReadOnlySpan = ReadOnlySpan(bytes, offset, length)
-
     override _.ReadBytes(pos, count) = 
         Array.sub bytes (offset + pos) count
 
@@ -330,8 +324,11 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
     override _.Slice(pos, count) =
         ByteArrayMemory(bytes, offset + pos, count) :> ByteMemory
 
-    override _.CopyTo stream =
+    override _.CopyTo(stream: Stream) =
         stream.Write(bytes, offset, length)
+
+    override _.CopyTo(span: Span<byte>) =
+        ReadOnlySpan(bytes, offset, length).CopyTo span
 
     override _.Copy(srcOffset, dest, destOffset, count) =
         Array.blit bytes (offset + srcOffset) dest destOffset count
@@ -368,10 +365,6 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
 
     override _.Length = length
 
-    override _.Span = Span(NativePtr.toVoidPtr addr, length)
-
-    override _.ReadOnlySpan = ReadOnlySpan(NativePtr.toVoidPtr addr, length)
-
     override _.ReadUtf8String(pos, count) =
         check pos
         check (pos + count - 1)
@@ -399,9 +392,12 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         check (pos + count - 1)
         RawByteMemory(NativePtr.add addr pos, count, hold) :> ByteMemory
 
-    override x.CopyTo stream =
+    override x.CopyTo(stream: Stream) =
         use stream2 = x.AsStream()
         stream2.CopyTo stream
+
+    override x.CopyTo(span: Span<byte>) =
+        ReadOnlySpan(NativePtr.toVoidPtr addr, length).CopyTo span
 
     override x.Copy(srcOffset, dest, destOffset, count) =
         check srcOffset
@@ -425,8 +421,6 @@ type ReadOnlyByteMemory(bytes: ByteMemory) =
 
     member _.Length with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = bytes.Length
 
-    member _.Span with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = bytes.ReadOnlySpan
-
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.ReadBytes(pos, count) = bytes.ReadBytes(pos, count)
 
@@ -443,7 +437,10 @@ type ReadOnlyByteMemory(bytes: ByteMemory) =
     member _.Slice(pos, count) = bytes.Slice(pos, count) |> ReadOnlyByteMemory
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
-    member _.CopyTo stream = bytes.CopyTo stream
+    member _.CopyTo(stream: Stream) = bytes.CopyTo stream
+
+    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
+    member _.CopyTo(span: Span<byte>) = bytes.CopyTo span
 
     [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.Copy(srcOffset, dest, destOffset, count) = bytes.Copy(srcOffset, dest, destOffset, count)
@@ -620,11 +617,12 @@ type internal ByteBuffer =
         buf.bbCurrent <- buf.bbCurrent + 4
 
     member buf.EmitBytes (i:byte[]) = 
-        buf.EmitByteSpan(ReadOnlySpan i)
+        buf.bbArray.AddSpan(ReadOnlySpan i)
+        buf.bbCurrent <- buf.bbCurrent + i.Length
 
-    member buf.EmitByteSpan (span: ReadOnlySpan<byte>) =
-        buf.bbArray.AddSpan span
-        buf.bbCurrent <- buf.bbCurrent + span.Length
+    member buf.EmitByteMemory (bytes: ReadOnlyByteMemory) =
+        bytes.CopyTo(buf.bbArray.Reserve bytes.Length)
+        buf.bbCurrent <- buf.bbCurrent + bytes.Length
 
     member buf.EmitInt32AsUInt16 n = 
         (buf.bbArray.Reserve 2).WriteInt32AsUInt16 (0, n)
