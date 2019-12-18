@@ -79,11 +79,11 @@ type LanguageVersion (specifiedVersionAsString) =
     member __.ValidOptions = validOptions
 
     /// Get a list of valid versions for help text
-    member __.ValidVersions = [|
-        for v in languageVersions |> Seq.sort do
-            let label = if v = defaultVersion then " (Default)" else ""
-            yield sprintf "%M%s" v label
-            |]
+    member __.ValidVersions =
+        [|
+            for v in languageVersions |> Seq.sort ->
+                sprintf "%M%s" v (if v = defaultVersion then " (Default)" else "")
+        |]
 
     /// Get the specified LanguageVersion
     member __.SpecifiedVersion = specified
