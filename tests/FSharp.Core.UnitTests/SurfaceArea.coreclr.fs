@@ -2720,7 +2720,7 @@ Microsoft.FSharp.Core.ExtraTopLevelOperators: Byte ToByte$W[T](Microsoft.FSharp.
 Microsoft.FSharp.Core.ExtraTopLevelOperators: Double ToDouble$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Double], T)
 Microsoft.FSharp.Core.ExtraTopLevelOperators: SByte ToSByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], T)
 Microsoft.FSharp.Core.ExtraTopLevelOperators: Single ToSingle$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Single], T)
-Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: Boolean op_Equality(Boolean, Boolean)Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: Boolean EqualityBuiltIn[T](T, T)
+Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: Boolean EqualityBuiltIn[T](T, T)
 Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: Boolean GreaterThanBuiltIn[T](T, T)
 Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: Boolean GreaterThanOrEqualBuiltIn[T](T, T)
 Microsoft.FSharp.Core.LanguagePrimitives+BuiltInWitnesses: Boolean InequalityBuiltIn[T](T, T)
