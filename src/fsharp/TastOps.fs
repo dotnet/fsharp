@@ -6932,12 +6932,12 @@ let mkCallNewDecimal (g: TcGlobals) m (e1, e2, e3, e4, e5) = mkApps g (typedExpr
 let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety e1 = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
 
 let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
-    let info = g.makeBuiltInWitnessInfo traitInfo
+    let info, tinst = g.makeBuiltInWitnessInfo traitInfo
     let vref = ValRefForIntrinsic info
     match vref.TryDeref with
     | ValueSome v -> 
         let f = exprForValRef m vref
-        mkApps g ((f, v.Type), [], [ mkRefTupledNoTypes g m argExprs ], m) |> Some
+        mkApps g ((f, v.Type), tinst, [ mkRefTupledNoTypes g m argExprs ], m) |> Some
     | ValueNone -> 
         None
 

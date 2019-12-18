@@ -1499,7 +1499,39 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   /// Find an FSharp.Core BuiltInWitness that corresponds to a trait witness
   member g.makeBuiltInWitnessInfo (t: TraitConstraintInfo) =
-      makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, t.MemberName, Some "BuiltInWitnesses", None, [], ([t.ArgumentTypes], defaultArg t.ReturnType g.unit_ty))
+      let memberName = 
+          let nm = t.MemberName
+          (if nm.StartsWith "op_" then nm.[3..] else nm) + "BuiltIn"
+      let gtps, argTys, retTy, tinst = 
+          let argTy = t.ArgumentTypes.[0]
+          match memberName with 
+          | "AdditionBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "MultiplyBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "UnaryNegationBuiltIn" -> [vara], [ varaTy ], varaTy, [ argTy ]
+          | "SubtractionBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "DivisionBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "ModulusBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "CheckedAdditionBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "CheckedMultiplyBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "CheckedUnaryNegationBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "CheckedSubtractionBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "LeftShiftBuiltIn" -> [vara], [ varaTy; v_int32_ty], varaTy, [ argTy ]
+          | "RightShiftBuiltIn" -> [vara], [ varaTy; v_int32_ty], varaTy, [ argTy ]
+          | "BitwiseAndBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "BitwiseOrBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "ExclusiveOrBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
+          | "LogicalNotBuiltIn" -> [vara], [ varaTy ], varaTy, [ argTy ]
+          | "ExplicitBuiltIn" -> [vara; varb], [ varaTy ], varbTy, [ argTy; t.ReturnType.Value ]
+          | "LessThanBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
+          | "GreaterThanBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
+          | "LessThanOrEqualBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
+          | "GreaterThanOrEqualBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
+          | "EqualityBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
+          | "InequalityBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
+          | "DivideByIntBuiltIn" -> [vara], [ varaTy; v_int32_ty ], varaTy, [ argTy ]
+          | _ -> failwith "unknown builtin witness"
+      let vref = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, memberName, Some "BuiltInWitnesses", None, gtps, ([argTys], retTy))
+      vref, tinsts
 
   /// Find an FSharp.Core operator that corresponds to a trait witness
   member g.tryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) argExprs =
