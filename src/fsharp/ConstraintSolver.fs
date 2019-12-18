@@ -2824,15 +2824,17 @@ let AddCxTypeIsDelegate denv css m trace ty aty bty =
          (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
+let CreateCodegenState tcVal g amap = 
+    { g = g
+      amap = amap
+      TcVal = tcVal
+      ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
+      InfoReader = new InfoReader(g, amap)
+      codegen = true }
+
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
 let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
-    let css =
-        { g = g
-          amap = amap
-          TcVal = tcVal
-          ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-          InfoReader = new InfoReader(g, amap)
-          codegen = true }
+    let css = CreateCodegenState tcVal g amap
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let! _res = SolveMemberConstraint csenv true true 0 m NoTrace traitInfo
     let sln = GenWitnessExpr amap g m traitInfo argExprs
