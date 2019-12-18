@@ -1531,7 +1531,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           | "DivideByIntBuiltIn" -> [vara], [ varaTy; v_int32_ty ], varaTy, [ argTy ]
           | _ -> failwith "unknown builtin witness"
       let vref = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, memberName, Some "BuiltInWitnesses", None, gtps, ([argTys], retTy))
-      vref, tinsts
+      vref, tinst
 
   /// Find an FSharp.Core operator that corresponds to a trait witness
   member g.tryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) argExprs =
