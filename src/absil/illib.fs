@@ -40,8 +40,9 @@ let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
-/// We set the limit to slightly under that to allow for some 'slop'
-let LOH_SIZE_THRESHOLD_BYTES = 84_900
+/// We set the limit to be lower than that because F# can run in a 64-bit environment where a value of 85k would actually still result in an LOH allocation.
+/// A limit of 1024 is not going to do that, and frankly, 1024 is still a pretty decently-sized chunk.
+let REASONABLE_THRESHOLD_TO_AVOID_LOH = 1024
 
 //---------------------------------------------------------------------
 // Library: ReportTime
@@ -472,7 +473,11 @@ module ResizeArray =
     let mapToSmallArrayChunks f (inp: ResizeArray<'t>) =
         let itemSizeBytes = sizeof<'t>
         // rounding down here is good because it ensures we don't go over
-        let maxArrayItemCount = LOH_SIZE_THRESHOLD_BYTES / itemSizeBytes
+        let maxArrayItemCount =
+            if itemSizeBytes < REASONABLE_THRESHOLD_TO_AVOID_LOH then
+                REASONABLE_THRESHOLD_TO_AVOID_LOH / itemSizeBytes
+            else
+                REASONABLE_THRESHOLD_TO_AVOID_LOH
 
         /// chunk the provided input into arrays that are smaller than the LOH limit
         /// in order to prevent long-term storage of those values
