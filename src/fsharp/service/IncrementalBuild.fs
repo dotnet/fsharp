@@ -1733,7 +1733,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                          defaultFSharpBinariesDir, 
                          implicitIncludeDir=projectDirectory, 
                          reduceMemoryUsage=ReduceMemoryFlag.Yes, 
-                         isInteractive=false, 
+                         isInteractive=useScriptResolutionRules, 
                          isInvalidationSupported=true, 
                          defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
                          tryGetMetadataSnapshot=tryGetMetadataSnapshot) 

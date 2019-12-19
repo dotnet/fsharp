@@ -2323,6 +2323,7 @@ type TcConfigBuilder =
             isInvalidationSupported = isInvalidationSupported
             copyFSharpCore = defaultCopyFSharpCore
             tryGetMetadataSnapshot = tryGetMetadataSnapshot
+            useFsiAuxLib = isInteractive
         }
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) = 
