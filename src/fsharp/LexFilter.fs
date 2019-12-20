@@ -424,20 +424,28 @@ type TokenTup =
 type TokenTupPool() =
 
     [<Literal>]
-    let maxSize = 1000
+    let maxSize = 100
 
     let stack = System.Collections.Generic.Stack(Array.init maxSize (fun _ -> TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)))
 
-    member _.Rent() = 
-        stack.Pop()
+    member _.Contains x =
+        stack.Contains x
 
-    member _.Return(x: TokenTup) =
-        if stack.Count >= maxSize then
-            failwith "pool larger than max size"
-        x.Token <- Unchecked.defaultof<_>
-        x.LexbufState <- Unchecked.defaultof<_>
-        x.LastTokenPos <- Unchecked.defaultof<_>
-        stack.Push x
+    member _.Rent() = 
+        TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
+        //let x = stack.Pop()
+        //x.Token <- Unchecked.defaultof<_>
+        //x.LexbufState <- Unchecked.defaultof<_>
+        //x.LastTokenPos <- Unchecked.defaultof<_>
+        //x
+
+    member _.Return(_x: TokenTup) = ()
+       /// if stack.Count >= maxSize then
+        //    failwith "pool larger than max size"
+        //x.Token <- Unchecked.defaultof<_>
+        //x.LexbufState <- Unchecked.defaultof<_>
+        //x.LastTokenPos <- Unchecked.defaultof<_>
+        //stack.Push x
 
     /// Returns a token 'tok' with the same position as this token
     member pool.UseLocation(x: TokenTup, tok) = 
@@ -458,13 +466,6 @@ type TokenTupPool() =
         tokTup.LexbufState <- LexbufState(tokState.StartPos.ShiftColumnBy shiftLeft, tokState.EndPos.ShiftColumnBy shiftRight, false)
         tokTup.LastTokenPos <- x.LastTokenPos
         tokTup     
-        
-    member pool.Copy(x: TokenTup) =
-        let tokTup = pool.Rent()
-        tokTup.Token <- x.Token
-        tokTup.LexbufState <- x.LexbufState
-        tokTup.LastTokenPos <- x.LastTokenPos
-        tokTup
 
 //----------------------------------------------------------------------------
 // Utilities for the tokenizer that are needed in other places
@@ -2298,11 +2299,12 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
     let rec swTokenFetch() = 
         let tokenTup = popNextTokenTup()
         let tokenReplaced = rulesForBothSoftWhiteAndHardWhite tokenTup
-        let lexbufState = tokenTup.LexbufState
-        let tok = tokenTup.Token
-        pool.Return tokenTup
         if tokenReplaced then swTokenFetch() 
-        else returnToken lexbufState tok
+        else
+            let lexbufState = tokenTup.LexbufState
+            let tok = tokenTup.Token
+            pool.Return tokenTup
+            returnToken lexbufState tok
 
     //----------------------------------------------------------------------------
     // Part VI. Publish the new lexer function.  
