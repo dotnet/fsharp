@@ -2,6 +2,7 @@
 
 namespace Internal.Utilities
 open System
+open System.Diagnostics
 open System.IO
 open Microsoft.Win32
 open System.Runtime.InteropServices
@@ -71,9 +72,10 @@ module internal FSharpEnvironment =
             (try
                 downcast Microsoft.Win32.Registry.GetValue("HKEY_LOCAL_MACHINE\\"+subKey,null,null)
              with e->
-                System.Diagnostics.Debug.Assert(false, sprintf "Failed in GetDefaultRegistryStringValueViaDotNet: %s" (e.ToString()))
+#if DEBUG
+                Debug.Assert(false, sprintf "Failed in GetDefaultRegistryStringValueViaDotNet: %s" (e.ToString()))
+#endif
                 null)
-
 
     let Get32BitRegistryStringValueViaPInvoke(subKey:string) = 
         Option.ofString
@@ -114,11 +116,13 @@ module internal FSharpEnvironment =
                     if pathResult <> IntPtr.Zero then
                         Marshal.FreeCoTaskMem(pathResult)
              with e->
-                System.Diagnostics.Debug.Assert(false, sprintf "Failed in Get32BitRegistryStringValueViaPInvoke: %s" (e.ToString()))
+#if DEBUG
+                Debug.Assert(false, sprintf "Failed in Get32BitRegistryStringValueViaPInvoke: %s" (e.ToString()))
+#endif
                 null)
 
     let is32Bit = IntPtr.Size = 4
-    
+
     let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e-> false
 
     let tryRegKey(subKey:string) = 
@@ -133,7 +137,7 @@ module internal FSharpEnvironment =
             // by comparing against the result from GetDefaultRegistryStringValueViaDotNet(...)
 #if DEBUG
             let viaPinvoke = Get32BitRegistryStringValueViaPInvoke(subKey)
-            System.Diagnostics.Debug.Assert((s = viaPinvoke), sprintf "32bit path: pi=%A def=%A" viaPinvoke s)
+            Debug.Assert((s = viaPinvoke), sprintf "32bit path: pi=%A def=%A" viaPinvoke s)
 #endif
             s
         else
@@ -141,13 +145,9 @@ module internal FSharpEnvironment =
 #endif
 
     let internal tryCurrentDomain() =
-        let pathFromCurrentDomain = 
-#if FX_NO_APP_DOMAINS
-            System.AppContext.BaseDirectory
-#else
-            System.AppDomain.CurrentDomain.BaseDirectory
-#endif
-        if not(String.IsNullOrEmpty(pathFromCurrentDomain)) then 
+        let pathFromCurrentDomain =
+            AppDomain.CurrentDomain.BaseDirectory
+        if not(String.IsNullOrEmpty(pathFromCurrentDomain)) then
             Some pathFromCurrentDomain
         else
             None
@@ -157,14 +157,17 @@ module internal FSharpEnvironment =
 #else
     let internal tryAppConfig (_appConfigKey:string) = 
         let locationFromAppConfig = System.Configuration.ConfigurationSettings.AppSettings.[_appConfigKey]
-        System.Diagnostics.Debug.Print(sprintf "Considering _appConfigKey %s which has value '%s'" _appConfigKey locationFromAppConfig) 
-
+#if DEBUG
+        Debug.Print(sprintf "Considering _appConfigKey %s which has value '%s'" _appConfigKey locationFromAppConfig) 
+#endif
         if String.IsNullOrEmpty(locationFromAppConfig) then 
             None
         else
             let exeAssemblyFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
             let locationFromAppConfig = locationFromAppConfig.Replace("{exepath}", exeAssemblyFolder)
-            System.Diagnostics.Debug.Print(sprintf "Using path %s" locationFromAppConfig) 
+#if DEBUG
+            Debug.Print(sprintf "Using path %s" locationFromAppConfig)
+#endif
             Some locationFromAppConfig
 #endif
 
@@ -175,14 +178,10 @@ module internal FSharpEnvironment =
     //     - default F# binaries directory in service.fs (REVIEW: check this)
     //     - default location of fsi.exe in FSharp.VS.FSI.dll (REVIEW: check this)
     //     - default F# binaries directory in (project system) Project.fs
-    let BinFolderOfDefaultFSharpCompiler(probePoint:string option) = 
+    let BinFolderOfDefaultFSharpCompiler(probePoint:string option) =
 #if FX_NO_WIN_REGISTRY
         ignore probePoint
-#if FX_NO_APP_DOMAINS
-        Some System.AppContext.BaseDirectory
-#else
-        Some System.AppDomain.CurrentDomain.BaseDirectory
-#endif
+        Some AppDomain.CurrentDomain.BaseDirectory
 #else
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
@@ -199,7 +198,7 @@ module internal FSharpEnvironment =
             | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p 
             | _ -> 
             // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
-            let result = System.Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
+            let result = Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
             if not (String.IsNullOrEmpty(result)) then
                 Some result
             else

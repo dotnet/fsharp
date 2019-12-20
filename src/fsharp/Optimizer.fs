@@ -3440,7 +3440,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           g=tcGlobals 
           amap=importMap
           optimizing=true
-          localInternalVals=Dictionary<Stamp, ValInfo>(10000)
+          localInternalVals=Dictionary<Stamp, ValInfo>()
           emitTailcalls=emitTailcalls
           casApplied=new Dictionary<Stamp,bool>() }
     let (optEnvNew, _, _, _ as results) = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
