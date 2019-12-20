@@ -934,7 +934,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                         let hasAfterOp = (match lookaheadToken with GREATER _ -> false | _ -> true)
                         if nParen > 0 then 
                             // Don't smash the token if there is an after op and we're in a nested paren
-                            stack := (pool.Copy(lookaheadTokenTup), not hasAfterOp) :: (!stack).Tail
+                            stack := (lookaheadTokenTup, not hasAfterOp) :: (!stack).Tail
                             scanAhead nParen 
                         else 
                             // On successful parse of a set of type parameters, look for an adjacent (, e.g. 
@@ -948,7 +948,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                         let nParen = nParen - greaters.Length
                         if nParen > 0 then 
                             // Don't smash the token if there is an after op and we're in a nested paren
-                            stack := (pool.Copy(lookaheadTokenTup), not afterOp.IsSome) :: (!stack).Tail
+                            stack := (lookaheadTokenTup, not afterOp.IsSome) :: (!stack).Tail
                             scanAhead nParen 
                         else 
                             // On successful parse of a set of type parameters, look for an adjacent (, e.g. 
@@ -2266,6 +2266,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                   let token = ADJACENT_PREFIX_OP tokenName
                   delayToken nextTokenTup 
                   delayToken (pool.UseLocation(tokenTup, token))
+                  pool.Return tokenTup
 
               if plusOrMinus then 
                   match nextTokenTup.Token with 
