@@ -130,12 +130,17 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
 
             if not (assemblies.ContainsKey(referenceName)) then
                 try
-                    assemblies.Add(referenceName, path) |> ignore
-                    if referenceName <> "System.Private.CoreLib" then
-                        let asm = System.Reflection.Assembly.LoadFrom(path)
-                        for reference in asm.GetReferencedAssemblies() do
-                            // System.Private.CoreLib doesn't load with reflection
-                            traverseDependencies reference.Name
+                    if File.Exists(path) then
+                        // System.Private.CoreLib doesn't load with reflection
+                        if referenceName = "System.Private.CoreLib" then
+                            assemblies.Add(referenceName, path)
+                        else
+                            try
+                                let asm = System.Reflection.Assembly.LoadFrom(path)
+                                assemblies.Add(referenceName, path)
+                                for reference in asm.GetReferencedAssemblies() do
+                                    traverseDependencies reference.Name
+                            with e -> ()
                 with e -> ()
 
         assemblyReferences |> List.iter(traverseDependencies)
@@ -193,7 +198,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                     let getImplementationReferences () =
                         // Coreclr supports netstandard assemblies only for now
                         (getDependenciesOf [
-                            yield Path.Combine(implementationAssemblyDir, "netstandard.dll")
+                            yield! Directory.GetFiles(implementationAssemblyDir, "*.dll")
                             yield getDefaultFSharpCoreReference
                             if useFsiAuxLib then yield getFsiLibraryName
                         ]).Values |> Seq.toList
