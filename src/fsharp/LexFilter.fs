@@ -399,28 +399,20 @@ type LexbufState(startPos: Position,
     member x.EndPos = endPos
     member x.PastEOF = pastEOF
 
-[<Struct>]
-type PositionTuple =
-    val X: Position
-    val Y: Position
-    new (x: Position, y: Position) = { X = x; Y = y }
-
 /// Used to save the state related to a token
 [<Class>]
 type TokenTup = 
     // This is mutable for performance reasons.
     val mutable Token : token
     val mutable LexbufState : LexbufState
-    val mutable LastTokenPos: PositionTuple
+    val mutable LastTokenPos: Position
     new (token, state, lastTokenPos) = { Token=token; LexbufState=state;LastTokenPos=lastTokenPos }
     
     /// Returns starting position of the token
     member x.StartPos = x.LexbufState.StartPos
     /// Returns end position of the token
     member x.EndPos = x.LexbufState.EndPos
-  
         
-[<Sealed>]
 type TokenTupPool() =
 
     [<Literal>]
@@ -428,24 +420,16 @@ type TokenTupPool() =
 
     let stack = System.Collections.Generic.Stack(Array.init maxSize (fun _ -> TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)))
 
-    member _.Contains x =
-        stack.Contains x
-
     member _.Rent() = 
-        TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
-        //let x = stack.Pop()
-        //x.Token <- Unchecked.defaultof<_>
-        //x.LexbufState <- Unchecked.defaultof<_>
-        //x.LastTokenPos <- Unchecked.defaultof<_>
-        //x
+        stack.Pop()
 
-    member _.Return(_x: TokenTup) = ()
-       /// if stack.Count >= maxSize then
-        //    failwith "pool larger than max size"
-        //x.Token <- Unchecked.defaultof<_>
-        //x.LexbufState <- Unchecked.defaultof<_>
-        //x.LastTokenPos <- Unchecked.defaultof<_>
-        //stack.Push x
+    member _.Return(x: TokenTup) =
+        if stack.Count >= maxSize then
+            invalidOp "pool larger than max size"
+        x.Token <- Unchecked.defaultof<_>
+        x.LexbufState <- Unchecked.defaultof<_>
+        x.LastTokenPos <- Unchecked.defaultof<_>
+        stack.Push x
 
     /// Returns a token 'tok' with the same position as this token
     member pool.UseLocation(x: TokenTup, tok) = 
@@ -592,7 +576,6 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
     let runWrappedLexerInConsistentLexbufState() =
         let state = if haveLexbufState then savedLexbufState else getLexbufState()
         setLexbufState state
-        let lastTokenStart = state.StartPos
         let lastTokenEnd = state.EndPos
         let token = lexer lexbuf
         // Now we've got the token, remember the lexbuf state, associating it with the token 
@@ -604,7 +587,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
         let tokenTup = pool.Rent()
         tokenTup.Token <- token
         tokenTup.LexbufState <- tokenLexbufState
-        tokenTup.LastTokenPos <- PositionTuple(lastTokenStart, lastTokenEnd)
+        tokenTup.LastTokenPos <- lastTokenEnd
         tokenTup
 
     //----------------------------------------------------------------------------
@@ -1159,7 +1142,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             // span of inserted token lasts from the col + 1 of the prev token 
             // to the beginning of current token
             let lastTokenPos = 
-                let pos = tokenTup.LastTokenPos.Y
+                let pos = tokenTup.LastTokenPos
                 pos.ShiftColumnBy 1
             returnToken (lexbufStateForInsertedDummyTokens (lastTokenPos, tokenTup.LexbufState.StartPos)) tok
 
@@ -2201,7 +2184,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                   | Some LPAREN -> HIGH_PRECEDENCE_PAREN_APP
                   | Some LBRACK -> HIGH_PRECEDENCE_BRACK_APP
                   | _ -> failwith "unreachable"
-              delayToken(pool.UseLocation(tokenTup, hpa))
+              delayToken(pool.UseLocation(dotTokenTup, hpa))
               delayToken tokenTup
               true
 
@@ -2238,7 +2221,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                        | PERCENT_OP s -> (s = "%") || (s = "%%") 
                        | _ -> true) &&
                       nextTokenIsAdjacent tokenTup && 
-                      not (prevWasAtomicEnd && (tokenTup.LastTokenPos.Y = startPosOfTokenTup tokenTup))) ->
+                      not (prevWasAtomicEnd && (tokenTup.LastTokenPos = startPosOfTokenTup tokenTup))) ->
 
               let plus = 
                   match tokenTup.Token with 
