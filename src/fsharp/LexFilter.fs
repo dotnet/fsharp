@@ -457,7 +457,14 @@ type TokenTupPool() =
         tokTup.Token <- tok
         tokTup.LexbufState <- LexbufState(tokState.StartPos.ShiftColumnBy shiftLeft, tokState.EndPos.ShiftColumnBy shiftRight, false)
         tokTup.LastTokenPos <- x.LastTokenPos
-        tokTup        
+        tokTup     
+        
+    member pool.Copy(x: TokenTup) =
+        let tokTup = pool.Rent()
+        tokTup.Token <- x.Token
+        tokTup.LexbufState <- x.LexbufState
+        tokTup.LastTokenPos <- x.LastTokenPos
+        tokTup
 
 //----------------------------------------------------------------------------
 // Utilities for the tokenizer that are needed in other places
@@ -927,7 +934,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                         let hasAfterOp = (match lookaheadToken with GREATER _ -> false | _ -> true)
                         if nParen > 0 then 
                             // Don't smash the token if there is an after op and we're in a nested paren
-                            stack := (lookaheadTokenTup, not hasAfterOp) :: (!stack).Tail
+                            stack := (pool.Copy(lookaheadTokenTup), not hasAfterOp) :: (!stack).Tail
                             scanAhead nParen 
                         else 
                             // On successful parse of a set of type parameters, look for an adjacent (, e.g. 
@@ -941,7 +948,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                         let nParen = nParen - greaters.Length
                         if nParen > 0 then 
                             // Don't smash the token if there is an after op and we're in a nested paren
-                            stack := (lookaheadTokenTup, not afterOp.IsSome) :: (!stack).Tail
+                            stack := (pool.Copy(lookaheadTokenTup), not afterOp.IsSome) :: (!stack).Tail
                             scanAhead nParen 
                         else 
                             // On successful parse of a set of type parameters, look for an adjacent (, e.g. 
@@ -1357,6 +1364,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             popCtxt()
             // reprocess as the DONE may close a DO context 
             delayToken(pool.UseLocation(tokenTup, ODECLEND))
+            pool.Return tokenTup
             hwTokenFetch useBlockRule
 
         // Balancing rule. Encountering a ')' or '}' balances with a '(' or '{', even if not offside 
@@ -2082,7 +2090,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                 //    if e1 then e2
                 //    else if e3 then e4
                 //    else if e5 then e6 
-                let _ = popNextTokenTup()
+                popNextTokenTup() |> pool.Return
                 if debug then dprintf "ELSE IF: replacing ELSE IF with ELIF, pushing CtxtIf, CtxtVanilla(%a)\n" outputPos tokenStartPos
                 pushCtxt tokenTup (CtxtIf tokenStartPos)
                 returnToken tokenLexbufState ELIF
@@ -2213,12 +2221,14 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
               let dotDotPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-2), tokenTup.EndPos, false)
               delayToken(let rented = pool.Rent() in rented.Token <- DOT_DOT; rented.LexbufState <- dotDotPos; rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
               delayToken(pool.UseShiftedLocation(tokenTup, INT32(i, v), 0, -2))
+              pool.Return tokenTup
               true
           // Split @>. and @@>. into two 
           | RQUOTE_DOT (s, raw) ->
               let dotPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-1), tokenTup.EndPos, false)
               delayToken(let rented = pool.Rent() in rented.Token <- DOT; rented.LexbufState <- dotPos; rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
               delayToken(pool.UseShiftedLocation(tokenTup, RQUOTE(s, raw), 0, -1))
+              pool.Return tokenTup
               true
 
           | MINUS | PLUS_MINUS_OP _ | PERCENT_OP _ | AMP | AMP_AMP
@@ -2243,6 +2253,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
               let delayMergedToken tok = 
                   delayToken(let rented = pool.Rent() in rented.Token <- tok; rented.LexbufState <- new LexbufState(tokenTup.LexbufState.StartPos, nextTokenTup.LexbufState.EndPos, nextTokenTup.LexbufState.PastEOF); rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
                   pool.Return nextTokenTup
+                  pool.Return tokenTup
               let noMerge() = 
                   let tokenName = 
                       match tokenTup.Token with 
