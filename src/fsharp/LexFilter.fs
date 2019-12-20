@@ -421,15 +421,20 @@ type TokenTupPool() =
     let stack = System.Collections.Generic.Stack(Array.init maxSize (fun _ -> TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)))
 
     member _.Rent() = 
-        stack.Pop()
+        if stack.Count = 0 then
+            assert false
+            TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
+        else
+            stack.Pop()
 
     member _.Return(x: TokenTup) =
-        if stack.Count >= maxSize then
-            invalidOp "pool larger than max size"
         x.Token <- Unchecked.defaultof<_>
         x.LexbufState <- Unchecked.defaultof<_>
         x.LastTokenPos <- Unchecked.defaultof<_>
-        stack.Push x
+        if stack.Count >= maxSize then
+            assert false
+        else
+            stack.Push x
 
     /// Returns a token 'tok' with the same position as this token
     member pool.UseLocation(x: TokenTup, tok) = 
