@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
   <PropertyGroup>
-    <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp3.1</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefaultFSharpPackageVersion>4.1.19</DefaultFSharpPackageVersion>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
