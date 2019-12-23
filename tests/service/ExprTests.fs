@@ -1059,8 +1059,12 @@ let ``Test Operator Declarations for Byte`` () =
         "let testByteToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.byte> (e1)) @ (53,43--53,51)";
         "let testByteToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,43--54,53)";
         "let testByteToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.byte> (e1) @ (55,43--55,50)";
+#if DEBUG
+        @"let testByteToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.byte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)";
+#else
         "let testByteToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.byte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)";
-      ]
+#endif
+    ]
 
     testOperators "Byte" "byte" excludedTests expectedUnoptimized expectedOptimized
 
@@ -1169,8 +1173,12 @@ let ``Test Operator Declarations for SByte`` () =
         "let testSByteToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.sbyte> (e1) @ (53,45--53,53)";
         "let testSByteToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testSByteToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.sbyte> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testSByteToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.sbyte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#else
         "let testSByteToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.sbyte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
-      ]
+#endif
+    ]
 
     testOperators "SByte" "sbyte" excludedTests expectedUnoptimized expectedOptimized
 
@@ -1279,7 +1287,11 @@ let ``Test Operator Declarations for Int16`` () =
         "let testInt16ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int16> (e1) @ (53,45--53,53)";
         "let testInt16ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testInt16ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int16> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testInt16ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#else
         "let testInt16ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#endif
       ]
 
     testOperators "Int16" "int16" excludedTests expectedUnoptimized expectedOptimized
@@ -1388,7 +1400,11 @@ let ``Test Operator Declarations for UInt16`` () =
         "let testUInt16ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.uint16> (e1)) @ (53,47--53,55)";
         "let testUInt16ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,47--54,57)";
         "let testUInt16ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.uint16> (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testUInt16ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testUInt16ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "UInt16" "uint16" excludedTests expectedUnoptimized expectedOptimized
@@ -1498,7 +1514,11 @@ let ``Test Operator Declarations for Int`` () =
         "let testIntToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int> (e1) @ (53,41--53,49)";
         "let testIntToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,41--54,51)";
         "let testIntToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int> (e1) @ (55,41--55,48)";
+#if DEBUG
+        @"let testIntToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,41--56,50)"
+#else
         "let testIntToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,41--56,50)";
+#endif
       ]
 
     testOperators "Int" "int" excludedTests expectedUnoptimized expectedOptimized
@@ -1608,7 +1628,11 @@ let ``Test Operator Declarations for Int32`` () =
         "let testInt32ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int32> (e1) @ (53,45--53,53)";
         "let testInt32ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testInt32ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int32> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testInt32ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)"
+#else
         "let testInt32ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#endif
       ]
 
     testOperators "Int32" "int32" excludedTests expectedUnoptimized expectedOptimized
@@ -1717,7 +1741,11 @@ let ``Test Operator Declarations for UInt32`` () =
         "let testUInt32ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.uint32> (e1)) @ (53,47--53,55)";
         "let testUInt32ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,47--54,57)";
         "let testUInt32ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.uint32> (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testUInt32ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testUInt32ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "UInt32" "uint32" excludedTests expectedUnoptimized expectedOptimized
@@ -1827,7 +1855,11 @@ let ``Test Operator Declarations for Int64`` () =
         "let testInt64ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int64> (e1) @ (53,45--53,53)";
         "let testInt64ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testInt64ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int64> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testInt64ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)"
+#else
         "let testInt64ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#endif
       ]
 
     testOperators "Int64" "int64" excludedTests expectedUnoptimized expectedOptimized
@@ -1936,7 +1968,11 @@ let ``Test Operator Declarations for UInt64`` () =
         "let testUInt64ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.uint64> (e1)) @ (53,47--53,55)";
         "let testUInt64ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,47--54,57)";
         "let testUInt64ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.uint64> (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testUInt64ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testUInt64ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "UInt64" "uint64" excludedTests expectedUnoptimized expectedOptimized
@@ -2046,7 +2082,11 @@ let ``Test Operator Declarations for IntPtr`` () =
         "let testIntPtrToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.nativeint> (e1) @ (53,50--53,58)";
         "let testIntPtrToDecimalOperator(e1) = Convert.ToDecimal (Operators.ToInt64<Microsoft.FSharp.Core.nativeint> (e1)) @ (54,50--54,60)";
         "let testIntPtrToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.nativeint> (e1) @ (55,50--55,57)";
+#if DEBUG
+        @"let testIntPtrToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.nativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,50--56,59)"
+#else
         "let testIntPtrToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.nativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,50--56,59)";
+#endif
       ]
 
     testOperators "IntPtr" "nativeint" excludedTests expectedUnoptimized expectedOptimized
@@ -2155,7 +2195,11 @@ let ``Test Operator Declarations for UIntPtr`` () =
         "let testUIntPtrToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.unativeint> (e1)) @ (53,52--53,60)";
         "let testUIntPtrToDecimalOperator(e1) = Convert.ToDecimal (Operators.ToUInt64<Microsoft.FSharp.Core.unativeint> (e1)) @ (54,52--54,62)";
         "let testUIntPtrToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.unativeint> (e1) @ (55,52--55,59)";
+#if DEBUG
+        @"let testUIntPtrToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.unativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,52--56,61)"
+#else
         "let testUIntPtrToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.unativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,52--56,61)";
+#endif
       ]
 
     testOperators "UIntPtr" "unativeint" excludedTests expectedUnoptimized expectedOptimized
@@ -2261,7 +2305,11 @@ let ``Test Operator Declarations for Single`` () =
         "let testSingleToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float32> (e1) @ (53,48--53,56)";
         "let testSingleToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,48--54,58)";
         "let testSingleToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.float32> (e1) @ (55,48--55,55)";
+#if DEBUG
+        @"let testSingleToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,48--56,57)"
+#else
         "let testSingleToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,48--56,57)";
+#endif
       ]
 
     testOperators "Single" "float32" excludedTests expectedUnoptimized expectedOptimized
@@ -2367,7 +2415,11 @@ let ``Test Operator Declarations for Double`` () =
         "let testDoubleToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (e1) @ (53,46--53,54)";
         "let testDoubleToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,46--54,56)";
         "let testDoubleToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.float> (e1) @ (55,46--55,53)";
+#if DEBUG
+        @"let testDoubleToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,46--56,55)"
+#else
         "let testDoubleToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,46--56,55)";
+#endif
       ]
 
     testOperators "Double" "float" excludedTests expectedUnoptimized expectedOptimized
@@ -2465,7 +2517,11 @@ let ``Test Operator Declarations for Decimal`` () =
         "let testDecimalToDoubleOperator(e1) = Convert.ToDouble (e1) @ (53,49--53,57)";
         "let testDecimalToDecimalOperator(e1) = e1 @ (54,57--54,59)";
         "let testDecimalToCharOperator(e1) = Decimal.op_Explicit (e1) @ (55,49--55,56)";
+#if DEBUG
+        @"let testDecimalToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.decimal> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,49--56,58)"
+#else
         "let testDecimalToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.decimal> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,49--56,58)";
+#endif
       ]
 
     testOperators "Decimal" "decimal" excludedTests expectedUnoptimized expectedOptimized
@@ -2562,7 +2618,11 @@ let ``Test Operator Declarations for Char`` () =
         "let testCharToSingleOperator(e1) = Operators.ToSingle<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.char> (e1)) @ (52,43--52,53)";
         "let testCharToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.char> (e1)) @ (53,43--53,51)";
         "let testCharToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.char> (e1) @ (55,43--55,50)";
+#if DEBUG
+        @"let testCharToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.char> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)"
+#else
         "let testCharToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.char> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)";
+#endif
       ]
 
     testOperators "Char" "char" excludedTests expectedUnoptimized expectedOptimized
@@ -2656,7 +2716,11 @@ let ``Test Operator Declarations for String`` () =
         "let testStringToDoubleOperator(e1) = Double.Parse ((if Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,dflt) then dflt else e1.Replace(\"_\",\"\")),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (53,47--53,55)";
         "let testStringToDecimalOperator(e1) = Decimal.Parse (e1,167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (54,47--54,57)";
         "let testStringToCharOperator(e1) = Char.Parse (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testStringToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.string> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testStringToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.string> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "String" "string" excludedTests expectedUnoptimized expectedOptimized
