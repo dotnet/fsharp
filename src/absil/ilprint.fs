@@ -1024,8 +1024,7 @@ let goutput_resource env os r =
   output_string os " { "
   goutput_custom_attrs env os r.CustomAttrs
   match r.Location with
-  | ILResourceLocation.LocalIn _
-  | ILResourceLocation.LocalOut _ ->
+  | ILResourceLocation.Local _ ->
       output_string os " /* loc nyi */ "
   | ILResourceLocation.File (mref, off) ->
       output_string os " .file "
