@@ -806,6 +806,8 @@ type CancellableBuilder() =
 
     member x.Combine(e1, e2) = e1 |> Cancellable.bind (fun () -> e2)
 
+    member x.For(es, f) = es |> Cancellable.each f   
+
     member x.TryWith(e, handler) = Cancellable.tryWith e handler
 
     member x.Using(resource, e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> IDisposable).Dispose())
@@ -815,6 +817,8 @@ type CancellableBuilder() =
     member x.Delay f = Cancellable.delay f
 
     member x.Zero() = Cancellable.ret ()
+
+    member x.YieldFrom(e: Cancellable<_>) = e
 
 let cancellable = CancellableBuilder()
 

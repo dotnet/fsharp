@@ -39,7 +39,6 @@
     <Compile Include="Tests.XmlDocComments.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.General.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.Completion.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.IncrementalBuild.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.GotoDefinition.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.NavigationBar.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.ParameterInfo.fs" />
