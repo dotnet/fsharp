@@ -2212,8 +2212,7 @@ type ILResourceAccess =
 
 [<RequireQualifiedAccess>]
 type ILResourceLocation =
-    | LocalIn of string * int * int
-    | LocalOut of byte[]
+    | Local of ReadOnlyByteMemory
     | File of ILModuleRef * int32
     | Assembly of ILAssemblyRef
 
@@ -2227,9 +2226,7 @@ type ILResource =
     /// Read the bytes from a resource local to an assembly
     member r.GetBytes() =
         match r.Location with
-        | ILResourceLocation.LocalIn (file, start, len) ->
-            File.ReadBinaryChunk(file, start, len)
-        | ILResourceLocation.LocalOut bytes -> bytes
+        | ILResourceLocation.Local bytes -> bytes
         | _ -> failwith "GetBytes"
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
@@ -4198,8 +4195,7 @@ and refs_of_exported_types s (tab: ILExportedTypesAndForwarders) = List.iter (re
 
 and refs_of_resource_where s x =
     match x with
-    | ILResourceLocation.LocalIn _ -> ()
-    | ILResourceLocation.LocalOut _ -> ()
+    | ILResourceLocation.Local _ -> ()
     | ILResourceLocation.File (mref, _) -> refs_of_modref s mref
     | ILResourceLocation.Assembly aref -> refs_of_assemblyRef s aref
 

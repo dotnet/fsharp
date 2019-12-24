@@ -3,6 +3,7 @@
 /// The "unlinked" view of .NET metadata and code.  Central to the Abstract IL library
 module public FSharp.Compiler.AbstractIL.IL 
 
+open FSharp.Compiler.AbstractIL.Internal
 open System.Collections.Generic
 open System.Reflection
 
@@ -1408,11 +1409,9 @@ type ILResourceAccess =
 
 [<RequireQualifiedAccess>]
 type ILResourceLocation = 
-    /// Represents a manifest resource that can be read from within the PE file
-    | LocalIn of string * int * int
-
-    /// Represents a manifest resource that is due to be written to the output PE file
-    | LocalOut of byte[]
+    internal
+    /// Represents a manifest resource that can be read or written to a PE file
+    | Local of ReadOnlyByteMemory
 
     /// Represents a manifest resource in an associated file
     | File of ILModuleRef * int32
@@ -1432,7 +1431,7 @@ type ILResource =
       MetadataIndex: int32 }
 
     /// Read the bytes from a resource local to an assembly. Will fail for non-local resources.
-    member GetBytes : unit -> byte[]
+    member internal GetBytes : unit -> ReadOnlyByteMemory
 
     member CustomAttrs: ILAttributes
 

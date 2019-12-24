@@ -284,9 +284,12 @@ let u_int32 st =
         assert(b0 = 0xFF)
         prim_u_int32 st
 
-let u_bytes st =
+let u_byte_memory st =
     let n =  (u_int32 st)
     st.is.ReadBytes n
+
+let u_bytes st =
+    (u_byte_memory st).ToArray()
 
 let u_prim_string st =
     let len =  (u_int32 st)
@@ -832,7 +835,7 @@ let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =
         // an identical copy of the source for the DLL containing the data being unpickled.  A message will
         // then be printed indicating the name of the item.
 
-let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (phase2bytes: byte[]) =
+let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (phase2bytes: ReadOnlyByteMemory) =
     let st2 =
        { is = ByteStream.FromBytes (phase2bytes, 0, phase2bytes.Length)
          iilscope= ilscope
@@ -858,7 +861,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
             (u_array u_encoded_pubpath)
             (u_array u_encoded_nleref)
             (u_array u_encoded_simpletyp)
-            u_bytes
+            u_byte_memory
             st2
     let ccuTab       = new_itbl "iccus"       (Array.map (CcuThunk.CreateDelayed) ccuNameTab)
     let stringTab    = new_itbl "istrings"    (Array.map decode_string stringTab)

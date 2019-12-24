@@ -148,6 +148,9 @@
     <Compile Include="CompletionProviderTests.fs">
       <Link>Roslyn\CompletionProviderTests.fs</Link>
     </Compile>
+    <Compile Include="FsxCompletionProviderTests.fs">
+      <Link>Roslyn\FsxCompletionProviderTests.fs</Link>
+    </Compile>
     <Compile Include="SignatureHelpProviderTests.fs">
       <Link>Roslyn\SignatureHelpProviderTests.fs</Link>
     </Compile>
