@@ -40,8 +40,8 @@ let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
-/// We set the limit to slightly under that to allow for some 'slop'
-let LOH_SIZE_THRESHOLD_BYTES = 84_900
+/// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
+let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
 //---------------------------------------------------------------------
 // Library: ReportTime

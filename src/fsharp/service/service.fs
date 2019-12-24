@@ -225,7 +225,7 @@ module CompileHelpers =
         // Register the reflected definitions for the dynamically generated assembly
         for resource in ilxMainModule.Resources.AsList do 
             if IsReflectedDefinitionsResource resource then 
-                Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, moduleBuilder.Name, resource.GetBytes())
+                Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, moduleBuilder.Name, resource.GetBytes().ToArray())
 
         // Save the result
         assemblyBuilderRef := Some assemblyBuilder
