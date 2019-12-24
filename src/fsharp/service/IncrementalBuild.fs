@@ -717,6 +717,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         |> Array.ofList
         |> Array.map (fun (_, nm, _) -> (nm, DateTime()))
 
+    /// Checks source file timestamps.
+    /// Source files can be invalidated by this call, which will cause re-type-checking.
     let checkSourceFileTimeStamps (cache: TimeStampCache) =
         sourceFileTimeStamps
         |> Array.iteri (fun slot (filename, currentTimeStamp) ->
@@ -730,6 +732,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         |> Array.ofList
         |> Array.map (fun (_, getTimeStamp) -> (getTimeStamp, DateTime()))
 
+    /// Checks reference assembly timestamps.
+    /// Build can be invalidated by this call.
     let checkReferenceAssemblyTimeStamps ctok (cache: TimeStampCache) =
         referenceAssemblyTimeStamps
         |> Array.iteri (fun i (getTimeStamp, currentTimeStamp) ->
@@ -738,6 +742,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 invalidateBuild ()
                 referenceAssemblyTimeStamps.[i] <- (getTimeStamp, newTimeStamp))
 
+    /// Checks source files and reference assembly timestamps.
+    /// Source files and/or build can be invalidated by this call.
     let checkTimeStamps ctok cache =
         checkSourceFileTimeStamps cache
         checkReferenceAssemblyTimeStamps ctok cache
