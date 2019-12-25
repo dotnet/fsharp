@@ -246,7 +246,6 @@ let MethInfoHasAttribute g m attribSpec minfo  =
         |> Option.isSome
 
 
-
 /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
 let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m = 
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
@@ -267,9 +266,16 @@ let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
 
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
-let CheckFSharpAttributes g attribs m = 
-    if isNil attribs then CompleteD 
-    else 
+let langVersionPrefix = "[--langversion:"
+let CheckFSharpAttributes (g:TcGlobals) attribs m =
+    let isExperimentalAttributeEnabled =
+        if g.compilingFslib then
+            false
+        else
+            g.langVersion.IsPreviewEnabled
+
+    if isNil attribs then CompleteD
+    else
         (match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
         | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) ->
             WarnD(ObsoleteWarning(s, m))
@@ -283,28 +289,27 @@ let CheckFSharpAttributes g attribs m =
         | None -> 
             CompleteD
         ) ++ (fun () -> 
-            
+
         match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-        | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) -> 
+        | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) ->
             let msg = UserCompilerMessage(s, n, m)
             let isError = 
                 match namedArgs with 
                 | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
                 | _ -> false 
             if isError && (not g.compilingFslib || n <> 1204) then ErrorD msg else WarnD msg
-                 
         | _ -> 
             CompleteD
         ) ++ (fun () -> 
-            
+
         match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
-        | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) -> 
+        | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) when not (isExperimentalAttributeEnabled) ->
             WarnD(Experimental(s, m))
-        | Some _ -> 
+        | Some _ when not (isExperimentalAttributeEnabled) ->
             WarnD(Experimental(FSComp.SR.experimentalConstruct (), m))
-        | _ ->  
+        | _ ->
             CompleteD
-        ) ++ (fun () -> 
+        ) ++ (fun () ->
 
         match TryFindFSharpAttribute g g.attrib_UnverifiableAttribute attribs with
         | Some _ -> 
