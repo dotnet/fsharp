@@ -1935,8 +1935,9 @@ namespace Microsoft.FSharp.Collections
         /// <param name="rank">The rank of the index.</param>
         /// <param name="offset">The offset from the end.</param>
         /// <returns>The corresponding index from the start.</returns>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         member GetReverseIndex: rank: int * offset: int -> int
-        
+
         /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
         /// <param name="head">A new head value for the list.</param>
         /// <param name="tail">The existing list.</param>
@@ -2747,12 +2748,14 @@ namespace Microsoft.FSharp.Core
         val ( |KeyValue| ): keyValuePair:KeyValuePair<'Key,'Value> -> 'Key * 'Value
 
         [<AutoOpen>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         module ArrayExtensions = 
             type ``[,,,]``<'T> with
                 /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
                 /// <param name="rank">The rank of the index. This refers to the dimension in the 4d array.</param>
                 /// <param name="offset">The offset from the end.</param>
                 /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[,,]``<'T> with
@@ -2760,6 +2763,7 @@ namespace Microsoft.FSharp.Core
                 /// <param name="rank">The rank of the index. This refers to the dimension in the 3d array.</param>
                 /// <param name="offset">The offset from the end.</param>
                 /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[,]``<'T> with
@@ -2767,13 +2771,15 @@ namespace Microsoft.FSharp.Core
                 /// <param name="rank">The rank of the index. This refers to the dimension in the 2d array.</param>
                 /// <param name="offset">The offset from the end.</param>
                 /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[]``<'T> with
                 /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
                 /// <param name="rank">The rank of the index.</param>
                 /// <param name="offset">The offset from the end.</param>
-                /// <returns>The corresponding index from the start.</returns> 
+                /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type System.String with
@@ -2781,6 +2787,7 @@ namespace Microsoft.FSharp.Core
                 /// <param name="rank">The rank of the index.</param>
                 /// <param name="offset">The offset from the end.</param>
                 /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
 

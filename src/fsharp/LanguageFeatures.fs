@@ -92,9 +92,7 @@ type LanguageVersion (specifiedVersionAsString) =
 
     /// Has preview been explicitly specified
     member __.IsPreviewEnabled =
-        match specifiedVersionAsString with
-        | "preview" -> true
-        | _ -> false
+        specified = previewVersion
 
     /// Does the languageVersion support this version string
     member __.ContainsVersion version =
