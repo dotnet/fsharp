@@ -2691,7 +2691,11 @@ let isILValueTy = function ILType.Value _ -> true | _ -> false
 
 let isBuiltInTySpec (ilg: ILGlobals) (tspec: ILTypeSpec) n =
     let tref = tspec.TypeRef
-    tref.Name = n && (tref.Scope.IsPrimaryAssemblyRef || tref.Scope = ilg.primaryAssemblyScopeRef)
+    let scoref = tref.Scope
+    tref.Name = n && 
+    (scoref.IsLocalRef ||
+     scoref.IsPrimaryAssemblyRef || 
+     tref.Scope = ilg.primaryAssemblyScopeRef)
 
 let isILBoxedBuiltInTy ilg (ty: ILType) n =
     isILBoxedTy ty && isBuiltInTySpec ilg ty.TypeSpec n
