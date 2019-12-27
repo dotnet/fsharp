@@ -3834,13 +3834,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #if !NO_EXTENSIONTYPING
         tcImportsWeak.SetDllInfos dllInfos
 #endif
-        let ilg =
-            // TODO: Since we may have not initialized ILGlobals, this is a placeholder to handle this case.
-            match ilGlobalsOpt with
-            | Some ilg -> ilg
-            | _ -> EcmaMscorlibILGlobals
-
-        dllTable <- NameMap.add (getNameOfScopeRef ilg dllInfo.ILScopeRef) dllInfo dllTable
+        dllTable <- NameMap.add (getNameOfScopeRef (defaultArg ilGlobalsOpt EcmaMscorlibILGlobals) dllInfo.ILScopeRef) dllInfo dllTable
 
     member tcImports.GetDllInfos() : ImportedBinary list = 
         CheckDisposed()
@@ -4348,11 +4342,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #if !NO_EXTENSIONTYPING
         let tcConfig = tcConfigP.Get ctok
 #endif
-        let ilg =
-            match ilGlobalsOpt with
-            | Some ilg -> ilg
-            | _ -> failwith "Unable to import referenced fsharp assembly with no ILGlobals"
-
+        let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
         let ilModule = dllinfo.RawMetadata 
         let ilScopeRef = dllinfo.ILScopeRef 
         let ilShortAssemName = getNameOfScopeRef ilg ilScopeRef 
