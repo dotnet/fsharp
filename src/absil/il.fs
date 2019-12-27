@@ -2620,7 +2620,7 @@ type ILGlobals(primaryScopeRef) =
 
     member x.primaryAssemblyScopeRef = m_typ_Object.TypeRef.Scope
     member x.primaryAssemblyName = 
-        match primaryScopeRef with 
+        match m_typ_Object.TypeRef.Scope with 
         | ILScopeRef.Assembly aref -> aref.Name 
         | _ -> failwith "Invalid primary assembly"
     member x.typ_Object = m_typ_Object
