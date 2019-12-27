@@ -2691,7 +2691,7 @@ let isILValueTy = function ILType.Value _ -> true | _ -> false
 
 let isBuiltInTySpec (ilg: ILGlobals) (tspec: ILTypeSpec) n =
     let tref = tspec.TypeRef
-    tref.Name = n && tref.Scope = ilg.primaryAssemblyScopeRef
+    tref.Name = n && (tref.Scope.IsPrimaryAssemblyRef || tref.Scope = ilg.primaryAssemblyScopeRef)
 
 let isILBoxedBuiltInTy ilg (ty: ILType) n =
     isILBoxedTy ty && isBuiltInTySpec ilg ty.TypeSpec n
@@ -2743,8 +2743,6 @@ let rescopeILScopeRef scoref scoref1 =
     | ILScopeRef.Local, _ -> scoref1
     | _, ILScopeRef.Module _ -> scoref
     | ILScopeRef.Module _, _ -> scoref1
-    | ILScopeRef.Assembly _, ILScopeRef.PrimaryAssembly -> scoref
-    | ILScopeRef.PrimaryAssembly, ILScopeRef.Assembly _ -> scoref1
     | _ -> scoref1
 
 let rescopeILTypeRef scoref (tref1: ILTypeRef) =
