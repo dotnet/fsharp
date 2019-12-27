@@ -2463,7 +2463,14 @@ and FSharpAssembly internal (cenv, ccu: CcuThunk) =
 
     member __.Contents : FSharpAssemblySignature = FSharpAssemblySignature(cenv, ccu)
                  
-    override x.ToString() = ccu.ILScopeRef.QualifiedName
+    override x.ToString() = 
+        match ccu.ILScopeRef with
+        | ILScopeRef.Local ->
+            cenv.thisCcu.ILScopeRef.QualifiedName
+        | ILScopeRef.PrimaryAssembly ->
+            cenv.g.ilg.primaryAssemblyRef.QualifiedName
+        | _ ->
+            ccu.ILScopeRef.QualifiedName
 
 /// Represents open declaration in F# code.
 [<Sealed>]
