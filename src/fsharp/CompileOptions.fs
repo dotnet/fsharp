@@ -1824,11 +1824,14 @@ let GenerateIlxCode
 // by the same references. Only used for static linking.
 //----------------------------------------------------------------------------
 
-let NormalizeAssemblyRefs (ctok, tcImports:TcImports) scoref =
+let NormalizeAssemblyRefs (ctok, ilGlobals: ILGlobals, tcImports:TcImports) scoref =
     match scoref with 
     | ILScopeRef.Local 
-    | ILScopeRef.Module _ 
-    | ILScopeRef.PrimaryAssembly -> scoref
+    | ILScopeRef.Module _ -> scoref
+    | ILScopeRef.PrimaryAssembly ->
+        match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, ilGlobals.primaryAssemblyName, lookupOnly=false) with 
+        | Some dllInfo -> dllInfo.ILScopeRef
+        | None -> scoref
     | ILScopeRef.Assembly aref -> 
         match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
         | Some dllInfo -> dllInfo.ILScopeRef

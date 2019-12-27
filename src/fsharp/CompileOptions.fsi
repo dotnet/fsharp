@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.CompileOptions
 
 open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Tast
@@ -84,7 +85,7 @@ val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSo
 val GenerateIlxCode : IlxGen.IlxGenBackend * isInteractiveItExpr:bool * isInteractiveOnMono:bool * TcConfig * TypeChecker.TopAttribs * TypedAssemblyAfterOptimization * fragName:string * IlxGen.IlxAssemblyGenerator -> IlxGen.IlxGenResults
 
 // Used during static linking
-val NormalizeAssemblyRefs : CompilationThreadToken * TcImports -> (AbstractIL.IL.ILScopeRef -> AbstractIL.IL.ILScopeRef)
+val NormalizeAssemblyRefs : CompilationThreadToken * ILGlobals * TcImports -> (AbstractIL.IL.ILScopeRef -> AbstractIL.IL.ILScopeRef)
 
 // Miscellany
 val ignoreFailureOnMono1_1_16 : (unit -> unit) -> unit
