@@ -785,6 +785,35 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                       |> String.concat " * "
           
                   prefix + (FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural args) + suffix
+
+          let knownReturnType (cx: TraitConstraintInfo option) =
+              match cx with 
+              | None -> String.Empty
+              | Some cx ->
+              let prefix = nl + nl
+              let suffix = nl + nl
+              match cx.ReturnType with
+              | None -> String.Empty
+              | Some t ->
+                prefix + (NicePrint.prettyStringOfTy denv t |> FSComp.SR.csNoOverloadsFoundReturnType) + suffix
+
+          let genericParametersMessage (cx: TraitConstraintInfo option) =
+              match cx with 
+              | None -> String.Empty
+              | Some cx ->
+              let prefix = nl + nl
+              let suffix = nl + nl
+            
+              match cx.ArgTys  with
+              | [] -> nl + nl
+              | [item] -> prefix + (item |> NicePrint.prettyStringOfTy denv |> FSComp.SR.csNoOverloadsFoundTypeParametersPrefixSingular) + suffix
+              | items ->
+                let args =
+                  items
+                  |> List.map (NicePrint.prettyStringOfTy denv)
+                  |> String.concat ", "
+                prefix + (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixPlural args) + suffix
+
           let formatOverloads (overloads: OverloadInformation list) =
               overloads
               |> List.map (fun overload -> overload.OverloadMethodInfo denv m)
@@ -796,7 +825,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
             let prettyArgTys =
               cx.ArgTys 
               |> List.map (NicePrint.prettyStringOfTy denv)
-              |> String.concat " +!+ "
+              |> String.concat ", "
                           
             [ sprintf "cx.ArgTys      %s" prettyArgTys
               sprintf "cx.MemberFlags %A" cx.MemberFlags
@@ -809,7 +838,12 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           let cx, msg =
               match failure with
               | NoOverloadsFound (methodName, overloads, cx) ->
-                cx, FSComp.SR.csNoOverloadsFound methodName + argsMessage + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
+                cx
+                , FSComp.SR.csNoOverloadsFound methodName
+                  + (knownReturnType cx) 
+                  + (genericParametersMessage cx)
+                  + argsMessage
+                  + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
               | PossibleCandidates (methodName, methodNames, cx) ->
                   cx
                   , (let msg = FSComp.SR.csMethodIsOverloaded methodName
@@ -818,6 +852,8 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                      | names -> 
                          let overloads = FSComp.SR.csCandidates (formatOverloads names)
                          msg 
+                         + (knownReturnType cx)
+                         + (genericParametersMessage cx)
                          + argsMessage
                          + overloads)
                   
