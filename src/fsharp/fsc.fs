@@ -1582,10 +1582,10 @@ module StaticLinker =
 
               // Rewrite type and assembly references
               let ilxMainModule =
-                  let isMscorlib = ilGlobals.primaryAssemblyName = PrimaryAssembly.Mscorlib.Name
+                  let isMscorlib = ilGlobals.primaryAssemblyName = "mscorlib"
                   let validateTargetPlatform (scopeRef : ILScopeRef) = 
                       let name = getNameOfScopeRef scopeRef
-                      if (not isMscorlib && name = PrimaryAssembly.Mscorlib.Name) then
+                      if (not isMscorlib && name = "mscorlib") then
                           error (Error(FSComp.SR.fscStaticLinkingNoProfileMismatches(), rangeCmdArgs))
                       scopeRef
                   let rewriteAssemblyRefsToMatchLibraries = NormalizeAssemblyRefs (ctok, tcImports)

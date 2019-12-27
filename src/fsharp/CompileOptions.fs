@@ -897,17 +897,6 @@ let cliRootFlag (_tcConfigB: TcConfigBuilder) =
          OptionString (fun _  -> ()), Some(DeprecatedCommandLineOptionFull(FSComp.SR.optsClirootDeprecatedMsg(), rangeCmdArgs)),
          Some(FSComp.SR.optsClirootDescription()))
 
-let SetTargetProfile tcConfigB v = 
-    tcConfigB.primaryAssembly <- 
-        match v with
-        // Indicates we assume "mscorlib.dll", i.e .NET Framework, Mono and Profile 47
-        | "mscorlib" -> PrimaryAssembly.Mscorlib
-        // Indicates we assume "System.Runtime.dll", i.e .NET Standard 1.x, .NET Core App 1.x and above, and Profile 7/78/259
-        | "netcore"  -> PrimaryAssembly.System_Runtime
-        // Indicates we assume "netstandard.dll", i.e .NET Standard 2.0 and above
-        | "netstandard"  -> PrimaryAssembly.NetStandard
-        | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile v, rangeCmdArgs))
-
 let advancedFlagsBoth tcConfigB =
     [
         yield codePageFlag tcConfigB
@@ -923,7 +912,7 @@ let advancedFlagsBoth tcConfigB =
 
         yield CompilerOption
                  ("targetprofile", tagString,
-                  OptionString (SetTargetProfile tcConfigB), None,
+                  OptionString (fun _ -> ()), None, // TODO: Add deprecation message.
                   Some(FSComp.SR.optsTargetProfile()))
     ]
 

@@ -55,22 +55,6 @@ let notlazy v = Lazy<_>.CreateFromValue v
 let lazyMap f (x: Lazy<_>) =
       if x.IsValueCreated then notlazy (f (x.Force())) else lazy (f (x.Force()))
 
-[<RequireQualifiedAccess>]
-type PrimaryAssembly =
-    | Mscorlib
-    | System_Runtime
-    | NetStandard
-
-    member this.Name =
-        match this with
-        | Mscorlib -> "mscorlib"
-        | System_Runtime -> "System.Runtime"
-        | NetStandard -> "netstandard"
-    static member IsSomePrimaryAssembly n =
-      n = PrimaryAssembly.Mscorlib.Name
-      || n = PrimaryAssembly.System_Runtime.Name
-      || n = PrimaryAssembly.NetStandard.Name
-
 // --------------------------------------------------------------------
 // Utilities: type names
 // --------------------------------------------------------------------
@@ -2698,54 +2682,54 @@ let isILBoxedTy = function ILType.Boxed _ -> true | _ -> false
 
 let isILValueTy = function ILType.Value _ -> true | _ -> false
 
-let isPrimaryAssemblyTySpec (tspec: ILTypeSpec) n =
+let isPrimaryAssemblyTySpec (ilg: ILGlobals) (tspec: ILTypeSpec) n =
     let tref = tspec.TypeRef
     let scoref = tref.Scope
     (tref.Name = n) &&
     match scoref with
-    | ILScopeRef.Assembly n -> PrimaryAssembly.IsSomePrimaryAssembly n.Name
+    | ILScopeRef.Assembly n -> ilg.primaryAssemblyScopeRef.IsAssemblyRef && ilg.primaryAssemblyScopeRef.AssemblyRef = n
     | ILScopeRef.Module _ -> false
     | ILScopeRef.Local -> true
 
-let isILBoxedPrimaryAssemblyTy (ty: ILType) n =
-  isILBoxedTy ty && isPrimaryAssemblyTySpec ty.TypeSpec n
+let isILBoxedPrimaryAssemblyTy ilg (ty: ILType) n =
+  isILBoxedTy ty && isPrimaryAssemblyTySpec ilg ty.TypeSpec n
 
-let isILValuePrimaryAssemblyTy (ty: ILType) n =
-  isILValueTy ty && isPrimaryAssemblyTySpec ty.TypeSpec n
+let isILValuePrimaryAssemblyTy ilg (ty: ILType) n =
+  isILValueTy ty && isPrimaryAssemblyTySpec ilg ty.TypeSpec n
 
-let isILObjectTy ty = isILBoxedPrimaryAssemblyTy ty tname_Object
+let isILObjectTy ilg ty = isILBoxedPrimaryAssemblyTy ilg ty tname_Object
 
-let isILStringTy ty = isILBoxedPrimaryAssemblyTy ty tname_String
+let isILStringTy ilg ty = isILBoxedPrimaryAssemblyTy ilg ty tname_String
 
-let isILTypedReferenceTy ty = isILValuePrimaryAssemblyTy ty "System.TypedReference"
+let isILTypedReferenceTy ilg ty = isILValuePrimaryAssemblyTy ilg ty "System.TypedReference"
 
-let isILSByteTy ty = isILValuePrimaryAssemblyTy ty tname_SByte
+let isILSByteTy ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_SByte
 
-let isILByteTy ty = isILValuePrimaryAssemblyTy ty tname_Byte
+let isILByteTy ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_Byte
 
-let isILInt16Ty ty = isILValuePrimaryAssemblyTy ty tname_Int16
+let isILInt16Ty ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_Int16
 
-let isILUInt16Ty ty = isILValuePrimaryAssemblyTy ty tname_UInt16
+let isILUInt16Ty ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_UInt16
 
-let isILInt32Ty ty = isILValuePrimaryAssemblyTy ty tname_Int32
+let isILInt32Ty ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_Int32
 
-let isILUInt32Ty ty = isILValuePrimaryAssemblyTy ty tname_UInt32
+let isILUInt32Ty ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_UInt32
 
-let isILInt64Ty ty = isILValuePrimaryAssemblyTy ty tname_Int64
+let isILInt64Ty ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_Int64
 
-let isILUInt64Ty ty = isILValuePrimaryAssemblyTy ty tname_UInt64
+let isILUInt64Ty ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_UInt64
 
-let isILIntPtrTy ty = isILValuePrimaryAssemblyTy ty tname_IntPtr
+let isILIntPtrTy ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_IntPtr
 
-let isILUIntPtrTy ty = isILValuePrimaryAssemblyTy ty tname_UIntPtr
+let isILUIntPtrTy ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_UIntPtr
 
-let isILBoolTy ty = isILValuePrimaryAssemblyTy ty tname_Bool
+let isILBoolTy ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_Bool
 
-let isILCharTy ty = isILValuePrimaryAssemblyTy ty tname_Char
+let isILCharTy ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_Char
 
-let isILSingleTy ty = isILValuePrimaryAssemblyTy ty tname_Single
+let isILSingleTy ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_Single
 
-let isILDoubleTy ty = isILValuePrimaryAssemblyTy ty tname_Double
+let isILDoubleTy ilg ty = isILValuePrimaryAssemblyTy ilg ty tname_Double
 
 // --------------------------------------------------------------------
 // Rescoping

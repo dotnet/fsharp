@@ -2209,7 +2209,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
             
             let backgroundDiagnostics = [| |]
             let reduceMemoryUsage = ReduceMemoryFlag.Yes
-            let assumeDotNetFramework = tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib
+            let assumeDotNetFramework = tcConfig.primaryAssembly.Name = "mscorlib"
 
             let applyCompilerOptions tcConfigB  = 
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 

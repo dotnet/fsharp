@@ -2008,8 +2008,7 @@ type CcuLoadFailureAction =
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
-    { mutable primaryAssembly: PrimaryAssembly
-      mutable noFeedback: bool
+    { mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string (* normally "." *)
       mutable openDebugInformationForLaterStaticLinking: bool (* only for --standalone *)
@@ -2169,7 +2168,6 @@ type TcConfigBuilder =
 
     static member Initial =
         {
-          primaryAssembly = PrimaryAssembly.Mscorlib // default value, can be overridden using the command line switch
           light = None
           noFeedback = false
           stackReserveSize = None
@@ -2549,6 +2547,56 @@ let GetAutoOpenAttributes ilg ilModule =
 
 let GetInternalsVisibleToAttributes ilg ilModule = 
     ilModule |> GetCustomAttributesOfILModule |> List.choose (TryFindInternalsVisibleToAttr ilg)
+
+let findPrimaryAssembly (data: TcConfigBuilder) =
+    let assemblies =
+        data.referencedDLLs
+        |> List.map (fun r -> r.Text)
+
+    let readerSettings: ILReaderOptions = 
+        { pdbDirPath=None
+          ilGlobals = EcmaMscorlibILGlobals
+          reduceMemoryUsage = data.reduceMemoryUsage
+          metadataOnly = MetadataOnlyFlag.Yes
+          tryGetMetadataSnapshot = data.tryGetMetadataSnapshot }
+
+    let nameSystem = ["System"]
+    let nameObject = "Object"
+
+    let hasNoPiaLocalTypes (reader: ILModuleReader) =
+        reader.ILModuleDef.TypeDefs.AsArray
+        |> Array.exists (fun (ilTypeDef: ILTypeDef) ->
+            ilTypeDef.CustomAttrs.AsArray
+            |> Array.exists (fun attr -> attr.Method.MethodRef.DeclaringTypeRef.Name = "System.Runtime.InteropServices.TypeIdentifierAttribute"))
+
+    let hasBaselessObjectClass (reader: ILModuleReader) =
+        reader.ILModuleDef.TypeDefs.AsArrayOfPreTypeDefs
+        |> Array.exists (fun (ilPreTypeDef: ILPreTypeDef) ->
+            if ilPreTypeDef.Name = nameObject && ilPreTypeDef.Namespace = nameSystem then
+                let ilTypeDef = ilPreTypeDef.GetTypeDef()
+                ilTypeDef.IsClass && ilTypeDef.Implements.IsEmpty
+            else
+                false)
+
+    let isCandidate (reader: ILModuleReader) =
+        reader.ILAssemblyRefs.IsEmpty &&
+        hasBaselessObjectClass reader &&
+        not (hasNoPiaLocalTypes reader)
+
+    let candidates =
+        assemblies
+        |> List.choose (fun path ->
+            let reader = OpenILModuleReader path readerSettings
+            if isCandidate reader && reader.ILModuleDef.HasManifest then
+                mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
+                |> Some
+            else
+                None)
+
+    match candidates with
+    | [] -> error(InternalError("Primary assembly not found.", Range.range0))
+    | [candidate] -> candidate
+    | _ -> error(InternalError("Two or more possible primary assemblies were found. Consider fixing the assembly references.", Range.range0))
     
 //----------------------------------------------------------------------------
 // TcConfig 
@@ -2579,8 +2627,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         | [r]
         | r :: _ -> nameOfDll r
 
+    let primaryAssemblyRef = findPrimaryAssembly data
+
     // Look for an explicit reference to mscorlib/netstandard.dll or System.Runtime.dll and use that to compute clrRoot and targetFrameworkVersion
-    let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(data.primaryAssembly.Name)
+    let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(primaryAssemblyRef.Name)
     let fslibReference =
         // Look for explicit FSharp.Core reference otherwise use version that was referenced by compiler
         let dllReference, fileNameOpt = computeKnownDllReference getFSharpCoreLibraryName
@@ -2617,7 +2667,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     let systemAssemblies = systemAssemblies
 
-    member x.primaryAssembly = data.primaryAssembly
+    member x.primaryAssembly = primaryAssemblyRef
     member x.noFeedback = data.noFeedback
     member x.stackReserveSize = data.stackReserveSize   
     member x.implicitIncludeDir = data.implicitIncludeDir

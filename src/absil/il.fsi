@@ -7,14 +7,6 @@ open FSharp.Compiler.AbstractIL.Internal
 open System.Collections.Generic
 open System.Reflection
 
-[<RequireQualifiedAccess>]
-type PrimaryAssembly = 
-    | Mscorlib
-    | System_Runtime
-    | NetStandard
-
-    member Name: string
-
 /// Represents guids 
 type ILGuid = byte[]
 
@@ -1948,23 +1940,23 @@ val instILType: ILGenericArgs -> ILType -> ILType
 val ecmaPublicKey: PublicKey
 
 /// Discriminating different important built-in types.
-val isILObjectTy: ILType -> bool
-val isILStringTy: ILType -> bool
-val isILSByteTy: ILType -> bool
-val isILByteTy: ILType -> bool
-val isILInt16Ty: ILType -> bool
-val isILUInt16Ty: ILType -> bool
-val isILInt32Ty: ILType -> bool
-val isILUInt32Ty: ILType -> bool
-val isILInt64Ty: ILType -> bool
-val isILUInt64Ty: ILType -> bool
-val isILIntPtrTy: ILType -> bool
-val isILUIntPtrTy: ILType -> bool
-val isILBoolTy: ILType -> bool
-val isILCharTy: ILType -> bool
-val isILTypedReferenceTy: ILType -> bool
-val isILDoubleTy: ILType -> bool
-val isILSingleTy: ILType -> bool
+val isILObjectTy: ILGlobals -> ILType -> bool
+val isILStringTy: ILGlobals -> ILType -> bool
+val isILSByteTy: ILGlobals -> ILType -> bool
+val isILByteTy: ILGlobals -> ILType -> bool
+val isILInt16Ty: ILGlobals -> ILType -> bool
+val isILUInt16Ty: ILGlobals -> ILType -> bool
+val isILInt32Ty: ILGlobals -> ILType -> bool
+val isILUInt32Ty: ILGlobals -> ILType -> bool
+val isILInt64Ty: ILGlobals -> ILType -> bool
+val isILUInt64Ty: ILGlobals -> ILType -> bool
+val isILIntPtrTy: ILGlobals -> ILType -> bool
+val isILUIntPtrTy: ILGlobals -> ILType -> bool
+val isILBoolTy: ILGlobals -> ILType -> bool
+val isILCharTy: ILGlobals -> ILType -> bool
+val isILTypedReferenceTy: ILGlobals -> ILType -> bool
+val isILDoubleTy: ILGlobals -> ILType -> bool
+val isILSingleTy: ILGlobals -> ILType -> bool
 
 val sha1HashInt64 : byte[] -> int64
 /// Get a public key token from a public key.
