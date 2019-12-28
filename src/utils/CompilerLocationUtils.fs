@@ -181,6 +181,7 @@ module internal FSharpEnvironment =
     //     - default F# binaries directory in service.fs (REVIEW: check this)
     //     - default location of fsi.exe in FSharp.VS.FSI.dll (REVIEW: check this)
     //     - default F# binaries directory in (project system) Project.fs
+    let BinFolderOfDefaultFSharpCompiler(probePoint:string option) =
 #if FX_NO_WIN_REGISTRY
         ignore probePoint
 

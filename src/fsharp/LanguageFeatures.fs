@@ -19,12 +19,12 @@ open System
 [<RequireQualifiedAccess>]
 type LanguageFeature =
     | SingleUnderscorePattern
+    | PackageManagement
     | WildCardInForLoop
     | RelaxWhitespace
     | NameOf
     | ImplicitYield
     | OpenStaticClasses
-    | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
 
@@ -91,7 +91,6 @@ type LanguageVersion (specifiedVersionAsString) =
             for v in languageVersions |> Seq.sort ->
                 sprintf "%M%s" v (if v = defaultVersion then " (Default)" else "")
         |]
-            |]
 
     /// Get the specified LanguageVersion
     member __.SpecifiedVersion = specified
