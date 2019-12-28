@@ -66,10 +66,6 @@ type PrimaryAssembly =
         | Mscorlib -> "mscorlib"
         | System_Runtime -> "System.Runtime"
         | NetStandard -> "netstandard"
-    static member IsSomePrimaryAssembly n =
-      n = PrimaryAssembly.Mscorlib.Name
-      || n = PrimaryAssembly.System_Runtime.Name
-      || n = PrimaryAssembly.NetStandard.Name
 
 // --------------------------------------------------------------------
 // Utilities: type names
