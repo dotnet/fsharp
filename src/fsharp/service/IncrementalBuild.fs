@@ -14,6 +14,7 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
@@ -1731,7 +1732,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                          defaultFSharpBinariesDir, 
                          implicitIncludeDir=projectDirectory, 
                          reduceMemoryUsage=ReduceMemoryFlag.Yes, 
-                         isInteractive=false, 
+                         isInteractive=useScriptResolutionRules, 
                          isInvalidationSupported=true, 
                          defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
                          tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
