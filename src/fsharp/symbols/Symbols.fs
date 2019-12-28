@@ -2469,8 +2469,8 @@ and FSharpAssembly internal (cenv, ccu: CcuThunk) =
             cenv.thisCcu.ILScopeRef.QualifiedName
         | ILScopeRef.PrimaryAssembly ->
             cenv.g.ilg.primaryAssemblyRef.QualifiedName
-        | _ ->
-            ccu.ILScopeRef.QualifiedName
+        | scoref ->
+            scoref.QualifiedName
 
 /// Represents open declaration in F# code.
 [<Sealed>]
