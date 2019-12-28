@@ -58,7 +58,7 @@ module internal FSharpCheckerResultsSettings =
         | s -> int64 s
 
     // Look for DLLs in the location of the service DLL first.
-    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<IncrementalBuilder>.Assembly.Location)).Value
+    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location))).Value
 
 [<RequireQualifiedAccess>]
 type FSharpFindDeclFailureReason = 

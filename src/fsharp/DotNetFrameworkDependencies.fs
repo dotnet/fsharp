@@ -1,23 +1,34 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Functions to retrieve framework dependencies
-
 module internal FSharp.Compiler.DotNetFrameworkDependencies
 
     open System
     open System.Collections.Generic
+    open System.Diagnostics
     open System.Globalization
     open System.IO
     open System.Reflection
+    open Internal.Utilities
 
     type private TypeInThisAssembly = class end
 
+    let implementationAssemblyDir = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
+    let fSharpCompilerLocation =
+        let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
+        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some location) with
+        | Some path -> path
+        | None ->
+#if DEBUG
+            Debug.Print(sprintf "FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171" location)
+#endif
+            // Use the location of this dll
+            location
+
     let getFSharpCoreLibraryName = "FSharp.Core"
     let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
-    let implementationAssemblyDir = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
-    let getDefaultFSharpCoreReference = typeof<Microsoft.FSharp.Core.Unit>.Assembly.Location
-    let getFSharpCompilerLocation = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
-    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
+    let getDefaultFSharpCoreLocation = Path.Combine(fSharpCompilerLocation, getFSharpCoreLibraryName + ".dll")
+    let getDefaultFsiLibraryLocation = Path.Combine(fSharpCompilerLocation, getFsiLibraryName + ".dll")
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
@@ -27,14 +38,12 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             if asm.FullName.StartsWith("System.ValueTuple", StringComparison.OrdinalIgnoreCase) then
                 Some asm.Location
             else
-                let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
-                let valueTuplePath = Path.Combine(location, "System.ValueTuple.dll")
+                let valueTuplePath = Path.Combine(fSharpCompilerLocation, "System.ValueTuple.dll")
                 if File.Exists(valueTuplePath) then
                     Some valueTuplePath
                 else
                     None
         with _ -> None
-
 
     // Algorithm:
     //     use implementation location of obj type, on shared frameworks it will always be in:
@@ -215,12 +224,17 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
 
             if not (assemblies.ContainsKey(referenceName)) then
                 try
-                    assemblies.Add(referenceName, path) |> ignore
-                    if referenceName <> "System.Private.CoreLib" then
-                        let asm = System.Reflection.Assembly.LoadFrom(path)
-                        for reference in asm.GetReferencedAssemblies() do
-                            // System.Private.CoreLib doesn't load with reflection
-                            traverseDependencies reference.Name
+                    if File.Exists(path) then
+                        // System.Private.CoreLib doesn't load with reflection
+                        if referenceName = "System.Private.CoreLib" then
+                            assemblies.Add(referenceName, path)
+                        else
+                            try
+                                let asm = System.Reflection.Assembly.LoadFrom(path)
+                                assemblies.Add(referenceName, path)
+                                for reference in asm.GetReferencedAssemblies() do
+                                    traverseDependencies reference.Name
+                            with e -> ()
                 with e -> ()
 
         assemblyReferences |> List.iter(traverseDependencies)
@@ -241,11 +255,12 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         yield "System.Data"
         yield "System.Drawing"
         yield "System.Core"
-        yield getDefaultFSharpCoreReference
+
+        yield getFSharpCoreLibraryName
         if useFsiAuxLib then yield getFsiLibraryName
 
         // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources 
-        match getDefaultSystemValueTupleReference() with
+        match getDefaultSystemValueTupleReference () with
         | None -> ()
         | Some v -> yield v
 
@@ -278,9 +293,9 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                     let getImplementationReferences () =
                         // Coreclr supports netstandard assemblies only for now
                         (getDependenciesOf [
-                            yield Path.Combine(implementationAssemblyDir, "netstandard.dll")
-                            yield getDefaultFSharpCoreReference
-                            if useFsiAuxLib then yield getFsiLibraryName
+                            yield! Directory.GetFiles(implementationAssemblyDir, "*.dll")
+                            yield getDefaultFSharpCoreLocation
+                            if useFsiAuxLib then yield getDefaultFsiLibraryLocation
                         ]).Values |> Seq.toList
 
                     if useSdkRefs then
@@ -288,8 +303,8 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                         match frameworkRefsPackDirectory with
                         | Some path ->
                             try [ yield! Directory.GetFiles(path, "*.dll")
-                                  yield getDefaultFSharpCoreReference
-                                  if useFsiAuxLib then yield getFsiLibraryName
+                                  yield getDefaultFSharpCoreLocation
+                                  if useFsiAuxLib then yield getDefaultFsiLibraryLocation
                                 ]
                             with | _ -> List.empty<string>
                         | None ->
@@ -299,8 +314,8 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                 dependencies
         results
 
-    let defaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework useSdkRefs =
-        fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources false useSdkRefs assumeDotNetFramework
+    let defaultReferencesForScriptsAndOutOfProjectSources useFsiAuxLib assumeDotNetFramework useSdkRefs =
+        fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources useFsiAuxLib useSdkRefs assumeDotNetFramework
 
     // A set of assemblies to always consider to be system assemblies.  A common set of these can be used a shared 
     // resources between projects in the compiler services.  Also all assemblies where well-known system types exist
