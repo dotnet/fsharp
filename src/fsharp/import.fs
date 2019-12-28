@@ -74,12 +74,12 @@ let CanImportILScopeRef (env: ImportMap) m scoref =
 
 /// Import a reference to a type definition, given the AbstractIL data for the type reference
 let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) = 
-    
-    // Explanation: This represents an unchecked invariant in the hosted compiler: that any operations
-    // which import types (and resolve assemblies from the tcImports tables) happen on the compilation thread.
-    let ctok = AssumeCompilationThreadWithoutEvidence()
 
     let findCcu assemblyRef =
+        // Explanation: This represents an unchecked invariant in the hosted compiler: that any operations
+        // which import types (and resolve assemblies from the tcImports tables) happen on the compilation thread.
+        let ctok = AssumeCompilationThreadWithoutEvidence()
+
         env.assemblyLoader.FindCcuFromAssemblyRef (ctok, m, assemblyRef)
 
     let ccu = 
