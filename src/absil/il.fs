@@ -498,8 +498,6 @@ type ILScopeRef =
 
     member x.IsAssemblyRef = match x with ILScopeRef.Assembly _ -> true | _ -> false
 
-    member x.IsPrimaryAssemblyRef = match x with ILScopeRef.PrimaryAssembly _ -> true | _ -> false
-
     member x.ModuleRef = match x with ILScopeRef.Module x -> x | _ -> failwith "not a module reference"
 
     member x.AssemblyRef = match x with ILScopeRef.Assembly x -> x | _ -> failwith "not an assembly reference"
@@ -2693,9 +2691,11 @@ let isBuiltInTySpec (ilg: ILGlobals) (tspec: ILTypeSpec) n =
     let tref = tspec.TypeRef
     let scoref = tref.Scope
     tref.Name = n && 
-    (scoref.IsLocalRef ||
-     scoref.IsPrimaryAssemblyRef || 
-     tref.Scope = ilg.primaryAssemblyScopeRef)
+    (match scoref with
+     | ILScopeRef.Local
+     | ILScopeRef.Module _ -> false
+     | ILScopeRef.Assembly aref -> aref = ilg.primaryAssemblyRef
+     | ILScopeRef.PrimaryAssembly -> true)
 
 let isILBoxedBuiltInTy ilg (ty: ILType) n =
     isILBoxedTy ty && isBuiltInTySpec ilg ty.TypeSpec n

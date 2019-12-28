@@ -103,7 +103,6 @@ type ILScopeRef =
     member IsLocalRef: bool
     member IsModuleRef: bool
     member IsAssemblyRef: bool
-    member IsPrimaryAssemblyRef: bool
     member ModuleRef: ILModuleRef
     member AssemblyRef: ILAssemblyRef
     member QualifiedName: string
