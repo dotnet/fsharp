@@ -2644,7 +2644,8 @@ type ILGlobals(primaryScopeRef: ILScopeRef, possiblePrimaryAssemblyRefs: ILAssem
         |> Array.exists (fun x -> aref = x)
 
     member x.RemapAssemblyRef aref =
-        if x.primaryAssemblyRef = aref then aref
+        if x.primaryAssemblyRef.EqualsIgnoringVersion aref then 
+            x.primaryAssemblyRef 
         else
             possiblePrimaryAssemblyRefs
             |> Array.tryFind aref.EqualsIgnoringVersion
