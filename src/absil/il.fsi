@@ -79,6 +79,9 @@ type ILAssemblyRef =
     member Retargetable: bool
     member Version: ILVersionInfo option
     member Locale: string option
+
+    member EqualsIgnoringVersion: ILAssemblyRef -> bool
+
     interface System.IComparable
 
 [<Sealed>]

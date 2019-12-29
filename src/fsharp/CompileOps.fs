@@ -4648,7 +4648,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                         match manifest.ExportedTypes.TryFindByName "System.Object" with
                         | Some x -> 
                             match x.ScopeRef, primaryScopeRef with
-                            | ILScopeRef.Assembly aref1, ILScopeRef.Assembly aref2 when aref1.Name = aref2.Name ->
+                            | ILScopeRef.Assembly aref1, ILScopeRef.Assembly aref2 when aref1.EqualsIgnoringVersion aref2 ->
                                 mkRefToILAssembly manifest
                                 |> Some
                             | _ -> 

@@ -384,6 +384,13 @@ type ILAssemblyRef(data) =
 
     member x.UniqueStamp=uniqueStamp
 
+    member x.EqualsIgnoringVersion (aref: ILAssemblyRef) =
+        x.UniqueStamp = aref.UniqueStamp ||
+        (x.Name = aref.Name &&
+         x.PublicKey = aref.PublicKey &&
+         x.Retargetable = aref.Retargetable &&
+         x.Locale = aref.Locale)
+
     override x.GetHashCode() = uniqueStamp
 
     override x.Equals yobj = ((yobj :?> ILAssemblyRef).UniqueStamp = uniqueStamp)
