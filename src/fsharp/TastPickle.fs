@@ -155,6 +155,7 @@ type ReaderState =
     isimpletys: InputTable<TType>
     ifile: string
     iILModule : ILModuleDef option // the Abstract IL metadata for the DLL being read
+    iilg: ILGlobals
   }
 
 let ufailwith st str = ffailwith st.ifile str
@@ -835,7 +836,7 @@ let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =
         // an identical copy of the source for the DLL containing the data being unpickled.  A message will
         // then be printed indicating the name of the item.
 
-let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (phase2bytes: ReadOnlyByteMemory) =
+let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) ilg u (phase2bytes: ReadOnlyByteMemory) =
     let st2 =
        { is = ByteStream.FromBytes (phase2bytes, 0, phase2bytes.Length)
          iilscope= ilscope
@@ -849,7 +850,8 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
          ipubpaths = new_itbl "ipubpaths (fake)" [| |]
          isimpletys = new_itbl "isimpletys (fake)" [| |]
          ifile=file
-         iILModule = iILModule }
+         iILModule = iILModule
+         iilg = ilg }
     let ccuNameTab = u_array u_encoded_ccuref st2
     let z1 = u_int st2
     let ntycons = if z1 < 0 then -z1-1 else z1
@@ -882,7 +884,8 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
              inlerefs = nlerefTab
              isimpletys = simpletypTab
              ifile=file
-             iILModule = iILModule }
+             iILModule = iILModule
+             iilg = ilg }
         let res = u st1
 #if !LAZY_UNPICKLE
         check ilscope st1.ientities
@@ -945,7 +948,10 @@ let u_ILAssemblyRef st =
     match tag with
     | 0 ->
         let a, b, c, d, e, f = u_tup6 u_string (u_option u_bytes) (u_option u_ILPublicKey) u_bool (u_option u_ILVersion) (u_option u_string) st
-        ILAssemblyRef.Create(a, b, c, d, e, f)
+        let aref = ILAssemblyRef.Create(a, b, c, d, e, f)
+        // Remap the assembly so we unpickle with an assembly that is equivelant.
+        // The analogous IL importer does its own version of remapping; thus it doesn't require to do this.  
+        st.iilg.RemapAssemblyRef aref
     | _ -> ufailwith st "u_ILAssemblyRef"
 
 // IL scope references are rescoped as they are unpickled.  This means

@@ -386,7 +386,7 @@ type ILAssemblyRef(data) =
 
     member x.EqualsIgnoringVersion (aref: ILAssemblyRef) =
         x.UniqueStamp = aref.UniqueStamp ||
-        (x.Name = aref.Name &&
+        (String.Equals(x.Name, aref.Name, StringComparison.OrdinalIgnoreCase) &&
          x.PublicKey = aref.PublicKey &&
          x.Retargetable = aref.Retargetable &&
          x.Locale = aref.Locale)
@@ -2638,10 +2638,17 @@ type ILGlobals(primaryScopeRef: ILScopeRef, possiblePrimaryAssemblyRefs: ILAssem
     member val typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UIntPtr))
     member val typ_TypedReference = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_TypedReference))
 
-    member x.IsPossiblePrimaryAssemblyRef (aref: ILAssemblyRef) =
+    member x.IsPossiblePrimaryAssemblyRef aref =
         x.primaryAssemblyRef = aref ||
         possiblePrimaryAssemblyRefs
-        |> Array.exists (fun x -> aref.Name = x.Name)
+        |> Array.exists (fun x -> aref = x)
+
+    member x.RemapAssemblyRef aref =
+        if x.primaryAssemblyRef = aref then aref
+        else
+            possiblePrimaryAssemblyRefs
+            |> Array.tryFind aref.EqualsIgnoringVersion
+            |> Option.defaultValue aref
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]

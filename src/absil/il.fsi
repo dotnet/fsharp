@@ -1601,6 +1601,10 @@ type ILGlobals =
 
     member IsPossiblePrimaryAssemblyRef: ILAssemblyRef -> bool
 
+    /// Remaps the given assembly to an assembly that is equivelant except for the version.
+    /// REVIEW: Only works for assemblies that might be possible primary assemblies.
+    member RemapAssemblyRef: ILAssemblyRef -> ILAssemblyRef
+
 /// Build the table of commonly used references given functions to find types in system assemblies
 val mkILGlobals: ILScopeRef * ILAssemblyRef list -> ILGlobals
 

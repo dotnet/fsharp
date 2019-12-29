@@ -3599,8 +3599,8 @@ let PickleToResource inMem file (g: TcGlobals) scope rName p x =
       CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
       MetadataIndex = NoMetadataIdx }
 
-let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo (byteReader())
+let GetSignatureData (file, ilScopeRef, ilModule, ilg, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule ilg unpickleCcuInfo (byteReader())
 
 let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, file, inMem) : ILResource =
     let mspec = ccu.Contents
@@ -3621,8 +3621,8 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
           compileTimeWorkingDir=includeDir
           usesQuotations = ccu.UsesFSharp20PlusQuotations }
 
-let GetOptimizationData (file, ilScopeRef, ilModule, byteReader) = 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule Optimizer.u_CcuOptimizationInfo (byteReader())
+let GetOptimizationData (file, ilScopeRef, ilModule, ilg, byteReader) = 
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule ilg Optimizer.u_CcuOptimizationInfo (byteReader())
 
 let WriteOptimizationData (tcGlobals, file, inMem, ccu: CcuThunk, modulInfo) = 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
@@ -4342,6 +4342,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #if !NO_EXTENSIONTYPING
         let tcConfig = tcConfigP.Get ctok
 #endif
+        let ilGlobals = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
         let ilModule = dllinfo.RawMetadata 
         let ilScopeRef = dllinfo.ILScopeRef 
         let ilShortAssemName = getNameOfScopeRef ilScopeRef 
@@ -4352,7 +4353,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let ccuRawDataAndInfos = 
             ilModule.GetRawFSharpSignatureData(m, ilShortAssemName, filename)
             |> List.map (fun (ccuName, sigDataReader) -> 
-                let data = GetSignatureData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader)
+                let data = GetSignatureData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), ilGlobals, sigDataReader)
 
                 let optDatas = Map.ofList optDataReaders
 
@@ -4391,7 +4392,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                             if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName 
                             None
                          | Some info -> 
-                            let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), info)
+                            let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), ilGlobals, info)
                             let res = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) 
                             if verbose then dprintf "found optimization data for CCU %s\n" ccuName 
                             Some res)
