@@ -3834,7 +3834,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #if !NO_EXTENSIONTYPING
         tcImportsWeak.SetDllInfos dllInfos
 #endif
-        dllTable <- NameMap.add (getNameOfScopeRef (defaultArg ilGlobalsOpt EcmaMscorlibILGlobals) dllInfo.ILScopeRef) dllInfo dllTable
+        dllTable <- NameMap.add (getNameOfScopeRef dllInfo.ILScopeRef) dllInfo dllTable
 
     member tcImports.GetDllInfos() : ImportedBinary list = 
         CheckDisposed()
@@ -4342,11 +4342,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #if !NO_EXTENSIONTYPING
         let tcConfig = tcConfigP.Get ctok
 #endif
-        let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
         let ilModule = dllinfo.RawMetadata 
         let ilScopeRef = dllinfo.ILScopeRef 
-        let ilShortAssemName = getNameOfScopeRef ilg ilScopeRef 
-        if verbose then dprintn ("Converting F# assembly to F# data structures "+(getNameOfScopeRef ilg ilScopeRef))
+        let ilShortAssemName = getNameOfScopeRef ilScopeRef 
+        if verbose then dprintn ("Converting F# assembly to F# data structures "+(getNameOfScopeRef ilScopeRef))
         if verbose then dprintn ("Relinking interface info from F# assembly "+ilShortAssemName)
         let optDataReaders = ilModule.GetRawFSharpOptimizationData(m, ilShortAssemName, filename)
 

@@ -1199,7 +1199,7 @@ module StaticLinker =
             
             // A rewriter which rewrites scope references to things in dependent assemblies to be local references 
             let rewriteExternalRefsToLocalRefs x = 
-                if assems.Contains (getNameOfScopeRef ilGlobals x) then ILScopeRef.Local else x
+                if assems.Contains (getNameOfScopeRef x) then ILScopeRef.Local else x
 
             let savedManifestAttrs = 
                 [ for (_, depILModule) in dependentILModules do 
@@ -1583,7 +1583,7 @@ module StaticLinker =
               let ilxMainModule =
                   let isMscorlib = ilGlobals.primaryAssemblyName = PrimaryAssembly.Mscorlib.Name
                   let validateTargetPlatform (scopeRef : ILScopeRef) = 
-                      let name = getNameOfScopeRef ilGlobals scopeRef
+                      let name = getNameOfScopeRef scopeRef
                       if (not isMscorlib && name = PrimaryAssembly.Mscorlib.Name) then
                           error (Error(FSComp.SR.fscStaticLinkingNoProfileMismatches(), rangeCmdArgs))
                       scopeRef
