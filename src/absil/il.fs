@@ -2631,10 +2631,10 @@ type ILGlobals(primaryScopeRef: ILScopeRef, possiblePrimaryAssemblyRefs: ILAssem
     member val typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UIntPtr))
     member val typ_TypedReference = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_TypedReference))
 
-    member x.IsPossiblePrimaryAssemblyRef aref =
+    member x.IsPossiblePrimaryAssemblyRef (aref: ILAssemblyRef) =
         x.primaryAssemblyRef = aref ||
         possiblePrimaryAssemblyRefs
-        |> Array.exists (fun x -> aref = x)
+        |> Array.exists (fun x -> aref.Name = x.Name)
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]

@@ -4640,16 +4640,19 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         // by checking to see if "System.Object" is an exported type.
         let possiblePrimaryAssemblyRefs =
             resolvedAssemblies
-            |> List.choose (fun x ->
-                if primaryAssemblyResolvedPath <> x.resolvedPath then
-                    let reader = OpenILModuleReader x.resolvedPath readerSettings
+            |> List.choose (fun resolvedAssembly ->
+                if primaryAssemblyResolvedPath <> resolvedAssembly.resolvedPath then
+                    let reader = OpenILModuleReader resolvedAssembly.resolvedPath readerSettings
                     match reader.ILModuleDef.Manifest with
                     | Some manifest ->
                         match manifest.ExportedTypes.TryFindByName "System.Object" with
                         | Some x -> 
-                            match x.ScopeRef with
-                            | ILScopeRef.Assembly aref -> Some aref
-                            | _ -> None
+                            match x.ScopeRef, primaryScopeRef with
+                            | ILScopeRef.Assembly aref1, ILScopeRef.Assembly aref2 when aref1.Name = aref2.Name ->
+                                mkRefToILAssembly manifest
+                                |> Some
+                            | _ -> 
+                                None
                         | _ -> 
                             None
                     | _ ->
