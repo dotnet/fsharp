@@ -2465,8 +2465,6 @@ and FSharpAssembly internal (cenv, ccu: CcuThunk) =
                  
     override x.ToString() = 
         match ccu.ILScopeRef with
-        | ILScopeRef.Local ->
-            cenv.thisCcu.ILScopeRef.QualifiedName
         | ILScopeRef.PrimaryAssembly ->
             cenv.g.ilg.primaryAssemblyRef.QualifiedName
         | scoref ->

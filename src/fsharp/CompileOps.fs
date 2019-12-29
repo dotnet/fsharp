@@ -4637,6 +4637,18 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
               metadataOnly = MetadataOnlyFlag.Yes
               tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }
 
+        let tryGetPossibleAssemblyRefByExportedType manifest (exportedType: ILExportedTypeOrForwarder) =
+            match exportedType.ScopeRef, primaryScopeRef with
+            | ILScopeRef.Assembly aref1, ILScopeRef.Assembly aref2 when aref1.EqualsIgnoringVersion aref2 ->
+                mkRefToILAssembly manifest
+                |> Some
+            | _ -> 
+                None
+
+        let tryGetPossibleAssemblyRef manifest =
+            manifest.ExportedTypes.TryFindByName "System.Object"
+            |> Option.bind (tryGetPossibleAssemblyRefByExportedType manifest)
+
         // Determine what other assemblies could have been the primary assembly
         // by checking to see if "System.Object" is an exported type.
         let possiblePrimaryAssemblyRefs =
@@ -4644,20 +4656,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             |> List.choose (fun resolvedAssembly ->
                 if primaryAssemblyResolvedPath <> resolvedAssembly.resolvedPath then
                     let reader = OpenILModuleReader resolvedAssembly.resolvedPath readerSettings
-                    match reader.ILModuleDef.Manifest with
-                    | Some manifest ->
-                        match manifest.ExportedTypes.TryFindByName "System.Object" with
-                        | Some x -> 
-                            match x.ScopeRef, primaryScopeRef with
-                            | ILScopeRef.Assembly aref1, ILScopeRef.Assembly aref2 when aref1.EqualsIgnoringVersion aref2 ->
-                                mkRefToILAssembly manifest
-                                |> Some
-                            | _ -> 
-                                None
-                        | _ -> 
-                            None
-                    | _ ->
-                        None
+                    reader.ILModuleDef.Manifest
+                    |> Option.bind tryGetPossibleAssemblyRef
                 else
                     None)
 
