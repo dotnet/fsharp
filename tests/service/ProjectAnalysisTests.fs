@@ -5529,3 +5529,55 @@ module M2 =
            (((25, 5), (25, 21)), "open SomeUnusedModule")]
     unusedOpensData |> shouldEqual expected
 
+
+[<Test>]
+let ``Opens in nested recursive modules`` () =
+    let _, checkResults = getParseAndCheckResults """
+module rec Module
+
+open System
+
+module Nested =
+    open System
+"""
+    checkResults.OpenDeclarations
+    |> Seq.filter (fun openDeclaration ->
+        match openDeclaration.Range with
+        | Some range -> range <> Range.rangeStartup
+        | _ -> false)
+    |> List.ofSeq
+    |> List.map(fun openDeclaration -> tups openDeclaration.AppliedScope)
+    |> shouldEqual
+           [ (2, 0), (7, 15)
+             (6, 0), (7, 15) ]
+
+[<Test>]
+let ``Opens in nested recursive modules - namespaces`` () =
+    let _, checkResults = getParseAndCheckResults """
+namespace rec Ns1
+
+open System
+
+module Nested =
+    open System
+
+namespace rec Ns2
+
+open System
+
+module Nested =
+    open System
+
+"""
+    checkResults.OpenDeclarations
+    |> Seq.filter (fun openDeclaration ->
+        match openDeclaration.Range with
+        | Some range -> range <> Range.rangeStartup
+        | _ -> false)
+    |> List.ofSeq
+    |> List.map(fun openDeclaration -> tups openDeclaration.AppliedScope)
+    |> shouldEqual
+           [ (4, 5), (7, 15)
+             (6, 0), (7, 15)
+             (11, 5), (14, 15)
+             (13, 0), (14, 15) ]
