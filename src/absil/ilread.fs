@@ -32,7 +32,7 @@ open System.Reflection
 
 #nowarn "9"
 
-let primaryAssemblyILGlobals = mkILGlobals ILScopeRef.PrimaryAssembly
+let primaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [])
 
 let checking = false  
 let logging = false

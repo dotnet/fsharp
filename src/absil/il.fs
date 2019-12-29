@@ -2199,6 +2199,8 @@ and ILExportedTypesAndForwarders =
 
     member x.AsList = let (ILExportedTypesAndForwarders ltab) = x in Map.foldBack (fun _x y r -> y :: r) (ltab.Force()) []
 
+    member x.TryFindByName nm = let (ILExportedTypesAndForwarders ltab) = x in (ltab.Force()).TryFind nm
+
 [<RequireQualifiedAccess>]
 type ILResourceAccess =
     | Public
@@ -2604,7 +2606,9 @@ let tname_TypedReference = "System.TypedReference"
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 // This data structure needs an entirely delayed implementation
-type ILGlobals(primaryScopeRef: ILScopeRef) =
+type ILGlobals(primaryScopeRef: ILScopeRef, possiblePrimaryAssemblyRefs: ILAssemblyRef list) =
+
+    let possiblePrimaryAssemblyRefs = Array.ofList possiblePrimaryAssemblyRefs
 
     let mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
 
@@ -2632,13 +2636,18 @@ type ILGlobals(primaryScopeRef: ILScopeRef) =
     member val typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UIntPtr))
     member val typ_TypedReference = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_TypedReference))
 
+    member x.IsPossiblePrimaryAssemblyRef aref =
+        x.primaryAssemblyRef = aref ||
+        possiblePrimaryAssemblyRefs
+        |> Array.exists (fun x -> aref = x)
+
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
     override x.ToString() = "<ILGlobals>"
 
-let mkILGlobals primaryScopeRef = ILGlobals primaryScopeRef
+let mkILGlobals (primaryScopeRef, possiblePrimaryAssemblyRefs) = ILGlobals (primaryScopeRef, possiblePrimaryAssemblyRefs)
 
 let mkNormalCall mspec = I_call (Normalcall, mspec, None)
 
@@ -2690,7 +2699,7 @@ let isBuiltInTySpec (ilg: ILGlobals) (tspec: ILTypeSpec) n =
     (match scoref with
      | ILScopeRef.Local
      | ILScopeRef.Module _ -> false
-     | ILScopeRef.Assembly aref -> aref = ilg.primaryAssemblyRef
+     | ILScopeRef.Assembly aref -> ilg.IsPossiblePrimaryAssemblyRef aref
      | ILScopeRef.PrimaryAssembly -> true)
 
 let isILBoxedBuiltInTy ilg (ty: ILType) n =
@@ -3701,7 +3710,7 @@ let getCustomAttrData (ilg: ILGlobals) cattr =
 
 let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", None, Some ecmaPublicKey, true, None, None))
 
-let EcmaMscorlibILGlobals = mkILGlobals MscorlibScopeRef
+let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [])
 
 // ILSecurityDecl is a 'blob' having the following format:
 // - A byte containing a period (.).

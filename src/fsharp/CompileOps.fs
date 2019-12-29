@@ -4623,11 +4623,45 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
               | (_, [ResolvedImportedAssembly ccu]) -> ccu.FSharpViewOfMetadata.ILScopeRef
               | _ -> failwith "unexpected"
 
-        let ilGlobals = mkILGlobals primaryScopeRef
+        let primaryAssemblyResolvedPath =
+            match primaryAssemblyResolution with
+            | [primaryAssemblyResolution] -> primaryAssemblyResolution.resolvedPath
+            | _ -> failwith "unexpected"
+
+        let resolvedAssemblies = tcResolutions.GetAssemblyResolutions()
+
+        let readerSettings: ILReaderOptions = 
+            { pdbDirPath=None
+              reduceMemoryUsage = tcConfig.reduceMemoryUsage
+              metadataOnly = MetadataOnlyFlag.Yes
+              tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }
+
+        // Determine what other assemblies could have been the primary assembly
+        // by checking to see if "System.Object" is an exported type.
+        let possiblePrimaryAssemblyRefs =
+            resolvedAssemblies
+            |> List.choose (fun x ->
+                if primaryAssemblyResolvedPath <> x.resolvedPath then
+                    let reader = OpenILModuleReader x.resolvedPath readerSettings
+                    match reader.ILModuleDef.Manifest with
+                    | Some manifest ->
+                        match manifest.ExportedTypes.TryFindByName "System.Object" with
+                        | Some x -> 
+                            match x.ScopeRef with
+                            | ILScopeRef.Assembly aref -> Some aref
+                            | _ -> None
+                        | _ -> 
+                            None
+                    | _ ->
+                        None
+                else
+                    None)
+
+        let ilGlobals = mkILGlobals (primaryScopeRef, possiblePrimaryAssemblyRefs)
         frameworkTcImports.SetILGlobals ilGlobals
 
         // Load the rest of the framework DLLs all at once (they may be mutually recursive)
-        let! _assemblies = frameworkTcImports.RegisterAndImportReferencedAssemblies (ctok, tcResolutions.GetAssemblyResolutions())
+        let! _assemblies = frameworkTcImports.RegisterAndImportReferencedAssemblies (ctok, resolvedAssemblies)
 
         // These are the DLLs we can search for well-known types
         let sysCcus =

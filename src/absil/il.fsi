@@ -1399,7 +1399,8 @@ type ILExportedTypeOrForwarder =
 [<NoEquality; NoComparison>]
 [<Sealed>]
 type ILExportedTypesAndForwarders =
-    member AsList: ILExportedTypeOrForwarder  list
+    member AsList: ILExportedTypeOrForwarder list
+    member TryFindByName: string -> ILExportedTypeOrForwarder option
 
 [<RequireQualifiedAccess>]
 type ILResourceAccess = 
@@ -1599,8 +1600,10 @@ type ILGlobals =
     member typ_Char: ILType
     member typ_TypedReference: ILType
 
+    member IsPossiblePrimaryAssemblyRef: ILAssemblyRef -> bool
+
 /// Build the table of commonly used references given functions to find types in system assemblies
-val mkILGlobals: ILScopeRef -> ILGlobals
+val mkILGlobals: ILScopeRef * ILAssemblyRef list -> ILGlobals
 
 val EcmaMscorlibILGlobals: ILGlobals
 
