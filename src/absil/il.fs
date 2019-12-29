@@ -2607,7 +2607,7 @@ type ILGlobals(primaryScopeRef: ILScopeRef, possiblePrimaryAssemblyRefs: ILAssem
     member _.primaryAssemblyScopeRef = primaryScopeRef
     member x.primaryAssemblyRef = 
         match primaryScopeRef with 
-        | ILScopeRef.Assembly aref -> aref.Name 
+        | ILScopeRef.Assembly aref -> aref
         | _ -> failwith "Invalid primary assembly"
     member x.primaryAssemblyName = x.primaryAssemblyRef.Name
 
