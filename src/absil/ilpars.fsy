@@ -20,21 +20,6 @@ let pfailwith s =
     stderr.WriteLine ("*** error: "+s); 
     raise Parsing.RecoverableParseError 
 
-/// vararg sentinels
-type SigArg = SigArg of (string option * ILType)  | Sentinel
-
-let decodeVarargs args = 
-  let rec normals = function 
-    | [] -> ([],None)
-    | Sentinel :: t -> ([],Some (varargs t))
-    | SigArg (_,p) :: t -> let (n,r) = normals t in (p :: n, r)
-  and varargs = function 
-    | [] -> []
-    | SigArg (_,ty) :: t ->  let l = varargs t in ty :: l
-    | Sentinel :: t -> pfailwith "two sentinels in vararg call"
-  normals args
-
-
 type ResolvedAtMethodSpecScope<'T> = 
     ResolvedAtMethodSpecScope of (ILGenericParameterDefs -> 'T)
 
@@ -42,11 +27,6 @@ let noMethodSpecScope x = ResolvedAtMethodSpecScope (fun _cgparams -> x)
 let resolveMethodSpecScope (ResolvedAtMethodSpecScope f) x = f x
 let resolveMethodSpecScopeThen (ResolvedAtMethodSpecScope f) g = 
   ResolvedAtMethodSpecScope (fun x -> resolveMethodSpecScope (g(f x)) x)
-
-let resolveFormalMethodSpecScope tspeco obj = 
-  match tspeco with 
-    None ->  resolveMethodSpecScope obj mkILEmptyGenericParams
-  | Some (tspec:ILTypeSpec) -> resolveMethodSpecScope obj (mkILFormalTypars tspec.GenericArgs)
 
 let resolveCurrentMethodSpecScope obj = 
     resolveMethodSpecScope obj mkILEmptyGenericParams
@@ -75,7 +55,6 @@ let findAssemblyRef nm =
 %token <Int32Int32Instr> INSTR_I32_I32
 %token <Int64Instr> INSTR_I8 
 %token <DoubleInstr> INSTR_R 
-%token <MethodSpecInstr> INSTR_METHOD 
 %token <NoArgInstr> INSTR_NONE 
 %token <StringInstr> INSTR_STRING 
 %token <TokenInstr> INSTR_TOK 
@@ -163,18 +142,6 @@ instrs2:
         { $1 :: $2  } 
    | { [] }
 
-
-
-methodSpecMaybeArrayMethod: 
-     callConv typ typSpec DCOLON methodName opt_actual_tyargs LPAREN sigArgs0 RPAREN
-       { let callee_class_typ : ILType = resolveCurrentMethodSpecScope $3 
-         let gscope = (if isILArrTy callee_class_typ then None else Some callee_class_typ.TypeSpec) 
-         let argtys_n_varargs = resolveFormalMethodSpecScope gscope $8 
-         let (argtys,varargs) = decodeVarargs argtys_n_varargs 
-         let minst = resolveCurrentMethodSpecScope $6 
-         let callee_retty = resolveFormalMethodSpecScope gscope $2 
-         (callee_class_typ, $1, $5, argtys, callee_retty, minst), varargs }
-
 instr: 
      INSTR_NONE                                         
         {  ($1 ()) }
@@ -188,19 +155,6 @@ instr:
         {  ($1 (ILConst.R8 $2)) }
    | INSTR_R int64
         {  ($1 (ILConst.R8 (float $2))) }
-   | INSTR_METHOD methodSpecMaybeArrayMethod 
-        {  
-               let  ((encl_typ, _cc, nm, _argtys, _retty, _minst) as data),varargs = $2 
-               if isILArrTy encl_typ then 
-                   let (shape,ty) = destILArrTy encl_typ 
-                   match nm with
-                   | "Get" -> I_ldelem_any(shape,ty) 
-                   | "Set" ->  I_stelem_any(shape,ty) 
-                   | "Address" ->  I_ldelema(NormalAddress,false,shape,ty) 
-                   | ".ctor" ->   I_newarr(shape,ty) 
-                   | _ -> failwith "bad method on array type"
-               else 
-                   $1 (mkILMethSpecInTy data, varargs) }
    | INSTR_TYPE typSpec                                 
         { $1 (resolveCurrentMethodSpecScope $2) }
    | INSTR_INT_TYPE int32 typSpec                               
@@ -209,34 +163,6 @@ instr:
         { $1 (resolveCurrentMethodSpecScope $2) }
    | INSTR_TOK typSpec                          
         {  ($1 (ILToken.ILType (resolveCurrentMethodSpecScope $2)))  }
-
-/*-----------------------------------------------
- * Formal signatures of methods etc. 
- *---------------------------------------------*/
-
-sigArgs0:  
-        {  noMethodSpecScope [] }
-   | sigArgs1   { $1 }
-
-sigArgs1: 
-   sigArgs1a
-        { ResolvedAtMethodSpecScope (fun c -> List.map (fun obj -> resolveMethodSpecScope obj c) (List.rev $1)) }
-
-sigArgs1a: 
-     sigArg
-        { [$1] }
-   | sigArgs1a COMMA sigArg
-        { $3 :: $1 }
-
-sigArg: 
-   | typ opt_id
-       { resolveMethodSpecScopeThen $1 (fun ty -> 
-         noMethodSpecScope (SigArg($2, ty))) }
-
-
-
-opt_id:  { None } | id { Some $1 }
-
  
 /*-----------------------------------------------
  * Type names

@@ -101,10 +101,6 @@ type ILScopeRef =
     /// A reference to a type in the primary assembly
     | PrimaryAssembly
     member IsLocalRef: bool
-    member IsModuleRef: bool
-    member IsAssemblyRef: bool
-    member ModuleRef: ILModuleRef
-    member AssemblyRef: ILAssemblyRef
     member QualifiedName: string
 
 // Calling conventions.  

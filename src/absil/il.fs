@@ -490,14 +490,6 @@ type ILScopeRef =
 
     member x.IsLocalRef = match x with ILScopeRef.Local -> true | _ -> false
 
-    member x.IsModuleRef = match x with ILScopeRef.Module _ -> true | _ -> false
-
-    member x.IsAssemblyRef = match x with ILScopeRef.Assembly _ -> true | _ -> false
-
-    member x.ModuleRef = match x with ILScopeRef.Module x -> x | _ -> failwith "not a module reference"
-
-    member x.AssemblyRef = match x with ILScopeRef.Assembly x -> x | _ -> failwith "not an assembly reference"
-
     member x.QualifiedName =
         match x with
         | ILScopeRef.Local -> ""
@@ -2613,8 +2605,11 @@ type ILGlobals(primaryScopeRef: ILScopeRef, possiblePrimaryAssemblyRefs: ILAssem
     let mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
 
     member _.primaryAssemblyScopeRef = primaryScopeRef
-    member x.primaryAssemblyRef = x.primaryAssemblyScopeRef.AssemblyRef
-    member x.primaryAssemblyName = x.primaryAssemblyScopeRef.AssemblyRef.Name
+    member x.primaryAssemblyRef = 
+        match primaryScopeRef with 
+        | ILScopeRef.Assembly aref -> aref.Name 
+        | _ -> failwith "Invalid primary assembly"
+    member x.primaryAssemblyName = x.primaryAssemblyRef.Name
 
     member val typ_Object = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Object))
     member val typ_String = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
