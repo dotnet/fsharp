@@ -259,7 +259,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
 module IncrementalBuild =
 
     let mutable injectCancellationFault = false
-    let LocallyInjectCancellationFault() = 
+    let locallyInjectCancellationFault() = 
         injectCancellationFault <- true
         { new IDisposable with member __.Dispose() =  injectCancellationFault <- false }
 

@@ -109,12 +109,12 @@ let ``Intro test`` () =
 
 
 // TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
-#if !INTERACTIVE && !NETCOREAPP2_0 // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
+#if !INTERACTIVE && !NETCOREAPP2_0 // InternalsVisibleTo on IncrementalBuild.locallyInjectCancellationFault not working for some reason?
 [<Test>]
 let ``Basic cancellation test`` () = 
    try 
     printfn "locally injecting a cancellation condition in incremental building"
-    use _holder = IncrementalBuild.LocallyInjectCancellationFault()
+    use _holder = IncrementalBuild.locallyInjectCancellationFault()
     
     // Split the input & define file name
     let inputLines = input.Split('\n')

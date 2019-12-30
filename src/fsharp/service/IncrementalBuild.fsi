@@ -166,4 +166,4 @@ type internal IncrementalBuilder =
 module internal IncrementalBuild =
 
     /// Used for unit testing. Causes all steps of underlying incremental graph evaluation to cancel
-    val LocallyInjectCancellationFault : unit -> IDisposable
+    val locallyInjectCancellationFault : unit -> IDisposable
