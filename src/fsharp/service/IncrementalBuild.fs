@@ -865,6 +865,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
       
     member _.GetParseResultsForFile (ctok: CompilationThreadToken, fileName) =
       cancellable {
+        let cache = TimeStampCache defaultTimeStamp 
+        checkSourceFileTimeStamps cache
+
         let parsedInfo =
             getSlot fileName
             |> getParseResults ctok
