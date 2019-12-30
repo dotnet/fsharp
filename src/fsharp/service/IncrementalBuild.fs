@@ -659,7 +659,19 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
         match slot with
         | 0 (* first file *) -> getInitialTcAcc ctok
-        | _ -> typeCheck ctok op (slot - 1)
+        | _ -> 
+            cancellable {
+                let slot = slot - 1
+                checkSlot slot
+                match typeCheckCache.[slot] with
+                | Checked (_, tcAcc, _) -> return tcAcc
+                | _ ->
+                    // Find the first slot that has not been checked.
+                    let startingSlot = typeCheckCache |> Array.findIndex (function Checked _ -> false | _ -> true)
+                    let! tcAccs = cancellable { for i = startingSlot to slot do yield! typeCheck ctok op i }
+                    if tcAccs.IsEmpty then
+                        failwith "Should not happen. Expected at least one type-checked result."
+                    return List.last tcAccs }
 
     let step ctok =
         cancellable {
