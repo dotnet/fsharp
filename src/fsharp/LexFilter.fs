@@ -415,6 +415,9 @@ type TokenTup =
         
 type TokenTupPool() =
 
+    /// Arbitrary.
+    /// When parsing the compiler's source files, the pool didn't come close to reaching this limit.
+    /// Therefore, this seems like a reasonable limit to handle 99% of cases.
     [<Literal>]
     let maxSize = 100
 
