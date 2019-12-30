@@ -400,6 +400,7 @@ type LexbufState(startPos: Position,
     member x.PastEOF = pastEOF
 
 /// Used to save the state related to a token
+/// Treat as though this is read-only.
 [<Class>]
 type TokenTup = 
     // This is mutable for performance reasons.
