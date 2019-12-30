@@ -2,11 +2,10 @@
 
 namespace FSharp.Compiler
 
-
 open System
-open System.Collections.Generic
 open System.IO
 open System.Threading
+open System.Runtime.CompilerServices
 open FSharp.Compiler
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Tastops
@@ -14,7 +13,6 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
@@ -36,9 +34,9 @@ module IncrementalBuilderEventTesting =
         let mutable curIndex = 0
         let mutable numAdds = 0
         // called by the product, to note when a parse/typecheck happens for a file
-        member this.Add(filename:'T) =
+        member this.Add(fileName:'T) =
             numAdds <- numAdds + 1
-            data.[curIndex] <- Some filename
+            data.[curIndex] <- Some fileName
             curIndex <- (curIndex + 1) % MAX
         member this.CurrentEventNum = numAdds
         // called by unit tests, returns 'n' most recent additions.
@@ -59,8 +57,8 @@ module IncrementalBuilderEventTesting =
             List.rev s
 
     type IBEvent =
-        | IBEParsed of string // filename
-        | IBETypechecked of string // filename
+        | IBEParsed of string // fileName
+        | IBETypechecked of string // fileName
         | IBECreated
 
     // ++GLOBAL MUTABLE STATE FOR TESTING++
@@ -249,8 +247,8 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
         member __.GetAutoOpenAttributes(_ilg) = autoOpenAttrs
         member __.GetInternalsVisibleToAttributes(_ilg) =  ivtAttrs
         member __.TryGetILModuleDef() = None
-        member __.GetRawFSharpSignatureData(_m, _ilShortAssemName, _filename) = sigData
-        member __.GetRawFSharpOptimizationData(_m, _ilShortAssemName, _filename) = [ ]
+        member __.GetRawFSharpSignatureData(_m, _ilShortAssemName, _fileName) = sigData
+        member __.GetRawFSharpOptimizationData(_m, _ilShortAssemName, _fileName) = [ ]
         member __.GetRawTypeForwarders() = mkILExportedTypes []  // TODO: cross-project references with type forwarders
         member __.ShortAssemblyName = assemblyName
         member __.ILScopeRef = IL.ILScopeRef.Assembly ilAssemRef
@@ -267,17 +265,17 @@ module IncrementalBuild =
 
 type SourceFile =
     {
-        filename: string
-        sourceRange: range
-        isLastCompiland: (bool * bool)
+        FileName: string
+        SourceRange: range
+        IsLastCompiland: (bool * bool)
     }
 
 type ParsedInfo =
     {
-        filename: string
-        sourceRange: range
-        input: Ast.ParsedInput option
-        errors: (PhasedDiagnostic * FSharpErrorSeverity)[]
+        FileName: string
+        SourceRange: range
+        Input: Ast.ParsedInput option
+        Errors: (PhasedDiagnostic * FSharpErrorSeverity)[]
     }
 
 type SourceTypeCheckState =
@@ -291,7 +289,7 @@ type SourceTypeCheckState =
         | Parsed (sourceFile, _) -> sourceFile
         | Checked (sourceFile, _, _) -> sourceFile
 
-    member x.FileName = x.SourceFile.filename
+    member x.FileName = x.SourceFile.FileName
 
 type TypeCheckOperation =
     | UseCache
@@ -344,7 +342,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
     ///
     /// Parse the given file and return the given input.
-    let ParseTask ctok (sourceRange: range, filename: string, isLastCompiland) =
+    let parseTask ctok (sourceRange: range, fileName: string, isLastCompiland) =
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
         let errorLogger = CompilationErrorLogger("ParseTask", tcConfig.errorSeverityOptions)
@@ -352,11 +350,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse)
 
         try  
-            IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
-            let input = ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
-            fileParsed.Trigger filename
+            IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
+            let input = ParseOneInputFile(tcConfig, lexResourceManager, [], fileName, isLastCompiland, errorLogger, (*retryLocked*)true)
+            fileParsed.Trigger fileName
 
-            input, sourceRange, filename, errorLogger.GetErrors ()
+            input, sourceRange, fileName, errorLogger.GetErrors ()
         with exn -> 
             let msg = sprintf "unexpected failure in IncrementalFSharpBuild.Parse\nerror = %s" (exn.ToString())
             System.Diagnostics.Debug.Assert(false, msg)
@@ -365,7 +363,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.Demultiplex
     ///
     // Link all the assemblies together and produce the input typecheck accumulator               
-    let CombineImportedAssembliesTask ctok : Cancellable<TypeCheckAccumulator> =
+    let combineImportedAssembliesTask ctok : Cancellable<TypeCheckAccumulator> =
       cancellable {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
@@ -436,17 +434,17 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
     ///
     /// Type check all files.     
-    let TypeCheckTask ctok (tcAcc: TypeCheckAccumulator) input: Eventually<TypeCheckAccumulator> =    
+    let typeCheckTask ctok (tcAcc: TypeCheckAccumulator) input: Eventually<TypeCheckAccumulator> =    
         match input with 
-        | Some input, _sourceRange, filename, parseErrors->
-            IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
+        | Some input, _sourceRange, fileName, parseErrors->
+            IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
             let capturingErrorLogger = CompilationErrorLogger("TypeCheckTask", tcConfig.errorSeverityOptions)
             let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, capturingErrorLogger)
             let fullComputation = 
                 eventually {
-                    beforeFileChecked.Trigger filename
+                    beforeFileChecked.Trigger fileName
 
-                    ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename) |> ignore
+                    ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName fileName) |> ignore
                     let sink = TcResultsSinkImpl(tcAcc.tcGlobals)
                     let hadParseErrors = not (Array.isEmpty parseErrors)
 
@@ -469,7 +467,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     
                     RequireCompilationThread ctok // Note: events get raised on the CompilationThread
 
-                    fileChecked.Trigger filename
+                    fileChecked.Trigger fileName
                     let newErrors = Array.append parseErrors (capturingErrorLogger.GetErrors())
                     return {tcAcc with tcState=tcState 
                                        tcEnvAtEndOfFile=tcEnvAtEndOfFile
@@ -481,7 +479,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                        tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: tcAcc.tcOpenDeclarationsRev
                                        tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
                                        tcModuleNamesDict = moduleNamesDict
-                                       tcDependencyFiles = filename :: tcAcc.tcDependencyFiles } 
+                                       tcDependencyFiles = fileName :: tcAcc.tcDependencyFiles } 
                 }
                     
             // Run part of the Eventually<_> computation until a timeout is reached. If not complete, 
@@ -506,7 +504,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.Demultiplex
     ///
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask ctok (tcStates: TypeCheckAccumulator[]) = 
+    let finalizeTypeCheckTask ctok (tcStates: TypeCheckAccumulator[]) = 
       cancellable {
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
@@ -593,14 +591,15 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             match initialTcAccCache with
             | Some result -> return result
             | _ ->
-                let! result = CombineImportedAssembliesTask ctok
+                let! result = combineImportedAssembliesTask ctok
                 initialTcAccCache <- Some result
                 return result }
     
     let typeCheckCache =
         sourceFiles
         |> Array.ofList
-        |> Array.map (fun (m, nm, isLastCompiland) -> NotParsed { filename = nm; sourceRange = m; isLastCompiland = isLastCompiland })
+        |> Array.map (fun (m, nm, isLastCompiland) -> 
+            NotParsed { FileName = nm; SourceRange = m; IsLastCompiland = isLastCompiland })
 
     let checkSlot slot =
         if slot < 0 || slot >= typeCheckCache.Length then
@@ -609,8 +608,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let parse ctok (sourceFile: SourceFile) slot =
         checkSlot slot
 
-        let (input, sourceRange, filename, errors) = ParseTask ctok (sourceFile.sourceRange, sourceFile.filename, sourceFile.isLastCompiland)
-        { filename = filename; sourceRange = sourceRange; input = input; errors = errors }
+        let (input, sourceRange, fileName, errors) = parseTask ctok (sourceFile.SourceRange, sourceFile.FileName, sourceFile.IsLastCompiland)
+        { FileName = fileName; SourceRange = sourceRange; Input = input; Errors = errors }
 
     let rec typeCheck ctok op slot =
         if IncrementalBuild.injectCancellationFault then Cancellable.canceled ()
@@ -623,11 +622,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             cancellable {
                 typeCheckCache.[slot] <- Parsed(sourceFile, parse ctok sourceFile slot)
                 return! typeCheck ctok op slot }
-        | Parsed(sourceFile, ({ filename = filename; sourceRange = sourceRange; input = input; errors = errors } as parsedInfo)) ->
+        | Parsed(sourceFile, ({ FileName = fileName; SourceRange = sourceRange; Input = input; Errors = errors } as parsedInfo)) ->
             cancellable {
                 let! ct = Cancellable.token ()
                 let! priorTcAcc = priorTypeCheck ctok UseCache slot
-                let tcAccTask = TypeCheckTask ctok priorTcAcc (input, sourceRange, filename, errors)
+                let tcAccTask = typeCheckTask ctok priorTcAcc (input, sourceRange, fileName, errors)
                 let tcAccOpt = Eventually.forceWhile ctok (fun () -> not ct.IsCancellationRequested) tcAccTask
                 match tcAccOpt with
                 | Some tcAcc ->
@@ -644,7 +643,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             | ReTypeCheck ->
                 match weakInfo.TryGetTarget() with
                 | true, parsedInfo ->
-                    match parsedInfo.input with
+                    match parsedInfo.Input with
                     | Some _ ->
                         typeCheckCache.[slot] <- Parsed (sourceFile, parsedInfo)
                     | _ ->
@@ -688,12 +687,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         initialTcAccCache <- None
         invalidateSlot 0
 
-    let getSlot filename =
+    let getSlot fileName =
         typeCheckCache 
         |> Array.findIndex (fun x ->
             let f2 = x.FileName
-            String.Compare(filename, f2, StringComparison.CurrentCultureIgnoreCase)=0
-            || String.Compare(FileSystem.GetFullPathShim filename, FileSystem.GetFullPathShim f2, StringComparison.CurrentCultureIgnoreCase)=0)
+            String.Compare(fileName, f2, StringComparison.CurrentCultureIgnoreCase)=0
+            || String.Compare(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f2, StringComparison.CurrentCultureIgnoreCase)=0)
 
     let getParseResults ctok slot =
         checkSlot slot
@@ -721,11 +720,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// Source files can be invalidated by this call, which will cause re-type-checking.
     let checkSourceFileTimeStamps (cache: TimeStampCache) =
         sourceFileTimeStamps
-        |> Array.iteri (fun slot (filename, currentTimeStamp) ->
-            let newTimeStamp = cache.GetFileTimeStamp filename
+        |> Array.iteri (fun slot (fileName, currentTimeStamp) ->
+            let newTimeStamp = cache.GetFileTimeStamp fileName
             if newTimeStamp <> currentTimeStamp then
                 invalidateSlot slot
-                sourceFileTimeStamps.[slot] <- (filename, newTimeStamp))
+                sourceFileTimeStamps.[slot] <- (fileName, newTimeStamp))
 
     let referenceAssemblyTimeStamps =
         nonFrameworkAssemblyInputs
@@ -796,12 +795,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         | Some _ ->
             return true }
     
-    member _.GetCheckResultsBeforeFileInProjectEvenIfStale filename: PartialCheckResults option =
-        getSlot filename
+    member _.GetCheckResultsBeforeFileInProjectEvenIfStale fileName: PartialCheckResults option =
+        getSlot fileName
         |> tryCreatePartialCheckResultsBeforeSlot       
     
-    member _.AreCheckResultsBeforeFileInProjectReady filename = 
-        match getSlot filename with
+    member _.AreCheckResultsBeforeFileInProjectReady fileName = 
+        match getSlot fileName with
         | 0 (* first file *) -> true
         | slot -> isChecked (slot - 1)
         
@@ -820,12 +819,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             | _ ->
                 return PartialCheckResults.Create(tcAcc, snd sourceFileTimeStamps.[slot - 1]) }
 
-    member builder.GetCheckResultsBeforeFileInProject (ctok: CompilationThreadToken, filename) = 
-        let slot = getSlot filename
+    member builder.GetCheckResultsBeforeFileInProject (ctok: CompilationThreadToken, fileName) = 
+        let slot = getSlot fileName
         builder.GetCheckResultsBeforeSlotInProject (ctok, slot)
 
-    member builder.GetCheckResultsAfterFileInProject (ctok: CompilationThreadToken, filename) = 
-        let slot = getSlot filename + 1
+    member builder.GetCheckResultsAfterFileInProject (ctok: CompilationThreadToken, fileName) = 
+        let slot = getSlot fileName + 1
         builder.GetCheckResultsBeforeSlotInProject (ctok, slot)
 
     member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) = 
@@ -840,7 +839,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 for i = 0 to builder.SlotCount do
                     yield! priorTypeCheck ctok UseCache i }
 
-        let! ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc = FinalizeTypeCheckTask ctok (multipleTcAcc |> Array.ofList)
+        let! ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc = finalizeTypeCheckTask ctok (multipleTcAcc |> Array.ofList)
         return PartialCheckResults.Create(tcAcc, timeStamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt }
         
     member _.GetLogicalTimeStampForProject(cache, ctok: CompilationThreadToken) = 
@@ -852,13 +851,13 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         else
             t1
       
-    member _.GetParseResultsForFile (ctok: CompilationThreadToken, filename) =
+    member _.GetParseResultsForFile (ctok: CompilationThreadToken, fileName) =
       cancellable {
         let parsedInfo =
-            getSlot filename
+            getSlot fileName
             |> getParseResults ctok
 
-        return (parsedInfo.input, parsedInfo.sourceRange, parsedInfo.filename, parsedInfo.errors) }
+        return (parsedInfo.Input, parsedInfo.SourceRange, parsedInfo.FileName, parsedInfo.Errors) }
 
     member _.SourceFiles  = sourceFiles  |> List.map (fun (_, f, _) -> f)
 
