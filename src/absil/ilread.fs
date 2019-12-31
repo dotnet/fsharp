@@ -994,8 +994,8 @@ let seekReadTypeRefRow (ctxt: ILMetadataReader) mdv idx =
 
 /// Read Table ILTypeDef.
 let seekReadTypeDefRow (ctxt: ILMetadataReader) idx = ctxt.seekReadTypeDefRow idx
-let seekReadTypeDefRowUncached (ctxtH: ILMetadataReader option ref) idx =
-    let ctxt = getHole ctxtH
+let seekReadTypeDefRowUncached ctxtH idx =
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     let mutable addr = ctxt.rowAddr TableNames.TypeDef idx
     let flags = seekReadInt32Adv mdv &addr
@@ -1050,8 +1050,8 @@ let seekReadMemberRefRow (ctxt: ILMetadataReader) mdv idx =
 
 /// Read Table Constant.
 let seekReadConstantRow (ctxt: ILMetadataReader) idx = ctxt.seekReadConstantRow idx
-let seekReadConstantRowUncached (ctxtH: ILMetadataReader option ref) idx =
-    let ctxt = getHole ctxtH
+let seekReadConstantRowUncached ctxtH idx =
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     let mutable addr = ctxt.rowAddr TableNames.Constant idx
     let kind = seekReadUInt16Adv mdv &addr
@@ -1136,8 +1136,8 @@ let seekReadPropertyRow (ctxt: ILMetadataReader) mdv idx =
 
 /// Read Table MethodSemantics.
 let seekReadMethodSemanticsRow (ctxt: ILMetadataReader) idx = ctxt.seekReadMethodSemanticsRow idx
-let seekReadMethodSemanticsRowUncached (ctxtH: ILMetadataReader option ref) idx =
-    let ctxt = getHole ctxtH
+let seekReadMethodSemanticsRowUncached ctxtH idx =
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     let mutable addr = ctxt.rowAddr TableNames.MethodSemantics idx
     let flags = seekReadUInt16AsInt32Adv mdv &addr
@@ -1270,15 +1270,15 @@ let seekReadMethodSpecRow (ctxt: ILMetadataReader) mdv idx =
     (mdorIdx, instIdx) 
 
 
-let readUserStringHeapUncached (ctxtH: ILMetadataReader option ref) idx = 
-    let ctxt = getHole ctxtH
+let readUserStringHeapUncached ctxtH idx = 
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     seekReadUserString mdv (ctxt.userStringsStreamPhysicalLoc + idx)
 
 let readUserStringHeap (ctxt: ILMetadataReader) idx = ctxt.readUserStringHeap idx 
 
-let readStringHeapUncached (ctxtH: ILMetadataReader option ref) idx = 
-    let ctxt = getHole ctxtH
+let readStringHeapUncached ctxtH idx = 
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     seekReadUTF8String mdv (ctxt.stringsStreamPhysicalLoc + idx) 
 
@@ -1288,8 +1288,8 @@ let readStringHeapOption (ctxt: ILMetadataReader) idx = if idx = 0 then None els
 
 let emptyByteArray: byte[] = [||]
 
-let readBlobHeapUncached (ctxtH: ILMetadataReader option ref) idx = 
-    let ctxt = getHole ctxtH
+let readBlobHeapUncached ctxtH idx = 
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     // valid index lies in range [1..streamSize)
     // NOTE: idx cannot be 0 - Blob\String heap has first empty element that mdv one byte 0
@@ -1473,8 +1473,8 @@ and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
       IgnoreSymbolStoreSequencePoints = 0 <> (flags &&& 0x2000) } 
 
 and seekReadAssemblyRef (ctxt: ILMetadataReader) idx = ctxt.seekReadAssemblyRef idx
-and seekReadAssemblyRefUncached (ctxtH: ILMetadataReader option ref) idx = 
-    let ctxt = getHole ctxtH
+and seekReadAssemblyRefUncached ctxtH idx = 
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     let (v1, v2, v3, v4, flags, publicKeyOrTokenIdx, nameIdx, localeIdx, hashValueIdx) = seekReadAssemblyRefRow ctxt mdv idx
     let nm = readStringHeap ctxt nameIdx
@@ -1628,8 +1628,8 @@ and seekReadInterfaceImpls (ctxt: ILMetadataReader) mdv numtypars tidx =
 and seekReadGenericParams ctxt numtypars (a, b): ILGenericParameterDefs = 
     ctxt.seekReadGenericParams (GenericParamsIdx(numtypars, a, b))
 
-and seekReadGenericParamsUncached (ctxtH: ILMetadataReader option ref) (GenericParamsIdx(numtypars, a, b)) =
-    let ctxt = getHole ctxtH
+and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numtypars, a, b)) =
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     let pars =
         seekReadIndexedRows
@@ -1668,8 +1668,8 @@ and seekReadGenericParamConstraints (ctxt: ILMetadataReader) mdv numtypars gpidx
 and seekReadTypeDefAsType (ctxt: ILMetadataReader) boxity (ginst: ILTypes) idx =
       ctxt.seekReadTypeDefAsType (TypeDefAsTypIdx (boxity, ginst, idx))
 
-and seekReadTypeDefAsTypeUncached (ctxtH: ILMetadataReader option ref) (TypeDefAsTypIdx (boxity, ginst, idx)) =
-    let ctxt = getHole ctxtH
+and seekReadTypeDefAsTypeUncached ctxtH (TypeDefAsTypIdx (boxity, ginst, idx)) =
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     mkILTy boxity (ILTypeSpec.Create(seekReadTypeDefAsTypeRef ctxt idx, ginst))
 
 and seekReadTypeDefAsTypeRef (ctxt: ILMetadataReader) idx =
@@ -1693,8 +1693,8 @@ and seekReadTypeRefUncached (ctxtH: ILMetadataReader option ref) idx =
      ILTypeRef.Create(scope=scope, enclosing=enc, name = nm) 
 
 and seekReadTypeRefAsType (ctxt: ILMetadataReader) boxity ginst idx = ctxt.seekReadTypeRefAsType (TypeRefAsTypIdx (boxity, ginst, idx))
-and seekReadTypeRefAsTypeUncached (ctxtH: ILMetadataReader option ref) (TypeRefAsTypIdx (boxity, ginst, idx)) =
-     let ctxt = getHole ctxtH
+and seekReadTypeRefAsTypeUncached ctxtH (TypeRefAsTypIdx (boxity, ginst, idx)) =
+     let (ctxt: ILMetadataReader) = getHole ctxtH
      mkILTy boxity (ILTypeSpec.Create(seekReadTypeRef ctxt idx, ginst))
 
 and seekReadTypeDefOrRef (ctxt: ILMetadataReader) numtypars boxity (ginst: ILTypes) (TaggedIndex(tag, idx) ) =
@@ -1942,8 +1942,8 @@ and sigptrGetLocal (ctxt: ILMetadataReader) numtypars bytes sigptr =
 and readBlobHeapAsMethodSig (ctxt: ILMetadataReader) numtypars blobIdx =
     ctxt.readBlobHeapAsMethodSig (BlobAsMethodSigIdx (numtypars, blobIdx))
 
-and readBlobHeapAsMethodSigUncached (ctxtH: ILMetadataReader option ref) (BlobAsMethodSigIdx (numtypars, blobIdx)) =
-    let ctxt = getHole ctxtH
+and readBlobHeapAsMethodSigUncached ctxtH (BlobAsMethodSigIdx (numtypars, blobIdx)) =
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     let bytes = readBlobHeap ctxt blobIdx
     let sigptr = 0
     let ccByte, sigptr = sigptrGetByte bytes sigptr
@@ -1962,7 +1962,7 @@ and readBlobHeapAsType ctxt numtypars blobIdx =
 and readBlobHeapAsFieldSig ctxt numtypars blobIdx =
     ctxt.readBlobHeapAsFieldSig (BlobAsFieldSigIdx (numtypars, blobIdx))
 
-and readBlobHeapAsFieldSigUncached (ctxtH: ILMetadataReader option ref) (BlobAsFieldSigIdx (numtypars, blobIdx)) =
+and readBlobHeapAsFieldSigUncached ctxtH (BlobAsFieldSigIdx (numtypars, blobIdx)) =
     let ctxt = getHole ctxtH
     let bytes = readBlobHeap ctxt blobIdx
     let sigptr = 0
@@ -1975,7 +1975,7 @@ and readBlobHeapAsFieldSigUncached (ctxtH: ILMetadataReader option ref) (BlobAsF
 and readBlobHeapAsPropertySig (ctxt: ILMetadataReader) numtypars blobIdx =
     ctxt.readBlobHeapAsPropertySig (BlobAsPropSigIdx (numtypars, blobIdx))
 
-and readBlobHeapAsPropertySigUncached (ctxtH: ILMetadataReader option ref) (BlobAsPropSigIdx (numtypars, blobIdx)) =
+and readBlobHeapAsPropertySigUncached ctxtH (BlobAsPropSigIdx (numtypars, blobIdx)) =
     let ctxt = getHole ctxtH
     let bytes = readBlobHeap ctxt blobIdx
     let sigptr = 0
@@ -1991,7 +1991,7 @@ and readBlobHeapAsPropertySigUncached (ctxtH: ILMetadataReader option ref) (Blob
 and readBlobHeapAsLocalsSig (ctxt: ILMetadataReader) numtypars blobIdx =
     ctxt.readBlobHeapAsLocalsSig (BlobAsLocalSigIdx (numtypars, blobIdx))
 
-and readBlobHeapAsLocalsSigUncached (ctxtH: ILMetadataReader option ref) (BlobAsLocalSigIdx (numtypars, blobIdx)) =
+and readBlobHeapAsLocalsSigUncached ctxtH (BlobAsLocalSigIdx (numtypars, blobIdx)) =
     let ctxt = getHole ctxtH
     let bytes = readBlobHeap ctxt blobIdx
     let sigptr = 0
@@ -2040,8 +2040,8 @@ and seekReadMemberRefAsMethDataNoVarArgs ctxt numtypars idx: MethodData =
 and seekReadMethodSpecAsMethodData (ctxt: ILMetadataReader) numtypars idx =  
     ctxt.seekReadMethodSpecAsMethodData (MethodSpecAsMspecIdx (numtypars, idx))
 
-and seekReadMethodSpecAsMethodDataUncached (ctxtH: ILMetadataReader option ref) (MethodSpecAsMspecIdx (numtypars, idx)) = 
-    let ctxt = getHole ctxtH
+and seekReadMethodSpecAsMethodDataUncached ctxtH (MethodSpecAsMspecIdx (numtypars, idx)) = 
+    let (ctxt: ILMetadataReader) = getHole ctxtH
     let mdv = ctxt.mdfile.GetView()
     let (mdorIdx, instIdx) = seekReadMethodSpecRow ctxt mdv idx
     let (VarArgMethodData(enclTy, cc, nm, argtys, varargs, retty, _)) = seekReadMethodDefOrRef ctxt numtypars mdorIdx
@@ -2058,8 +2058,8 @@ and seekReadMethodSpecAsMethodDataUncached (ctxtH: ILMetadataReader option ref) 
 and seekReadMemberRefAsFieldSpec (ctxt: ILMetadataReader) numtypars idx = 
    ctxt.seekReadMemberRefAsFieldSpec (MemberRefAsFspecIdx (numtypars, idx))
 
-and seekReadMemberRefAsFieldSpecUncached (ctxtH: ILMetadataReader option ref) (MemberRefAsFspecIdx (numtypars, idx)) = 
-   let ctxt = getHole ctxtH
+and seekReadMemberRefAsFieldSpecUncached ctxtH (MemberRefAsFspecIdx (numtypars, idx)) = 
+   let (ctxt: ILMetadataReader) = getHole ctxtH
    let mdv = ctxt.mdfile.GetView()
    let (mrpIdx, nameIdx, typeIdx) = seekReadMemberRefRow ctxt mdv idx
    let nm = readStringHeap ctxt nameIdx
@@ -2076,8 +2076,8 @@ and seekReadMemberRefAsFieldSpecUncached (ctxtH: ILMetadataReader option ref) (M
 and seekReadMethodDefAsMethodData ctxt idx =
    ctxt.seekReadMethodDefAsMethodData idx
 
-and seekReadMethodDefAsMethodDataUncached (ctxtH: ILMetadataReader option ref) idx =
-   let ctxt = getHole ctxtH
+and seekReadMethodDefAsMethodDataUncached ctxtH idx =
+   let (ctxt: ILMetadataReader) = getHole ctxtH
    let mdv = ctxt.mdfile.GetView()
    // Look for the method def parent. 
    let tidx = 
@@ -2340,10 +2340,10 @@ and seekReadProperties (ctxt: ILMetadataReader) numtypars tidx =
                      yield seekReadProperty ctxt mdv numtypars i ])
 
 
-and customAttrsReader (ctxtH: ILMetadataReader option ref) tag: ILAttributesStored =
+and customAttrsReader ctxtH tag: ILAttributesStored =
     mkILCustomAttrsReader
       (fun idx ->
-          let ctxt = getHole ctxtH
+          let (ctxt: ILMetadataReader) = getHole ctxtH
           seekReadIndexedRows (ctxt.getNumRows TableNames.CustomAttribute, 
                                   seekReadCustomAttributeRow ctxt, (fun (a, _, _) -> a), 
                                   hcaCompare (TaggedIndex(tag,idx)), 
