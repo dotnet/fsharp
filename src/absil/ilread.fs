@@ -1348,8 +1348,8 @@ let readNativeResources (pectxt: PEReader) =
 
 
 let getDataEndPointsDelayed (pectxt: PEReader) (ctxtH: ILMetadataReader option ref) =
-    let ctxt = getHole ctxtH
     lazy
+        let (ctxt: ILMetadataReader) = getHole ctxtH
         let mdv = ctxt.mdfile.GetView()
         let dataStartPoints =
             let mutable res = []
@@ -2364,7 +2364,7 @@ and seekReadCustomAttrUncached ctxtH (CustomAttrIdx (cat, idx, valIdx)) =
     let elements = []
     ILAttribute.Encoded (method, data, elements)
 
-and securityDeclsReader (ctxtH: ILMetadataReader option ref) tag =
+and securityDeclsReader ctxtH tag =
     mkILSecurityDeclsReader
       (fun idx ->
          let (ctxt: ILMetadataReader) = getHole ctxtH
