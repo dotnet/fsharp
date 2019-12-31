@@ -703,7 +703,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         typeCheckCache 
         |> Array.findIndex (fun x ->
             let f2 = x.FileName
-            String.Equals(fileName, f2, StringComparison.OrdinalIgnoreCase) ||
+            String.Equals(fileName, f2, StringComparison.OrdinalIgnoreCase)
             || String.Equals(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f2, StringComparison.OrdinalIgnoreCase))
 
     let getParseResults ctok slot =
