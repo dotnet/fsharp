@@ -47,15 +47,15 @@ let LOH_SIZE_THRESHOLD_BYTES = 80_000
 // Library: ReportTime
 //---------------------------------------------------------------------
 let reportTime =
-    let tFirst = ref None
-    let tPrev = ref None
+    let mutable tFirst = None
+    let mutable tPrev = None
     fun showTimes descr ->
         if showTimes then 
             let t = Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
-            let prev = match !tPrev with None -> 0.0 | Some t -> t
-            let first = match !tFirst with None -> (tFirst := Some t; t) | Some t -> t
+            let prev = match tPrev with None -> 0.0 | Some t -> t
+            let first = match tFirst with None -> (tFirst <- Some t; t) | Some t -> t
             printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
-            tPrev := Some t
+            tPrev <- Some t
 
 //-------------------------------------------------------------------------
 // Library: projections
@@ -573,10 +573,10 @@ module String =
     let getLines (str: string) =
         use reader = new StringReader(str)
         [|
-            let line = ref (reader.ReadLine())
-            while not (isNull !line) do
-                yield !line
-                line := reader.ReadLine()
+            let mutable line = reader.ReadLine()
+            while not (isNull line) do
+                yield line
+                line <- reader.ReadLine()
             if str.EndsWithOrdinal("\n") then
                 // last trailing space not returned
                 // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
