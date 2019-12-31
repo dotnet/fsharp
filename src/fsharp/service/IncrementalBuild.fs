@@ -261,7 +261,7 @@ module IncrementalBuild =
     let mutable injectCancellationFault = false
     let locallyInjectCancellationFault() = 
         injectCancellationFault <- true
-        { new IDisposable with member __.Dispose() =  injectCancellationFault <- false }
+        { new IDisposable with member _.Dispose() =  injectCancellationFault <- false }
 
 type SourceFile =
     {
@@ -703,8 +703,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         typeCheckCache 
         |> Array.findIndex (fun x ->
             let f2 = x.FileName
-            String.Compare(fileName, f2, StringComparison.CurrentCultureIgnoreCase)=0
-            || String.Compare(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f2, StringComparison.CurrentCultureIgnoreCase)=0)
+            String.Equals(fileName, f2, StringComparison.OrdinalIgnoreCase) ||
+            || String.Equals(FileSystem.GetFullPathShim fileName, FileSystem.GetFullPathShim f2, StringComparison.OrdinalIgnoreCase))
 
     let getParseResults ctok slot =
         checkSlot slot
