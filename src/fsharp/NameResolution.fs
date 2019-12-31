@@ -2528,7 +2528,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
             ResolveExprLongIdentPrim sink ncenv false FullyQualified m ad nenv typeNameResInfo id2 rest2 isOpenDecl
     else
         if isNil rest && fullyQualified <> FullyQualified then
-            let typeError = ref None
+            let mutable typeError = None
             // Single identifier.  Lookup the unqualified names in the environment
             let envSearch =
                 match nenv.eUnqualifiedItems.TryGetValue id.idText with
@@ -2549,7 +2549,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                         let resInfo, item, rest = ForceRaise res
                         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
                         Some(item, rest)
-                    | Exception e -> typeError := Some e; None
+                    | Exception e -> typeError <- Some e; None
 
                 | true, res ->
                     let fresh = FreshenUnqualifiedItem ncenv m res
@@ -2587,7 +2587,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     | Result _ as res -> ForceRaise res
                     | _ ->
                         let failingCase =
-                            match !typeError with
+                            match typeError with
                             | Some e -> raze e
                             | _ ->
                                 let suggestNamesAndTypes (addToBuffer: string -> unit) =

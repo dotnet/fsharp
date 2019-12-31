@@ -29,6 +29,7 @@ this file.
     <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="$(FSharpBuildAssemblyFile)" />
     <UsingTask TaskName="WriteCodeFragment" AssemblyFile="$(FSharpBuildAssemblyFile)" />
     <UsingTask TaskName="FSharpPlatformInformation" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="SubstituteText" AssemblyFile="$(FSharpBuildAssemblyFile)" />
 
     <PropertyGroup>
         <ImportByWildcardBeforeMicrosoftFSharpTargets Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == ''">true</ImportByWildcardBeforeMicrosoftFSharpTargets>
