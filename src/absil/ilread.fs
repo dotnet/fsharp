@@ -1347,7 +1347,7 @@ let readNativeResources (pectxt: PEReader) =
             yield ILNativeResource.In (pectxt.fileName, pectxt.nativeResourcesAddr, start, pectxt.nativeResourcesSize ) ]
 
 
-let getDataEndPointsDelayed (pectxt: PEReader) (ctxtH: ILMetadataReader option ref) =
+let getDataEndPointsDelayed (pectxt: PEReader) ctxtH =
     lazy
         let (ctxt: ILMetadataReader) = getHole ctxtH
         let mdv = ctxt.mdfile.GetView()
