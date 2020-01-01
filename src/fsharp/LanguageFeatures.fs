@@ -28,7 +28,6 @@ type LanguageFeature =
     | FromEndSlicing
     | FixedIndexSlice3d4d
 
-
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
 
