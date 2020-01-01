@@ -13,7 +13,6 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
 
     type private TypeInThisAssembly = class end
 
-    let implementationAssemblyDir = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
     let fSharpCompilerLocation =
         let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some location) with
