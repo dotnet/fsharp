@@ -16,22 +16,18 @@ open System
 //   *  When a feature is assigned a release language, we will scrub the code of feature references and apply
 //      the Release Language version.
 
-/// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | PreviewVersion = 0
-    | SingleUnderscorePattern = 3
-    | WildCardInForLoop = 4
-    | RelaxWhitespace = 5
-    | NameOf = 6
-    | ImplicitYield = 7
-    | OpenStaticClasses = 8
-    | PackageManagement = 9
-    | FromEndSlicing = 11
-    | FixedIndexSlice3d4d = 12
-    | LanguageVersion46 = 0x10046
-    | LanguageVersion47 = 0x10047
-    | LanguageVersion50 = 0x10050
+    | SingleUnderscorePattern
+    | WildCardInForLoop
+    | RelaxWhitespace
+    | NameOf
+    | ImplicitYield
+    | OpenStaticClasses
+    | PackageManagement
+    | FromEndSlicing
+    | FixedIndexSlice3d4d
+
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -50,19 +46,13 @@ type LanguageVersion (specifiedVersionAsString) =
 
     static let features =
         dict [
-            // Add new LanguageVersions here ...
-            LanguageFeature.LanguageVersion46, languageVersion46
-            LanguageFeature.LanguageVersion47, languageVersion47
-            LanguageFeature.LanguageVersion50, languageVersion50
-            LanguageFeature.PreviewVersion, previewVersion
-
             // F# 4.7
             LanguageFeature.SingleUnderscorePattern, languageVersion47
             LanguageFeature.WildCardInForLoop, languageVersion47
             LanguageFeature.RelaxWhitespace, languageVersion47
             LanguageFeature.ImplicitYield, languageVersion47
 
-            // Add new Language Features here...
+            // F# preview
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.PackageManagement, previewVersion
@@ -98,11 +88,11 @@ type LanguageVersion (specifiedVersionAsString) =
     member __.ValidOptions = validOptions
 
     /// Get a list of valid versions for help text
-    member __.ValidVersions = [|
-        for v in languageVersions |> Seq.sort do
-            let label = if v = defaultVersion then " (Default)" else ""
-            yield sprintf "%M%s" v label
-            |]
+    member __.ValidVersions =
+        [|
+            for v in languageVersions |> Seq.sort ->
+                sprintf "%M%s" v (if v = defaultVersion then " (Default)" else "")
+        |]
 
     /// Get the specified LanguageVersion
     member __.SpecifiedVersion = specified
