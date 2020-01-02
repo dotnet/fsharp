@@ -24,6 +24,9 @@ type LanguageFeature =
     | NameOf
     | ImplicitYield
     | OpenStaticClasses
+    | PackageManagement
+    | FromEndSlicing
+    | FixedIndexSlice3d4d
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -31,13 +34,14 @@ type LanguageVersion (specifiedVersionAsString) =
     // When we increment language versions here preview is higher than current RTM version
     static let languageVersion46 = 4.6m
     static let languageVersion47 = 4.7m
+    static let languageVersion50 = 5.0m
     static let previewVersion = 9999m                   // Language version when preview specified
-    static let defaultVersion = languageVersion47       // Language version when default specified
+    static let defaultVersion = languageVersion50       // Language version when default specified
     static let latestVersion = defaultVersion           // Language version when latest specified
-    static let latestMajorVersion = languageVersion46   // Language version when latestmajor specified
+    static let latestMajorVersion = languageVersion47   // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
-    static let languageVersions = set [| languageVersion46; languageVersion47 |]
+    static let languageVersions = set [| languageVersion46; languageVersion47; languageVersion50 |]
 
     static let features =
         dict [
@@ -50,6 +54,9 @@ type LanguageVersion (specifiedVersionAsString) =
             // F# preview
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
+            LanguageFeature.PackageManagement, previewVersion
+            LanguageFeature.FixedIndexSlice3d4d, previewVersion
+            LanguageFeature.FromEndSlicing, previewVersion
         ]
 
     let specified =
@@ -61,6 +68,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | "latestmajor" -> latestMajorVersion
         | "4.6" -> languageVersion46
         | "4.7" -> languageVersion47
+        | "5.0" -> languageVersion50
         | _ -> 0m
 
     /// Check if this feature is supported by the selected langversion
