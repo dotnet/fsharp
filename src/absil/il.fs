@@ -2593,6 +2593,9 @@ let tname_IntPtr = "System.IntPtr"
 [<Literal>]
 let tname_UIntPtr = "System.UIntPtr"
 
+[<Literal>]
+let tname_TypedReference = "System.TypedReference"
+
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 // This data structure needs an entirely delayed implementation
 type ILGlobals(primaryScopeRef) =
@@ -2617,6 +2620,7 @@ type ILGlobals(primaryScopeRef) =
     let m_typ_Char = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Char))
     let m_typ_IntPtr = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_IntPtr))
     let m_typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UIntPtr))
+    let m_typ_TypedReference = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_TypedReference))
 
     member x.primaryAssemblyScopeRef = m_typ_Object.TypeRef.Scope
     member x.primaryAssemblyName = 
@@ -2641,6 +2645,7 @@ type ILGlobals(primaryScopeRef) =
     member x.typ_Double = m_typ_Double
     member x.typ_Bool = m_typ_Bool
     member x.typ_Char = m_typ_Char
+    member x.typ_TypedReference = m_typ_TypedReference
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
