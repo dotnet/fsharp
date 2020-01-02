@@ -2088,9 +2088,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
    // guarantees to optimize.
   
     | TOp.ILCall (_, _, _, _, _, _, _, mref, _enclTypeArgs, _methTypeArgs, _tys), _, [arg]
-        when (mref.DeclaringTypeRef.Scope.IsAssemblyRef &&
-              mref.DeclaringTypeRef.Scope.AssemblyRef.Name = cenv.g.ilg.typ_Array.TypeRef.Scope.AssemblyRef.Name &&
-              mref.DeclaringTypeRef.Name = cenv.g.ilg.typ_Array.TypeRef.Name &&
+        when (mref.DeclaringTypeRef.Name = cenv.g.ilg.typ_Array.TypeRef.Name &&
               mref.Name = "get_Length" &&
               isArray1DTy cenv.g (tyOfExpr cenv.g arg)) -> 
          OptimizeExpr cenv env (Expr.Op (TOp.ILAsm (i_ldlen, [cenv.g.int_ty]), [], [arg], m))
@@ -2803,7 +2801,10 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
                     match vref.ApparentEnclosingEntity with
                     | Parent tcr when (tyconRefEq cenv.g cenv.g.lazy_tcr_canon tcr) ->
                             match tcr.CompiledRepresentation with
-                            | CompiledTypeRepr.ILAsmNamed(iltr, _, _) -> iltr.Scope.AssemblyRef.Name = "FSharp.Core"
+                            | CompiledTypeRepr.ILAsmNamed(iltr, _, _) -> 
+                                match iltr.Scope with
+                                | ILScopeRef.Assembly aref -> aref.Name = "FSharp.Core"
+                                | _ -> false
                             | _ -> false
                     | _ -> false
                 | _ -> false                                          
