@@ -637,9 +637,9 @@ module rec ILBinaryReaderImpl =
             let ilTypeRef = readILTypeRefFromTypeDefinition cenv typeDef
 
             let ilGenericArgs = 
-                // TODO: Confirm if this is right?
+                let enclILGenericArgCount = typeDef.GetGenericParameters().Count
                 typeDef.GetGenericParameters()
-                |> Seq.mapi (fun i _ -> mkILTyvarTy (uint16 i))
+                |> Seq.mapi (fun i _ -> mkILTyvarTy (uint16 (enclILGenericArgCount + i)))
                 |> List.ofSeq
 
             let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, ilGenericArgs)
@@ -761,7 +761,6 @@ module rec ILBinaryReaderImpl =
         let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilCallingConv, name, genericArity, si.ParameterTypes |> List.ofSeq, si.ReturnType)
 
         let ilGenericArgs =
-            // TODO: Confirm if this is right?
             let enclILGenericArgCount = enclILTy.GenericArgs.Length
             methodDef.GetGenericParameters()
             |> Seq.mapi (fun i _ -> mkILTyvarTy (uint16 (enclILGenericArgCount + i)))
