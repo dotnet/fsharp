@@ -645,7 +645,7 @@ type ILTokenMappings =
       PropertyTokenMap: ILTypeDef list * ILTypeDef -> ILPropertyDef -> int32
       EventTokenMap: ILTypeDef list * ILTypeDef -> ILEventDef -> int32 }
 
-let recordRequiredDataFixup (requiredDataFixups: byref<('a * 'b) list>) (buf: ByteBuffer) pos lab =
+let recordRequiredDataFixup (requiredDataFixups: byref<(int32 * (int * bool)) list>) (buf: ByteBuffer) pos lab =
     requiredDataFixups <- (pos, lab) :: requiredDataFixups
     // Write a special value in that we check later when applying the fixup 
     buf.EmitInt32 0xdeaddddd
