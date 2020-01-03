@@ -332,7 +332,6 @@ module rec ILBinaryReaderImpl =
             ILArrayShape (List.init rank dim)
         mkILArrTy (elementType, shape)
 
-    [<Sealed>]
     type SignatureTypeProvider(ilg: ILGlobals) =
 
         member val cenv : cenv = Unchecked.defaultof<_> with get, set
@@ -386,7 +385,30 @@ module rec ILBinaryReaderImpl =
             member _.GetSZArrayType(elementType) =
                 mkILArr1DTy elementType
 
-    [<Sealed>]
+        interface ICustomAttributeTypeProvider<ILType> with
+
+            member _.GetSystemType() = ilg.typ_Type
+            
+            member _.GetTypeFromSerializedName nm = ILType.Parse nm
+
+            member _.GetUnderlyingEnumType ilType = 
+                if isILSByteTy ilType then PrimitiveTypeCode.SByte
+                elif isILByteTy ilType then PrimitiveTypeCode.Byte
+                elif isILInt16Ty ilType then PrimitiveTypeCode.Int16
+                elif isILUInt16Ty ilType then PrimitiveTypeCode.UInt16
+                elif isILInt32Ty ilType then PrimitiveTypeCode.Int32
+                elif isILUInt32Ty ilType then PrimitiveTypeCode.UInt32
+                elif isILInt64Ty ilType then PrimitiveTypeCode.Int64
+                elif isILUInt64Ty ilType then PrimitiveTypeCode.UInt64
+                elif isILCharTy ilType then PrimitiveTypeCode.Char
+                elif isILDoubleTy ilType then PrimitiveTypeCode.Double
+                elif isILSingleTy ilType then PrimitiveTypeCode.Single
+                elif isILBoolTy ilType then PrimitiveTypeCode.Boolean
+                else
+                    failwith "GetUnderlyingEnumType: Invalid type"
+
+            member _.IsSystemType ilType = isILTypeTy ilType
+
     type LocalSignatureTypeProvider(ilg: ILGlobals) =
 
         member val cenv : cenv = Unchecked.defaultof<_> with get, set
@@ -495,7 +517,7 @@ module rec ILBinaryReaderImpl =
                     IsPinned = false
                     Type =  mkILArr1DTy elementType.Type
                     DebugInfo = None
-                }
+                }            
 
     let rec readILScopeRef (cenv: cenv) (handle: EntityHandle) =
         let mdReader = cenv.MetadataReader
@@ -829,7 +851,7 @@ module rec ILBinaryReaderImpl =
 
         let bytes = 
             if customAttr.Value.IsNil then [||]
-            else mdReader.GetBlobBytes(customAttr.Value)
+            else mdReader.GetBlobBytes(customAttr)
 
         let elements = [] // Why are we not putting elements in here?
         ILAttribute.Encoded(readILMethodSpec cenv customAttr.Constructor, bytes, elements)

@@ -270,6 +270,8 @@ and
 
     member QualifiedName: string
 
+    static member Parse: assemblyQualifiedName: string -> ILType
+
 and [<StructuralEquality; StructuralComparison>]
     ILCallingSignature =  
     { CallingConv: ILCallingConv
@@ -1959,6 +1961,7 @@ val isILIntPtrTy: ILType -> bool
 val isILUIntPtrTy: ILType -> bool
 val isILBoolTy: ILType -> bool
 val isILCharTy: ILType -> bool
+val isILTypeTy: ILType -> bool
 val isILTypedReferenceTy: ILType -> bool
 val isILDoubleTy: ILType -> bool
 val isILSingleTy: ILType -> bool
