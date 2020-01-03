@@ -54,7 +54,7 @@ module rec ILBinaryReaderImpl =
         let memberRefToILMethSpecCache = Dictionary()
         let methDefToILMethSpecCache = Dictionary()
 
-        let isILTypeCacheEnabled = not canReduceMemory
+        let isCachingEnabled = not canReduceMemory
 
         member _.IsMetadataOnly = isMetadataOnly
 
@@ -73,25 +73,27 @@ module rec ILBinaryReaderImpl =
         member _.LocalSignatureTypeProvider = localSigTyProvider
 
         member _.CacheILType(typeDefHandle: TypeDefinitionHandle, ilType: ILType) =
-            if isILTypeCacheEnabled then
+            if isCachingEnabled then
                 typeDefCache.Add(typeDefHandle, ilType)
 
         member _.CacheILType(typeRefHandle: TypeReferenceHandle, ilType: ILType) =
-            if isILTypeCacheEnabled then
+            if isCachingEnabled then
                 typeRefCache.Add(typeRefHandle, ilType)
 
         member _.CacheILType(typeSpecHandle: TypeSpecificationHandle, ilType: ILType) =
-            if isILTypeCacheEnabled then
+            if isCachingEnabled then
                 typeSpecCache.Add(typeSpecHandle, ilType)
 
         member _.CacheILAssemblyRef(asmRefHandle: AssemblyReferenceHandle, ilAsmRef: ILAssemblyRef) =
             asmRefCache.Add(asmRefHandle, ilAsmRef)
 
         member _.CacheILMethodSpec(memberRefHandle: MemberReferenceHandle, ilMethSpec: ILMethodSpec) =
-            memberRefToILMethSpecCache.Add(memberRefHandle, ilMethSpec)
+            if isCachingEnabled then
+                memberRefToILMethSpecCache.Add(memberRefHandle, ilMethSpec)
 
         member _.CacheILMethodSpec(methDefHandle: MethodDefinitionHandle, ilMethSpec: ILMethodSpec) =
-            methDefToILMethSpecCache.Add(methDefHandle, ilMethSpec)
+            if isCachingEnabled then
+                methDefToILMethSpecCache.Add(methDefHandle, ilMethSpec)
         
         member _.TryGetCachedILType(typeDefHandle) =
             match typeDefCache.TryGetValue(typeDefHandle) with
