@@ -10,6 +10,7 @@ open System.Reflection
 open System.Reflection.PortableExecutable
 open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
+open FSharp.NativeInterop
 open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
@@ -2135,35 +2136,37 @@ module rec ILBinaryReaderImpl =
         |]
 
     let readILResources (cenv: cenv) =
+        let peReader = cenv.PEReader
         let mdReader = cenv.MetadataReader
 
         mdReader.ManifestResources
         |> Seq.map mdReader.GetManifestResource
-        |> Seq.choose (fun resource ->
-            if resource.Implementation.IsNil then None
-            else
-                let location =
+        |> Seq.map (fun resource ->
+            let location =
+                if resource.Implementation.IsNil then
+                    let rva = peReader.PEHeaders.CorHeader.ResourcesDirectory.RelativeVirtualAddress
+                    let block = peReader.GetSectionData(rva)
+                    let mutable reader = block.GetReader()
+                    reader.Offset <- int resource.Offset
+                    let length = reader.ReadInt32()
+                    let mutable reader = block.GetReader(int resource.Offset + 4, length)
+                    let bytes = reader.ReadBytes(reader.RemainingBytes)
+                    // TODO: Fix LOH issue here.
+                    let bytes = ByteMemory.FromArray bytes
+                    ILResourceLocation.Local(bytes.AsReadOnly())
+                else
                     match readILScopeRef cenv resource.Implementation with
-                    | ILScopeRef.Local ->
-                        let bytes =
-                            let bytes = mdReader.GetBlobBytes(MetadataTokens.BlobHandle(int resource.Offset))
-                            if cenv.CanReduceMemory then
-                                ByteMemory.CreateMemoryMappedFile (ByteMemory.FromFile(mdReader.GetString resource.Name, FileAccess.Read, canShadowCopy=true).AsReadOnly())
-                            else
-                                ByteMemory.FromArray bytes
-                        ILResourceLocation.Local(bytes.AsReadOnly())
-                    
                     | ILScopeRef.Module mref -> ILResourceLocation.File (mref, int resource.Offset)
                     | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
+                    | ILScopeRef.Local -> failwith "Unexpected ILScopeRef.Local"
 
-                Some
-                    {
-                        Name = mdReader.GetString resource.Name
-                        Location = location
-                        Access = (if resource.Attributes &&& ManifestResourceAttributes.Public = ManifestResourceAttributes.Public then ILResourceAccess.Public else ILResourceAccess.Private)
-                        CustomAttrsStored = resource.GetCustomAttributes() |> readILAttributesStored cenv
-                        MetadataIndex = MetadataTokens.GetRowNumber(resource.Implementation)
-                    })
+            {
+                Name = mdReader.GetString resource.Name
+                Location = location
+                Access = (if resource.Attributes &&& ManifestResourceAttributes.Public = ManifestResourceAttributes.Public then ILResourceAccess.Public else ILResourceAccess.Private)
+                CustomAttrsStored = resource.GetCustomAttributes() |> readILAttributesStored cenv
+                MetadataIndex = MetadataTokens.GetRowNumber(resource.Implementation)
+            })
         |> List.ofSeq
         |> mkILResources
 
