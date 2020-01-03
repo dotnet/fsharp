@@ -1086,6 +1086,7 @@ module rec ILBinaryReaderImpl =
         let param = mdReader.GetParameter(paramHandle)
 
         let nameOpt = mdReader.TryGetString(param.Name)
+
         let typ = 
             if param.SequenceNumber = 0 then returnType
             else paramTypes.[param.SequenceNumber - 1]
@@ -1118,7 +1119,7 @@ module rec ILBinaryReaderImpl =
 
     let readILParameters (cenv: cenv) paramTypes (ret: ILReturn ref) (paramHandles: ParameterHandleCollection) =
         paramHandles
-        |> Seq.choose (fun paramHandle ->
+        |> Seq.map (fun paramHandle ->
             let struct(ilParameter, sequenceNumber) = readILParameter cenv paramTypes (!ret).Type paramHandle
             if sequenceNumber = 0 then
                 ret := 
@@ -1126,9 +1127,7 @@ module rec ILBinaryReaderImpl =
                       Type = ilParameter.Type
                       CustomAttrsStored = ilParameter.CustomAttrsStored
                       MetadataIndex = ilParameter.MetadataIndex }
-                None
-            else
-                Some ilParameter)
+            struct(ilParameter, sequenceNumber))
         |> List.ofSeq
 
     // -------------------------------------------------------------------- 
@@ -1793,6 +1792,14 @@ module rec ILBinaryReaderImpl =
 
         let ret = ref (mkILReturn si.ReturnType)
         let parameters = readILParameters cenv si.ParameterTypes ret (methDef.GetParameters())
+        let parameters =
+            match parameters with
+            | [] -> [struct(mkILParamAnon (!ret).Type, 0)]
+            | struct(_, headNum) :: _ when headNum <> 0 -> struct(mkILParamAnon (!ret).Type, 0) :: parameters
+            | _ -> parameters
+        let parameters =
+            parameters
+            |> List.map (fun struct(x, _) -> x)
 
         ILMethodDef(
             name = mdReader.GetString(methDef.Name),
