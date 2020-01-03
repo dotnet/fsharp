@@ -37,6 +37,11 @@ module rec ILBinaryReaderImpl =
             if namespaceHandle.IsNil then name
             else this.GetString namespaceHandle + "." + name
 
+    let typarCount (nm: string) =
+        let index = nm.IndexOf('`')
+        if index < 0 || (index + 1) < nm.Length then 0
+        else Int32.Parse(nm.Substring(index + 1)) // REVIEW: Maybe use Span here?
+
     [<Sealed>]
     type cenv(
                 peReader: PEReader, 
@@ -317,6 +322,9 @@ module rec ILBinaryReaderImpl =
         | PrimitiveTypeCode.UIntPtr -> ilg.typ_UIntPtr
         | PrimitiveTypeCode.Void -> ILType.Void
         | _ -> failwithf "Invalid Primitive Type Code: %A" primitiveTypeCode
+
+    let mkILGenericsArgsByCount offset count =
+        List.init count (fun i -> mkILTyvarTy (uint16 (offset + i)))
 
     let mkILTypeGeneric typeRef boxity typeArgs =
         let ilTypeSpec = ILTypeSpec.Create(typeRef, typeArgs)
@@ -634,7 +642,20 @@ module rec ILBinaryReaderImpl =
 
             let typeRef = mdReader.GetTypeReference(typeRefHandle)
             let ilTypeRef = readILTypeRefFromTypeReference cenv typeRef
-            let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, ILGenericArgs.Empty)
+
+            let typarOffset =
+                match typeRef.ResolutionScope.Kind with
+                // Enclosing type
+                | HandleKind.TypeReference ->
+                    let ilTypeRef = 
+                        mdReader.GetTypeReference(TypeReferenceHandle.op_Explicit typeRef.ResolutionScope)
+                        |> readILTypeRefFromTypeReference cenv
+                    typarCount ilTypeRef.Name
+                | _ ->
+                    0
+
+            let typarCount = typarCount ilTypeRef.Name
+            let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, mkILGenericsArgsByCount typarOffset typarCount)
 
             let boxity =
                 match mdReader.ResolveSignatureTypeKind(TypeReferenceHandle.op_Implicit typeRefHandle, byte SignatureTypeKind.Class) with
