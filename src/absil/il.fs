@@ -3958,7 +3958,7 @@ let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) =
       | ILType.Value _ -> (* assume it is an enumeration *)
           let n, sigptr = sigptr_get_i32 bytes sigptr
           ILAttribElem.Int32 n, sigptr
-      | _ -> failwith "decodeILAttribData: attribute data involves an enum or System.Type value"
+      | x -> failwithf "decodeILAttribData: attribute data involves an enum or System.Type value - type: %A" x
     let rec parseFixed argtys sigptr =
       match argtys with
         [] -> [], sigptr
