@@ -6,6 +6,7 @@ open System.Linq
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Collections.ObjectModel
+open System.Collections.Concurrent
 open System.Reflection
 open System.Reflection.PortableExecutable
 open System.Reflection.Metadata
@@ -53,12 +54,12 @@ module rec ILBinaryReaderImpl =
                 sigTyProvider: ISignatureTypeProvider<ILType, unit>,
                 localSigTyProvider: ISignatureTypeProvider<ILLocal, unit>) =
 
-        let typeDefCache = Dictionary()
-        let typeRefCache = Dictionary()
-        let typeSpecCache = Dictionary()
-        let asmRefCache = Dictionary()
-        let memberRefToILMethSpecCache = Dictionary()
-        let methDefToILMethSpecCache = Dictionary()
+        let typeDefCache = ConcurrentDictionary()
+        let typeRefCache = ConcurrentDictionary()
+        let typeSpecCache = ConcurrentDictionary()
+        let asmRefCache = ConcurrentDictionary()
+        let memberRefToILMethSpecCache = ConcurrentDictionary()
+        let methDefToILMethSpecCache = ConcurrentDictionary()
 
         let isCachingEnabled = not canReduceMemory
 
@@ -78,56 +79,56 @@ module rec ILBinaryReaderImpl =
 
         member _.LocalSignatureTypeProvider = localSigTyProvider
 
-        member _.CacheILType(typeDefHandle: TypeDefinitionHandle, ilType: ILType) =
+        member _.CacheILType(key: TypeDefinitionHandle, ilType: ILType) =
             if isCachingEnabled then
-                typeDefCache.Add(typeDefHandle, ilType)
+                typeDefCache.[key] <- ilType
 
-        member _.CacheILType(typeRefHandle: TypeReferenceHandle, ilType: ILType) =
+        member _.CacheILType(key: struct(TypeReferenceHandle * byte), ilType: ILType) =
             if isCachingEnabled then
-                typeRefCache.Add(typeRefHandle, ilType)
+                typeRefCache.[key] <- ilType
 
-        member _.CacheILType(typeSpecHandle: TypeSpecificationHandle, ilType: ILType) =
+        member _.CacheILType(key: TypeSpecificationHandle, ilType: ILType) =
             if isCachingEnabled then
-                typeSpecCache.Add(typeSpecHandle, ilType)
+                typeSpecCache.[key] <- ilType
 
-        member _.CacheILAssemblyRef(asmRefHandle: AssemblyReferenceHandle, ilAsmRef: ILAssemblyRef) =
-            asmRefCache.Add(asmRefHandle, ilAsmRef)
+        member _.CacheILAssemblyRef(key: AssemblyReferenceHandle, ilAsmRef: ILAssemblyRef) =
+            asmRefCache.[key] <- ilAsmRef
 
-        member _.CacheILMethodSpec(memberRefHandle: MemberReferenceHandle, ilMethSpec: ILMethodSpec) =
+        member _.CacheILMethodSpec(key: MemberReferenceHandle, ilMethSpec: ILMethodSpec) =
             if isCachingEnabled then
-                memberRefToILMethSpecCache.Add(memberRefHandle, ilMethSpec)
+                memberRefToILMethSpecCache.[key] <- ilMethSpec
 
-        member _.CacheILMethodSpec(methDefHandle: MethodDefinitionHandle, ilMethSpec: ILMethodSpec) =
+        member _.CacheILMethodSpec(key: MethodDefinitionHandle, ilMethSpec: ILMethodSpec) =
             if isCachingEnabled then
-                methDefToILMethSpecCache.Add(methDefHandle, ilMethSpec)
+                methDefToILMethSpecCache.[key] <- ilMethSpec
         
-        member _.TryGetCachedILType(typeDefHandle) =
-            match typeDefCache.TryGetValue(typeDefHandle) with
+        member _.TryGetCachedILType(key) =
+            match typeDefCache.TryGetValue(key) with
             | true, ilType -> ValueSome(ilType)
             | _ -> ValueNone
 
-        member _.TryGetCachedILType(typeRefHandle) =
-            match typeRefCache.TryGetValue(typeRefHandle) with
+        member _.TryGetCachedILType(key) =
+            match typeRefCache.TryGetValue(key) with
             | true, ilType -> ValueSome(ilType)
             | _ -> ValueNone
    
-        member _.TryGetCachedILType(typeSpecHandle) =
-            match typeSpecCache.TryGetValue(typeSpecHandle) with
+        member _.TryGetCachedILType(key) =
+            match typeSpecCache.TryGetValue(key) with
             | true, ilType -> ValueSome(ilType)
             | _ -> ValueNone
 
-        member _.TryGetCachedILAssemblyRef(asmRefHandle: AssemblyReferenceHandle) =
-            match asmRefCache.TryGetValue(asmRefHandle) with
+        member _.TryGetCachedILAssemblyRef(key: AssemblyReferenceHandle) =
+            match asmRefCache.TryGetValue(key) with
             | true, ilAsmRef -> ValueSome(ilAsmRef)
             | _ -> ValueNone
 
-        member _.TryGetCachedILMethodSpec(memberRefHandle) =
-            match memberRefToILMethSpecCache.TryGetValue(memberRefHandle) with
+        member _.TryGetCachedILMethodSpec(key) =
+            match memberRefToILMethSpecCache.TryGetValue(key) with
             | true, ilMethSpec -> ValueSome(ilMethSpec)
             | _ -> ValueNone
 
-        member _.TryGetCachedILMethodSpec(methDefHandle) =
-            match methDefToILMethSpecCache.TryGetValue(methDefHandle) with
+        member _.TryGetCachedILMethodSpec(key) =
+            match methDefToILMethSpecCache.TryGetValue(key) with
             | true, ilMethSpec -> ValueSome(ilMethSpec)
             | _ -> ValueNone
 
@@ -372,8 +373,8 @@ module rec ILBinaryReaderImpl =
             member this.GetTypeFromDefinition(_, typeDefHandle, _) =
                 readILTypeFromTypeDefinition this.cenv typeDefHandle
 
-            member this.GetTypeFromReference(_, typeRefHandle, _) =
-                readILTypeFromTypeReference this.cenv typeRefHandle
+            member this.GetTypeFromReference(_, typeRefHandle, rawTypeKind) =
+                readILTypeFromTypeReference this.cenv rawTypeKind typeRefHandle
 
         interface IConstructedTypeProvider<ILType> with
 
@@ -482,10 +483,10 @@ module rec ILBinaryReaderImpl =
                     DebugInfo = None
                 }    
 
-            member this.GetTypeFromReference(_, typeRefHandle, _) =
+            member this.GetTypeFromReference(_, typeRefHandle, rawTypeKind) =
                 {
                     IsPinned = false
-                    Type = readILTypeFromTypeReference this.cenv typeRefHandle
+                    Type = readILTypeFromTypeReference this.cenv rawTypeKind typeRefHandle
                     DebugInfo = None
                 } 
             
@@ -609,8 +610,9 @@ module rec ILBinaryReaderImpl =
     let readILType (cenv: cenv) (handle: EntityHandle) : ILType =
         match handle.Kind with
         | HandleKind.TypeReference ->
-            readILTypeFromTypeReference cenv (TypeReferenceHandle.op_Explicit(handle))
-
+            // No way to tell at this point if the type reference is a value type or not, so default to class.
+            let rawTypeKind = byte SignatureTypeKind.Class
+            readILTypeFromTypeReference cenv rawTypeKind (TypeReferenceHandle.op_Explicit(handle))
         | HandleKind.TypeDefinition ->
             readILTypeFromTypeDefinition cenv (TypeDefinitionHandle.op_Explicit(handle))
 
@@ -634,9 +636,10 @@ module rec ILBinaryReaderImpl =
 
         ILTypeRef.Create(ilScopeRef, [], namespac + "." + name)
 
-    let readILTypeFromTypeReference (cenv: cenv) (typeRefHandle: TypeReferenceHandle) =
-        match cenv.TryGetCachedILType(typeRefHandle) with
-        | ValueSome(ilType) -> ilType
+    let readILTypeFromTypeReference (cenv: cenv) rawTypeKind (typeRefHandle: TypeReferenceHandle) =
+        let cacheKey = struct(typeRefHandle, rawTypeKind)
+        match cenv.TryGetCachedILType cacheKey with
+        | ValueSome ilType -> ilType
         | _ ->
             let mdReader = cenv.MetadataReader
 
@@ -658,12 +661,12 @@ module rec ILBinaryReaderImpl =
             let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, mkILGenericsArgsByCount typarOffset typarCount)
 
             let boxity =
-                match mdReader.ResolveSignatureTypeKind(TypeReferenceHandle.op_Implicit typeRefHandle, byte SignatureTypeKind.Class) with
+                match mdReader.ResolveSignatureTypeKind(TypeReferenceHandle.op_Implicit typeRefHandle, rawTypeKind) with
                 | SignatureTypeKind.ValueType -> AsValue
                 | _ -> AsObject
 
             let ilType = mkILTy boxity ilTypeSpec
-            cenv.CacheILType(typeRefHandle, ilType)
+            cenv.CacheILType(cacheKey, ilType)
             ilType
 
     let rec readILTypeRefFromTypeDefinition (cenv: cenv) (typeDef: TypeDefinition) : ILTypeRef =
