@@ -22,6 +22,8 @@ module rec ILBinaryReaderImpl =
 
     type OperandType = System.Reflection.Emit.OperandType
 
+    type PdbReaderProvider = MetadataReaderProvider * string
+
     type MetadataReader with
 
         member this.TryGetString(handle: StringHandle) =
@@ -31,8 +33,11 @@ module rec ILBinaryReaderImpl =
     [<Sealed>]
     type cenv(
                 peReader: PEReader, 
-                mdReader: MetadataReader, 
-                isMetadataOnly: bool, 
+                mdReader: MetadataReader,
+                pdbReaderProviderOpt: PdbReaderProvider option,
+                entryPointToken: int,
+                isMetadataOnly: bool,
+                canReduceMemory: bool,
                 sigTyProvider: ISignatureTypeProvider<ILType, unit>,
                 localSigTyProvider: ISignatureTypeProvider<ILLocal, unit>) =
 
@@ -43,65 +48,71 @@ module rec ILBinaryReaderImpl =
         let memberRefToILMethSpecCache = Dictionary()
         let methDefToILMethSpecCache = Dictionary()
 
-        let isILTypeCacheEnabled = true
+        let isILTypeCacheEnabled = not canReduceMemory
 
-        member __.IsMetadataOnly = isMetadataOnly
+        member _.IsMetadataOnly = isMetadataOnly
 
-        member __.PEReader = peReader
+        member _.CanReduceMemory = canReduceMemory
 
-        member __.MetadataReader = mdReader
+        member _.PEReader = peReader
 
-        member __.SignatureTypeProvider = sigTyProvider
+        member _.MetadataReader = mdReader
 
-        member __.LocalSignatureTypeProvider = localSigTyProvider
+        member _.PdbReaderProvider = pdbReaderProviderOpt
 
-        member __.CacheILType(typeDefHandle: TypeDefinitionHandle, ilType: ILType) =
+        member _.EntryPointToken = entryPointToken
+
+        member _.SignatureTypeProvider = sigTyProvider
+
+        member _.LocalSignatureTypeProvider = localSigTyProvider
+
+        member _.CacheILType(typeDefHandle: TypeDefinitionHandle, ilType: ILType) =
             if isILTypeCacheEnabled then
                 typeDefCache.Add(typeDefHandle, ilType)
 
-        member __.CacheILType(typeRefHandle: TypeReferenceHandle, ilType: ILType) =
+        member _.CacheILType(typeRefHandle: TypeReferenceHandle, ilType: ILType) =
             if isILTypeCacheEnabled then
                 typeRefCache.Add(typeRefHandle, ilType)
 
-        member __.CacheILType(typeSpecHandle: TypeSpecificationHandle, ilType: ILType) =
+        member _.CacheILType(typeSpecHandle: TypeSpecificationHandle, ilType: ILType) =
             if isILTypeCacheEnabled then
                 typeSpecCache.Add(typeSpecHandle, ilType)
 
-        member __.CacheILAssemblyRef(asmRefHandle: AssemblyReferenceHandle, ilAsmRef: ILAssemblyRef) =
+        member _.CacheILAssemblyRef(asmRefHandle: AssemblyReferenceHandle, ilAsmRef: ILAssemblyRef) =
             asmRefCache.Add(asmRefHandle, ilAsmRef)
 
-        member __.CacheILMethodSpec(memberRefHandle: MemberReferenceHandle, ilMethSpec: ILMethodSpec) =
+        member _.CacheILMethodSpec(memberRefHandle: MemberReferenceHandle, ilMethSpec: ILMethodSpec) =
             memberRefToILMethSpecCache.Add(memberRefHandle, ilMethSpec)
 
-        member __.CacheILMethodSpec(methDefHandle: MethodDefinitionHandle, ilMethSpec: ILMethodSpec) =
+        member _.CacheILMethodSpec(methDefHandle: MethodDefinitionHandle, ilMethSpec: ILMethodSpec) =
             methDefToILMethSpecCache.Add(methDefHandle, ilMethSpec)
         
-        member __.TryGetCachedILType(typeDefHandle) =
+        member _.TryGetCachedILType(typeDefHandle) =
             match typeDefCache.TryGetValue(typeDefHandle) with
             | true, ilType -> ValueSome(ilType)
             | _ -> ValueNone
 
-        member __.TryGetCachedILType(typeRefHandle) =
+        member _.TryGetCachedILType(typeRefHandle) =
             match typeRefCache.TryGetValue(typeRefHandle) with
             | true, ilType -> ValueSome(ilType)
             | _ -> ValueNone
    
-        member __.TryGetCachedILType(typeSpecHandle) =
+        member _.TryGetCachedILType(typeSpecHandle) =
             match typeSpecCache.TryGetValue(typeSpecHandle) with
             | true, ilType -> ValueSome(ilType)
             | _ -> ValueNone
 
-        member __.TryGetCachedILAssemblyRef(asmRefHandle: AssemblyReferenceHandle) =
+        member _.TryGetCachedILAssemblyRef(asmRefHandle: AssemblyReferenceHandle) =
             match asmRefCache.TryGetValue(asmRefHandle) with
             | true, ilAsmRef -> ValueSome(ilAsmRef)
             | _ -> ValueNone
 
-        member __.TryGetCachedILMethodSpec(memberRefHandle) =
+        member _.TryGetCachedILMethodSpec(memberRefHandle) =
             match memberRefToILMethSpecCache.TryGetValue(memberRefHandle) with
             | true, ilMethSpec -> ValueSome(ilMethSpec)
             | _ -> ValueNone
 
-        member __.TryGetCachedILMethodSpec(methDefHandle) =
+        member _.TryGetCachedILMethodSpec(methDefHandle) =
             match methDefToILMethSpecCache.TryGetValue(methDefHandle) with
             | true, ilMethSpec -> ValueSome(ilMethSpec)
             | _ -> ValueNone
@@ -322,26 +333,26 @@ module rec ILBinaryReaderImpl =
 
         interface ISignatureTypeProvider<ILType, unit> with
 
-            member __.GetFunctionPointerType(si) =
+            member _.GetFunctionPointerType(si) =
                 mkILTypeFunctionPointer si.Header (si.ParameterTypes |> Seq.toList) si.ReturnType
 
-            member __.GetGenericMethodParameter(_, index) =
+            member _.GetGenericMethodParameter(_, index) =
                 mkILTypeTypeVar index
 
-            member __.GetGenericTypeParameter(_, index) =
+            member _.GetGenericTypeParameter(_, index) =
                 mkILTypeTypeVar index
 
-            member __.GetModifiedType(modifier, unmodifiedType, isRequired) =
+            member _.GetModifiedType(modifier, unmodifiedType, isRequired) =
                 mkILTypeModified isRequired modifier.TypeRef unmodifiedType
 
-            member __.GetPinnedType(elementType) = elementType
+            member _.GetPinnedType(elementType) = elementType
 
             member this.GetTypeFromSpecification(_, _, typeSpecHandle, _) =
                 readILTypeFromTypeSpecification this.cenv typeSpecHandle
             
         interface ISimpleTypeProvider<ILType> with
 
-            member __.GetPrimitiveType(typeCode) =
+            member _.GetPrimitiveType(typeCode) =
                 mkILTypePrimitive typeCode ilg
             
             member this.GetTypeFromDefinition(_, typeDefHandle, _) =
@@ -352,21 +363,21 @@ module rec ILBinaryReaderImpl =
 
         interface IConstructedTypeProvider<ILType> with
 
-            member __.GetGenericInstantiation(genericType, typeArgs) =
+            member _.GetGenericInstantiation(genericType, typeArgs) =
                 mkILTypeGeneric genericType.TypeRef genericType.Boxity (typeArgs |> List.ofSeq)
 
-            member __.GetArrayType(elementType, shape) =
+            member _.GetArrayType(elementType, shape) =
                 mkILTypeArray elementType shape
 
-            member __.GetByReferenceType(elementType) =
+            member _.GetByReferenceType(elementType) =
                 ILType.Byref(elementType)
 
-            member __.GetPointerType(elementType) =
+            member _.GetPointerType(elementType) =
                 ILType.Ptr(elementType)
 
         interface ISZArrayTypeProvider<ILType> with
 
-            member __.GetSZArrayType(elementType) =
+            member _.GetSZArrayType(elementType) =
                 mkILArr1DTy elementType
 
     [<Sealed>]
@@ -376,35 +387,35 @@ module rec ILBinaryReaderImpl =
 
         interface ISignatureTypeProvider<ILLocal, unit> with
 
-            member __.GetFunctionPointerType(si) =
+            member _.GetFunctionPointerType(si) =
                 {
                     IsPinned = false
                     Type = mkILTypeFunctionPointer si.Header (si.ParameterTypes |> Seq.map (fun x -> x.Type) |> Seq.toList) si.ReturnType.Type
                     DebugInfo = None
                 }
 
-            member __.GetGenericMethodParameter(_, index) =
+            member _.GetGenericMethodParameter(_, index) =
                 {
                     IsPinned = false
                     Type = mkILTypeTypeVar index
                     DebugInfo = None
                 }
 
-            member __.GetGenericTypeParameter(_, index) =
+            member _.GetGenericTypeParameter(_, index) =
                 {
                     IsPinned = false
                     Type = mkILTypeTypeVar index
                     DebugInfo = None
                 }
 
-            member __.GetModifiedType(modifier, unmodifiedType, isRequired) =
+            member _.GetModifiedType(modifier, unmodifiedType, isRequired) =
                 {
                     IsPinned = false
                     Type = mkILTypeModified isRequired modifier.Type.TypeRef unmodifiedType.Type
                     DebugInfo = None
                 }
 
-            member __.GetPinnedType(elementType) =
+            member _.GetPinnedType(elementType) =
                 {
                     IsPinned = true
                     Type = elementType.Type
@@ -420,7 +431,7 @@ module rec ILBinaryReaderImpl =
             
         interface ISimpleTypeProvider<ILLocal> with
 
-            member __.GetPrimitiveType(typeCode) =
+            member _.GetPrimitiveType(typeCode) =
                 {
                     IsPinned = false
                     Type = mkILTypePrimitive typeCode ilg
@@ -443,28 +454,28 @@ module rec ILBinaryReaderImpl =
             
         interface IConstructedTypeProvider<ILLocal> with
 
-            member __.GetGenericInstantiation(genericType, typeArgs) =
+            member _.GetGenericInstantiation(genericType, typeArgs) =
                 {
                     IsPinned = false
                     Type = mkILTypeGeneric genericType.Type.TypeRef genericType.Type.Boxity (typeArgs |> Seq.map (fun x -> x.Type) |> List.ofSeq)
                     DebugInfo = None
                 }
 
-            member __.GetArrayType(elementType, shape) =
+            member _.GetArrayType(elementType, shape) =
                 {
                     IsPinned = false
                     Type = mkILTypeArray elementType.Type shape
                     DebugInfo = None
                 }
 
-            member __.GetByReferenceType(elementType) =
+            member _.GetByReferenceType(elementType) =
                 {
                     IsPinned = false
                     Type = ILType.Byref(elementType.Type)
                     DebugInfo = None
                 }
 
-            member __.GetPointerType(elementType) =
+            member _.GetPointerType(elementType) =
                 {
                     IsPinned = false
                     Type = ILType.Ptr(elementType.Type)
@@ -473,7 +484,7 @@ module rec ILBinaryReaderImpl =
 
         interface ISZArrayTypeProvider<ILLocal> with
 
-            member __.GetSZArrayType(elementType) =
+            member _.GetSZArrayType(elementType) =
                 {
                     IsPinned = false
                     Type =  mkILArr1DTy elementType.Type
@@ -933,10 +944,10 @@ module rec ILBinaryReaderImpl =
     let readILNativeResources (peReader: PEReader) =
         peReader.PEHeaders.SectionHeaders
         |> Seq.choose (fun s ->
-            // TODO: Is this right?
             if s.Name.Equals(".rsrc", StringComparison.OrdinalIgnoreCase) then
                 let memBlock = peReader.GetSectionData(s.VirtualAddress)
-                let bytes = memBlock.GetContent().ToArray() // We should never do this. ILNativeResource.Out should just take an immutable array...
+                // REVIEW: We should not read the entire raw bytes.
+                let bytes = memBlock.GetContent().ToArray()
                 ILNativeResource.Out(bytes)
                 |> Some
             else
@@ -1075,7 +1086,7 @@ module rec ILBinaryReaderImpl =
             IsOut = int (param.Attributes &&& ParameterAttributes.Out) <> 0
             IsOptional = int (param.Attributes &&& ParameterAttributes.Optional) <> 0
             CustomAttrsStored = readILAttributesStored cenv (param.GetCustomAttributes())
-            MetadataIndex = NoMetadataIdx
+            MetadataIndex = MetadataTokens.GetRowNumber(ParameterHandle.op_Implicit paramHandle)
         }
 
     let readILParameters (cenv: cenv) paramTypes returnType (paramHandles: ParameterHandleCollection) =
@@ -1582,8 +1593,64 @@ module rec ILBinaryReaderImpl =
 
     // --------------------------------------------------------------------
 
-    let readILCode (cenv: cenv) (methBodyBlock: MethodBodyBlock) : ILCode =
-    
+    let decodeLocalSignature (cenv: cenv) (mdReader: MetadataReader) localSignature =
+        let si = mdReader.GetStandaloneSignature localSignature
+        si.DecodeLocalSignature(cenv.LocalSignatureTypeProvider, ())
+        |> List.ofSeq
+
+    let mkMethodCodeLabelLookup (debugInfo: MethodDebugInformation) =
+        let lookup = Dictionary()
+
+        for seqPoint in debugInfo.GetSequencePoints() do
+            lookup.Add(generateCodeLabel(), seqPoint.Offset)
+
+        lookup
+
+    let readILLocalDebugInfo (pdbReader: MetadataReader) (debugInfoHandle: MethodDebugInformationHandle) =
+        let localScopes = pdbReader.GetLocalScopes debugInfoHandle |> Seq.map pdbReader.GetLocalScope
+        localScopes 
+        |> Seq.map (fun localScope ->
+            {
+                Range = (localScope.StartOffset, localScope.EndOffset)
+                DebugMappings = 
+                    localScope.GetLocalVariables()
+                    |> Seq.choose (fun handle -> 
+                        let x = pdbReader.GetLocalVariable handle
+                        if x.Attributes &&& LocalVariableAttributes.DebuggerHidden <> LocalVariableAttributes.DebuggerHidden then
+                            Some({ LocalIndex = x.Index; LocalName = pdbReader.GetString x.Name } : ILLocalDebugMapping)
+                        else
+                            None)
+                    |> List.ofSeq
+            } : ILLocalDebugInfo)
+        |> List.ofSeq
+
+    let readMethodDebugInfo (cenv: cenv) (methDef: MethodDefinition) =
+        let mdReader = cenv.MetadataReader
+
+        match cenv.PdbReaderProvider with
+        | Some(readerProvider, _) ->
+            let pdbReader = readerProvider.GetMetadataReader()
+            let debugInfoOpt = 
+                pdbReader.MethodDebugInformation 
+                |> Seq.tryPick (fun handle -> 
+                    if handle.IsNil then None 
+                    else
+                        let debugInfo = pdbReader.GetMethodDebugInformation handle
+                        let doc = pdbReader.GetDocument debugInfo.Document
+                        if pdbReader.GetString doc.Name = mdReader.GetString methDef.Name then
+                            Some(handle, mkMethodCodeLabelLookup debugInfo)
+                        else
+                            None)
+
+            match debugInfoOpt with
+            | Some(debugInfoHandle, labels) when not debugInfoHandle.IsNil ->
+                (labels, readILLocalDebugInfo pdbReader debugInfoHandle)
+            | _ ->
+                (Dictionary(), List.empty)
+        | _ ->
+            (Dictionary(), List.empty)
+
+    let readILCode (cenv: cenv) (methDef: MethodDefinition) (methBodyBlock: MethodBodyBlock) : ILCode =
         let exceptions =
             methBodyBlock.ExceptionRegions
             |> Seq.map (fun region ->
@@ -1611,13 +1678,16 @@ module rec ILBinaryReaderImpl =
             )
             |> List.ofSeq
 
+        let labels, locals = readMethodDebugInfo cenv methDef
+
         let mutable ilReader = methBodyBlock.GetILReader()
+        let instrs = readILInstrs cenv &ilReader
 
         {
-            Labels = System.Collections.Generic.Dictionary() // TODO
-            Instrs = readILInstrs cenv &ilReader
+            Labels = labels
+            Instrs = instrs
             Exceptions = exceptions
-            Locals = [] // TODO
+            Locals = locals
         }
 
     let readILMethodBody (cenv: cenv) (methDef: MethodDefinition) : ILMethodBody =
@@ -1628,10 +1698,9 @@ module rec ILBinaryReaderImpl =
 
         let ilLocals =
             if methBodyBlock.LocalSignature.IsNil then []
-            else
-                let si = mdReader.GetStandaloneSignature(methBodyBlock.LocalSignature)
-                si.DecodeLocalSignature(cenv.LocalSignatureTypeProvider, ())
-                |> List.ofSeq
+            else decodeLocalSignature cenv mdReader methBodyBlock.LocalSignature
+
+        let ilCode = readILCode cenv methDef methBodyBlock
     
         {
             IsZeroInit = methBodyBlock.LocalVariablesInitialized
@@ -1639,8 +1708,8 @@ module rec ILBinaryReaderImpl =
             NoInlining = int (methDef.ImplAttributes &&& MethodImplAttributes.NoInlining) <> 0
             AggressiveInlining = int (methDef.ImplAttributes &&& MethodImplAttributes.AggressiveInlining) <> 0
             Locals = ilLocals
-            Code = readILCode cenv methBodyBlock // TODO:
-            SourceMarker = None // TODO: Do we need to read a source marker?
+            Code = ilCode
+            SourceMarker = None // Note: The original reader never set this.
         }
 
     let readMethodBody (cenv: cenv) (methDef: MethodDefinition) =
@@ -1681,20 +1750,38 @@ module rec ILBinaryReaderImpl =
         let methDef = mdReader.GetMethodDefinition(methDefHandle)
         let si = methDef.DecodeSignature(cenv.SignatureTypeProvider, ())
 
+        let isEntryPoint =
+            let handle = MetadataTokens.MethodDefinitionHandle cenv.EntryPointToken
+            handle = methDefHandle
+
+        let ret, parameters = 
+            // First param is the return.
+            match readILParameters cenv si.ParameterTypes si.ReturnType (methDef.GetParameters()) with
+            | head :: parameters ->
+                let ret =
+                    {
+                        Marshal = head.Marshal
+                        Type = head.Type
+                        CustomAttrsStored = head.CustomAttrsStored
+                        MetadataIndex = head.MetadataIndex
+                    } : ILReturn
+                ret, parameters
+            | _ ->
+                invalidOp "Expected at least one parameter"
+
         ILMethodDef(
             name = mdReader.GetString(methDef.Name),
             attributes = methDef.Attributes,
             implAttributes = methDef.ImplAttributes,
             callingConv = mkILCallingConv si.Header,
-            parameters = readILParameters cenv si.ParameterTypes si.ReturnType (methDef.GetParameters()), // TODO: First param might actually be the return type.
-            ret = mkILReturn si.ReturnType, // TODO: Do we need more info for ILReturn?
+            parameters = parameters,
+            ret = ret,
             body = mkMethBodyLazyAux (lazy readMethodBody cenv methDef),
-            isEntryPoint = false, // TODO: need to pass entrypoint token
+            isEntryPoint = isEntryPoint,
             genericParams = readILGenericParameterDefs cenv (methDef.GetGenericParameters()),
             securityDeclsStored = readILSecurityDeclsStored cenv (methDef.GetDeclarativeSecurityAttributes()),
             customAttrsStored = readILAttributesStored cenv (methDef.GetCustomAttributes()),
-            metadataIndex = NoMetadataIdx
-        )
+            metadataIndex = MetadataTokens.GetRowNumber(MethodDefinitionHandle.op_Implicit methDefHandle))
 
     let readILFieldDef (cenv: cenv) (fieldDefHandle: FieldDefinitionHandle) : ILFieldDef =
         let mdReader = cenv.MetadataReader
@@ -1737,8 +1824,7 @@ module rec ILBinaryReaderImpl =
             offset = offset,
             marshal = marshal,
             customAttrsStored = readILAttributesStored cenv (fieldDef.GetCustomAttributes()),
-            metadataIndex = NoMetadataIdx
-        )
+            metadataIndex = MetadataTokens.GetRowNumber(FieldDefinitionHandle.op_Implicit fieldDefHandle))
 
     let readILFieldSpec (cenv: cenv) (handle: EntityHandle) : ILFieldSpec =
         let mdReader = cenv.MetadataReader
@@ -1826,8 +1912,7 @@ module rec ILBinaryReaderImpl =
             init = init,
             args = args,
             customAttrsStored = readILAttributesStored cenv (propDef.GetCustomAttributes()),
-            metadataIndex = NoMetadataIdx
-        )
+            metadataIndex = MetadataTokens.GetRowNumber(PropertyDefinitionHandle.op_Implicit propDefHandle))
 
     let readILPropertyDefs (cenv: cenv) (propDefHandles: PropertyDefinitionHandleCollection) =
         let f =
@@ -1891,8 +1976,7 @@ module rec ILBinaryReaderImpl =
             fireMethod = tryReadILMethodRef cenv (MethodDefinitionHandle.op_Implicit(accessors.Raiser)),
             otherMethods = otherMethods,
             customAttrsStored = readILAttributesStored cenv (eventDef.GetCustomAttributes()),
-            metadataIndex = NoMetadataIdx
-        )
+            metadataIndex = MetadataTokens.GetRowNumber(EventDefinitionHandle.op_Implicit eventDefHandle))
  
     let readILEventDefs (cenv: cenv) (eventDefHandles: EventDefinitionHandleCollection) =
         let f =
@@ -1996,7 +2080,40 @@ module rec ILBinaryReaderImpl =
                     yield readILPreTypeDef cenv typeDefHandle
         |]
 
-    let readModuleDef ilGlobals (peReader: PEReader) isMetadataOnly =
+    let readILResources (cenv: cenv) =
+        let mdReader = cenv.MetadataReader
+
+        mdReader.ManifestResources
+        |> Seq.map mdReader.GetManifestResource
+        |> Seq.choose (fun resource ->
+            if resource.Implementation.IsNil then None
+            else
+                let location =
+                    match readILScopeRef cenv resource.Implementation with
+                    | ILScopeRef.Local ->
+                        let bytes =
+                            let bytes = mdReader.GetBlobBytes(MetadataTokens.BlobHandle(int resource.Offset))
+                            if cenv.CanReduceMemory then
+                                ByteMemory.CreateMemoryMappedFile (ByteMemory.FromFile(mdReader.GetString resource.Name, FileAccess.Read, canShadowCopy=true).AsReadOnly())
+                            else
+                                ByteMemory.FromArray bytes
+                        ILResourceLocation.Local(bytes.AsReadOnly())
+                    
+                    | ILScopeRef.Module mref -> ILResourceLocation.File (mref, int resource.Offset)
+                    | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
+
+                Some
+                    {
+                        Name = mdReader.GetString resource.Name
+                        Location = location
+                        Access = (if resource.Attributes &&& ManifestResourceAttributes.Public = ManifestResourceAttributes.Public then ILResourceAccess.Public else ILResourceAccess.Private)
+                        CustomAttrsStored = resource.GetCustomAttributes() |> readILAttributesStored cenv
+                        MetadataIndex = MetadataTokens.GetRowNumber(resource.Implementation)
+                    })
+        |> List.ofSeq
+        |> mkILResources
+
+    let readModuleDef ilGlobals (peReader: PEReader) isMetadataOnly canReduceMemory (pdbReaderProviderOpt: PdbReaderProvider option) =
         let nativeResources = readILNativeResources peReader
 
         let subsys =
@@ -2046,7 +2163,7 @@ module rec ILBinaryReaderImpl =
         let cenv = 
             let sigTyProvider = SignatureTypeProvider(ilGlobals)
             let localSigTyProvider = LocalSignatureTypeProvider(ilGlobals)
-            let cenv = cenv(peReader, mdReader, isMetadataOnly, sigTyProvider, localSigTyProvider)
+            let cenv = cenv(peReader, mdReader, pdbReaderProviderOpt, entryPointToken, isMetadataOnly, canReduceMemory, sigTyProvider, localSigTyProvider)
             sigTyProvider.cenv <- cenv
             localSigTyProvider.cenv <- cenv
             cenv
@@ -2063,7 +2180,7 @@ module rec ILBinaryReaderImpl =
 
         { Manifest = Some(readILAssemblyManifest cenv entryPointToken)
           CustomAttrsStored = readILAttributesStored cenv (moduleDef.GetCustomAttributes())
-          MetadataIndex = 1 // TODO: Is this right?
+          MetadataIndex = 1 // Note: The original reader set this to 1.
           Name = ilModuleName
           NativeResources = nativeResources
           TypeDefs = mkILTypeDefsComputed (fun () -> readILPreTypeDefs cenv)
@@ -2072,7 +2189,7 @@ module rec ILBinaryReaderImpl =
           SubsystemVersion = subsysversion
           UseHighEntropyVA = useHighEntropyVA
           Platform = platform
-          StackReserveSize = None  // TODO
+          StackReserveSize = None  // TODO - Note: The original reader did not set this and was marked as a TODO.
           Is32Bit = only32
           Is32BitPreferred = is32bitpreferred
           Is64Bit = only64
@@ -2081,7 +2198,7 @@ module rec ILBinaryReaderImpl =
           PhysicalAlignment = alignPhys
           ImageBase = imageBaseReal
           MetadataVersion = ilMetadataVersion
-          Resources = mkILResources [] // TODO //seekReadManifestResources ctxt mdv pectxtEager pevEager
+          Resources = readILResources cenv
         }, ilAsmRefs
 
 module ILBinaryReader =
@@ -2127,8 +2244,14 @@ module ILBinaryReader =
 
     let OpenILModuleReaderAux (memory: ReadOnlyByteMemory) (opts: ILReaderOptions) =
         let peReader = new PEReader(memory.AsStream())
-
-        let ilModuleDef, ilAsmRefs = readModuleDef opts.ilGlobals peReader (opts.metadataOnly = MetadataOnlyFlag.Yes)
+        let pdbReaderProviderOpt = 
+            opts.pdbDirPath
+            |> Option.bind (fun pdbDirPath ->
+                let streamProvider = System.Func<_,_>(fun pdbPath -> ByteMemory.FromFile(pdbPath, FileAccess.Read, canShadowCopy=true).AsReadOnlyStream())
+                match peReader.TryOpenAssociatedPortablePdb(pdbDirPath, streamProvider) with
+                | true, pdbReaderProvider, pdbPath -> Some(pdbReaderProvider, pdbPath)
+                | _ -> None)
+        let ilModuleDef, ilAsmRefs = readModuleDef opts.ilGlobals peReader (opts.metadataOnly = MetadataOnlyFlag.Yes) (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes) pdbReaderProviderOpt
         {   new Object() with
     
                 override _.Finalize() =
