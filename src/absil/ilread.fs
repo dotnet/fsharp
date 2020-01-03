@@ -636,7 +636,12 @@ module rec ILBinaryReaderImpl =
             let ilTypeRef = readILTypeRefFromTypeReference cenv typeRef
             let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, ILGenericArgs.Empty)
 
-            let ilType = mkILTy AsObject (* AsObject probably not nok *) ilTypeSpec
+            let boxity =
+                match mdReader.ResolveSignatureTypeKind(TypeReferenceHandle.op_Implicit typeRefHandle, byte SignatureTypeKind.Class) with
+                | SignatureTypeKind.ValueType -> AsValue
+                | _ -> AsObject
+
+            let ilType = mkILTy boxity ilTypeSpec
             cenv.CacheILType(typeRefHandle, ilType)
             ilType
 
