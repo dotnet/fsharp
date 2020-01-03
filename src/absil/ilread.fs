@@ -1080,7 +1080,7 @@ module rec ILBinaryReaderImpl =
             let mutable (* it doesn't have to be mutable, but it's best practice for .NET structs *) reader = mdReader.GetBlobReader(marshalDesc)
             Some(readILNativeType cenv &reader)
 
-    let readILParameter (cenv: cenv) (paramTypes: ImmutableArray<ILType>) (returnType: ILType) (paramHandle: ParameterHandle) : struct(ILParameter * int) =
+    let readILParameter (cenv: cenv) (returnType: ILReturn) (parameters: ILParameter []) (paramHandle: ParameterHandle) : struct(ILParameter * int) =
         let mdReader = cenv.MetadataReader
 
         let param = mdReader.GetParameter(paramHandle)
@@ -1088,8 +1088,8 @@ module rec ILBinaryReaderImpl =
         let nameOpt = mdReader.TryGetString(param.Name)
 
         let typ = 
-            if param.SequenceNumber = 0 then returnType
-            else paramTypes.[param.SequenceNumber - 1]
+            if param.SequenceNumber = 0 then returnType.Type
+            else parameters.[param.SequenceNumber - 1].Type
 
         let defaul =
             if int (param.Attributes &&& ParameterAttributes.HasDefault) <> 0 then
@@ -1117,18 +1117,25 @@ module rec ILBinaryReaderImpl =
             } : ILParameter
         struct(ilParameter, param.SequenceNumber)
 
-    let readILParameters (cenv: cenv) paramTypes (ret: ILReturn ref) (paramHandles: ParameterHandleCollection) =
-        paramHandles
-        |> Seq.map (fun paramHandle ->
-            let struct(ilParameter, sequenceNumber) = readILParameter cenv paramTypes (!ret).Type paramHandle
-            if sequenceNumber = 0 then
-                ret := 
-                    { Marshal = ilParameter.Marshal
-                      Type = ilParameter.Type
-                      CustomAttrsStored = ilParameter.CustomAttrsStored
-                      MetadataIndex = ilParameter.MetadataIndex }
-            struct(ilParameter, sequenceNumber))
-        |> List.ofSeq
+    let readILParameters (cenv: cenv) (si: MethodSignature<ILType>) (methDef: MethodDefinition) =
+        let ret = ref (mkILReturn si.ReturnType)
+        let parameters = [| for paramType in si.ParameterTypes do yield mkILParamAnon paramType |]
+        let paramHandles = methDef.GetParameters()
+
+        if paramHandles.Count > 0 then
+            paramHandles
+            |> Seq.iter (fun paramHandle ->
+                let struct(ilParameter, sequenceNumber) = readILParameter cenv !ret parameters paramHandle
+                if sequenceNumber = 0 then
+                    ret := 
+                        { Marshal = ilParameter.Marshal
+                          Type = ilParameter.Type
+                          CustomAttrsStored = ilParameter.CustomAttrsStored
+                          MetadataIndex = ilParameter.MetadataIndex }
+                else
+                    parameters.[sequenceNumber - 1] <- ilParameter)
+
+        !ret, parameters |> List.ofArray
 
     // -------------------------------------------------------------------- 
     // IL Instruction reading
@@ -1790,16 +1797,7 @@ module rec ILBinaryReaderImpl =
             let handle = MetadataTokens.MethodDefinitionHandle cenv.EntryPointToken
             handle = methDefHandle
 
-        let ret = ref (mkILReturn si.ReturnType)
-        let parameters = readILParameters cenv si.ParameterTypes ret (methDef.GetParameters())
-        let parameters =
-            match parameters with
-            | [] -> [struct(mkILParamAnon (!ret).Type, 0)]
-            | struct(_, headNum) :: _ when headNum <> 0 -> struct(mkILParamAnon (!ret).Type, 0) :: parameters
-            | _ -> parameters
-        let parameters =
-            parameters
-            |> List.map (fun struct(x, _) -> x)
+        let ret, parameters = readILParameters cenv si methDef
 
         ILMethodDef(
             name = mdReader.GetString(methDef.Name),
@@ -1807,7 +1805,7 @@ module rec ILBinaryReaderImpl =
             implAttributes = methDef.ImplAttributes,
             callingConv = mkILCallingConv si.Header,
             parameters = parameters,
-            ret = !ret,
+            ret = ret,
             body = mkMethBodyLazyAux (lazy readMethodBody cenv methDef),
             isEntryPoint = isEntryPoint,
             genericParams = readILGenericParameterDefs cenv (methDef.GetGenericParameters()),
@@ -1914,13 +1912,13 @@ module rec ILBinaryReaderImpl =
         let si = propDef.DecodeSignature(cenv.SignatureTypeProvider, ())
         let accessors = propDef.GetAccessors()
 
-        let setMethod =
+        let getMethod =
             if accessors.Getter.IsNil then None
             else
                 let spec = readILMethodSpec cenv (MethodDefinitionHandle.op_Implicit(accessors.Getter))
                 Some(spec.MethodRef)
 
-        let getMethod =
+        let setMethod =
             if accessors.Setter.IsNil then None
             else
                 let spec = readILMethodSpec cenv (MethodDefinitionHandle.op_Implicit(accessors.Setter))
