@@ -536,8 +536,7 @@ module rec ILBinaryReaderImpl =
             ILScopeRef.Module(readILModuleRefFromModuleReference cenv modRef)
 
         | HandleKind.TypeReference ->
-            let typeRef = mdReader.GetTypeReference(TypeReferenceHandle.op_Explicit(handle))
-            readILScopeRef cenv typeRef.ResolutionScope
+            ILScopeRef.Local
 
         | HandleKind.ModuleDefinition ->
             ILScopeRef.Local
