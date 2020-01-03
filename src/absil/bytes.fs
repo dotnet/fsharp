@@ -318,7 +318,7 @@ type ByteMemory with
         match access with
         | FileAccess.Read when not accessor.CanRead -> failwith "Cannot read file"
         | FileAccess.Write when not accessor.CanWrite -> failwith "Cannot write file"
-        | _ when not accessor.CanRead || not accessor.CanWrite -> failwith "Cannot read or write file"
+        | FileAccess.ReadWrite when not accessor.CanRead || not accessor.CanWrite -> failwith "Cannot read or write file"
         | _ -> ()
 
         let safeHolder =

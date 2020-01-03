@@ -121,30 +121,28 @@ module rec ILBinaryReaderImpl =
         ILVersionInfo(uint16 v.Major, uint16 v.Minor, uint16 v.Build, uint16 v.Revision)
     
     let mkILMemberAccess (attributes: TypeAttributes) =
-        if int (attributes &&& TypeAttributes.Public) <> 0 then
-            ILMemberAccess.Public
-        elif int (attributes &&& TypeAttributes.NestedFamily) <> 0 then
-            ILMemberAccess.Family
-        elif int (attributes &&& TypeAttributes.NestedFamANDAssem) <> 0 then
-            ILMemberAccess.FamilyAndAssembly
-        elif int (attributes &&& TypeAttributes.NestedFamORAssem) <> 0 then
-            ILMemberAccess.FamilyOrAssembly
-        elif int (attributes &&& TypeAttributes.NestedAssembly) <> 0 then
-            ILMemberAccess.Assembly
-        else
-            ILMemberAccess.Private
+        let attributes = attributes &&& TypeAttributes.VisibilityMask
+        match attributes with
+        | TypeAttributes.Public -> ILMemberAccess.Public
+        | TypeAttributes.NestedPublic -> ILMemberAccess.Public
+        | TypeAttributes.NestedPrivate -> ILMemberAccess.Private
+        | TypeAttributes.NestedFamily -> ILMemberAccess.Family
+        | TypeAttributes.NestedAssembly -> ILMemberAccess.Assembly
+        | TypeAttributes.NestedFamANDAssem -> ILMemberAccess.FamilyAndAssembly
+        | TypeAttributes.NestedFamORAssem -> ILMemberAccess.FamilyOrAssembly
+        | _ -> ILMemberAccess.Private
 
     let mkILTypeDefAccess (attributes: TypeAttributes) =
-        let ilMemberAccess = mkILMemberAccess attributes
-        match ilMemberAccess with
-        | ILMemberAccess.Public -> ILTypeDefAccess.Public
-        | ILMemberAccess.Private ->
-            if int (attributes &&& TypeAttributes.NestedPrivate) <> 0 then
-                ILTypeDefAccess.Nested(ILMemberAccess.Private)
-            else
-                ILTypeDefAccess.Private
-        | _ ->
-            ILTypeDefAccess.Nested(ilMemberAccess)
+        let attributes = attributes &&& TypeAttributes.VisibilityMask
+        match attributes with
+        | TypeAttributes.Public -> ILTypeDefAccess.Public
+        | TypeAttributes.NestedPublic
+        | TypeAttributes.NestedPrivate
+        | TypeAttributes.NestedFamily
+        | TypeAttributes.NestedAssembly
+        | TypeAttributes.NestedFamANDAssem
+        | TypeAttributes.NestedFamORAssem -> ILTypeDefAccess.Nested (mkILMemberAccess attributes)
+        | _ -> ILTypeDefAccess.Private
 
     let mkILAssemblyLongevity (flags: AssemblyFlags) =
         let  masked = int flags &&& 0x000e
@@ -870,9 +868,8 @@ module rec ILBinaryReaderImpl =
         | _ ->
             mkILNestedExportedTypes []
 
-    let readILExportedType (cenv: cenv) (exportedTyHandle: ExportedTypeHandle) =
+    let readILExportedType (cenv: cenv) (exportedTy: ExportedType) (exportedTyHandle: ExportedTypeHandle) =
         let mdReader = cenv.MetadataReader
-        let exportedTy = mdReader.GetExportedType(exportedTyHandle)
 
         {
             ScopeRef = readILScopeRef cenv exportedTy.Implementation
@@ -884,11 +881,16 @@ module rec ILBinaryReaderImpl =
         }
 
     let readILExportedTypes (cenv: cenv) (exportedTys: ExportedTypeHandleCollection) =
+        let mdReader = cenv.MetadataReader
         let f =
             lazy
                 [
                     for exportedTyHandle in exportedTys do
-                        yield readILExportedType cenv exportedTyHandle
+                        let exportedTy = mdReader.GetExportedType(exportedTyHandle)
+                        let access = mkILTypeDefAccess exportedTy.Attributes
+                        let entityHandle: EntityHandle = ExportedTypeHandle.op_Implicit(exportedTyHandle)
+                        if (access = ILTypeDefAccess.Public || access = ILTypeDefAccess.Private) && entityHandle.Kind <> HandleKind.ExportedType then
+                            yield readILExportedType cenv exportedTy exportedTyHandle
                 ]
         mkILExportedTypesLazy f
 
@@ -1755,8 +1757,8 @@ module rec ILBinaryReaderImpl =
             handle = methDefHandle
 
         let ret, parameters = 
-            // First param is the return.
             match readILParameters cenv si.ParameterTypes si.ReturnType (methDef.GetParameters()) with
+            // First param is the return.
             | head :: parameters ->
                 let ret =
                     {
@@ -1766,8 +1768,10 @@ module rec ILBinaryReaderImpl =
                         MetadataIndex = head.MetadataIndex
                     } : ILReturn
                 ret, parameters
+
+            // Otherwise, use the signature's return type if we did not get any parameters.
             | _ ->
-                invalidOp "Expected at least one parameter"
+                mkILReturn si.ReturnType, []
 
         ILMethodDef(
             name = mdReader.GetString(methDef.Name),
