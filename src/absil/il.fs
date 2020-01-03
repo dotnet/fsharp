@@ -3962,6 +3962,7 @@ let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) =
             parseElems (v :: acc) (n-1) sigptr
           let elems, sigptr = parseElems [] n sigptr
           ILAttribElem.Array (elemTy, elems), sigptr
+      | ILType.Boxed _
       | ILType.Value _ -> (* assume it is an enumeration *)
           let n, sigptr = sigptr_get_i32 bytes sigptr
           ILAttribElem.Int32 n, sigptr
