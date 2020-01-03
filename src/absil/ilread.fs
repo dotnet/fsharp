@@ -816,11 +816,36 @@ module rec ILBinaryReaderImpl =
             cenv.CacheILMethodSpec(memberRefHandle, ilMethSpec)
             ilMethSpec
 
+    let readFullGenericCount (cenv: cenv) (entityHandle: EntityHandle) =
+        let mdReader = cenv.MetadataReader
+
+        if entityHandle.IsNil then 0
+        else
+            match entityHandle.Kind with
+            | HandleKind.MethodDefinition ->
+                let methDef = mdReader.GetMethodDefinition(MethodDefinitionHandle.op_Explicit entityHandle)
+                let parentCount =
+                    let parent = methDef.GetDeclaringType()
+                    if parent.IsNil then 0
+                    else readFullGenericCount cenv (TypeDefinitionHandle.op_Implicit parent)
+                methDef.GetGenericParameters().Count + parentCount
+
+            | HandleKind.TypeDefinition ->
+                let typDef = mdReader.GetTypeDefinition(TypeDefinitionHandle.op_Explicit entityHandle)
+                let parentCount =
+                    let parent = typDef.GetDeclaringType()
+                    if parent.IsNil then 0
+                    else readFullGenericCount cenv (TypeDefinitionHandle.op_Implicit parent)
+                typDef.GetGenericParameters().Count + parentCount
+
+            | _ ->
+                0
+
     let readILMethodSpecFromMethodDefinitionUncached (cenv: cenv) (methDefHandle: MethodDefinitionHandle) =
         let mdReader = cenv.MetadataReader
 
         let methodDef = mdReader.GetMethodDefinition(methDefHandle)
-        let si = methodDef.DecodeSignature(cenv.SignatureTypeProvider, 0)
+        let si = methodDef.DecodeSignature(cenv.SignatureTypeProvider, readFullGenericCount cenv (methodDef.GetDeclaringType() |> TypeDefinitionHandle.op_Implicit))
 
         let name = mdReader.GetString(methodDef.Name)
         let enclILTy = readILTypeFromTypeDefinition cenv (methodDef.GetDeclaringType())
@@ -1849,7 +1874,7 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let methDef = mdReader.GetMethodDefinition(methDefHandle)
-        let si = methDef.DecodeSignature(cenv.SignatureTypeProvider, 0)
+        let si = methDef.DecodeSignature(cenv.SignatureTypeProvider, readFullGenericCount cenv (methDef.GetDeclaringType() |> TypeDefinitionHandle.op_Implicit))
 
         let name = mdReader.GetString(methDef.Name)
 
