@@ -676,9 +676,17 @@ module rec ILBinaryReaderImpl =
 
             let typeDef = mdReader.GetTypeDefinition(typeDefHandle)
             let ilTypeRef = readILTypeRefFromTypeDefinition cenv typeDef
+            let enclILTypeOpt =
+                let declaringType = typeDef.GetDeclaringType()
+                if declaringType.IsNil then ValueNone
+                else
+                    ValueSome(readILTypeFromTypeDefinition cenv declaringType)
 
             let ilGenericArgs = 
-                let enclILGenericArgCount = typeDef.GetGenericParameters().Count
+                let enclILGenericArgCount =
+                    enclILTypeOpt
+                    |> ValueOption.map (fun x -> x.GenericArgs.Length)
+                    |> ValueOption.defaultValue 0
                 typeDef.GetGenericParameters()
                 |> Seq.mapi (fun i _ -> mkILTyvarTy (uint16 (enclILGenericArgCount + i)))
                 |> List.ofSeq
