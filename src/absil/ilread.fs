@@ -5,6 +5,7 @@ open System.IO
 open System.Linq
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Collections.ObjectModel
 open System.Reflection
 open System.Reflection.PortableExecutable
 open System.Reflection.Metadata
@@ -29,6 +30,11 @@ module rec ILBinaryReaderImpl =
         member this.TryGetString(handle: StringHandle) =
             if handle.IsNil then ValueNone
             else ValueSome(this.GetString(handle))
+
+        member this.GetTypeName(namespaceHandle: StringHandle, nameHandle: StringHandle) =
+            let name = this.GetString nameHandle
+            if namespaceHandle.IsNil then name
+            else this.GetString namespaceHandle + "." + name
 
     [<Sealed>]
     type cenv(
@@ -508,10 +514,6 @@ module rec ILBinaryReaderImpl =
             let typeRef = mdReader.GetTypeReference(TypeReferenceHandle.op_Explicit(handle))
             readILScopeRef cenv typeRef.ResolutionScope
 
-        | HandleKind.ExportedType ->
-            let exportedTy = mdReader.GetExportedType(ExportedTypeHandle.op_Explicit(handle))
-            readILScopeRef cenv exportedTy.Implementation
-
         | HandleKind.ModuleDefinition ->
             ILScopeRef.Local
 
@@ -840,57 +842,78 @@ module rec ILBinaryReaderImpl =
             customAttrsArray
         )
 
-    let rec readILNestedExportedTypes (cenv: cenv) (handle: EntityHandle) =
+    let readILNestedExportedType (cenv: cenv) nested (exportedTyHandle: ExportedTypeHandle) =
         let mdReader = cenv.MetadataReader
-        match handle.Kind with
-        | HandleKind.TypeDefinition ->
-            let typeDefHandle = TypeDefinitionHandle.op_Explicit(handle)
-            let typeDef = mdReader.GetTypeDefinition(typeDefHandle)
 
-            let nestedLazy =
-                lazy
-                    typeDef.GetNestedTypes()
-                    |> Seq.map (fun typeDefHandle ->
-                        let typeDef = mdReader.GetTypeDefinition(typeDefHandle)
-                
-                        {
-                            Name = mdReader.GetString(typeDef.Name)
-                            Access = mkILMemberAccess typeDef.Attributes
-                            Nested = readILNestedExportedTypes cenv (TypeDefinitionHandle.op_Implicit(typeDefHandle))
-                            CustomAttrsStored = readILAttributesStored cenv (typeDef.GetCustomAttributes())
-                            MetadataIndex = MetadataTokens.GetRowNumber(TypeDefinitionHandle.op_Implicit(typeDefHandle))
-                        }
-                    )
-                    |> List.ofSeq
+        let exportedTy = mdReader.GetExportedType(exportedTyHandle)
 
-            mkILNestedExportedTypesLazy nestedLazy
+        let name = mdReader.GetTypeName(exportedTy.Namespace, exportedTy.Name)
 
+        {
+            Name = name
+            Access = mkILMemberAccess exportedTy.Attributes
+            Nested = realILNestedExportedTypes cenv nested exportedTyHandle
+            CustomAttrsStored = readILAttributesStored cenv (exportedTy.GetCustomAttributes())
+            MetadataIndex = MetadataTokens.GetRowNumber(ExportedTypeHandle.op_Implicit(exportedTyHandle))
+        }
+
+    let realILNestedExportedTypes (cenv: cenv) (nested: ReadOnlyDictionary<ExportedTypeHandle, ResizeArray<ExportedTypeHandle>>) (parentExportedTyHandle: ExportedTypeHandle) =
+        match nested.TryGetValue parentExportedTyHandle with
+        | true, nestedTys ->
+            nestedTys
+            |> Seq.map (fun x -> readILNestedExportedType cenv nested x)
+            |> List.ofSeq
+            |> mkILNestedExportedTypes
         | _ ->
-            mkILNestedExportedTypes []
+            mkILNestedExportedTypes List.empty
 
-    let readILExportedType (cenv: cenv) (exportedTy: ExportedType) (exportedTyHandle: ExportedTypeHandle) =
+    let readILExportedType (cenv: cenv) (nested: ReadOnlyDictionary<ExportedTypeHandle, ResizeArray<ExportedTypeHandle>>) (exportedTyHandle: ExportedTypeHandle) =
         let mdReader = cenv.MetadataReader
+
+        let exportedTy = mdReader.GetExportedType(exportedTyHandle)
+
+        let name = mdReader.GetTypeName(exportedTy.Namespace, exportedTy.Name)
 
         {
             ScopeRef = readILScopeRef cenv exportedTy.Implementation
-            Name = mdReader.GetString(exportedTy.Name)
+            Name = name
             Attributes = exportedTy.Attributes
-            Nested = readILNestedExportedTypes cenv exportedTy.Implementation
+            Nested = realILNestedExportedTypes cenv nested exportedTyHandle
             CustomAttrsStored = readILAttributesStored cenv (exportedTy.GetCustomAttributes())
             MetadataIndex = MetadataTokens.GetRowNumber(ExportedTypeHandle.op_Implicit(exportedTyHandle))
         }
 
     let readILExportedTypes (cenv: cenv) (exportedTys: ExportedTypeHandleCollection) =
         let mdReader = cenv.MetadataReader
+        let nested =
+            lazy
+                let lookup = Dictionary<ExportedTypeHandle, ResizeArray<ExportedTypeHandle>>()
+
+                for exportedTyHandle in exportedTys do
+                    let exportedTy = mdReader.GetExportedType(exportedTyHandle)
+                    let access = mkILTypeDefAccess exportedTy.Attributes
+                    if not (access = ILTypeDefAccess.Public || access = ILTypeDefAccess.Private) && exportedTy.Implementation.Kind = HandleKind.ExportedType then
+                        let parentExportedTyHandle = ExportedTypeHandle.op_Explicit exportedTy.Implementation
+                        let nested =
+                            match lookup.TryGetValue parentExportedTyHandle with
+                            | true, nested -> nested
+                            | _ ->
+                                let nested = ResizeArray()
+                                lookup.[parentExportedTyHandle] <- nested
+                                nested
+                        nested.Add exportedTyHandle
+
+                ReadOnlyDictionary lookup
         let f =
             lazy
+                let nested = nested.Value
                 [
                     for exportedTyHandle in exportedTys do
                         let exportedTy = mdReader.GetExportedType(exportedTyHandle)
                         let access = mkILTypeDefAccess exportedTy.Attributes
-                        let entityHandle: EntityHandle = ExportedTypeHandle.op_Implicit(exportedTyHandle)
-                        if (access = ILTypeDefAccess.Public || access = ILTypeDefAccess.Private) && entityHandle.Kind <> HandleKind.ExportedType then
-                            yield readILExportedType cenv exportedTy exportedTyHandle
+                        // Not a nested type
+                        if (access = ILTypeDefAccess.Public || access = ILTypeDefAccess.Private) && exportedTy.Implementation.Kind <> HandleKind.ExportedType then
+                            yield readILExportedType cenv nested exportedTyHandle
                 ]
         mkILExportedTypesLazy f
 
@@ -1057,7 +1080,7 @@ module rec ILBinaryReaderImpl =
             let mutable (* it doesn't have to be mutable, but it's best practice for .NET structs *) reader = mdReader.GetBlobReader(marshalDesc)
             Some(readILNativeType cenv &reader)
 
-    let readILParameter (cenv: cenv) (paramTypes: ImmutableArray<ILType>) (returnType: ILType) (paramHandle: ParameterHandle) : ILParameter =
+    let readILParameter (cenv: cenv) (paramTypes: ImmutableArray<ILType>) (returnType: ILType) (paramHandle: ParameterHandle) : struct(ILParameter * int) =
         let mdReader = cenv.MetadataReader
 
         let param = mdReader.GetParameter(paramHandle)
@@ -1079,21 +1102,33 @@ module rec ILBinaryReaderImpl =
             else
                 None
 
-        {
-            Name = match nameOpt with | ValueNone -> None | ValueSome(name) -> Some(name)
-            Type = typ
-            Default = defaul
-            Marshal = marshal
-            IsIn = int (param.Attributes &&& ParameterAttributes.In) <> 0
-            IsOut = int (param.Attributes &&& ParameterAttributes.Out) <> 0
-            IsOptional = int (param.Attributes &&& ParameterAttributes.Optional) <> 0
-            CustomAttrsStored = readILAttributesStored cenv (param.GetCustomAttributes())
-            MetadataIndex = MetadataTokens.GetRowNumber(ParameterHandle.op_Implicit paramHandle)
-        }
+        let ilParameter =
+            {
+                Name = match nameOpt with | ValueNone -> None | ValueSome(name) -> Some(name)
+                Type = typ
+                Default = defaul
+                Marshal = marshal
+                IsIn = int (param.Attributes &&& ParameterAttributes.In) <> 0
+                IsOut = int (param.Attributes &&& ParameterAttributes.Out) <> 0
+                IsOptional = int (param.Attributes &&& ParameterAttributes.Optional) <> 0
+                CustomAttrsStored = readILAttributesStored cenv (param.GetCustomAttributes())
+                MetadataIndex = MetadataTokens.GetRowNumber(ParameterHandle.op_Implicit paramHandle)
+            } : ILParameter
+        struct(ilParameter, param.SequenceNumber)
 
-    let readILParameters (cenv: cenv) paramTypes returnType (paramHandles: ParameterHandleCollection) =
+    let readILParameters (cenv: cenv) paramTypes (ret: ILReturn ref) (paramHandles: ParameterHandleCollection) =
         paramHandles
-        |> Seq.map (readILParameter cenv paramTypes returnType)
+        |> Seq.choose (fun paramHandle ->
+            let struct(ilParameter, sequenceNumber) = readILParameter cenv paramTypes (!ret).Type paramHandle
+            if sequenceNumber = 0 then
+                ret := 
+                    { Marshal = ilParameter.Marshal
+                      Type = ilParameter.Type
+                      CustomAttrsStored = ilParameter.CustomAttrsStored
+                      MetadataIndex = ilParameter.MetadataIndex }
+                None
+            else
+                Some ilParameter)
         |> List.ofSeq
 
     // -------------------------------------------------------------------- 
@@ -1756,22 +1791,8 @@ module rec ILBinaryReaderImpl =
             let handle = MetadataTokens.MethodDefinitionHandle cenv.EntryPointToken
             handle = methDefHandle
 
-        let ret, parameters = 
-            match readILParameters cenv si.ParameterTypes si.ReturnType (methDef.GetParameters()) with
-            // First param is the return.
-            | head :: parameters ->
-                let ret =
-                    {
-                        Marshal = head.Marshal
-                        Type = head.Type
-                        CustomAttrsStored = head.CustomAttrsStored
-                        MetadataIndex = head.MetadataIndex
-                    } : ILReturn
-                ret, parameters
-
-            // Otherwise, use the signature's return type if we did not get any parameters.
-            | _ ->
-                mkILReturn si.ReturnType, []
+        let ret = ref (mkILReturn si.ReturnType)
+        let parameters = readILParameters cenv si.ParameterTypes ret (methDef.GetParameters())
 
         ILMethodDef(
             name = mdReader.GetString(methDef.Name),
@@ -1779,7 +1800,7 @@ module rec ILBinaryReaderImpl =
             implAttributes = methDef.ImplAttributes,
             callingConv = mkILCallingConv si.Header,
             parameters = parameters,
-            ret = ret,
+            ret = !ret,
             body = mkMethBodyLazyAux (lazy readMethodBody cenv methDef),
             isEntryPoint = isEntryPoint,
             genericParams = readILGenericParameterDefs cenv (methDef.GetGenericParameters()),
@@ -1995,12 +2016,7 @@ module rec ILBinaryReaderImpl =
 
         let typeDef = mdReader.GetTypeDefinition(typeDefHandle)
 
-        let name = 
-            let namespaceOpt = mdReader.TryGetString(typeDef.Namespace)
-            let name = mdReader.GetString(typeDef.Name)
-            match namespaceOpt with
-            | ValueNone -> name
-            | ValueSome(namespac) -> namespac + "." + name
+        let name = mdReader.GetTypeName(typeDef.Namespace, typeDef.Name)
 
         let implements =
             typeDef.GetInterfaceImplementations()
