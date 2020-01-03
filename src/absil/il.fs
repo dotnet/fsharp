@@ -2717,7 +2717,7 @@ let isILObjectTy ty = isILBoxedPrimaryAssemblyTy ty tname_Object
 
 let isILStringTy ty = isILBoxedPrimaryAssemblyTy ty tname_String
 
-let isTypeTy ty = isILBoxedPrimaryAssemblyTy ty tname_Type
+let isILTypeTy ty = isILBoxedPrimaryAssemblyTy ty tname_Type
 
 let isILTypedReferenceTy ty = isILValuePrimaryAssemblyTy ty tname_TypedReference
 
