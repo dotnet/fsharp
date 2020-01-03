@@ -742,7 +742,7 @@ module rec ILBinaryReaderImpl =
         let name = mdReader.GetString(memberRef.Name)
         let enclILTy = readILType cenv memberRef.Parent
         let ilCallingConv = mkILCallingConv si.Header
-        let genericArity = 0
+        let genericArity = si.GenericParameterCount
 
         let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilCallingConv, name, genericArity, si.ParameterTypes |> List.ofSeq, si.ReturnType)
 
@@ -765,10 +765,10 @@ module rec ILBinaryReaderImpl =
         let name = mdReader.GetString(methodDef.Name)
         let enclILTy = readILTypeFromTypeDefinition cenv (methodDef.GetDeclaringType())
         let ilCallingConv =
-            if int (methodDef.Attributes &&& MethodAttributes.Static) <> 0 then
-                ILCallingConv.Static
-            else
+            if si.Header.IsInstance then
                 ILCallingConv.Instance
+            else
+                ILCallingConv.Static
         let genericArity = si.GenericParameterCount
 
         let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilCallingConv, name, genericArity, si.ParameterTypes |> List.ofSeq, si.ReturnType)
