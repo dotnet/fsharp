@@ -2150,9 +2150,14 @@ module rec ILBinaryReaderImpl =
                     reader.Offset <- int resource.Offset
                     let length = reader.ReadInt32()
                     let mutable reader = block.GetReader(int resource.Offset + 4, length)
-                    let bytes = reader.ReadBytes(reader.RemainingBytes)
-                    // TODO: Fix LOH issue here.
-                    let bytes = ByteMemory.FromArray bytes
+                    let bytes =
+                        // If we are trying to reduce memory, create a memory mapped file based on the contents.
+                        if cenv.CanReduceMemory then
+                            ByteMemory.FromUnsafePointer(reader.CurrentPointer |> NativePtr.toNativeInt, reader.RemainingBytes, null).AsReadOnly()
+                            |> ByteMemory.CreateMemoryMappedFile
+                        else
+                            let bytes = reader.ReadBytes(reader.RemainingBytes)
+                            ByteMemory.FromArray bytes
                     ILResourceLocation.Local(bytes.AsReadOnly())
                 else
                     match readILScopeRef cenv resource.Implementation with
