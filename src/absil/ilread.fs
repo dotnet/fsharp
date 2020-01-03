@@ -43,6 +43,8 @@ module rec ILBinaryReaderImpl =
         if index < 0 || (index + 1) < nm.Length then 0
         else Int32.Parse(nm.Substring(index + 1)) // REVIEW: Maybe use Span here?
 
+    type TypeVarOffset = int
+
     [<Sealed>]
     type cenv(
                 peReader: PEReader, 
@@ -51,8 +53,8 @@ module rec ILBinaryReaderImpl =
                 entryPointToken: int,
                 isMetadataOnly: bool,
                 canReduceMemory: bool,
-                sigTyProvider: ISignatureTypeProvider<ILType, unit>,
-                localSigTyProvider: ISignatureTypeProvider<ILLocal, unit>) =
+                sigTyProvider: ISignatureTypeProvider<ILType, TypeVarOffset>,
+                localSigTyProvider: ISignatureTypeProvider<ILLocal, TypeVarOffset>) =
 
         let typeDefCache = ConcurrentDictionary()
         let typeRefCache = ConcurrentDictionary()
@@ -346,16 +348,16 @@ module rec ILBinaryReaderImpl =
 
         member val cenv : cenv = Unchecked.defaultof<_> with get, set
 
-        interface ISignatureTypeProvider<ILType, unit> with
+        interface ISignatureTypeProvider<ILType, TypeVarOffset> with
 
             member _.GetFunctionPointerType(si) =
                 mkILTypeFunctionPointer si.Header (si.ParameterTypes |> Seq.toList) si.ReturnType
 
-            member _.GetGenericMethodParameter(_, index) =
-                mkILTypeTypeVar index
+            member _.GetGenericMethodParameter(typeVarOffset, index) =
+                mkILTypeTypeVar (typeVarOffset + index)
 
-            member _.GetGenericTypeParameter(_, index) =
-                mkILTypeTypeVar index
+            member _.GetGenericTypeParameter(typeVarOffset, index) =
+                mkILTypeTypeVar (typeVarOffset + index)
 
             member _.GetModifiedType(modifier, unmodifiedType, isRequired) =
                 mkILTypeModified isRequired modifier.TypeRef unmodifiedType
@@ -423,7 +425,7 @@ module rec ILBinaryReaderImpl =
 
         member val cenv : cenv = Unchecked.defaultof<_> with get, set
 
-        interface ISignatureTypeProvider<ILLocal, unit> with
+        interface ISignatureTypeProvider<ILLocal, TypeVarOffset> with
 
             member _.GetFunctionPointerType(si) =
                 {
@@ -432,17 +434,17 @@ module rec ILBinaryReaderImpl =
                     DebugInfo = None
                 }
 
-            member _.GetGenericMethodParameter(_, index) =
+            member _.GetGenericMethodParameter(typeVarOffset, index) =
                 {
                     IsPinned = false
-                    Type = mkILTypeTypeVar index
+                    Type = mkILTypeTypeVar (typeVarOffset + index)
                     DebugInfo = None
                 }
 
-            member _.GetGenericTypeParameter(_, index) =
+            member _.GetGenericTypeParameter(typeVarOffset, index) =
                 {
                     IsPinned = false
-                    Type = mkILTypeTypeVar index
+                    Type = mkILTypeTypeVar (typeVarOffset + index)
                     DebugInfo = None
                 }
 
@@ -732,7 +734,7 @@ module rec ILBinaryReaderImpl =
 
             let typeSpec = mdReader.GetTypeSpecification(typeSpecHandle)
 
-            let ilType = typeSpec.DecodeSignature(cenv.SignatureTypeProvider, ())
+            let ilType = typeSpec.DecodeSignature(cenv.SignatureTypeProvider, 0)
             cenv.CacheILType(typeSpecHandle, ilType)
             ilType
 
@@ -795,7 +797,7 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let memberRef = mdReader.GetMemberReference(memberRefHandle)
-        let si = memberRef.DecodeMethodSignature(cenv.SignatureTypeProvider, ())
+        let si = memberRef.DecodeMethodSignature(cenv.SignatureTypeProvider, 0)
 
         let name = mdReader.GetString(memberRef.Name)
         let enclILTy = readILType cenv memberRef.Parent
@@ -818,7 +820,7 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let methodDef = mdReader.GetMethodDefinition(methDefHandle)
-        let si = methodDef.DecodeSignature(cenv.SignatureTypeProvider, ())
+        let si = methodDef.DecodeSignature(cenv.SignatureTypeProvider, 0)
 
         let name = mdReader.GetString(methodDef.Name)
         let enclILTy = readILTypeFromTypeDefinition cenv (methodDef.GetDeclaringType())
@@ -1694,7 +1696,7 @@ module rec ILBinaryReaderImpl =
 
     let decodeLocalSignature (cenv: cenv) (mdReader: MetadataReader) localSignature =
         let si = mdReader.GetStandaloneSignature localSignature
-        si.DecodeLocalSignature(cenv.LocalSignatureTypeProvider, ())
+        si.DecodeLocalSignature(cenv.LocalSignatureTypeProvider, 0)
         |> List.ofSeq
 
     let mkMethodCodeLabelLookup (debugInfo: MethodDebugInformation) =
@@ -1847,7 +1849,9 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let methDef = mdReader.GetMethodDefinition(methDefHandle)
-        let si = methDef.DecodeSignature(cenv.SignatureTypeProvider, ())
+        let si = methDef.DecodeSignature(cenv.SignatureTypeProvider, 0)
+
+        let name = mdReader.GetString(methDef.Name)
 
         let isEntryPoint =
             let handle = MetadataTokens.MethodDefinitionHandle cenv.EntryPointToken
@@ -1856,7 +1860,7 @@ module rec ILBinaryReaderImpl =
         let ret, parameters = readILParameters cenv si methDef
 
         ILMethodDef(
-            name = mdReader.GetString(methDef.Name),
+            name = name,
             attributes = methDef.Attributes,
             implAttributes = methDef.ImplAttributes,
             callingConv = mkILCallingConv si.Header,
@@ -1903,7 +1907,7 @@ module rec ILBinaryReaderImpl =
 
         ILFieldDef(
             name = mdReader.GetString(fieldDef.Name),
-            fieldType = fieldDef.DecodeSignature(cenv.SignatureTypeProvider, ()),
+            fieldType = fieldDef.DecodeSignature(cenv.SignatureTypeProvider, 0),
             attributes = fieldDef.Attributes,
             data = data,
             literalValue = literalValue,
@@ -1925,7 +1929,7 @@ module rec ILBinaryReaderImpl =
                 {
                     DeclaringTypeRef = declaringILType.TypeRef
                     Name = mdReader.GetString(fieldDef.Name)
-                    Type = fieldDef.DecodeSignature(cenv.SignatureTypeProvider, ())
+                    Type = fieldDef.DecodeSignature(cenv.SignatureTypeProvider, 0)
                 }
 
             {
@@ -1942,7 +1946,7 @@ module rec ILBinaryReaderImpl =
                 {
                     DeclaringTypeRef = declaringType.TypeRef
                     Name = mdReader.GetString(memberRef.Name)
-                    Type = memberRef.DecodeFieldSignature(cenv.SignatureTypeProvider, ())
+                    Type = memberRef.DecodeFieldSignature(cenv.SignatureTypeProvider, 0)
                 }
 
             {
@@ -1965,7 +1969,7 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let propDef = mdReader.GetPropertyDefinition(propDefHandle)
-        let si = propDef.DecodeSignature(cenv.SignatureTypeProvider, ())
+        let si = propDef.DecodeSignature(cenv.SignatureTypeProvider, 0)
         let accessors = propDef.GetAccessors()
 
         let getMethod =
