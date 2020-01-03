@@ -720,12 +720,11 @@ module rec ILBinaryReaderImpl =
             |> List.ofSeq     
 
         let variance = 
-            if int (attributes &&& GenericParameterAttributes.Covariant) <> 0 then
-                ILGenericVariance.CoVariant
-            elif int (attributes &&& GenericParameterAttributes.Contravariant) <> 0 then
-                ILGenericVariance.ContraVariant
-            else
-                ILGenericVariance.NonVariant
+            let attributes = attributes &&& GenericParameterAttributes.VarianceMask
+            match attributes with
+            | GenericParameterAttributes.Covariant -> CoVariant
+            | GenericParameterAttributes.Contravariant -> ContraVariant
+            | _ -> NonVariant
 
         {
             Name = mdReader.GetString(genParam.Name)
