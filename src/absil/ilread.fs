@@ -851,7 +851,7 @@ module rec ILBinaryReaderImpl =
 
         let bytes = 
             if customAttr.Value.IsNil then [||]
-            else mdReader.GetBlobBytes(customAttr)
+            else mdReader.GetBlobBytes(customAttr.Value)
 
         let elements = [] // Why are we not putting elements in here?
         ILAttribute.Encoded(readILMethodSpec cenv customAttr.Constructor, bytes, elements)
