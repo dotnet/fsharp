@@ -47,6 +47,21 @@
         <target state="translated">Algorithme '{0}' non pris en charge</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameDifferent">
+        <source>This is the wrong anonymous record. The expected record has the following fields: '{0}'.</source>
+        <target state="new">This is the wrong anonymous record. The expected record has the following fields: '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSubset">
+        <source>This anonymous record is missing the following fields: '{0}'. Please add them.</source>
+        <target state="new">This anonymous record is missing the following fields: '{0}'. Please add them.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSuperset">
+        <source>This anonymous record has the following unexpected extra fields '{0}'. Please remove them.</source>
+        <target state="new">This anonymous record has the following unexpected extra fields '{0}'. Please remove them.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Impossible d'appliquer des attributs aux extensions de type.</target>
@@ -7128,8 +7143,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
-        <target state="translated">Deux types d'enregistrement anonyme ont des ensembles de noms de champ incompatibles '{0}' et '{1}'</target>
+        <source>This anonymous record has the following missing fields '{0}' and the following unexpected extra fields '{1}'.</source>
+        <target state="needs-review-translation">Deux types d'enregistrement anonyme ont des ensembles de noms de champ incompatibles '{0}' et '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">

@@ -47,6 +47,21 @@
         <target state="translated">{0}' algoritması desteklenmiyor</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameDifferent">
+        <source>This is the wrong anonymous record. The expected record has the following fields: '{0}'.</source>
+        <target state="new">This is the wrong anonymous record. The expected record has the following fields: '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSubset">
+        <source>This anonymous record is missing the following fields: '{0}'. Please add them.</source>
+        <target state="new">This anonymous record is missing the following fields: '{0}'. Please add them.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSuperset">
+        <source>This anonymous record has the following unexpected extra fields '{0}'. Please remove them.</source>
+        <target state="new">This anonymous record has the following unexpected extra fields '{0}'. Please remove them.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Öznitelikler tür uzantılarına uygulanamaz.</target>
@@ -7128,8 +7143,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
-        <target state="translated">İki anonim kayıt türünün eşleşmeyen '{0}' ve '{1}' alan adı kümeleri var</target>
+        <source>This anonymous record has the following missing fields '{0}' and the following unexpected extra fields '{1}'.</source>
+        <target state="needs-review-translation">İki anonim kayıt türünün eşleşmeyen '{0}' ve '{1}' alan adı kümeleri var</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
