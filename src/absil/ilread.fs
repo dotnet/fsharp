@@ -648,17 +648,7 @@ module rec ILBinaryReaderImpl =
             let typeRef = mdReader.GetTypeReference(typeRefHandle)
             let ilTypeRef = readILTypeRefFromTypeReference cenv typeRef
 
-            let typarOffset =
-                match typeRef.ResolutionScope.Kind with
-                // Enclosing type
-                | HandleKind.TypeReference ->
-                    let ilTypeRef = 
-                        mdReader.GetTypeReference(TypeReferenceHandle.op_Explicit typeRef.ResolutionScope)
-                        |> readILTypeRefFromTypeReference cenv
-                    typarCount ilTypeRef.Name
-                | _ ->
-                    0
-
+            let typarOffset = readFullGenericCount cenv typeRef.ResolutionScope
             let typarCount = typarCount ilTypeRef.Name
             let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, mkILGenericsArgsByCount typarOffset typarCount)
 
@@ -829,6 +819,11 @@ module rec ILBinaryReaderImpl =
                     else readFullGenericCount cenv (TypeDefinitionHandle.op_Implicit parent)
                 typDef.GetGenericParameters().Count + parentCount
 
+            | HandleKind.TypeReference ->
+                let typRef = mdReader.GetTypeReference(TypeReferenceHandle.op_Explicit entityHandle)
+                let ilTypeRef = readILTypeRefFromTypeReference cenv typRef
+                let parentCount = readFullGenericCount cenv typRef.ResolutionScope
+                typarCount ilTypeRef.Name + parentCount
             | _ ->
                 0
 
