@@ -701,20 +701,11 @@ module rec ILBinaryReaderImpl =
 
             let typeDef = mdReader.GetTypeDefinition(typeDefHandle)
             let ilTypeRef = readILTypeRefFromTypeDefinition cenv typeDef
-            let enclILTypeOpt =
-                let declaringType = typeDef.GetDeclaringType()
-                if declaringType.IsNil then ValueNone
-                else
-                    ValueSome(readILTypeFromTypeDefinition cenv declaringType)
 
             let ilGenericArgs = 
-                let enclILGenericArgCount =
-                    enclILTypeOpt
-                    |> ValueOption.map (fun x -> x.GenericArgs.Length)
-                    |> ValueOption.defaultValue 0
-                typeDef.GetGenericParameters()
-                |> Seq.mapi (fun i _ -> mkILTyvarTy (uint16 (enclILGenericArgCount + i)))
-                |> List.ofSeq
+                mkILGenericsArgsByCount 
+                    (readFullGenericCount cenv (TypeDefinitionHandle.op_Implicit typeDefHandle)) 
+                    (typeDef.GetGenericParameters().Count)
 
             let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, ilGenericArgs)
 
@@ -1161,7 +1152,11 @@ module rec ILBinaryReaderImpl =
             let mdReader = cenv.MetadataReader
 
             let mutable (* it doesn't have to be mutable, but it's best practice for .NET structs *) reader = mdReader.GetBlobReader(marshalDesc)
-            Some(readILNativeType cenv &reader)
+            try
+                Some(readILNativeType cenv &reader)
+            with
+            | ex ->
+                failwithf "tryReadILNativeType: %A" ex
 
     let readILParameter (cenv: cenv) (returnType: ILReturn) (parameters: ILParameter []) (paramHandle: ParameterHandle) : struct(ILParameter * int) =
         let mdReader = cenv.MetadataReader
