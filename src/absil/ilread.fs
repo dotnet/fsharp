@@ -1110,7 +1110,7 @@ module rec ILBinaryReaderImpl =
                     if reader.RemainingBytes = 0 then
                         ILNativeType.SafeArray(ilVariantType, None)
                     else
-                        let s = reader.ReadUTF16(reader.Length)
+                        let s = reader.ReadUTF16(reader.ReadCompressedInteger())
                         ILNativeType.SafeArray(ilVariantType, Some(s))
 
             | _ when kind = nt_ARRAY ->
