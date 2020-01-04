@@ -96,3 +96,4 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
             stdin.Dispose()
             stdout.Dispose()
             stderr.Dispose()
+            (fsi :> IDisposable).Dispose()
