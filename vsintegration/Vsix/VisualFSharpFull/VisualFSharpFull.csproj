@@ -14,16 +14,21 @@
     <None Include="Source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
-    <Content Include="..\RegisterFsharpPackage.pkgdef">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-      <Link>RegisterFsharpPackage.pkgdef</Link>
-    </Content>
+
+    <NoneSubstituteText Include="..\RegisterFsharpPackage.pkgdef" CopyToOutputDirectory="PreserveNewest">
+      <TargetFileName>RegisterFsharpPackage.pkgdef</TargetFileName>
+      <Pattern1>{{FSProductVersion}}</Pattern1>
+      <Replacement1>$(FSProductVersion)</Replacement1>
+      <Pattern2>{{FSLanguageVersion}}</Pattern2>
+      <Replacement2>$(FSLanguageVersion)</Replacement2>
+    </NoneSubstituteText>
+
     <Content Include="$(FSharpSourcesRoot)\..\License.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>License.txt</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+
     <Content Include="$(NuGetPackageRoot)\Microsoft.VisualFSharp.Type.Providers.Redist\$(MicrosoftVisualFSharpTypeProvidersRedistVersion)\content\$(FSharpDataTypeProvidersVersion)\FSharp.Data.TypeProviders.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>FSharp.Data.TypeProviders.dll</Link>
