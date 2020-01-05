@@ -17,6 +17,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.BinaryConstants
+open Internal.Utilities.Collections
 
 #nowarn "9"
 
@@ -2410,30 +2411,25 @@ module ILBinaryReader =
             match x with
             | ILModuleReaderCacheKey(writeStamp=writeStamp) -> writeStamp
 
-    /// Due to .NET Core including many assemblies, we set this cache size to 200 to ensure we have them in the cache as well as other assemblies.
-    [<Literal>]
-    let strongCacheSize = 200
+    let stronglyHeldReaderCacheSizeDefault = 30
+    let stronglyHeldReaderCacheSize = try (match System.Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with null -> stronglyHeldReaderCacheSizeDefault | s -> int32 s) with _ -> stronglyHeldReaderCacheSizeDefault
 
-    /// This is a reasonable limit if we truly exceed way outside the bounds of how many assemblies could be loaded.
-    [<Literal>]
-    let weakCacheSize = 1000
+    // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
+    // Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
+    type ILModuleReaderCache1LockToken() = interface LockToken
+    let ilModuleReaderCache1 =
+        new AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>
+               (stronglyHeldReaderCacheSize, 
+                keepMax=stronglyHeldReaderCacheSize, // only strong entries
+                areSimilar=(fun (x, y) -> x = y))
+    let ilModuleReaderCache1Lock = Lock()
 
-    let cacheKeyEquality =
-        let stringComparer = StringComparer.OrdinalIgnoreCase
-        { new System.Collections.Generic.IEqualityComparer<ILModuleReaderCacheKey> with
-
-            member _.GetHashCode (ILModuleReaderCacheKey (fullPath,_,_,_,_,_)) = 
-                stringComparer.GetHashCode fullPath
-        
-            member _.Equals(key1, key2) =
-                let (ILModuleReaderCacheKey (fullPath1,_,scope1,hasPdbPath1,reduceMemoryUsage1,metadataOnlyFlag1)) = key1
-                let (ILModuleReaderCacheKey (fullPath2,_,scope2,hasPdbPath2,reduceMemoryUsage2,metadataOnlyFlag2)) = key2
-                stringComparer.Equals(fullPath1, fullPath2) && scope1 = scope2 && hasPdbPath1 = hasPdbPath2 &&
-                reduceMemoryUsage1 = reduceMemoryUsage2 && metadataOnlyFlag1 = metadataOnlyFlag2 }
-    let cache = LruWeakCache<ILModuleReaderCacheKey, ILModuleReader>.Create(strongCacheSize, weakCacheSize, cacheKeyEquality)
+    // // Cache to reuse readers that have already been created and are not yet GC'd
+    let ilModuleReaderCache2 = new ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
 
     let ClearAllILModuleReaderCache () =
-        cache.Clear()
+        ilModuleReaderCache1.Clear(ILModuleReaderCache1LockToken())
+        ilModuleReaderCache2.Clear()
 
     let OpenILModuleReader fileName opts =
         let (ILModuleReaderCacheKey (fullPath,_,_,_,_,_) as key) = 
@@ -2441,9 +2437,33 @@ module ILBinaryReader =
             let writeTime = FileSystem.GetLastWriteTimeShim fileName
             ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
 
-        cache.GetOrSet(key, 
-            (fun () -> OpenILModuleReaderFromFile fullPath opts), 
-            isExistingKeyValid = (fun existingKey -> existingKey.WriteStamp = key.WriteStamp))
+        let cacheResult1 = 
+            // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
+            if opts.pdbDirPath.IsNone then 
+                ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.TryGet(ltok, key))
+            else 
+                None
+        
+        match cacheResult1 with 
+        | Some ilModuleReader -> ilModuleReader
+        | None -> 
+
+        let cacheResult2 = 
+            // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
+            if opts.pdbDirPath.IsNone then 
+                ilModuleReaderCache2.TryGetValue key
+            else 
+                false, Unchecked.defaultof<_>
+
+        let mutable res = Unchecked.defaultof<_> 
+        match cacheResult2 with 
+        | true, weak when weak.TryGetTarget(&res) -> res
+        | _ ->
+
+        let ilModuleReader = OpenILModuleReaderFromFile fullPath opts
+        ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.Put(ltok, key, ilModuleReader))
+        ilModuleReaderCache2.[key] <- System.WeakReference<_>(ilModuleReader)
+        ilModuleReader
         
     [<AutoOpen>]
     module Shim =
