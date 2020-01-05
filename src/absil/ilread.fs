@@ -1088,8 +1088,13 @@ module rec ILBinaryReaderImpl =
                 let memBlock = peReader.GetSectionData(s.VirtualAddress)
                 // REVIEW: We should not read the entire raw bytes.
                 let bytes = memBlock.GetContent().ToArray()
-                ILNativeResource.Out(Support.unlinkResource s.VirtualAddress bytes)
-                |> Some
+                // TODO: This is probably wrong and we shouldn't try to catch this.
+                try
+                    ILNativeResource.Out(Support.unlinkResource s.VirtualAddress bytes)
+                    |> Some
+                with
+                | _ ->
+                    None
             else
                 None
         )
