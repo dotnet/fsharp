@@ -533,18 +533,19 @@ module rec ILBinaryReaderImpl =
 
         match handle.Kind with
         | HandleKind.AssemblyFile ->
-            let asmFile = mdReader.GetAssemblyFile(AssemblyFileHandle.op_Explicit(handle))
+            let asmFile = mdReader.GetAssemblyFile(AssemblyFileHandle.op_Explicit handle)
             ILScopeRef.Module(readILModuleRefFromAssemblyFile cenv asmFile)
 
         | HandleKind.AssemblyReference ->
             ILScopeRef.Assembly(readILAssemblyRefFromAssemblyReference cenv (AssemblyReferenceHandle.op_Explicit(handle)))
 
         | HandleKind.ModuleReference ->
-            let modRef = mdReader.GetModuleReference(ModuleReferenceHandle.op_Explicit(handle))
+            let modRef = mdReader.GetModuleReference(ModuleReferenceHandle.op_Explicit handle)
             ILScopeRef.Module(readILModuleRefFromModuleReference cenv modRef)
 
         | HandleKind.TypeReference ->
-            ILScopeRef.Local
+            let typeRef = mdReader.GetTypeReference(TypeReferenceHandle.op_Explicit handle)
+            readILScopeRef cenv typeRef.ResolutionScope
 
         | HandleKind.ModuleDefinition ->
             ILScopeRef.Local
@@ -656,15 +657,21 @@ module rec ILBinaryReaderImpl =
         let name = cenv.MetadataReader.GetString(modRef.Name)
         ILModuleRef.Create(name, hasMetadata = true, hash = None)
 
-    let readILTypeRefFromTypeReference (cenv: cenv) (typeRef: TypeReference) =
+    let readILTypeRefFromTypeReference (cenv: cenv) (typeRef: TypeReference) : ILTypeRef =
         let mdReader = cenv.MetadataReader
 
         let ilScopeRef = readILScopeRef cenv typeRef.ResolutionScope
+        let enc =
+            match typeRef.ResolutionScope.Kind with
+            | HandleKind.TypeReference ->
+                let encTypeRef = mdReader.GetTypeReference(TypeReferenceHandle.op_Explicit typeRef.ResolutionScope)
+                let encILTypeRef = readILTypeRefFromTypeReference cenv encTypeRef
+                encILTypeRef.Enclosing @ [encILTypeRef.Name]
+            | _ ->
+                List.empty
+        let name = mdReader.GetTypeName(typeRef.Namespace, typeRef.Name)
 
-        let name = mdReader.GetString(typeRef.Name)
-        let namespac = mdReader.GetString(typeRef.Namespace)
-
-        ILTypeRef.Create(ilScopeRef, [], namespac + "." + name)
+        ILTypeRef.Create(ilScopeRef, enc, name)
 
     let readILTypeFromTypeReference (cenv: cenv) rawTypeKind (typeRefHandle: TypeReferenceHandle) =
         let cacheKey = struct(typeRefHandle, rawTypeKind)
@@ -701,12 +708,10 @@ module rec ILBinaryReaderImpl =
                 []
   
         let name =
-            let name = mdReader.GetString(typeDef.Name)
             if enclosing.Length > 0 then 
-                name
+                mdReader.GetString typeDef.Name
             else
-                let namespac = mdReader.GetString(typeDef.Namespace)
-                namespac + "." + name
+                mdReader.GetTypeName(typeDef.Namespace, typeDef.Name)
 
         ILTypeRef.Create(ILScopeRef.Local, enclosing, name)
 
