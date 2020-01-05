@@ -84,15 +84,15 @@ module rec ILBinaryReaderImpl =
 
         member _.LocalSignatureTypeProvider = localSigTyProvider
 
-        member _.CacheILType(key: TypeDefinitionHandle, ilType: ILType) =
+        member _.CacheILType(key: struct(TypeDefinitionHandle * SignatureTypeKind), ilType: ILType) =
             if isCachingEnabled then
                 typeDefCache.[key] <- ilType
 
-        member _.CacheILType(key: struct(TypeReferenceHandle * byte), ilType: ILType) =
+        member _.CacheILType(key: struct(TypeReferenceHandle * SignatureTypeKind), ilType: ILType) =
             if isCachingEnabled then
                 typeRefCache.[key] <- ilType
 
-        member _.CacheILType(key: TypeSpecificationHandle, ilType: ILType) =
+        member _.CacheILType(key: struct(TypeSpecificationHandle * SignatureTypeKind), ilType: ILType) =
             if isCachingEnabled then
                 typeSpecCache.[key] <- ilType
 
@@ -366,19 +366,19 @@ module rec ILBinaryReaderImpl =
 
             member _.GetPinnedType(elementType) = elementType
 
-            member this.GetTypeFromSpecification(_, _, typeSpecHandle, _) =
-                readILTypeFromTypeSpecification this.cenv typeSpecHandle
+            member this.GetTypeFromSpecification(_, _, typeSpecHandle, rawTypeKind) =
+                readILTypeFromTypeSpecification this.cenv (LanguagePrimitives.EnumOfValue rawTypeKind) typeSpecHandle
             
         interface ISimpleTypeProvider<ILType> with
 
             member _.GetPrimitiveType(typeCode) =
                 mkILTypePrimitive typeCode ilg
             
-            member this.GetTypeFromDefinition(_, typeDefHandle, _) =
-                readILTypeFromTypeDefinition this.cenv typeDefHandle
+            member this.GetTypeFromDefinition(_, typeDefHandle, rawTypeKind) =
+                readILTypeFromTypeDefinition this.cenv (LanguagePrimitives.EnumOfValue rawTypeKind) typeDefHandle
 
             member this.GetTypeFromReference(_, typeRefHandle, rawTypeKind) =
-                readILTypeFromTypeReference this.cenv rawTypeKind typeRefHandle
+                readILTypeFromTypeReference this.cenv (LanguagePrimitives.EnumOfValue rawTypeKind) typeRefHandle
 
         interface IConstructedTypeProvider<ILType> with
 
@@ -464,10 +464,10 @@ module rec ILBinaryReaderImpl =
                     DebugInfo = None
                 }
 
-            member this.GetTypeFromSpecification(_, _, typeSpecHandle, _) =
+            member this.GetTypeFromSpecification(_, _, typeSpecHandle, rawTypeKind) =
                 {
                     IsPinned = false
-                    Type = readILTypeFromTypeSpecification this.cenv typeSpecHandle
+                    Type = readILTypeFromTypeSpecification this.cenv (LanguagePrimitives.EnumOfValue rawTypeKind) typeSpecHandle
                     DebugInfo = None
                 }
             
@@ -480,17 +480,17 @@ module rec ILBinaryReaderImpl =
                     DebugInfo = None
                 }
             
-            member this.GetTypeFromDefinition(_, typeDefHandle, _) =
+            member this.GetTypeFromDefinition(_, typeDefHandle, rawTypeKind) =
                 {
                     IsPinned = false
-                    Type = readILTypeFromTypeDefinition this.cenv typeDefHandle
+                    Type = readILTypeFromTypeDefinition this.cenv (LanguagePrimitives.EnumOfValue rawTypeKind) typeDefHandle
                     DebugInfo = None
                 }    
 
             member this.GetTypeFromReference(_, typeRefHandle, rawTypeKind) =
                 {
                     IsPinned = false
-                    Type = readILTypeFromTypeReference this.cenv rawTypeKind typeRefHandle
+                    Type = readILTypeFromTypeReference this.cenv (LanguagePrimitives.EnumOfValue rawTypeKind) typeRefHandle
                     DebugInfo = None
                 } 
             
@@ -643,17 +643,14 @@ module rec ILBinaryReaderImpl =
         | _ ->
             invalidOp "readILGenericArgs: Invalid handle kind."
 
-    let readILType (cenv: cenv) (handle: EntityHandle) : ILType =
+    let readILType (cenv: cenv) sigTypeKind (handle: EntityHandle) : ILType =
         match handle.Kind with
         | HandleKind.TypeReference ->
-            // No way to tell at this point if the type reference is a value type or not, so default to class.
-            let rawTypeKind = byte SignatureTypeKind.Class
-            readILTypeFromTypeReference cenv rawTypeKind (TypeReferenceHandle.op_Explicit(handle))
+            readILTypeFromTypeReference cenv sigTypeKind (TypeReferenceHandle.op_Explicit(handle))
         | HandleKind.TypeDefinition ->
-            readILTypeFromTypeDefinition cenv (TypeDefinitionHandle.op_Explicit(handle))
-
+            readILTypeFromTypeDefinition cenv sigTypeKind (TypeDefinitionHandle.op_Explicit(handle))
         | HandleKind.TypeSpecification ->
-            readILTypeFromTypeSpecification cenv (TypeSpecificationHandle.op_Explicit(handle))
+            readILTypeFromTypeSpecification cenv sigTypeKind (TypeSpecificationHandle.op_Explicit(handle))
 
         | _ ->
             failwithf "Invalid Handle Kind: %A" handle.Kind
@@ -678,8 +675,8 @@ module rec ILBinaryReaderImpl =
 
         ILTypeRef.Create(ilScopeRef, enc, name)
 
-    let readILTypeFromTypeReference (cenv: cenv) rawTypeKind (typeRefHandle: TypeReferenceHandle) =
-        let cacheKey = struct(typeRefHandle, rawTypeKind)
+    let readILTypeFromTypeReference (cenv: cenv) (sigTypeKind: SignatureTypeKind) (typeRefHandle: TypeReferenceHandle) =
+        let cacheKey = struct(typeRefHandle, sigTypeKind)
         match cenv.TryGetCachedILType cacheKey with
         | ValueSome ilType -> ilType
         | _ ->
@@ -692,7 +689,7 @@ module rec ILBinaryReaderImpl =
             let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, ilGenericArgs)
 
             let ilBoxity =
-                match mdReader.ResolveSignatureTypeKind(TypeReferenceHandle.op_Implicit typeRefHandle, rawTypeKind) with
+                match mdReader.ResolveSignatureTypeKind(TypeReferenceHandle.op_Implicit typeRefHandle, byte sigTypeKind) with
                 | SignatureTypeKind.ValueType -> AsValue
                 | _ -> AsObject
 
@@ -720,7 +717,7 @@ module rec ILBinaryReaderImpl =
 
         ILTypeRef.Create(ILScopeRef.Local, enclosing, name)
 
-    let readILTypeFromTypeDefinitionUncached (cenv: cenv) (typeDefHandle: TypeDefinitionHandle) =
+    let readILTypeFromTypeDefinitionUncached (cenv: cenv) (sigTypeKind: SignatureTypeKind) (typeDefHandle: TypeDefinitionHandle) =
         let mdReader = cenv.MetadataReader
 
         let typeDef = mdReader.GetTypeDefinition(typeDefHandle)
@@ -728,22 +725,25 @@ module rec ILBinaryReaderImpl =
         let ilGenericArgs = readILGenericArgs cenv (TypeDefinitionHandle.op_Implicit typeDefHandle)
         let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, ilGenericArgs)
 
-        let boxity = 
-            if int (typeDef.Attributes &&& TypeAttributes.Class) <> 0 then AsObject
-            else AsValue
+        let ilBoxity =
+            match mdReader.ResolveSignatureTypeKind(TypeDefinitionHandle.op_Implicit typeDefHandle, byte sigTypeKind) with
+            | SignatureTypeKind.ValueType -> AsValue
+            | _ -> AsObject
 
-        mkILTy boxity ilTypeSpec
+        mkILTy ilBoxity ilTypeSpec
 
-    let readILTypeFromTypeDefinition (cenv: cenv) (typeDefHandle: TypeDefinitionHandle) =
-        match cenv.TryGetCachedILType(typeDefHandle) with
+    let readILTypeFromTypeDefinition (cenv: cenv) (sigTypeKind: SignatureTypeKind) (typeDefHandle: TypeDefinitionHandle) =
+        let cacheKey = struct(typeDefHandle, sigTypeKind)
+        match cenv.TryGetCachedILType cacheKey with
         | ValueSome(ilType) -> ilType
         | _ ->
-            let ilType = readILTypeFromTypeDefinitionUncached cenv typeDefHandle
-            cenv.CacheILType(typeDefHandle, ilType)
+            let ilType = readILTypeFromTypeDefinitionUncached cenv sigTypeKind typeDefHandle
+            cenv.CacheILType(cacheKey, ilType)
             ilType
 
-    let readILTypeFromTypeSpecification (cenv: cenv) (typeSpecHandle: TypeSpecificationHandle) =
-        match cenv.TryGetCachedILType(typeSpecHandle) with
+    let readILTypeFromTypeSpecification (cenv: cenv) (sigTypeKind: SignatureTypeKind) (typeSpecHandle: TypeSpecificationHandle) =
+        let cacheKey = struct(typeSpecHandle, sigTypeKind)
+        match cenv.TryGetCachedILType cacheKey with
         | ValueSome(ilType) -> ilType
         | _ ->
             let mdReader = cenv.MetadataReader
@@ -751,7 +751,7 @@ module rec ILBinaryReaderImpl =
             let typeSpec = mdReader.GetTypeSpecification(typeSpecHandle)
 
             let ilType = typeSpec.DecodeSignature(cenv.SignatureTypeProvider, 0)
-            cenv.CacheILType(typeSpecHandle, ilType)
+            cenv.CacheILType(cacheKey, ilType)
             ilType
 
     let readILGenericParameterDef (cenv: cenv) (genParamHandle: GenericParameterHandle) : ILGenericParameterDef =
@@ -764,7 +764,7 @@ module rec ILBinaryReaderImpl =
             genParam.GetConstraints()
             |> Seq.map (fun genParamCnstrHandle ->
                 let genParamCnstr = mdReader.GetGenericParameterConstraint(genParamCnstrHandle)
-                readILType cenv genParamCnstr.Type
+                readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) genParamCnstr.Type
             )
             |> List.ofSeq     
 
@@ -796,11 +796,11 @@ module rec ILBinaryReaderImpl =
         match handle.Kind with
         | HandleKind.MemberReference ->
             let memberRef = mdReader.GetMemberReference(MemberReferenceHandle.op_Explicit(handle))
-            (mdReader.GetString(memberRef.Name), readILType cenv memberRef.Parent)
+            (mdReader.GetString(memberRef.Name), readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent)
 
         | HandleKind.MethodDefinition ->
             let methodDef = mdReader.GetMethodDefinition(MethodDefinitionHandle.op_Explicit(handle))
-            (mdReader.GetString(methodDef.Name), readILTypeFromTypeDefinition cenv (methodDef.GetDeclaringType()))
+            (mdReader.GetString(methodDef.Name), readILTypeFromTypeDefinition cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) (methodDef.GetDeclaringType()))
 
         | HandleKind.MethodSpecification ->
             let methodSpec = mdReader.GetMethodSpecification(MethodSpecificationHandle.op_Explicit(handle))
@@ -816,7 +816,7 @@ module rec ILBinaryReaderImpl =
         let si = memberRef.DecodeMethodSignature(cenv.SignatureTypeProvider, 0)
 
         let name = mdReader.GetString(memberRef.Name)
-        let enclILTy = readILType cenv memberRef.Parent
+        let enclILTy = readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent
         let ilCallingConv = mkILCallingConv si.Header
 
         let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilCallingConv, name, 0, si.ParameterTypes |> List.ofSeq, si.ReturnType)
@@ -865,7 +865,7 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let methDef = mdReader.GetMethodDefinition(methDefHandle)
-        let enclILTy = readILTypeFromTypeDefinition cenv (methDef.GetDeclaringType())
+        let enclILTy = readILTypeFromTypeDefinition cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) (methDef.GetDeclaringType())
         let ilMethDef = readILMethodDef cenv methDefHandle
 
         let genericArity = ilMethDef.GenericParams.Length
@@ -1633,7 +1633,7 @@ module rec ILBinaryReaderImpl =
             | PrefixShortInlineI(f) -> f prefixes (ilReader.ReadUInt16())
             | PrefixInlineType(f) ->
                 let handle = MetadataTokens.EntityHandle(ilReader.ReadInt32())
-                let ilType = readILType cenv handle
+                let ilType = readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle
                 f prefixes ilType
 
             | decoder ->
@@ -1686,7 +1686,7 @@ module rec ILBinaryReaderImpl =
 
                     | InlineType(f) ->
                         let handle = MetadataTokens.EntityHandle(ilReader.ReadInt32())
-                        let ilType = readILType cenv handle
+                        let ilType = readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle
                         f prefixes ilType
                     
                     | InlineString(f) ->
@@ -1713,7 +1713,7 @@ module rec ILBinaryReaderImpl =
                             | HandleKind.FieldDefinition -> ILToken.ILField(readILFieldSpec cenv handle)
                             | HandleKind.TypeDefinition
                             | HandleKind.TypeReference
-                            | HandleKind.TypeSpecification -> ILToken.ILType(readILType cenv handle)
+                            | HandleKind.TypeSpecification -> ILToken.ILType(readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle)
                             | _ -> failwithf "Invalid Handle Kind: %A" handle.Kind
 
                         f prefixes ilToken
@@ -1808,7 +1808,7 @@ module rec ILBinaryReaderImpl =
                         let filterFinish = region.HandlerOffset
                         ILExceptionClause.FilterCatch((filterStart, filterFinish), (start, finish))
                     | ExceptionRegionKind.Catch ->
-                        ILExceptionClause.TypeCatch(readILType cenv region.CatchType, (start, finish))
+                        ILExceptionClause.TypeCatch(readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) region.CatchType, (start, finish))
                     | _ ->
                         failwithf "Invalid Exception Region Kind: %A" region.Kind
 
@@ -1964,7 +1964,7 @@ module rec ILBinaryReaderImpl =
         | HandleKind.FieldDefinition ->
             let fieldDef = mdReader.GetFieldDefinition(FieldDefinitionHandle.op_Explicit(handle))
 
-            let declaringILType = readILTypeFromTypeDefinition cenv (fieldDef.GetDeclaringType())
+            let declaringILType = readILTypeFromTypeDefinition cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) (fieldDef.GetDeclaringType())
 
             let ilFieldRef =
                 {
@@ -1981,7 +1981,7 @@ module rec ILBinaryReaderImpl =
         | HandleKind.MemberReference ->
             let memberRef = mdReader.GetMemberReference(MemberReferenceHandle.op_Explicit(handle))
 
-            let declaringType = readILType cenv memberRef.Parent
+            let declaringType = readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent
 
             let ilFieldRef =
                 {
@@ -2106,7 +2106,7 @@ module rec ILBinaryReaderImpl =
     let tryReadILType (cenv: cenv) (handle: EntityHandle) =
         if handle.IsNil then None
         else
-            readILType cenv handle
+            readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle
             |> Some
 
     let readILEventDef (cenv: cenv) (eventDefHandle: EventDefinitionHandle) =
@@ -2147,14 +2147,14 @@ module rec ILBinaryReaderImpl =
             typeDef.GetInterfaceImplementations()
             |> Seq.map (fun h ->
                 let interfaceImpl = mdReader.GetInterfaceImplementation h
-                readILType cenv interfaceImpl.Interface)
+                readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) interfaceImpl.Interface)
             |> List.ofSeq
 
         let genericParams = readILGenericParameterDefs cenv (typeDef.GetGenericParameters())
 
         let extends =
             if typeDef.BaseType.IsNil then None
-            else Some(readILType cenv typeDef.BaseType)
+            else Some(readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) typeDef.BaseType)
 
         let methods =
             mkILMethodsComputed (fun () ->
