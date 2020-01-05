@@ -784,6 +784,7 @@ let ``Test Unoptimized Declarations Project1`` () =
 //#if NETCOREAPP2_0
 //[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 //#endif
+[<Ignore("SKIPPED: FSharp.Core nuget package needs to be updated before this test can be re-enabled")>]
 let ``Test Optimized Declarations Project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
 
@@ -903,7 +904,7 @@ let ``Test Optimized Declarations Project1`` () =
         "let testHashUInt64(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (x),Operators.ToInt32<Microsoft.FSharp.Core.int> (Operators.op_RightShift<Microsoft.FSharp.Core.uint64> (x,32))) @ (12,32--12,38)";
         "let testHashIntPtr(x) = Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.nativeint> (x)) @ (13,35--13,41)";
         "let testHashUIntPtr(x) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.unativeint> (x)),2147483647) @ (14,37--14,43)";
-        "let testHashString(x) = (if Operators.op_Equality<Microsoft.FSharp.Core.string> (x,dflt) then 0 else Operators.Hash<Microsoft.FSharp.Core.string> (x)) @ (16,32--16,38)";
+        "let testHashString(x) = (if Operators.op_Equality<Microsoft.FSharp.Core.string> (x,dflt) then 0 else x.GetHashCode()) @ (16,32--16,38)";
         "let testTypeOf(x) = Operators.TypeOf<'T> () @ (17,24--17,30)";
         "let mutableVar(x) = (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (20,4--22,16)";
         "let mutableConst(unitVar0) = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (25,16--25,19)";
