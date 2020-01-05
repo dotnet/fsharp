@@ -12,6 +12,10 @@ type LanguageFeature =
     | NameOf
     | ImplicitYield
     | OpenStaticClasses
+    | PackageManagement
+    | FromEndSlicing
+    | FixedIndexSlice3d4d
+
 
 /// LanguageVersion management
 type LanguageVersion =
