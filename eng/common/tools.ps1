@@ -96,10 +96,7 @@ function Exec-Process([string]$command, [string]$commandArgs) {
   }
 }
 
-# createSdkLocationFile parameter enables a file being generated under the toolset directory
-# which writes the sdk's location into. This is only necessary for cmd --> powershell invocations
-# as dot sourcing isn't possible.
-function InitializeDotNetCli([bool]$install, [bool]$createSdkLocationFile) {
+function InitializeDotNetCli([bool]$install) {
   if (Test-Path variable:global:_DotNetInstallDir) {
     return $global:_DotNetInstallDir
   }
@@ -149,24 +146,6 @@ function InitializeDotNetCli([bool]$install, [bool]$createSdkLocationFile) {
     $env:DOTNET_INSTALL_DIR = $dotnetRoot
   }
 
-  # Creates a temporary file under the toolset dir.
-  # The following code block is protecting against concurrent access so that this function can
-  # be called in parallel.
-  if ($createSdkLocationFile) {
-    do { 
-      $sdkCacheFileTemp = Join-Path $ToolsetDir $([System.IO.Path]::GetRandomFileName())
-    } 
-    until (!(Test-Path $sdkCacheFileTemp))
-    Set-Content -Path $sdkCacheFileTemp -Value $dotnetRoot
-  
-    try {
-      Rename-Item -Force -Path $sdkCacheFileTemp 'sdk.txt'
-    } catch {
-      # Somebody beat us
-      Remove-Item -Path $sdkCacheFileTemp
-    }
-  }
-
   # Add dotnet to PATH. This prevents any bare invocation of dotnet in custom
   # build steps from using anything other than what we've downloaded.
   # It also ensures that VS msbuild will use the downloaded sdk targets.
@@ -205,7 +184,14 @@ function InstallDotNetSdk([string] $dotnetRoot, [string] $version, [string] $arc
   InstallDotNet $dotnetRoot $version $architecture
 }
 
-function InstallDotNet([string] $dotnetRoot, [string] $version, [string] $architecture = "", [string] $runtime = "", [bool] $skipNonVersionedFiles = $false) {
+function InstallDotNet([string] $dotnetRoot, 
+  [string] $version, 
+  [string] $architecture = "", 
+  [string] $runtime = "", 
+  [bool] $skipNonVersionedFiles = $false, 
+  [string] $runtimeSourceFeed = "", 
+  [string] $runtimeSourceFeedKey = "") {
+
   $installScript = GetDotNetInstallScript $dotnetRoot
   $installParameters = @{
     Version = $version
@@ -220,7 +206,7 @@ function InstallDotNet([string] $dotnetRoot, [string] $version, [string] $archit
     & $installScript @installParameters
   }
   catch {
-    Write-PipelineTelemetryError -Category 'InitializeToolset' -Message "Failed to install dotnet runtime '$runtime' from public location."
+    Write-PipelineTelemetryError -Category "InitializeToolset" -Message "Failed to install dotnet runtime '$runtime' from public location."
 
     # Only the runtime can be installed from a custom [private] location.
     if ($runtime -and ($runtimeSourceFeed -or $runtimeSourceFeedKey)) {
@@ -236,7 +222,7 @@ function InstallDotNet([string] $dotnetRoot, [string] $version, [string] $archit
         & $installScript @installParameters
       }
       catch {
-        Write-PipelineTelemetryError -Category 'InitializeToolset' -Message "Failed to install dotnet runtime '$runtime' from custom location '$runtimeSourceFeed'."
+        Write-PipelineTelemetryError -Category "InitializeToolset" -Message "Failed to install dotnet runtime '$runtime' from custom location '$runtimeSourceFeed'."
         ExitWithExitCode 1
       }
     } else {
@@ -298,11 +284,8 @@ function InitializeVisualStudioMSBuild([bool]$install, [object]$vsRequirements =
       $vsMajorVersion = $vsMinVersion.Major
       $xcopyMSBuildVersion = "$vsMajorVersion.$($vsMinVersion.Minor).0-alpha"
     }
-    
-    $vsInstallDir = $null
-    if ($xcopyMSBuildVersion.Trim() -ine "none") {
-        $vsInstallDir = InitializeXCopyMSBuild $xcopyMSBuildVersion $install
-    }
+
+    $vsInstallDir = InitializeXCopyMSBuild $xcopyMSBuildVersion $install
     if ($vsInstallDir -eq $null) {
       throw "Unable to find Visual Studio that has required version and components installed"
     }
