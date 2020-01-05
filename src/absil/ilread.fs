@@ -43,7 +43,7 @@ module rec ILBinaryReaderImpl =
         if index < 0 || (index + 1) < nm.Length then 0
         else Int32.Parse(nm.Substring(index + 1)) // REVIEW: Maybe use Span here?
 
-    type TypeVarOffset = int
+    type MethodTypeVarOffset = int
 
     [<Sealed>]
     type cenv(
@@ -53,8 +53,8 @@ module rec ILBinaryReaderImpl =
                 entryPointToken: int,
                 isMetadataOnly: bool,
                 canReduceMemory: bool,
-                sigTyProvider: ISignatureTypeProvider<ILType, TypeVarOffset>,
-                localSigTyProvider: ISignatureTypeProvider<ILLocal, TypeVarOffset>) =
+                sigTyProvider: ISignatureTypeProvider<ILType, MethodTypeVarOffset>,
+                localSigTyProvider: ISignatureTypeProvider<ILLocal, MethodTypeVarOffset>) =
 
         let typeDefCache = ConcurrentDictionary()
         let typeRefCache = ConcurrentDictionary()
@@ -298,9 +298,6 @@ module rec ILBinaryReaderImpl =
             }
         ILType.FunctionPointer(callingSig)
 
-    let mkILTypeTypeVar index =
-        ILType.TypeVar(uint16 index)
-
     let mkILTypeModified isRequired typeRef unmodifiedType =
         ILType.Modified(isRequired, typeRef, unmodifiedType)
         
@@ -326,7 +323,7 @@ module rec ILBinaryReaderImpl =
         | PrimitiveTypeCode.Void -> ILType.Void
         | _ -> failwithf "Invalid Primitive Type Code: %A" primitiveTypeCode
 
-    let mkILGenericsArgsByCount offset count =
+    let mkILGenericArgsByCount offset count : ILGenericArgs =
         List.init count (fun i -> mkILTyvarTy (uint16 (offset + i)))
 
     let mkILTypeGeneric typeRef boxity typeArgs =
@@ -348,16 +345,16 @@ module rec ILBinaryReaderImpl =
 
         member val cenv : cenv = Unchecked.defaultof<_> with get, set
 
-        interface ISignatureTypeProvider<ILType, TypeVarOffset> with
+        interface ISignatureTypeProvider<ILType, MethodTypeVarOffset> with
 
             member _.GetFunctionPointerType(si) =
                 mkILTypeFunctionPointer si.Header (si.ParameterTypes |> Seq.toList) si.ReturnType
 
             member _.GetGenericMethodParameter(typeVarOffset, index) =
-                mkILTypeTypeVar (typeVarOffset + index)
+                mkILTyvarTy (uint16 (typeVarOffset + index))
 
-            member _.GetGenericTypeParameter(typeVarOffset, index) =
-                mkILTypeTypeVar (typeVarOffset + index)
+            member _.GetGenericTypeParameter(_, index) =
+                mkILTyvarTy (uint16 index)
 
             member _.GetModifiedType(modifier, unmodifiedType, isRequired) =
                 mkILTypeModified isRequired modifier.TypeRef unmodifiedType
@@ -425,7 +422,7 @@ module rec ILBinaryReaderImpl =
 
         member val cenv : cenv = Unchecked.defaultof<_> with get, set
 
-        interface ISignatureTypeProvider<ILLocal, TypeVarOffset> with
+        interface ISignatureTypeProvider<ILLocal, MethodTypeVarOffset> with
 
             member _.GetFunctionPointerType(si) =
                 {
@@ -437,14 +434,14 @@ module rec ILBinaryReaderImpl =
             member _.GetGenericMethodParameter(typeVarOffset, index) =
                 {
                     IsPinned = false
-                    Type = mkILTypeTypeVar (typeVarOffset + index)
+                    Type = mkILTyvarTy (uint16 (typeVarOffset + index))
                     DebugInfo = None
                 }
 
-            member _.GetGenericTypeParameter(typeVarOffset, index) =
+            member _.GetGenericTypeParameter(_, index) =
                 {
                     IsPinned = false
-                    Type = mkILTypeTypeVar (typeVarOffset + index)
+                    Type = mkILTyvarTy (uint16 index)
                     DebugInfo = None
                 }
 
@@ -607,7 +604,38 @@ module rec ILBinaryReaderImpl =
             if hashValue.IsNil then None
             else Some(mdReader.GetBlobBytes(hashValue))
 
-        ILModuleRef.Create(name, asmFile.ContainsMetadata, hash) 
+        ILModuleRef.Create(name, asmFile.ContainsMetadata, hash)
+
+    let readDeclaringTypeGenericCountFromMethodDefinition (cenv: cenv) (methDef: MethodDefinition) =
+        let mdReader = cenv.MetadataReader
+
+        let typeDef = mdReader.GetTypeDefinition(methDef.GetDeclaringType())
+        typeDef.GetGenericParameters().Count
+        
+    let readILGenericArgs (cenv: cenv) (entityHandle: EntityHandle) : ILGenericArgs =
+        let mdReader = cenv.MetadataReader
+
+        match entityHandle.Kind with
+        | HandleKind.TypeDefinition ->
+            let typeDef = mdReader.GetTypeDefinition(TypeDefinitionHandle.op_Explicit entityHandle)
+            let typarOffset = readFullGenericCount cenv (typeDef.GetDeclaringType() |> TypeDefinitionHandle.op_Implicit)
+            let typarCount = typeDef.GetGenericParameters().Count
+            mkILGenericArgsByCount typarOffset typarCount
+
+        | HandleKind.TypeReference ->
+            let typeRef = mdReader.GetTypeReference(TypeReferenceHandle.op_Explicit entityHandle)
+            let typarOffset = readFullGenericCount cenv typeRef.ResolutionScope
+            let typarCount = parseTyparCount (mdReader.GetString typeRef.Name)
+            mkILGenericArgsByCount typarOffset typarCount
+
+        | HandleKind.MethodDefinition ->
+            let methDef = mdReader.GetMethodDefinition(MethodDefinitionHandle.op_Explicit entityHandle)
+            let typarOffset = readDeclaringTypeGenericCountFromMethodDefinition cenv methDef
+            let typarCount = methDef.GetGenericParameters().Count
+            mkILGenericArgsByCount typarOffset typarCount
+
+        | _ ->
+            invalidOp "readILGenericArgs: Invalid handle kind."
 
     let readILType (cenv: cenv) (handle: EntityHandle) : ILType =
         match handle.Kind with
@@ -646,18 +674,17 @@ module rec ILBinaryReaderImpl =
             let mdReader = cenv.MetadataReader
 
             let typeRef = mdReader.GetTypeReference(typeRefHandle)
+
             let ilTypeRef = readILTypeRefFromTypeReference cenv typeRef
+            let ilGenericArgs = readILGenericArgs cenv (TypeReferenceHandle.op_Implicit typeRefHandle)
+            let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, ilGenericArgs)
 
-            let typarOffset = readFullGenericCount cenv typeRef.ResolutionScope
-            let typarCount = parseTyparCount ilTypeRef.Name
-            let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, mkILGenericsArgsByCount typarOffset typarCount)
-
-            let boxity =
+            let ilBoxity =
                 match mdReader.ResolveSignatureTypeKind(TypeReferenceHandle.op_Implicit typeRefHandle, rawTypeKind) with
                 | SignatureTypeKind.ValueType -> AsValue
                 | _ -> AsObject
 
-            let ilType = mkILTy boxity ilTypeSpec
+            let ilType = mkILTy ilBoxity ilTypeSpec
             cenv.CacheILType(cacheKey, ilType)
             ilType
 
@@ -688,12 +715,7 @@ module rec ILBinaryReaderImpl =
 
         let typeDef = mdReader.GetTypeDefinition(typeDefHandle)
         let ilTypeRef = readILTypeRefFromTypeDefinition cenv typeDef
-
-        let ilGenericArgs = 
-            mkILGenericsArgsByCount 
-                (readFullGenericCount cenv (TypeDefinitionHandle.op_Implicit typeDefHandle)) 
-                (typeDef.GetGenericParameters().Count)
-
+        let ilGenericArgs = readILGenericArgs cenv (TypeDefinitionHandle.op_Implicit typeDefHandle)
         let ilTypeSpec = ILTypeSpec.Create(ilTypeRef, ilGenericArgs)
 
         let boxity = 
@@ -786,9 +808,8 @@ module rec ILBinaryReaderImpl =
         let name = mdReader.GetString(memberRef.Name)
         let enclILTy = readILType cenv memberRef.Parent
         let ilCallingConv = mkILCallingConv si.Header
-        let genericArity = si.GenericParameterCount
 
-        let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilCallingConv, name, genericArity, si.ParameterTypes |> List.ofSeq, si.ReturnType)
+        let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilCallingConv, name, 0, si.ParameterTypes |> List.ofSeq, si.ReturnType)
 
         ILMethodSpec.Create(enclILTy, ilMethodRef, [])
 
@@ -837,10 +858,9 @@ module rec ILBinaryReaderImpl =
         let enclILTy = readILTypeFromTypeDefinition cenv (methDef.GetDeclaringType())
         let ilMethDef = readILMethodDef cenv methDefHandle
 
-        let typarCount = ilMethDef.GenericParams.Length
-        let typarOffset = enclILTy.TypeSpec.GenericArgs.Length
-        let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilMethDef.CallingConv, ilMethDef.Name, typarCount, ilMethDef.ParameterTypes, ilMethDef.Return.Type)
-        let ilGenericArgs = mkILGenericsArgsByCount typarOffset typarCount 
+        let genericArity = ilMethDef.GenericParams.Length
+        let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilMethDef.CallingConv, ilMethDef.Name, genericArity, ilMethDef.ParameterTypes, ilMethDef.Return.Type)
+        let ilGenericArgs = readILGenericArgs cenv (MethodDefinitionHandle.op_Implicit methDefHandle) 
         ILMethodSpec.Create(enclILTy, ilMethodRef, ilGenericArgs)
 
     let readILMethodSpecFromMethodDefinition (cenv: cenv) (methDefHandle: MethodDefinitionHandle) =
@@ -1859,7 +1879,8 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let methDef = mdReader.GetMethodDefinition(methDefHandle)
-        let si = methDef.DecodeSignature(cenv.SignatureTypeProvider, readFullGenericCount cenv (methDef.GetDeclaringType() |> TypeDefinitionHandle.op_Implicit))
+        let typarOffset = readDeclaringTypeGenericCountFromMethodDefinition cenv methDef
+        let si = methDef.DecodeSignature(cenv.SignatureTypeProvider, typarOffset)
 
         let name = mdReader.GetString(methDef.Name)
 
@@ -2086,7 +2107,7 @@ module rec ILBinaryReaderImpl =
                 |> List.ofSeq
         mkILEventsLazy f
 
-    let rec readILTypeDef (cenv: cenv) (typeDefHandle: TypeDefinitionHandle) =
+    let rec readILTypeDef (cenv: cenv) (typeDefHandle: TypeDefinitionHandle) : ILTypeDef =
         let mdReader = cenv.MetadataReader
 
         let typeDef = mdReader.GetTypeDefinition(typeDefHandle)
