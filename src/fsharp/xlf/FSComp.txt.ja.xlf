@@ -48,18 +48,18 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
-        <source>This is the wrong anonymous record. The expected record has the following fields: '{0}'.</source>
-        <target state="new">This is the wrong anonymous record. The expected record has the following fields: '{0}'.</target>
+        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
+        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSubset">
-        <source>This anonymous record is missing the following fields: '{0}'. Please add them.</source>
-        <target state="new">This anonymous record is missing the following fields: '{0}'. Please add them.</target>
+        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
+        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
-        <source>This anonymous record has the following unexpected extra fields '{0}'. Please remove them.</source>
-        <target state="new">This anonymous record has the following unexpected extra fields '{0}'. Please remove them.</target>
+        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
+        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -7143,7 +7143,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>This anonymous record has the following missing fields '{0}' and the following unexpected extra fields '{1}'.</source>
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
         <target state="needs-review-translation">2 種類の匿名レコードのフィールド名 '{0}' と '{1}' が一致しません</target>
         <note />
       </trans-unit>

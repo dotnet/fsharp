@@ -840,8 +840,9 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
         let (|Subset|Superset|Overlap|CompletelyDifferent|) (first, second) =
             let first = Set first
             let second = Set second
-            let secondOnly = (second - first) |> Set.toList
-            let firstOnly = (first - second) |> Set.toList
+            let secondOnly = Set.toList (second - first)
+            let firstOnly = Set.toList (first - second)
+
             if second.IsSubsetOf first then Subset firstOnly
             elif second.IsSupersetOf first then Superset secondOnly
             elif Set.intersect first second <> Set.empty then Overlap(firstOnly, secondOnly)
@@ -849,10 +850,10 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
         
         let message =
             match anonInfo1.SortedNames, anonInfo2.SortedNames with
-            | Subset missingFields -> FSComp.SR.tcAnonRecdFieldNameSubset(sprintf "%A" missingFields)
-            | Superset extraFields -> FSComp.SR.tcAnonRecdFieldNameSuperset(sprintf "%A" extraFields)
-            | Overlap(missingFields, extraFields) -> FSComp.SR.tcAnonRecdFieldNameMismatch(sprintf "%A" missingFields, sprintf "%A" extraFields)
-            | CompletelyDifferent(missingFields) -> FSComp.SR.tcAnonRecdFieldNameDifferent(sprintf "%A" missingFields)
+            | Subset missingFields -> FSComp.SR.tcAnonRecdFieldNameSubset(string missingFields)
+            | Superset extraFields -> FSComp.SR.tcAnonRecdFieldNameSuperset(string extraFields)
+            | Overlap (missingFields, extraFields) -> FSComp.SR.tcAnonRecdFieldNameMismatch(string missingFields, string extraFields)
+            | CompletelyDifferent missingFields -> FSComp.SR.tcAnonRecdFieldNameDifferent(string missingFields)
         
         ErrorD (ConstraintSolverError(message, csenv.m,m2)) 
     else 
