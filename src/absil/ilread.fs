@@ -30,17 +30,6 @@ module rec ILBinaryReaderImpl =
 
     type PdbReaderProvider = MetadataReaderProvider * string
 
-    type MetadataReader with
-
-        member this.TryGetString(handle: StringHandle) =
-            if handle.IsNil then ValueNone
-            else ValueSome(this.GetString(handle))
-
-        member this.GetTypeName(namespaceHandle: StringHandle, nameHandle: StringHandle) =
-            let name = this.GetString nameHandle
-            if namespaceHandle.IsNil then name
-            else this.GetString namespaceHandle + "." + name
-
     let parseTyparCount (nm: string) =
         let index = nm.IndexOf('`')
         if index < 0 || (index + 1) < nm.Length then 0
@@ -55,7 +44,7 @@ module rec ILBinaryReaderImpl =
                 pdbReaderProviderOpt: PdbReaderProvider option,
                 entryPointToken: int,
                 isMetadataOnly: bool,
-                _canReduceMemory: bool,
+                canReduceMemory: bool,
                 sigTyProvider: ISignatureTypeProvider<ILType, MethodTypeVarOffset>,
                 localSigTyProvider: ISignatureTypeProvider<ILLocal, MethodTypeVarOffset>) =
 
@@ -65,12 +54,14 @@ module rec ILBinaryReaderImpl =
         let asmRefCache = ConcurrentDictionary()
         let memberRefToILMethSpecCache = ConcurrentDictionary()
         let methDefToILMethSpecCache = ConcurrentDictionary()
+        let methDefCache = ConcurrentDictionary()
+        let stringCache = ConcurrentDictionary()
 
-        let isCachingEnabled = false //not canReduceMemory
+        let isCachingEnabled = not canReduceMemory
 
         member _.IsMetadataOnly = isMetadataOnly
 
-        member _.CanReduceMemory = false
+        member _.CanReduceMemory = canReduceMemory
 
         member _.PEReader = peReader
 
@@ -106,6 +97,13 @@ module rec ILBinaryReaderImpl =
         member _.CacheILMethodSpec(key: MethodDefinitionHandle, ilMethSpec: ILMethodSpec) =
             if isCachingEnabled then
                 methDefToILMethSpecCache.[key] <- ilMethSpec
+
+        member _.CacheILMethodDef(key: MethodDefinitionHandle, ilMethDef: ILMethodDef) =
+            if isCachingEnabled then
+                methDefCache.[key] <- ilMethDef
+
+        member _.CacheString(key: StringHandle, str: string) =
+            stringCache.[key] <- str
         
         member _.TryGetCachedILType(key) =
             match typeDefCache.TryGetValue(key) with
@@ -135,6 +133,16 @@ module rec ILBinaryReaderImpl =
         member _.TryGetCachedILMethodSpec(key) =
             match methDefToILMethSpecCache.TryGetValue(key) with
             | true, ilMethSpec -> ValueSome(ilMethSpec)
+            | _ -> ValueNone
+
+        member _.TryGetCachedILMethodDef key =
+            match methDefCache.TryGetValue key with
+            | true, ilMethDef -> ValueSome ilMethDef
+            | _ -> ValueNone
+
+        member _.TryGetCachedString key =
+            match stringCache.TryGetValue key with
+            | true, str -> ValueSome str
             | _ -> ValueNone
 
     let mkILVersionInfo (v: Version) =
@@ -531,7 +539,20 @@ module rec ILBinaryReaderImpl =
                     IsPinned = false
                     Type =  mkILArr1DTy elementType.Type
                     DebugInfo = None
-                }            
+                }
+                
+    let readString (cenv: cenv) (stringHandle: StringHandle) =
+        match cenv.TryGetCachedString stringHandle with
+        | ValueSome str -> str
+        | _ ->
+            let str = cenv.MetadataReader.GetString stringHandle
+            cenv.CacheString(stringHandle, str)
+            str
+
+    let readTypeName (cenv: cenv) (namespaceHandle: StringHandle) (nameHandle: StringHandle) =
+        let name = readString cenv nameHandle
+        if namespaceHandle.IsNil then name
+        else readString cenv namespaceHandle + "." + name
 
     let rec readILScopeRef (cenv: cenv) (handle: EntityHandle) =
         let mdReader = cenv.MetadataReader
@@ -562,7 +583,7 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let asmRef = mdReader.GetAssemblyReference(asmRefHandle)
-        let name = mdReader.GetString(asmRef.Name)
+        let name = readString cenv asmRef.Name
         let flags = asmRef.Flags
 
         let hash = 
@@ -586,7 +607,7 @@ module rec ILBinaryReaderImpl =
         let version = mkILVersionInfo asmRef.Version
 
         let locale =
-            let locale = mdReader.GetString(asmRef.Culture)
+            let locale = readString cenv asmRef.Culture
             if String.IsNullOrWhiteSpace(locale) then None
             else Some(locale)
 
@@ -603,7 +624,7 @@ module rec ILBinaryReaderImpl =
     let readILModuleRefFromAssemblyFile (cenv: cenv) (asmFile: AssemblyFile) =
         let mdReader = cenv.MetadataReader
 
-        let name = mdReader.GetString(asmFile.Name)
+        let name = readString cenv asmFile.Name
 
         let hash = 
             let hashValue = asmFile.HashValue
@@ -631,7 +652,7 @@ module rec ILBinaryReaderImpl =
         | HandleKind.TypeReference ->
             let typeRef = mdReader.GetTypeReference(TypeReferenceHandle.op_Explicit entityHandle)
             let typarOffset = readFullGenericCount cenv typeRef.ResolutionScope
-            let typarCount = parseTyparCount (mdReader.GetString typeRef.Name)
+            let typarCount = parseTyparCount (readString cenv typeRef.Name)
             mkILGenericArgsByCount typarOffset typarCount
 
         | HandleKind.MethodDefinition ->
@@ -656,7 +677,7 @@ module rec ILBinaryReaderImpl =
             failwithf "Invalid Handle Kind: %A" handle.Kind
 
     let readILModuleRefFromModuleReference (cenv: cenv) (modRef: ModuleReference) =
-        let name = cenv.MetadataReader.GetString(modRef.Name)
+        let name = readString cenv modRef.Name
         ILModuleRef.Create(name, hasMetadata = true, hash = None)
 
     let readILTypeRefFromTypeReference (cenv: cenv) (typeRef: TypeReference) : ILTypeRef =
@@ -671,7 +692,7 @@ module rec ILBinaryReaderImpl =
                 encILTypeRef.Enclosing @ [encILTypeRef.Name]
             | _ ->
                 List.empty
-        let name = mdReader.GetTypeName(typeRef.Namespace, typeRef.Name)
+        let name = readTypeName cenv typeRef.Namespace typeRef.Name
 
         ILTypeRef.Create(ilScopeRef, enc, name)
 
@@ -711,9 +732,9 @@ module rec ILBinaryReaderImpl =
   
         let name =
             if enclosing.Length > 0 then 
-                mdReader.GetString typeDef.Name
+                readString cenv typeDef.Name
             else
-                mdReader.GetTypeName(typeDef.Namespace, typeDef.Name)
+                readTypeName cenv typeDef.Namespace typeDef.Name
 
         ILTypeRef.Create(ILScopeRef.Local, enclosing, name)
 
@@ -776,7 +797,7 @@ module rec ILBinaryReaderImpl =
             | _ -> NonVariant
 
         {
-            Name = mdReader.GetString(genParam.Name)
+            Name = readString cenv genParam.Name
             Constraints = constraints
             Variance = variance
             HasReferenceTypeConstraint = int (attributes &&& GenericParameterAttributes.ReferenceTypeConstraint) <> 0
@@ -796,11 +817,11 @@ module rec ILBinaryReaderImpl =
         match handle.Kind with
         | HandleKind.MemberReference ->
             let memberRef = mdReader.GetMemberReference(MemberReferenceHandle.op_Explicit(handle))
-            (mdReader.GetString(memberRef.Name), readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent)
+            (readString cenv memberRef.Name, readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent)
 
         | HandleKind.MethodDefinition ->
             let methodDef = mdReader.GetMethodDefinition(MethodDefinitionHandle.op_Explicit(handle))
-            (mdReader.GetString(methodDef.Name), readILTypeFromTypeDefinition cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) (methodDef.GetDeclaringType()))
+            (readString cenv methodDef.Name, readILTypeFromTypeDefinition cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) (methodDef.GetDeclaringType()))
 
         | HandleKind.MethodSpecification ->
             let methodSpec = mdReader.GetMethodSpecification(MethodSpecificationHandle.op_Explicit(handle))
@@ -815,7 +836,7 @@ module rec ILBinaryReaderImpl =
         let memberRef = mdReader.GetMemberReference(memberRefHandle)
         let si = memberRef.DecodeMethodSignature(cenv.SignatureTypeProvider, 0)
 
-        let name = mdReader.GetString(memberRef.Name)
+        let name = readString cenv memberRef.Name
         let enclILTy = readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent
         let ilCallingConv = mkILCallingConv si.Header
 
@@ -927,21 +948,23 @@ module rec ILBinaryReaderImpl =
         ILAttribute.Encoded(readILMethodSpec cenv customAttr.Constructor, bytes, elements)
 
     let readILAttributesStored (cenv: cenv) (customAttrs: CustomAttributeHandleCollection) =
-        mkILCustomAttrsReader (fun _ ->
-            let customAttrsArray = Array.zeroCreate customAttrs.Count
-            let mutable i = 0
-            for customAttrHandle in customAttrs do
-                customAttrsArray.[i] <- readILAttribute cenv customAttrHandle
-                i <- i + 1
-            customAttrsArray
-        )
+        if customAttrs.Count = 0 then
+            emptyILCustomAttrsStored
+        else
+            mkILCustomAttrsReader (fun _ ->
+                let customAttrsArray = Array.zeroCreate customAttrs.Count
+                let mutable i = 0
+                for customAttrHandle in customAttrs do
+                    customAttrsArray.[i] <- readILAttribute cenv customAttrHandle
+                    i <- i + 1
+                customAttrsArray)
 
     let readILNestedExportedType (cenv: cenv) nested (exportedTyHandle: ExportedTypeHandle) =
         let mdReader = cenv.MetadataReader
 
         let exportedTy = mdReader.GetExportedType(exportedTyHandle)
 
-        let name = mdReader.GetTypeName(exportedTy.Namespace, exportedTy.Name)
+        let name = readTypeName cenv exportedTy.Namespace exportedTy.Name
 
         {
             Name = name
@@ -966,7 +989,7 @@ module rec ILBinaryReaderImpl =
 
         let exportedTy = mdReader.GetExportedType(exportedTyHandle)
 
-        let name = mdReader.GetTypeName(exportedTy.Namespace, exportedTy.Name)
+        let name = readTypeName cenv exportedTy.Namespace exportedTy.Name
 
         {
             ScopeRef = readILScopeRef cenv exportedTy.Implementation
@@ -1024,9 +1047,7 @@ module rec ILBinaryReaderImpl =
             else Some(bytes)
 
         let locale =
-            let str =
-                asmDef.Culture
-                |> mdReader.GetString
+            let str = readString cenv asmDef.Culture
             if str.Length = 0 then None
             else Some(str)
 
@@ -1043,7 +1064,7 @@ module rec ILBinaryReaderImpl =
                 | _ -> None
 
         {
-            Name = mdReader.GetString(asmDef.Name)
+            Name = readString cenv asmDef.Name
             AuxModuleHashAlgorithm = int asmDef.HashAlgorithm
             SecurityDeclsStored = readILSecurityDeclsStored cenv (asmDef.GetDeclarativeSecurityAttributes())
             PublicKey = publicKey
@@ -1181,9 +1202,14 @@ module rec ILBinaryReaderImpl =
     let readILParameter (cenv: cenv) (returnType: ILReturn) (parameters: ILParameter []) (paramHandle: ParameterHandle) : struct(ILParameter * int) =
         let mdReader = cenv.MetadataReader
 
-        let param = mdReader.GetParameter(paramHandle)
+        let param = mdReader.GetParameter paramHandle
 
-        let nameOpt = mdReader.TryGetString(param.Name)
+        let nameOpt = 
+            if param.Name.IsNil then ValueNone
+            else 
+                let str = readString cenv param.Name
+                if String.IsNullOrEmpty str then ValueNone
+                else ValueSome str
 
         let typ = 
             if param.SequenceNumber = 0 then returnType.Type
@@ -1203,7 +1229,7 @@ module rec ILBinaryReaderImpl =
 
         let ilParameter =
             {
-                Name = match nameOpt with | ValueNone -> None | ValueSome(name) -> Some(name)
+                Name = match nameOpt with | ValueNone -> None | ValueSome name -> Some name
                 Type = typ
                 Default = defaul
                 Marshal = marshal
@@ -1217,7 +1243,11 @@ module rec ILBinaryReaderImpl =
 
     let readILParameters (cenv: cenv) (si: MethodSignature<ILType>) (methDef: MethodDefinition) =
         let ret = ref (mkILReturn si.ReturnType)
-        let parameters = [| for paramType in si.ParameterTypes do yield mkILParamAnon paramType |]
+        let parameters = 
+            let parameters = Array.zeroCreate si.ParameterTypes.Length
+            for i = 0 to si.ParameterTypes.Length - 1 do
+                parameters.[i] <- mkILParamAnon si.ParameterTypes.[i]
+            parameters
         let paramHandles = methDef.GetParameters()
 
         if paramHandles.Count > 0 then
@@ -1693,7 +1723,7 @@ module rec ILBinaryReaderImpl =
                         let handle = MetadataTokens.Handle(ilReader.ReadInt32())
                         let value =
                             match handle.Kind with
-                            | HandleKind.String -> mdReader.GetString(StringHandle.op_Explicit(handle))
+                            | HandleKind.String -> readString cenv (StringHandle.op_Explicit(handle))
                             | HandleKind.UserString -> mdReader.GetUserString(UserStringHandle.op_Explicit(handle))
                             | _ -> failwithf "Invalid Handle Kind: %A" handle.Kind
                         f prefixes value
@@ -1766,8 +1796,6 @@ module rec ILBinaryReaderImpl =
         |> List.ofSeq
 
     let readMethodDebugInfo (cenv: cenv) (methDef: MethodDefinition) =
-        let mdReader = cenv.MetadataReader
-
         match cenv.PdbReaderProvider with
         | Some(readerProvider, _) ->
             let pdbReader = readerProvider.GetMetadataReader()
@@ -1778,7 +1806,7 @@ module rec ILBinaryReaderImpl =
                     else
                         let debugInfo = pdbReader.GetMethodDebugInformation handle
                         let doc = pdbReader.GetDocument debugInfo.Document
-                        if pdbReader.GetString doc.Name = mdReader.GetString methDef.Name then
+                        if pdbReader.GetString doc.Name = readString cenv methDef.Name then
                             Some(handle, mkMethodCodeLabelLookup debugInfo)
                         else
                             None)
@@ -1869,7 +1897,7 @@ module rec ILBinaryReaderImpl =
             let pInvokeMethod : PInvokeMethod =
                 {
                     Where = readILModuleRefFromModuleReference cenv (mdReader.GetModuleReference(import.Module))
-                    Name = mdReader.GetString(import.Name)
+                    Name = readString cenv import.Name
                     CallingConv = mkPInvokeCallingConvention importAttrs
                     CharEncoding = mkPInvokeCharEncoding importAttrs
                     NoMangle = int (importAttrs &&& MethodImportAttributes.ExactSpelling) <> 0
@@ -1886,33 +1914,39 @@ module rec ILBinaryReaderImpl =
             MethodBody.NotAvailable
 
     let readILMethodDef (cenv: cenv) (methDefHandle: MethodDefinitionHandle) : ILMethodDef =
-        let mdReader = cenv.MetadataReader
+        match cenv.TryGetCachedILMethodDef methDefHandle with
+        | ValueSome ilMethDef -> ilMethDef
+        | _ ->
+            let mdReader = cenv.MetadataReader
 
-        let methDef = mdReader.GetMethodDefinition(methDefHandle)
-        let typarOffset = readDeclaringTypeGenericCountFromMethodDefinition cenv methDef
-        let si = methDef.DecodeSignature(cenv.SignatureTypeProvider, typarOffset)
+            let methDef = mdReader.GetMethodDefinition(methDefHandle)
+            let typarOffset = readDeclaringTypeGenericCountFromMethodDefinition cenv methDef
+            let si = methDef.DecodeSignature(cenv.SignatureTypeProvider, typarOffset)
 
-        let name = mdReader.GetString(methDef.Name)
+            let name = readString cenv methDef.Name
 
-        let isEntryPoint =
-            let handle = MetadataTokens.MethodDefinitionHandle cenv.EntryPointToken
-            handle = methDefHandle
+            let isEntryPoint =
+                let handle = MetadataTokens.MethodDefinitionHandle cenv.EntryPointToken
+                handle = methDefHandle
 
-        let ret, parameters = readILParameters cenv si methDef
+            let ret, parameters = readILParameters cenv si methDef
 
-        ILMethodDef(
-            name = name,
-            attributes = methDef.Attributes,
-            implAttributes = methDef.ImplAttributes,
-            callingConv = mkILCallingConv si.Header,
-            parameters = parameters,
-            ret = ret,
-            body = mkMethBodyLazyAux (lazy readMethodBody cenv methDef),
-            isEntryPoint = isEntryPoint,
-            genericParams = readILGenericParameterDefs cenv (methDef.GetGenericParameters()),
-            securityDeclsStored = readILSecurityDeclsStored cenv (methDef.GetDeclarativeSecurityAttributes()),
-            customAttrsStored = readILAttributesStored cenv (methDef.GetCustomAttributes()),
-            metadataIndex = MetadataTokens.GetRowNumber(MethodDefinitionHandle.op_Implicit methDefHandle))
+            let ilMethDef =
+                ILMethodDef(
+                    name = name,
+                    attributes = methDef.Attributes,
+                    implAttributes = methDef.ImplAttributes,
+                    callingConv = mkILCallingConv si.Header,
+                    parameters = parameters,
+                    ret = ret,
+                    body = mkMethBodyLazyAux (lazy readMethodBody cenv methDef),
+                    isEntryPoint = isEntryPoint,
+                    genericParams = readILGenericParameterDefs cenv (methDef.GetGenericParameters()),
+                    securityDeclsStored = readILSecurityDeclsStored cenv (methDef.GetDeclarativeSecurityAttributes()),
+                    customAttrsStored = readILAttributesStored cenv (methDef.GetCustomAttributes()),
+                    metadataIndex = MetadataTokens.GetRowNumber(MethodDefinitionHandle.op_Implicit methDefHandle))
+            cenv.CacheILMethodDef(methDefHandle, ilMethDef)
+            ilMethDef
 
     let readILFieldDef (cenv: cenv) (fieldDefHandle: FieldDefinitionHandle) : ILFieldDef =
         let mdReader = cenv.MetadataReader
@@ -1947,7 +1981,7 @@ module rec ILBinaryReaderImpl =
                 None
 
         ILFieldDef(
-            name = mdReader.GetString(fieldDef.Name),
+            name = readString cenv fieldDef.Name,
             fieldType = fieldDef.DecodeSignature(cenv.SignatureTypeProvider, 0),
             attributes = fieldDef.Attributes,
             data = data,
@@ -1969,7 +2003,7 @@ module rec ILBinaryReaderImpl =
             let ilFieldRef =
                 {
                     DeclaringTypeRef = declaringILType.TypeRef
-                    Name = mdReader.GetString(fieldDef.Name)
+                    Name = readString cenv fieldDef.Name
                     Type = fieldDef.DecodeSignature(cenv.SignatureTypeProvider, 0)
                 }
 
@@ -1986,7 +2020,7 @@ module rec ILBinaryReaderImpl =
             let ilFieldRef =
                 {
                     DeclaringTypeRef = declaringType.TypeRef
-                    Name = mdReader.GetString(memberRef.Name)
+                    Name = readString cenv memberRef.Name
                     Type = memberRef.DecodeFieldSignature(cenv.SignatureTypeProvider, 0)
                 }
 
@@ -2053,7 +2087,7 @@ module rec ILBinaryReaderImpl =
                 | _ -> mkILThisConvention si.Header
 
         ILPropertyDef(
-            name = mdReader.GetString(propDef.Name),
+            name = readString cenv propDef.Name,
             attributes = propDef.Attributes,
             setMethod = setMethod,
             getMethod = getMethod,
@@ -2119,7 +2153,7 @@ module rec ILBinaryReaderImpl =
 
         ILEventDef(
             eventType = tryReadILType cenv eventDef.Type,
-            name = mdReader.GetString eventDef.Name,
+            name = readString cenv eventDef.Name,
             attributes = eventDef.Attributes,
             addMethod = readILMethodRef cenv (MethodDefinitionHandle.op_Implicit accessors.Adder),
             removeMethod = readILMethodRef cenv (MethodDefinitionHandle.op_Implicit accessors.Remover),
@@ -2141,7 +2175,7 @@ module rec ILBinaryReaderImpl =
 
         let typeDef = mdReader.GetTypeDefinition typeDefHandle
 
-        let name = mdReader.GetTypeName(typeDef.Namespace, typeDef.Name)
+        let name = readTypeName cenv typeDef.Namespace typeDef.Name
 
         let implements =
             typeDef.GetInterfaceImplementations()
@@ -2198,8 +2232,14 @@ module rec ILBinaryReaderImpl =
 
         let typeDef = mdReader.GetTypeDefinition typeDefHandle
 
-        let namespaceOpt = mdReader.TryGetString typeDef.Namespace
-        let name = mdReader.GetString typeDef.Name
+        let namespaceOpt = 
+            if typeDef.Namespace.IsNil then ValueNone
+            else
+                let str = readString cenv typeDef.Namespace
+                if String.IsNullOrEmpty str then ValueNone
+                else ValueSome str
+
+        let name = readString cenv typeDef.Name
 
         let namespaceSplit =
             match namespaceOpt with
@@ -2248,7 +2288,7 @@ module rec ILBinaryReaderImpl =
                     | ILScopeRef.Local -> failwith "Unexpected ILScopeRef.Local"
 
             {
-                Name = mdReader.GetString resource.Name
+                Name = readString cenv resource.Name
                 Location = location
                 Access = (if resource.Attributes &&& ManifestResourceAttributes.Public = ManifestResourceAttributes.Public then ILResourceAccess.Public else ILResourceAccess.Private)
                 CustomAttrsStored = resource.GetCustomAttributes() |> readILAttributesStored cenv
@@ -2301,7 +2341,7 @@ module rec ILBinaryReaderImpl =
 
         let mdReader = peReader.GetMetadataReader()
         let moduleDef = mdReader.GetModuleDefinition()
-        let ilModuleName = mdReader.GetString(moduleDef.Name)
+        let ilModuleName = mdReader.GetString moduleDef.Name
         let ilMetadataVersion = mdReader.MetadataVersion
     
         let cenv = 
