@@ -222,10 +222,13 @@ module rec ILBinaryReaderImpl =
             | x -> failwithf "Invalid DeclarativeSecurityAction: %i" x
 
     let mkILThisConvention (sigHeader: SignatureHeader) =
-        if sigHeader.HasExplicitThis then ILThisConvention.InstanceExplicit
-        elif sigHeader.IsInstance then ILThisConvention.Instance
-        else ILThisConvention.Static
-    
+        if sigHeader.Attributes &&& SignatureAttributes.Instance = SignatureAttributes.Instance then
+            ILThisConvention.Instance
+        elif sigHeader.Attributes &&& SignatureAttributes.ExplicitThis = SignatureAttributes.ExplicitThis then
+            ILThisConvention.InstanceExplicit
+        else
+            ILThisConvention.Static
+
     let mkILCallingConv (sigHeader: SignatureHeader) =
         let ilThisConvention = mkILThisConvention sigHeader
 
@@ -2034,18 +2037,27 @@ module rec ILBinaryReaderImpl =
                     else
                         accessors.Setter
                 else
-                    accessors.Setter
+                    accessors.Getter
             let methDef = mdReader.GetMethodDefinition methDefHandle
             readDeclaringTypeGenericCountFromMethodDefinition cenv methDef
         let si = propDef.DecodeSignature(cenv.SignatureTypeProvider, typarOffset)
         let args = si.ParameterTypes |> List.ofSeq
+
+        (* NOTE: the "ThisConv" value on the property is not reliable: better to look on the getter/setter *)
+        let ilThisConv =
+            match getMethod with
+            | Some mref -> mref.CallingConv.ThisConv
+            | _ ->
+                match setMethod with
+                | Some mref -> mref.CallingConv.ThisConv
+                | _ -> mkILThisConvention si.Header
 
         ILPropertyDef(
             name = mdReader.GetString(propDef.Name),
             attributes = propDef.Attributes,
             setMethod = setMethod,
             getMethod = getMethod,
-            callingConv = mkILThisConvention si.Header,
+            callingConv = ilThisConv,
             propertyType = si.ReturnType,
             init = init,
             args = args,
