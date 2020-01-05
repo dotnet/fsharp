@@ -1657,7 +1657,24 @@ module rec ILBinaryReaderImpl =
                 constrained = None
             }
     
+        let offsets = Dictionary<int, ILCodeLabel>()
+        let recordOffset rawOffset =
+            match offsets.TryGetValue rawOffset with
+            | true, label -> label
+            | _ ->
+                let label = generateCodeLabel()
+                offsets.[rawOffset] <- label
+                label
+
+        let labels = Dictionary<ILCodeLabel, int>()
+        let recordLabel rawOffset ilOffset =
+            let label = recordOffset rawOffset
+            labels.[label] <- ilOffset
+
         while ilReader.RemainingBytes > 0 do
+
+            recordLabel ilReader.Offset instrs.Count
+
             match readILOperandDecoder &ilReader with
             | PrefixInlineNone(f) -> f prefixes
             | PrefixShortInlineI(f) -> f prefixes (ilReader.ReadUInt16())
@@ -1706,12 +1723,20 @@ module rec ILBinaryReaderImpl =
                             | xs -> Some(xs)
                         f prefixes (ilMethSpec.MethodRef.CallingSignature, ilVarArgs)
 
-                    | ShortInlineBrTarget(f) -> f prefixes (ilReader.ReadSByte())
-                    | InlineBrTarget(f) -> f prefixes (ilReader.ReadInt32())
+                    | ShortInlineBrTarget(f) -> 
+                        let value = ilReader.ReadSByte()
+                        recordLabel ((int value) + ilReader.Offset) instrs.Count
+                        f prefixes value
+                    | InlineBrTarget(f) -> 
+                        let value = ilReader.ReadInt32()
+                        recordLabel (value + ilReader.Offset) instrs.Count
+                        f prefixes value
 
                     | InlineSwitch(f) ->
                         let deltas = Array.zeroCreate (ilReader.ReadInt32())
                         for i = 0 to deltas.Length - 1 do deltas.[i] <- ilReader.ReadInt32()
+                        let offset = ilReader.Offset
+                        deltas |> Array.iteri (fun i delta -> recordLabel (delta + offset) (i + instrs.Count))
                         f prefixes (deltas |> List.ofArray)
 
                     | InlineType(f) ->
@@ -1753,6 +1778,8 @@ module rec ILBinaryReaderImpl =
 
                 instrs.Add(instr)
 
+                recordLabel ilReader.Offset instrs.Count
+
                 // Reset prefixes
                 prefixes.al <- Aligned
                 prefixes.tl <- Normalcall
@@ -1760,7 +1787,7 @@ module rec ILBinaryReaderImpl =
                 prefixes.ro <- NormalAddress
                 prefixes.constrained <- None
 
-        instrs.ToArray()
+        labels, instrs.ToArray()
 
     // --------------------------------------------------------------------
 
@@ -1768,14 +1795,6 @@ module rec ILBinaryReaderImpl =
         let si = mdReader.GetStandaloneSignature localSignature
         si.DecodeLocalSignature(cenv.LocalSignatureTypeProvider, 0)
         |> List.ofSeq
-
-    let mkMethodCodeLabelLookup (debugInfo: MethodDebugInformation) =
-        let lookup = Dictionary()
-
-        for seqPoint in debugInfo.GetSequencePoints() do
-            lookup.Add(generateCodeLabel(), seqPoint.Offset)
-
-        lookup
 
     let readILLocalDebugInfo (pdbReader: MetadataReader) (debugInfoHandle: MethodDebugInformationHandle) =
         let localScopes = pdbReader.GetLocalScopes debugInfoHandle |> Seq.map pdbReader.GetLocalScope
@@ -1807,17 +1826,17 @@ module rec ILBinaryReaderImpl =
                         let debugInfo = pdbReader.GetMethodDebugInformation handle
                         let doc = pdbReader.GetDocument debugInfo.Document
                         if pdbReader.GetString doc.Name = readString cenv methDef.Name then
-                            Some(handle, mkMethodCodeLabelLookup debugInfo)
+                            Some handle
                         else
                             None)
 
             match debugInfoOpt with
-            | Some(debugInfoHandle, labels) when not debugInfoHandle.IsNil ->
-                (labels, readILLocalDebugInfo pdbReader debugInfoHandle)
+            | Some debugInfoHandle when not debugInfoHandle.IsNil ->
+                readILLocalDebugInfo pdbReader debugInfoHandle
             | _ ->
-                (Dictionary(), List.empty)
+                List.empty
         | _ ->
-            (Dictionary(), List.empty)
+            List.empty
 
     let readILCode (cenv: cenv) (methDef: MethodDefinition) (methBodyBlock: MethodBodyBlock) : ILCode =
         let exceptions =
@@ -1847,10 +1866,9 @@ module rec ILBinaryReaderImpl =
             )
             |> List.ofSeq
 
-        let labels, locals = readMethodDebugInfo cenv methDef
-
+        let locals = readMethodDebugInfo cenv methDef
         let mutable ilReader = methBodyBlock.GetILReader()
-        let instrs = readILInstrs cenv &ilReader
+        let labels, instrs = readILInstrs cenv &ilReader
 
         {
             Labels = labels
