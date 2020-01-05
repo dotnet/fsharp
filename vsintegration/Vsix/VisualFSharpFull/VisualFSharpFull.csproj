@@ -21,6 +21,7 @@
       <Replacement1>$(FSProductVersion)</Replacement1>
       <Pattern2>{{FSLanguageVersion}}</Pattern2>
       <Replacement2>$(FSLanguageVersion)</Replacement2>
+      <IncludeInVSix>true</IncludeInVSix>
     </NoneSubstituteText>
 
     <Content Include="$(FSharpSourcesRoot)\..\License.txt">

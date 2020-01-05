@@ -21,16 +21,19 @@
 
       <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' != ''">%(NoneSubstituteText.CopyToOutputDirectory)</_CopyToOutputDirectory>
       <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' == ''">Never</_CopyToOutputDirectory>
+
+      <_IncludeInVsix>false</_IncludeInVsix>
+      <_IncludeInVsix Condition="'%(NoneSubstituteText.IncludeInVsix)' == 'true'">true</_IncludeInVsix>
     </PropertyGroup>
 
     <MakeDir Directories="$(IntermediateOutputPath)"
              Condition="!Exists('$(IntermediateOutputPath)')" />
     <WriteLinesToFile File="$(__TargetFilePath)" Lines="$(_ReplacementText)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
-    <!-- Make sure it will get cleaned  -->
     <ItemGroup>
       <None Include="$(__TargetFilePath)" CopyToOutputDirectory="$(_CopyToOutputDirectory)" />
       <FileWrites Include="$(__TargetFilePath)" Condition="'$(__TargetFileName)' != 'App.config'" />
+      <Content Include="$(__TargetFilePath)" CopyToOutputDirectory="Always" IncludeInVsix="true" />
     </ItemGroup>
   </Target>
 
