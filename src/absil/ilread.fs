@@ -1088,7 +1088,7 @@ module rec ILBinaryReaderImpl =
                 let memBlock = peReader.GetSectionData(s.VirtualAddress)
                 // REVIEW: We should not read the entire raw bytes.
                 let bytes = memBlock.GetContent().ToArray()
-                ILNativeResource.Out(bytes)
+                ILNativeResource.Out(Support.unlinkResource s.VirtualAddress bytes)
                 |> Some
             else
                 None
@@ -1656,23 +1656,12 @@ module rec ILBinaryReaderImpl =
                 ro = NormalAddress
                 constrained = None
             }
-    
-        let offsets = Dictionary<int, ILCodeLabel>()
-        let recordOffset rawOffset =
-            match offsets.TryGetValue rawOffset with
-            | true, label -> label
-            | _ ->
-                let label = generateCodeLabel()
-                offsets.[rawOffset] <- label
-                label
 
         let labels = Dictionary<ILCodeLabel, int>()
         let recordLabel rawOffset ilOffset =
-            let label = recordOffset rawOffset
-            labels.[label] <- ilOffset
+            labels.[rawOffset] <- ilOffset
 
         while ilReader.RemainingBytes > 0 do
-
             recordLabel ilReader.Offset instrs.Count
 
             match readILOperandDecoder &ilReader with
@@ -1725,18 +1714,17 @@ module rec ILBinaryReaderImpl =
 
                     | ShortInlineBrTarget(f) -> 
                         let value = ilReader.ReadSByte()
-                        recordLabel ((int value) + ilReader.Offset) instrs.Count
+                        recordLabel (int value) instrs.Count
                         f prefixes value
                     | InlineBrTarget(f) -> 
                         let value = ilReader.ReadInt32()
-                        recordLabel (value + ilReader.Offset) instrs.Count
+                        recordLabel value instrs.Count
                         f prefixes value
 
                     | InlineSwitch(f) ->
                         let deltas = Array.zeroCreate (ilReader.ReadInt32())
                         for i = 0 to deltas.Length - 1 do deltas.[i] <- ilReader.ReadInt32()
-                        let offset = ilReader.Offset
-                        deltas |> Array.iteri (fun i delta -> recordLabel (delta + offset) (i + instrs.Count))
+                        deltas |> Array.iter (fun delta -> recordLabel delta instrs.Count)
                         f prefixes (deltas |> List.ofArray)
 
                     | InlineType(f) ->
