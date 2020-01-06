@@ -834,15 +834,17 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let memberRef = mdReader.GetMemberReference(memberRefHandle)
-        let si = memberRef.DecodeMethodSignature(cenv.SignatureTypeProvider, 0)
+        let enclILTy = readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent
+        let typarOffset = enclILTy.GenericArgs.Length
+        let si = memberRef.DecodeMethodSignature(cenv.SignatureTypeProvider, typarOffset)
 
         let name = readString cenv memberRef.Name
-        let enclILTy = readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) memberRef.Parent
         let ilCallingConv = mkILCallingConv si.Header
+        let genericArity = si.GenericParameterCount
+        let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilCallingConv, name, genericArity, si.ParameterTypes |> List.ofSeq, si.ReturnType)
+        let ilGenericArgs = mkILGenericArgsByCount typarOffset genericArity 
 
-        let ilMethodRef = ILMethodRef.Create(enclILTy.TypeRef, ilCallingConv, name, 0, si.ParameterTypes |> List.ofSeq, si.ReturnType)
-
-        ILMethodSpec.Create(enclILTy, ilMethodRef, [])
+        ILMethodSpec.Create(enclILTy, ilMethodRef, ilGenericArgs)
 
     let readILMethodSpecFromMemberReference (cenv: cenv) (memberRefHandle: MemberReferenceHandle) =
         match cenv.TryGetCachedILMethodSpec(memberRefHandle) with
@@ -902,18 +904,26 @@ module rec ILBinaryReaderImpl =
             cenv.CacheILMethodSpec(methDefHandle, ilMethSpec)
             ilMethSpec
 
-    let rec readILMethodSpec (cenv: cenv) (handle: EntityHandle) : ILMethodSpec =
+    let readILMethodSpecFromMethodSpecification (cenv: cenv) (methSpecHandle: MethodSpecificationHandle) =
         let mdReader = cenv.MetadataReader
+
+        let methSpec = mdReader.GetMethodSpecification methSpecHandle
+        let origILMethSpec = readILMethodSpec cenv methSpec.Method
+
+        let ilGenericArgs =
+            methSpec.DecodeSignature(cenv.SignatureTypeProvider, origILMethSpec.DeclaringType.GenericArgs.Length)
+            |> List.ofSeq
+
+        ILMethodSpec.Create(origILMethSpec.DeclaringType, origILMethSpec.MethodRef, ilGenericArgs)
+
+    let rec readILMethodSpec (cenv: cenv) (handle: EntityHandle) : ILMethodSpec =
         match handle.Kind with
         | HandleKind.MemberReference ->
-            readILMethodSpecFromMemberReference cenv (MemberReferenceHandle.op_Explicit(handle))
-
+            readILMethodSpecFromMemberReference cenv (MemberReferenceHandle.op_Explicit handle)
         | HandleKind.MethodDefinition ->
-            readILMethodSpecFromMethodDefinition cenv (MethodDefinitionHandle.op_Explicit(handle))
-
+            readILMethodSpecFromMethodDefinition cenv (MethodDefinitionHandle.op_Explicit handle)
         | HandleKind.MethodSpecification ->
-            let methodSpec = mdReader.GetMethodSpecification(MethodSpecificationHandle.op_Explicit(handle))
-            readILMethodSpec cenv methodSpec.Method
+            readILMethodSpecFromMethodSpecification cenv (MethodSpecificationHandle.op_Explicit handle)
 
         | _ ->
             failwithf "Invalid Entity Handle Kind: %A" handle.Kind
