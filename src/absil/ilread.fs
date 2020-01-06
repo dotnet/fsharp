@@ -1712,11 +1712,7 @@ module rec ILBinaryReaderImpl =
                             | _ -> failwith "Bad method on array type"
                         | _ ->
                             let ilMethSpec = readILMethodSpec cenv handle
-                            let ilVarArgs =
-                                match ilMethSpec.GenericArgs with
-                                | [] -> None
-                                | xs -> Some(xs)
-                            f prefixes (ilMethSpec, ilVarArgs)
+                            f prefixes (ilMethSpec, None)
 
                     | InlineSig(f) ->
                         let handle = MetadataTokens.EntityHandle(ilReader.ReadInt32())
