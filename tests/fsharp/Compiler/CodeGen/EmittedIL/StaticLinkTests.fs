@@ -35,7 +35,7 @@ printfn "%A" y
                 |> List.iter (fun dep -> try File.Delete dep with | _ -> ())))
 
     [<Test>]
-    let ``Simple library should fail to execute if dependency was not found and is not statically linked``() =
+    let ``Simple exe should fail to execute if dependency was not found and is not statically linked``() =
         let module1 =
             let source =
                 """
@@ -58,6 +58,27 @@ printfn "%A" y
                 beforeExecute=(fun _ deps ->
                     deps
                     |> List.iter (fun dep -> try File.Delete dep with | _ -> ())))) |> ignore
+
+    [<Test>]
+    let ``Simple exe should execute if dependency was found and is not statically linked``() =
+        let module1 =
+            let source =
+                """
+module Module1
+
+type C() = class end
+                """
+            Compilation.Create(source, Fsx, Library, [||], [])
+
+        let module2 =
+            let source =
+                """
+let y = Module1.C()
+printfn "%A" y
+                """
+            Compilation.Create(source, Fsx, Exe, [||], [CompilationReference(module1, false)])
+
+        CompilerAssert.Execute module2
 
     [<Test>]
     let ``Static link quotes in multiple modules``() =
