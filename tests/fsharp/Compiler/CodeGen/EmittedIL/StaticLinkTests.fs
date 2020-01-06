@@ -27,7 +27,7 @@ type C() = class end
 let y = Module1.C()
 printfn "%A" y
                 """
-            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference(module1, true)])
+            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference.CreateFSharp(module1, staticLink=true)])
 
         CompilerAssert.Execute(module2, 
             beforeExecute=(fun _ deps ->
@@ -51,7 +51,7 @@ type C() = class end
 let y = Module1.C()
 printfn "%A" y
                 """
-            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference(module1, false)])
+            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference.CreateFSharp module1])
 
         Assert.Throws<TargetInvocationException>(fun _ ->
             CompilerAssert.Execute(module2, 
@@ -76,7 +76,7 @@ type C() = class end
 let y = Module1.C()
 printfn "%A" y
                 """
-            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference(module1, false)])
+            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference.CreateFSharp module1])
 
         CompilerAssert.Execute module2
 
@@ -149,7 +149,7 @@ if not test3 then
 if test1 && test2 && test3 then ()
 else failwith "Test Failed"
                 """
-            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference(module1, true)])
+            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference.CreateFSharp(module1, staticLink=true)])
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)
 
@@ -222,6 +222,6 @@ if not test3 then
 if test1 && test2 && test3 then ()
 else failwith "Test Failed"
                 """
-            Compilation.Create(source, Fsx, Exe, [|"--optimize+"|], [CompilationReference(module1, false)])
+            Compilation.Create(source, Fsx, Exe, [|"--optimize+"|], [CompilationReference.CreateFSharp(module1, staticLink=true)])
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)

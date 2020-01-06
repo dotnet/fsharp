@@ -52,8 +52,11 @@ type CompileOutput =
     | Library
     | Exe
 
-type CompilationReference =
-    | CompilationReference of Compilation * staticLink: bool
+type CompilationReference = private CompilationReference of Compilation * staticLink: bool with
+
+    static member CreateFSharp(cmpl: Compilation, ?staticLink) =
+        let staticLink = defaultArg staticLink false
+        CompilationReference(cmpl, staticLink)
 
 and Compilation = private Compilation of string * SourceKind * CompileOutput * options: string[] * CompilationReference list with
 
