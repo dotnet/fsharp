@@ -2717,7 +2717,9 @@ let isILObjectTy ty = isILBoxedPrimaryAssemblyTy ty tname_Object
 
 let isILStringTy ty = isILBoxedPrimaryAssemblyTy ty tname_String
 
-let isILTypedReferenceTy ty = isILValuePrimaryAssemblyTy ty "System.TypedReference"
+let isILTypeTy ty = isILBoxedPrimaryAssemblyTy ty tname_Type
+
+let isILTypedReferenceTy ty = isILValuePrimaryAssemblyTy ty tname_TypedReference
 
 let isILSByteTy ty = isILValuePrimaryAssemblyTy ty tname_SByte
 
@@ -3779,7 +3781,7 @@ type ILTypeSigParser (tstring : string) =
     //   Since we're only reading valid IL, we assume that the signature is properly formed
     //   For type parameters, if the type is non-local, it will be wrapped in brackets ([])
     //   Still needs testing with jagged arrays and byref parameters
-    member private x.ParseType() =
+    member x.ParseType() =
 
         // Does the type name start with a leading '['? If so, ignore it
         // (if the specialization type is in another module, it will be wrapped in bracket)
@@ -3878,6 +3880,11 @@ type ILTypeSigParser (tstring : string) =
         let ilty = x.ParseType()
         ILAttribElem.Type (Some ilty)
 
+type ILType with
+
+    static member Parse assemblyQualifiedName = 
+        (ILTypeSigParser assemblyQualifiedName).ParseType()
+
 let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) =
     match ca with
     | ILAttribute.Decoded (_, fixedArgs, namedArgs) -> fixedArgs, namedArgs
@@ -3955,10 +3962,11 @@ let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) =
             parseElems (v :: acc) (n-1) sigptr
           let elems, sigptr = parseElems [] n sigptr
           ILAttribElem.Array (elemTy, elems), sigptr
+      | ILType.Boxed _
       | ILType.Value _ -> (* assume it is an enumeration *)
           let n, sigptr = sigptr_get_i32 bytes sigptr
           ILAttribElem.Int32 n, sigptr
-      | _ -> failwith "decodeILAttribData: attribute data involves an enum or System.Type value"
+      | x -> failwithf "decodeILAttribData: attribute data involves an enum or System.Type value - boxity: %A type: %A" x.Boxity x
     let rec parseFixed argtys sigptr =
       match argtys with
         [] -> [], sigptr
