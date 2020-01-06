@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+[<AutoOpen>]
+module FSharp.Compiler.UnitTests.CompilerAssert
 
 open System
 open System.Diagnostics
@@ -54,8 +55,10 @@ type CompileOutput =
 type CompilationReference =
     | CompilationReference of Compilation * staticLink: bool
 
-and Compilation =
-    | Source of string * SourceKind * CompileOutput * options: string[] * CompilationReference list
+and Compilation = private Compilation of string * SourceKind * CompileOutput * options: string[] * CompilationReference list with
+
+    static member Create(source, sourceKind, output, options, cmplRefs) =
+        Compilation(source, sourceKind, output, options, cmplRefs)
 
 [<Sealed;AbstractClass>]
 type CompilerAssert private () =
@@ -242,7 +245,7 @@ let main argv = 0"""
     static let rec compileCompilationAux (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpErrorInfo[] * string) * string list =
         let compilationRefs, deps =
             match cmpl with
-            | Source(_, _, _, _, cmpls) ->
+            | Compilation(_, _, _, _, cmpls) ->
                 let compiledRefs =               
                     cmpls
                     |> List.map (fun cmpl ->
@@ -272,25 +275,25 @@ let main argv = 0"""
 
         let isScript =
             match cmpl with
-            | Source(_, kind, _, _, _) ->
+            | Compilation(_, kind, _, _, _) ->
                 match kind with
                 | Fs -> false
                 | Fsx -> true
 
         let isExe =
             match cmpl with
-            | Source(_, _, output, _, _) ->
+            | Compilation(_, _, output, _, _) ->
                 match output with
                 | Library -> false
                 | Exe -> true
 
         let source =
             match cmpl with
-            | Source(source, _, _, _, _) -> source
+            | Compilation(source, _, _, _, _) -> source
 
         let options = 
             match cmpl with
-            | Source(_, _, _, options, _) -> options
+            | Compilation(_, _, _, options, _) -> options
                     
         let disposal, res = compileDisposable isScript isExe (Array.append options compilationRefs) source
         disposals.Add disposal

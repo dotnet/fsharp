@@ -19,7 +19,7 @@ module Module1
 
 type C() = class end
                 """
-            Source(source, Fsx, Library, [||], [])
+            Compilation.Create(source, Fsx, Library, [||], [])
 
         let module2 =
             let source =
@@ -27,9 +27,9 @@ type C() = class end
 let y = Module1.C()
 printfn "%A" y
                 """
-            Source(source, Fsx, Exe, [||], [CompilationReference(module1, true)])
+            Compilation.Create(source, Fsx, Exe, [||], [CompilationReference(module1, true)])
 
-        CompilerAssert.Execute(module2, ignoreWarnings=true, 
+        CompilerAssert.Execute(module2, 
             beforeExecute=(fun _ deps ->
                 deps
                 |> List.iter (fun dep -> try File.Delete dep with | _ -> ())))
@@ -43,7 +43,7 @@ module Module1
 
 type C() = class end
                 """
-            Source(source, Fsx, Library, [||], [])
+            Compilation.Create(source, Fsx, Library, [||], [])
 
         let module2 =
             let source =
@@ -51,10 +51,10 @@ type C() = class end
 let y = Module1.C()
 printfn "%A" y
                 """
-            Source(source, Fsx, Exe, [||], [CompilationReference(module1, false)])
+            Compilation.Create(source, Fsx, Exe, [||], [CompilationReference(module1, false)])
 
         Assert.Throws<TargetInvocationException>(fun _ ->
-            CompilerAssert.Execute(module2, ignoreWarnings=true, 
+            CompilerAssert.Execute(module2, 
                 beforeExecute=(fun _ deps ->
                     deps
                     |> List.iter (fun dep -> try File.Delete dep with | _ -> ())))) |> ignore
@@ -83,7 +83,7 @@ type C() =
   [<ReflectedDefinition>]
   static member F x = (C(), System.DateTime.Now)
                 """
-            Source(source, Fsx, Library, [||], [])
+            Compilation.Create(source, Fsx, Library, [||], [])
 
         let module2 =
             let source =
@@ -128,7 +128,7 @@ if not test3 then
 if test1 && test2 && test3 then ()
 else failwith "Test Failed"
                 """
-            Source(source, Fsx, Exe, [||], [CompilationReference(module1, true)])
+            Compilation.Create(source, Fsx, Exe, [||], [CompilationReference(module1, true)])
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)
 
@@ -156,7 +156,7 @@ type C() =
   [<ReflectedDefinition>]
   static member F x = (C(), System.DateTime.Now)
                 """
-            Source(source, Fsx, Library, [|"--optimize+"|], [])
+            Compilation.Create(source, Fsx, Library, [|"--optimize+"|], [])
 
         let module2 =
             let source =
@@ -201,6 +201,6 @@ if not test3 then
 if test1 && test2 && test3 then ()
 else failwith "Test Failed"
                 """
-            Source(source, Fsx, Exe, [|"--optimize+"|], [CompilationReference(module1, false)])
+            Compilation.Create(source, Fsx, Exe, [|"--optimize+"|], [CompilationReference(module1, false)])
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)
