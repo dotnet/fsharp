@@ -19,7 +19,7 @@ module Module1
 
 type C() = class end
                 """
-            Compilation.Create(source, Fsx, Library, [||], [])
+            Compilation.Create(source, Fsx, Library)
 
         let module2 =
             let source =
@@ -27,7 +27,7 @@ type C() = class end
 let y = Module1.C()
 printfn "%A" y
                 """
-            Compilation.Create(source, Fsx, Exe, [||], [CompilationReference(module1, true)])
+            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference(module1, true)])
 
         CompilerAssert.Execute(module2, 
             beforeExecute=(fun _ deps ->
@@ -43,7 +43,7 @@ module Module1
 
 type C() = class end
                 """
-            Compilation.Create(source, Fsx, Library, [||], [])
+            Compilation.Create(source, Fsx, Library)
 
         let module2 =
             let source =
@@ -51,7 +51,7 @@ type C() = class end
 let y = Module1.C()
 printfn "%A" y
                 """
-            Compilation.Create(source, Fsx, Exe, [||], [CompilationReference(module1, false)])
+            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference(module1, false)])
 
         Assert.Throws<TargetInvocationException>(fun _ ->
             CompilerAssert.Execute(module2, 
@@ -68,7 +68,7 @@ module Module1
 
 type C() = class end
                 """
-            Compilation.Create(source, Fsx, Library, [||], [])
+            Compilation.Create(source, Fsx, Library)
 
         let module2 =
             let source =
@@ -76,7 +76,7 @@ type C() = class end
 let y = Module1.C()
 printfn "%A" y
                 """
-            Compilation.Create(source, Fsx, Exe, [||], [CompilationReference(module1, false)])
+            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference(module1, false)])
 
         CompilerAssert.Execute module2
 
@@ -104,7 +104,7 @@ type C() =
   [<ReflectedDefinition>]
   static member F x = (C(), System.DateTime.Now)
                 """
-            Compilation.Create(source, Fsx, Library, [||], [])
+            Compilation.Create(source, Fsx, Library)
 
         let module2 =
             let source =
@@ -149,7 +149,7 @@ if not test3 then
 if test1 && test2 && test3 then ()
 else failwith "Test Failed"
                 """
-            Compilation.Create(source, Fsx, Exe, [||], [CompilationReference(module1, true)])
+            Compilation.Create(source, Fsx, Exe, cmplRefs=[CompilationReference(module1, true)])
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)
 
@@ -177,7 +177,7 @@ type C() =
   [<ReflectedDefinition>]
   static member F x = (C(), System.DateTime.Now)
                 """
-            Compilation.Create(source, Fsx, Library, [|"--optimize+"|], [])
+            Compilation.Create(source, Fsx, Library, [|"--optimize+"|])
 
         let module2 =
             let source =

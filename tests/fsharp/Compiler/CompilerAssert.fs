@@ -57,7 +57,9 @@ type CompilationReference =
 
 and Compilation = private Compilation of string * SourceKind * CompileOutput * options: string[] * CompilationReference list with
 
-    static member Create(source, sourceKind, output, options, cmplRefs) =
+    static member Create(source, sourceKind, output, ?options, ?cmplRefs) =
+        let options = defaultArg options [||]
+        let cmplRefs = defaultArg cmplRefs []
         Compilation(source, sourceKind, output, options, cmplRefs)
 
 [<Sealed;AbstractClass>]
