@@ -33,7 +33,7 @@ let resolveCurrentMethodSpecScope obj =
 
 
 let findSystemRuntimeAssemblyRef() = 
-  match (!parseILGlobals).primaryAssemblyScopeRef with
+  match parseILGlobals.primaryAssemblyScopeRef with
   | ILScopeRef.Assembly aref -> aref
   | _ -> pfailwith "systemRuntimeScopeRef not set to valid assembly reference in parseILGlobals"
 
@@ -235,9 +235,9 @@ callKind:
  *---------------------------------------------*/
 
 typ: STRING
-       { noMethodSpecScope (!parseILGlobals).typ_String } 
+       { noMethodSpecScope parseILGlobals.typ_String } 
    | OBJECT
-       { noMethodSpecScope (!parseILGlobals).typ_Object } 
+       { noMethodSpecScope parseILGlobals.typ_Object } 
    | CLASS typeNameInst
        { resolveMethodSpecScopeThen $2 (fun tspec -> 
           noMethodSpecScope (mkILBoxedType tspec)) } 
@@ -256,45 +256,45 @@ typ: STRING
    | typ STAR
        { resolveMethodSpecScopeThen $1 (fun ty -> noMethodSpecScope (ILType.Ptr ty)) }
    | CHAR
-       { noMethodSpecScope (!parseILGlobals).typ_Char }
+       { noMethodSpecScope parseILGlobals.typ_Char }
    | VOID
        { noMethodSpecScope ILType.Void }
    | BOOL
-       { noMethodSpecScope (!parseILGlobals).typ_Bool }
+       { noMethodSpecScope parseILGlobals.typ_Bool }
    | INT8
-       { noMethodSpecScope (!parseILGlobals).typ_SByte }
+       { noMethodSpecScope parseILGlobals.typ_SByte }
    | INT16              
-       { noMethodSpecScope (!parseILGlobals).typ_Int16 }
+       { noMethodSpecScope parseILGlobals.typ_Int16 }
    | INT32              
-       { noMethodSpecScope (!parseILGlobals).typ_Int32 }
+       { noMethodSpecScope parseILGlobals.typ_Int32 }
    | INT64              
-       { noMethodSpecScope (!parseILGlobals).typ_Int64 }
+       { noMethodSpecScope parseILGlobals.typ_Int64 }
    | FLOAT32            
-       { noMethodSpecScope (!parseILGlobals).typ_Single }
+       { noMethodSpecScope parseILGlobals.typ_Single }
    | FLOAT64            
-       { noMethodSpecScope (!parseILGlobals).typ_Double }
+       { noMethodSpecScope parseILGlobals.typ_Double }
    | UNSIGNED INT8      
-       { noMethodSpecScope (!parseILGlobals).typ_Byte }
+       { noMethodSpecScope parseILGlobals.typ_Byte }
    | UNSIGNED INT16     
-       { noMethodSpecScope (!parseILGlobals).typ_UInt16 }
+       { noMethodSpecScope parseILGlobals.typ_UInt16 }
    | UNSIGNED INT32     
-       { noMethodSpecScope (!parseILGlobals).typ_UInt32 }
+       { noMethodSpecScope parseILGlobals.typ_UInt32 }
    | UNSIGNED INT64     
-       { noMethodSpecScope (!parseILGlobals).typ_UInt64 }
+       { noMethodSpecScope parseILGlobals.typ_UInt64 }
    | UINT8      
-       { noMethodSpecScope (!parseILGlobals).typ_Byte }
+       { noMethodSpecScope parseILGlobals.typ_Byte }
    | UINT16     
-       { noMethodSpecScope (!parseILGlobals).typ_UInt16 }
+       { noMethodSpecScope parseILGlobals.typ_UInt16 }
    | UINT32     
-       { noMethodSpecScope (!parseILGlobals).typ_UInt32 }
+       { noMethodSpecScope parseILGlobals.typ_UInt32 }
    | UINT64     
-       { noMethodSpecScope (!parseILGlobals).typ_UInt64 }
+       { noMethodSpecScope parseILGlobals.typ_UInt64 }
    | NATIVE INT         
-       { noMethodSpecScope (!parseILGlobals).typ_IntPtr }
+       { noMethodSpecScope parseILGlobals.typ_IntPtr }
    | NATIVE UNSIGNED INT  
-       { noMethodSpecScope (!parseILGlobals).typ_UIntPtr }
+       { noMethodSpecScope parseILGlobals.typ_UIntPtr }
    | NATIVE UINT  
-       { noMethodSpecScope (!parseILGlobals).typ_UIntPtr }
+       { noMethodSpecScope parseILGlobals.typ_UIntPtr }
 
    | BANG int32
        { noMethodSpecScope (ILType.TypeVar (uint16 ( $2)))  }

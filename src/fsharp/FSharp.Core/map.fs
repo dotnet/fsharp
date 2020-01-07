@@ -374,8 +374,8 @@ module MapTree =
             mkFromEnumerator comparer empty ie 
 
     let copyToArray m (arr: _[]) i =
-        let j = ref i 
-        m |> iter (fun x y -> arr.[!j] <- KeyValuePair(x, y); j := !j + 1)
+        let mutable j = i 
+        m |> iter (fun x y -> arr.[j] <- KeyValuePair(x, y); j <- j + 1)
 
     /// Imperative left-to-right iterators.
     [<NoEquality; NoComparison>]
