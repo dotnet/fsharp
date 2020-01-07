@@ -5,12 +5,12 @@ open NUnit.Framework
 open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
-module ``Validate ExperimentalAttribute and LanguagVersion `` =
+module ``Validate ExperimentalAttribute and LanguageVersion`` =
 
     let experimentalSource = """
 module TestModule =
 
-    [<ExperimentalAttribute("Experimental attribute message")>]
+    [<ExperimentalAttribute("Preview library feature, requires '--langversion:preview'")>]
     let getString = "A string"
 
     if getString = "A string" then ()
@@ -29,4 +29,4 @@ module TestModule =
             FSharpErrorSeverity.Warning
             57
             (7, 8, 7, 17)
-            "Experimental attribute message. This warning can be disabled using '--nowarn:57' or '#nowarn \"57\"'."
+            "Preview library feature, requires '--langversion:preview'. This warning can be disabled using '--nowarn:57' or '#nowarn \"57\"'."

@@ -183,9 +183,9 @@ Microsoft.FSharp.Collections.FSharpList`1[T]: Boolean get_IsEmpty()
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 CompareTo(Microsoft.FSharp.Collections.FSharpList`1[T])
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 CompareTo(System.Object)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 CompareTo(System.Object, System.Collections.IComparer)
-Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 GetReverseIndex(Int32, Int32)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 GetHashCode()
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 GetHashCode(System.Collections.IEqualityComparer)
+Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 GetReverseIndex(Int32, Int32)
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 Length
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 Tag
 Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 get_Length()
@@ -2746,7 +2746,13 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String Name
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String ToString()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
-Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()"
+Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
+"
+#if DEBUG
+        let expected =
+            expected +
+            @"Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])"
+#endif
 #if CROSS_PLATFORM_COMPILER
         ()
         // disabled because of slight order and GetMember discrepencies

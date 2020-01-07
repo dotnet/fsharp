@@ -4,6 +4,7 @@
 /// on items from name resolution
 module internal FSharp.Compiler.AttributeChecking
 
+open System
 open System.Collections.Generic
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -266,13 +267,13 @@ let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
 
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
-let langVersionPrefix = "[--langversion:"
+let langVersionPrefix = "--langversion:preview"
 let CheckFSharpAttributes (g:TcGlobals) attribs m =
-    let isExperimentalAttributeEnabled =
+    let isExperimentalAttributeDisabled (s:string) =
         if g.compilingFslib then
-            false
+            true
         else
-            g.langVersion.IsPreviewEnabled
+            g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
 
     if isNil attribs then CompleteD
     else
@@ -303,9 +304,12 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
         ) ++ (fun () -> 
 
         match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
-        | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) when not (isExperimentalAttributeEnabled) ->
-            WarnD(Experimental(s, m))
-        | Some _ when not (isExperimentalAttributeEnabled) ->
+        | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) ->
+            if isExperimentalAttributeDisabled s then
+                CompleteD
+            else
+                WarnD(Experimental(s, m))
+        | Some _ ->
             WarnD(Experimental(FSComp.SR.experimentalConstruct (), m))
         | _ ->
             CompleteD
