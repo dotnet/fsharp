@@ -24,6 +24,7 @@ type LanguageFeature =
     | NameOf
     | ImplicitYield
     | OpenStaticClasses
+    | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
@@ -54,6 +55,7 @@ type LanguageVersion (specifiedVersionAsString) =
             // F# preview
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
+            LanguageFeature.DotlessFloat32Literal, languageVersion50
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.FixedIndexSlice3d4d, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion

@@ -26,8 +26,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants  Condition="'$(UnitTestType)' == 'xunit'">$(DefineConstants);XUNIT</DefineConstants>
-    <DefineConstants  Condition="'$(UnitTestType)' != 'xunit'">$(DefineConstants);NUNIT</DefineConstants>
+    <DefineConstants Condition="'$(UnitTestType)' == 'xunit'">$(DefineConstants);XUNIT</DefineConstants>
+    <DefineConstants Condition="'$(UnitTestType)' != 'xunit'">$(DefineConstants);NUNIT</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -88,7 +88,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="**/*"  Exclude="**/*.bak;Directory.Build.Props;Directory.Build.targets" CopyToOutputDirectory="never" />
+    <Content Include="**/*" Exclude="**/*.bak;Directory.Build.Props;Directory.Build.targets;FSharp.Core.UnitTests.fsproj" CopyToOutputDirectory="never" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' == 'true'">
@@ -102,8 +102,8 @@
  </ItemGroup>
 
   <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
-    <PackageReference Include="xunit" Version="2.4.1"  PrivateAssets="All" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1"  PrivateAssets="All" />
+    <PackageReference Include="xunit" Version="2.4.1" PrivateAssets="All" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>
