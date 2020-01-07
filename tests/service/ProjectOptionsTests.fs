@@ -519,7 +519,7 @@ let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
     test "MainBad" [|"MainBad"|] 
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: no project options cracker for .NET Core?")>]
 #endif
 let ``Script load closure project`` () =

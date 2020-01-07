@@ -52,8 +52,8 @@ module internal CodeGenerationUtils =
                 indentWriter.Dispose()
 
     let (|IndexerArg|) = function
-        | SynIndexerArg.Two(e1, e2) -> [e1; e2]
-        | SynIndexerArg.One e -> [e]
+        | SynIndexerArg.Two(e1, _, e2, _, _, _) -> [e1; e2]
+        | SynIndexerArg.One (e, _, _) -> [e]
 
     let (|IndexerArgList|) xs =
         List.collect (|IndexerArg|) xs

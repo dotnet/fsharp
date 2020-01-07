@@ -84,6 +84,7 @@ type CompilerAssert private () =
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <UseFSharpPreview>true</UseFSharpPreview>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
@@ -386,19 +387,24 @@ let main argv = 0"""
     static member TypeCheckSingleError (source: string) (expectedServerity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrors source [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    static member CompileExe (source: string) =
-        compile true [||] source (fun (errors, _) ->
+    static member CompileExeWithOptions options (source: string) =
+        compile true options source (fun (errors, _) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
-    static member CompileExeAndRun (source: string) =
-        compile true [||] source (fun (errors, outputExe) ->
+    static member CompileExe (source: string) =
+        CompileExeWithOptions [||] source
 
+    static member CompileExeAndRunWithOptions options (source: string) =
+        compile true options source (fun (errors, outputExe) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
             executeBuiltApp outputExe []
         )
+
+    static member CompileExeAndRun (source: string) =
+        CompileExeAndRunWithOptions [||] source
 
     static member CompileLibraryAndVerifyILWithOptions options (source: string) (f: ILVerifier -> unit) =
         compile false options source (fun (errors, outputFilePath) ->
@@ -413,7 +419,7 @@ let main argv = 0"""
     static member CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions [||] source f
 
-    static member RunScript (source: string) (expectedErrorMessages: string list) =
+    static member RunScriptWithOptions (source: string) (expectedErrorMessages: string list) =
         lock gate <| fun () ->
             // Intialize output and input streams
             use inStream = new StringReader("")
@@ -423,10 +429,11 @@ let main argv = 0"""
             // Build command line arguments & start FSI session
             let argv = [| "C:\\fsi.exe" |]
     #if !NETCOREAPP
-            let allArgs = Array.append argv [|"--noninteractive"|]
+            let args = Array.append argv [|"--noninteractive"|]
     #else
-            let allArgs = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
+            let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
     #endif
+            let allArgs = Array.append args options
 
             let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
             use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
@@ -448,6 +455,9 @@ let main argv = 0"""
                 ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
                     Assert.AreEqual(expectedErrorMessage, errorMessage)
             )
+
+    static member RunScript (source: string) (expectedErrorMessages: string list) =
+        RunScriptWithOptions [||] source expectedErrorMessages
 
     static member ParseWithErrors (source: string) expectedParseErrors =
         let sourceFileName = "test.fs"
