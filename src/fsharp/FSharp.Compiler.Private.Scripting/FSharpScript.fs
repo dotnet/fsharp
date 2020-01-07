@@ -7,7 +7,7 @@ open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.Interactive.Shell
 
-type FSharpScript(?additionalArgs: string[]) as this =
+type FSharpScript(?additionalArgs: string[]) =
 
     let additionalArgs = defaultArg additionalArgs [||]
     let config = FsiEvaluationSession.GetDefaultConfiguration()
@@ -15,7 +15,7 @@ type FSharpScript(?additionalArgs: string[]) as this =
         // If we are being executed on the desktop framework (we can tell because the assembly containing int is mscorlib) then profile must be mscorlib otherwise use netcore
         if typeof<int>.Assembly.GetName().Name = "mscorlib" then "mscorlib"
         else "netcore"
-    let baseArgs = [| this.GetType().Assembly.Location; "--noninteractive"; "--targetprofile:" + computedProfile; "--quiet" |]
+    let baseArgs = [| typeof<FSharpScript>.Assembly.Location; "--noninteractive"; "--targetprofile:" + computedProfile; "--quiet" |]
     let argv = Array.append baseArgs additionalArgs
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr, collectible=true)
 
