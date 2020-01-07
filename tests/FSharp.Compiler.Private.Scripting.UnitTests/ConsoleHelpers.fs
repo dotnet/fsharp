@@ -37,7 +37,7 @@ type internal EventedTextWriter() =
         if c = '\n' then
             let line =
                 let v = sb.ToString()
-                if v.EndsWith("\r") then v.[..v.Length - 1]
+                if v.EndsWith("\r") then v.Substring(0, v.Length - 1)
                 else v
             sb.Clear() |> ignore
             lineWritten.Trigger(line)
