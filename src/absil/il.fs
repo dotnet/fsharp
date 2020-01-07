@@ -369,7 +369,7 @@ let isMscorlib data =
 [<Sealed>]
 type ILAssemblyRef(data) =
     let uniqueStamp = AssemblyRefUniqueStampGenerator.Encode data
-    let uniqueStampIgnoringVersion = AssemblyRefUniqueStampGenerator.Encode { data with assemRefVersion = None }
+    let uniqueIgnoringVersionStamp = AssemblyRefUniqueStampGenerator.Encode { data with assemRefVersion = None }
 
     member x.Name=data.assemRefName
 
@@ -385,10 +385,10 @@ type ILAssemblyRef(data) =
 
     member x.UniqueStamp=uniqueStamp
 
-    member x.UniqueStampIgnoringVersion=uniqueStampIgnoringVersion
+    member x.UniqueIgnoringVersionStamp=uniqueIgnoringVersionStamp
 
     member x.EqualsIgnoringVersion (aref: ILAssemblyRef) =
-        x.UniqueStampIgnoringVersion = aref.UniqueStampIgnoringVersion
+        aref.UniqueIgnoringVersionStamp = uniqueIgnoringVersionStamp
 
     override x.GetHashCode() = uniqueStamp
 
