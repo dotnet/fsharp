@@ -1346,9 +1346,9 @@ module rec ILBinaryReaderImpl =
         | InlineR of (ILOperandPrefixEnv -> double -> ILInstr)
         | InlineMethod of (ILOperandPrefixEnv -> ILMethodSpec * ILVarArgs -> ILInstr)
         | InlineSig of (ILOperandPrefixEnv -> ILCallingSignature * ILVarArgs -> ILInstr)
-        | ShortInlineBrTarget of (ILOperandPrefixEnv -> sbyte -> ILInstr)
-        | InlineBrTarget of (ILOperandPrefixEnv -> int -> ILInstr)
-        | InlineSwitch of (ILOperandPrefixEnv -> int list -> ILInstr)
+        | ShortInlineBrTarget of (ILOperandPrefixEnv -> ILCodeLabel -> ILInstr)
+        | InlineBrTarget of (ILOperandPrefixEnv -> ILCodeLabel -> ILInstr)
+        | InlineSwitch of (ILOperandPrefixEnv -> ILCodeLabel list -> ILInstr)
         | InlineType of (ILOperandPrefixEnv -> ILType -> ILInstr)
         | InlineString of (ILOperandPrefixEnv -> string -> ILInstr)
         | InlineField of (ILOperandPrefixEnv -> ILFieldSpec -> ILInstr)
@@ -1672,12 +1672,28 @@ module rec ILBinaryReaderImpl =
                 constrained = None
             }
 
-        let labels = Dictionary<ILCodeLabel, int>()
-        let recordLabel rawOffset ilOffset =
-            labels.[rawOffset] <- ilOffset
+        let labelsOfRawOffsets = Dictionary() 
+        let ilOffsetsOfLabels = Dictionary()
+        let tryRawToLabel rawOffset =
+            match labelsOfRawOffsets.TryGetValue rawOffset with
+            | true, v -> Some v
+            | _ -> None
+
+        let rawToLabel rawOffset = 
+            match tryRawToLabel rawOffset with 
+            | Some l -> l
+            | None -> 
+                let lab = generateCodeLabel()
+                labelsOfRawOffsets.[rawOffset] <- lab
+                lab
+
+        let markAsInstructionStart rawOffset ilOffset = 
+            let lab = rawToLabel rawOffset
+            ilOffsetsOfLabels.[lab] <- ilOffset
 
         while ilReader.RemainingBytes > 0 do
-            recordLabel ilReader.Offset instrs.Count
+
+            markAsInstructionStart ilReader.Offset instrs.Count
 
             match readILOperandDecoder &ilReader with
             | PrefixInlineNone(f) -> f prefixes
@@ -1725,17 +1741,17 @@ module rec ILBinaryReaderImpl =
 
                     | ShortInlineBrTarget(f) -> 
                         let value = ilReader.ReadSByte()
-                        recordLabel (int value) instrs.Count
-                        f prefixes value
+                        f prefixes (rawToLabel (ilReader.Offset + int value))
                     | InlineBrTarget(f) -> 
                         let value = ilReader.ReadInt32()
-                        recordLabel value instrs.Count
-                        f prefixes value
+                        f prefixes (rawToLabel (ilReader.Offset + value))
 
                     | InlineSwitch(f) ->
                         let deltas = Array.zeroCreate (ilReader.ReadInt32())
-                        for i = 0 to deltas.Length - 1 do deltas.[i] <- ilReader.ReadInt32()
-                        deltas |> Array.iter (fun delta -> recordLabel delta instrs.Count)
+                        for i = 0 to deltas.Length - 1 do 
+                            deltas.[i] <- ilReader.ReadInt32()
+                        for i = 0 to deltas.Length - 1 do
+                            deltas.[i] <- rawToLabel (ilReader.Offset + deltas.[i])
                         f prefixes (deltas |> List.ofArray)
 
                     | InlineType(f) ->
@@ -1777,8 +1793,6 @@ module rec ILBinaryReaderImpl =
 
                 instrs.Add(instr)
 
-                recordLabel ilReader.Offset instrs.Count
-
                 // Reset prefixes
                 prefixes.al <- Aligned
                 prefixes.tl <- Normalcall
@@ -1786,7 +1800,25 @@ module rec ILBinaryReaderImpl =
                 prefixes.ro <- NormalAddress
                 prefixes.constrained <- None
 
-        labels, instrs.ToArray()
+        // Finished reading instructions - mark the end of the instruction stream in case the PDB information refers to it. 
+        markAsInstructionStart ilReader.Offset instrs.Count
+        // Build the function that maps from raw labels (offsets into the bytecode stream) to indexes in the AbsIL instruction stream 
+        let lab2pc = ilOffsetsOfLabels
+
+        // Some offsets used in debug info refer to the end of an instruction, rather than the 
+        // start of the subsequent instruction. But all labels refer to instruction starts, 
+        // apart from a final label which refers to the end of the method. This function finds 
+        // the start of the next instruction referred to by the raw offset. 
+        let raw2nextLab rawOffset = 
+            let isInstrStart x = 
+                match tryRawToLabel x with 
+                | None -> false
+                | Some lab -> ilOffsetsOfLabels.ContainsKey lab
+            if isInstrStart rawOffset then rawToLabel rawOffset 
+            elif isInstrStart (rawOffset+1) then rawToLabel (rawOffset+1)
+            else failwith ("the bytecode raw offset "+string rawOffset+" did not refer either to the start or end of an instruction")
+
+        instrs.ToArray(), rawToLabel, lab2pc, raw2nextLab
 
     // --------------------------------------------------------------------
 
@@ -1795,12 +1827,12 @@ module rec ILBinaryReaderImpl =
         si.DecodeLocalSignature(cenv.LocalSignatureTypeProvider, 0)
         |> List.ofSeq
 
-    let readILLocalDebugInfo (pdbReader: MetadataReader) (debugInfoHandle: MethodDebugInformationHandle) =
+    let readILLocalDebugInfo (pdbReader: MetadataReader) (debugInfoHandle: MethodDebugInformationHandle) (raw2nextLab: int -> ILCodeLabel) =
         let localScopes = pdbReader.GetLocalScopes debugInfoHandle |> Seq.map pdbReader.GetLocalScope
         localScopes 
         |> Seq.map (fun localScope ->
             {
-                Range = (localScope.StartOffset, localScope.EndOffset)
+                Range = (raw2nextLab localScope.StartOffset, raw2nextLab localScope.EndOffset)
                 DebugMappings = 
                     localScope.GetLocalVariables()
                     |> Seq.choose (fun handle -> 
@@ -1813,7 +1845,7 @@ module rec ILBinaryReaderImpl =
             } : ILLocalDebugInfo)
         |> List.ofSeq
 
-    let readMethodDebugInfo (cenv: cenv) (methDef: MethodDefinition) =
+    let readMethodDebugInfo (cenv: cenv) (methDef: MethodDefinition) (raw2nextLab: int -> ILCodeLabel) =
         match cenv.PdbReaderProvider with
         | Some(readerProvider, _) ->
             let pdbReader = readerProvider.GetMetadataReader()
@@ -1831,18 +1863,21 @@ module rec ILBinaryReaderImpl =
 
             match debugInfoOpt with
             | Some debugInfoHandle when not debugInfoHandle.IsNil ->
-                readILLocalDebugInfo pdbReader debugInfoHandle
+                readILLocalDebugInfo pdbReader debugInfoHandle raw2nextLab
             | _ ->
                 List.empty
         | _ ->
             List.empty
 
-    let readILCode (cenv: cenv) (methDef: MethodDefinition) (methBodyBlock: MethodBodyBlock) : ILCode =
+    let readILCode (cenv: cenv) (_methDef: MethodDefinition) (methBodyBlock: MethodBodyBlock) : ILCode =
+        let mutable ilReader = methBodyBlock.GetILReader()
+        let instrs, rawToLabel, lab2pc, _raw2nextLab = readILInstrs cenv &ilReader
+
         let exceptions =
             methBodyBlock.ExceptionRegions
             |> Seq.map (fun region ->
-                let start = region.HandlerOffset
-                let finish = region.HandlerOffset + region.HandlerLength
+                let start = rawToLabel region.HandlerOffset
+                let finish = rawToLabel (region.HandlerOffset + region.HandlerLength)
                 let clause =
                     match region.Kind with
                     | ExceptionRegionKind.Finally ->
@@ -1850,8 +1885,8 @@ module rec ILBinaryReaderImpl =
                     | ExceptionRegionKind.Fault ->
                         ILExceptionClause.Fault(start, finish)
                     | ExceptionRegionKind.Filter ->
-                        let filterStart = region.FilterOffset
-                        let filterFinish = region.HandlerOffset
+                        let filterStart = rawToLabel region.FilterOffset
+                        let filterFinish = rawToLabel region.HandlerOffset
                         ILExceptionClause.FilterCatch((filterStart, filterFinish), (start, finish))
                     | ExceptionRegionKind.Catch ->
                         ILExceptionClause.TypeCatch(readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) region.CatchType, (start, finish))
@@ -1859,21 +1894,17 @@ module rec ILBinaryReaderImpl =
                         failwithf "Invalid Exception Region Kind: %A" region.Kind
 
                 {
-                    ILExceptionSpec.Range = (region.TryOffset, region.TryOffset + region.TryLength)
+                    ILExceptionSpec.Range = (rawToLabel region.TryOffset, rawToLabel (region.TryOffset + region.TryLength))
                     ILExceptionSpec.Clause = clause
                 }
             )
             |> List.ofSeq
 
-        let locals = readMethodDebugInfo cenv methDef
-        let mutable ilReader = methBodyBlock.GetILReader()
-        let labels, instrs = readILInstrs cenv &ilReader
-
         {
-            Labels = labels
+            Labels = lab2pc
             Instrs = instrs
             Exceptions = exceptions
-            Locals = locals
+            Locals = [] //let locals = readMethodDebugInfo cenv methDef raw2nextLab - does not work yet and didn't in the original reader
         }
 
     let readILMethodBody (cenv: cenv) (methDef: MethodDefinition) : ILMethodBody =
