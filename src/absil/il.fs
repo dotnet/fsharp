@@ -2198,7 +2198,10 @@ and ILExportedTypesAndForwarders =
 
     member x.AsList = let (ILExportedTypesAndForwarders ltab) = x in Map.foldBack (fun _x y r -> y :: r) (ltab.Force()) []
 
-    member x.TryFindByName nm = let (ILExportedTypesAndForwarders ltab) = x in (ltab.Force()).TryFind nm
+    member x.TryFindByName nm =
+        match x with
+        | ILExportedTypesAndForwarders ltab ->
+            ltab.Value.TryFind nm
 
 [<RequireQualifiedAccess>]
 type ILResourceAccess =
