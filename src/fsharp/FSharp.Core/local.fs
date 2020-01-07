@@ -1185,13 +1185,13 @@ module internal Array =
             let count = min count len
             let res = zeroCreateUnchecked count : 'T[][]
             let minChunkSize = len / count
-            let startIndex = ref 0
+            let mutable startIndex = 0
             for i = 0 to len % count - 1 do
-                res.[i] <- subUnchecked !startIndex (minChunkSize + 1) array
-                startIndex := !startIndex + minChunkSize + 1
+                res.[i] <- subUnchecked startIndex (minChunkSize + 1) array
+                startIndex <- startIndex + minChunkSize + 1
             for i = len % count to count - 1 do
-                res.[i] <- subUnchecked !startIndex minChunkSize array
-                startIndex := !startIndex + minChunkSize
+                res.[i] <- subUnchecked startIndex minChunkSize array
+                startIndex <- startIndex + minChunkSize
             res
 
 module internal Seq =
