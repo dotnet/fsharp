@@ -369,6 +369,7 @@ let isMscorlib data =
 [<Sealed>]
 type ILAssemblyRef(data) =
     let uniqueStamp = AssemblyRefUniqueStampGenerator.Encode data
+    let uniqueStampIgnoringVersion = AssemblyRefUniqueStampGenerator.Encode { data with assemRefVersion = None }
 
     member x.Name=data.assemRefName
 
@@ -384,12 +385,10 @@ type ILAssemblyRef(data) =
 
     member x.UniqueStamp=uniqueStamp
 
+    member x.UniqueStampIgnoringVersion=uniqueStampIgnoringVersion
+
     member x.EqualsIgnoringVersion (aref: ILAssemblyRef) =
-        x.UniqueStamp = aref.UniqueStamp ||
-        (String.Equals(x.Name, aref.Name, StringComparison.OrdinalIgnoreCase) &&
-         x.PublicKey = aref.PublicKey &&
-         x.Retargetable = aref.Retargetable &&
-         x.Locale = aref.Locale)
+        x.UniqueStampIgnoringVersion = aref.UniqueStampIgnoringVersion
 
     override x.GetHashCode() = uniqueStamp
 
@@ -2607,10 +2606,9 @@ let tname_UIntPtr = "System.UIntPtr"
 let tname_TypedReference = "System.TypedReference"
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-// This data structure needs an entirely delayed implementation
-type ILGlobals(primaryScopeRef: ILScopeRef, possiblePrimaryAssemblyRefs: ILAssemblyRef list) =
+type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list) =
 
-    let possiblePrimaryAssemblyRefs = Array.ofList possiblePrimaryAssemblyRefs
+    let assembliesThatForwardToPrimaryAssembly = Array.ofList assembliesThatForwardToPrimaryAssembly
 
     let mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
 
@@ -2641,18 +2639,10 @@ type ILGlobals(primaryScopeRef: ILScopeRef, possiblePrimaryAssemblyRefs: ILAssem
     member val typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UIntPtr))
     member val typ_TypedReference = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_TypedReference))
 
-    member x.IsPossiblePrimaryAssemblyRef aref =
-        x.primaryAssemblyRef = aref ||
-        possiblePrimaryAssemblyRefs
-        |> Array.exists (fun x -> aref = x)
-
-    member x.RemapAssemblyRef aref =
-        if x.primaryAssemblyRef.EqualsIgnoringVersion aref then 
-            x.primaryAssemblyRef 
-        else
-            possiblePrimaryAssemblyRefs
-            |> Array.tryFind aref.EqualsIgnoringVersion
-            |> Option.defaultValue aref
+    member x.IsPossiblePrimaryAssemblyRef(aref: ILAssemblyRef) =
+        aref.EqualsIgnoringVersion x.primaryAssemblyRef ||
+        assembliesThatForwardToPrimaryAssembly
+        |> Array.exists aref.EqualsIgnoringVersion
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2660,7 +2650,7 @@ type ILGlobals(primaryScopeRef: ILScopeRef, possiblePrimaryAssemblyRefs: ILAssem
 
     override x.ToString() = "<ILGlobals>"
 
-let mkILGlobals (primaryScopeRef, possiblePrimaryAssemblyRefs) = ILGlobals (primaryScopeRef, possiblePrimaryAssemblyRefs)
+let mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly) = ILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly)
 
 let mkNormalCall mspec = I_call (Normalcall, mspec, None)
 

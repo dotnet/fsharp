@@ -1599,14 +1599,18 @@ type ILGlobals =
     member typ_Char: ILType
     member typ_TypedReference: ILType
 
+    /// Is the given assembly possibly a primary assembly?
+    /// In practice, a primary assembly is an assembly that contains the System.Object type definition
+    /// and has no referenced assemblies. 
+    /// However, we must consider assemblies that forward the System.Object type definition
+    /// to be possible primary assemblies.
+    /// Therefore, this will return true if the given assembly is the real primary assembly or an assembly that forwards
+    /// the System.Object type definition.
+    /// Assembly equivalency ignores the version here.
     member IsPossiblePrimaryAssemblyRef: ILAssemblyRef -> bool
 
-    /// Remaps the given assembly to an assembly that is equivelant except for the version.
-    /// REVIEW: Only works for assemblies that might be possible primary assemblies.
-    member RemapAssemblyRef: ILAssemblyRef -> ILAssemblyRef
-
 /// Build the table of commonly used references given functions to find types in system assemblies
-val mkILGlobals: ILScopeRef * ILAssemblyRef list -> ILGlobals
+val mkILGlobals: primaryScopeRef: ILScopeRef * assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list -> ILGlobals
 
 val EcmaMscorlibILGlobals: ILGlobals
 
