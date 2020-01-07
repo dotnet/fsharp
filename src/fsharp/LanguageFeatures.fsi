@@ -12,6 +12,11 @@ type LanguageFeature =
     | NameOf
     | ImplicitYield
     | OpenStaticClasses
+    | DotlessFloat32Literal
+    | PackageManagement
+    | FromEndSlicing
+    | FixedIndexSlice3d4d
+
 
 /// LanguageVersion management
 type LanguageVersion =
