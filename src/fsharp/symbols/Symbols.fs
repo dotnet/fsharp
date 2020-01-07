@@ -1048,7 +1048,7 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
             | Choice1Of3 r -> r.Accessibility
             | Choice2Of3 _ -> taccessPublic
             | Choice3Of3 _ -> taccessPublic
-        FSharpAccessibility(access) 
+        FSharpAccessibility access 
 
     member private x.V = d
 
@@ -1951,7 +1951,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
       /// How visible is this? 
     member this.Accessibility: FSharpAccessibility  = 
-        if isUnresolved() then FSharpAccessibility(taccessPublic) else 
+        if isUnresolved() then FSharpAccessibility taccessPublic else 
         match fsharpInfo() with 
         | Some v -> FSharpAccessibility(v.Accessibility)
         | None ->  
@@ -1967,7 +1967,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     getApproxFSharpAccessibilityOfMember this.DeclaringEntity.Value.Entity ilAccess
                 | _ -> taccessPublic
 
-            FSharpAccessibility(access)
+            FSharpAccessibility access
 
         | P p ->  
             // For IL  properties, we get an approximate accessibility that at least reports "internal" as "internal" and "private" as "private"
@@ -1978,7 +1978,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     getApproxFSharpAccessibilityOfMember this.DeclaringEntity.Value.Entity  ilAccess
                 | _ -> taccessPublic
 
-            FSharpAccessibility(access)
+            FSharpAccessibility access
 
         | M m | C m ->  
 
