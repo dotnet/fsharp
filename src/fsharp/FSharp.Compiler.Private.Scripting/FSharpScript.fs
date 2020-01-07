@@ -38,11 +38,24 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
         else "netcore"
     let baseArgs = [| this.GetType().Assembly.Location; "--noninteractive"; "--targetprofile:" + computedProfile; "--quiet" |]
     let argv = Array.append baseArgs additionalArgs
-    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr, collectible=true)
+    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
+    [<CLIEvent>]
     member __.AssemblyReferenceAdded = fsi.AssemblyReferenceAdded
 
     member __.ValueBound = fsi.ValueBound
+
+    [<CLIEvent>]
+    member __.IncludePathAdded = fsi.IncludePathAdded
+
+    [<CLIEvent>]
+    member __.DependencyAdding = fsi.DependencyAdding
+
+    [<CLIEvent>]
+    member __.DependencyAdded = fsi.DependencyAdded
+
+    [<CLIEvent>]
+    member __.DependencyFailed = fsi.DependencyFailed
 
     member __.ProvideInput = stdin.ProvideInput
 
@@ -83,3 +96,4 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
             stdin.Dispose()
             stdout.Dispose()
             stderr.Dispose()
+            (fsi :> IDisposable).Dispose()

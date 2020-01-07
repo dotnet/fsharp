@@ -551,6 +551,7 @@ rule token args skip = parse
  | "?" { QMARK }
  | "??" { QMARK_QMARK }
  | ".." { DOT_DOT }
+ | "..^" { DOT_DOT_HAT }
  | "." { DOT }
  | ":" { COLON }
  | "::" { COLON_COLON }
