@@ -325,14 +325,51 @@ let main argv = 0"""
             compileCompilation ignoreWarnings cmpl (fun ((errors, _), _) ->
                 assertErrors ignoreWarnings errors))
 
-    static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute) =
+    static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess) =
         let ignoreWarnings = defaultArg ignoreWarnings false
         let beforeExecute = defaultArg beforeExecute (fun _ _ -> ())
+        let newProcess = defaultArg newProcess false
         lock gate (fun () -> 
             compileCompilation ignoreWarnings cmpl (fun ((errors, outputFilePath), deps) ->
                 assertErrors ignoreWarnings errors
                 beforeExecute outputFilePath deps
-                executeBuiltApp outputFilePath deps))
+                if newProcess then
+                    let mutable pinfo = ProcessStartInfo()
+                    pinfo.RedirectStandardError <- true
+                    pinfo.RedirectStandardOutput <- true
+#if !NETCOREAPP
+                    pinfo.FileName <- outputFilePath
+#else
+                    pinfo.FileName <- "dotnet"
+                    pinfo.Arguments <- outputFilePath
+
+                    let runtimeconfig =
+                        """
+{
+    "runtimeOptions": {
+        "tfm": "netcoreapp3.1",
+        "framework": {
+            "name": "Microsoft.NETCore.App",
+            "version": "3.1.0"
+        }
+    }
+}
+                        """
+
+                    let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
+                    File.WriteAllText(runtimeconfigPath, runtimeconfig)
+                    use _disposal =
+                        { new IDisposable with
+                            member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
+#endif
+                    pinfo.UseShellExecute <- false
+                    let p = Process.Start pinfo
+                    let errors = p.StandardError.ReadToEnd()
+                    Assert.True(p.WaitForExit(120000))
+                    if p.ExitCode <> 0 then
+                        Assert.Fail errors
+                else
+                    executeBuiltApp outputFilePath deps))
 
     static member Pass (source: string) =
         lock gate <| fun () ->
