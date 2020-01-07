@@ -84,6 +84,14 @@ type CompilerAssert private () =
     static let _ = config |> ignore
 
     // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
+    static let primaryAssembly =
+#if NETCOREAPP
+        PrimaryAssembly.System_Runtime
+#else
+        PrimaryAssembly.Mscorlib
+#endif
+
+// Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
     static let projectFile = """
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -499,6 +507,44 @@ let main argv = 0"""
         CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output)))
 
     /// Assert that the given source code compiles with the `defaultProjectOptions`, with no errors or warnings
+    static member CompileOfAst isExe source =
+        let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then "exe" else ".dll")
+        let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
+
+        let parseResults = 
+            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions) 
+            |> Async.RunSynchronously
+
+        Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
+        Assert.IsTrue(parseResults.ParseTree.IsSome, "no parse tree returned")
+
+        let compileErrors, statusCode = 
+            checker.Compile([parseResults.ParseTree.Value], "test", outputFilePath, [], executable = isExe, primaryAssembly = primaryAssembly) 
+            |> Async.RunSynchronously
+
+        Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
+        Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
+        outputFilePath
+
+    static member CompileOfAstToDynamicAssembly source =
+        let assemblyName = sprintf "test-%O" (Guid.NewGuid())
+        let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
+        let parseResults = 
+            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions) 
+            |> Async.RunSynchronously
+    
+        Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
+        Assert.IsTrue(parseResults.ParseTree.IsSome, "no parse tree returned")
+
+        let compileErrors, statusCode, assembly = 
+            checker.CompileToDynamicAssembly([parseResults.ParseTree.Value], assemblyName, [], None, primaryAssembly = primaryAssembly) 
+            |> Async.RunSynchronously
+
+        Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
+        Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
+        Assert.IsTrue(assembly.IsSome, "no assembly returned")
+        Option.get assembly
+
     static member Pass (source: string) =
         lock gate <| fun () ->
             let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
