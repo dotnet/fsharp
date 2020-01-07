@@ -4636,7 +4636,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
               metadataOnly = MetadataOnlyFlag.Yes
               tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }
 
-        let tryGetPossibleAssemblyRefByExportedType manifest (exportedType: ILExportedTypeOrForwarder) =
+        let tryFindAssemblyByExportedType manifest (exportedType: ILExportedTypeOrForwarder) =
             match exportedType.ScopeRef, primaryScopeRef with
             | ILScopeRef.Assembly aref1, ILScopeRef.Assembly aref2 when aref1.EqualsIgnoringVersion aref2 ->
                 mkRefToILAssembly manifest
@@ -4644,23 +4644,23 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             | _ -> 
                 None
 
-        let tryGetPossibleAssemblyRef manifest =
+        let tryFindAssemblyThatForwardsToPrimaryAssembly manifest =
             manifest.ExportedTypes.TryFindByName "System.Object"
-            |> Option.bind (tryGetPossibleAssemblyRefByExportedType manifest)
+            |> Option.bind (tryFindAssemblyByExportedType manifest)
 
         // Determine what other assemblies could have been the primary assembly
         // by checking to see if "System.Object" is an exported type.
-        let possiblePrimaryAssemblyRefs =
+        let assembliesThatForwardToPrimaryAssembly =
             resolvedAssemblies
             |> List.choose (fun resolvedAssembly ->
                 if primaryAssemblyResolvedPath <> resolvedAssembly.resolvedPath then
                     let reader = OpenILModuleReader resolvedAssembly.resolvedPath readerSettings
                     reader.ILModuleDef.Manifest
-                    |> Option.bind tryGetPossibleAssemblyRef
+                    |> Option.bind tryFindAssemblyThatForwardsToPrimaryAssembly
                 else
                     None)
 
-        let ilGlobals = mkILGlobals (primaryScopeRef, possiblePrimaryAssemblyRefs)
+        let ilGlobals = mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly)
         frameworkTcImports.SetILGlobals ilGlobals
 
         // Load the rest of the framework DLLs all at once (they may be mutually recursive)
