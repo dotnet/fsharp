@@ -616,6 +616,12 @@ namespace Microsoft.FSharp.Core
         /// <summary>Indicates one or more adjustments to the compiled representation of an F# type or member</summary>
         member Flags : CompilationRepresentationFlags
 
+    /// <summary>Provice pre-prepared message for requires Preview compiler switch
+    /// feature.</summary>
+    module internal ExperimentalAttributeMessages =
+        [<Literal>]
+        val RequiresPreview : string = "Experimental library feature, requires '--langversion:preview'"
+
     /// <summary>This attribute is used to tag values that are part of an experimental library
     /// feature.</summary>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
@@ -1935,7 +1941,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="rank">The rank of the index.</param>
         /// <param name="offset">The offset from the end.</param>
         /// <returns>The corresponding index from the start.</returns>
-        [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         member GetReverseIndex: rank: int * offset: int -> int
 
         /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
@@ -2748,14 +2754,14 @@ namespace Microsoft.FSharp.Core
         val ( |KeyValue| ): keyValuePair:KeyValuePair<'Key,'Value> -> 'Key * 'Value
 
         [<AutoOpen>]
-        [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         module ArrayExtensions = 
             type ``[,,,]``<'T> with
                 /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
                 /// <param name="rank">The rank of the index. This refers to the dimension in the 4d array.</param>
                 /// <param name="offset">The offset from the end.</param>
                 /// <returns>The corresponding index from the start.</returns>
-                [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[,,]``<'T> with
@@ -2763,7 +2769,7 @@ namespace Microsoft.FSharp.Core
                 /// <param name="rank">The rank of the index. This refers to the dimension in the 3d array.</param>
                 /// <param name="offset">The offset from the end.</param>
                 /// <returns>The corresponding index from the start.</returns>
-                [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[,]``<'T> with
@@ -2771,7 +2777,7 @@ namespace Microsoft.FSharp.Core
                 /// <param name="rank">The rank of the index. This refers to the dimension in the 2d array.</param>
                 /// <param name="offset">The offset from the end.</param>
                 /// <returns>The corresponding index from the start.</returns>
-                [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[]``<'T> with
@@ -2779,7 +2785,7 @@ namespace Microsoft.FSharp.Core
                 /// <param name="rank">The rank of the index.</param>
                 /// <param name="offset">The offset from the end.</param>
                 /// <returns>The corresponding index from the start.</returns>
-                [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type System.String with
@@ -2787,7 +2793,7 @@ namespace Microsoft.FSharp.Core
                 /// <param name="rank">The rank of the index.</param>
                 /// <param name="offset">The offset from the end.</param>
                 /// <returns>The corresponding index from the start.</returns>
-                [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
 
@@ -2878,7 +2884,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start3">The start index of the third dimension.</param>
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline GetArraySlice3DFixedSingle1 : source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 3D array.</summary>
@@ -2889,7 +2895,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start3">The start index of the third dimension.</param>
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline GetArraySlice3DFixedSingle2 : source:'T[,,] ->  start1:int option -> finish1:int option -> index2: int -> start3:int option -> finish3:int option -> 'T[,]
 
             /// <summary>Gets a 2D slice of a 3D array.</summary>
@@ -2900,7 +2906,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish2">The end index of the second dimension.</param>
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline GetArraySlice3DFixedSingle3 : source:'T[,,] ->  start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3: int -> 'T[,]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
@@ -2910,7 +2916,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start3">The start index of the third dimension.</param>
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline GetArraySlice3DFixedDouble1 : source:'T[,,] ->  index1:int -> index2:int -> start3:int option -> finish3:int option -> 'T[]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
@@ -2920,7 +2926,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish2">The end index of the second dimension.</param>
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline GetArraySlice3DFixedDouble2 : source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> index3:int -> 'T[]
 
             /// <summary>Gets a 1D slice of a 3D array.</summary>
@@ -2930,7 +2936,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index2">The fixed index of the second dimension.</param>
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline GetArraySlice3DFixedDouble3 : source:'T[,,] ->  start1:int option -> finish1:int option -> index2:int -> index3:int -> 'T[]
 
             /// <summary>Sets a slice of an array</summary>
@@ -2953,7 +2959,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <param name="source">The source array.</param>
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline SetArraySlice3DFixedSingle1 : target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 3D array</summary>
@@ -2965,7 +2971,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <param name="source">The source array.</param>
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline SetArraySlice3DFixedSingle2 : target: 'T[,,] -> start1: int option -> finish1: int option -> index2: int -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
 
             /// <summary>Sets a 2D slice of a 3D array</summary>
@@ -2977,7 +2983,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <param name="source">The source array.</param>
             /// <returns>The two dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline SetArraySlice3DFixedSingle3 : target: 'T[,,] -> start1: int option -> finish1: int option ->  start2: int option -> finish2: int option -> index3: int -> source: 'T[,] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
@@ -2988,7 +2994,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <param name="source">The source array.</param>
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline SetArraySlice3DFixedDouble1 : target: 'T[,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> source: 'T[] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
@@ -2999,7 +3005,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <param name="source">The source array.</param>
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline SetArraySlice3DFixedDouble2 : target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> source: 'T[] -> unit
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
@@ -3010,7 +3016,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="index3">The fixed index of the third dimension.</param>
             /// <param name="source">The source array.</param>
             /// <returns>The one dimensional sub array from the given indices.</returns>
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             val inline SetArraySlice3DFixedDouble3 : target: 'T[,,] -> start1: int option -> finish1: int option ->  index2: int -> index3: int -> source: 'T[] -> unit
 
             /// <summary>Gets a slice of an array</summary>

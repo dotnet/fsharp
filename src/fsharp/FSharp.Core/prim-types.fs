@@ -237,11 +237,17 @@ namespace Microsoft.FSharp.Core
         inherit System.Attribute()
         member x.Flags = flags
 
+
+    module internal ExperimentalAttributeMessages =
+        [<Literal>]
+        let RequiresPreview : string = "Experimental library feature, requires '--langversion:preview'"
+
     [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type ExperimentalAttribute(message:string) =
         inherit System.Attribute()
-        member x.Message = message    
+
+        member x.Message = message
 
     [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
@@ -3189,7 +3195,7 @@ namespace Microsoft.FSharp.Collections
                 let start = if i < 0 then 0 else i
                 PrivateListHelpers.sliceTake (j - start) (PrivateListHelpers.sliceSkip start l)
 
-        [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         member l.GetReverseIndex(_: int, offset: int) = l.Length - offset - 1
 
         interface IEnumerable<'T> with
@@ -5006,13 +5012,13 @@ namespace Microsoft.FSharp.Core
 
                 dst
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedSingle1 (source: _[,,]) index1 start2 finish2 start3 finish3 = GetArraySlice3DFixedSingle source start2 finish2 start3 finish3 index1 1 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedSingle2 (source: _[,,]) start1 finish1 index2 start3 finish3 = GetArraySlice3DFixedSingle source start1 finish1 start3 finish3 index2 0 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedSingle3 (source: _[,,]) start1 finish1 start2 finish2 index3 = GetArraySlice3DFixedSingle source start1 finish1 start2 finish2 index3 0 1
 
             let inline GetArraySlice3DFixedDouble (source: _[,,]) start finish index1 index2 nonFixedDim = 
@@ -5030,15 +5036,15 @@ namespace Microsoft.FSharp.Core
                     SetArray dst j (getArrayElem j)
                 dst
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedDouble1 (source: _[,,]) index1 index2 start3 finish3 = 
                 GetArraySlice3DFixedDouble source start3 finish3 index1 index2 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedDouble2 (source: _[,,]) index1 start2 finish2 index3 = 
                 GetArraySlice3DFixedDouble source start2 finish2 index1 index3 1
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice3DFixedDouble3 (source: _[,,]) start1 finish1 index2 index3 = 
                 GetArraySlice3DFixedDouble source start1 finish1 index2 index3 0
 
@@ -5072,15 +5078,15 @@ namespace Microsoft.FSharp.Core
                     for j = 0 to len2 - 1 do
                         setArrayElem i j
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedSingle1 (target: _[,,]) index start2 finish2 start3 finish3 (source: _[,]) = 
                 SetArraySlice3DFixedSingle target source index start2 finish2 start3 finish3 1 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedSingle2 (target: _[,,]) start1 finish1 index start3 finish3 (source: _[,]) = 
                 SetArraySlice3DFixedSingle target source index start1 finish1 start3 finish3 0 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedSingle3 (target: _[,,]) start1 finish1 start2 finish2 index (source: _[,]) = 
                 SetArraySlice3DFixedSingle target source index start1 finish1 start2 finish2 0 1
 
@@ -5097,15 +5103,15 @@ namespace Microsoft.FSharp.Core
                 for j = 0 to len - 1 do 
                     setArrayElem j
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedDouble1 (target: _[,,]) index1 index2 start3 finish3 (source: _[]) = 
                 SetArraySlice3DFixedDouble target source index1 index2 start3 finish3 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedDouble2 (target: _[,,]) index1 start2 finish2 index3 (source: _[]) = 
                 SetArraySlice3DFixedDouble target source index1 index3 start2 finish2 1
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice3DFixedDouble3 (target: _[,,]) start1 finish1 index2 index3 (source: _[]) = 
                 SetArraySlice3DFixedDouble target source index2 index3 start1 finish1 0
 
@@ -5150,19 +5156,19 @@ namespace Microsoft.FSharp.Core
 
                 dst
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedSingle1 (source: _[,,,]) index1 start2 finish2 start3 finish3 start4 finish4 =
                 GetArraySlice4DFixedSingle source start2 finish2 start3 finish3 start4 finish4 index1 1 2 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedSingle2 (source: _[,,,]) start1 finish1 index2 start3 finish3 start4 finish4 = 
                 GetArraySlice4DFixedSingle source start1 finish1 start3 finish3 start4 finish4 index2 0 2 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedSingle3 (source: _[,,,]) start1 finish1 start2 finish2 index3 start4 finish4 = 
                 GetArraySlice4DFixedSingle source start1 finish1 start2 finish2 start4 finish4 index3 0 1 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedSingle4 (source: _[,,,]) start1 finish1 start2 finish2 start3 finish3 index4 = 
                 GetArraySlice4DFixedSingle source start1 finish1 start2 finish2 start3 finish3 index4 0 1 2
 
@@ -5190,27 +5196,27 @@ namespace Microsoft.FSharp.Core
 
                 dst
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble1 (source: _[,,,]) index1 index2 start3 finish3 start4 finish4 =
                 GetArraySlice4DFixedDouble source start3 finish3 start4 finish4 index1 index2 2 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble2 (source: _[,,,]) index1 start2 finish2 index3 start4 finish4 =
                 GetArraySlice4DFixedDouble source start2 finish2 start4 finish4 index1 index3 1 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble3 (source: _[,,,]) index1 start2 finish2 start3 finish3 index4 =
                 GetArraySlice4DFixedDouble source start2 finish2 start3 finish3 index1 index4 1 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble4 (source: _[,,,]) start1 finish1 index2 index3 start4 finish4 =
                 GetArraySlice4DFixedDouble source start1 finish1 start4 finish4 index2 index3 0 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble5 (source: _[,,,]) start1 finish1 index2 start3 finish3 index4 = 
                 GetArraySlice4DFixedDouble source start1 finish1 start3 finish3 index2 index4 0 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedDouble6 (source: _[,,,]) start1 finish1 start2 finish2 index3 index4 = 
                 GetArraySlice4DFixedDouble source start1 finish1 start2 finish2 index3 index4 0 1
 
@@ -5231,19 +5237,19 @@ namespace Microsoft.FSharp.Core
 
                 dst
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedTriple1 (source: _[,,,]) start1 finish1 index2 index3 index4 = 
                 GetArraySlice4DFixedTriple source start1 finish1 index2 index3 index4 0
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedTriple2 (source: _[,,,]) index1 start2 finish2 index3 index4 =
                 GetArraySlice4DFixedTriple source start2 finish2 index1 index3 index4 1
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedTriple3 (source: _[,,,]) index1 index2 start3 finish3 index4 =
                 GetArraySlice4DFixedTriple source start3 finish3 index1 index2 index4 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline GetArraySlice4DFixedTriple4 (source: _[,,,]) index1 index2 index3 start4 finish4 = 
                 GetArraySlice4DFixedTriple source start4 finish4 index1 index2 index3 3
 
@@ -5286,19 +5292,19 @@ namespace Microsoft.FSharp.Core
                         for k = 0 to len3 - 1 do
                             setArrayElem i j k
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedSingle1 (target: _[,,,]) index1 start2 finish2 start3 finish3 start4 finish4 (source: _[,,]) = 
                 SetArraySlice4DFixedSingle target source index1 start2 finish2 start3 finish3 start4 finish4 1 2 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedSingle2 (target: _[,,,]) start1 finish1 index2 start3 finish3 start4 finish4 (source: _[,,]) = 
                 SetArraySlice4DFixedSingle target source index2 start1 finish1 start3 finish3 start4 finish4 0 2 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedSingle3 (target: _[,,,]) start1 finish1 start2 finish2 index3 start4 finish4 (source: _[,,]) = 
                 SetArraySlice4DFixedSingle target source index3 start1 finish1 start2 finish2 start4 finish4 0 1 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedSingle4 (target: _[,,,]) start1 finish1 start2 finish2 start3 finish3 index4 (source: _[,,]) = 
                 SetArraySlice4DFixedSingle target source index4 start1 finish1 start2 finish2 start3 finish3 0 1 2
 
@@ -5324,27 +5330,27 @@ namespace Microsoft.FSharp.Core
                     for j = 0 to len2 - 1 do
                         setArrayElem i j 
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble1 (target: _[,,,]) index1 index2 start3 finish3 start4 finish4 (source: _[,]) =
                 SetArraySlice4DFixedDouble target source index1 index2 start3 finish3 start4 finish4  2 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble2 (target: _[,,,]) index1 start2 finish2 index3 start4 finish4 (source: _[,]) =
                 SetArraySlice4DFixedDouble target source index1 index3 start2 finish2 start4 finish4 1 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble3 (target: _[,,,]) index1 start2 finish2 start3 finish3 index4 (source: _[,]) = 
                 SetArraySlice4DFixedDouble target source index1 index4 start2 finish2 start3 finish3 1 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble4 (target: _[,,,]) start1 finish1 index2 index3 start4 finish4 (source: _[,]) =
                 SetArraySlice4DFixedDouble target source index2 index3 start1 finish1 start4 finish4 0 3
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble5 (target: _[,,,]) start1 finish1 index2 start3 finish3 index4 (source: _[,]) =
                 SetArraySlice4DFixedDouble target source index2 index4 start1 finish1 start3 finish3 0 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedDouble6 (target: _[,,,]) start1 finish1 start2 finish2 index3 index4 (source: _[,]) =
                 SetArraySlice4DFixedDouble target source index3 index4 start1 finish1 start2 finish2 0 1
 
@@ -5362,19 +5368,19 @@ namespace Microsoft.FSharp.Core
                 for i = 0 to len1 - 1 do
                     setArrayElem i
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedTriple1 (target: _[,,,]) start1 finish1 index2 index3 index4 (source: _[]) = 
                 SetArraySlice4DFixedTriple target source index2 index3 index4 start1 finish1 0
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedTriple2 (target: _[,,,]) index1 start2 finish2 index3 index4 (source: _[]) = 
                 SetArraySlice4DFixedTriple target source index1 index3 index4 start2 finish2 1
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedTriple3 (target: _[,,,]) index1 index2 start3 finish3 index4 (source: _[]) =
                 SetArraySlice4DFixedTriple target source index1 index2 index4 start3 finish3 2
 
-            [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
             let inline SetArraySlice4DFixedTriple4 (target: _[,,,]) index1 index2 index3 start4 finish4 (source: _[]) =
                 SetArraySlice4DFixedTriple target source index1 index2 index3 start4 finish4 3
 
@@ -5970,10 +5976,10 @@ namespace Microsoft.FSharp.Core
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
 
         [<AutoOpen>]
-        [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         module ArrayExtensions =
             type ``[,,,]``<'T> with
-                [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -5986,7 +5992,7 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[,,]``<'T> with
-                [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -5998,7 +6004,7 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[,]``<'T> with
-                [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -6009,11 +6015,11 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[]``<'T> with
-                [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member arr.GetReverseIndex (_: int, offset: int) = arr.Length - offset - 1
 
             type System.String with
-                [<Experimental("Preview library feature, requires '--langversion:preview'")>]
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member str.GetReverseIndex (_: int, offset: int) = str.Length - offset - 1
 
 namespace Microsoft.FSharp.Control
