@@ -58,7 +58,7 @@ module internal FSharpCheckerResultsSettings =
         | s -> int64 s
 
     // Look for DLLs in the location of the service DLL first.
-    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<IncrementalBuilder>.Assembly.Location)).Value
+    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location))).Value
 
 [<RequireQualifiedAccess>]
 type FSharpFindDeclFailureReason = 
@@ -193,7 +193,7 @@ type internal TypeCheckInfo
         // We guarantee to only refine to a more nested environment.  It may not be strictly  
         // the right environment, but will always be at least as rich 
 
-        let bestAlmostIncludedSoFar = ref None 
+        let mutable bestAlmostIncludedSoFar = None 
 
         sResolutions.CapturedEnvs |> ResizeArray.iter (fun (possm,env,ad) -> 
             // take only ranges that strictly do not include cursorPos (all ranges that touch cursorPos were processed during 'Strict Inclusion' part)
@@ -204,15 +204,15 @@ type internal TypeCheckInfo
                     | None -> true 
                 
                 if contained then 
-                    match !bestAlmostIncludedSoFar with 
+                    match bestAlmostIncludedSoFar with 
                     | Some (rightm:range,_,_) -> 
                         if posGt possm.End rightm.End || 
                           (posEq possm.End rightm.End && posGt possm.Start rightm.Start) then
-                            bestAlmostIncludedSoFar := Some (possm,env,ad)
-                    | _ -> bestAlmostIncludedSoFar := Some (possm,env,ad))
+                            bestAlmostIncludedSoFar <- Some (possm,env,ad)
+                    | _ -> bestAlmostIncludedSoFar <- Some (possm,env,ad))
         
         let resEnv = 
-            match !bestAlmostIncludedSoFar, mostDeeplyNestedEnclosingScope with 
+            match bestAlmostIncludedSoFar, mostDeeplyNestedEnclosingScope with 
             | Some (_,env,ad), None -> env, ad
             | Some (_,almostIncludedEnv,ad), Some (_,mostDeeplyNestedEnv,_) 
                 when almostIncludedEnv.eFieldLabels.Count >= mostDeeplyNestedEnv.eFieldLabels.Count -> 
@@ -1525,7 +1525,7 @@ module internal ParseAndCheckFile =
         
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
-        let lexargs = mkLexargs(fileName, defines, lightSyntaxStatus, lexResourceManager, ref [], errHandler.ErrorLogger, PathMap.empty)
+        let lexargs = mkLexargs(fileName, defines, lightSyntaxStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
         let lexargs = { lexargs with applyLineDirectives = false }
 
         let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)

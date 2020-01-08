@@ -32,7 +32,11 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
         ())()
 
     let config = FsiEvaluationSession.GetDefaultConfiguration()
-    let baseArgs = [| this.GetType().Assembly.Location; "--noninteractive"; "--targetprofile:netcore"; "--quiet" |]
+    let computedProfile =
+        // If we are being executed on the desktop framework (we can tell because the assembly containing int is mscorlib) then profile must be mscorlib otherwise use netcore
+        if typeof<int>.Assembly.GetName().Name = "mscorlib" then "mscorlib"
+        else "netcore"
+    let baseArgs = [| this.GetType().Assembly.Location; "--noninteractive"; "--targetprofile:" + computedProfile; "--quiet" |]
     let argv = Array.append baseArgs additionalArgs
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr, collectible=true)
 
@@ -79,3 +83,4 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
             stdin.Dispose()
             stdout.Dispose()
             stderr.Dispose()
+            (fsi :> IDisposable).Dispose()

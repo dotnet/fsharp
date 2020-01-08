@@ -14,6 +14,7 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
@@ -124,10 +125,10 @@ module internal IncrementalBuild =
             | VectorBuildRule ve -> ve.Name    
 
     // Ids of exprs            
-    let nextid = ref 999 // Number ids starting with 1000 to discern them
+    let mutable nextid = 999 // Number ids starting with 1000 to discern them
     let NextId() =
-        nextid:=!nextid+1
-        Id(!nextid)                    
+        nextid <- nextid + 1
+        Id(nextid)                    
         
     type INode = 
         abstract Name: string
@@ -1744,7 +1745,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                          defaultFSharpBinariesDir, 
                          implicitIncludeDir=projectDirectory, 
                          reduceMemoryUsage=ReduceMemoryFlag.Yes, 
-                         isInteractive=false, 
+                         isInteractive=useScriptResolutionRules, 
                          isInvalidationSupported=true, 
                          defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
                          tryGetMetadataSnapshot=tryGetMetadataSnapshot) 

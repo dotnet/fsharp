@@ -42,9 +42,9 @@ type internal EventWrapper() =
 /// Exceptions raised by f x are caught and reported in DEBUG mode.
 let timeoutApp descr timeoutMS (f : 'a -> 'b) (arg:'a) =
     use ev = new EventWrapper()
-    let r : 'b option ref = ref None
+    let mutable r = None
     System.Threading.ThreadPool.QueueUserWorkItem(fun _ ->
-        r := 
+        r <-
             try
                 f arg |> Some
             with
@@ -63,7 +63,7 @@ let timeoutApp descr timeoutMS (f : 'a -> 'b) (arg:'a) =
         ev.Set() 
     ) |> ignore
     ev.WaitOne(timeoutMS) |> ignore
-    !r
+    r
 
 module SessionsProperties = 
     let mutable useAnyCpuVersion = true // 64-bit by default

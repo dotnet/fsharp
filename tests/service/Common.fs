@@ -304,6 +304,9 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
           yield! allSymbolsInEntities compGen e.NestedEntities ]
 
 
+let getParseAndCheckResults (source: string) =
+     parseAndCheckScript("/home/user/Test.fsx", source)
+
 let getSymbolUses (source: string) =
     let _, typeCheckResults = parseAndCheckScript("/home/user/Test.fsx", source) 
     typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously

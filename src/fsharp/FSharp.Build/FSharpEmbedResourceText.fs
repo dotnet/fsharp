@@ -399,18 +399,18 @@ open Printf
             stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, netFormatString) ->
                 let formalArgs = new System.Text.StringBuilder()
                 let actualArgs = new System.Text.StringBuilder()
-                let firstTime = ref true
-                let n = ref 0
+                let mutable firstTime = true
+                let mutable n = 0
                 formalArgs.Append "(" |> ignore
                 for hole in holes do
-                    if !firstTime then
-                        firstTime := false
+                    if firstTime then
+                        firstTime <- false
                     else
                         formalArgs.Append ", " |> ignore
                         actualArgs.Append " " |> ignore
-                    formalArgs.Append(sprintf "a%d : %s" !n hole) |> ignore
-                    actualArgs.Append(sprintf "a%d" !n) |> ignore
-                    n := !n + 1
+                    formalArgs.Append(sprintf "a%d : %s" n hole) |> ignore
+                    actualArgs.Append(sprintf "a%d" n) |> ignore
+                    n <- n + 1
                 formalArgs.Append ")" |> ignore
                 fprintfn out "    /// %s" str
                 fprintfn out "    /// (Originally from %s:%d)" filename (lineNum+1)

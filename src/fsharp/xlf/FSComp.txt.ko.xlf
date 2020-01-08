@@ -7192,11 +7192,6 @@
         <target state="translated">무명 레코드를 만드는 복사 및 업데이트 식의 입력은 무명 레코드이거나 레코드여야 합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcLangFeatureNotEnabled50">
-        <source>This language feature is not enabled, use /langversion:5.0 or greater to enable it</source>
-        <target state="new">This language feature is not enabled, use /langversion:5.0 or greater to enable it</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csNullNotNullConstraintInconsistent">
         <source>The constraints 'null' and 'not null' are inconsistent</source>
         <target state="new">The constraints 'null' and 'not null' are inconsistent</target>

@@ -49,7 +49,7 @@ type LexResourceManager() =
 /// Lexer parameters 
 type lexargs =  
     { defines: string list
-      ifdefStack: LexerIfdefStack
+      mutable ifdefStack: LexerIfdefStack
       resourceManager: LexResourceManager
       lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger

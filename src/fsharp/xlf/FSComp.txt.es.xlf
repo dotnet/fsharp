@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Todas las ramas de una expresión de coincidencia de patrón deben devolver valores del mismo tipo. La primera rama devolvió un valor de tipo "{0}", pero esta rama devolvió un valor de tipo "\{1 \}".</target>
+        <target state="new">All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -7190,11 +7190,6 @@
       <trans-unit id="tcCopyAndUpdateNeedsRecordType">
         <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
         <target state="translated">La entrada a una expresión de copia y actualización que crea un registro anónimo debe ser un registro anónimo o un registro</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcLangFeatureNotEnabled50">
-        <source>This language feature is not enabled, use /langversion:5.0 or greater to enable it</source>
-        <target state="new">This language feature is not enabled, use /langversion:5.0 or greater to enable it</target>
         <note />
       </trans-unit>
       <trans-unit id="csNullNotNullConstraintInconsistent">

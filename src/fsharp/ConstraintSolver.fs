@@ -1895,9 +1895,9 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
               // This works because the types on the r.h.s. of subtype 
               // constraints are head-types and so any further inferences are equational. 
               let collect ty = 
-                  let res = ref [] 
-                  IterateEntireHierarchyOfType (fun x -> res := x :: !res) g amap m AllowMultiIntfInstantiations.No ty
-                  List.rev !res
+                  let mutable res = [] 
+                  IterateEntireHierarchyOfType (fun x -> res <- x :: res) g amap m AllowMultiIntfInstantiations.No ty
+                  List.rev res
               let parents1 = collect ty1
               let parents2 = collect ty2
               trackErrors {

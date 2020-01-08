@@ -3410,7 +3410,7 @@ module DebugPrint =
         | TType_measure unt -> 
 #if DEBUG
           leftL (tagText "{") ^^
-          (match !global_g with
+          (match global_g with
            | None -> wordL (tagText "<no global g>")
            | Some g -> 
              let sortVars (vs:(Typar * Rational) list) = vs |> List.sortBy (fun (v, _) -> v.DisplayName) 
@@ -3469,7 +3469,7 @@ module DebugPrint =
     and auxTraitL env (ttrait: TraitConstraintInfo) =
 #if DEBUG
         let (TTrait(tys, nm, memFlags, argtys, rty, _)) = ttrait 
-        match !global_g with
+        match global_g with
         | None -> wordL (tagText "<no global g>")
         | Some g -> 
             let rty = GetFSharpViewOfReturnType g rty
@@ -3591,7 +3591,7 @@ module DebugPrint =
     let slotSigL (slotsig: SlotSig) =
 #if DEBUG
         let (TSlotSig(nm, ty, tps1, tps2, pms, rty)) = slotsig 
-        match !global_g with
+        match global_g with
         | None -> wordL(tagText "<no global g>")
         | Some g -> 
             let rty = GetFSharpViewOfReturnType g rty
@@ -6558,10 +6558,10 @@ let FoldImplFile folders state implFile = ExprFolders(folders).FoldImplFile stat
 //-------------------------------------------------------------------------
 
 let ExprStats x =
-  let count = ref 0
-  let folders = {ExprFolder0 with exprIntercept = (fun _ noInterceptF z x -> (count := !count + 1; noInterceptF z x))}
+  let mutable count = 0
+  let folders = {ExprFolder0 with exprIntercept = (fun _ noInterceptF z x -> (count <- count + 1; noInterceptF z x))}
   let () = FoldExpr folders () x
-  string !count + " TExpr nodes"
+  string count + " TExpr nodes"
 #endif
     
 //-------------------------------------------------------------------------

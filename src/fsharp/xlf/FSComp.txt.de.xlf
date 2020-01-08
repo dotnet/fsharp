@@ -7192,11 +7192,6 @@
         <target state="translated">Die Eingabe in einen Ausdruck für das Kopieren und Aktualisieren, der einen anonymen Datensatz erstellt, muss entweder ein anonymer Datensatz oder ein Datensatz sein.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcLangFeatureNotEnabled50">
-        <source>This language feature is not enabled, use /langversion:5.0 or greater to enable it</source>
-        <target state="new">This language feature is not enabled, use /langversion:5.0 or greater to enable it</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csNullNotNullConstraintInconsistent">
         <source>The constraints 'null' and 'not null' are inconsistent</source>
         <target state="new">The constraints 'null' and 'not null' are inconsistent</target>

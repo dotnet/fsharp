@@ -225,7 +225,7 @@ module CompileHelpers =
         // Register the reflected definitions for the dynamically generated assembly
         for resource in ilxMainModule.Resources.AsList do 
             if IsReflectedDefinitionsResource resource then 
-                Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, moduleBuilder.Name, resource.GetBytes())
+                Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, moduleBuilder.Name, resource.GetBytes().ToArray())
 
         // Save the result
         assemblyBuilderRef := Some assemblyBuilder
@@ -1013,7 +1013,7 @@ type FSharpChecker(legacyReferenceResolver,
         CompileHelpers.setOutputStreams execute
         
         // References used to capture the results of compilation
-        let tcImportsRef = ref (None: TcImports option)
+        let tcImportsRef = ref None
         let assemblyBuilderRef = ref None
         let tcImportsCapture = Some (fun tcImports -> tcImportsRef := Some tcImports)
 

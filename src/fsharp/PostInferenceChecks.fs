@@ -313,7 +313,7 @@ let RecordAnonRecdInfo cenv (anonInfo: AnonRecdTypeInfo) =
 // approx walk of type
 //--------------------------------------------------------------------------
 
-let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, visitTraitSolutionOpt, visitTyparOpt) as f) g env isInner ty =
+let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, visitTraitSolutionOpt, visitTyparOpt) as f) (g: TcGlobals) env isInner ty =
     // We iterate the _solved_ constraints as well, to pick up any record of trait constraint solutions
     // This means we walk _all_ the constraints _everywhere_ in a type, including
     // those attached to _solved_ type variables. This is used by PostTypeCheckSemanticChecks to detect uses of
@@ -332,7 +332,14 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, v
             | _ -> ())
     | _ -> ()
     
-    let ty = stripTyparEqns ty 
+    let ty =
+        if g.compilingFslib then
+            match stripTyparEqns ty with
+            // When compiling FSharp.Core, do not strip type equations at this point if we can't dereference a tycon.
+            | TType_app (tcref, _, _) when not tcref.CanDeref -> ty
+            | _ -> stripTyEqns g ty
+        else 
+            stripTyEqns g ty
     visitTy ty
 
     match ty with

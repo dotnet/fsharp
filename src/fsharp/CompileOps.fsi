@@ -11,6 +11,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
+open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler
 open FSharp.Compiler.TypeChecker
@@ -160,10 +161,10 @@ type IRawFSharpAssemblyData =
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
 
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData : range * ilShortAssemName: string * fileName: string -> (string * ((unit -> byte[]) * (unit -> byte[]) option)) list
+    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData : range * ilShortAssemName: string * fileName: string -> (string * ((unit -> byte[]) * (unit -> byte[]) option)) list
+    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -214,7 +215,7 @@ type AssemblyResolution =
        /// Whether or not this is an installed system assembly (for example, System.dll)
        sysdir: bool
        // Lazily populated ilAssemblyRef for this reference. 
-       ilAssemblyRef: ILAssemblyRef option ref  }
+       mutable ilAssemblyRef: ILAssemblyRef option }
 
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
 

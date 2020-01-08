@@ -16,19 +16,15 @@ open System
 //   *  When a feature is assigned a release language, we will scrub the code of feature references and apply
 //      the Release Language version.
 
-/// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | PreviewVersion = 0
-    | LanguageVersion46 = 1
-    | LanguageVersion47 = 2
-    | SingleUnderscorePattern = 3
-    | WildCardInForLoop = 4
-    | RelaxWhitespace = 5
-    | NameOf = 6
-    | ImplicitYield = 7
-    | OpenStaticClasses = 8
-    | NullnessChecking = 18
+    | SingleUnderscorePattern
+    | WildCardInForLoop
+    | RelaxWhitespace
+    | NameOf
+    | ImplicitYield
+    | OpenStaticClasses
+    | NullnessChecking
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -46,18 +42,13 @@ type LanguageVersion (specifiedVersionAsString) =
 
     static let features =
         dict [
-            // Add new LanguageVersions here ...
-            LanguageFeature.LanguageVersion46, languageVersion46
-            LanguageFeature.LanguageVersion47, languageVersion47
-            LanguageFeature.PreviewVersion, previewVersion
-        
             // F# 4.7
             LanguageFeature.SingleUnderscorePattern, languageVersion47
             LanguageFeature.WildCardInForLoop, languageVersion47
             LanguageFeature.RelaxWhitespace, languageVersion47
             LanguageFeature.ImplicitYield, languageVersion47
 
-            // Add new Language Features here...
+            // F# preview
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.NullnessChecking, languageVersion47 // currently always on because requires FSharp.Core build
@@ -90,11 +81,11 @@ type LanguageVersion (specifiedVersionAsString) =
     member __.ValidOptions = validOptions
 
     /// Get a list of valid versions for help text
-    member __.ValidVersions = [|
-        for v in languageVersions |> Seq.sort do
-            let label = if v = defaultVersion then " (Default)" else ""
-            yield sprintf "%M%s" v label
-            |]
+    member __.ValidVersions =
+        [|
+            for v in languageVersions |> Seq.sort ->
+                sprintf "%M%s" v (if v = defaultVersion then " (Default)" else "")
+        |]
 
     /// Get the specified LanguageVersion
     member __.SpecifiedVersion = specified

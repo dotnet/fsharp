@@ -3783,11 +3783,11 @@ let EliminateInitializationGraphs
         hash
 
     // The output of the analysis
-    let outOfOrder = ref false
-    let runtimeChecks = ref false
-    let directRecursiveData = ref false
-    let reportedEager = ref false
-    let definiteDependencies = ref []
+    let mutable outOfOrder = false
+    let mutable runtimeChecks = false
+    let mutable directRecursiveData = false
+    let mutable reportedEager = false
+    let mutable definiteDependencies = []
 
     let rec stripChooseAndExpr e = 
         match stripExpr e with 
@@ -3883,21 +3883,21 @@ let EliminateInitializationGraphs
             | MaybeLazy -> 
                 if recursiveVals.TryFind v.Deref |> Option.isSome then 
                     warning (RecursiveUseCheckedAtRuntime (denv, v, m)) 
-                    if not !reportedEager then 
-                      (warning (LetRecCheckedAtRuntime m); reportedEager := true)
-                    runtimeChecks := true
+                    if not reportedEager then 
+                      (warning (LetRecCheckedAtRuntime m); reportedEager <- true)
+                    runtimeChecks <- true
 
             | Top | DefinitelyStrict ->
                 if recursiveVals.TryFind v.Deref |> Option.isSome then 
                     if availIfInOrder.TryFind v.Deref |> Option.isNone then 
                         warning (LetRecEvaluatedOutOfOrder (denv, boundv, v, m)) 
-                        outOfOrder := true
-                        if not !reportedEager then 
-                          (warning (LetRecCheckedAtRuntime m); reportedEager := true)
-                    definiteDependencies := (boundv, v) :: !definiteDependencies
+                        outOfOrder <- true
+                        if not reportedEager then 
+                          (warning (LetRecCheckedAtRuntime m); reportedEager <- true)
+                    definiteDependencies <- (boundv, v) :: definiteDependencies
             | InnerTop -> 
                 if recursiveVals.TryFind v.Deref |> Option.isSome then 
-                    directRecursiveData := true
+                    directRecursiveData <- true
             | DefinitelyLazy -> () 
         and checkDelayed st b = 
             match st with 
@@ -3919,11 +3919,11 @@ let EliminateInitializationGraphs
     
     // ddg = definiteDependencyGraph 
     let ddgNodes = recursiveVals.Values |> Seq.toList |> List.map mkLocalValRef
-    let ddg = Graph<ValRef, Stamp>((fun v -> v.Stamp), ddgNodes, !definiteDependencies )
+    let ddg = Graph<ValRef, Stamp>((fun v -> v.Stamp), ddgNodes, definiteDependencies )
     ddg.IterateCycles (fun path -> error (LetRecUnsound (denv, path, path.Head.Range))) 
 
-    let requiresLazyBindings = !runtimeChecks || !outOfOrder
-    if !directRecursiveData && requiresLazyBindings then 
+    let requiresLazyBindings = runtimeChecks || outOfOrder
+    if directRecursiveData && requiresLazyBindings then 
         error(Error(FSComp.SR.tcInvalidMixtureOfRecursiveForms(), bindsm))
 
     if requiresLazyBindings then 
@@ -4232,7 +4232,7 @@ type ValSpecResult = ValSpecResult of ParentRef * ValMemberInfoTransient option 
 
 type RecDefnBindingInfo = RecDefnBindingInfo of ContainerInfo * NewSlotsOK * DeclKind * SynBinding
 
-type MutRecDataForOpen = MutRecDataForOpen of LongIdent * range
+type MutRecDataForOpen = MutRecDataForOpen of LongIdent * range * appliedScope: range
 type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
 
 type MutRecSigsInitialData = MutRecShape<SynTypeDefnSig, SynValSig, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
@@ -5218,9 +5218,9 @@ and ValidateOptArgOrder (spats: SynSimplePats) =
         
     let pats, m = getPats spats 
         
-    let hitOptArg = ref false
+    let mutable hitOptArg = false
     
-    List.iter (fun pat -> if isOptArg pat then hitOptArg := true elif !hitOptArg then error(Error(FSComp.SR.tcOptionalArgsMustComeAfterNonOptionalArgs(), m))) pats
+    List.iter (fun pat -> if isOptArg pat then hitOptArg <- true elif hitOptArg then error(Error(FSComp.SR.tcOptionalArgsMustComeAfterNonOptionalArgs(), m))) pats
             
                     
 /// Bind the patterns used in argument position for a function, method or lambda. 
@@ -5991,10 +5991,10 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 
         // Always allow subsumption if a nominal type is known prior to type checking any arguments
         let flex = not (isTyparTy cenv.g argty)
-        let first = ref true
+        let mutable first = true
         let getInitEnv m = 
-            if !first then 
-                first := false
+            if first then 
+                first <- false
                 env
             else
                 { env with eContextInfo = ContextInfo.CollectionElement (isArray, m) }
@@ -10568,8 +10568,8 @@ and TcMatchPattern cenv inputTy env tpenv (pat: SynPat, optWhenExpr) =
     patf' (TcPatPhase2Input (values, true)), optWhenExpr', NameMap.range vspecMap, envinner, tpenv
 
 and TcMatchClauses cenv inputTy resultTy env tpenv clauses =
-    let first = ref true
-    let isFirst() = if !first then first := false; true else false
+    let mutable first = true
+    let isFirst() = if first then first <- false; true else false
     List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
 
 and TcMatchClause cenv inputTy resultTy env isFirst tpenv (Clause(pat, optWhenExpr, e, patm, spTgt)) =
@@ -14073,7 +14073,7 @@ module MutRecBindingChecking =
                 let tycons = decls |> List.choose (function MutRecShape.Tycon d -> getTyconOpt d | _ -> None) 
                 let mspecs = decls |> List.choose (function MutRecShape.Module (MutRecDefnsPhase2DataForModule (_, mspec), _) -> Some mspec | _ -> None)
                 let moduleAbbrevs = decls |> List.choose (function MutRecShape.ModuleAbbrev (MutRecDataForModuleAbbrev (id, mp, m)) -> Some (id, mp, m) | _ -> None)
-                let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpen (mp, m)) -> Some (mp, m) | _ -> None)
+                let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpen (mp, m, moduleRange)) -> Some (mp, m, moduleRange) | _ -> None)
                 let lets = decls |> List.collect (function MutRecShape.Lets binds -> getVals binds | _ -> [])
                 let exns = tycons |> List.filter (fun (tycon: Tycon) -> tycon.IsExceptionDecl)
 
@@ -14099,7 +14099,7 @@ module MutRecBindingChecking =
                 // Add the modules being defined
                 let envForDecls = (envForDecls, mspecs) ||> List.fold ((if report then AddLocalSubModuleAndReport cenv.tcSink scopem else AddLocalSubModule) g cenv.amap m)
                 // Process the 'open' declarations                
-                let envForDecls = (envForDecls, opens) ||> List.fold (fun env (mp, m) -> TcOpenDecl cenv.tcSink g cenv.amap m scopem env mp)
+                let envForDecls = (envForDecls, opens) ||> List.fold (fun env (mp, m, moduleRange) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m moduleRange env mp)
                 // Add the type definitions being defined
                 let envForDecls = (if report then AddLocalTyconsAndReport cenv.tcSink scopem else AddLocalTycons) g cenv.amap m tycons envForDecls 
                 // Add the exception definitions being defined
@@ -14499,7 +14499,7 @@ module TyconConstraintInference =
         // Repeatedly eliminate structural type definitions whose structural component types no longer support 
         // comparison. On the way record type variables which are support the comparison relation.
         let rec loop (assumedTycons: Set<Stamp>) (assumedTypars: Set<Stamp>) =
-            let assumedTyparsAcc = ref assumedTypars
+            let mutable assumedTyparsAcc = assumedTypars
 
             // Checks if a field type supports the 'comparison' constraint based on the assumptions about the type constructors
             // and type parameters.
@@ -14515,7 +14515,7 @@ module TyconConstraintInference =
                     // Within structural types, type parameters can be optimistically assumed to have comparison
                     // We record the ones for which we have made this assumption.
                     elif tycon.TyparsNoRange |> List.exists (fun tp2 -> typarRefEq tp tp2) then 
-                        assumedTyparsAcc := (!assumedTyparsAcc).Add(tp.Stamp)
+                        assumedTyparsAcc <- assumedTyparsAcc.Add(tp.Stamp)
                         true
                     
                     else
@@ -14595,10 +14595,10 @@ module TyconConstraintInference =
                                                       
                    res)
 
-            if newSet = assumedTycons && assumedTypars = !assumedTyparsAcc then 
-                newSet, !assumedTyparsAcc
+            if newSet = assumedTycons && assumedTypars = assumedTyparsAcc then 
+                newSet, assumedTyparsAcc
             else 
-                loop newSet !assumedTyparsAcc
+                loop newSet assumedTyparsAcc
 
         let uneliminatedTycons, assumedTyparsActual = loop initialAssumedTycons initialAssumedTypars
 
@@ -14630,7 +14630,7 @@ module TyconConstraintInference =
         // Repeatedly eliminate structural type definitions whose structural component types no longer support 
         // equality. On the way add type variables which are support the equality relation
         let rec loop (assumedTycons: Set<Stamp>) (assumedTypars: Set<Stamp>) =
-            let assumedTyparsAcc = ref assumedTypars
+            let mutable assumedTyparsAcc = assumedTypars
             
             // Checks if a field type supports the 'equality' constraint based on the assumptions about the type constructors
             // and type parameters.
@@ -14644,7 +14644,7 @@ module TyconConstraintInference =
                     // Within structural types, type parameters can be optimistically assumed to have equality
                     // We record the ones for which we have made this assumption.
                     elif tycon.Typars(tycon.Range) |> List.exists (fun tp2 -> typarRefEq tp tp2) then                     
-                        assumedTyparsAcc := (!assumedTyparsAcc).Add(tp.Stamp)
+                        assumedTyparsAcc <- assumedTyparsAcc.Add(tp.Stamp)
                         true
                     else
                         false
@@ -14724,10 +14724,10 @@ module TyconConstraintInference =
                                                       
                    res)
 
-            if newSet = assumedTycons && assumedTypars = !assumedTyparsAcc then 
-                newSet, !assumedTyparsAcc
+            if newSet = assumedTycons && assumedTypars = assumedTyparsAcc then 
+                newSet, assumedTyparsAcc
             else 
-                loop newSet !assumedTyparsAcc
+                loop newSet assumedTyparsAcc
 
         let uneliminatedTycons, assumedTyparsActual = loop initialAssumedTycons initialAssumedTypars
 
@@ -16975,13 +16975,13 @@ and TcSignatureElementsNonMutRec cenv parent typeNames endm env defs =
         return! Eventually.fold (TcSignatureElementNonMutRec cenv parent typeNames endm) env defs
     }
 
-and TcSignatureElementsMutRec cenv parent typeNames endm mutRecNSInfo envInitial (defs: SynModuleSigDecl list) =
+and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (defs: SynModuleSigDecl list) =
     eventually {
-        let m = match defs with [] -> endm | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
-        let scopem = (defs, endm) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
+        let m = match defs with [] -> m | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
+        let scopem = (defs, m) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
         let mutRecDefns = 
-          let rec loop isNamespace defs: MutRecSigsInitialData = 
+          let rec loop isNamespace moduleRange defs: MutRecSigsInitialData = 
             ((true, true), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk) def -> 
                 match def with 
                 | SynModuleSigDecl.Types (typeSpecs, _) -> 
@@ -16990,7 +16990,7 @@ and TcSignatureElementsMutRec cenv parent typeNames endm mutRecNSInfo envInitial
 
                 | SynModuleSigDecl.Open (lid, m) -> 
                       if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(), m))
-                      let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, m)) ]
+                      let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, m, moduleRange)) ]
                       decls, (openOk, moduleAbbrevOk)
 
                 | SynModuleSigDecl.Exception (SynExceptionSig(exnRepr, members, _), _) ->
@@ -17004,9 +17004,9 @@ and TcSignatureElementsMutRec cenv parent typeNames endm mutRecNSInfo envInitial
                     let decls = [ MutRecShape.Lets vspec ]
                     decls, (false, false)
 
-                | SynModuleSigDecl.NestedModule(compInfo, isRec, synDefs, _) ->
+                | SynModuleSigDecl.NestedModule(compInfo, isRec, synDefs, moduleRange) ->
                       if isRec then warning(Error(FSComp.SR.tcRecImplied(), compInfo.Range))
-                      let mutRecDefs = loop false synDefs 
+                      let mutRecDefs = loop false moduleRange synDefs
                       let decls = [MutRecShape.Module (compInfo, mutRecDefs)]
                       decls, (false, false)
 
@@ -17022,7 +17022,7 @@ and TcSignatureElementsMutRec cenv parent typeNames endm mutRecNSInfo envInitial
                     error(Error(FSComp.SR.tcUnsupportedMutRecDecl(), def.Range)))
 
               |> fst
-          loop (match parent with ParentNone -> true | Parent _ -> false) defs
+          loop (match parent with ParentNone -> true | Parent _ -> false) m defs
         return TcDeclarations.TcMutRecSignatureDecls cenv envInitial parent typeNames emptyUnscopedTyparEnv m scopem mutRecNSInfo mutRecDefns
     }
 
@@ -17202,7 +17202,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(longId, isRec, kind, defs, xml, attribs, vis, m)) ->
 
-          if !progress then dprintn ("Typecheck implementation " + textOfLid longId)
+          if progress then dprintn ("Typecheck implementation " + textOfLid longId)
           let endm = m.EndRange
 
           do for id in longId do 
@@ -17289,14 +17289,14 @@ and TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, 
  }
 
 /// The mutually recursive case for a sequence of declarations (and nested modules)
-and TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm envInitial mutRecNSInfo (defs: SynModuleDecl list) =
+and TcModuleOrNamespaceElementsMutRec cenv parent typeNames m envInitial mutRecNSInfo (defs: SynModuleDecl list) =
  eventually {
 
-    let m = match defs with [] -> endm | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
-    let scopem = (defs, endm) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
+    let m = match defs with [] -> m | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
+    let scopem = (defs, m) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
     let (mutRecDefns, (_, _, Attributes synAttrs)) = 
-      let rec loop isNamespace attrs defs: (MutRecDefnsInitialData * _) = 
+      let rec loop isNamespace moduleRange attrs defs: (MutRecDefnsInitialData * _) = 
         ((true, true, attrs), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk, attrs) def -> 
             match ElimModuleDoBinding def with
 
@@ -17313,15 +17313,15 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm envInitial mutR
                           else List.map (List.singleton >> MutRecShape.Lets) binds
                   binds, (false, false, attrs)
 
-              | SynModuleDecl.NestedModule(compInfo, isRec, synDefs, _isContinuingModule, _) -> 
+              | SynModuleDecl.NestedModule(compInfo, isRec, synDefs, _isContinuingModule, moduleRange) -> 
                   if isRec then warning(Error(FSComp.SR.tcRecImplied(), compInfo.Range))
-                  let mutRecDefs, (_, _, attrs) = loop false attrs synDefs 
+                  let mutRecDefs, (_, _, attrs) = loop false moduleRange attrs synDefs 
                   let decls = [MutRecShape.Module (compInfo, mutRecDefs)]
                   decls, (false, false, attrs)
 
               | SynModuleDecl.Open (LongIdentWithDots(lid, _), m) ->  
                   if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(), m))
-                  let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, m)) ]
+                  let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, m, moduleRange)) ]
                   decls, (openOk, moduleAbbrevOk, attrs)
 
               | SynModuleDecl.Exception (SynExceptionDefn(repr, members, _), _m) -> 
@@ -17345,7 +17345,7 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm envInitial mutR
 
               | (SynModuleDecl.NamespaceFragment _ as d) -> error(Error(FSComp.SR.tcUnsupportedMutRecDecl(), d.Range)))
 
-      loop (match parent with ParentNone -> true | Parent _ -> false) [] defs
+      loop (match parent with ParentNone -> true | Parent _ -> false) m [] defs
 
     let tpenv = emptyUnscopedTyparEnv 
     let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv envInitial parent typeNames tpenv m scopem mutRecNSInfo mutRecDefns 

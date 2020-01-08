@@ -7192,11 +7192,6 @@
         <target state="translated">匿名レコードを作成する copy-and-update 式への入力には匿名レコードまたはレコードを 1 つ含める必要があります</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcLangFeatureNotEnabled50">
-        <source>This language feature is not enabled, use /langversion:5.0 or greater to enable it</source>
-        <target state="new">This language feature is not enabled, use /langversion:5.0 or greater to enable it</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csNullNotNullConstraintInconsistent">
         <source>The constraints 'null' and 'not null' are inconsistent</source>
         <target state="new">The constraints 'null' and 'not null' are inconsistent</target>

@@ -7192,11 +7192,6 @@
         <target state="translated">Dane wejściowe wyrażenia kopiowania i aktualizowania, które tworzy rekord anonimowy, muszą być rekordem lub rekordem anonimowym</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcLangFeatureNotEnabled50">
-        <source>This language feature is not enabled, use /langversion:5.0 or greater to enable it</source>
-        <target state="new">This language feature is not enabled, use /langversion:5.0 or greater to enable it</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csNullNotNullConstraintInconsistent">
         <source>The constraints 'null' and 'not null' are inconsistent</source>
         <target state="new">The constraints 'null' and 'not null' are inconsistent</target>
