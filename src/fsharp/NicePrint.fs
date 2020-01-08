@@ -787,11 +787,11 @@ module private PrintTypes =
         let cxs = 
             cxs
             |> ListSet.setify (fun (_, cx1) (_, cx2) ->
-                match cx1, cx2 with 
+                match cx1,cx2 with 
                 | TyparConstraint.MayResolveMember(traitInfo1, _),
                   TyparConstraint.MayResolveMember(traitInfo2, _) -> traitsAEquiv denv.g TypeEquivEnv.Empty traitInfo1 traitInfo2
                 | _ -> false)
-
+                     
         let cxsL = List.collect (layoutConstraintWithInfo denv env) cxs
         match cxsL with 
         | [] -> emptyL 
@@ -864,7 +864,7 @@ module private PrintTypes =
                     WordL.arrow ^^
                     (layoutTyparRefWithInfo denv env tp)) |> longConstraintPrefix]
 
-    and private layoutTraitWithInfo denv env (TTrait(tys, nm, memFlags, argtys, rty, _)) =
+    and private layoutTraitWithInfo denv env (TTrait(tys, nm, memFlags, argtys, rty, _, _, _)) =
         let nm = DemangleOperatorName nm
         if denv.shortConstraints then 
             WordL.keywordMember ^^ wordL (tagMember nm)
@@ -876,9 +876,19 @@ module private PrintTypes =
                 match tys with 
                 | [ty] -> layoutTypeWithInfo denv env ty 
                 | tys -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagKeyword "or")) tys)
-            tysL ^^ wordL (tagPunctuation ":") ---
+
+            let argtys = 
+                if memFlags.IsInstance then 
+                    match argtys with 
+                    | [] | [_] -> [denv.g.unit_ty]
+                    | _ :: rest -> rest
+                else argtys
+
+            let argtysL = layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argtys
+
+            tysL ^^ wordL (tagPunctuation ":")  ---  
                 bracketL (stat ++ wordL (tagMember nm) ^^ wordL (tagPunctuation ":") ---
-                        ((layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argtys --- wordL (tagPunctuation "->")) --- (layoutTypeWithInfo denv env rty)))
+                        ((argtysL --- wordL (tagPunctuation "->")) --- (layoutTypeWithInfo denv env rty)))
 
 
     /// Layout a unit expression 

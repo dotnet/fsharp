@@ -7,6 +7,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Range
 open FSharp.Compiler.Import
@@ -34,47 +35,70 @@ val NewErrorMeasure : unit -> Measure
 /// Create a list of inference type variables, one for each element in the input list
 val NewInferenceTypes : 'a list -> TType list
 
+/// Freshen a trait for use at a particular location
+type TraitFreshener = (TraitConstraintInfo -> TraitPossibleExtensionMemberSolutions * TraitAccessorDomain)
+
 /// Given a set of formal type parameters and their constraints, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted to refer to these.
-val FreshenAndFixupTypars : range -> TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInst * TType list
+val FreshenAndFixupTypars : TraitFreshener option -> range -> TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInst * TType list
 
-val FreshenTypeInst : range -> Typars -> Typars * TyparInst * TType list
+/// Make new type inference variables for the use of a generic construct at a particular location
+val FreshenTypeInst : TraitFreshener option -> range -> Typars -> Typars * TyparInst * TType list
 
-val FreshenTypars : range -> Typars -> TType list
+/// Make new type inference variables for the use of a generic construct at a particular location
+val FreshenTypars : TraitFreshener option -> range -> Typars -> TType list
 
-val FreshenMethInfo : range -> MethInfo -> TType list
+/// Make new type inference variables for the use of a method at a particular location
+val FreshenMethInfo : TraitFreshener option -> range -> MethInfo -> TType list
+
+/// Get the trait freshener for a particular location
+val GetTraitFreshner : AccessorDomain -> NameResolutionEnv -> TraitFreshener
 
 [<RequireQualifiedAccess>] 
-/// Information about the context of a type equation.
+/// Information about the context of a type equation, for better error reporting
 type ContextInfo =
-/// No context was given.
-| NoContext
-/// The type equation comes from an IF expression.
-| IfExpression of range
-/// The type equation comes from an omitted else branch.
-| OmittedElseBranch of range
-/// The type equation comes from a type check of the result of an else branch.
-| ElseBranchResult of range
-/// The type equation comes from the verification of record fields.
-| RecordFields
-/// The type equation comes from the verification of a tuple in record fields.
-| TupleInRecordFields
-/// The type equation comes from a list or array constructor
-| CollectionElement of bool * range
-/// The type equation comes from a return in a computation expression.
-| ReturnInComputationExpression
-/// The type equation comes from a yield in a computation expression.
-| YieldInComputationExpression
-/// The type equation comes from a runtime type test.
-| RuntimeTypeTest of bool
-/// The type equation comes from an downcast where a upcast could be used.
-| DowncastUsedInsteadOfUpcast of bool
-/// The type equation comes from a return type of a pattern match clause (not the first clause).
-| FollowingPatternMatchClause of range
-/// The type equation comes from a pattern match guard.
-| PatternMatchGuard of range
-/// The type equation comes from a sequence expression.
-| SequenceExpression of TType
+
+    /// No context was given.
+    | NoContext
+
+    /// The type equation comes from an IF expression.
+    | IfExpression of range
+
+    /// The type equation comes from an omitted else branch.
+    | OmittedElseBranch of range
+
+    /// The type equation comes from a type check of the result of an else branch.
+    | ElseBranchResult of range
+
+    /// The type equation comes from the verification of record fields.
+    | RecordFields
+
+    /// The type equation comes from the verification of a tuple in record fields.
+    | TupleInRecordFields
+
+    /// The type equation comes from a list or array constructor
+    | CollectionElement of bool * range
+
+    /// The type equation comes from a return in a computation expression.
+    | ReturnInComputationExpression
+
+    /// The type equation comes from a yield in a computation expression.
+    | YieldInComputationExpression
+
+    /// The type equation comes from a runtime type test.
+    | RuntimeTypeTest of bool
+
+    /// The type equation comes from an downcast where a upcast could be used.
+    | DowncastUsedInsteadOfUpcast of bool
+
+    /// The type equation comes from a return type of a pattern match clause (not the first clause).
+    | FollowingPatternMatchClause of range
+
+    /// The type equation comes from a pattern match guard.
+    | PatternMatchGuard of range
+
+    /// The type equation comes from a sequence expression.
+    | SequenceExpression of TType
 
 exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
@@ -116,7 +140,10 @@ type OptionalTrace =
 val SimplifyMeasuresInTypeScheme             : TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
 val SolveTyparEqualsType                     : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
 val SolveTypeEqualsTypeKeepAbbrevs           : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
+
+/// Canonicalize constraints prior to generalization 
 val CanonicalizeRelevantMemberConstraints    : ConstraintSolverEnv -> int -> OptionalTrace -> Typars -> OperationResult<unit>
+
 val ResolveOverloading                       : ConstraintSolverEnv -> OptionalTrace -> string -> ndeep: int -> TraitConstraintInfo option -> int * int -> AccessorDomain -> CalledMeth<Expr> list ->  bool -> TType option -> CalledMeth<Expr> option * OperationResult<unit>
 val UnifyUniqueOverloading                   : ConstraintSolverEnv -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool> 
 val EliminateConstraintsForGeneralizedTypars : ConstraintSolverEnv -> OptionalTrace -> Typars -> unit 
@@ -145,5 +172,8 @@ val AddCxTypeIsDelegate                       : DisplayEnv -> ConstraintSolverSt
 val CodegenWitnessThatTypeSupportsTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
 
 val ChooseTyparSolutionAndSolve : ConstraintSolverState -> DisplayEnv -> Typar -> unit
+
+/// Get the type variables that may help provide solutions to a statically resolved member trait constraint
+val GetSupportOfMemberConstraint : ConstraintSolverEnv -> TraitConstraintInfo -> Typar list
 
 val IsApplicableMethApprox : TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool

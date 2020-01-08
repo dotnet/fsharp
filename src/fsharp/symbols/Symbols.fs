@@ -1218,7 +1218,8 @@ and FSharpAbstractSignature(cenv, info: SlotSig) =
     member __.DeclaringType = FSharpType(cenv, info.ImplementedType)
 
 and FSharpGenericParameterMemberConstraint(cenv, info: TraitConstraintInfo) = 
-    let (TTrait(tys, nm, flags, atys, rty, _)) = info 
+    let (TTrait(tys, nm, flags, atys, rty, _, _extSlns, _ad)) = info 
+
     member __.MemberSources = 
         tys   |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
 
@@ -1276,7 +1277,7 @@ and FSharpGenericParameterConstraint(cenv, cx: TyparConstraint) =
 
     member __.MemberConstraintData =  
         match cx with 
-        | TyparConstraint.MayResolveMember(info, _) ->  FSharpGenericParameterMemberConstraint(cenv, info) 
+        | TyparConstraint.MayResolveMember(info, _) ->  FSharpGenericParameterMemberConstraint(cenv,  info) 
         | _ -> invalidOp "not a member constraint"
 
     member __.IsNonNullableValueTypeConstraint = 

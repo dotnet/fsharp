@@ -1073,6 +1073,11 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
              Zset.exists hiddenUnionCase fvs.FreeUnionCases ) ->
                 UnknownValue
 
+        // TODO: consider what happens when the expression refers to extSlns that have become hidden
+        // At the moment it feels like this may lead to remap failures, where the optimization information
+        // for a module contains dangling references to extSlns that are no longer needed (because they have been solved).
+        // However, we don't save extSlns into actual pickled optimization information, so maybe this is not a problem.
+
         // Check for escape in constant 
         | ConstValue(_, ty) when 
             (let ftyvs = freeInType CollectAll ty
@@ -3438,7 +3443,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           optimizing=true
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
-          casApplied=new Dictionary<Stamp, bool>() }
+          casApplied=new Dictionary<Stamp,bool>() }
     let (optEnvNew, _, _, _ as results) = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
     let optimizeDuringCodeGen expr = OptimizeExpr cenv optEnvNew expr |> fst
     results, optimizeDuringCodeGen
