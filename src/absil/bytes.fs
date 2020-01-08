@@ -155,7 +155,7 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
             raise (ArgumentOutOfRangeException("i"))
 
     do
-        if length <= 0 then
+        if length < 0 then
             raise (ArgumentOutOfRangeException("length"))
 
     override _.Item 
