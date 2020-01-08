@@ -675,13 +675,14 @@ val IsOptimizationDataResource: ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
+
 val GetSignatureDataResourceName: ILResource -> string
 
-/// Write F# signature data as an IL resource
-val WriteSignatureData: TcConfig * TcGlobals * Tastops.Remap * CcuThunk * filename: string * inMem: bool -> ILResource * ILResource
+/// Write F# signature data as an IL resource(s)
+val WriteSignatureData: TcConfig * TcGlobals * Tastops.Remap * CcuThunk * filename: string * inMem: bool -> ILResource * ILResource option
 
-/// Write F# optimization data as an IL resource
-val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource * ILResource
+/// Write F# optimization data as an IL resource(s)
+val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource * ILResource option
 
 //----------------------------------------------------------------------------
 // #r and other directives

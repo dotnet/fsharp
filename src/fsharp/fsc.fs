@@ -445,7 +445,7 @@ let EncodeInterfaceData(tcConfig: TcConfig, tcGlobals, exportRemapping, generate
             let bytes = resource1.GetBytes()
             use fileStream = File.Create(sigDataFileName, bytes.Length)
             bytes.CopyTo fileStream
-        let resources = [resource1; resource2]
+        let resources = [ yield resource1; match resource2 with None -> () | Some r -> yield r ]
         let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
         [sigAttr], resources
       else 
@@ -470,7 +470,8 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
             else 
                 data
         let r1, r2 = WriteOptimizationData (tcGlobals, outfile, isIncrementalBuild, ccu, optData)
-        [ r1; r2 ]
+        let resources = [ yield r1; match r2 with None -> () | Some r -> yield r ]
+        resources
     else
         [ ]
 

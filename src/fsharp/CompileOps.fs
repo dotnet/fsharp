@@ -3673,18 +3673,23 @@ let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x =
       Access = ILResourceAccess.Public
       CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
       MetadataIndex = NoMetadataIdx },
-    { Name = rNameB
-      Location = ILResourceLocation.Local(ByteMemory.FromArray(bytesB).AsReadOnly())
-      Access = ILResourceAccess.Public
-      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-      MetadataIndex = NoMetadataIdx }
+    if bytesB.Length > 0 then 
+        Some 
+          { Name = rNameB
+            Location = ILResourceLocation.Local(ByteMemory.FromArray(bytesB).AsReadOnly())
+            Access = ILResourceAccess.Public
+            CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+            MetadataIndex = NoMetadataIdx 
+          }
+    else
+        None
 
 let GetSignatureData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) : PickledDataWithReferences<PickledCcuInfo> = 
     let memA = byteReaderA()
     let memB = (match byteReaderB with None -> ByteMemory.Empty.AsReadOnly() | Some br -> br())
     unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo memA memB
 
-let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, file, inMem) : ILResource * ILResource = 
+let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, file, inMem) = 
     let mspec = ccu.Contents
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
