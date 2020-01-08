@@ -384,7 +384,7 @@ let main argv = 0"""
 
             Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
 
-    let PassWithOptions options (source: string) =
+    static member PassWithOptions options (source: string) =
         lock gate <| fun () ->
             let options = { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions}
 
@@ -398,7 +398,7 @@ let main argv = 0"""
 
             Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
 
-    let TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
+    static member TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
         lock gate <| fun () ->
             let parseResults, fileAnswer =
                 checker.ParseAndCheckFileInProject(
@@ -444,7 +444,7 @@ let main argv = 0"""
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
     static member CompileExe (source: string) =
-        CompileExeWithOptions [||] source
+        CompilerAssert.CompileExeWithOptions [||] source
 
     static member CompileExeAndRunWithOptions options (source: string) =
         compile true options source (fun (errors, outputExe) ->
@@ -456,7 +456,7 @@ let main argv = 0"""
         )
 
     static member CompileExeAndRun (source: string) =
-        CompileExeAndRunWithOptions [||] source
+        CompilerAssert.CompileExeAndRunWithOptions [||] source
 
     static member CompileLibraryAndVerifyILWithOptions options (source: string) (f: ILVerifier -> unit) =
         compile false options source (fun (errors, outputFilePath) ->
@@ -508,7 +508,8 @@ let main argv = 0"""
                     Assert.AreEqual(expectedErrorMessage, errorMessage)
             )
 
-    static member RunScript source expectedErrorMessages = RunScriptWithOptions [||] source expectedErrorMessages
+    static member RunScript source expectedErrorMessages =
+        CompilerAssert.RunScriptWithOptions [||] source expectedErrorMessages
 
     static member ParseWithErrors (source: string) expectedParseErrors =
         let sourceFileName = "test.fs"

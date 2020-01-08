@@ -5115,7 +5115,7 @@ module ScriptPreprocessClosure =
             TcConfig.Create(tcConfigB, validate=false), nowarns
     
     let FindClosureFiles(mainFile, _m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager: Lexhelp.LexResourceManager) =
-        let tcConfig = origTcConfig
+        let mutable tcConfig = origTcConfig
         
         let observedSources = Observed()
         let loadScripts = HashSet<_>()
@@ -5123,7 +5123,7 @@ module ScriptPreprocessClosure =
         // Resolve the packages
         let rec resolveDependencyManagerSources scriptName =
             if not (loadScripts.Contains scriptName) then
-                [ for kv in tcConfig.Value.packageManagerLines do
+                [ for kv in tcConfig.packageManagerLines do
                     let packageManagerKey, packageManagerLines = kv.Key, kv.Value
                     match packageManagerLines with
                     | [] -> ()
@@ -5131,14 +5131,14 @@ module ScriptPreprocessClosure =
                         match origTcConfig.packageManagerLines |> Map.tryFind packageManagerKey with
                         | Some oldDependencyManagerLines when oldDependencyManagerLines = packageManagerLines -> ()
                         | _ ->
-                            match DependencyManagerIntegration.tryFindDependencyManagerByKey tcConfig.Value.compilerToolPaths tcConfig.Value.outputDir m packageManagerKey with
+                            match DependencyManagerIntegration.tryFindDependencyManagerByKey tcConfig.compilerToolPaths tcConfig.outputDir m packageManagerKey with
                             | None ->
-                                errorR(DependencyManagerIntegration.createPackageManagerUnknownError tcConfig.Value.compilerToolPaths tcConfig.Value.outputDir packageManagerKey m)
+                                errorR(DependencyManagerIntegration.createPackageManagerUnknownError tcConfig.compilerToolPaths tcConfig.outputDir packageManagerKey m)
                             | Some packageManager ->
                                 let inline snd3 (_, b, _) = b
                                 let packageManagerTextLines = packageManagerLines |> List.map snd3
 
-                                match DependencyManagerIntegration.resolve packageManager tcConfig.Value.implicitIncludeDir mainFile scriptName m packageManagerTextLines with
+                                match DependencyManagerIntegration.resolve packageManager tcConfig.implicitIncludeDir mainFile scriptName m packageManagerTextLines with
                                 | None -> () // error already reported
                                 | Some (succeeded, generatedScripts, additionalIncludeFolders) ->  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                                     // This may incrementally update tcConfig too with new #r references
@@ -5147,11 +5147,11 @@ module ScriptPreprocessClosure =
                                     | true ->
                                         // Resolution produced no errors
                                         if not (isNil additionalIncludeFolders) then
-                                            let tcConfigB = tcConfig.Value.CloneOfOriginalBuilder
+                                            let tcConfigB = tcConfig.CloneOfOriginalBuilder
                                             for folder in additionalIncludeFolders do 
                                                 tcConfigB.AddIncludePath(m, folder, "")
                                             tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
-                                            tcConfig := TcConfig.Create(tcConfigB, validate=false)
+                                            tcConfig <- TcConfig.Create(tcConfigB, validate=false)
                                         for script in generatedScripts do
                                             let scriptText = File.ReadAllText script
                                             loadScripts.Add script |> ignore
@@ -5160,7 +5160,7 @@ module ScriptPreprocessClosure =
                                     | false ->
                                         // Resolution produced errors update packagerManagerLines entries to note these failure
                                         // failed resolutions will no longer be considered
-                                        let tcConfigB = tcConfig.Value.CloneOfOriginalBuilder
+                                        let tcConfigB = tcConfig.CloneOfOriginalBuilder
                                         tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
                                         tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
             else []
