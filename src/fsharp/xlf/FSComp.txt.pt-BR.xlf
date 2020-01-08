@@ -47,6 +47,21 @@
         <target state="translated">Algoritmo '{0}' sem suporte</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameDifferent">
+        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
+        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSubset">
+        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
+        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSuperset">
+        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
+        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Os atributos não podem ser aplicados às extensões de tipo.</target>
@@ -7153,8 +7168,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
-        <target state="translated">Dois tipos de registro anônimos têm conjuntos incompatíveis de nomes de campos '{0}' e '{1}'</target>
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="needs-review-translation">Dois tipos de registro anônimos têm conjuntos incompatíveis de nomes de campos '{0}' e '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
