@@ -225,3 +225,33 @@ else failwith "Test Failed"
             Compilation.Create(source, Fsx, Exe, [|"--optimize+"|], [CompilationReference.CreateFSharp(module1, staticLink=true)])
 
         CompilerAssert.Execute(module2, ignoreWarnings=true)
+
+    [<Test>]
+    let ``Standalone linking``() =
+        let source =
+            """
+module Module1
+
+let _ = List.iter (fun s -> eprintf "%s" s) ["hello"; " "; "world"]
+let _ = eprintfn "%s" "."
+let _ = exit 0
+            """
+
+        let module1 = Compilation.Create(source, Fsx, Exe, [|"--standalone"|])
+
+        CompilerAssert.Execute(module1, newProcess=true)
+
+    [<Test>]
+    let ``Standalone linking - optimized``() =
+        let source =
+            """
+module Module1
+
+let _ = List.iter (fun s -> eprintf "%s" s) ["hello"; " "; "world"]
+let _ = eprintfn "%s" "."
+let _ = exit 0
+            """
+
+        let module1 = Compilation.Create(source, Fsx, Exe, [|"--standalone"; "--optimize+"|])
+
+        CompilerAssert.Execute(module1, newProcess=true)
