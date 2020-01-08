@@ -204,7 +204,7 @@ type AssemblyResolution =
        /// Whether or not this is an installed system assembly (for example, System.dll)
        sysdir: bool
        // Lazily populated ilAssemblyRef for this reference. 
-       ilAssemblyRef: ILAssemblyRef option ref  }
+       mutable ilAssemblyRef: ILAssemblyRef option }
 
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
 

@@ -255,12 +255,12 @@ module LegacyMSBuildReferenceResolver
           "Software\Microsoft\.NetFramework", "AssemblyFoldersEx" , ""              
         if Array.isEmpty references then [| |] else
 
-        let backgroundException = ref false
+        let mutable backgroundException = false
 
         let protect f = 
-            if not !backgroundException then 
+            if not backgroundException then 
                 try f() 
-                with _ -> backgroundException := true
+                with _ -> backgroundException <- true
 
         let engine = 
             { new IBuildEngine with 

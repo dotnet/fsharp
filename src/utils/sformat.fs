@@ -822,9 +822,9 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             let path = Dictionary<obj,int>(10,HashIdentity.Reference)
 
             // Roughly count the "nodes" printed, e.g. leaf items and inner nodes, but not every bracket and comma.
-            let size = ref opts.PrintSize
-            let exceededPrintSize() = !size<=0
-            let countNodes n = if !size > 0 then size := !size - n else () // no need to keep decrementing (and avoid wrap around) 
+            let mutable  size = opts.PrintSize
+            let exceededPrintSize() = size<=0
+            let countNodes n = if size > 0 then size <- size - n else () // no need to keep decrementing (and avoid wrap around) 
             let stopShort _ = exceededPrintSize() // for unfoldL
 
             // Recursive descent

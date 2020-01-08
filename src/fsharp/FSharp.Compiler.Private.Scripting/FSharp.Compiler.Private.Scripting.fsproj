@@ -9,13 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="TextHelpers.fs" />
     <Compile Include="FSharpScript.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <NuspecProperty Include="FSharpCoreVersion=$(FSCorePackageVersion)-$(VersionSuffix)"/>
-    <NuspecProperty Include="TargetFramework=$(TargetFramework)"/>
+    <NuspecProperty Include="FSharpCoreVersion=$(FSCorePackageVersion)-$(VersionSuffix)" />
+    <NuspecProperty Include="TargetFramework=$(TargetFramework)" />
   </ItemGroup>
 
   <ItemGroup>

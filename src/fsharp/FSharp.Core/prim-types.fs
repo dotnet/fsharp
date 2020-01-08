@@ -4708,14 +4708,14 @@ namespace Microsoft.FSharp.Core
                 else 
                     // a constrained, common simple iterator that is fast.
                     let singleStepRangeEnumerator () =
-                        let value : Ref<'T> = ref (n - LanguagePrimitives.GenericOne)
+                        let mutable value = n - LanguagePrimitives.GenericOne
 
                         let inline current () =
                             // according to IEnumerator<int>.Current documentation, the result of of Current
                             // is undefined prior to the first call of MoveNext and post called to MoveNext
                             // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
                             // so we should be able to just return value here, which would be faster
-                            let derefValue = !value
+                            let derefValue = value
                             if derefValue < n then
                                 notStarted ()
                             elif derefValue > m then
@@ -4731,14 +4731,14 @@ namespace Microsoft.FSharp.Core
 
                           interface IEnumerator with
                             member __.Current = box (current ())
-                            member __.Reset () = value := n - LanguagePrimitives.GenericOne
+                            member __.Reset () = value <- n - LanguagePrimitives.GenericOne
                             member __.MoveNext () =
-                                let derefValue = !value
+                                let derefValue = value
                                 if derefValue < m then
-                                    value := derefValue + LanguagePrimitives.GenericOne
+                                    value <- derefValue + LanguagePrimitives.GenericOne
                                     true
                                 elif derefValue = m then 
-                                    value := derefValue + LanguagePrimitives.GenericOne
+                                    value <- derefValue + LanguagePrimitives.GenericOne
                                     false
                                 else false }
 
