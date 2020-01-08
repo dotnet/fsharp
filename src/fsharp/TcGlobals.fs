@@ -1586,5 +1586,5 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
 #if DEBUG
 // This global is only used during debug output 
-let global_g = ref (None : TcGlobals option)
+let mutable global_g = None : TcGlobals option
 #endif
