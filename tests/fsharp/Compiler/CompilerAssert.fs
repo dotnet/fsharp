@@ -192,6 +192,20 @@ let main argv = 0"""
 
             Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
 
+    let PassWithOptions options (source: string) =
+        lock gate <| fun () ->
+            let options = { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions}
+
+            let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunSynchronously
+
+            Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
+
+            match fileAnswer with
+            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
+
+            Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
+
     let TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
         lock gate <| fun () ->
             let parseResults, fileAnswer =

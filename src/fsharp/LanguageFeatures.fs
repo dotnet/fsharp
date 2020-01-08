@@ -52,13 +52,15 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.RelaxWhitespace, languageVersion47
             LanguageFeature.ImplicitYield, languageVersion47
 
+            // F# 5.0
+            LanguageFeature.FixedIndexSlice3d4d, languageVersion50
+            LanguageFeature.FromEndSlicing, languageVersion50
+
             // F# preview
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.DotlessFloat32Literal, languageVersion50
             LanguageFeature.PackageManagement, previewVersion
-            LanguageFeature.FixedIndexSlice3d4d, previewVersion
-            LanguageFeature.FromEndSlicing, previewVersion
         ]
 
     let specified =
@@ -78,6 +80,10 @@ type LanguageVersion (specifiedVersionAsString) =
         match features.TryGetValue featureId with
         | true, v -> v <= specified
         | false, _ -> false
+
+    /// Has preview been explicitly specified
+    member __.IsPreviewEnabled =
+        specified = previewVersion
 
     /// Does the languageVersion support this version string
     member __.ContainsVersion version =

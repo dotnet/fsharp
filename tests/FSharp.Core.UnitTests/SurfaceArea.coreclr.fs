@@ -2746,5 +2746,11 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String Name
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String ToString()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
-Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()"
+Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
+"
+#if DEBUG
+        let expected =
+            expected +
+            @"Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])"
+#endif
         SurfaceArea.verify expected "coreclr" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))

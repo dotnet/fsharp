@@ -27,7 +27,10 @@ type LanguageVersion =
     /// Get the list of valid versions
     member ContainsVersion: string -> bool
 
-    /// Does the specified LanguageVersion support the specified feature
+    /// Has preview been explicitly specified
+    member IsPreviewEnabled: bool
+
+    /// Does the selected LanguageVersion support the specified feature
     member SupportsFeature: LanguageFeature -> bool
 
     /// Get the list of valid versions
