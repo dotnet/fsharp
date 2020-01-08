@@ -32,8 +32,9 @@ type InteractiveTests() =
 
     [<Test>]
     member __.``Capture console input``() =
-        use script = new FSharpScript(captureInput=true)
-        script.ProvideInput "stdin:1234\r\n"
+        use input = new RedirectConsoleInput()
+        use script = new FSharpScript()
+        input.ProvideInput "stdin:1234\r\n"
         let opt = script.Eval("System.Console.ReadLine()") |> getValue
         let value = opt.Value
         Assert.AreEqual(typeof<string>, value.ReflectionType)
@@ -41,11 +42,12 @@ type InteractiveTests() =
 
     [<Test>]
     member __.``Capture console output/error``() =
-        use script = new FSharpScript(captureOutput=true)
+        use output = new RedirectConsoleOutput()
+        use script = new FSharpScript()
         use sawOutputSentinel = new ManualResetEvent(false)
         use sawErrorSentinel = new ManualResetEvent(false)
-        script.OutputProduced.Add (fun line -> if line = "stdout:1234" then sawOutputSentinel.Set() |> ignore)
-        script.ErrorProduced.Add (fun line -> if line = "stderr:5678" then sawErrorSentinel.Set() |> ignore)
+        output.OutputProduced.Add (fun line -> if line = "stdout:1234" then sawOutputSentinel.Set() |> ignore)
+        output.ErrorProduced.Add (fun line -> if line = "stderr:5678" then sawErrorSentinel.Set() |> ignore)
         script.Eval("printfn \"stdout:1234\"; eprintfn \"stderr:5678\"") |> ignoreValue
         Assert.True(sawOutputSentinel.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see output sentinel value written")
         Assert.True(sawErrorSentinel.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see error sentinel value written")

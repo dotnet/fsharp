@@ -14,6 +14,7 @@
     <PropertyGroup>
       <__TargetFilePath>@(NoneSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')</__TargetFilePath>
       <__TargetFileName>@(NoneSubstituteText->'%(Filename)%(Extension)')</__TargetFileName>
+      <__TargetLink>@(NoneSubstituteText->'%(Link)')</__TargetLink>
 
       <_ReplacementText>$([System.IO.File]::ReadAllText('%(NoneSubstituteText.FullPath)'))</_ReplacementText>
       <_ReplacementText Condition="'%(NoneSubstituteText.Pattern1)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern1)', '%(NoneSubstituteText.Replacement1)'))</_ReplacementText>
@@ -33,7 +34,7 @@
     <ItemGroup>
       <None Include="$(__TargetFilePath)" CopyToOutputDirectory="$(_CopyToOutputDirectory)" />
       <FileWrites Include="$(__TargetFilePath)" Condition="'$(__TargetFileName)' != 'App.config'" />
-      <Content Include="$(__TargetFilePath)" CopyToOutputDirectory="Always" IncludeInVsix="true" />
+      <Content Include="$(__TargetFilePath)" CopyToOutputDirectory="Always" IncludeInVsix="true" Link="$(__TargetLink)" Condition="'$(_IncludeInVsix)'=='true'" />
     </ItemGroup>
   </Target>
 
