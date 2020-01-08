@@ -40,12 +40,12 @@ namespace Microsoft.FSharp.Control
 
         [<CompiledName("Scan")>]
         let scan collector state (sourceEvent: IEvent<'Delegate,'T>) =
-            let state = ref state
+            let mutable state = state
             let ev = new Event<_>() 
             sourceEvent.Add(fun msg ->
-                 let z = !state
+                 let z = state
                  let z = collector z msg
-                 state := z; 
+                 state <- z; 
                  ev.Trigger(z))
             ev.Publish
 
@@ -55,12 +55,12 @@ namespace Microsoft.FSharp.Control
         [<CompiledName("Pairwise")>]
         let pairwise (sourceEvent : IEvent<'Delegate,'T>) : IEvent<'T * 'T> = 
             let ev = new Event<'T * 'T>() 
-            let lastArgs = ref None
+            let mutable lastArgs = None
             sourceEvent.Add(fun args2 -> 
-                (match !lastArgs with 
+                (match lastArgs with 
                  | None -> () 
                  | Some args1 -> ev.Trigger(args1,args2))
-                lastArgs := Some args2)
+                lastArgs <- Some args2)
 
             ev.Publish
 

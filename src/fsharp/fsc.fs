@@ -209,13 +209,13 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
         commandLineSourceFiles 
         |> List.map combineFilePath
         
-    let allSources = ref []       
+    let mutable allSources = []       
     
     let tcConfig = TcConfig.Create(tcConfigB, validate=false) 
     
     let AddIfNotPresent(filename: string) =
-        if not(!allSources |> List.contains filename) then
-            allSources := filename :: !allSources
+        if not(allSources |> List.contains filename) then
+            allSources <- filename :: allSources
     
     let AppendClosureInformation filename =
         if IsScript filename then 
@@ -240,16 +240,16 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
     // Find closure of .fsx files.
     commandLineSourceFiles |> List.iter AppendClosureInformation
 
-    List.rev !allSources
+    List.rev allSources
 
 let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals, lcidFromCodePage, argv) =
-    let inputFilesRef   = ref ([] : string list)
+    let mutable inputFilesRef = []
     let collect name = 
         let lower = String.lowercase name
         if List.exists (Filename.checkSuffix lower) [".resx"]  then
             error(Error(FSComp.SR.fscResxSourceFileDeprecated name, rangeStartup))
         else
-            inputFilesRef := name :: !inputFilesRef
+            inputFilesRef <- name :: inputFilesRef
     let abbrevArgs = GetAbbrevFlagSet tcConfigB true
 
     // This is where flags are interpreted by the command line fsc.exe.
@@ -268,7 +268,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals,
         if tcConfigB.pathMap <> PathMap.empty then
             error(Error(FSComp.SR.fscPathMapDebugRequiresPortablePdb(), rangeCmdArgs))
 
-    let inputFiles = List.rev !inputFilesRef
+    let inputFiles = List.rev inputFilesRef
 
     // Check if we have a codepage from the console
     match tcConfigB.lcid with
@@ -381,11 +381,11 @@ module XmlDocWriter =
         if not (Filename.hasSuffixCaseInsensitive "xml" xmlfile ) then 
             error(Error(FSComp.SR.docfileNoXmlSuffix(), Range.rangeStartup))
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
-        let members = ref []
+        let mutable members = []
         let addMember id xmlDoc = 
             if hasDoc xmlDoc then
                 let doc = getDoc xmlDoc
-                members := (id, doc) :: !members
+                members <- (id, doc) :: members
         let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc
         let doUnionCase (uc: UnionCase) = addMember uc.XmlDocSig uc.XmlDoc
         let doField (rf: RecdField) = addMember rf.XmlDocSig rf.XmlDoc
@@ -422,7 +422,7 @@ module XmlDocWriter =
         fprintfn os ("<doc>")
         fprintfn os ("<assembly><name>%s</name></assembly>") assemblyName
         fprintfn os ("<members>")
-        !members |> List.iter (fun (id, doc) -> 
+        members |> List.iter (fun (id, doc) -> 
             fprintfn os  "<member name=\"%s\">" id
             fprintfn os  "%s" doc
             fprintfn os  "</member>")
@@ -1298,10 +1298,10 @@ module StaticLinker =
             let assumedIndependentSet = set [ "mscorlib";  "System"; "System.Core"; "System.Xml"; "Microsoft.Build.Framework"; "Microsoft.Build.Utilities" ]      
 
             begin 
-                let remaining = ref (computeILRefs ilxMainModule).AssemblyReferences
-                while not (isNil !remaining) do
-                    let ilAssemRef = List.head !remaining
-                    remaining := List.tail !remaining
+                let mutable remaining = (computeILRefs ilxMainModule).AssemblyReferences
+                while not (isNil remaining) do
+                    let ilAssemRef = List.head remaining
+                    remaining <- List.tail remaining
                     if assumedIndependentSet.Contains ilAssemRef.Name || (ilAssemRef.PublicKey = Some ecmaPublicKey) then 
                         depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
                     else
@@ -1358,7 +1358,7 @@ module StaticLinker =
                                       visited = false }
 
                                 // Push the new work items
-                                remaining := refs.AssemblyReferences @ !remaining
+                                remaining <- refs.AssemblyReferences @ remaining
 
                             | None -> 
                                 warning(Error(FSComp.SR.fscAssumeStaticLinkContainsNoDependencies(ilAssemRef.Name), rangeStartup)) 
@@ -1384,14 +1384,14 @@ module StaticLinker =
                       | None -> error(Error(FSComp.SR.fscAssemblyNotFoundInDependencySet n, rangeStartup)) 
                 ]
                               
-            let remaining = ref roots
-            [ while not (isNil !remaining) do
-                let n = List.head !remaining
-                remaining := List.tail !remaining
+            let mutable remaining = roots
+            [ while not (isNil remaining) do
+                let n = List.head remaining
+                remaining <- List.tail remaining
                 if not n.visited then 
                     if verbose then dprintn ("Module "+n.name+" depends on "+GetFSharpCoreLibraryName())
                     n.visited <- true
-                    remaining := n.edges @ !remaining
+                    remaining <- n.edges @ remaining
                     yield (n.ccu, n.data)  ]
 
     // Add all provider-generated assemblies into the static linking set

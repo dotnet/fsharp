@@ -907,11 +907,11 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
         | INFIX_COMPARE_OP "</" | LESS _ -> 
             let tokenEndPos = tokenTup.LexbufState.EndPos 
             if isAdjacent tokenTup lookaheadTokenTup then 
-                let stack = ref []
+                let mutable stack = []
                 let rec scanAhead nParen = 
                     let lookaheadTokenTup = popNextTokenTup()
                     let lookaheadToken = lookaheadTokenTup.Token
-                    stack := (lookaheadTokenTup, true) :: !stack
+                    stack <- (lookaheadTokenTup, true) :: stack
                     let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
                     match lookaheadToken with 
                     | Parser.EOF _ | SEMICOLON_SEMICOLON -> false 
@@ -927,7 +927,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                         let hasAfterOp = (match lookaheadToken with GREATER _ -> false | _ -> true)
                         if nParen > 0 then 
                             // Don't smash the token if there is an after op and we're in a nested paren
-                            stack := (lookaheadTokenTup, not hasAfterOp) :: (!stack).Tail
+                            stack <- (lookaheadTokenTup, not hasAfterOp) :: stack.Tail
                             scanAhead nParen 
                         else 
                             // On successful parse of a set of type parameters, look for an adjacent (, e.g. 
@@ -935,13 +935,13 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                             // and insert a HIGH_PRECEDENCE_PAREN_APP
                             if not hasAfterOp && (match nextTokenIsAdjacentLParenOrLBrack lookaheadTokenTup with Some LPAREN -> true | _ -> false) then
                                 let dotTokenTup = peekNextTokenTup()
-                                stack := (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: !stack
+                                stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
                             true
                     | INFIX_COMPARE_OP (TyparsCloseOp(greaters, afterOp)) -> 
                         let nParen = nParen - greaters.Length
                         if nParen > 0 then 
                             // Don't smash the token if there is an after op and we're in a nested paren
-                            stack := (lookaheadTokenTup, not afterOp.IsSome) :: (!stack).Tail
+                            stack <- (lookaheadTokenTup, not afterOp.IsSome) :: stack.Tail
                             scanAhead nParen 
                         else 
                             // On successful parse of a set of type parameters, look for an adjacent (, e.g. 
@@ -949,7 +949,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                             // and insert a HIGH_PRECEDENCE_PAREN_APP
                             if afterOp.IsNone && (match nextTokenIsAdjacentLParenOrLBrack lookaheadTokenTup with Some LPAREN -> true | _ -> false) then
                                 let dotTokenTup = peekNextTokenTup()
-                                stack := (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: !stack
+                                stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
                             true
                     | (LPAREN | LESS _ | LBRACK | LBRACK_LESS | INFIX_COMPARE_OP "</") -> 
                         scanAhead (nParen+1)
@@ -1000,7 +1000,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
  
                 let res = scanAhead 0
                 // Put the tokens back on and smash them up if needed
-                !stack |> List.iter (fun (tokenTup, smash) ->
+                stack |> List.iter (fun (tokenTup, smash) ->
                     if smash then 
                         match tokenTup.Token with 
                         | INFIX_COMPARE_OP "</" ->
