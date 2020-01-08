@@ -48,8 +48,10 @@ param (
     [switch]$testCoreClr,
     [switch]$testCambridge,
     [switch]$testCompiler,
+    [switch]$testDependencyManager,
     [switch]$testFSharpCore,
     [switch]$testFSharpQA,
+    [switch]$testScripting,
     [switch]$testVs,
     [switch]$testAll,
     [string]$officialSkipTests = "false",
@@ -82,10 +84,12 @@ function Print-Usage() {
     Write-Host "  -testAll                  Run all tests"
     Write-Host "  -testCambridge            Run Cambridge tests"
     Write-Host "  -testCompiler             Run FSharpCompiler unit tests"
+    Write-Host "  -testDependencyManager    Run FSharp.DependencyManager.UnitTests"
     Write-Host "  -testDesktop              Run tests against full .NET Framework"
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
     Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
     Write-Host "  -testFSharpQA             Run F# Cambridge tests"
+    Write-Host "  -testScripting            Run Scripting tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
     Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
     Write-Host ""
@@ -122,6 +126,7 @@ function Process-Arguments() {
         $script:testAll = $False
         $script:testCambridge = $False
         $script:testCompiler = $False
+        $script:testDependencyManager = $False
         $script:testDesktop = $False
         $script:testCoreClr = $False
         $script:testFSharpCore = $False
@@ -148,11 +153,11 @@ function Process-Arguments() {
 
 function Update-Arguments() {
     if ($script:noVisualStudio) {
-        $script:bootstrapTfm = "netcoreapp2.1"
+        $script:bootstrapTfm = "netcoreapp3.0"
         $script:msbuildEngine = "dotnet"
     }
 
-    if ($bootstrapTfm -eq "netcoreapp2.1") {
+    if ($bootstrapTfm -eq "netcoreapp3.0") {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
@@ -256,7 +261,7 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
 }
 
 function BuildCompiler() {
-    if ($bootstrapTfm -eq "netcoreapp2.1") {
+    if ($bootstrapTfm -eq "netcoreapp3.0") {
         $dotnetPath = InitializeDotNetCli
         $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
         $fscProject = "$RepoRoot\src\fsharp\fsc\fsc.fsproj"
@@ -265,10 +270,10 @@ function BuildCompiler() {
         $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
         $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
 
-        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp2.1" + $argNoRestore + $argNoIncremental
+        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
         Exec-Console $dotnetExe $args
 
-        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp2.1" + $argNoRestore + $argNoIncremental
+        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
         Exec-Console $dotnetExe $args
     }
 }
@@ -309,11 +314,6 @@ try {
     if ($ci) {
         Prepare-TempDir
         EnablePreviewSdks
-
-        # enable us to build netcoreapp2.1 product binaries
-        $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
-        InstallDotNetSdk $global:_DotNetInstallDir $GlobalJson.tools.dotnet
-        InstallDotNetSdk $global:_DotNetInstallDir "2.1.503"
     }
 
     if ($bootstrap) {
@@ -339,6 +339,7 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
@@ -348,6 +349,7 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
@@ -387,11 +389,25 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
+    if ($testDependencyManager) {
+        if (-not $noVisualStudio) {
+            TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        }
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+    }
+
     if ($testCambridge) {
         if (-not $noVisualStudio) {
             TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
         }
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
+    }
+
+    if ($testScripting) {
+        if (-not $noVisualStudio) {
+            TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        }
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
     if ($testVs -and -not $noVisualStudio) {
