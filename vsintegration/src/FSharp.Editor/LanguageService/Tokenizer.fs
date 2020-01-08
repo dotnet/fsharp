@@ -458,7 +458,7 @@ module internal Tokenizer =
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
         let tokens = ResizeArray<SavedTokenInfo>()
         let mutable tokenInfoOption = None
-        let previousLexState = ref lexState
+        let mutable previousLexState = lexState
             
         let processToken() =
             let classificationType = compilerTokenToRoslynToken(tokenInfoOption.Value.ColorClass)
@@ -471,9 +471,9 @@ module internal Tokenizer =
             tokens.Add savedToken
 
         let scanAndColorNextToken() =
-            let info, nextLexState = lineTokenizer.ScanToken(!previousLexState)
+            let info, nextLexState = lineTokenizer.ScanToken(previousLexState)
             tokenInfoOption <- info
-            previousLexState := nextLexState
+            previousLexState <- nextLexState
 
             // Apply some hacks to clean up the token stream (we apply more later)
             match info with
@@ -519,7 +519,7 @@ module internal Tokenizer =
             classifiedSpans.Add(new ClassifiedSpan(classificationType, textSpan))
             startPosition <- endPosition
 
-        SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans.ToArray(), tokens.ToArray())
+        SourceLineData(textLine.Start, lexState, previousLexState, lineContents.GetHashCode(), classifiedSpans.ToArray(), tokens.ToArray())
 
 
     // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)

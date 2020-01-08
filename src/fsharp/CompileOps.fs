@@ -2479,7 +2479,7 @@ type AssemblyResolution =
       resolvedPath: string    
       prepareToolTip: unit -> string
       sysdir: bool 
-      ilAssemblyRef: ILAssemblyRef option ref
+      mutable ilAssemblyRef: ILAssemblyRef option
     }
     override this.ToString() = sprintf "%s%s" (if this.sysdir then "[sys]" else "") this.resolvedPath
 
@@ -2494,7 +2494,7 @@ type AssemblyResolution =
     //
     member this.GetILAssemblyRef(ctok, reduceMemoryUsage, tryGetMetadataSnapshot) = 
       cancellable {
-        match !this.ilAssemblyRef with 
+        match this.ilAssemblyRef with 
         | Some assemblyRef -> return assemblyRef
         | None ->
             let! assemblyRefOpt = 
@@ -2522,7 +2522,7 @@ type AssemblyResolution =
                           tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
                     use reader = OpenILModuleReader this.resolvedPath readerSettings
                     mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
-            this.ilAssemblyRef := Some assemblyRef
+            this.ilAssemblyRef <- Some assemblyRef
             return assemblyRef
       }
 
@@ -2892,7 +2892,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                   resolvedPath = resolved
                   prepareToolTip = (fun () -> resolved)
                   sysdir = sysdir
-                  ilAssemblyRef = ref None }
+                  ilAssemblyRef = None }
         | None -> 
 
         if String.Compare(ext, ".dll", StringComparison.OrdinalIgnoreCase)=0 
@@ -2927,7 +2927,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                             let line(append: string) = append.Trim([|' '|])+"\n"
                             line resolved + line fusionName)
                       sysdir = sysdir
-                      ilAssemblyRef = ref None }
+                      ilAssemblyRef = None }
             | None -> None
         else None
 
@@ -3057,7 +3057,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                                                       resolvedPath=canonicalItemSpec 
                                                       prepareToolTip = (fun () -> resolvedFile.prepareToolTip (originalReference.Text, canonicalItemSpec))
                                                       sysdir= tcConfig.IsSystemAssembly canonicalItemSpec
-                                                      ilAssemblyRef = ref None })
+                                                      ilAssemblyRef = None })
                                     (maxIndexOfReference, assemblyResolutions))
 
             // When calculating the resulting resolutions, we're going to use the index of the reference
@@ -3395,7 +3395,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
     try 
         let skip = true in (* don't report whitespace from lexer *)
         let lightSyntaxStatus = LightSyntaxStatus (tcConfig.ComputeLightSyntaxInitialStatus filename, true) 
-        let lexargs = mkLexargs (filename, conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightSyntaxStatus, lexResourceManager, ref [], errorLogger, tcConfig.pathMap)
+        let lexargs = mkLexargs (filename, conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightSyntaxStatus, lexResourceManager, [], errorLogger, tcConfig.pathMap)
         let shortFilename = SanitizeFileName filename tcConfig.implicitIncludeDir 
         let input = 
             Lexhelp.usingLexbufForParsing (lexbuf, filename) (fun lexbuf ->
@@ -3525,24 +3525,24 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
         let frameworkDLLs, nonFrameworkReferences = resolutions.GetAssemblyResolutions() |> List.partition (fun r -> r.sysdir) 
         let unresolved = resolutions.GetUnresolvedReferences()
 #if DEBUG
-        let itFailed = ref false
+        let mutable itFailed = false
         let addedText = "\nIf you want to debug this right now, attach a debugger, and put a breakpoint in 'CompileOps.fs' near the text '!itFailed', and you can re-step through the assembly resolution logic."
         unresolved 
         |> List.iter (fun (UnresolvedAssemblyReference(referenceText, _ranges)) ->
             if referenceText.Contains("mscorlib") then
                 System.Diagnostics.Debug.Assert(false, sprintf "whoops, did not resolve mscorlib: '%s'%s" referenceText addedText)
-                itFailed := true)
+                itFailed <- true)
         frameworkDLLs 
         |> List.iter (fun x ->
             if not(FileSystem.IsPathRootedShim(x.resolvedPath)) then
                 System.Diagnostics.Debug.Assert(false, sprintf "frameworkDLL should be absolute path: '%s'%s" x.resolvedPath addedText)
-                itFailed := true)
+                itFailed <- true)
         nonFrameworkReferences 
         |> List.iter (fun x -> 
             if not(FileSystem.IsPathRootedShim(x.resolvedPath)) then
                 System.Diagnostics.Debug.Assert(false, sprintf "nonFrameworkReference should be absolute path: '%s'%s" x.resolvedPath addedText) 
-                itFailed := true)
-        if !itFailed then
+                itFailed <- true)
+        if itFailed then
             // idea is, put a breakpoint here and then step through
             let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
             let resolutions = TcAssemblyResolutions.ResolveAssemblyReferences (ctok, tcConfig, assemblyList, [])
@@ -4207,9 +4207,9 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             let systemRuntimeContainsType =  
                 // NOTE: do not touch this, edit: but we did, we had no choice - TPs cannot hold a strong reference on TcImports "ever".
                 let tcImports = tcImportsWeak
-                let systemRuntimeContainsTypeRef = ref (fun typeName -> tcImports.SystemRuntimeContainsType typeName)
-                tcImportsStrong.AttachDisposeTypeProviderAction(fun () -> systemRuntimeContainsTypeRef := (fun _ -> raise (System.ObjectDisposedException("The type provider has been disposed"))))  
-                fun arg -> systemRuntimeContainsTypeRef.Value arg  
+                let mutable systemRuntimeContainsTypeRef = fun typeName -> tcImports.SystemRuntimeContainsType typeName
+                tcImportsStrong.AttachDisposeTypeProviderAction(fun () -> systemRuntimeContainsTypeRef <- fun _ -> raise (System.ObjectDisposedException("The type provider has been disposed")))
+                fun arg -> systemRuntimeContainsTypeRef arg  
 
             let providers = 
                 [ for designTimeAssemblyName in designTimeAssemblyNames do
@@ -4676,7 +4676,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                             error(InternalError("BuildFrameworkTcImports: no successful import of "+coreLibraryResolution.resolvedPath, coreLibraryResolution.originalReference.Range))
                     | None -> 
                         error(InternalError(sprintf "BuildFrameworkTcImports: no resolution of '%s'" coreLibraryReference.Text, rangeStartup))
-                IlxSettings.ilxFsharpCoreLibAssemRef := 
+                IlxSettings.ilxFsharpCoreLibAssemRef <- 
                     (let scoref = fslibCcuInfo.ILScopeRef
                      match scoref with
                      | ILScopeRef.Assembly aref -> Some aref
@@ -4691,11 +4691,11 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing
-        global_g := Some tcGlobals
+        global_g <- Some tcGlobals
 #endif
         // do this prior to parsing, since parsing IL assembly code may refer to mscorlib
 #if !NO_INLINE_IL_PARSER
-        FSharp.Compiler.AbstractIL.Internal.AsciiConstants.parseILGlobals := tcGlobals.ilg 
+        FSharp.Compiler.AbstractIL.Internal.AsciiConstants.parseILGlobals <- tcGlobals.ilg 
 #endif
         frameworkTcImports.SetTcGlobals tcGlobals
         return tcGlobals, frameworkTcImports
@@ -5035,8 +5035,8 @@ module private ScriptPreprocessClosure =
            (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaCommandSource) = 
 
         let tcConfigB = tcConfig.CloneOfOriginalBuilder 
-        let nowarns = ref [] 
-        let getWarningNumber = fun () (m, s) -> nowarns := (s, m) :: !nowarns
+        let mutable nowarns = [] 
+        let getWarningNumber = fun () (m, s) -> nowarns <- (s, m) :: nowarns
         let addReferencedAssemblyByPath = fun () (m, s) -> tcConfigB.AddReferencedAssemblyByPath(m, s)
         let addLoadedSource = fun () (m, s) -> tcConfigB.AddLoadedSource(m, s, pathOfMetaCommandSource)
         try 
@@ -5056,7 +5056,7 @@ module private ScriptPreprocessClosure =
            (closureSources, tcConfig: TcConfig, codeContext, 
             lexResourceManager: Lexhelp.LexResourceManager) =
 
-        let tcConfig = ref tcConfig
+        let mutable tcConfig = tcConfig
         
         let observedSources = Observed()
         let rec loop (ClosureSource(filename, m, sourceText, parseRequired)) = 
@@ -5067,7 +5067,7 @@ module private ScriptPreprocessClosure =
                         let parseResult, parseDiagnostics =
                             let errorLogger = CapturingErrorLogger("FindClosureParse")                    
                             use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                            let result = ParseScriptText (filename, sourceText, !tcConfig, codeContext, lexResourceManager, errorLogger) 
+                            let result = ParseScriptText (filename, sourceText, tcConfig, codeContext, lexResourceManager, errorLogger) 
                             result, errorLogger.Diagnostics
 
                         match parseResult with 
@@ -5075,12 +5075,12 @@ module private ScriptPreprocessClosure =
                             let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")                    
                             use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
                             let pathOfMetaCommandSource = Path.GetDirectoryName filename
-                            let preSources = (!tcConfig).GetAvailableLoadedSources()
+                            let preSources = tcConfig.GetAvailableLoadedSources()
 
-                            let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (!tcConfig, parsedScriptAst, pathOfMetaCommandSource)
-                            tcConfig := tcConfigResult // We accumulate the tcConfig in order to collect assembly references
+                            let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (tcConfig, parsedScriptAst, pathOfMetaCommandSource)
+                            tcConfig <- tcConfigResult // We accumulate the tcConfig in order to collect assembly references
                         
-                            let postSources = (!tcConfig).GetAvailableLoadedSources()
+                            let postSources = tcConfig.GetAvailableLoadedSources()
                             let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
 
                             //for (_, subFile) in sources do
@@ -5094,7 +5094,7 @@ module private ScriptPreprocessClosure =
                                     yield ClosureFile(subFile, m, None, [], [], []) 
 
                             //printfn "yielding source %s" filename
-                            yield ClosureFile(filename, m, Some parsedScriptAst, parseDiagnostics, errorLogger.Diagnostics, !noWarns)
+                            yield ClosureFile(filename, m, Some parsedScriptAst, parseDiagnostics, errorLogger.Diagnostics, noWarns)
 
                         | None -> 
                             //printfn "yielding source %s (failed parse)" filename
@@ -5104,7 +5104,7 @@ module private ScriptPreprocessClosure =
                         //printfn "yielding non-script source %s" filename
                         yield ClosureFile(filename, m, None, [], [], []) ]
 
-        closureSources |> List.collect loop, !tcConfig
+        closureSources |> List.collect loop, tcConfig
         
     /// Reduce the full directive closure into LoadClosure
     let GetLoadClosure(ctok, rootFilename, closureFiles, tcConfig: TcConfig, codeContext) = 

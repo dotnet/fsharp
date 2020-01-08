@@ -441,8 +441,8 @@ let PushThreadBuildPhaseUntilUnwind (phase:BuildPhase) =
 let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #ErrorLogger) =
     let oldErrorLogger = CompileThreadStatic.ErrorLogger
     let newErrorLogger = errorLoggerTransformer oldErrorLogger
-    let newInstalled = ref true
-    let newIsInstalled() = if !newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
+    let mutable newInstalled = true
+    let newIsInstalled() = if newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
     let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
                              member __.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
                              member __.ErrorCount = newIsInstalled(); newErrorLogger.ErrorCount }
@@ -452,7 +452,7 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
     { new System.IDisposable with 
          member __.Dispose() =
             CompileThreadStatic.ErrorLogger <- oldErrorLogger
-            newInstalled := false }
+            newInstalled <- false }
 
 let SetThreadBuildPhaseNoUnwind(phase:BuildPhase) = CompileThreadStatic.BuildPhase <- phase
 let SetThreadErrorLoggerNoUnwind errorLogger     = CompileThreadStatic.ErrorLogger <- errorLogger

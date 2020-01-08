@@ -99,10 +99,6 @@ type ILScopeRef =
     /// A reference to a type in another assembly
     | Assembly of ILAssemblyRef  
     member IsLocalRef: bool
-    member IsModuleRef: bool
-    member IsAssemblyRef: bool
-    member ModuleRef: ILModuleRef
-    member AssemblyRef: ILAssemblyRef
     member QualifiedName: string
 
 // Calling conventions.  
