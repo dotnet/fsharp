@@ -66,16 +66,16 @@ Target.create "Build" (fun _ ->
     runDotnet __SOURCE_DIRECTORY__ "build" "../src/buildtools/buildtools.proj -v n -c Proto"
     let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp2.1/fslex.dll"
     let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp2.1/fsyacc.dll"
-    runDotnet __SOURCE_DIRECTORY__ "build" (sprintf "FSharp.Compiler.Service.sln -nodereuse:false -v n -c Release /p:DisableCompilerRedirection=true /p:FsLexPath=%s /p:FsYaccPath=%s" fslexPath fsyaccPath)
+    runDotnet __SOURCE_DIRECTORY__ "build" (sprintf "FSharp.Compiler.Service.sln -v n -c Release /p:FsLexPath=%s /p:FsYaccPath=%s" fslexPath fsyaccPath)
 )
 
 Target.create "Test" (fun _ ->
     // This project file is used for the netcoreapp2.0 tests to work out reference sets
-    runDotnet __SOURCE_DIRECTORY__ "build" "../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -nodereuse:false -v n /restore /p:DisableCompilerRedirection=true"
+    runDotnet __SOURCE_DIRECTORY__ "build" "../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n /restore /p:DisableCompilerRedirection=true"
 
     // Now run the tests
     let logFilePath = Path.Combine(__SOURCE_DIRECTORY__, "..", "artifacts", "TestResults", "Release", "FSharp.Compiler.Service.Test.xml")
-    runDotnet __SOURCE_DIRECTORY__ "test" (sprintf "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --no-restore --no-build -nodereuse:false -v n -c Release --test-adapter-path . --logger \"nunit;LogFilePath=%s\"" logFilePath)
+    runDotnet __SOURCE_DIRECTORY__ "test" (sprintf "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj --no-restore --no-build -v n -c Release --test-adapter-path . --logger \"nunit;LogFilePath=%s\"" logFilePath)
 )
 
 Target.create "NuGet" (fun _ ->
