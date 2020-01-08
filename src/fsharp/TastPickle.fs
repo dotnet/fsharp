@@ -554,12 +554,12 @@ let p_maybe_lazy p (x: MaybeLazy<_>) st =
     p_lazy_impl p x.Value st
 
 let p_hole () =
-    let h = ref (None : ('T -> WriterState -> unit) option)
-    (fun f -> h := Some f), (fun x st -> match !h with Some f -> f x st | None -> pfailwith st "p_hole: unfilled hole")
+    let mutable h = None
+    (fun f -> h <- Some f), (fun x st -> match h with Some f -> f x st | None -> pfailwith st "p_hole: unfilled hole")
 
 let p_hole2 () =
-    let h = ref (None : ('Arg -> 'T -> WriterState -> unit) option)
-    (fun f -> h := Some f), (fun arg x st -> match !h with Some f -> f arg x st | None -> pfailwith st "p_hole2: unfilled hole")
+    let mutable h = None
+    (fun f -> h <- Some f), (fun arg x st -> match h with Some f -> f arg x st | None -> pfailwith st "p_hole2: unfilled hole")
 
 let u_array_core f n st =
     let res = Array.zeroCreate n
@@ -675,8 +675,8 @@ let u_lazy u st =
 
 
 let u_hole () =
-    let h = ref (None : 'T unpickler option)
-    (fun f -> h := Some f), (fun st -> match !h with Some f -> f st | None -> ufailwith st "u_hole: unfilled hole")
+    let mutable h = None
+    (fun f -> h <- Some f), (fun st -> match h with Some f -> f st | None -> ufailwith st "u_hole: unfilled hole")
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle F# interface data
