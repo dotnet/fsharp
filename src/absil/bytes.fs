@@ -218,35 +218,26 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
 [<Struct;NoEquality;NoComparison>]
 type ReadOnlyByteMemory(bytes: ByteMemory) =
 
-    member _.Item with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get i = bytes.[i]
+    member _.Item with get i = bytes.[i]
 
-    member _.Length with [<MethodImpl(MethodImplOptions.AggressiveInlining)>] get () = bytes.Length
+    member _.Length with get () = bytes.Length
 
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.ReadBytes(pos, count) = bytes.ReadBytes(pos, count)
 
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.ReadInt32 pos = bytes.ReadInt32 pos
 
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.ReadUInt16 pos = bytes.ReadUInt16 pos
 
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.ReadUtf8String(pos, count) = bytes.ReadUtf8String(pos, count)
 
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.Slice(pos, count) = bytes.Slice(pos, count) |> ReadOnlyByteMemory
 
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.CopyTo stream = bytes.CopyTo stream
 
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.Copy(srcOffset, dest, destOffset, count) = bytes.Copy(srcOffset, dest, destOffset, count)
 
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.ToArray() = bytes.ToArray()
 
-    [<MethodImpl(MethodImplOptions.AggressiveInlining)>]
     member _.AsStream() = bytes.AsReadOnlyStream()
 
 type ByteMemory with
