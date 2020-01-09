@@ -98,4 +98,10 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)" />
   </ItemGroup>
 
+  <ItemDefinitionGroup>
+    <PackageReference>
+      <GeneratePathProperty>true</GeneratePathProperty>
+    </PackageReference>
+  </ItemDefinitionGroup>
+
 </Project>

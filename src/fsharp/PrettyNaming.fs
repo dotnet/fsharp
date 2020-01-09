@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
-// Some general F# utilities for mangling / demangling / manipulating names.
+// Some general F# utilities for mangling / unmangling / manipulating names.
 //--------------------------------------------------------------------------
 
 /// Anything to do with special names of identifiers and other lexical rules 
