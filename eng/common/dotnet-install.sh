@@ -14,6 +14,8 @@ scriptroot="$( cd -P "$( dirname "$source" )" && pwd )"
 version='Latest'
 architecture=''
 runtime='dotnet'
+runtimeSourceFeed=''
+runtimeSourceFeedKey=''
 while [[ $# > 0 ]]; do
   opt="$(echo "$1" | awk '{print tolower($0)}')"
   case "$opt" in
@@ -28,6 +30,14 @@ while [[ $# > 0 ]]; do
     -runtime|-r)
       shift
       runtime="$1"
+      ;;
+    -runtimesourcefeed)
+      shift
+      runtimeSourceFeed="$1"
+      ;;
+    -runtimesourcefeedkey)
+      shift
+      runtimeSourceFeedKey="$1"
       ;;
     *)
       echo "Invalid argument: $1"
