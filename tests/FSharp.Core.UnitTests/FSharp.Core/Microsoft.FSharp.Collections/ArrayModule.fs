@@ -67,7 +67,7 @@ type ArrayModule() =
         // integer array
         let intArray = Array.append [| 1; 2 |] [| 3; 4 |]
         Assert.IsTrue( (intArray = [| 1; 2; 3; 4 |]) )
-        
+
         // string array
         let strArray = Array.append [| "a"; "b" |] [| "C"; "D" |]
         Assert.IsTrue( (strArray = [| "a"; "b"; "C"; "D" |]) )
@@ -1677,3 +1677,165 @@ type ArrayModule() =
         // null array
         let nullArr = null:string[]
         CheckThrowsArgumentNullException (fun () -> Array.contains "empty" nullArr |> ignore)
+
+    [<Test>]
+    member this.``Slicing with first index reverse behaves as expected``()  = 
+        let arr = [| 1;2;3;4;5 |]
+
+        Assert.That(arr.[^3..], Is.EquivalentTo(arr.[1..]))
+
+    
+    [<Test>]
+    member this.``Slicing with second index reverse behaves as expected``()  = 
+        let arr = [| 1;2;3;4;5 |]
+
+        Assert.That(arr.[..^1], Is.EquivalentTo(arr.[..3]))
+
+    
+    [<Test>]
+    member this.``Slicing with both index reverse behaves as expected``()  = 
+        let arr = [| 1;2;3;4;5 |]
+
+        Assert.That(arr.[^3..^1], Is.EquivalentTo(arr.[1..3]))
+
+    [<Test>]
+    member this.``Slicing with first index reverse and second index non reverse behaves as expected``()=
+        let arr = [|1;2;3;4;5|]
+
+        Assert.That(arr.[^3..4], Is.EquivalentTo(arr.[1..4]))
+
+    [<Test>]
+    member this.``Slicing with first index non reverse and second index reverse behaves as expected``()=
+        let arr = [|1;2;3;4;5|]
+
+        Assert.That(arr.[3..^0], Is.EquivalentTo(arr.[3..4]))
+
+    [<Test>]
+    member this.``Set slice with first index reverse behaves as expected``()  = 
+        let arr1 = [| 1;2;3;4;5 |]
+        let arr2 = [| 1;2;3;4;5 |]
+
+        arr1.[^3..] <- [| 9;8;7;6 |]
+        arr2.[1..] <- [| 9;8;7;6 |]
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    
+    [<Test>]
+    member this.``Set slice with second index reverse behaves as expected``()  = 
+        let arr1 = [| 1;2;3;4;5 |]
+        let arr2 = [| 1;2;3;4;5 |]
+
+        arr1.[..^1] <- [| 9;8;7;6 |]
+        arr2.[..3] <- [| 9;8;7;6 |]
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    
+    [<Test>]
+    member this.``Set slice with both index reverse behaves as expected``()  = 
+        let arr1 = [| 1;2;3;4;5 |]
+        let arr2 = [| 1;2;3;4;5 |]
+
+        arr1.[^3..^1] <- [| 8;7;6 |]
+        arr2.[1..3] <- [| 8;7;6 |]
+
+        Assert.That(arr1, Is.EquivalentTo(arr2))
+
+    [<Test>]
+    member this.``Get item with reverse index behaves as expected``() = 
+        let arr = [|1;2;3;4;5|]
+
+        Assert.That(arr.[^1], Is.EqualTo(4))
+
+    [<Test>]
+    member this.``Set item with reverse index behaves as expected``() = 
+        let arr = [|1;2;3;4;5|]
+
+        arr.[^0] <- 9
+        Assert.That(arr.[4], Is.EqualTo(9))
+
+    [<Test>] 
+    member this.SlicingUnboundedEnd() = 
+        let arr = [|1;2;3;4;5;6|]
+
+        Assert.AreEqual(arr.[-1..], arr)
+        Assert.AreEqual(arr.[0..], arr)
+        Assert.AreEqual(arr.[1..], [2;3;4;5;6])
+        Assert.AreEqual(arr.[2..], [3;4;5;6])
+        Assert.AreEqual(arr.[5..], [6])
+        Assert.AreEqual(arr.[6..], ([||]: int array))
+        Assert.AreEqual(arr.[7..], ([||]: int array))
+
+    
+    [<Test>] 
+    member this.SlicingUnboundedStart() = 
+        let arr = [|1;2;3;4;5;6|]
+
+        Assert.AreEqual(arr.[..(-1)], ([||]: int array))
+        Assert.AreEqual(arr.[..0], [|1|])
+        Assert.AreEqual(arr.[..1], [|1;2|])
+        Assert.AreEqual(arr.[..2], [|1;2;3|])
+        Assert.AreEqual(arr.[..3], [|1;2;3;4|])
+        Assert.AreEqual(arr.[..4], [|1;2;3;4;5|])
+        Assert.AreEqual(arr.[..5], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[..6], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[..7], [|1;2;3;4;5;6|])
+
+
+    [<Test>]
+    member this.SlicingBoundedStartEnd() =
+        let arr = [|1;2;3;4;5;6|]
+
+        Assert.AreEqual(arr.[*], arr)
+
+        Assert.AreEqual(arr.[0..0], [|1|])
+        Assert.AreEqual(arr.[0..1], [|1;2|])
+        Assert.AreEqual(arr.[0..2], [|1;2;3|])
+        Assert.AreEqual(arr.[0..3], [|1;2;3;4|])
+        Assert.AreEqual(arr.[0..4], [|1;2;3;4;5|])
+        Assert.AreEqual(arr.[0..5], [|1;2;3;4;5;6|])
+
+        Assert.AreEqual(arr.[1..1], [|2|])
+        Assert.AreEqual(arr.[1..2], [|2;3|])
+        Assert.AreEqual(arr.[1..3], [|2;3;4|])
+        Assert.AreEqual(arr.[1..4], [|2;3;4;5|])
+        Assert.AreEqual(arr.[1..5], [|2;3;4;5;6|])
+
+        Assert.AreEqual(arr.[0..1], [|1;2|])
+        Assert.AreEqual(arr.[1..1], [|2|])
+        Assert.AreEqual(arr.[2..1], ([||]: int array))
+        Assert.AreEqual(arr.[3..1], ([||]: int array))
+        Assert.AreEqual(arr.[4..1], ([||]: int array))
+
+
+    [<Test>]
+    member this.SlicingEmptyArray() = 
+
+        let empty : obj array = Array.empty
+        Assert.AreEqual(empty.[*], ([||]: obj array))
+        Assert.AreEqual(empty.[5..3], ([||]: obj array))
+        Assert.AreEqual(empty.[0..], ([||]: obj array))
+        Assert.AreEqual(empty.[0..0], ([||]: obj array))
+        Assert.AreEqual(empty.[0..1], ([||]: obj array))
+        Assert.AreEqual(empty.[3..5], ([||]: obj array))
+
+
+    [<Test>]
+    member this.SlicingOutOfBounds() = 
+        let arr = [|1;2;3;4;5;6|]
+       
+        Assert.AreEqual(arr.[..6], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[6..], ([||]: int array))
+
+        Assert.AreEqual(arr.[0..(-1)], ([||]: int array))
+        Assert.AreEqual(arr.[1..(-1)], ([||]: int array))
+        Assert.AreEqual(arr.[1..0], ([||]: int array))
+        Assert.AreEqual(arr.[0..6], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[1..6], [|2;3;4;5;6|])
+
+        Assert.AreEqual(arr.[-1..1], [|1;2|])
+        Assert.AreEqual(arr.[-3..(-4)], ([||]: int array))
+        Assert.AreEqual(arr.[-4..(-3)], ([||]: int array))
+
+
