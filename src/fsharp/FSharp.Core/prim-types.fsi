@@ -803,7 +803,7 @@ namespace Microsoft.FSharp.Core
     type int64<[<Measure>] 'Measure> = int64
 
     /// <summary>Represents a managed pointer in F# code.</summary>
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
@@ -814,7 +814,7 @@ namespace Microsoft.FSharp.Core
     type byref<'T> = (# "!0&" #)
 
     /// Represents the types of byrefs in F# 4.5+
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
@@ -822,7 +822,7 @@ namespace Microsoft.FSharp.Core
     module ByRefKinds = 
 
         /// Represents a byref that can be written
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
@@ -830,7 +830,7 @@ namespace Microsoft.FSharp.Core
         type Out
 
         /// Represents a byref that can be read
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
@@ -838,7 +838,7 @@ namespace Microsoft.FSharp.Core
         type In
 
         /// Represents a byref that can be both read and written
-#if BUILDING_WITH_LKG
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
         [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
@@ -1069,6 +1069,10 @@ namespace Microsoft.FSharp.Core
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val AdditionDynamic : x:'T1 -> y:'T2 -> 'U
 
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '+' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val CheckedAdditionDynamic : x:'T1 -> y:'T2 -> 'U
+
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '-' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val SubtractionDynamic : x:'T1 -> y:'T2 -> 'U
@@ -1076,6 +1080,10 @@ namespace Microsoft.FSharp.Core
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '*' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val MultiplyDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '*' operator when used in quotations.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val CheckedMultiplyDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '/' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -1089,17 +1097,9 @@ namespace Microsoft.FSharp.Core
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val ModulusDynamic : x:'T1 -> y:'T2 -> 'U
 
-        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '+' operator when used in quotations.</summary>
-        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val CheckedAdditionDynamic : x:'T1 -> y:'T2 -> 'U
-
         /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '-' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val CheckedSubtractionDynamic : x:'T1 -> y:'T2 -> 'U
-
-        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '*' operator when used in quotations.</summary>
-        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val CheckedMultiplyDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the checked unary '-' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
