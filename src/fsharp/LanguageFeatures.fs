@@ -42,7 +42,7 @@ type LanguageVersion (specifiedVersionAsString) =
     static let latestMajorVersion = languageVersion47   // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
-    static let languageVersions = set [| languageVersion46; languageVersion47; languageVersion50 |]
+    static let languageVersions = set [| languageVersion46; languageVersion47 (*; languageVersion50 *) |]
 
     static let features =
         dict [
@@ -72,7 +72,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | "latestmajor" -> latestMajorVersion
         | "4.6" -> languageVersion46
         | "4.7" -> languageVersion47
-        | "5.0" -> languageVersion50
+(*      | "5.0" -> languageVersion50    *)
         | _ -> 0m
 
     /// Check if this feature is supported by the selected langversion
