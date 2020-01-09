@@ -44,13 +44,13 @@
   // Offset: 0x000008E8 Length: 0x00000039
 }
 .module OptionalArg01.exe
-// MVID: {5E171A36-4F48-B5AF-A745-0383361A175E}
+// MVID: {5E172EE9-4F48-B5AF-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04F80000
+// Image base: 0x07070000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

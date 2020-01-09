@@ -49,13 +49,13 @@
   // Offset: 0x00000640 Length: 0x00000211
 }
 .module Linq101Aggregates01.exe
-// MVID: {5E171A38-D281-4783-A745-0383381A175E}
+// MVID: {5E172EEB-D281-4783-A745-0383EB2E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x051F0000
+// Image base: 0x00B90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1601,7 +1601,7 @@
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,int32>,object> 
             Invoke(class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> _arg2) cil managed
     {
-      // Code size       149 (0x95)
+      // Code size       145 (0x91)
       .maxstack  8
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g,
                [1] int32 sum,
@@ -1609,12 +1609,11 @@
                [3] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_3,
                [4] class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable> V_4,
                [5] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32> V_5,
-               [6] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32> V_6,
-               [7] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> V_7,
-               [8] class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> V_8,
+               [6] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> V_6,
+               [7] class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> V_7,
+               [8] int32 V_8,
                [9] int32 V_9,
-               [10] int32 V_10,
-               [11] class [mscorlib]System.IDisposable V_11)
+               [10] class [mscorlib]System.IDisposable V_10)
       .line 40,40 : 38,39 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
@@ -1634,75 +1633,73 @@
       IL_0018:  stloc.s    V_4
       IL_001a:  newobj     instance void Linq101Aggregates01/'sum@43-1'::.ctor()
       IL_001f:  stloc.s    V_5
-      IL_0021:  ldloc.s    V_5
-      IL_0023:  stloc.s    V_6
-      IL_0025:  ldloc.s    V_4
-      IL_0027:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-      IL_002c:  stloc.s    V_7
-      IL_002e:  ldloc.s    V_7
-      IL_0030:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>::GetEnumerator()
-      IL_0035:  stloc.s    V_8
+      IL_0021:  ldloc.s    V_4
+      IL_0023:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+      IL_0028:  stloc.s    V_6
+      IL_002a:  ldloc.s    V_6
+      IL_002c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>::GetEnumerator()
+      IL_0031:  stloc.s    V_7
       .try
       {
-        IL_0037:  ldc.i4.0
-        IL_0038:  stloc.s    V_10
-        IL_003a:  ldloc.s    V_8
-        IL_003c:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-        IL_0041:  brfalse.s  IL_0059
+        IL_0033:  ldc.i4.0
+        IL_0034:  stloc.s    V_9
+        IL_0036:  ldloc.s    V_7
+        IL_0038:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+        IL_003d:  brfalse.s  IL_0055
 
         .line 43,43 : 13,33 ''
-        IL_0043:  ldloc.s    V_10
-        IL_0045:  ldloc.s    V_6
-        IL_0047:  ldloc.s    V_8
-        IL_0049:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
-        IL_004e:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32>::Invoke(!0)
-        IL_0053:  add.ovf
-        IL_0054:  stloc.s    V_10
+        IL_003f:  ldloc.s    V_9
+        IL_0041:  ldloc.s    V_5
+        IL_0043:  ldloc.s    V_7
+        IL_0045:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
+        IL_004a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32>::Invoke(!0)
+        IL_004f:  add.ovf
+        IL_0050:  stloc.s    V_9
         .line 100001,100001 : 0,0 ''
-        IL_0056:  nop
-        IL_0057:  br.s       IL_003a
+        IL_0052:  nop
+        IL_0053:  br.s       IL_0036
 
-        IL_0059:  ldloc.s    V_10
-        IL_005b:  stloc.s    V_9
-        IL_005d:  leave.s    IL_007d
+        IL_0055:  ldloc.s    V_9
+        IL_0057:  stloc.s    V_8
+        IL_0059:  leave.s    IL_0079
 
       }  // end .try
       finally
       {
-        IL_005f:  ldloc.s    V_8
-        IL_0061:  isinst     [mscorlib]System.IDisposable
-        IL_0066:  stloc.s    V_11
-        IL_0068:  ldloc.s    V_11
-        IL_006a:  brfalse.s  IL_006e
+        IL_005b:  ldloc.s    V_7
+        IL_005d:  isinst     [mscorlib]System.IDisposable
+        IL_0062:  stloc.s    V_10
+        IL_0064:  ldloc.s    V_10
+        IL_0066:  brfalse.s  IL_006a
 
-        IL_006c:  br.s       IL_0070
+        IL_0068:  br.s       IL_006c
 
-        IL_006e:  br.s       IL_007a
+        IL_006a:  br.s       IL_0076
 
         .line 100001,100001 : 0,0 ''
-        IL_0070:  ldloc.s    V_11
-        IL_0072:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-        IL_0077:  ldnull
-        IL_0078:  pop
-        IL_0079:  endfinally
+        IL_006c:  ldloc.s    V_10
+        IL_006e:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+        IL_0073:  ldnull
+        IL_0074:  pop
+        IL_0075:  endfinally
         .line 100001,100001 : 0,0 ''
-        IL_007a:  ldnull
-        IL_007b:  pop
-        IL_007c:  endfinally
+        IL_0076:  ldnull
+        IL_0077:  pop
+        IL_0078:  endfinally
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_007d:  ldloc.s    V_9
-      IL_007f:  stloc.1
+      IL_0079:  ldloc.s    V_8
+      IL_007b:  stloc.1
       .line 45,45 : 9,28 ''
-      IL_0080:  ldarg.0
-      IL_0081:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Aggregates01/'categories@40-3'::builder@
-      IL_0086:  ldloc.0
-      IL_0087:  ldloc.1
-      IL_0088:  newobj     instance void class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,int32>::.ctor(!0,
+      IL_007c:  ldarg.0
+      IL_007d:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Aggregates01/'categories@40-3'::builder@
+      IL_0082:  ldloc.0
+      IL_0083:  ldloc.1
+      IL_0084:  newobj     instance void class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,int32>::.ctor(!0,
                                                                                                                                                                     !1)
-      IL_008d:  tail.
-      IL_008f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,int32>,object>(!!0)
-      IL_0094:  ret
+      IL_0089:  tail.
+      IL_008b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,int32>,object>(!!0)
+      IL_0090:  ret
     } // end of method 'categories@40-3'::Invoke
 
   } // end of class 'categories@40-3'
@@ -6835,7 +6832,7 @@
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,object> 
             Invoke(class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> _arg2) cil managed
     {
-      // Code size       246 (0xf6)
+      // Code size       230 (0xe6)
       .maxstack  9
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g,
                [1] valuetype [mscorlib]System.Decimal averagePrice,
@@ -6844,17 +6841,13 @@
                [4] class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable> V_4,
                [5] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,valuetype [mscorlib]System.Decimal> V_5,
                [6] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> V_6,
-               [7] string V_7,
-               [8] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> V_8,
-               [9] string V_9,
-               [10] class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> V_10,
+               [7] class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> V_7,
+               [8] valuetype [mscorlib]System.Decimal V_8,
+               [9] valuetype [mscorlib]System.Decimal V_9,
+               [10] int32 V_10,
                [11] valuetype [mscorlib]System.Decimal V_11,
-               [12] valuetype [mscorlib]System.Decimal V_12,
-               [13] int32 V_13,
-               [14] string V_14,
-               [15] valuetype [mscorlib]System.Decimal V_15,
-               [16] int32 V_16,
-               [17] class [mscorlib]System.IDisposable V_17)
+               [12] int32 V_12,
+               [13] class [mscorlib]System.IDisposable V_13)
       .line 114,114 : 38,39 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
@@ -6877,129 +6870,121 @@
       IL_0021:  ldloc.s    V_4
       IL_0023:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()
       IL_0028:  stloc.s    V_6
-      IL_002a:  ldstr      "source"
-      IL_002f:  stloc.s    V_7
-      IL_0031:  ldloc.s    V_6
-      IL_0033:  stloc.s    V_8
-      IL_0035:  ldloc.s    V_8
-      IL_0037:  box        class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>
-      IL_003c:  brfalse.s  IL_0040
+      IL_002a:  ldloc.s    V_6
+      IL_002c:  box        class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>
+      IL_0031:  brfalse.s  IL_0035
 
-      IL_003e:  br.s       IL_004c
+      IL_0033:  br.s       IL_0040
 
       .line 100001,100001 : 0,0 ''
-      IL_0040:  ldloc.s    V_7
-      IL_0042:  stloc.s    V_9
-      IL_0044:  ldloc.s    V_9
-      IL_0046:  newobj     instance void [mscorlib]System.ArgumentNullException::.ctor(string)
-      IL_004b:  throw
+      IL_0035:  ldstr      "source"
+      IL_003a:  newobj     instance void [mscorlib]System.ArgumentNullException::.ctor(string)
+      IL_003f:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_004c:  nop
-      IL_004d:  ldloc.s    V_6
-      IL_004f:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>::GetEnumerator()
-      IL_0054:  stloc.s    V_10
+      IL_0040:  nop
+      IL_0041:  ldloc.s    V_6
+      IL_0043:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>::GetEnumerator()
+      IL_0048:  stloc.s    V_7
       .try
       {
-        IL_0056:  ldc.i4.0
-        IL_0057:  ldc.i4.0
-        IL_0058:  ldc.i4.0
-        IL_0059:  ldc.i4.0
-        IL_005a:  ldc.i4.0
-        IL_005b:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
+        IL_004a:  ldc.i4.0
+        IL_004b:  ldc.i4.0
+        IL_004c:  ldc.i4.0
+        IL_004d:  ldc.i4.0
+        IL_004e:  ldc.i4.0
+        IL_004f:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
                                                                            int32,
                                                                            int32,
                                                                            bool,
                                                                            uint8)
-        IL_0060:  stloc.s    V_12
-        IL_0062:  ldc.i4.0
-        IL_0063:  stloc.s    V_13
-        IL_0065:  ldloc.s    V_10
-        IL_0067:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-        IL_006c:  brfalse.s  IL_008e
+        IL_0054:  stloc.s    V_9
+        IL_0056:  ldc.i4.0
+        IL_0057:  stloc.s    V_10
+        IL_0059:  ldloc.s    V_7
+        IL_005b:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+        IL_0060:  brfalse.s  IL_0082
 
-        IL_006e:  ldloc.s    V_12
-        IL_0070:  ldloc.s    V_5
-        IL_0072:  ldloc.s    V_10
-        IL_0074:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
-        IL_0079:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,valuetype [mscorlib]System.Decimal>::Invoke(!0)
-        IL_007e:  call       valuetype [mscorlib]System.Decimal [mscorlib]System.Decimal::op_Addition(valuetype [mscorlib]System.Decimal,
+        IL_0062:  ldloc.s    V_9
+        IL_0064:  ldloc.s    V_5
+        IL_0066:  ldloc.s    V_7
+        IL_0068:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
+        IL_006d:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,valuetype [mscorlib]System.Decimal>::Invoke(!0)
+        IL_0072:  call       valuetype [mscorlib]System.Decimal [mscorlib]System.Decimal::op_Addition(valuetype [mscorlib]System.Decimal,
                                                                                                       valuetype [mscorlib]System.Decimal)
-        IL_0083:  stloc.s    V_12
+        IL_0077:  stloc.s    V_9
         .line 115,115 : 50,71 ''
-        IL_0085:  ldloc.s    V_13
-        IL_0087:  ldc.i4.1
-        IL_0088:  add
-        IL_0089:  stloc.s    V_13
+        IL_0079:  ldloc.s    V_10
+        IL_007b:  ldc.i4.1
+        IL_007c:  add
+        IL_007d:  stloc.s    V_10
         .line 100001,100001 : 0,0 ''
-        IL_008b:  nop
-        IL_008c:  br.s       IL_0065
+        IL_007f:  nop
+        IL_0080:  br.s       IL_0059
 
-        IL_008e:  ldloc.s    V_13
-        IL_0090:  brtrue.s   IL_0094
+        IL_0082:  ldloc.s    V_10
+        IL_0084:  brtrue.s   IL_0088
 
-        IL_0092:  br.s       IL_0096
+        IL_0086:  br.s       IL_008a
 
-        IL_0094:  br.s       IL_00a5
-
-        .line 100001,100001 : 0,0 ''
-        IL_0096:  ldstr      "source"
-        IL_009b:  stloc.s    V_14
-        IL_009d:  ldloc.s    V_14
-        IL_009f:  newobj     instance void [mscorlib]System.InvalidOperationException::.ctor(string)
-        IL_00a4:  throw
+        IL_0088:  br.s       IL_0095
 
         .line 100001,100001 : 0,0 ''
-        IL_00a5:  nop
-        IL_00a6:  ldloc.s    V_12
-        IL_00a8:  stloc.s    V_15
-        IL_00aa:  ldloc.s    V_13
-        IL_00ac:  stloc.s    V_16
-        IL_00ae:  ldloc.s    V_15
-        IL_00b0:  ldloc.s    V_16
-        IL_00b2:  call       valuetype [mscorlib]System.Decimal [mscorlib]System.Convert::ToDecimal(int32)
-        IL_00b7:  call       valuetype [mscorlib]System.Decimal [mscorlib]System.Decimal::Divide(valuetype [mscorlib]System.Decimal,
+        IL_008a:  ldstr      "source"
+        IL_008f:  newobj     instance void [mscorlib]System.InvalidOperationException::.ctor(string)
+        IL_0094:  throw
+
+        .line 100001,100001 : 0,0 ''
+        IL_0095:  nop
+        IL_0096:  ldloc.s    V_9
+        IL_0098:  stloc.s    V_11
+        IL_009a:  ldloc.s    V_10
+        IL_009c:  stloc.s    V_12
+        IL_009e:  ldloc.s    V_11
+        IL_00a0:  ldloc.s    V_12
+        IL_00a2:  call       valuetype [mscorlib]System.Decimal [mscorlib]System.Convert::ToDecimal(int32)
+        IL_00a7:  call       valuetype [mscorlib]System.Decimal [mscorlib]System.Decimal::Divide(valuetype [mscorlib]System.Decimal,
                                                                                                  valuetype [mscorlib]System.Decimal)
-        IL_00bc:  stloc.s    V_11
-        IL_00be:  leave.s    IL_00de
+        IL_00ac:  stloc.s    V_8
+        IL_00ae:  leave.s    IL_00ce
 
       }  // end .try
       finally
       {
-        IL_00c0:  ldloc.s    V_10
-        IL_00c2:  isinst     [mscorlib]System.IDisposable
-        IL_00c7:  stloc.s    V_17
-        IL_00c9:  ldloc.s    V_17
-        IL_00cb:  brfalse.s  IL_00cf
+        IL_00b0:  ldloc.s    V_7
+        IL_00b2:  isinst     [mscorlib]System.IDisposable
+        IL_00b7:  stloc.s    V_13
+        IL_00b9:  ldloc.s    V_13
+        IL_00bb:  brfalse.s  IL_00bf
 
-        IL_00cd:  br.s       IL_00d1
+        IL_00bd:  br.s       IL_00c1
 
-        IL_00cf:  br.s       IL_00db
+        IL_00bf:  br.s       IL_00cb
 
         .line 100001,100001 : 0,0 ''
-        IL_00d1:  ldloc.s    V_17
-        IL_00d3:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-        IL_00d8:  ldnull
-        IL_00d9:  pop
-        IL_00da:  endfinally
+        IL_00c1:  ldloc.s    V_13
+        IL_00c3:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+        IL_00c8:  ldnull
+        IL_00c9:  pop
+        IL_00ca:  endfinally
         .line 100001,100001 : 0,0 ''
-        IL_00db:  ldnull
-        IL_00dc:  pop
-        IL_00dd:  endfinally
+        IL_00cb:  ldnull
+        IL_00cc:  pop
+        IL_00cd:  endfinally
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_00de:  ldloc.s    V_11
-      IL_00e0:  stloc.1
+      IL_00ce:  ldloc.s    V_8
+      IL_00d0:  stloc.1
       .line 116,116 : 9,37 ''
-      IL_00e1:  ldarg.0
-      IL_00e2:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Aggregates01/'categories6@114-3'::builder@
-      IL_00e7:  ldloc.0
-      IL_00e8:  ldloc.1
-      IL_00e9:  newobj     instance void class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>::.ctor(!0,
+      IL_00d1:  ldarg.0
+      IL_00d2:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Aggregates01/'categories6@114-3'::builder@
+      IL_00d7:  ldloc.0
+      IL_00d8:  ldloc.1
+      IL_00d9:  newobj     instance void class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>::.ctor(!0,
                                                                                                                                                                                                  !1)
-      IL_00ee:  tail.
-      IL_00f0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,object>(!!0)
-      IL_00f5:  ret
+      IL_00de:  tail.
+      IL_00e0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,object>(!!0)
+      IL_00e5:  ret
     } // end of method 'categories6@114-3'::Invoke
 
   } // end of class 'categories6@114-3'
@@ -7387,7 +7372,7 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       1805 (0x70d)
+    // Code size       1765 (0x6e5)
     .maxstack  13
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> factorsOf300,
              [1] int32 uniqueFactors,
@@ -7414,60 +7399,50 @@
              [22] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_22,
              [23] class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable> V_23,
              [24] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> V_24,
-             [25] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> V_25,
-             [26] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> V_26,
-             [27] class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> V_27,
+             [25] class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> V_25,
+             [26] class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> V_26,
+             [27] int32 V_27,
              [28] int32 V_28,
-             [29] int32 V_29,
-             [30] class [mscorlib]System.IDisposable V_30,
+             [29] class [mscorlib]System.IDisposable V_29,
+             [30] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_30,
              [31] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_31,
-             [32] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_32,
-             [33] class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable> V_33,
-             [34] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32> V_34,
-             [35] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32> V_35,
-             [36] class [mscorlib]System.Collections.Generic.IEnumerable`1<string> V_36,
-             [37] class [mscorlib]System.Collections.Generic.IEnumerator`1<string> V_37,
-             [38] int32 V_38,
-             [39] int32 V_39,
-             [40] class [mscorlib]System.IDisposable V_40,
+             [32] class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable> V_32,
+             [33] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32> V_33,
+             [34] class [mscorlib]System.Collections.Generic.IEnumerable`1<string> V_34,
+             [35] class [mscorlib]System.Collections.Generic.IEnumerator`1<string> V_35,
+             [36] int32 V_36,
+             [37] int32 V_37,
+             [38] class [mscorlib]System.IDisposable V_38,
+             [39] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_39,
+             [40] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_40,
              [41] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_41,
              [42] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_42,
              [43] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_43,
              [44] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_44,
              [45] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_45,
-             [46] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_46,
-             [47] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_47,
-             [48] class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<float64,class [mscorlib]System.Collections.IEnumerable> V_48,
-             [49] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,float64> V_49,
-             [50] class [mscorlib]System.Collections.Generic.IEnumerable`1<float64> V_50,
-             [51] string V_51,
-             [52] class [mscorlib]System.Collections.Generic.IEnumerable`1<float64> V_52,
-             [53] string V_53,
-             [54] class [mscorlib]System.Collections.Generic.IEnumerator`1<float64> V_54,
-             [55] float64 V_55,
-             [56] float64 V_56,
-             [57] int32 V_57,
-             [58] string V_58,
-             [59] float64 V_59,
-             [60] int32 V_60,
-             [61] class [mscorlib]System.IDisposable V_61,
-             [62] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_62,
-             [63] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_63,
-             [64] class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,float64>,class [mscorlib]System.Collections.IEnumerable> V_64,
-             [65] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,float64>,float64> V_65,
-             [66] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,float64>> V_66,
-             [67] string V_67,
-             [68] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,float64>> V_68,
-             [69] string V_69,
-             [70] class [mscorlib]System.Collections.Generic.IEnumerator`1<class [mscorlib]System.Tuple`2<string,float64>> V_70,
-             [71] float64 V_71,
-             [72] float64 V_72,
-             [73] int32 V_73,
-             [74] string V_74,
-             [75] float64 V_75,
-             [76] int32 V_76,
-             [77] class [mscorlib]System.IDisposable V_77,
-             [78] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_78)
+             [46] class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<float64,class [mscorlib]System.Collections.IEnumerable> V_46,
+             [47] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,float64> V_47,
+             [48] class [mscorlib]System.Collections.Generic.IEnumerable`1<float64> V_48,
+             [49] class [mscorlib]System.Collections.Generic.IEnumerator`1<float64> V_49,
+             [50] float64 V_50,
+             [51] float64 V_51,
+             [52] int32 V_52,
+             [53] float64 V_53,
+             [54] int32 V_54,
+             [55] class [mscorlib]System.IDisposable V_55,
+             [56] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_56,
+             [57] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_57,
+             [58] class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,float64>,class [mscorlib]System.Collections.IEnumerable> V_58,
+             [59] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,float64>,float64> V_59,
+             [60] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,float64>> V_60,
+             [61] class [mscorlib]System.Collections.Generic.IEnumerator`1<class [mscorlib]System.Tuple`2<string,float64>> V_61,
+             [62] float64 V_62,
+             [63] float64 V_63,
+             [64] int32 V_64,
+             [65] float64 V_65,
+             [66] int32 V_66,
+             [67] class [mscorlib]System.IDisposable V_67,
+             [68] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_68)
     .line 8,8 : 1,31 ''
     IL_0000:  ldc.i4.2
     IL_0001:  ldc.i4.2
@@ -7554,682 +7529,662 @@
     IL_00b7:  stloc.s    V_23
     IL_00b9:  newobj     instance void Linq101Aggregates01/'numSum@22-1'::.ctor()
     IL_00be:  stloc.s    V_24
-    IL_00c0:  ldloc.s    V_24
-    IL_00c2:  stloc.s    V_25
-    IL_00c4:  ldloc.s    V_23
-    IL_00c6:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_00cb:  stloc.s    V_26
-    IL_00cd:  ldloc.s    V_26
-    IL_00cf:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-    IL_00d4:  stloc.s    V_27
+    IL_00c0:  ldloc.s    V_23
+    IL_00c2:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_00c7:  stloc.s    V_25
+    IL_00c9:  ldloc.s    V_25
+    IL_00cb:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
+    IL_00d0:  stloc.s    V_26
     .try
     {
-      IL_00d6:  ldc.i4.0
-      IL_00d7:  stloc.s    V_29
-      IL_00d9:  ldloc.s    V_27
-      IL_00db:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_00e0:  brfalse.s  IL_00f8
+      IL_00d2:  ldc.i4.0
+      IL_00d3:  stloc.s    V_28
+      IL_00d5:  ldloc.s    V_26
+      IL_00d7:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_00dc:  brfalse.s  IL_00f4
 
       .line 22,22 : 9,16 ''
-      IL_00e2:  ldloc.s    V_29
-      IL_00e4:  ldloc.s    V_25
-      IL_00e6:  ldloc.s    V_27
-      IL_00e8:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_00ed:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)
-      IL_00f2:  add.ovf
-      IL_00f3:  stloc.s    V_29
+      IL_00de:  ldloc.s    V_28
+      IL_00e0:  ldloc.s    V_24
+      IL_00e2:  ldloc.s    V_26
+      IL_00e4:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_00e9:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)
+      IL_00ee:  add.ovf
+      IL_00ef:  stloc.s    V_28
       .line 100001,100001 : 0,0 ''
-      IL_00f5:  nop
-      IL_00f6:  br.s       IL_00d9
+      IL_00f1:  nop
+      IL_00f2:  br.s       IL_00d5
 
-      IL_00f8:  ldloc.s    V_29
-      IL_00fa:  stloc.s    V_28
-      IL_00fc:  leave.s    IL_011c
+      IL_00f4:  ldloc.s    V_28
+      IL_00f6:  stloc.s    V_27
+      IL_00f8:  leave.s    IL_0118
 
     }  // end .try
     finally
     {
-      IL_00fe:  ldloc.s    V_27
-      IL_0100:  isinst     [mscorlib]System.IDisposable
-      IL_0105:  stloc.s    V_30
-      IL_0107:  ldloc.s    V_30
-      IL_0109:  brfalse.s  IL_010d
+      IL_00fa:  ldloc.s    V_26
+      IL_00fc:  isinst     [mscorlib]System.IDisposable
+      IL_0101:  stloc.s    V_29
+      IL_0103:  ldloc.s    V_29
+      IL_0105:  brfalse.s  IL_0109
 
-      IL_010b:  br.s       IL_010f
+      IL_0107:  br.s       IL_010b
 
-      IL_010d:  br.s       IL_0119
+      IL_0109:  br.s       IL_0115
 
       .line 100001,100001 : 0,0 ''
-      IL_010f:  ldloc.s    V_30
-      IL_0111:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-      IL_0116:  ldnull
-      IL_0117:  pop
-      IL_0118:  endfinally
+      IL_010b:  ldloc.s    V_29
+      IL_010d:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+      IL_0112:  ldnull
+      IL_0113:  pop
+      IL_0114:  endfinally
       .line 100001,100001 : 0,0 ''
-      IL_0119:  ldnull
-      IL_011a:  pop
-      IL_011b:  endfinally
+      IL_0115:  ldnull
+      IL_0116:  pop
+      IL_0117:  endfinally
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_011c:  ldloc.s    V_28
-    IL_011e:  dup
-    IL_011f:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::numSum@19
-    IL_0124:  stloc.3
+    IL_0118:  ldloc.s    V_27
+    IL_011a:  dup
+    IL_011b:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::numSum@19
+    IL_0120:  stloc.3
     .line 26,26 : 1,45 ''
-    IL_0125:  ldstr      "cherry"
-    IL_012a:  ldstr      "apple"
-    IL_012f:  ldstr      "blueberry"
-    IL_0134:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::get_Empty()
-    IL_0139:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
+    IL_0121:  ldstr      "cherry"
+    IL_0126:  ldstr      "apple"
+    IL_012b:  ldstr      "blueberry"
+    IL_0130:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::get_Empty()
+    IL_0135:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_013e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
+    IL_013a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_0143:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
+    IL_013f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_0148:  dup
-    IL_0149:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::words@26
-    IL_014e:  stloc.s    words
-    IL_0150:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_0144:  dup
+    IL_0145:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::words@26
+    IL_014a:  stloc.s    words
+    IL_014c:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_0151:  stloc.s    V_30
+    IL_0153:  ldloc.s    V_30
     IL_0155:  stloc.s    V_31
-    IL_0157:  ldloc.s    V_31
-    IL_0159:  stloc.s    V_32
-    IL_015b:  ldnull
-    IL_015c:  ldc.i4.0
-    IL_015d:  ldnull
-    IL_015e:  newobj     instance void Linq101Aggregates01/totalChars@30::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
+    IL_0157:  ldnull
+    IL_0158:  ldc.i4.0
+    IL_0159:  ldnull
+    IL_015a:  newobj     instance void Linq101Aggregates01/totalChars@30::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
                                                                                 int32,
                                                                                 string)
-    IL_0163:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0168:  stloc.s    V_33
-    IL_016a:  newobj     instance void Linq101Aggregates01/'totalChars@31-1'::.ctor()
-    IL_016f:  stloc.s    V_34
-    IL_0171:  ldloc.s    V_34
-    IL_0173:  stloc.s    V_35
-    IL_0175:  ldloc.s    V_33
-    IL_0177:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_017c:  stloc.s    V_36
-    IL_017e:  ldloc.s    V_36
-    IL_0180:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
-    IL_0185:  stloc.s    V_37
+    IL_015f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_0164:  stloc.s    V_32
+    IL_0166:  newobj     instance void Linq101Aggregates01/'totalChars@31-1'::.ctor()
+    IL_016b:  stloc.s    V_33
+    IL_016d:  ldloc.s    V_32
+    IL_016f:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_0174:  stloc.s    V_34
+    IL_0176:  ldloc.s    V_34
+    IL_0178:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
+    IL_017d:  stloc.s    V_35
     .try
     {
-      IL_0187:  ldc.i4.0
-      IL_0188:  stloc.s    V_39
-      IL_018a:  ldloc.s    V_37
-      IL_018c:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0191:  brfalse.s  IL_01a9
+      IL_017f:  ldc.i4.0
+      IL_0180:  stloc.s    V_37
+      IL_0182:  ldloc.s    V_35
+      IL_0184:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0189:  brfalse.s  IL_01a1
 
       .line 31,31 : 9,25 ''
-      IL_0193:  ldloc.s    V_39
-      IL_0195:  ldloc.s    V_35
-      IL_0197:  ldloc.s    V_37
-      IL_0199:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
-      IL_019e:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32>::Invoke(!0)
-      IL_01a3:  add.ovf
-      IL_01a4:  stloc.s    V_39
+      IL_018b:  ldloc.s    V_37
+      IL_018d:  ldloc.s    V_33
+      IL_018f:  ldloc.s    V_35
+      IL_0191:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
+      IL_0196:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32>::Invoke(!0)
+      IL_019b:  add.ovf
+      IL_019c:  stloc.s    V_37
       .line 100001,100001 : 0,0 ''
-      IL_01a6:  nop
-      IL_01a7:  br.s       IL_018a
+      IL_019e:  nop
+      IL_019f:  br.s       IL_0182
 
-      IL_01a9:  ldloc.s    V_39
-      IL_01ab:  stloc.s    V_38
-      IL_01ad:  leave.s    IL_01cd
+      IL_01a1:  ldloc.s    V_37
+      IL_01a3:  stloc.s    V_36
+      IL_01a5:  leave.s    IL_01c5
 
     }  // end .try
     finally
     {
-      IL_01af:  ldloc.s    V_37
-      IL_01b1:  isinst     [mscorlib]System.IDisposable
-      IL_01b6:  stloc.s    V_40
-      IL_01b8:  ldloc.s    V_40
-      IL_01ba:  brfalse.s  IL_01be
+      IL_01a7:  ldloc.s    V_35
+      IL_01a9:  isinst     [mscorlib]System.IDisposable
+      IL_01ae:  stloc.s    V_38
+      IL_01b0:  ldloc.s    V_38
+      IL_01b2:  brfalse.s  IL_01b6
 
-      IL_01bc:  br.s       IL_01c0
+      IL_01b4:  br.s       IL_01b8
 
-      IL_01be:  br.s       IL_01ca
+      IL_01b6:  br.s       IL_01c2
 
       .line 100001,100001 : 0,0 ''
-      IL_01c0:  ldloc.s    V_40
-      IL_01c2:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-      IL_01c7:  ldnull
-      IL_01c8:  pop
-      IL_01c9:  endfinally
+      IL_01b8:  ldloc.s    V_38
+      IL_01ba:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+      IL_01bf:  ldnull
+      IL_01c0:  pop
+      IL_01c1:  endfinally
       .line 100001,100001 : 0,0 ''
-      IL_01ca:  ldnull
-      IL_01cb:  pop
-      IL_01cc:  endfinally
+      IL_01c2:  ldnull
+      IL_01c3:  pop
+      IL_01c4:  endfinally
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_01cd:  ldloc.s    V_38
-    IL_01cf:  dup
-    IL_01d0:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::totalChars@28
-    IL_01d5:  stloc.s    totalChars
+    IL_01c5:  ldloc.s    V_36
+    IL_01c7:  dup
+    IL_01c8:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::totalChars@28
+    IL_01cd:  stloc.s    totalChars
     .line 35,35 : 1,32 ''
-    IL_01d7:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
-    IL_01dc:  dup
-    IL_01dd:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::products@35
-    IL_01e2:  stloc.s    products
+    IL_01cf:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
+    IL_01d4:  dup
+    IL_01d5:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::products@35
+    IL_01da:  stloc.s    products
     .line 37,46 : 1,21 ''
-    IL_01e4:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_01e9:  stloc.s    V_41
-    IL_01eb:  ldloc.s    V_41
-    IL_01ed:  ldloc.s    V_41
-    IL_01ef:  ldloc.s    V_41
-    IL_01f1:  ldloc.s    V_41
-    IL_01f3:  ldloc.s    V_41
-    IL_01f5:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
-    IL_01fa:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_01ff:  ldloc.s    V_41
-    IL_0201:  newobj     instance void Linq101Aggregates01/categories@39::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_0206:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_01dc:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_01e1:  stloc.s    V_39
+    IL_01e3:  ldloc.s    V_39
+    IL_01e5:  ldloc.s    V_39
+    IL_01e7:  ldloc.s    V_39
+    IL_01e9:  ldloc.s    V_39
+    IL_01eb:  ldloc.s    V_39
+    IL_01ed:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
+    IL_01f2:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_01f7:  ldloc.s    V_39
+    IL_01f9:  newobj     instance void Linq101Aggregates01/categories@39::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_01fe:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_020b:  newobj     instance void Linq101Aggregates01/'categories@40-1'::.ctor()
-    IL_0210:  newobj     instance void Linq101Aggregates01/'categories@40-2'::.ctor()
-    IL_0215:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
+    IL_0203:  newobj     instance void Linq101Aggregates01/'categories@40-1'::.ctor()
+    IL_0208:  newobj     instance void Linq101Aggregates01/'categories@40-2'::.ctor()
+    IL_020d:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
-    IL_021a:  ldloc.s    V_41
-    IL_021c:  newobj     instance void Linq101Aggregates01/'categories@40-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_0221:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,int32>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0212:  ldloc.s    V_39
+    IL_0214:  newobj     instance void Linq101Aggregates01/'categories@40-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0219:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,int32>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_0226:  newobj     instance void Linq101Aggregates01/'categories@45-4'::.ctor()
-    IL_022b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,int32>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,int32>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_021e:  newobj     instance void Linq101Aggregates01/'categories@45-4'::.ctor()
+    IL_0223:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,int32>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,int32>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_0230:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,int32>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_0235:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,int32>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_023a:  dup
-    IL_023b:  stsfld     class [mscorlib]System.Tuple`2<string,int32>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories@37
-    IL_0240:  stloc.s    categories
-    IL_0242:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_0247:  ldnull
-    IL_0248:  ldc.i4.0
-    IL_0249:  ldc.i4.0
-    IL_024a:  newobj     instance void Linq101Aggregates01/minNum@49::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+    IL_0228:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,int32>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_022d:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,int32>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0232:  dup
+    IL_0233:  stsfld     class [mscorlib]System.Tuple`2<string,int32>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories@37
+    IL_0238:  stloc.s    categories
+    IL_023a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_023f:  ldnull
+    IL_0240:  ldc.i4.0
+    IL_0241:  ldc.i4.0
+    IL_0242:  newobj     instance void Linq101Aggregates01/minNum@49::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
                                                                             int32,
                                                                             int32)
-    IL_024f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0254:  newobj     instance void Linq101Aggregates01/'minNum@49-1'::.ctor()
-    IL_0259:  callvirt   instance !!2 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::MinBy<int32,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0247:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_024c:  newobj     instance void Linq101Aggregates01/'minNum@49-1'::.ctor()
+    IL_0251:  callvirt   instance !!2 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::MinBy<int32,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_025e:  dup
-    IL_025f:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::minNum@49
-    IL_0264:  stloc.s    minNum
-    IL_0266:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_026b:  ldnull
-    IL_026c:  ldc.i4.0
-    IL_026d:  ldnull
-    IL_026e:  newobj     instance void Linq101Aggregates01/shortestWord@52::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
+    IL_0256:  dup
+    IL_0257:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::minNum@49
+    IL_025c:  stloc.s    minNum
+    IL_025e:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_0263:  ldnull
+    IL_0264:  ldc.i4.0
+    IL_0265:  ldnull
+    IL_0266:  newobj     instance void Linq101Aggregates01/shortestWord@52::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
                                                                                   int32,
                                                                                   string)
-    IL_0273:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0278:  newobj     instance void Linq101Aggregates01/'shortestWord@52-1'::.ctor()
-    IL_027d:  callvirt   instance !!2 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::MinBy<string,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_026b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_0270:  newobj     instance void Linq101Aggregates01/'shortestWord@52-1'::.ctor()
+    IL_0275:  callvirt   instance !!2 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::MinBy<string,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_0282:  dup
-    IL_0283:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::shortestWord@52
-    IL_0288:  stloc.s    shortestWord
+    IL_027a:  dup
+    IL_027b:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::shortestWord@52
+    IL_0280:  stloc.s    shortestWord
     .line 55,61 : 1,21 ''
-    IL_028a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_028f:  stloc.s    V_42
-    IL_0291:  ldloc.s    V_42
-    IL_0293:  ldloc.s    V_42
-    IL_0295:  ldloc.s    V_42
-    IL_0297:  ldloc.s    V_42
-    IL_0299:  ldloc.s    V_42
-    IL_029b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
-    IL_02a0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_02a5:  ldloc.s    V_42
-    IL_02a7:  newobj     instance void Linq101Aggregates01/categories2@57::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_02ac:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0282:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_0287:  stloc.s    V_40
+    IL_0289:  ldloc.s    V_40
+    IL_028b:  ldloc.s    V_40
+    IL_028d:  ldloc.s    V_40
+    IL_028f:  ldloc.s    V_40
+    IL_0291:  ldloc.s    V_40
+    IL_0293:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
+    IL_0298:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_029d:  ldloc.s    V_40
+    IL_029f:  newobj     instance void Linq101Aggregates01/categories2@57::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_02a4:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_02b1:  newobj     instance void Linq101Aggregates01/'categories2@58-1'::.ctor()
-    IL_02b6:  newobj     instance void Linq101Aggregates01/'categories2@58-2'::.ctor()
-    IL_02bb:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
+    IL_02a9:  newobj     instance void Linq101Aggregates01/'categories2@58-1'::.ctor()
+    IL_02ae:  newobj     instance void Linq101Aggregates01/'categories2@58-2'::.ctor()
+    IL_02b3:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
-    IL_02c0:  ldloc.s    V_42
-    IL_02c2:  newobj     instance void Linq101Aggregates01/'categories2@58-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_02c7:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_02b8:  ldloc.s    V_40
+    IL_02ba:  newobj     instance void Linq101Aggregates01/'categories2@58-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_02bf:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_02cc:  newobj     instance void Linq101Aggregates01/'categories2@60-4'::.ctor()
-    IL_02d1:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_02c4:  newobj     instance void Linq101Aggregates01/'categories2@60-4'::.ctor()
+    IL_02c9:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_02d6:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_02db:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_02e0:  dup
-    IL_02e1:  stsfld     class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories2@55
-    IL_02e6:  stloc.s    categories2
+    IL_02ce:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_02d3:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_02d8:  dup
+    IL_02d9:  stsfld     class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories2@55
+    IL_02de:  stloc.s    categories2
     .line 64,71 : 1,21 ''
-    IL_02e8:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_02ed:  stloc.s    V_43
-    IL_02ef:  ldloc.s    V_43
-    IL_02f1:  ldloc.s    V_43
-    IL_02f3:  ldloc.s    V_43
-    IL_02f5:  ldloc.s    V_43
-    IL_02f7:  ldloc.s    V_43
-    IL_02f9:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
-    IL_02fe:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0303:  ldloc.s    V_43
-    IL_0305:  newobj     instance void Linq101Aggregates01/categories3@66::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_030a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_02e0:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_02e5:  stloc.s    V_41
+    IL_02e7:  ldloc.s    V_41
+    IL_02e9:  ldloc.s    V_41
+    IL_02eb:  ldloc.s    V_41
+    IL_02ed:  ldloc.s    V_41
+    IL_02ef:  ldloc.s    V_41
+    IL_02f1:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
+    IL_02f6:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_02fb:  ldloc.s    V_41
+    IL_02fd:  newobj     instance void Linq101Aggregates01/categories3@66::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0302:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_030f:  newobj     instance void Linq101Aggregates01/'categories3@67-1'::.ctor()
-    IL_0314:  newobj     instance void Linq101Aggregates01/'categories3@67-2'::.ctor()
-    IL_0319:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
+    IL_0307:  newobj     instance void Linq101Aggregates01/'categories3@67-1'::.ctor()
+    IL_030c:  newobj     instance void Linq101Aggregates01/'categories3@67-2'::.ctor()
+    IL_0311:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
-    IL_031e:  ldloc.s    V_43
-    IL_0320:  newobj     instance void Linq101Aggregates01/'categories3@67-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_0325:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0316:  ldloc.s    V_41
+    IL_0318:  newobj     instance void Linq101Aggregates01/'categories3@67-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_031d:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_032a:  newobj     instance void Linq101Aggregates01/'categories3@70-4'::.ctor()
-    IL_032f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`3<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0322:  newobj     instance void Linq101Aggregates01/'categories3@70-4'::.ctor()
+    IL_0327:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`3<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_0334:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_0339:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_033e:  dup
-    IL_033f:  stsfld     class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories3@64
-    IL_0344:  stloc.s    categories3
-    IL_0346:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_034b:  ldnull
-    IL_034c:  ldc.i4.0
-    IL_034d:  ldc.i4.0
-    IL_034e:  newobj     instance void Linq101Aggregates01/maxNum@74::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+    IL_032c:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_0331:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0336:  dup
+    IL_0337:  stsfld     class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories3@64
+    IL_033c:  stloc.s    categories3
+    IL_033e:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_0343:  ldnull
+    IL_0344:  ldc.i4.0
+    IL_0345:  ldc.i4.0
+    IL_0346:  newobj     instance void Linq101Aggregates01/maxNum@74::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
                                                                             int32,
                                                                             int32)
-    IL_0353:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0358:  newobj     instance void Linq101Aggregates01/'maxNum@74-1'::.ctor()
-    IL_035d:  callvirt   instance !!2 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::MaxBy<int32,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_034b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_0350:  newobj     instance void Linq101Aggregates01/'maxNum@74-1'::.ctor()
+    IL_0355:  callvirt   instance !!2 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::MaxBy<int32,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_0362:  dup
-    IL_0363:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::maxNum@74
-    IL_0368:  stloc.s    maxNum
-    IL_036a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_036f:  ldnull
-    IL_0370:  ldc.i4.0
-    IL_0371:  ldnull
-    IL_0372:  newobj     instance void Linq101Aggregates01/longestLength@77::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
+    IL_035a:  dup
+    IL_035b:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::maxNum@74
+    IL_0360:  stloc.s    maxNum
+    IL_0362:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_0367:  ldnull
+    IL_0368:  ldc.i4.0
+    IL_0369:  ldnull
+    IL_036a:  newobj     instance void Linq101Aggregates01/longestLength@77::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
                                                                                    int32,
                                                                                    string)
-    IL_0377:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_037c:  newobj     instance void Linq101Aggregates01/'longestLength@77-1'::.ctor()
-    IL_0381:  callvirt   instance !!2 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::MaxBy<string,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_036f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_0374:  newobj     instance void Linq101Aggregates01/'longestLength@77-1'::.ctor()
+    IL_0379:  callvirt   instance !!2 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::MaxBy<string,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_0386:  dup
-    IL_0387:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::longestLength@77
-    IL_038c:  stloc.s    longestLength
+    IL_037e:  dup
+    IL_037f:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::longestLength@77
+    IL_0384:  stloc.s    longestLength
     .line 80,86 : 1,21 ''
-    IL_038e:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_0393:  stloc.s    V_44
-    IL_0395:  ldloc.s    V_44
-    IL_0397:  ldloc.s    V_44
-    IL_0399:  ldloc.s    V_44
-    IL_039b:  ldloc.s    V_44
-    IL_039d:  ldloc.s    V_44
-    IL_039f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
-    IL_03a4:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_03a9:  ldloc.s    V_44
-    IL_03ab:  newobj     instance void Linq101Aggregates01/categories4@82::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_03b0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0386:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_038b:  stloc.s    V_42
+    IL_038d:  ldloc.s    V_42
+    IL_038f:  ldloc.s    V_42
+    IL_0391:  ldloc.s    V_42
+    IL_0393:  ldloc.s    V_42
+    IL_0395:  ldloc.s    V_42
+    IL_0397:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
+    IL_039c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_03a1:  ldloc.s    V_42
+    IL_03a3:  newobj     instance void Linq101Aggregates01/categories4@82::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_03a8:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_03b5:  newobj     instance void Linq101Aggregates01/'categories4@83-1'::.ctor()
-    IL_03ba:  newobj     instance void Linq101Aggregates01/'categories4@83-2'::.ctor()
-    IL_03bf:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
+    IL_03ad:  newobj     instance void Linq101Aggregates01/'categories4@83-1'::.ctor()
+    IL_03b2:  newobj     instance void Linq101Aggregates01/'categories4@83-2'::.ctor()
+    IL_03b7:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
-    IL_03c4:  ldloc.s    V_44
-    IL_03c6:  newobj     instance void Linq101Aggregates01/'categories4@83-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_03cb:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_03bc:  ldloc.s    V_42
+    IL_03be:  newobj     instance void Linq101Aggregates01/'categories4@83-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_03c3:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_03d0:  newobj     instance void Linq101Aggregates01/'categories4@85-4'::.ctor()
-    IL_03d5:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_03c8:  newobj     instance void Linq101Aggregates01/'categories4@85-4'::.ctor()
+    IL_03cd:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_03da:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_03df:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_03e4:  dup
-    IL_03e5:  stsfld     class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories4@80
-    IL_03ea:  stloc.s    categories4
+    IL_03d2:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_03d7:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_03dc:  dup
+    IL_03dd:  stsfld     class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories4@80
+    IL_03e2:  stloc.s    categories4
     .line 89,96 : 1,21 ''
-    IL_03ec:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_03f1:  stloc.s    V_45
-    IL_03f3:  ldloc.s    V_45
-    IL_03f5:  ldloc.s    V_45
-    IL_03f7:  ldloc.s    V_45
-    IL_03f9:  ldloc.s    V_45
-    IL_03fb:  ldloc.s    V_45
-    IL_03fd:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
-    IL_0402:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0407:  ldloc.s    V_45
-    IL_0409:  newobj     instance void Linq101Aggregates01/categories5@91::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_040e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_03e4:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_03e9:  stloc.s    V_43
+    IL_03eb:  ldloc.s    V_43
+    IL_03ed:  ldloc.s    V_43
+    IL_03ef:  ldloc.s    V_43
+    IL_03f1:  ldloc.s    V_43
+    IL_03f3:  ldloc.s    V_43
+    IL_03f5:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
+    IL_03fa:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_03ff:  ldloc.s    V_43
+    IL_0401:  newobj     instance void Linq101Aggregates01/categories5@91::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0406:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_0413:  newobj     instance void Linq101Aggregates01/'categories5@92-1'::.ctor()
-    IL_0418:  newobj     instance void Linq101Aggregates01/'categories5@92-2'::.ctor()
-    IL_041d:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
+    IL_040b:  newobj     instance void Linq101Aggregates01/'categories5@92-1'::.ctor()
+    IL_0410:  newobj     instance void Linq101Aggregates01/'categories5@92-2'::.ctor()
+    IL_0415:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
-    IL_0422:  ldloc.s    V_45
-    IL_0424:  newobj     instance void Linq101Aggregates01/'categories5@92-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_0429:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_041a:  ldloc.s    V_43
+    IL_041c:  newobj     instance void Linq101Aggregates01/'categories5@92-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0421:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`3<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_042e:  newobj     instance void Linq101Aggregates01/'categories5@95-4'::.ctor()
-    IL_0433:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`3<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0426:  newobj     instance void Linq101Aggregates01/'categories5@95-4'::.ctor()
+    IL_042b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`3<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_0438:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_043d:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0442:  dup
-    IL_0443:  stsfld     class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories5@89
-    IL_0448:  stloc.s    categories5
+    IL_0430:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_0435:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_043a:  dup
+    IL_043b:  stsfld     class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories5@89
+    IL_0440:  stloc.s    categories5
     .line 99,99 : 1,66 ''
-    IL_044a:  ldc.r8     5.
-    IL_0453:  ldc.r8     4.
-    IL_045c:  ldc.r8     1.
-    IL_0465:  ldc.r8     3.
-    IL_046e:  ldc.r8     9.
-    IL_0477:  ldc.r8     8.
-    IL_0480:  ldc.r8     6.
-    IL_0489:  ldc.r8     7.
-    IL_0492:  ldc.r8     2.
-    IL_049b:  ldc.r8     0.0
-    IL_04a4:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::get_Empty()
-    IL_04a9:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
+    IL_0442:  ldc.r8     5.
+    IL_044b:  ldc.r8     4.
+    IL_0454:  ldc.r8     1.
+    IL_045d:  ldc.r8     3.
+    IL_0466:  ldc.r8     9.
+    IL_046f:  ldc.r8     8.
+    IL_0478:  ldc.r8     6.
+    IL_0481:  ldc.r8     7.
+    IL_048a:  ldc.r8     2.
+    IL_0493:  ldc.r8     0.0
+    IL_049c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::get_Empty()
+    IL_04a1:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_04ae:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
+    IL_04a6:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_04b3:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
+    IL_04ab:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_04b8:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
+    IL_04b0:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_04bd:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
+    IL_04b5:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_04c2:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
+    IL_04ba:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_04c7:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
+    IL_04bf:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_04cc:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
+    IL_04c4:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_04d1:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
+    IL_04c9:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_04d6:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
+    IL_04ce:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64>::Cons(!0,
                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_04db:  dup
-    IL_04dc:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64> '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::numbers2@99
-    IL_04e1:  stloc.s    numbers2
-    IL_04e3:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_04e8:  stloc.s    V_46
-    IL_04ea:  ldloc.s    V_46
-    IL_04ec:  stloc.s    V_47
-    IL_04ee:  ldnull
-    IL_04ef:  ldc.i4.0
-    IL_04f0:  ldc.r8     0.0
-    IL_04f9:  newobj     instance void Linq101Aggregates01/averageNum@100::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<float64>,
+    IL_04d3:  dup
+    IL_04d4:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<float64> '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::numbers2@99
+    IL_04d9:  stloc.s    numbers2
+    IL_04db:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_04e0:  stloc.s    V_44
+    IL_04e2:  ldloc.s    V_44
+    IL_04e4:  stloc.s    V_45
+    IL_04e6:  ldnull
+    IL_04e7:  ldc.i4.0
+    IL_04e8:  ldc.r8     0.0
+    IL_04f1:  newobj     instance void Linq101Aggregates01/averageNum@100::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<float64>,
                                                                                  int32,
                                                                                  float64)
-    IL_04fe:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<float64,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0503:  stloc.s    V_48
-    IL_0505:  newobj     instance void Linq101Aggregates01/'averageNum@100-1'::.ctor()
-    IL_050a:  stloc.s    V_49
-    IL_050c:  ldloc.s    V_48
-    IL_050e:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<float64,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_0513:  stloc.s    V_50
-    IL_0515:  ldstr      "source"
-    IL_051a:  stloc.s    V_51
-    IL_051c:  ldloc.s    V_50
-    IL_051e:  stloc.s    V_52
-    IL_0520:  ldloc.s    V_52
-    IL_0522:  box        class [mscorlib]System.Collections.Generic.IEnumerable`1<float64>
-    IL_0527:  brfalse.s  IL_052b
+    IL_04f6:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<float64,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
+    IL_04fb:  stloc.s    V_46
+    IL_04fd:  newobj     instance void Linq101Aggregates01/'averageNum@100-1'::.ctor()
+    IL_0502:  stloc.s    V_47
+    IL_0504:  ldloc.s    V_46
+    IL_0506:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<float64,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_050b:  stloc.s    V_48
+    IL_050d:  ldloc.s    V_48
+    IL_050f:  box        class [mscorlib]System.Collections.Generic.IEnumerable`1<float64>
+    IL_0514:  brfalse.s  IL_0518
 
-    IL_0529:  br.s       IL_0537
+    IL_0516:  br.s       IL_0523
 
     .line 100001,100001 : 0,0 ''
-    IL_052b:  ldloc.s    V_51
-    IL_052d:  stloc.s    V_53
-    IL_052f:  ldloc.s    V_53
-    IL_0531:  newobj     instance void [mscorlib]System.ArgumentNullException::.ctor(string)
-    IL_0536:  throw
+    IL_0518:  ldstr      "source"
+    IL_051d:  newobj     instance void [mscorlib]System.ArgumentNullException::.ctor(string)
+    IL_0522:  throw
 
     .line 100001,100001 : 0,0 ''
-    IL_0537:  nop
-    IL_0538:  ldloc.s    V_50
-    IL_053a:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<float64>::GetEnumerator()
-    IL_053f:  stloc.s    V_54
+    IL_0523:  nop
+    IL_0524:  ldloc.s    V_48
+    IL_0526:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<float64>::GetEnumerator()
+    IL_052b:  stloc.s    V_49
     .try
     {
-      IL_0541:  ldc.r8     0.0
-      IL_054a:  stloc.s    V_56
-      IL_054c:  ldc.i4.0
-      IL_054d:  stloc.s    V_57
-      IL_054f:  ldloc.s    V_54
-      IL_0551:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0556:  brfalse.s  IL_0574
+      IL_052d:  ldc.r8     0.0
+      IL_0536:  stloc.s    V_51
+      IL_0538:  ldc.i4.0
+      IL_0539:  stloc.s    V_52
+      IL_053b:  ldloc.s    V_49
+      IL_053d:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0542:  brfalse.s  IL_0560
 
-      IL_0558:  ldloc.s    V_56
-      IL_055a:  ldloc.s    V_49
-      IL_055c:  ldloc.s    V_54
-      IL_055e:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<float64>::get_Current()
-      IL_0563:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,float64>::Invoke(!0)
-      IL_0568:  add
-      IL_0569:  stloc.s    V_56
+      IL_0544:  ldloc.s    V_51
+      IL_0546:  ldloc.s    V_47
+      IL_0548:  ldloc.s    V_49
+      IL_054a:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<float64>::get_Current()
+      IL_054f:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,float64>::Invoke(!0)
+      IL_0554:  add
+      IL_0555:  stloc.s    V_51
       .line 100,100 : 47,58 ''
-      IL_056b:  ldloc.s    V_57
-      IL_056d:  ldc.i4.1
-      IL_056e:  add
-      IL_056f:  stloc.s    V_57
+      IL_0557:  ldloc.s    V_52
+      IL_0559:  ldc.i4.1
+      IL_055a:  add
+      IL_055b:  stloc.s    V_52
       .line 100001,100001 : 0,0 ''
-      IL_0571:  nop
-      IL_0572:  br.s       IL_054f
+      IL_055d:  nop
+      IL_055e:  br.s       IL_053b
 
-      IL_0574:  ldloc.s    V_57
-      IL_0576:  brtrue.s   IL_057a
+      IL_0560:  ldloc.s    V_52
+      IL_0562:  brtrue.s   IL_0566
 
-      IL_0578:  br.s       IL_057c
+      IL_0564:  br.s       IL_0568
 
-      IL_057a:  br.s       IL_058b
-
-      .line 100001,100001 : 0,0 ''
-      IL_057c:  ldstr      "source"
-      IL_0581:  stloc.s    V_58
-      IL_0583:  ldloc.s    V_58
-      IL_0585:  newobj     instance void [mscorlib]System.InvalidOperationException::.ctor(string)
-      IL_058a:  throw
+      IL_0566:  br.s       IL_0573
 
       .line 100001,100001 : 0,0 ''
-      IL_058b:  nop
-      IL_058c:  ldloc.s    V_56
-      IL_058e:  stloc.s    V_59
-      IL_0590:  ldloc.s    V_57
-      IL_0592:  stloc.s    V_60
-      IL_0594:  ldloc.s    V_59
-      IL_0596:  ldloc.s    V_60
-      IL_0598:  conv.r8
-      IL_0599:  div
-      IL_059a:  stloc.s    V_55
-      IL_059c:  leave.s    IL_05bc
+      IL_0568:  ldstr      "source"
+      IL_056d:  newobj     instance void [mscorlib]System.InvalidOperationException::.ctor(string)
+      IL_0572:  throw
+
+      .line 100001,100001 : 0,0 ''
+      IL_0573:  nop
+      IL_0574:  ldloc.s    V_51
+      IL_0576:  stloc.s    V_53
+      IL_0578:  ldloc.s    V_52
+      IL_057a:  stloc.s    V_54
+      IL_057c:  ldloc.s    V_53
+      IL_057e:  ldloc.s    V_54
+      IL_0580:  conv.r8
+      IL_0581:  div
+      IL_0582:  stloc.s    V_50
+      IL_0584:  leave.s    IL_05a4
 
     }  // end .try
     finally
     {
-      IL_059e:  ldloc.s    V_54
-      IL_05a0:  isinst     [mscorlib]System.IDisposable
-      IL_05a5:  stloc.s    V_61
-      IL_05a7:  ldloc.s    V_61
-      IL_05a9:  brfalse.s  IL_05ad
+      IL_0586:  ldloc.s    V_49
+      IL_0588:  isinst     [mscorlib]System.IDisposable
+      IL_058d:  stloc.s    V_55
+      IL_058f:  ldloc.s    V_55
+      IL_0591:  brfalse.s  IL_0595
 
-      IL_05ab:  br.s       IL_05af
+      IL_0593:  br.s       IL_0597
 
-      IL_05ad:  br.s       IL_05b9
+      IL_0595:  br.s       IL_05a1
 
       .line 100001,100001 : 0,0 ''
-      IL_05af:  ldloc.s    V_61
-      IL_05b1:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-      IL_05b6:  ldnull
-      IL_05b7:  pop
-      IL_05b8:  endfinally
+      IL_0597:  ldloc.s    V_55
+      IL_0599:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+      IL_059e:  ldnull
+      IL_059f:  pop
+      IL_05a0:  endfinally
       .line 100001,100001 : 0,0 ''
-      IL_05b9:  ldnull
-      IL_05ba:  pop
-      IL_05bb:  endfinally
+      IL_05a1:  ldnull
+      IL_05a2:  pop
+      IL_05a3:  endfinally
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_05bc:  ldloc.s    V_55
-    IL_05be:  dup
-    IL_05bf:  stsfld     float64 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::averageNum@100
-    IL_05c4:  stloc.s    averageNum
-    IL_05c6:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_05cb:  stloc.s    V_62
-    IL_05cd:  ldloc.s    V_62
-    IL_05cf:  stloc.s    V_63
-    IL_05d1:  ldloc.s    V_62
-    IL_05d3:  ldloc.s    V_62
-    IL_05d5:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Aggregates01::get_words()
-    IL_05da:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<string>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_05df:  ldloc.s    V_62
-    IL_05e1:  newobj     instance void Linq101Aggregates01/averageLength@105::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_05e6:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<string,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,float64>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_05a4:  ldloc.s    V_50
+    IL_05a6:  dup
+    IL_05a7:  stsfld     float64 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::averageNum@100
+    IL_05ac:  stloc.s    averageNum
+    IL_05ae:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_05b3:  stloc.s    V_56
+    IL_05b5:  ldloc.s    V_56
+    IL_05b7:  stloc.s    V_57
+    IL_05b9:  ldloc.s    V_56
+    IL_05bb:  ldloc.s    V_56
+    IL_05bd:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Aggregates01::get_words()
+    IL_05c2:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<string>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_05c7:  ldloc.s    V_56
+    IL_05c9:  newobj     instance void Linq101Aggregates01/averageLength@105::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_05ce:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<string,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,float64>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_05eb:  stloc.s    V_64
-    IL_05ed:  newobj     instance void Linq101Aggregates01/'averageLength@107-1'::.ctor()
-    IL_05f2:  stloc.s    V_65
-    IL_05f4:  ldloc.s    V_64
-    IL_05f6:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,float64>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_05fb:  stloc.s    V_66
-    IL_05fd:  ldstr      "source"
-    IL_0602:  stloc.s    V_67
-    IL_0604:  ldloc.s    V_66
-    IL_0606:  stloc.s    V_68
-    IL_0608:  ldloc.s    V_68
-    IL_060a:  box        class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,float64>>
-    IL_060f:  brfalse.s  IL_0613
+    IL_05d3:  stloc.s    V_58
+    IL_05d5:  newobj     instance void Linq101Aggregates01/'averageLength@107-1'::.ctor()
+    IL_05da:  stloc.s    V_59
+    IL_05dc:  ldloc.s    V_58
+    IL_05de:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,float64>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_05e3:  stloc.s    V_60
+    IL_05e5:  ldloc.s    V_60
+    IL_05e7:  box        class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,float64>>
+    IL_05ec:  brfalse.s  IL_05f0
 
-    IL_0611:  br.s       IL_061f
+    IL_05ee:  br.s       IL_05fb
 
     .line 100001,100001 : 0,0 ''
-    IL_0613:  ldloc.s    V_67
-    IL_0615:  stloc.s    V_69
-    IL_0617:  ldloc.s    V_69
-    IL_0619:  newobj     instance void [mscorlib]System.ArgumentNullException::.ctor(string)
-    IL_061e:  throw
+    IL_05f0:  ldstr      "source"
+    IL_05f5:  newobj     instance void [mscorlib]System.ArgumentNullException::.ctor(string)
+    IL_05fa:  throw
 
     .line 100001,100001 : 0,0 ''
-    IL_061f:  nop
-    IL_0620:  ldloc.s    V_66
-    IL_0622:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,float64>>::GetEnumerator()
-    IL_0627:  stloc.s    V_70
+    IL_05fb:  nop
+    IL_05fc:  ldloc.s    V_60
+    IL_05fe:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<string,float64>>::GetEnumerator()
+    IL_0603:  stloc.s    V_61
     .try
     {
-      IL_0629:  ldc.r8     0.0
-      IL_0632:  stloc.s    V_72
-      IL_0634:  ldc.i4.0
-      IL_0635:  stloc.s    V_73
-      IL_0637:  ldloc.s    V_70
-      IL_0639:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_063e:  brfalse.s  IL_065c
+      IL_0605:  ldc.r8     0.0
+      IL_060e:  stloc.s    V_63
+      IL_0610:  ldc.i4.0
+      IL_0611:  stloc.s    V_64
+      IL_0613:  ldloc.s    V_61
+      IL_0615:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_061a:  brfalse.s  IL_0638
 
-      IL_0640:  ldloc.s    V_72
-      IL_0642:  ldloc.s    V_65
-      IL_0644:  ldloc.s    V_70
-      IL_0646:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [mscorlib]System.Tuple`2<string,float64>>::get_Current()
-      IL_064b:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,float64>,float64>::Invoke(!0)
-      IL_0650:  add
-      IL_0651:  stloc.s    V_72
+      IL_061c:  ldloc.s    V_63
+      IL_061e:  ldloc.s    V_59
+      IL_0620:  ldloc.s    V_61
+      IL_0622:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [mscorlib]System.Tuple`2<string,float64>>::get_Current()
+      IL_0627:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<string,float64>,float64>::Invoke(!0)
+      IL_062c:  add
+      IL_062d:  stloc.s    V_63
       .line 107,107 : 9,21 ''
-      IL_0653:  ldloc.s    V_73
-      IL_0655:  ldc.i4.1
-      IL_0656:  add
-      IL_0657:  stloc.s    V_73
+      IL_062f:  ldloc.s    V_64
+      IL_0631:  ldc.i4.1
+      IL_0632:  add
+      IL_0633:  stloc.s    V_64
       .line 100001,100001 : 0,0 ''
-      IL_0659:  nop
-      IL_065a:  br.s       IL_0637
+      IL_0635:  nop
+      IL_0636:  br.s       IL_0613
 
-      IL_065c:  ldloc.s    V_73
-      IL_065e:  brtrue.s   IL_0662
+      IL_0638:  ldloc.s    V_64
+      IL_063a:  brtrue.s   IL_063e
 
-      IL_0660:  br.s       IL_0664
+      IL_063c:  br.s       IL_0640
 
-      IL_0662:  br.s       IL_0673
-
-      .line 100001,100001 : 0,0 ''
-      IL_0664:  ldstr      "source"
-      IL_0669:  stloc.s    V_74
-      IL_066b:  ldloc.s    V_74
-      IL_066d:  newobj     instance void [mscorlib]System.InvalidOperationException::.ctor(string)
-      IL_0672:  throw
+      IL_063e:  br.s       IL_064b
 
       .line 100001,100001 : 0,0 ''
-      IL_0673:  nop
-      IL_0674:  ldloc.s    V_72
-      IL_0676:  stloc.s    V_75
-      IL_0678:  ldloc.s    V_73
-      IL_067a:  stloc.s    V_76
-      IL_067c:  ldloc.s    V_75
-      IL_067e:  ldloc.s    V_76
-      IL_0680:  conv.r8
-      IL_0681:  div
-      IL_0682:  stloc.s    V_71
-      IL_0684:  leave.s    IL_06a4
+      IL_0640:  ldstr      "source"
+      IL_0645:  newobj     instance void [mscorlib]System.InvalidOperationException::.ctor(string)
+      IL_064a:  throw
+
+      .line 100001,100001 : 0,0 ''
+      IL_064b:  nop
+      IL_064c:  ldloc.s    V_63
+      IL_064e:  stloc.s    V_65
+      IL_0650:  ldloc.s    V_64
+      IL_0652:  stloc.s    V_66
+      IL_0654:  ldloc.s    V_65
+      IL_0656:  ldloc.s    V_66
+      IL_0658:  conv.r8
+      IL_0659:  div
+      IL_065a:  stloc.s    V_62
+      IL_065c:  leave.s    IL_067c
 
     }  // end .try
     finally
     {
-      IL_0686:  ldloc.s    V_70
-      IL_0688:  isinst     [mscorlib]System.IDisposable
-      IL_068d:  stloc.s    V_77
-      IL_068f:  ldloc.s    V_77
-      IL_0691:  brfalse.s  IL_0695
+      IL_065e:  ldloc.s    V_61
+      IL_0660:  isinst     [mscorlib]System.IDisposable
+      IL_0665:  stloc.s    V_67
+      IL_0667:  ldloc.s    V_67
+      IL_0669:  brfalse.s  IL_066d
 
-      IL_0693:  br.s       IL_0697
+      IL_066b:  br.s       IL_066f
 
-      IL_0695:  br.s       IL_06a1
+      IL_066d:  br.s       IL_0679
 
       .line 100001,100001 : 0,0 ''
-      IL_0697:  ldloc.s    V_77
-      IL_0699:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-      IL_069e:  ldnull
-      IL_069f:  pop
-      IL_06a0:  endfinally
+      IL_066f:  ldloc.s    V_67
+      IL_0671:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+      IL_0676:  ldnull
+      IL_0677:  pop
+      IL_0678:  endfinally
       .line 100001,100001 : 0,0 ''
-      IL_06a1:  ldnull
-      IL_06a2:  pop
-      IL_06a3:  endfinally
+      IL_0679:  ldnull
+      IL_067a:  pop
+      IL_067b:  endfinally
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_06a4:  ldloc.s    V_71
-    IL_06a6:  dup
-    IL_06a7:  stsfld     float64 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::averageLength@103
-    IL_06ac:  stloc.s    averageLength
+    IL_067c:  ldloc.s    V_62
+    IL_067e:  dup
+    IL_067f:  stsfld     float64 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::averageLength@103
+    IL_0684:  stloc.s    averageLength
     .line 111,117 : 1,21 ''
-    IL_06ae:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_06b3:  stloc.s    V_78
-    IL_06b5:  ldloc.s    V_78
-    IL_06b7:  ldloc.s    V_78
-    IL_06b9:  ldloc.s    V_78
-    IL_06bb:  ldloc.s    V_78
-    IL_06bd:  ldloc.s    V_78
-    IL_06bf:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
-    IL_06c4:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_06c9:  ldloc.s    V_78
-    IL_06cb:  newobj     instance void Linq101Aggregates01/categories6@113::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_06d0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0686:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_068b:  stloc.s    V_68
+    IL_068d:  ldloc.s    V_68
+    IL_068f:  ldloc.s    V_68
+    IL_0691:  ldloc.s    V_68
+    IL_0693:  ldloc.s    V_68
+    IL_0695:  ldloc.s    V_68
+    IL_0697:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Aggregates01::get_products()
+    IL_069c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_06a1:  ldloc.s    V_68
+    IL_06a3:  newobj     instance void Linq101Aggregates01/categories6@113::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_06a8:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_06d5:  newobj     instance void Linq101Aggregates01/'categories6@114-1'::.ctor()
-    IL_06da:  newobj     instance void Linq101Aggregates01/'categories6@114-2'::.ctor()
-    IL_06df:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
+    IL_06ad:  newobj     instance void Linq101Aggregates01/'categories6@114-1'::.ctor()
+    IL_06b2:  newobj     instance void Linq101Aggregates01/'categories6@114-2'::.ctor()
+    IL_06b7:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
-    IL_06e4:  ldloc.s    V_78
-    IL_06e6:  newobj     instance void Linq101Aggregates01/'categories6@114-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_06eb:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_06bc:  ldloc.s    V_68
+    IL_06be:  newobj     instance void Linq101Aggregates01/'categories6@114-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_06c3:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_06f0:  newobj     instance void Linq101Aggregates01/'categories6@116-4'::.ctor()
-    IL_06f5:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_06c8:  newobj     instance void Linq101Aggregates01/'categories6@116-4'::.ctor()
+    IL_06cd:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_06fa:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_06ff:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0704:  dup
-    IL_0705:  stsfld     class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories6@111
-    IL_070a:  stloc.s    categories6
-    IL_070c:  ret
+    IL_06d2:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_06d7:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_06dc:  dup
+    IL_06dd:  stsfld     class [mscorlib]System.Tuple`2<string,valuetype [mscorlib]System.Decimal>[] '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::categories6@111
+    IL_06e2:  stloc.s    categories6
+    IL_06e4:  ret
   } // end of method $Linq101Aggregates01::main@
 
 } // end of class '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01

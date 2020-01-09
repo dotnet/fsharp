@@ -40,13 +40,13 @@
   // Offset: 0x00000210 Length: 0x00000092
 }
 .module IfThenElse01.dll
-// MVID: {5E171A36-2D6C-0B5D-A745-0383361A175E}
+// MVID: {5E172EE9-2D6C-0B5D-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05510000
+// Image base: 0x067D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

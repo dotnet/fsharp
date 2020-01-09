@@ -44,13 +44,13 @@
   // Offset: 0x000003F0 Length: 0x00000138
 }
 .module Linq101Partitioning01.exe
-// MVID: {5E171A38-B280-A6A2-A745-0383381A175E}
+// MVID: {5E172EEB-B280-A6A2-A745-0383EB2E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x054D0000
+// Image base: 0x05A80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

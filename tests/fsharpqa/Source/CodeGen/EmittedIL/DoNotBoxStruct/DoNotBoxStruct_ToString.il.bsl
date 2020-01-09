@@ -40,13 +40,13 @@
   // Offset: 0x00000210 Length: 0x00000086
 }
 .module DoNotBoxStruct_ToString.exe
-// MVID: {5E171A37-8D34-C606-A745-0383371A175E}
+// MVID: {5E172EEA-8D34-C606-A745-0383EA2E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x054C0000
+// Image base: 0x05180000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

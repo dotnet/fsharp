@@ -40,13 +40,13 @@
   // Offset: 0x00000290 Length: 0x000000B0
 }
 .module DoNotBoxStruct_MDArray_FSInterface_NoExtMeth.exe
-// MVID: {5E171A37-A67D-867A-A745-0383371A175E}
+// MVID: {5E172EEA-A67D-867A-A745-0383EA2E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x068F0000
+// Image base: 0x070E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

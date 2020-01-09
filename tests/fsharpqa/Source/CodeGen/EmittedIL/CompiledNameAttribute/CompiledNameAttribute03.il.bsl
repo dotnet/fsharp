@@ -40,13 +40,13 @@
   // Offset: 0x00000288 Length: 0x00000086
 }
 .module CompiledNameAttribute03.exe
-// MVID: {5E171A36-2CE4-60B9-A745-0383361A175E}
+// MVID: {5E172EE9-2CE4-60B9-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07340000
+// Image base: 0x00A60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

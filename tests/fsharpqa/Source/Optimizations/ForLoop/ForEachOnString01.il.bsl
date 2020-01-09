@@ -40,13 +40,13 @@
   // Offset: 0x00000378 Length: 0x000000FF
 }
 .module ForEachOnString01.dll
-// MVID: {5E171CA0-105C-852B-A745-0383A01C175E}
+// MVID: {5E1730A7-105C-852B-A745-0383A730175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05AC0000
+// Image base: 0x05680000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -308,11 +308,12 @@
 
   .method public static void  test5() cil managed
   {
-    // Code size       64 (0x40)
+    // Code size       71 (0x47)
     .maxstack  5
     .locals init ([0] int32 V_0,
              [1] int32 V_1,
-             [2] char x)
+             [2] char x,
+             [3] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_3)
     .line 31,31 : 6,20 ''
     IL_0000:  ldc.i4.0
     IL_0001:  stloc.1
@@ -323,7 +324,7 @@
     IL_000e:  stloc.0
     IL_000f:  ldloc.0
     IL_0010:  ldloc.1
-    IL_0011:  blt.s      IL_003f
+    IL_0011:  blt.s      IL_0046
 
     .line 31,31 : 6,20 ''
     IL_0013:  ldstr      "123"
@@ -332,22 +333,26 @@
     IL_001e:  stloc.2
     IL_001f:  ldstr      "%A"
     IL_0024:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,char>::.ctor(string)
-    IL_0029:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_002e:  ldloc.2
-    IL_002f:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_0034:  pop
-    IL_0035:  ldloc.1
-    IL_0036:  ldc.i4.1
-    IL_0037:  add
-    IL_0038:  stloc.1
+    IL_0029:  stloc.3
+    IL_002a:  call       class [mscorlib]System.IO.TextWriter [mscorlib]System.Console::get_Out()
+    IL_002f:  ldloc.3
+    IL_0030:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [mscorlib]System.IO.TextWriter,
+                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0035:  ldloc.2
+    IL_0036:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_003b:  pop
+    IL_003c:  ldloc.1
+    IL_003d:  ldc.i4.1
+    IL_003e:  add
+    IL_003f:  stloc.1
     .line 31,31 : 6,20 ''
-    IL_0039:  ldloc.1
-    IL_003a:  ldloc.0
-    IL_003b:  ldc.i4.1
-    IL_003c:  add
-    IL_003d:  bne.un.s   IL_0013
+    IL_0040:  ldloc.1
+    IL_0041:  ldloc.0
+    IL_0042:  ldc.i4.1
+    IL_0043:  add
+    IL_0044:  bne.un.s   IL_0013
 
-    IL_003f:  ret
+    IL_0046:  ret
   } // end of method ForEachOnString01::test5
 
   .method public static void  test6(string str) cil managed
@@ -446,12 +451,13 @@
 
   .method public static void  test8() cil managed
   {
-    // Code size       72 (0x48)
+    // Code size       81 (0x51)
     .maxstack  5
     .locals init ([0] string V_0,
              [1] int32 V_1,
              [2] int32 V_2,
-             [3] char i)
+             [3] char i,
+             [4] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_4)
     .line 53,55 : 17,40 ''
     IL_0000:  newobj     instance void ForEachOnString01/test8@54::.ctor()
     IL_0005:  ldstr      "1234"
@@ -468,7 +474,7 @@
     IL_001a:  stloc.1
     IL_001b:  ldloc.1
     IL_001c:  ldloc.2
-    IL_001d:  blt.s      IL_0047
+    IL_001d:  blt.s      IL_0050
 
     .line 52,56 : 5,21 ''
     IL_001f:  ldloc.0
@@ -477,33 +483,38 @@
     IL_0026:  stloc.3
     IL_0027:  ldstr      "%O"
     IL_002c:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,char>::.ctor(string)
-    IL_0031:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0036:  ldloc.3
-    IL_0037:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_003c:  pop
-    IL_003d:  ldloc.2
-    IL_003e:  ldc.i4.1
-    IL_003f:  add
-    IL_0040:  stloc.2
+    IL_0031:  stloc.s    V_4
+    IL_0033:  call       class [mscorlib]System.IO.TextWriter [mscorlib]System.Console::get_Out()
+    IL_0038:  ldloc.s    V_4
+    IL_003a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [mscorlib]System.IO.TextWriter,
+                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_003f:  ldloc.3
+    IL_0040:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0045:  pop
+    IL_0046:  ldloc.2
+    IL_0047:  ldc.i4.1
+    IL_0048:  add
+    IL_0049:  stloc.2
     .line 52,56 : 5,21 ''
-    IL_0041:  ldloc.2
-    IL_0042:  ldloc.1
-    IL_0043:  ldc.i4.1
-    IL_0044:  add
-    IL_0045:  bne.un.s   IL_001f
+    IL_004a:  ldloc.2
+    IL_004b:  ldloc.1
+    IL_004c:  ldc.i4.1
+    IL_004d:  add
+    IL_004e:  bne.un.s   IL_001f
 
-    IL_0047:  ret
+    IL_0050:  ret
   } // end of method ForEachOnString01::test8
 
   .method public static void  test9() cil managed
   {
-    // Code size       91 (0x5b)
+    // Code size       100 (0x64)
     .maxstack  5
     .locals init ([0] string V_0,
              [1] int32 V_1,
              [2] int32 V_2,
              [3] char i,
-             [4] string tmp)
+             [4] string tmp,
+             [5] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_5)
     .line 62,64 : 17,40 ''
     IL_0000:  newobj     instance void ForEachOnString01/test9@63::.ctor()
     IL_0005:  ldstr      "1234"
@@ -520,7 +531,7 @@
     IL_001a:  stloc.1
     IL_001b:  ldloc.1
     IL_001c:  ldloc.2
-    IL_001d:  blt.s      IL_005a
+    IL_001d:  blt.s      IL_0063
 
     .line 61,65 : 5,21 ''
     IL_001f:  ldloc.0
@@ -537,22 +548,26 @@
     .line 67,67 : 9,21 ''
     IL_0039:  ldstr      "%O"
     IL_003e:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string>::.ctor(string)
-    IL_0043:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0048:  ldloc.s    tmp
-    IL_004a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_004f:  pop
-    IL_0050:  ldloc.2
-    IL_0051:  ldc.i4.1
-    IL_0052:  add
-    IL_0053:  stloc.2
+    IL_0043:  stloc.s    V_5
+    IL_0045:  call       class [mscorlib]System.IO.TextWriter [mscorlib]System.Console::get_Out()
+    IL_004a:  ldloc.s    V_5
+    IL_004c:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [mscorlib]System.IO.TextWriter,
+                                                                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0051:  ldloc.s    tmp
+    IL_0053:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0058:  pop
+    IL_0059:  ldloc.2
+    IL_005a:  ldc.i4.1
+    IL_005b:  add
+    IL_005c:  stloc.2
     .line 61,65 : 5,21 ''
-    IL_0054:  ldloc.2
-    IL_0055:  ldloc.1
-    IL_0056:  ldc.i4.1
-    IL_0057:  add
-    IL_0058:  bne.un.s   IL_001f
+    IL_005d:  ldloc.2
+    IL_005e:  ldloc.1
+    IL_005f:  ldc.i4.1
+    IL_0060:  add
+    IL_0061:  bne.un.s   IL_001f
 
-    IL_005a:  ret
+    IL_0063:  ret
   } // end of method ForEachOnString01::test9
 
 } // end of class ForEachOnString01

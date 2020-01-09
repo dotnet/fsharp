@@ -40,13 +40,13 @@
   // Offset: 0x000001F0 Length: 0x00000076
 }
 .module LetIfThenElse01.exe
-// MVID: {5E171A36-BE5A-D8FD-A745-0383361A175E}
+// MVID: {5E172EE9-BE5A-D8FD-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x053A0000
+// Image base: 0x06FC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -189,20 +189,17 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       12 (0xc)
+    // Code size       10 (0xa)
     .maxstack  3
     .locals init ([0] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_0,
-             [1] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_1,
-             [2] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_2)
+             [1] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_1)
     .line 12,12 : 1,15 ''
     IL_0000:  ldc.i4.1
     IL_0001:  call       class [mscorlib]System.Tuple`4<int32,int32,int32,int32> LetIfThenElse01::F<int32>(!!0)
     IL_0006:  stloc.0
     IL_0007:  ldloc.0
     IL_0008:  stloc.1
-    IL_0009:  ldloc.1
-    IL_000a:  stloc.2
-    IL_000b:  ret
+    IL_0009:  ret
   } // end of method $LetIfThenElse01::main@
 
 } // end of class '<StartupCode$LetIfThenElse01>'.$LetIfThenElse01

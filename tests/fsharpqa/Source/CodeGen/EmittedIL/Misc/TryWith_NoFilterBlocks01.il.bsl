@@ -36,7 +36,7 @@
   // Offset: 0x00000160 Length: 0x0000005F
 }
 .module TryWith_NoFilterBlocks01.exe
-// MVID: {5E171A36-3DEF-9A40-A745-0383361A175E}
+// MVID: {5E172EE9-3DEF-9A40-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
