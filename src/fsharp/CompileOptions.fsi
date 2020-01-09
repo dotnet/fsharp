@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CompileOptions
 
+open System
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompileOps
@@ -12,7 +13,7 @@ open FSharp.Compiler.TcGlobals
 
 //----------------------------------------------------------------------------
 // Compiler Option Parser
-//--------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 // For command-line options that can be suffixed with +/-
 [<RequireQualifiedAccess>]
@@ -89,7 +90,7 @@ val NormalizeAssemblyRefs : CompilationThreadToken * TcImports -> (AbstractIL.IL
 // Miscellany
 val ignoreFailureOnMono1_1_16 : (unit -> unit) -> unit
 val mutable enableConsoleColoring : bool
-val DoWithColor : System.ConsoleColor -> (unit -> 'a) -> 'a
+val DoWithColor : ConsoleColor -> (unit -> 'a) -> 'a
 val DoWithErrorColor : bool -> (unit -> 'a) -> 'a
 val ReportTime : TcConfig -> string -> unit
 val GetAbbrevFlagSet : TcConfigBuilder -> bool -> Set<string>

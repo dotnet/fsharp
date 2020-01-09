@@ -74,7 +74,7 @@ let UseMyFileSystem() =
 
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``FileSystem compilation test``() = 

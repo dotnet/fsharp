@@ -68,6 +68,7 @@
     <!-- System.* packages -->
     <SystemCollectionsImmutableVersion>1.5.0</SystemCollectionsImmutableVersion>
     <SystemConsoleVersion>4.3.0</SystemConsoleVersion>
+    <SystemDataSqlClientPackageVersion>4.3.0</SystemDataSqlClientPackageVersion>
     <SystemDesignVersion>4.0.0</SystemDesignVersion>
     <SystemDiagnosticsProcessVersion>4.3.0</SystemDiagnosticsProcessVersion>
     <SystemDiagnosticsTraceSourceVersion>4.3.0</SystemDiagnosticsTraceSourceVersion>
@@ -88,6 +89,7 @@
     <SystemSecurityClaimsVersion>4.3.0</SystemSecurityClaimsVersion>
     <SystemSecurityCryptographyAlgorithmsVersion>4.3.0</SystemSecurityCryptographyAlgorithmsVersion>
     <SystemSecurityPrincipalVersion>4.3.0</SystemSecurityPrincipalVersion>
+    <SystemThreadingTasksDataflowPackageVersion>4.6.0</SystemThreadingTasksDataflowPackageVersion>
     <SystemThreadingTasksParallelVersion>4.3.0</SystemThreadingTasksParallelVersion>
     <SystemThreadingTasksDataflow>4.11.0</SystemThreadingTasksDataflow>
     <SystemThreadingThreadVersion>4.3.0</SystemThreadingThreadVersion>

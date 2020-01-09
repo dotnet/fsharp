@@ -7,6 +7,11 @@
         <target state="translated">{0} для F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="fromEndSlicingRequiresVFive">
+        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
+        <target state="new">From the end slicing with requires language version 5.0, use /langversion:preview.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Поток не начинается с нулевого ресурса и не соответствует формату ".RES".</target>
@@ -30,6 +35,11 @@
       <trans-unit id="optsUnrecognizedLanguageVersion">
         <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
         <target state="translated">Не удалось распознать значение "{0}" для параметра --langversion. Для получения полного списка допустимых значений выполните команду use --langversion:?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -7235,6 +7245,26 @@
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
         <target state="translated">Недействительная карта путей. Сопоставления должны быть разделены запятыми и должны иметь формат "path=исходный_путь"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsCompilerTool">
+        <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
+        <target state="new">Reference an assembly or directory containing a design time tool (Short form: -t)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerUnknown">
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerError">
+        <source>{0}</source>
+        <target state="new">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotLoadDependencyManagerExtension">
+        <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
+        <target state="new">The dependency manager extension {0} could not be loaded. Message: {1}</target>
         <note />
       </trans-unit>
     </body>
