@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly ForLoop02
 {
@@ -29,28 +29,20 @@
 }
 .mresource public FSharpSignatureData.ForLoop02
 {
-  // Offset: 0x00000000 Length: 0x00000147
-}
-.mresource public FSharpSignatureDataB.ForLoop02
-{
-  // Offset: 0x00000150 Length: 0x00000000
+  // Offset: 0x00000000 Length: 0x0000013B
 }
 .mresource public FSharpOptimizationData.ForLoop02
 {
-  // Offset: 0x00000158 Length: 0x00000050
-}
-.mresource public FSharpOptimizationDataB.ForLoop02
-{
-  // Offset: 0x000001B0 Length: 0x00000000
+  // Offset: 0x00000140 Length: 0x00000050
 }
 .module ForLoop02.exe
-// MVID: {5C6C932A-04E7-DA0D-A745-03832A936C5C}
+// MVID: {5E171A36-1736-791C-A745-0383361A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01210000
+// Image base: 0x07090000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -77,7 +69,7 @@
              [1] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_1,
              [2] int32 V_2)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 1,19 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\ForLoop02.fs'
+    .line 5,5 : 1,19 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\ForLoop02.fs'
     IL_0000:  ldc.i4.1
     IL_0001:  stloc.0
     IL_0002:  br.s       IL_0022

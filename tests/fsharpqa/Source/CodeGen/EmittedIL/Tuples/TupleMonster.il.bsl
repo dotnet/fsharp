@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly TupleMonster
 {
@@ -29,28 +29,20 @@
 }
 .mresource public FSharpSignatureData.TupleMonster
 {
-  // Offset: 0x00000000 Length: 0x00000151
-}
-.mresource public FSharpSignatureDataB.TupleMonster
-{
-  // Offset: 0x00000158 Length: 0x00000000
+  // Offset: 0x00000000 Length: 0x00000145
 }
 .mresource public FSharpOptimizationData.TupleMonster
 {
-  // Offset: 0x00000160 Length: 0x00000053
-}
-.mresource public FSharpOptimizationDataB.TupleMonster
-{
-  // Offset: 0x000001B8 Length: 0x00000000
+  // Offset: 0x00000150 Length: 0x00000053
 }
 .module TupleMonster.exe
-// MVID: {5C6C932B-36C8-CAB4-A745-03832B936C5C}
+// MVID: {5E171A36-1552-41D8-A745-0383361A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00710000
+// Image base: 0x06670000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -74,7 +66,7 @@
     // Code size       74 (0x4a)
     .maxstack  28
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 9,137 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Tuples\\TupleMonster.fs'
+    .line 3,3 : 9,137 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\TupleMonster.fs'
     IL_0000:  ldc.i4.s   97
     IL_0002:  ldc.i4.s   98
     IL_0004:  ldc.i4.s   99

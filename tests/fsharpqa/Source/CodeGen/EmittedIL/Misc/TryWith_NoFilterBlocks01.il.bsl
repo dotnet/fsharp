@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly TryWith_NoFilterBlocks01
 {
@@ -29,28 +29,20 @@
 }
 .mresource public FSharpSignatureData.TryWith_NoFilterBlocks01
 {
-  // Offset: 0x00000000 Length: 0x00000165
-}
-.mresource public FSharpSignatureDataB.TryWith_NoFilterBlocks01
-{
-  // Offset: 0x00000170 Length: 0x00000000
+  // Offset: 0x00000000 Length: 0x00000159
 }
 .mresource public FSharpOptimizationData.TryWith_NoFilterBlocks01
 {
-  // Offset: 0x00000178 Length: 0x0000005F
-}
-.mresource public FSharpOptimizationDataB.TryWith_NoFilterBlocks01
-{
-  // Offset: 0x000001E0 Length: 0x00000000
+  // Offset: 0x00000160 Length: 0x0000005F
 }
 .module TryWith_NoFilterBlocks01.exe
-// MVID: {5C6C932A-6F86-BEF5-A745-03832A936C5C}
+// MVID: {5E171A36-3DEF-9A40-A745-0383361A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00DE0000
+// Image base: 0x04EC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -78,7 +70,7 @@
              [2] class [mscorlib]System.Exception e,
              [3] class [mscorlib]System.Exception V_3)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 4,4 : 3,5 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\TryWith_NoFilterBlocks01.fs'
+    .line 4,4 : 3,5 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\TryWith_NoFilterBlocks01.fs'
     .try
     {
       IL_0000:  ldnull

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly Structs02
 {
@@ -29,7 +29,7 @@
 }
 .mresource public FSharpSignatureData.Structs02
 {
-  // Offset: 0x00000000 Length: 0x0000077B
+  // Offset: 0x00000000 Length: 0x00000777
 }
 .mresource public FSharpSignatureDataB.Structs02
 {
@@ -44,13 +44,13 @@
   // Offset: 0x00000A60 Length: 0x00000035
 }
 .module Structs02.exe
-// MVID: {5C6C932A-BE14-39D7-A745-03832A936C5C}
+// MVID: {5E171A36-7040-5E27-A745-0383361A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00D30000
+// Image base: 0x009D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -84,14 +84,17 @@
             instance int32  CompareTo(valuetype Experiment.Test/Repro obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       38 (0x26)
+      // Code size       51 (0x33)
       .maxstack  4
       .locals init ([0] valuetype Experiment.Test/Repro& V_0,
                [1] class [mscorlib]System.Collections.IComparer V_1,
                [2] int32 V_2,
-               [3] int32 V_3)
+               [3] int32 V_3,
+               [4] class [mscorlib]System.Collections.IComparer V_4,
+               [5] int32 V_5,
+               [6] int32 V_6)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 6,6 : 6,11 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\Structs02.fs'
+      .line 6,6 : 6,11 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Structs02.fs'
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
@@ -102,23 +105,29 @@
       IL_0010:  ldloc.0
       IL_0011:  ldfld      int32 Experiment.Test/Repro::hash@
       IL_0016:  stloc.3
-      IL_0017:  ldloc.2
-      IL_0018:  ldloc.3
-      IL_0019:  bge.s      IL_001d
+      IL_0017:  ldloc.1
+      IL_0018:  stloc.s    V_4
+      IL_001a:  ldloc.2
+      IL_001b:  stloc.s    V_5
+      IL_001d:  ldloc.3
+      IL_001e:  stloc.s    V_6
+      IL_0020:  ldloc.s    V_5
+      IL_0022:  ldloc.s    V_6
+      IL_0024:  bge.s      IL_0028
 
-      IL_001b:  br.s       IL_001f
+      IL_0026:  br.s       IL_002a
 
-      IL_001d:  br.s       IL_0021
+      IL_0028:  br.s       IL_002c
 
       .line 100001,100001 : 0,0 ''
-      IL_001f:  ldc.i4.m1
-      IL_0020:  ret
+      IL_002a:  ldc.i4.m1
+      IL_002b:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0021:  ldloc.2
-      IL_0022:  ldloc.3
-      IL_0023:  cgt
-      IL_0025:  ret
+      IL_002c:  ldloc.s    V_5
+      IL_002e:  ldloc.s    V_6
+      IL_0030:  cgt
+      IL_0032:  ret
     } // end of method Repro::CompareTo
 
     .method public hidebysig virtual final 
@@ -140,13 +149,16 @@
                                       class [mscorlib]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       44 (0x2c)
+      // Code size       56 (0x38)
       .maxstack  4
       .locals init ([0] valuetype Experiment.Test/Repro V_0,
                [1] valuetype Experiment.Test/Repro& V_1,
                [2] class [mscorlib]System.Collections.IComparer V_2,
                [3] int32 V_3,
-               [4] int32 V_4)
+               [4] int32 V_4,
+               [5] class [mscorlib]System.Collections.IComparer V_5,
+               [6] int32 V_6,
+               [7] int32 V_7)
       .line 6,6 : 6,11 ''
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  Experiment.Test/Repro
@@ -161,33 +173,41 @@
       IL_0013:  ldloc.1
       IL_0014:  ldfld      int32 Experiment.Test/Repro::hash@
       IL_0019:  stloc.s    V_4
-      IL_001b:  ldloc.3
-      IL_001c:  ldloc.s    V_4
-      IL_001e:  bge.s      IL_0022
+      IL_001b:  ldloc.2
+      IL_001c:  stloc.s    V_5
+      IL_001e:  ldloc.3
+      IL_001f:  stloc.s    V_6
+      IL_0021:  ldloc.s    V_4
+      IL_0023:  stloc.s    V_7
+      IL_0025:  ldloc.s    V_6
+      IL_0027:  ldloc.s    V_7
+      IL_0029:  bge.s      IL_002d
 
-      IL_0020:  br.s       IL_0024
+      IL_002b:  br.s       IL_002f
 
-      IL_0022:  br.s       IL_0026
+      IL_002d:  br.s       IL_0031
 
       .line 100001,100001 : 0,0 ''
-      IL_0024:  ldc.i4.m1
-      IL_0025:  ret
+      IL_002f:  ldc.i4.m1
+      IL_0030:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0026:  ldloc.3
-      IL_0027:  ldloc.s    V_4
-      IL_0029:  cgt
-      IL_002b:  ret
+      IL_0031:  ldloc.s    V_6
+      IL_0033:  ldloc.s    V_7
+      IL_0035:  cgt
+      IL_0037:  ret
     } // end of method Repro::CompareTo
 
     .method public hidebysig virtual final 
             instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       27 (0x1b)
+      // Code size       31 (0x1f)
       .maxstack  7
       .locals init ([0] int32 V_0,
-               [1] class [mscorlib]System.Collections.IEqualityComparer V_1)
+               [1] class [mscorlib]System.Collections.IEqualityComparer V_1,
+               [2] int32 V_2,
+               [3] class [mscorlib]System.Collections.IEqualityComparer V_3)
       .line 6,6 : 6,11 ''
       IL_0000:  ldc.i4.0
       IL_0001:  stloc.0
@@ -196,18 +216,22 @@
       IL_0008:  stloc.1
       IL_0009:  ldarg.0
       IL_000a:  ldfld      int32 Experiment.Test/Repro::hash@
-      IL_000f:  ldloc.0
-      IL_0010:  ldc.i4.6
-      IL_0011:  shl
-      IL_0012:  ldloc.0
-      IL_0013:  ldc.i4.2
-      IL_0014:  shr
-      IL_0015:  add
-      IL_0016:  add
-      IL_0017:  add
-      IL_0018:  stloc.0
-      IL_0019:  ldloc.0
-      IL_001a:  ret
+      IL_000f:  stloc.2
+      IL_0010:  ldloc.1
+      IL_0011:  stloc.3
+      IL_0012:  ldloc.2
+      IL_0013:  ldloc.0
+      IL_0014:  ldc.i4.6
+      IL_0015:  shl
+      IL_0016:  ldloc.0
+      IL_0017:  ldc.i4.2
+      IL_0018:  shr
+      IL_0019:  add
+      IL_001a:  add
+      IL_001b:  add
+      IL_001c:  stloc.0
+      IL_001d:  ldloc.0
+      IL_001e:  ret
     } // end of method Repro::GetHashCode
 
     .method public hidebysig virtual final 
@@ -228,17 +252,20 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       39 (0x27)
+      // Code size       48 (0x30)
       .maxstack  4
       .locals init ([0] valuetype Experiment.Test/Repro V_0,
                [1] valuetype Experiment.Test/Repro& V_1,
-               [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
+               [2] class [mscorlib]System.Collections.IEqualityComparer V_2,
+               [3] int32 V_3,
+               [4] int32 V_4,
+               [5] class [mscorlib]System.Collections.IEqualityComparer V_5)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype Experiment.Test/Repro>(object)
       IL_0006:  brtrue.s   IL_000a
 
-      IL_0008:  br.s       IL_0025
+      IL_0008:  br.s       IL_002e
 
       .line 100001,100001 : 0,0 ''
       IL_000a:  ldarg.1
@@ -250,14 +277,20 @@
       IL_0015:  stloc.2
       IL_0016:  ldarg.0
       IL_0017:  ldfld      int32 Experiment.Test/Repro::hash@
-      IL_001c:  ldloc.1
-      IL_001d:  ldfld      int32 Experiment.Test/Repro::hash@
-      IL_0022:  ceq
-      IL_0024:  ret
+      IL_001c:  stloc.3
+      IL_001d:  ldloc.1
+      IL_001e:  ldfld      int32 Experiment.Test/Repro::hash@
+      IL_0023:  stloc.s    V_4
+      IL_0025:  ldloc.2
+      IL_0026:  stloc.s    V_5
+      IL_0028:  ldloc.3
+      IL_0029:  ldloc.s    V_4
+      IL_002b:  ceq
+      IL_002d:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0025:  ldc.i4.0
-      IL_0026:  ret
+      IL_002e:  ldc.i4.0
+      IL_002f:  ret
     } // end of method Repro::Equals
 
     .method public specialname rtspecialname 

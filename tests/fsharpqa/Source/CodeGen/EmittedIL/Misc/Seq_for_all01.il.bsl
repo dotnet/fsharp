@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly Seq_for_all01
 {
@@ -29,28 +29,24 @@
 }
 .mresource public FSharpSignatureData.Seq_for_all01
 {
-  // Offset: 0x00000000 Length: 0x000001B3
+  // Offset: 0x00000000 Length: 0x000001A7
 }
 .mresource public FSharpSignatureDataB.Seq_for_all01
 {
-  // Offset: 0x000001B8 Length: 0x00000001
+  // Offset: 0x000001B0 Length: 0x00000001
 }
 .mresource public FSharpOptimizationData.Seq_for_all01
 {
-  // Offset: 0x000001C0 Length: 0x00000072
-}
-.mresource public FSharpOptimizationDataB.Seq_for_all01
-{
-  // Offset: 0x00000238 Length: 0x00000000
+  // Offset: 0x000001B8 Length: 0x00000072
 }
 .module Seq_for_all01.exe
-// MVID: {5C6C932A-1CE8-5D72-A745-03832A936C5C}
+// MVID: {5E171A36-D30D-BA80-A745-0383361A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00A90000
+// Image base: 0x04E60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -80,7 +76,7 @@
       // Code size       14 (0xe)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 31,47 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\Seq_for_all01.fs'
+      .line 5,5 : 31,47 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Seq_for_all01.fs'
       IL_0000:  ldc.i4.1
       IL_0001:  brtrue.s   IL_0005
 

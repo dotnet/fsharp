@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly comparison_decimal01
 {
@@ -29,28 +29,20 @@
 }
 .mresource public FSharpSignatureData.comparison_decimal01
 {
-  // Offset: 0x00000000 Length: 0x0000017E
-}
-.mresource public FSharpSignatureDataB.comparison_decimal01
-{
-  // Offset: 0x00000188 Length: 0x00000000
+  // Offset: 0x00000000 Length: 0x00000172
 }
 .mresource public FSharpOptimizationData.comparison_decimal01
 {
-  // Offset: 0x00000190 Length: 0x0000005B
-}
-.mresource public FSharpOptimizationDataB.comparison_decimal01
-{
-  // Offset: 0x000001F0 Length: 0x00000000
+  // Offset: 0x00000178 Length: 0x0000005B
 }
 .module comparison_decimal01.exe
-// MVID: {5C6C932A-0B02-E065-A745-03832A936C5C}
+// MVID: {5E171A36-76D8-7EE3-A745-0383361A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01610000
+// Image base: 0x06D40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -74,7 +66,7 @@
     // Code size       228 (0xe4)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 4,4 : 9,20 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Operators\\comparison_decimal01.fs'
+    .line 4,4 : 9,20 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Operators\\comparison_decimal01.fs'
     IL_0000:  ldc.i4.s   10
     IL_0002:  ldc.i4.0
     IL_0003:  ldc.i4.0

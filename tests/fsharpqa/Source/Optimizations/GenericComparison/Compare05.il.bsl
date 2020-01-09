@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly Compare05
 {
@@ -29,28 +29,28 @@
 }
 .mresource public FSharpSignatureData.Compare05
 {
-  // Offset: 0x00000000 Length: 0x000006E0
+  // Offset: 0x00000000 Length: 0x000006DC
 }
 .mresource public FSharpSignatureDataB.Compare05
 {
-  // Offset: 0x000006E8 Length: 0x0000007E
+  // Offset: 0x000006E0 Length: 0x0000007E
 }
 .mresource public FSharpOptimizationData.Compare05
 {
-  // Offset: 0x00000770 Length: 0x000003BA
+  // Offset: 0x00000768 Length: 0x000003BA
 }
 .mresource public FSharpOptimizationDataB.Compare05
 {
-  // Offset: 0x00000B30 Length: 0x00000057
+  // Offset: 0x00000B28 Length: 0x00000057
 }
 .module Compare05.dll
-// MVID: {5C6C9457-D514-27BF-A745-038357946C5C}
+// MVID: {5E171C9B-051C-F88E-A745-03839B1C175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01770000
+// Image base: 0x06BB0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -195,7 +195,7 @@
                  [4] int32 V_4,
                  [5] int32 V_5)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Compare05.fsx'
+        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Compare05.fsx'
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un

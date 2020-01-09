@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly LetIfThenElse01
 {
@@ -29,28 +29,24 @@
 }
 .mresource public FSharpSignatureData.LetIfThenElse01
 {
-  // Offset: 0x00000000 Length: 0x000001E5
+  // Offset: 0x00000000 Length: 0x000001D9
 }
 .mresource public FSharpSignatureDataB.LetIfThenElse01
 {
-  // Offset: 0x000001F0 Length: 0x00000007
+  // Offset: 0x000001E0 Length: 0x00000007
 }
 .mresource public FSharpOptimizationData.LetIfThenElse01
 {
-  // Offset: 0x00000200 Length: 0x00000076
-}
-.mresource public FSharpOptimizationDataB.LetIfThenElse01
-{
-  // Offset: 0x00000280 Length: 0x00000000
+  // Offset: 0x000001F0 Length: 0x00000076
 }
 .module LetIfThenElse01.exe
-// MVID: {5C6C932A-21CD-AB75-A745-03832A936C5C}
+// MVID: {5E171A36-BE5A-D8FD-A745-0383361A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01920000
+// Image base: 0x053A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -73,7 +69,7 @@
              [6] int32 y2,
              [7] valuetype [mscorlib]System.DateTime V_7)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 6,6 : 12,51 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\LetIfThenElse01.fs'
+    .line 6,6 : 12,51 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\LetIfThenElse01.fs'
     IL_0000:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
     IL_0005:  stloc.1
     IL_0006:  ldloca.s   V_1
@@ -193,17 +189,20 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       10 (0xa)
+    // Code size       12 (0xc)
     .maxstack  3
     .locals init ([0] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_0,
-             [1] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_1)
+             [1] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_1,
+             [2] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_2)
     .line 12,12 : 1,15 ''
     IL_0000:  ldc.i4.1
     IL_0001:  call       class [mscorlib]System.Tuple`4<int32,int32,int32,int32> LetIfThenElse01::F<int32>(!!0)
     IL_0006:  stloc.0
     IL_0007:  ldloc.0
     IL_0008:  stloc.1
-    IL_0009:  ret
+    IL_0009:  ldloc.1
+    IL_000a:  stloc.2
+    IL_000b:  ret
   } // end of method $LetIfThenElse01::main@
 
 } // end of class '<StartupCode$LetIfThenElse01>'.$LetIfThenElse01

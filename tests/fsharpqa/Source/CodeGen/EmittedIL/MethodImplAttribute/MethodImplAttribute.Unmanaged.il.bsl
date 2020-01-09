@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly MethodImplAttribute.Unmanaged
 {
@@ -29,28 +29,24 @@
 }
 .mresource public FSharpSignatureData.MethodImplAttribute.Unmanaged
 {
-  // Offset: 0x00000000 Length: 0x00000336
+  // Offset: 0x00000000 Length: 0x0000032A
 }
 .mresource public FSharpSignatureDataB.MethodImplAttribute.Unmanaged
 {
-  // Offset: 0x00000340 Length: 0x00000007
+  // Offset: 0x00000330 Length: 0x00000007
 }
 .mresource public FSharpOptimizationData.MethodImplAttribute.Unmanaged
 {
-  // Offset: 0x00000350 Length: 0x0000007C
-}
-.mresource public FSharpOptimizationDataB.MethodImplAttribute.Unmanaged
-{
-  // Offset: 0x000003D0 Length: 0x00000000
+  // Offset: 0x00000340 Length: 0x0000007C
 }
 .module MethodImplAttribute.Unmanaged.dll
-// MVID: {5C6C932A-F5DD-260B-A745-03832A936C5C}
+// MVID: {5E171A35-FF34-309C-A745-0383351A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x011E0000
+// Image base: 0x06F30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,7 +60,7 @@
     // Code size       9 (0x9)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 34,37 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\MethodImplAttribute\\MethodImplAttribute.Unmanaged.fs'
+    .line 5,5 : 34,37 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\MethodImplAttribute\\MethodImplAttribute.Unmanaged.fs'
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)

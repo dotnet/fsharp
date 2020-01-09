@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly GenIter01
 {
@@ -29,28 +29,24 @@
 }
 .mresource public FSharpSignatureData.GenIter01
 {
-  // Offset: 0x00000000 Length: 0x000001FF
+  // Offset: 0x00000000 Length: 0x000001F3
 }
 .mresource public FSharpSignatureDataB.GenIter01
 {
-  // Offset: 0x00000208 Length: 0x00000004
+  // Offset: 0x000001F8 Length: 0x00000004
 }
 .mresource public FSharpOptimizationData.GenIter01
 {
-  // Offset: 0x00000210 Length: 0x0000007A
-}
-.mresource public FSharpOptimizationDataB.GenIter01
-{
-  // Offset: 0x00000290 Length: 0x00000000
+  // Offset: 0x00000200 Length: 0x0000007A
 }
 .module GenIter01.exe
-// MVID: {5C6C932A-15AD-8011-A745-03832A936C5C}
+// MVID: {5E171A35-F836-DC98-A745-0383351A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002E0000
+// Image base: 0x050F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -103,7 +99,7 @@
       .maxstack  8
       .locals init ([0] int32 x)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\GeneratedIterators\\GenIter01.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\GeneratedIterators\\GenIter01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 GenIter01/squaresOfOneToTen@5::pc
       IL_0006:  ldc.i4.1

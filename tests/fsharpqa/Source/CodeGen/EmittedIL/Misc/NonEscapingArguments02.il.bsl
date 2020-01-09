@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly NonEscapingArguments02
 {
@@ -29,28 +29,28 @@
 }
 .mresource public FSharpSignatureData.NonEscapingArguments02
 {
-  // Offset: 0x00000000 Length: 0x00000361
+  // Offset: 0x00000000 Length: 0x00000355
 }
 .mresource public FSharpSignatureDataB.NonEscapingArguments02
 {
-  // Offset: 0x00000368 Length: 0x0000001C
+  // Offset: 0x00000360 Length: 0x0000001C
 }
 .mresource public FSharpOptimizationData.NonEscapingArguments02
 {
-  // Offset: 0x00000388 Length: 0x000001A4
+  // Offset: 0x00000380 Length: 0x0000019E
 }
 .mresource public FSharpOptimizationDataB.NonEscapingArguments02
 {
-  // Offset: 0x00000530 Length: 0x0000000D
+  // Offset: 0x00000528 Length: 0x0000000D
 }
 .module NonEscapingArguments02.dll
-// MVID: {5C6C932A-3633-A298-A745-03832A936C5C}
+// MVID: {5E171A36-BB56-6582-A745-0383361A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01770000
+// Image base: 0x05110000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -70,7 +70,7 @@
       // Code size       21 (0x15)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\NonEscapingArguments02.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\NonEscapingArguments02.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0

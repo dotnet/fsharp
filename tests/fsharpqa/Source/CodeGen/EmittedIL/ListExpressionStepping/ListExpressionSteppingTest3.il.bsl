@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly ListExpressionSteppingTest3
 {
@@ -29,28 +29,24 @@
 }
 .mresource public FSharpSignatureData.ListExpressionSteppingTest3
 {
-  // Offset: 0x00000000 Length: 0x00000285
+  // Offset: 0x00000000 Length: 0x00000279
 }
 .mresource public FSharpSignatureDataB.ListExpressionSteppingTest3
 {
-  // Offset: 0x00000290 Length: 0x00000005
+  // Offset: 0x00000280 Length: 0x00000005
 }
 .mresource public FSharpOptimizationData.ListExpressionSteppingTest3
 {
-  // Offset: 0x000002A0 Length: 0x000000AF
-}
-.mresource public FSharpOptimizationDataB.ListExpressionSteppingTest3
-{
-  // Offset: 0x00000358 Length: 0x00000000
+  // Offset: 0x00000290 Length: 0x000000AF
 }
 .module ListExpressionSteppingTest3.exe
-// MVID: {5C6C932A-96C1-875E-A745-03832A936C5C}
+// MVID: {5E171A35-AE45-39B4-A745-0383351A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01270000
+// Image base: 0x06E10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -103,7 +99,7 @@
         // Code size       116 (0x74)
         .maxstack  6
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ListExpressionStepping\\ListExpressionSteppingTest3.fs'
+        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ListExpressionStepping\\ListExpressionSteppingTest3.fs'
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 ListExpressionSteppingTest3/ListExpressionSteppingTest3/f2@7::pc
         IL_0006:  ldc.i4.1

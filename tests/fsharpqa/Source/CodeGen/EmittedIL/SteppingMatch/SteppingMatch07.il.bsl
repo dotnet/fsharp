@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly SteppingMatch07
 {
@@ -29,28 +29,28 @@
 }
 .mresource public FSharpSignatureData.SteppingMatch07
 {
-  // Offset: 0x00000000 Length: 0x00000679
+  // Offset: 0x00000000 Length: 0x0000066D
 }
 .mresource public FSharpSignatureDataB.SteppingMatch07
 {
-  // Offset: 0x00000680 Length: 0x0000007D
+  // Offset: 0x00000678 Length: 0x0000007D
 }
 .mresource public FSharpOptimizationData.SteppingMatch07
 {
-  // Offset: 0x00000708 Length: 0x000001D9
+  // Offset: 0x00000700 Length: 0x000001D9
 }
 .mresource public FSharpOptimizationDataB.SteppingMatch07
 {
-  // Offset: 0x000008E8 Length: 0x0000002A
+  // Offset: 0x000008E0 Length: 0x0000002A
 }
 .module SteppingMatch07.dll
-// MVID: {5C6C932B-6FFE-E210-A745-03832B936C5C}
+// MVID: {5E171A35-D373-07F3-A745-0383351A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01090000
+// Image base: 0x05310000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -218,7 +218,7 @@
       .locals init ([0] int32 V_0,
                [1] int32 V_1)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch07.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch07.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldnull
       IL_0002:  cgt.un

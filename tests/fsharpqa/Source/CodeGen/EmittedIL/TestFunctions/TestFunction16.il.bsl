@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly TestFunction16
 {
@@ -29,28 +29,28 @@
 }
 .mresource public FSharpSignatureData.TestFunction16
 {
-  // Offset: 0x00000000 Length: 0x00000687
+  // Offset: 0x00000000 Length: 0x00000683
 }
 .mresource public FSharpSignatureDataB.TestFunction16
 {
-  // Offset: 0x00000690 Length: 0x0000007F
+  // Offset: 0x00000688 Length: 0x0000007F
 }
 .mresource public FSharpOptimizationData.TestFunction16
 {
-  // Offset: 0x00000718 Length: 0x000001CD
+  // Offset: 0x00000710 Length: 0x000001CD
 }
 .mresource public FSharpOptimizationDataB.TestFunction16
 {
-  // Offset: 0x000008F0 Length: 0x0000002A
+  // Offset: 0x000008E8 Length: 0x0000002A
 }
 .module TestFunction16.exe
-// MVID: {5C6C932B-12D5-E97E-A745-03832B936C5C}
+// MVID: {5E171A36-A624-45C5-A745-0383361A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02D40000
+// Image base: 0x07180000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -182,7 +182,7 @@
             instance int32  CompareTo(class TestFunction16/U obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       154 (0x9a)
+      // Code size       177 (0xb1)
       .maxstack  4
       .locals init ([0] class TestFunction16/U V_0,
                [1] class TestFunction16/U V_1,
@@ -192,9 +192,15 @@
                [5] int32 V_5,
                [6] class [mscorlib]System.Collections.IComparer V_6,
                [7] int32 V_7,
-               [8] int32 V_8)
+               [8] int32 V_8,
+               [9] class [mscorlib]System.Collections.IComparer V_9,
+               [10] int32 V_10,
+               [11] int32 V_11,
+               [12] class [mscorlib]System.Collections.IComparer V_12,
+               [13] int32 V_13,
+               [14] int32 V_14)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction16.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction16.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldnull
       IL_0002:  cgt.un
@@ -202,7 +208,7 @@
 
       IL_0006:  br.s       IL_000d
 
-      IL_0008:  br         IL_008c
+      IL_0008:  br         IL_00a3
 
       .line 100001,100001 : 0,0 ''
       IL_000d:  ldarg.1
@@ -212,7 +218,7 @@
 
       IL_0013:  br.s       IL_001a
 
-      IL_0015:  br         IL_008a
+      IL_0015:  br         IL_00a1
 
       .line 100001,100001 : 0,0 ''
       IL_001a:  ldarg.0
@@ -230,101 +236,113 @@
       IL_002e:  ldloc.1
       IL_002f:  ldfld      int32 TestFunction16/U::item1
       IL_0034:  stloc.s    V_5
-      IL_0036:  ldloc.s    V_4
-      IL_0038:  ldloc.s    V_5
-      IL_003a:  bge.s      IL_003e
+      IL_0036:  ldloc.3
+      IL_0037:  stloc.s    V_6
+      IL_0039:  ldloc.s    V_4
+      IL_003b:  stloc.s    V_7
+      IL_003d:  ldloc.s    V_5
+      IL_003f:  stloc.s    V_8
+      IL_0041:  ldloc.s    V_7
+      IL_0043:  ldloc.s    V_8
+      IL_0045:  bge.s      IL_0049
 
-      IL_003c:  br.s       IL_0040
+      IL_0047:  br.s       IL_004b
 
-      IL_003e:  br.s       IL_0044
-
-      .line 100001,100001 : 0,0 ''
-      IL_0040:  ldc.i4.m1
-      .line 100001,100001 : 0,0 ''
-      IL_0041:  nop
-      IL_0042:  br.s       IL_004b
-
-      .line 100001,100001 : 0,0 ''
-      IL_0044:  ldloc.s    V_4
-      IL_0046:  ldloc.s    V_5
-      IL_0048:  cgt
-      .line 100001,100001 : 0,0 ''
-      IL_004a:  nop
-      .line 100001,100001 : 0,0 ''
-      IL_004b:  stloc.2
-      IL_004c:  ldloc.2
-      IL_004d:  ldc.i4.0
-      IL_004e:  bge.s      IL_0052
-
-      IL_0050:  br.s       IL_0054
-
-      IL_0052:  br.s       IL_0056
+      IL_0049:  br.s       IL_004f
 
       .line 100001,100001 : 0,0 ''
-      IL_0054:  ldloc.2
-      IL_0055:  ret
+      IL_004b:  ldc.i4.m1
+      .line 100001,100001 : 0,0 ''
+      IL_004c:  nop
+      IL_004d:  br.s       IL_0056
 
       .line 100001,100001 : 0,0 ''
-      IL_0056:  ldloc.2
-      IL_0057:  ldc.i4.0
-      IL_0058:  ble.s      IL_005c
+      IL_004f:  ldloc.s    V_7
+      IL_0051:  ldloc.s    V_8
+      IL_0053:  cgt
+      .line 100001,100001 : 0,0 ''
+      IL_0055:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0056:  stloc.2
+      IL_0057:  ldloc.2
+      IL_0058:  ldc.i4.0
+      IL_0059:  bge.s      IL_005d
 
-      IL_005a:  br.s       IL_005e
+      IL_005b:  br.s       IL_005f
 
-      IL_005c:  br.s       IL_0060
+      IL_005d:  br.s       IL_0061
 
       .line 100001,100001 : 0,0 ''
-      IL_005e:  ldloc.2
-      IL_005f:  ret
+      IL_005f:  ldloc.2
+      IL_0060:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0060:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0065:  stloc.s    V_6
-      IL_0067:  ldloc.0
-      IL_0068:  ldfld      int32 TestFunction16/U::item2
-      IL_006d:  stloc.s    V_7
-      IL_006f:  ldloc.1
-      IL_0070:  ldfld      int32 TestFunction16/U::item2
-      IL_0075:  stloc.s    V_8
-      IL_0077:  ldloc.s    V_7
-      IL_0079:  ldloc.s    V_8
-      IL_007b:  bge.s      IL_007f
+      IL_0061:  ldloc.2
+      IL_0062:  ldc.i4.0
+      IL_0063:  ble.s      IL_0067
 
-      IL_007d:  br.s       IL_0081
+      IL_0065:  br.s       IL_0069
 
-      IL_007f:  br.s       IL_0083
+      IL_0067:  br.s       IL_006b
 
       .line 100001,100001 : 0,0 ''
-      IL_0081:  ldc.i4.m1
-      IL_0082:  ret
+      IL_0069:  ldloc.2
+      IL_006a:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0083:  ldloc.s    V_7
-      IL_0085:  ldloc.s    V_8
-      IL_0087:  cgt
-      IL_0089:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_008a:  ldc.i4.1
-      IL_008b:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_008c:  ldarg.1
-      IL_008d:  ldnull
-      IL_008e:  cgt.un
-      IL_0090:  brfalse.s  IL_0094
-
-      IL_0092:  br.s       IL_0096
+      IL_006b:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0070:  stloc.s    V_9
+      IL_0072:  ldloc.0
+      IL_0073:  ldfld      int32 TestFunction16/U::item2
+      IL_0078:  stloc.s    V_10
+      IL_007a:  ldloc.1
+      IL_007b:  ldfld      int32 TestFunction16/U::item2
+      IL_0080:  stloc.s    V_11
+      IL_0082:  ldloc.s    V_9
+      IL_0084:  stloc.s    V_12
+      IL_0086:  ldloc.s    V_10
+      IL_0088:  stloc.s    V_13
+      IL_008a:  ldloc.s    V_11
+      IL_008c:  stloc.s    V_14
+      IL_008e:  ldloc.s    V_13
+      IL_0090:  ldloc.s    V_14
+      IL_0092:  bge.s      IL_0096
 
       IL_0094:  br.s       IL_0098
 
-      .line 100001,100001 : 0,0 ''
-      IL_0096:  ldc.i4.m1
-      IL_0097:  ret
+      IL_0096:  br.s       IL_009a
 
       .line 100001,100001 : 0,0 ''
-      IL_0098:  ldc.i4.0
+      IL_0098:  ldc.i4.m1
       IL_0099:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_009a:  ldloc.s    V_13
+      IL_009c:  ldloc.s    V_14
+      IL_009e:  cgt
+      IL_00a0:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_00a1:  ldc.i4.1
+      IL_00a2:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_00a3:  ldarg.1
+      IL_00a4:  ldnull
+      IL_00a5:  cgt.un
+      IL_00a7:  brfalse.s  IL_00ab
+
+      IL_00a9:  br.s       IL_00ad
+
+      IL_00ab:  br.s       IL_00af
+
+      .line 100001,100001 : 0,0 ''
+      IL_00ad:  ldc.i4.m1
+      IL_00ae:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_00af:  ldc.i4.0
+      IL_00b0:  ret
     } // end of method U::CompareTo
 
     .method public hidebysig virtual final 
@@ -346,7 +364,7 @@
                                       class [mscorlib]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       164 (0xa4)
+      // Code size       188 (0xbc)
       .maxstack  4
       .locals init ([0] class TestFunction16/U V_0,
                [1] class TestFunction16/U V_1,
@@ -357,7 +375,13 @@
                [6] int32 V_6,
                [7] class [mscorlib]System.Collections.IComparer V_7,
                [8] int32 V_8,
-               [9] int32 V_9)
+               [9] int32 V_9,
+               [10] class [mscorlib]System.Collections.IComparer V_10,
+               [11] int32 V_11,
+               [12] int32 V_12,
+               [13] class [mscorlib]System.Collections.IComparer V_13,
+               [14] int32 V_14,
+               [15] int32 V_15)
       .line 4,4 : 6,7 ''
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  TestFunction16/U
@@ -369,7 +393,7 @@
 
       IL_000d:  br.s       IL_0014
 
-      IL_000f:  br         IL_0091
+      IL_000f:  br         IL_00a9
 
       .line 100001,100001 : 0,0 ''
       IL_0014:  ldarg.1
@@ -380,7 +404,7 @@
 
       IL_001f:  br.s       IL_0026
 
-      IL_0021:  br         IL_008f
+      IL_0021:  br         IL_00a7
 
       .line 100001,100001 : 0,0 ''
       IL_0026:  ldarg.0
@@ -398,114 +422,130 @@
       IL_0037:  ldloc.2
       IL_0038:  ldfld      int32 TestFunction16/U::item1
       IL_003d:  stloc.s    V_6
-      IL_003f:  ldloc.s    V_5
-      IL_0041:  ldloc.s    V_6
-      IL_0043:  bge.s      IL_0047
+      IL_003f:  ldloc.s    V_4
+      IL_0041:  stloc.s    V_7
+      IL_0043:  ldloc.s    V_5
+      IL_0045:  stloc.s    V_8
+      IL_0047:  ldloc.s    V_6
+      IL_0049:  stloc.s    V_9
+      IL_004b:  ldloc.s    V_8
+      IL_004d:  ldloc.s    V_9
+      IL_004f:  bge.s      IL_0053
 
-      IL_0045:  br.s       IL_0049
+      IL_0051:  br.s       IL_0055
 
-      IL_0047:  br.s       IL_004d
-
-      .line 100001,100001 : 0,0 ''
-      IL_0049:  ldc.i4.m1
-      .line 100001,100001 : 0,0 ''
-      IL_004a:  nop
-      IL_004b:  br.s       IL_0054
-
-      .line 100001,100001 : 0,0 ''
-      IL_004d:  ldloc.s    V_5
-      IL_004f:  ldloc.s    V_6
-      IL_0051:  cgt
-      .line 100001,100001 : 0,0 ''
-      IL_0053:  nop
-      .line 100001,100001 : 0,0 ''
-      IL_0054:  stloc.3
-      IL_0055:  ldloc.3
-      IL_0056:  ldc.i4.0
-      IL_0057:  bge.s      IL_005b
-
-      IL_0059:  br.s       IL_005d
-
-      IL_005b:  br.s       IL_005f
+      IL_0053:  br.s       IL_0059
 
       .line 100001,100001 : 0,0 ''
-      IL_005d:  ldloc.3
-      IL_005e:  ret
+      IL_0055:  ldc.i4.m1
+      .line 100001,100001 : 0,0 ''
+      IL_0056:  nop
+      IL_0057:  br.s       IL_0060
 
       .line 100001,100001 : 0,0 ''
-      IL_005f:  ldloc.3
-      IL_0060:  ldc.i4.0
-      IL_0061:  ble.s      IL_0065
-
-      IL_0063:  br.s       IL_0067
+      IL_0059:  ldloc.s    V_8
+      IL_005b:  ldloc.s    V_9
+      IL_005d:  cgt
+      .line 100001,100001 : 0,0 ''
+      IL_005f:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0060:  stloc.3
+      IL_0061:  ldloc.3
+      IL_0062:  ldc.i4.0
+      IL_0063:  bge.s      IL_0067
 
       IL_0065:  br.s       IL_0069
 
-      .line 100001,100001 : 0,0 ''
-      IL_0067:  ldloc.3
-      IL_0068:  ret
+      IL_0067:  br.s       IL_006b
 
       .line 100001,100001 : 0,0 ''
-      IL_0069:  ldarg.2
-      IL_006a:  stloc.s    V_7
-      IL_006c:  ldloc.1
-      IL_006d:  ldfld      int32 TestFunction16/U::item2
-      IL_0072:  stloc.s    V_8
-      IL_0074:  ldloc.2
-      IL_0075:  ldfld      int32 TestFunction16/U::item2
-      IL_007a:  stloc.s    V_9
-      IL_007c:  ldloc.s    V_8
-      IL_007e:  ldloc.s    V_9
-      IL_0080:  bge.s      IL_0084
-
-      IL_0082:  br.s       IL_0086
-
-      IL_0084:  br.s       IL_0088
+      IL_0069:  ldloc.3
+      IL_006a:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0086:  ldc.i4.m1
-      IL_0087:  ret
+      IL_006b:  ldloc.3
+      IL_006c:  ldc.i4.0
+      IL_006d:  ble.s      IL_0071
+
+      IL_006f:  br.s       IL_0073
+
+      IL_0071:  br.s       IL_0075
 
       .line 100001,100001 : 0,0 ''
-      IL_0088:  ldloc.s    V_8
-      IL_008a:  ldloc.s    V_9
-      IL_008c:  cgt
-      IL_008e:  ret
+      IL_0073:  ldloc.3
+      IL_0074:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_008f:  ldc.i4.1
-      IL_0090:  ret
+      IL_0075:  ldarg.2
+      IL_0076:  stloc.s    V_10
+      IL_0078:  ldloc.1
+      IL_0079:  ldfld      int32 TestFunction16/U::item2
+      IL_007e:  stloc.s    V_11
+      IL_0080:  ldloc.2
+      IL_0081:  ldfld      int32 TestFunction16/U::item2
+      IL_0086:  stloc.s    V_12
+      IL_0088:  ldloc.s    V_10
+      IL_008a:  stloc.s    V_13
+      IL_008c:  ldloc.s    V_11
+      IL_008e:  stloc.s    V_14
+      IL_0090:  ldloc.s    V_12
+      IL_0092:  stloc.s    V_15
+      IL_0094:  ldloc.s    V_14
+      IL_0096:  ldloc.s    V_15
+      IL_0098:  bge.s      IL_009c
 
-      .line 100001,100001 : 0,0 ''
-      IL_0091:  ldarg.1
-      IL_0092:  unbox.any  TestFunction16/U
-      IL_0097:  ldnull
-      IL_0098:  cgt.un
-      IL_009a:  brfalse.s  IL_009e
+      IL_009a:  br.s       IL_009e
 
       IL_009c:  br.s       IL_00a0
 
-      IL_009e:  br.s       IL_00a2
+      .line 100001,100001 : 0,0 ''
+      IL_009e:  ldc.i4.m1
+      IL_009f:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_00a0:  ldc.i4.m1
-      IL_00a1:  ret
+      IL_00a0:  ldloc.s    V_14
+      IL_00a2:  ldloc.s    V_15
+      IL_00a4:  cgt
+      IL_00a6:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_00a2:  ldc.i4.0
-      IL_00a3:  ret
+      IL_00a7:  ldc.i4.1
+      IL_00a8:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_00a9:  ldarg.1
+      IL_00aa:  unbox.any  TestFunction16/U
+      IL_00af:  ldnull
+      IL_00b0:  cgt.un
+      IL_00b2:  brfalse.s  IL_00b6
+
+      IL_00b4:  br.s       IL_00b8
+
+      IL_00b6:  br.s       IL_00ba
+
+      .line 100001,100001 : 0,0 ''
+      IL_00b8:  ldc.i4.m1
+      IL_00b9:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_00ba:  ldc.i4.0
+      IL_00bb:  ret
     } // end of method U::CompareTo
 
     .method public hidebysig virtual final 
             instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       68 (0x44)
+      // Code size       82 (0x52)
       .maxstack  7
       .locals init ([0] int32 V_0,
                [1] class TestFunction16/U V_1,
                [2] class [mscorlib]System.Collections.IEqualityComparer V_2,
-               [3] class [mscorlib]System.Collections.IEqualityComparer V_3)
+               [3] int32 V_3,
+               [4] class [mscorlib]System.Collections.IEqualityComparer V_4,
+               [5] class [mscorlib]System.Collections.IEqualityComparer V_5,
+               [6] int32 V_6,
+               [7] class [mscorlib]System.Collections.IEqualityComparer V_7)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldnull
@@ -514,7 +554,7 @@
 
       IL_0006:  br.s       IL_000a
 
-      IL_0008:  br.s       IL_0042
+      IL_0008:  br.s       IL_0050
 
       .line 100001,100001 : 0,0 ''
       IL_000a:  ldc.i4.0
@@ -531,37 +571,45 @@
       IL_0018:  stloc.2
       IL_0019:  ldloc.1
       IL_001a:  ldfld      int32 TestFunction16/U::item2
-      IL_001f:  ldloc.0
-      IL_0020:  ldc.i4.6
-      IL_0021:  shl
-      IL_0022:  ldloc.0
-      IL_0023:  ldc.i4.2
-      IL_0024:  shr
-      IL_0025:  add
-      IL_0026:  add
-      IL_0027:  add
-      IL_0028:  stloc.0
-      IL_0029:  ldc.i4     0x9e3779b9
-      IL_002e:  ldarg.1
-      IL_002f:  stloc.3
-      IL_0030:  ldloc.1
-      IL_0031:  ldfld      int32 TestFunction16/U::item1
-      IL_0036:  ldloc.0
-      IL_0037:  ldc.i4.6
-      IL_0038:  shl
-      IL_0039:  ldloc.0
-      IL_003a:  ldc.i4.2
-      IL_003b:  shr
-      IL_003c:  add
-      IL_003d:  add
-      IL_003e:  add
-      IL_003f:  stloc.0
-      IL_0040:  ldloc.0
-      IL_0041:  ret
+      IL_001f:  stloc.3
+      IL_0020:  ldloc.2
+      IL_0021:  stloc.s    V_4
+      IL_0023:  ldloc.3
+      IL_0024:  ldloc.0
+      IL_0025:  ldc.i4.6
+      IL_0026:  shl
+      IL_0027:  ldloc.0
+      IL_0028:  ldc.i4.2
+      IL_0029:  shr
+      IL_002a:  add
+      IL_002b:  add
+      IL_002c:  add
+      IL_002d:  stloc.0
+      IL_002e:  ldc.i4     0x9e3779b9
+      IL_0033:  ldarg.1
+      IL_0034:  stloc.s    V_5
+      IL_0036:  ldloc.1
+      IL_0037:  ldfld      int32 TestFunction16/U::item1
+      IL_003c:  stloc.s    V_6
+      IL_003e:  ldloc.s    V_5
+      IL_0040:  stloc.s    V_7
+      IL_0042:  ldloc.s    V_6
+      IL_0044:  ldloc.0
+      IL_0045:  ldc.i4.6
+      IL_0046:  shl
+      IL_0047:  ldloc.0
+      IL_0048:  ldc.i4.2
+      IL_0049:  shr
+      IL_004a:  add
+      IL_004b:  add
+      IL_004c:  add
+      IL_004d:  stloc.0
+      IL_004e:  ldloc.0
+      IL_004f:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0042:  ldc.i4.0
-      IL_0043:  ret
+      IL_0050:  ldc.i4.0
+      IL_0051:  ret
     } // end of method U::GetHashCode
 
     .method public hidebysig virtual final 
@@ -582,14 +630,20 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       85 (0x55)
+      // Code size       109 (0x6d)
       .maxstack  4
       .locals init ([0] class TestFunction16/U V_0,
                [1] class TestFunction16/U V_1,
                [2] class TestFunction16/U V_2,
                [3] class TestFunction16/U V_3,
                [4] class [mscorlib]System.Collections.IEqualityComparer V_4,
-               [5] class [mscorlib]System.Collections.IEqualityComparer V_5)
+               [5] int32 V_5,
+               [6] int32 V_6,
+               [7] class [mscorlib]System.Collections.IEqualityComparer V_7,
+               [8] class [mscorlib]System.Collections.IEqualityComparer V_8,
+               [9] int32 V_9,
+               [10] int32 V_10,
+               [11] class [mscorlib]System.Collections.IEqualityComparer V_11)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldnull
@@ -598,7 +652,7 @@
 
       IL_0006:  br.s       IL_000a
 
-      IL_0008:  br.s       IL_004d
+      IL_0008:  br.s       IL_0065
 
       .line 100001,100001 : 0,0 ''
       IL_000a:  ldarg.1
@@ -609,7 +663,7 @@
 
       IL_0014:  br.s       IL_0018
 
-      IL_0016:  br.s       IL_004b
+      IL_0016:  br.s       IL_0063
 
       .line 100001,100001 : 0,0 ''
       IL_0018:  ldloc.0
@@ -625,40 +679,52 @@
       IL_0021:  stloc.s    V_4
       IL_0023:  ldloc.2
       IL_0024:  ldfld      int32 TestFunction16/U::item1
-      IL_0029:  ldloc.3
-      IL_002a:  ldfld      int32 TestFunction16/U::item1
-      IL_002f:  ceq
-      IL_0031:  brfalse.s  IL_0035
+      IL_0029:  stloc.s    V_5
+      IL_002b:  ldloc.3
+      IL_002c:  ldfld      int32 TestFunction16/U::item1
+      IL_0031:  stloc.s    V_6
+      IL_0033:  ldloc.s    V_4
+      IL_0035:  stloc.s    V_7
+      IL_0037:  ldloc.s    V_5
+      IL_0039:  ldloc.s    V_6
+      IL_003b:  ceq
+      IL_003d:  brfalse.s  IL_0041
 
-      IL_0033:  br.s       IL_0037
+      IL_003f:  br.s       IL_0043
 
-      IL_0035:  br.s       IL_0049
-
-      .line 100001,100001 : 0,0 ''
-      IL_0037:  ldarg.2
-      IL_0038:  stloc.s    V_5
-      IL_003a:  ldloc.2
-      IL_003b:  ldfld      int32 TestFunction16/U::item2
-      IL_0040:  ldloc.3
-      IL_0041:  ldfld      int32 TestFunction16/U::item2
-      IL_0046:  ceq
-      IL_0048:  ret
+      IL_0041:  br.s       IL_0061
 
       .line 100001,100001 : 0,0 ''
-      IL_0049:  ldc.i4.0
-      IL_004a:  ret
+      IL_0043:  ldarg.2
+      IL_0044:  stloc.s    V_8
+      IL_0046:  ldloc.2
+      IL_0047:  ldfld      int32 TestFunction16/U::item2
+      IL_004c:  stloc.s    V_9
+      IL_004e:  ldloc.3
+      IL_004f:  ldfld      int32 TestFunction16/U::item2
+      IL_0054:  stloc.s    V_10
+      IL_0056:  ldloc.s    V_8
+      IL_0058:  stloc.s    V_11
+      IL_005a:  ldloc.s    V_9
+      IL_005c:  ldloc.s    V_10
+      IL_005e:  ceq
+      IL_0060:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_004b:  ldc.i4.0
-      IL_004c:  ret
+      IL_0061:  ldc.i4.0
+      IL_0062:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_004d:  ldarg.1
-      IL_004e:  ldnull
-      IL_004f:  cgt.un
-      IL_0051:  ldc.i4.0
-      IL_0052:  ceq
-      IL_0054:  ret
+      IL_0063:  ldc.i4.0
+      IL_0064:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0065:  ldarg.1
+      IL_0066:  ldnull
+      IL_0067:  cgt.un
+      IL_0069:  ldc.i4.0
+      IL_006a:  ceq
+      IL_006c:  ret
     } // end of method U::Equals
 
     .method public hidebysig virtual final 

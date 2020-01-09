@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly DoNotBoxStruct_Array_CSInterface
 {
@@ -29,28 +29,24 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_Array_CSInterface
 {
-  // Offset: 0x00000000 Length: 0x0000025D
+  // Offset: 0x00000000 Length: 0x00000251
 }
 .mresource public FSharpSignatureDataB.DoNotBoxStruct_Array_CSInterface
 {
-  // Offset: 0x00000268 Length: 0x00000006
+  // Offset: 0x00000258 Length: 0x00000006
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_Array_CSInterface
 {
-  // Offset: 0x00000278 Length: 0x00000098
-}
-.mresource public FSharpOptimizationDataB.DoNotBoxStruct_Array_CSInterface
-{
-  // Offset: 0x00000318 Length: 0x00000000
+  // Offset: 0x00000268 Length: 0x00000098
 }
 .module DoNotBoxStruct_Array_CSInterface.exe
-// MVID: {5C6C932A-C4D6-12C8-A745-03832A936C5C}
+// MVID: {5E171A37-1735-654E-A745-0383371A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x012E0000
+// Image base: 0x06E50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,7 +60,7 @@
     // Code size       21 (0x15)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 53,68 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_Array_CSInterface.fs'
+    .line 5,5 : 53,68 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_Array_CSInterface.fs'
     IL_0000:  ldarg.0
     IL_0001:  ldc.i4.0
     IL_0002:  readonly.

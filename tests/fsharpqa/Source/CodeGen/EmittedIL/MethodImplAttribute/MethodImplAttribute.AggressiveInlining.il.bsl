@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly MethodImplAttribute.AggressiveInlining
 {
@@ -29,28 +29,24 @@
 }
 .mresource public FSharpSignatureData.MethodImplAttribute.AggressiveInlining
 {
-  // Offset: 0x00000000 Length: 0x00000354
+  // Offset: 0x00000000 Length: 0x00000347
 }
 .mresource public FSharpSignatureDataB.MethodImplAttribute.AggressiveInlining
 {
-  // Offset: 0x00000358 Length: 0x00000007
+  // Offset: 0x00000350 Length: 0x00000007
 }
 .mresource public FSharpOptimizationData.MethodImplAttribute.AggressiveInlining
 {
-  // Offset: 0x00000368 Length: 0x00000085
-}
-.mresource public FSharpOptimizationDataB.MethodImplAttribute.AggressiveInlining
-{
-  // Offset: 0x000003F8 Length: 0x00000000
+  // Offset: 0x00000360 Length: 0x00000085
 }
 .module MethodImplAttribute.AggressiveInlining.dll
-// MVID: {5C6C932A-4A5F-46FA-A745-03832A936C5C}
+// MVID: {5E171A35-66DC-14D3-A745-0383351A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00E20000
+// Image base: 0x00A30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,7 +60,7 @@
     // Code size       9 (0x9)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 34,37 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\MethodImplAttribute\\MethodImplAttribute.AggressiveInlining.fs'
+    .line 5,5 : 34,37 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\MethodImplAttribute\\MethodImplAttribute.AggressiveInlining.fs'
     IL_0000:  ldarg.0
     IL_0001:  ldnull
     IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)

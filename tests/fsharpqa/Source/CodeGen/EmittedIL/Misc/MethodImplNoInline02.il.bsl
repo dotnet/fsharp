@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly MethodImplNoInline02
 {
@@ -25,28 +25,28 @@
 }
 .mresource public FSharpSignatureData.MethodImplNoInline02
 {
-  // Offset: 0x00000000 Length: 0x0000030D
+  // Offset: 0x00000000 Length: 0x00000301
 }
 .mresource public FSharpSignatureDataB.MethodImplNoInline02
 {
-  // Offset: 0x00000318 Length: 0x00000008
+  // Offset: 0x00000308 Length: 0x00000008
 }
 .mresource public FSharpOptimizationData.MethodImplNoInline02
 {
-  // Offset: 0x00000328 Length: 0x000000F9
+  // Offset: 0x00000318 Length: 0x000000F9
 }
 .mresource public FSharpOptimizationDataB.MethodImplNoInline02
 {
-  // Offset: 0x00000428 Length: 0x00000009
+  // Offset: 0x00000418 Length: 0x00000009
 }
 .module MethodImplNoInline02.exe
-// MVID: {5C6C932A-95A3-A4EB-A745-03832A936C5C}
+// MVID: {5E171A36-084F-1A8E-A745-0383361A175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002F0000
+// Image base: 0x05690000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -57,18 +57,13 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static void  g() cil managed noinlining
   {
-    // Code size       24 (0x18)
-    .maxstack  4
-    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
+    // Code size       17 (0x11)
+    .maxstack  8
     IL_0000:  ldstr      "Hey!"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_000a:  stloc.0
-    IL_000b:  call       class [mscorlib]System.IO.TextWriter [mscorlib]System.Console::get_Out()
-    IL_0010:  ldloc.0
-    IL_0011:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [mscorlib]System.IO.TextWriter,
-                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0016:  pop
-    IL_0017:  ret
+    IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_000f:  pop
+    IL_0010:  ret
   } // end of method MethodImplNoInline02::g
 
   .method public static void  f() cil managed
