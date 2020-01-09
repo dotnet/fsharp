@@ -2222,7 +2222,7 @@ let noInferredTypars = SynValTyparDecls([], false, [])
 
 type LexerIfdefStackEntry = IfDefIf | IfDefElse
 type LexerIfdefStackEntries = (LexerIfdefStackEntry * range) list
-type LexerIfdefStack = LexerIfdefStackEntries ref
+type LexerIfdefStack = LexerIfdefStackEntries
 
 /// Specifies how the 'endline' function in the lexer should continue after
 /// it reaches end of line or eof. The options are to continue with 'token' function

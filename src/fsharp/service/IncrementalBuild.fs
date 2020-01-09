@@ -125,10 +125,10 @@ module internal IncrementalBuild =
             | VectorBuildRule ve -> ve.Name    
 
     // Ids of exprs            
-    let nextid = ref 999 // Number ids starting with 1000 to discern them
+    let mutable nextid = 999 // Number ids starting with 1000 to discern them
     let NextId() =
-        nextid:=!nextid+1
-        Id(!nextid)                    
+        nextid <- nextid + 1
+        Id(nextid)                    
         
     type INode = 
         abstract Name: string

@@ -61,20 +61,20 @@ type internal InProcCompiler(legacyReferenceResolver) =
         let ctok = AssumeCompilationThreadWithoutEvidence ()
 
         let loggerProvider = InProcErrorLoggerProvider()
-        let exitCode = ref 0
+        let mutable exitCode = 0
         let exiter = 
             { new Exiter with
-                 member this.Exit n = exitCode := n; raise StopProcessing }
+                 member this.Exit n = exitCode <- n; raise StopProcessing }
         try 
             typecheckAndCompile(ctok, argv, legacyReferenceResolver, false, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.Yes, exiter, loggerProvider.Provider, None, None)
         with 
             | StopProcessing -> ()
             | ReportedError _  | WrappedError(ReportedError _,_)  ->
-                exitCode := 1
+                exitCode <- 1
                 ()
 
         let output : CompilationOutput = { Warnings = loggerProvider.CapturedWarnings; Errors = loggerProvider.CapturedErrors }
-        !exitCode = 0, output
+        exitCode = 0, output
 
 /// in-proc version of fsc.exe
 type internal FscCompiler(legacyReferenceResolver) =

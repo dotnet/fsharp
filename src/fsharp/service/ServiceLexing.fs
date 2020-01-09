@@ -476,10 +476,10 @@ module internal LexerStateEncoding =
 
     let callLexCont lexcont args skip lexbuf =
         let argsWithIfDefs ifd =
-            if !args.ifdefStack = ifd then
+            if args.ifdefStack = ifd then
                 args
             else
-                {args with ifdefStack = ref ifd}
+                {args with ifdefStack = ifd}
         match lexcont with
         | LexCont.EndLine cont -> Lexer.endline cont args skip lexbuf
         | LexCont.Token ifd -> Lexer.token (argsWithIfDefs ifd) skip lexbuf
@@ -776,8 +776,8 @@ type FSharpSourceTokenizer(defineConstants: string list, filename: string option
  
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
-    let lexArgsLightOn = mkLexargs(filename, defineConstants, LightSyntaxStatus(true, false), lexResourceManager, ref [], DiscardErrorsLogger, PathMap.empty)
-    let lexArgsLightOff = mkLexargs(filename, defineConstants, LightSyntaxStatus(false, false), lexResourceManager, ref [], DiscardErrorsLogger, PathMap.empty)
+    let lexArgsLightOn = mkLexargs(filename, defineConstants, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
+    let lexArgsLightOff = mkLexargs(filename, defineConstants, LightSyntaxStatus(false, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
 
     member this.CreateLineTokenizer(lineText: string) =
         let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, lineText)

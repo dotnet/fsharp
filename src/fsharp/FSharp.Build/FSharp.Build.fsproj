@@ -26,6 +26,7 @@
     <Compile Include="FSharpEmbedResXSource.fs" />
     <Compile Include="WriteCodeFragment.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
+    <Compile Include="SubstituteText.fs" />
     <None Include="Microsoft.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />

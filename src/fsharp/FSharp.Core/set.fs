@@ -429,13 +429,13 @@ module internal SetTree =
             not i.stack.IsEmpty 
 
     let mkIEnumerator s = 
-        let i = ref (mkIterator s) 
+        let mutable  i = mkIterator s
         { new IEnumerator<_> with 
-              member __.Current = current !i
+              member __.Current = current i
           interface IEnumerator with 
-              member __.Current = box (current !i)
-              member __.MoveNext() = moveNext !i
-              member __.Reset() = i :=  mkIterator s
+              member __.Current = box (current i)
+              member __.MoveNext() = moveNext i
+              member __.Reset() = i <- mkIterator s
           interface System.IDisposable with 
               member __.Dispose() = () }
 
@@ -486,8 +486,8 @@ module internal SetTree =
         loop s []
 
     let copyToArray s (arr: _[]) i =
-        let j = ref i 
-        iter (fun x -> arr.[!j] <- x; j := !j + 1) s
+        let mutable j = i 
+        iter (fun x -> arr.[j] <- x; j <- j + 1) s
 
     let toArray s = 
         let n = (count s) 
