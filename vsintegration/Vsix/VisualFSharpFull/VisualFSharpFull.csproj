@@ -22,6 +22,7 @@
       <Pattern2>{{FSLanguageVersion}}</Pattern2>
       <Replacement2>$(FSLanguageVersion)</Replacement2>
       <IncludeInVSix>true</IncludeInVSix>
+      <Link>RegisterFsharpPackage.pkgdef</Link>
     </NoneSubstituteText>
 
     <Content Include="$(FSharpSourcesRoot)\..\License.txt">
