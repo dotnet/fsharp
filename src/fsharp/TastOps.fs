@@ -6937,7 +6937,7 @@ let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
     match vref.TryDeref with
     | ValueSome v -> 
         let f = exprForValRef m vref
-        mkApps g ((f, v.Type), [tinst], [ mkRefTupledNoTypes g m argExprs ], m) |> Some
+        mkApps g ((f, v.Type), [tinst], argExprs, m) |> Some
     | ValueNone -> 
         None
 

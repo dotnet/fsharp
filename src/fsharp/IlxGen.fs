@@ -5283,7 +5283,6 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
             | _ -> error(InternalError("these matches should never be needed", switchm))
 
 and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets repeatSP targetInfos sequel caseLabels cases (contf: Zmap<_,_> -> FakeUnit) =
-    assert(cgbuf.GetCurrentStack() = stackAtTargets) // cgbuf stack should be unchanged over tests. [bug://1750].
 
     match defaultTargetOpt with
     | Some defaultTarget -> 

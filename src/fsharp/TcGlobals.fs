@@ -1497,40 +1497,33 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member __.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
 
-  /// Find an FSharp.Core BuiltInWitness that corresponds to a trait witness
-  member g.makeBuiltInWitnessInfo (t: TraitConstraintInfo) =
+  /// Find an FSharp.Core LaguagePrimitives dynamic function that corresponds to a trait witness, e.g.
+  /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
+  member __.makeBuiltInWitnessInfo (t: TraitConstraintInfo) =
       let memberName = 
           let nm = t.MemberName
-          (if nm.StartsWith "op_" then nm.[3..] else nm) + "BuiltIn"
+          let coreName = 
+              if nm.StartsWith "op_" then nm.[3..]
+              elif nm = "get_Zero" then "GenericZero"
+              elif nm = "get_One" then "GenericOne"
+              else nm
+          coreName + "Dynamic"
       let gtps, argTys, retTy, tinst = 
-          let argTy = t.ArgumentTypes.[0]
-          match memberName with 
-          | "AdditionBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "MultiplyBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "UnaryNegationBuiltIn" -> [vara], [ varaTy ], varaTy, [ argTy ]
-          | "SubtractionBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "DivisionBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "ModulusBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "CheckedAdditionBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "CheckedMultiplyBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "CheckedUnaryNegationBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "CheckedSubtractionBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "LeftShiftBuiltIn" -> [vara], [ varaTy; v_int32_ty], varaTy, [ argTy ]
-          | "RightShiftBuiltIn" -> [vara], [ varaTy; v_int32_ty], varaTy, [ argTy ]
-          | "BitwiseAndBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "BitwiseOrBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "ExclusiveOrBuiltIn" -> [vara], [ varaTy; varaTy ], varaTy, [ argTy ]
-          | "LogicalNotBuiltIn" -> [vara], [ varaTy ], varaTy, [ argTy ]
-          | "ExplicitBuiltIn" -> [vara; varb], [ varaTy ], varbTy, [ argTy; t.ReturnType.Value ]
-          | "LessThanBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
-          | "GreaterThanBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
-          | "LessThanOrEqualBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
-          | "GreaterThanOrEqualBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
-          | "EqualityBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
-          | "InequalityBuiltIn" -> [vara], [ varaTy; varaTy ], v_bool_ty, [ argTy ]
-          | "DivideByIntBuiltIn" -> [vara], [ varaTy; v_int32_ty ], varaTy, [ argTy ]
-          | _ -> failwith "unknown builtin witness"
-      let vref = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, memberName, Some "BuiltInWitnesses", None, gtps, ([argTys], retTy))
+          match memberName, t.ArgumentTypes, t.ReturnType with 
+          | ("AdditionDynamic" | "MultiplyDynamic" | "SubtractionDynamic"| "DivisionDynamic" | "ModulusDynamic" | "CheckedAdditionDynamic" | "CheckedMultiplyDynamic" | "CheckedSubtractionDynamic" | "LeftShiftDynamic" | "RightShiftDynamic" | "BitwiseAndDynamic" | "BitwiseOrDynamic" | "ExclusiveOrDynamic" | "LessThanDynamic" | "GreaterThanDynamic" | "LessThanOrEqualDynamic" | "GreaterThanOrEqualDynamic" | "EqualityDynamic" | "InequalityDynamic"), 
+            [ arg0Ty; arg1Ty ], 
+            Some retTy -> 
+               [vara; varb; varc], [ varaTy; varbTy ], varcTy, [ arg0Ty; arg1Ty; retTy ]
+          | ("UnaryNegationDynamic" | "CheckedUnaryNegationDynamic" | "LogicalNotDynamic" | "ExplicitDynamic"), 
+            [ arg0Ty ], 
+            Some retTy -> 
+               [vara; varb ], [ varaTy ], varbTy, [ arg0Ty; retTy ]
+          | "DivideByIntDynamic", [arg0Ty; _], _ -> 
+               [vara], [ varaTy; v_int32_ty ], varaTy, [ arg0Ty ]
+          | ("GenericZeroDynamic" | "GenericOneDynamic"), [], Some retTy -> 
+               [vara], [ ], varaTy, [ retTy ]
+          | _ -> failwithf "unknown builtin witness '%s'" memberName
+      let vref = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, memberName, None, None, gtps, (List.map List.singleton argTys, retTy))
       vref, tinst
 
   /// Find an FSharp.Core operator that corresponds to a trait witness

@@ -1107,55 +1107,55 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&lt;&lt;&lt;' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpLeftShiftDynamic : value:'T1 -> shift:'T2 -> 'U
+        val LeftShiftDynamic : value:'T1 -> shift:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&gt;&gt;&gt;' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpRightShiftDynamic : value:'T1 -> shift:'T2 -> 'U
+        val RightShiftDynamic : value:'T1 -> shift:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&&&' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpBitwiseAndDynamic : x:'T1 -> y:'T2 -> 'U
+        val BitwiseAndDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '|||' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpBitwiseOrDynamic : x:'T1 -> y:'T2 -> 'U
+        val BitwiseOrDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '^^^' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpBitwiseExclusiveOrDynamic : x:'T1 -> y:'T2 -> 'U
+        val ExclusiveOrDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '~~~' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpLogicalNotDynamic : value:'T1 -> 'U
+        val LogicalNotDynamic : value:'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to conversion operators when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpExplicitDynamic : value:'T1 -> 'U
+        val ExplicitDynamic : value:'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpLessThanDynamic : x:'T1 -> y:'T2 -> 'U
+        val LessThanDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpGreaterThanDynamic : x:'T1 -> y:'T2 -> 'U
+        val GreaterThanDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;=' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpLessThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
+        val LessThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;=' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpGreaterThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
+        val GreaterThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpEqualityDynamic : x:'T1 -> y:'T2 -> 'U
+        val EqualityDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        val OpInequalityDynamic : x:'T1 -> y:'T2 -> 'U
+        val InequalityDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations for the DivideByInt primitive when used in quotations.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -1174,85 +1174,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="y">The input int.</param>
         /// <returns>The division result.</returns>
         val inline DivideByInt< ^T >  : x:^T -> y:int -> ^T when ^T : (static member DivideByInt : ^T * int -> ^T) 
-
-#if !BUILDING_WITH_LKG
-        [<Class>]
-        /// <summary>Representative witnesses for traits solved by the F# compiler</summary>
-        type BuiltInWitnesses = 
-                        
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member AdditionBuiltIn: x: 'T * y: 'T -> 'T
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>            
-            static member MultiplyBuiltIn: x: 'T * y: 'T -> 'T
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member UnaryNegationBuiltIn: value: 'T -> 'T
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member SubtractionBuiltIn: x: 'T * y: 'T -> 'T
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member DivisionBuiltIn: x: 'T * y: 'T -> 'T
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member ModulusBuiltIn: x: 'T * y: 'T -> 'T
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member CheckedAdditionBuiltIn: x: 'T * y: 'T -> 'T
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>            
-            static member CheckedMultiplyBuiltIn: x: 'T * y: 'T -> 'T 
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member CheckedUnaryNegationBuiltIn: value: 'T -> 'T
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member CheckedSubtractionBuiltIn: x: 'T * y: 'T -> 'T 
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member LeftShiftBuiltIn: value: 'T * shift: int -> 'T 
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member RightShiftBuiltIn: value: 'T * shift: int -> 'T 
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member BitwiseAndBuiltIn: x: 'T * y: 'T -> 'T 
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member BitwiseOrBuiltIn: x: 'T * y: 'T -> 'T 
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member ExclusiveOrBuiltIn: x: 'T * y: 'T -> 'T 
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member LogicalNotBuiltIn: value: 'T -> 'T 
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member ExplicitBuiltIn: value: 'T1 -> 'T2
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member LessThanBuiltIn: x: 'T * y: 'T -> bool
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member GreaterThanBuiltIn: x: 'T * y: 'T -> bool
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member LessThanOrEqualBuiltIn: x: 'T * y: 'T -> bool
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member GreaterThanOrEqualBuiltIn: x: 'T * y: 'T -> bool
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member EqualityBuiltIn: x: 'T * y: 'T -> bool
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member InequalityBuiltIn: x: 'T * y: 'T -> bool
-
-            /// <summary>A representative witness for traits solved by the F# compiler</summary>
-            static member DivideByIntBuiltIn: x: 'T * y: int -> 'T
-
-#endif
 
         /// <summary>For compiler use only</summary>
         module (* internal *) ErrorStrings = 
