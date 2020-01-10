@@ -34,6 +34,7 @@
       <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
       <Pattern1>{{FSharpCoreShippedPackageVersion}}</Pattern1>
       <Replacement1>$(FSharpCorePackageShippedVersion)</Replacement1>
+      <Replacement1>$(FSharpCoreShippedPackageVersion)</Replacement1>
       <Pattern2>{{FSharpCorePreviewPackageVersion}}</Pattern2>
       <Replacement2>$(FSharpCorePreviewPackageVersion)</Replacement2>
     </NoneSubstituteText>
