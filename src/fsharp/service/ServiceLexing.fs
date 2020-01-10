@@ -54,6 +54,7 @@ module FSharpTokenTag =
     let COMMA = tagOfToken COMMA
     let DOT = tagOfToken DOT
     let DOT_DOT = tagOfToken DOT_DOT
+    let DOT_DOT_HAT = tagOfToken DOT_DOT_HAT
     let INT32_DOT_DOT = tagOfToken (INT32_DOT_DOT(0, true))
     let UNDERSCORE = tagOfToken UNDERSCORE
     let BAR = tagOfToken BAR
@@ -210,7 +211,7 @@ module internal TokenClassifications =
         | INFIX_AMP_OP _ ->
                 (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.None)
 
-        | DOT_DOT ->
+        | DOT_DOT | DOT_DOT_HAT ->
             (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.MemberSelect)
 
         | COMMA ->

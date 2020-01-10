@@ -30,6 +30,7 @@ type public Fsc () as this =
     let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
     let mutable commandLineArgs : ITaskItem list = []
+    let mutable compilerTools: ITaskItem [] = [||]
     let mutable debugSymbols = false
     let mutable defineConstants : ITaskItem[] = [||]
     let mutable delaySign : bool = false
@@ -211,6 +212,10 @@ type public Fsc () as this =
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
 
+        // CompilerTools
+        for item in compilerTools do
+            builder.AppendSwitchIfNotNull("--compilertool:", item.ItemSpec)
+
         // References
         for item in references do
             builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
@@ -334,6 +339,11 @@ type public Fsc () as this =
     member fsc.CodePage
         with get() = codePage
         and set(s) = codePage <- s
+
+    // -r <string>: Reference an F# or .NET assembly.
+    member fsc.CompilerTools
+        with get() = compilerTools
+        and set(a) = compilerTools <- a
 
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
     member fsc.DebugSymbols

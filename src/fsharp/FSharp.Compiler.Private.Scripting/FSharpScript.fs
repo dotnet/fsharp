@@ -17,11 +17,24 @@ type FSharpScript(?additionalArgs: string[]) =
         else "netcore"
     let baseArgs = [| typeof<FSharpScript>.Assembly.Location; "--noninteractive"; "--targetprofile:" + computedProfile; "--quiet" |]
     let argv = Array.append baseArgs additionalArgs
-    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr, collectible=true)
+    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
+    [<CLIEvent>]
     member __.AssemblyReferenceAdded = fsi.AssemblyReferenceAdded
 
     member __.ValueBound = fsi.ValueBound
+
+    [<CLIEvent>]
+    member __.IncludePathAdded = fsi.IncludePathAdded
+
+    [<CLIEvent>]
+    member __.DependencyAdding = fsi.DependencyAdding
+
+    [<CLIEvent>]
+    member __.DependencyAdded = fsi.DependencyAdded
+
+    [<CLIEvent>]
+    member __.DependencyFailed = fsi.DependencyFailed
 
     member __.Fsi = fsi
 

@@ -593,8 +593,8 @@ module ParsedInput =
     
         and walkIndexerArg arg =
             match arg with
-            | SynIndexerArg.One e -> walkExpr e
-            | SynIndexerArg.Two (e1, e2) -> List.iter walkExpr [e1; e2]
+            | SynIndexerArg.One (e, _, _) -> walkExpr e
+            | SynIndexerArg.Two (e1, _, e2, _, _, _) -> List.iter walkExpr [e1; e2]
     
         and walkType ty =
             match ty with 
