@@ -13,8 +13,9 @@ open FSharp.Compiler.AbstractIL.IL
 
 [<Sealed>]
 type QuotationTranslationEnv =
-   static member Empty : QuotationTranslationEnv
+   static member CreateEmpty : TcGlobals -> QuotationTranslationEnv
    member BindTypars : Typars -> QuotationTranslationEnv
+   member BindWitnessInfos : TraitWitnessInfo list -> QuotationTranslationEnv
 
 exception InvalidQuotedTerm of exn
 exception IgnoringPartOfQuotedTermWarning of string * Range.range
@@ -26,13 +27,17 @@ type IsReflectedDefinition =
 
 [<RequireQualifiedAccess>]
 type QuotationSerializationFormat =
-    /// Indicates that type references are emitted as integer indexes into a supplied table
-    | FSharp_40_Plus
-    | FSharp_20_Plus
+    { 
+      /// Indicates that witness parameters are recorded
+      SupportsWitnesses: bool 
+      
+      /// Indicates that type references are emitted as integer indexes into a supplied table
+      SupportsDeserializeEx: bool 
+    }
 
 [<Sealed>]
 type QuotationGenerationScope  =
-    static member Create: TcGlobals * ImportMap * CcuThunk * IsReflectedDefinition -> QuotationGenerationScope
+    static member Create: TcGlobals * ImportMap * CcuThunk * ConstraintSolver.TcValF * IsReflectedDefinition -> QuotationGenerationScope
     member Close: unit -> ILTypeRef list * (TType * range) list * (Expr * range) list 
     static member ComputeQuotationFormat : TcGlobals -> QuotationSerializationFormat
 
