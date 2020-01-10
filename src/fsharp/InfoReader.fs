@@ -18,6 +18,10 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 
+#if !NO_EXTENSIONTYPING
+open FSharp.Compiler.ExtensionTyping
+#endif
+
 /// Use the given function to select some of the member values from the members of an F# type
 let private SelectImmediateMemberVals g optFilter f (tcref: TyconRef) = 
     let chooser (vref: ValRef) = 
@@ -144,8 +148,8 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
                 match optFilter with
                 |   Some name ->
                         match st.PApply((fun st -> st.GetProperty name), m) with
-                        |   Tainted.Null -> [||]
-                        |   pi -> [|pi|]
+                        | Tainted.Null -> [||]
+                        | Tainted.NonNull pi -> [|pi|]
                 |   None ->
                         st.PApplyArray((fun st -> st.GetProperties()), "GetProperties", m)
             matchingProps
@@ -187,7 +191,7 @@ let IsIndexerType g amap ty =
     isListTy g ty ||
     match tryDestAppTy g ty with
     | ValueSome tcref ->
-        let _, entityTy = generalizeTyconRef tcref
+        let entityTy = generalizedTyconRef g tcref
         let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g amap range0 entityTy
         props |> List.exists (fun x -> x.PropertyName = "Item")
     | ValueNone -> false
@@ -219,8 +223,8 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                         [ for fi in st.PApplyArray((fun st -> st.GetFields()), "GetFields", m) -> ProvidedField(amap, fi, m) ]
                 |   Some name ->
                         match st.PApply ((fun st -> st.GetField name), m) with
-                        |   Tainted.Null -> []
-                        |   fi -> [  ProvidedField(amap, fi, m) ]
+                        | Tainted.Null -> []
+                        | Tainted.NonNull fi -> [  ProvidedField(amap, fi, m) ]
 #endif
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty
@@ -244,8 +248,8 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                         [   for ei in st.PApplyArray((fun st -> st.GetEvents()), "GetEvents", m) -> ProvidedEvent(amap, ei, m) ]
                 |   Some name ->
                         match st.PApply ((fun st -> st.GetEvent name), m) with
-                        |   Tainted.Null -> []
-                        |   ei -> [  ProvidedEvent(amap, ei, m) ]
+                        | Tainted.Null -> []
+                        | Tainted.NonNull ei -> [  ProvidedEvent(amap, ei, m) ]
 #endif
             | ILTypeMetadata _ -> 
                 let tinfo = ILTypeInfo.FromType g ty
@@ -342,7 +346,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
               // a decent hash function for these.
               canMemoize=(fun (_flags, (_: range), ty) -> 
                                     match stripTyEqns g ty with 
-                                    | TType_app(tcref, []) -> tcref.TypeContents.tcaug_closed 
+                                    | TType_app(tcref, [], _nullness) -> tcref.TypeContents.tcaug_closed // TODO NULLNESS: consider whether ignoring _nullness is valid here
                                     | _ -> false),
               
               keyComparer=
@@ -351,13 +355,13 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.Equals(flags1, flags2) && 
                                     match stripTyEqns g typ1, stripTyEqns g typ2 with 
-                                    | TType_app(tcref1, []), TType_app(tcref2, []) -> tyconRefEq g tcref1 tcref2
+                                    | TType_app(tcref1, [], _nullness1),TType_app(tcref2, [], _nullness2) -> tyconRefEq g tcref1 tcref2  // TODO NULLNESS: consider whether ignoring _nullness is valid here
                                     | _ -> false
                        member x.GetHashCode((flags, _, ty)) =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.GetHashCode flags + 
                                     (match stripTyEqns g ty with 
-                                     | TType_app(tcref, []) -> hash tcref.LogicalName
+                                     | TType_app(tcref, [], _nullness1) -> hash tcref.LogicalName  // TODO NULLNESS: consider whether ignoring _nullness is valid here
                                      | _ -> 0) })
 
     
@@ -732,8 +736,8 @@ let GetSigOfFunctionForDelegate (infoReader: InfoReader) delty m ad =
         | _ -> compiledViewOfDelArgTys
     let delRetTy = invokeMethInfo.GetFSharpReturnTy(amap, m, minst)
     CheckMethInfoAttributes g m None invokeMethInfo |> CommitOperationResult
-    let fty = mkIteratedFunTy fsharpViewOfDelArgTys delRetTy
-    SigOfFunctionForDelegate(invokeMethInfo, compiledViewOfDelArgTys, delRetTy, fty)
+    let fty = mkIteratedFunTy g fsharpViewOfDelArgTys delRetTy
+    SigOfFunctionForDelegate(invokeMethInfo,compiledViewOfDelArgTys, delRetTy, fty)
 
 /// Try and interpret a delegate type as a "standard" .NET delegate type associated with an event, with a "sender" parameter.
 let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =

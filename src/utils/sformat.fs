@@ -109,6 +109,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         abstract MaxRows : int
 
     module TaggedTextOps =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+        let inline nonNull<'T> (x: 'T) = x
+#endif
+
         let tag tag text = 
           { new TaggedText with 
             member x.Tag = tag
@@ -423,7 +428,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             // analysis of null values. 
 
             let GetValueInfo bindingFlags (x : 'a, ty : Type)  (* x could be null *) = 
-                let obj = (box x)
+                let obj = box x
                 match obj with 
                 | null ->
                    let isNullaryUnion =
@@ -851,10 +856,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                             // Try the StructuredFormatDisplayAttribute extensibility attribute
                             match ty.GetCustomAttributes (typeof<StructuredFormatDisplayAttribute>, true) with
                             | null | [| |] -> None
-                            | res -> 
+                            | NonNull res -> 
                                let attr = (res.[0] :?> StructuredFormatDisplayAttribute) 
                                let txt = attr.Value
-                               if isNull txt || txt.Length <= 1 then  
+                               if isNull (box txt) || txt.Length <= 1 then  
                                    None
                                else
                                   let messageRegexPattern = @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"

@@ -247,8 +247,6 @@ let fsiStartInfo channelName =
     procInfo
 
 
-let nonNull = function null -> false | (s:string) -> true
-
 /// Represents an active F# Interactive process to which Visual Studio is connected via stdin/stdout/stderr and a remoting channel
 type FsiSession() = 
     let randomSalt = System.Random()
@@ -328,9 +326,9 @@ type FsiSession() =
 
     member x.SendInput (str: string) = inputQueue.Post(str)
 
-    member x.Output      = Observable.filter nonNull fsiOutput.Publish
+    member x.Output      = Observable.filter (isNull >> not) fsiOutput.Publish
 
-    member x.Error       = Observable.filter nonNull fsiError.Publish
+    member x.Error       = Observable.filter (isNull >> not) fsiError.Publish
 
     member x.Exited      = (cmdProcess.Exited |> Observable.map id)
 

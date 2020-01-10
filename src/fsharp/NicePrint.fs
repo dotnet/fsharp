@@ -836,6 +836,8 @@ module private PrintTypes =
                 [layoutTypeAppWithInfoAndPrec denv env (WordL.keywordDelegate) 2 true [aty;bty] |> longConstraintPrefix]
         | TyparConstraint.SupportsNull _ ->
             [wordL (tagKeyword "null") |> longConstraintPrefix]
+        | TyparConstraint.NotSupportsNull _ ->
+                [(wordL (tagKeyword "not") ^^ wordL(tagKeyword "null")) |> longConstraintPrefix]
         | TyparConstraint.IsNonNullableStruct _ ->
             if denv.shortConstraints then 
                 [wordL (tagText "value type")]
@@ -912,30 +914,40 @@ module private PrintTypes =
             | [arg] -> layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args) --- tcL)
 
+    and layoutNullness part2 (nullness: Nullness) =
+        match nullness.Evaluate() with
+        | NullnessInfo.WithNull -> part2 ^^ rightL (tagText "?")
+        | NullnessInfo.WithoutNull -> part2
+        | NullnessInfo.AmbivalentToNull -> part2 // TODO NULLNESS: emit this optionally ^^ wordL (tagText "%")
+
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
 
         match stripTyparEqns ty with 
 
-        // Always prefer to format 'byref<ty, ByRefKind.In>' as 'inref<ty>'
-        | ty when isInByrefTy denv.g ty && (match ty with TType_app (tc, _) when denv.g.inref_tcr.CanDeref && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+        // Always prefer to format 'byref<ty,ByRefKind.In>' as 'inref<ty>'
+        | ty when isInByrefTy denv.g ty && (match ty with TType_app (tc, _, _) when denv.g.inref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkInByrefTy denv.g (destByrefTy denv.g ty))
 
-        // Always prefer to format 'byref<ty, ByRefKind.Out>' as 'outref<ty>'
-        | ty when isOutByrefTy denv.g ty && (match ty with TType_app (tc, _) when denv.g.outref_tcr.CanDeref && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+        // Always prefer to format 'byref<ty,ByRefKind.Out>' as 'outref<ty>'
+        | ty when isOutByrefTy denv.g ty && (match ty with TType_app (tc, _, _) when denv.g.outref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkOutByrefTy denv.g (destByrefTy denv.g ty))
 
-        // Always prefer to format 'byref<ty, ByRefKind.InOut>' as 'byref<ty>'
-        | ty when isByrefTy denv.g ty && (match ty with TType_app (tc, _) when denv.g.byref_tcr.CanDeref && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+        // Always prefer to format 'byref<ty,ByRefKind.InOut>' as 'byref<ty>'
+        | ty when isByrefTy denv.g ty && (match ty with TType_app (tc, _, _) when denv.g.byref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
             layoutTypeWithInfoAndPrec denv env prec (mkByrefTy denv.g (destByrefTy denv.g ty))
 
         // Always prefer 'float' to 'float<1>'
-        | TType_app (tc, args) when tc.IsMeasureableReprTycon && List.forall (isDimensionless denv.g) args ->
-          layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided denv.g tc args)
+        | TType_app (tc,args,nullness) when tc.IsMeasureableReprTycon && List.forall (isDimensionless denv.g) args ->
+          let part1 = layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided denv.g tc args)
+          let part2 = layoutNullness part1 nullness
+          part2
 
         // Layout a type application 
-        | TType_app (tc, args) -> 
-          layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
+        | TType_app (tc,args, nullness) -> 
+          let part1 = layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
+          let part2 = layoutNullness part1 nullness
+          part2
 
         | TType_ucase (UCRef(tc, _), args) -> 
           layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
@@ -967,13 +979,19 @@ module private PrintTypes =
         | TType_fun _ ->
             let rec loop soFarL ty = 
               match stripTyparEqns ty with 
-              | TType_fun (dty, rty) -> loop (soFarL --- (layoutTypeWithInfoAndPrec denv env 4 dty ^^ wordL (tagPunctuation "->"))) rty
+              | TType_fun (dty, rty, nullness) -> 
+                  let part1 = soFarL --- (layoutTypeWithInfoAndPrec denv env 4 dty ^^ wordL (tagPunctuation "->"))
+                  let part2 = loop part1 rty
+                  let part3 = layoutNullness part2 nullness
+                  part3
               | rty -> soFarL --- layoutTypeWithInfoAndPrec denv env 5 rty
             bracketIfL (prec <= 4) (loop emptyL ty)
 
         // Layout a type variable . 
-        | TType_var r ->
-            layoutTyparRefWithInfo denv env r
+        | TType_var (r, nullness) ->
+            let part1 = layoutTyparRefWithInfo denv env r
+            let part2 = layoutNullness part1 nullness
+            part2
 
         | TType_measure unt -> layoutMeasure denv unt
 
@@ -1398,7 +1416,7 @@ module InfoMemberPrinting =
 
     let prettyLayoutOfPropInfoFreeStyle g amap m denv (pinfo: PropInfo) =
         let rty = pinfo.GetPropertyType(amap, m) 
-        let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else rty 
+        let rty = if pinfo.IsIndexer then mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty else  rty 
         let rty, _ = PrettyTypes.PrettifyType g rty
         let tagProp =
             match pinfo.ArbitraryValRef with
@@ -1659,7 +1677,7 @@ module private TastDefinitionPrinting =
 
     let layoutTycon (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tycon: Tycon) =
       let g = denv.g
-      let _, ty = generalizeTyconRef (mkLocalTyconRef tycon) 
+      let ty = generalizedTyconRef g (mkLocalTyconRef tycon) 
       let start, name = 
           let n = tycon.DisplayName
           if isStructTy g ty then Some "struct", tagStruct n
@@ -2106,8 +2124,8 @@ let minimalStringsOfTwoTypes denv t1 t2=
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let makeName t =
-            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | null | "" -> "" | name -> sprintf " (%s)" name
-            sprintf "%s%s" (stringOfTy denv t1) assemblyName
+            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function "" -> "" | name -> sprintf " (%s)" name
+            sprintf "%s%s" (stringOfTy denv t) assemblyName
 
         (makeName t1, makeName t2, stringOfTyparConstraints denv tpcs)
     

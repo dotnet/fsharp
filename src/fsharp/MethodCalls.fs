@@ -339,13 +339,16 @@ type CalledMeth<'T>
                         match epinfos with 
                         | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
                             let pminfo = pinfo.SetterMethod
-                            let pminst = match minfo with
-                                         | MethInfo.FSMeth(_, TType.TType_app(_, types), _, _) -> types
-                                         | _ -> freshenMethInfo m pminfo
+                            let pminst =
+                                match minfo with
+                                | MethInfo.FSMeth(_, TType_app(_, types, _), _, _) -> types
+                                | _ -> freshenMethInfo m pminfo
 
-                            let pminst = match tyargsOpt with
-                                         | Some(TType.TType_app(_, types)) -> types
-                                         | _ -> pminst
+                            let pminst =
+                                match tyargsOpt with
+                                | Some (TType_app(_, types, _)) -> types
+                                | _ -> pminst
+
                             Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(pinfo, pminfo, pminst), e))
                         |  _ ->    
                             match infoReader.GetILFieldInfosOfType(Some(nm), ad, m, returnedObjTy) with
@@ -1064,7 +1067,7 @@ let MakeMethInfoCall amap m minfo minst args =
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         let ilMethodRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m mi
         let isConstructor = mi.PUntaint((fun c -> c.IsConstructor), m)
-        let valu = mi.PUntaint((fun c -> c.DeclaringType.IsValueType), m)
+        let valu = mi.PUntaint((fun c -> (nonNull<ProvidedType> c.DeclaringType).IsValueType), m)
         let actualTypeInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
         let actualMethInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
         let ilReturnTys = Option.toList (minfo.GetCompiledReturnTy(amap, m, []))  // GENERIC TYPE PROVIDERS: for generics, we would have more here
@@ -1077,7 +1080,7 @@ let MakeMethInfoCall amap m minfo minst args =
 // This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
 let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name), m)
-    let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> x.DeclaringType), m))
+    let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m))
     if isAppTy amap.g declaringType then 
         let declaringEntity = tcrefOfAppTy amap.g declaringType
         if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
@@ -1179,8 +1182,14 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
 
         // Build a 'call' to a struct default constructor 
         | DefaultStructCtor (g, ty) -> 
-            if not (TypeHasDefaultValue g m ty) then 
-                errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
+            if g.langFeatureNullness then 
+                if not (TypeHasDefaultValueNew g m ty) && not (TypeHasDefaultValueOld g m ty) then 
+                    errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
+                if g.checkNullness && not (TypeHasDefaultValueNew g m ty) then 
+                    warning(Error(FSComp.SR.tcDefaultStructConstructorCallNulls(), m))  
+            else
+                if not (TypeHasDefaultValueOld g m ty) then 
+                    errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
             mkDefault (m, ty), ty)
 
 
@@ -1258,7 +1267,7 @@ module ProvidedMethodCalls =
                         st.PApply((fun st -> 
                             match st.BaseType with 
                             | null -> ProvidedType.CreateNoContext(typeof<obj>)  // it might be an interface
-                            | st -> st), m)
+                            | NonNull st -> st), m)
                     loop baseType
                 else
                     if isGeneric then 
@@ -1300,7 +1309,7 @@ module ProvidedMethodCalls =
             let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)), m))
             match ea with
             | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation), m))
-            |  _ ->
+            | Tainted.NonNull ea ->
             match ea.PApplyOption((function ProvidedTypeAsExpr x -> Some x | _ -> None), m) with
             | Some info -> 
                 let (expr, targetTy) = info.PApply2(id, m)
@@ -1423,7 +1432,7 @@ module ProvidedMethodCalls =
                 let vsT = List.map addVar vs
                 let delegateBodyExprT = exprToExpr delegateBodyExpr
                 List.iter removeVar vs
-                let lambdaExpr = mkLambdas m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
+                let lambdaExpr = mkLambdas g m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
                 let lambdaExprTy = tyOfExpr g lambdaExpr
                 let infoReader = InfoReader(g, amap)
                 let exprT = CoerceFromFSharpFuncToDelegate g amap infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyT
@@ -1564,7 +1573,7 @@ module ProvidedMethodCalls =
         let thisArg, paramVars = 
             match objArgs with
             | [objArg] -> 
-                let erasedThisTy = eraseSystemType (amap, m, mi.PApply((fun mi -> mi.DeclaringType), m))
+                let erasedThisTy = eraseSystemType (amap, m, mi.PApply((fun mi -> nonNull<ProvidedType> mi.DeclaringType), m))
                 let thisVar = erasedThisTy.PApply((fun ty -> ProvidedVar.Fresh("this", ty)), m)
                 Some objArg, Array.append [| thisVar |] paramVars
             | [] -> None, paramVars
@@ -1584,7 +1593,7 @@ module ProvidedMethodCalls =
             methInfoOpt, expr, exprty
         with
             | :? TypeProviderError as tpe ->
-                let typeName = mi.PUntaint((fun mb -> mb.DeclaringType.FullName), m)
+                let typeName = mi.PUntaint((fun mb -> (nonNull<ProvidedType> mb.DeclaringType).FullName), m)
                 let methName = mi.PUntaint((fun mb -> mb.Name), m)
                 raise( tpe.WithContext(typeName, methName) )  // loses original stack trace
 #endif
@@ -1615,7 +1624,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
         match objArgs, ad with 
         | [objArg], AccessibleFrom(paths, Some tcref) -> 
             let objArgTy = tyOfExpr g objArg 
-            let ty = generalizedTyconRef tcref
+            let ty = generalizedTyconRef g tcref
             // We get to keep our rights if the type we're in subsumes the object argument type
             if TypeFeasiblySubsumesType 0 g amap m ty CanCoerce objArgTy then
                 ad

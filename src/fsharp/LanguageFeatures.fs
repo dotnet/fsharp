@@ -28,6 +28,7 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
+    | NullnessChecking
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -61,6 +62,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.DotlessFloat32Literal, languageVersion50
             LanguageFeature.PackageManagement, previewVersion
+            LanguageFeature.NullnessChecking, languageVersion47 // currently always on because requires FSharp.Core build
         ]
 
     let specified =

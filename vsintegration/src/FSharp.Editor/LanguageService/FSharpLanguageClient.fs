@@ -22,12 +22,12 @@ type FSharpContentDefinition() =
     [<Export>]
     [<Name(FSharpConstants.FSharpLanguageName)>]
     [<BaseDefinition(CodeRemoteContentDefinition.CodeRemoteContentTypeName)>]
-    static member val FSharpContentTypeDefinition: ContentTypeDefinition = null with get, set
+    static member val FSharpContentTypeDefinition: ContentTypeDefinition = Unchecked.defaultof<_> with get, set
 
     [<Export>]
     [<FileExtension(FSharpConstants.FSharpFileExtension)>]
     [<ContentType(FSharpConstants.FSharpLanguageName)>]
-    static member val FSharpFileExtensionDefinition: FileExtensionToContentTypeDefinition = null with get, set
+    static member val FSharpFileExtensionDefinition: FileExtensionToContentTypeDefinition = Unchecked.defaultof<_> with get, set
 
 [<Export(typeof<ILanguageClient>)>]
 [<ContentType(FSharpConstants.FSharpLanguageName)>]
@@ -52,7 +52,7 @@ type internal FSharpLanguageClient
             proc.StartInfo <- startInfo
             return
                 if proc.Start() then new Connection(proc.StandardOutput.BaseStream, proc.StandardInput.BaseStream)
-                else null
+                else Unchecked.defaultof<_>
         } |> Async.StartAsTask
     override __.ConfigurationSections = null
     override __.FilesToWatch = null

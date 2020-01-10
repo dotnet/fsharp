@@ -67,7 +67,7 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
     inherit ByteMemory()
 
     do
-        if length <= 0 || length > bytes.Length then
+        if length < 0 || length > bytes.Length then
             raise (ArgumentOutOfRangeException("length"))
 
         if offset < 0 || (offset + length) > bytes.Length then
@@ -155,7 +155,7 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
             raise (ArgumentOutOfRangeException("i"))
 
     do
-        if length <= 0 then
+        if length < 0 then
             raise (ArgumentOutOfRangeException("length"))
 
     override _.Item 
@@ -332,10 +332,15 @@ type ByteMemory with
     static member FromArray bytes =
         ByteArrayMemory.FromArray(bytes, 0, bytes.Length)
 
+    static member Empty with get() = ByteMemory.FromArray [| |]
+
 type internal ByteStream = 
     { bytes: ReadOnlyByteMemory
       mutable pos: int 
       max: int }
+
+    member b.IsEOF = (b.pos >= b.max)
+
     member b.ReadByte() = 
         if b.pos >= b.max then failwith "end of stream"
         let res = b.bytes.[b.pos]

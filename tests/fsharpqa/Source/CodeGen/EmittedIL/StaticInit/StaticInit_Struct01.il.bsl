@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly StaticInit_Struct01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Struct01
 {
-  // Offset: 0x00000000 Length: 0x000007B1
+  // Offset: 0x00000000 Length: 0x000007A1
+}
+.mresource public FSharpSignatureDataB.StaticInit_Struct01
+{
+  // Offset: 0x000007A8 Length: 0x0000009B
 }
 .mresource public FSharpOptimizationData.StaticInit_Struct01
 {
-  // Offset: 0x000007B8 Length: 0x0000021F
+  // Offset: 0x00000848 Length: 0x0000021F
+}
+.mresource public FSharpOptimizationDataB.StaticInit_Struct01
+{
+  // Offset: 0x00000A70 Length: 0x00000035
 }
 .module StaticInit_Struct01.dll
-// MVID: {59B19250-05F6-D6CB-A745-03835092B159}
+// MVID: {5E172EE8-05F6-D6CB-A745-0383E82E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02BA0000
+// Image base: 0x07070000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -71,7 +79,7 @@
       .maxstack  5
       .locals init ([0] valuetype StaticInit_Struct01/C& V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 4,4 : 6,7 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Struct01.fs'
+      .line 4,4 : 6,7 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Struct01.fs'
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()

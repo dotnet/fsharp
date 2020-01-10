@@ -10,7 +10,10 @@ open System.Collections.Generic
 /// When this fix flag is true, this byte is converted to a char using the System.Console.InputEncoding.
 /// This is a code-around for bug://1345.
 /// Fixes to System.Console.ReadKey may break this code around, hence the option here.
+[<AutoOpen>]
 module internal ConsoleOptions =
+
+  let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
 
   let readKeyFixup (c:char) =
       // Assumes the c:char is actually a byte in the System.Console.InputEncoding.
@@ -38,19 +41,26 @@ type internal History() =
         if current >= 0 && current < list.Count then list.[current] else String.Empty
 
     member x.Clear() = list.Clear(); current <- -1
-    member x.Add line =
-        match line with
-        | null | "" -> ()
-        | _ -> list.Add(line)
 
-    member x.AddLast line =
-        match line with
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    member x.Add (line: string) =
+#else
+    member x.Add (line: string?) = 
+#endif
+        match line with 
         | null | "" -> ()
-        | _ -> list.Add(line); current <- list.Count
+        | NonNull line -> list.Add(line)
 
-    // Dead code
-    // member x.First() = current <- 0; x.Current
-    // member x.Last() = current <- list.Count - 1; x.Current
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    member x.AddLast (line: string) =
+#else
+    member x.AddLast (line: string?) =  
+#endif
+        match line with 
+        | null | "" -> ()
+        | NonNull line ->
+            list.Add(line)
+            current <- list.Count
 
     member x.Previous() =
         if (list.Count > 0)  then
@@ -345,7 +355,7 @@ type internal ReadLineConsole() =
             // REVIEW: the Ctrl-Z code is not recognised as EOF by the lexer.
             // REVIEW: looks like a relic of the port of readline, which is currently removable.
             let c = if (key.Key = ConsoleKey.F6) then '\x1A' else key.KeyChar
-            let c = ConsoleOptions.readKeyFixup c
+            let c = readKeyFixup c
             insertChar(c)
 
         let backspace() =
