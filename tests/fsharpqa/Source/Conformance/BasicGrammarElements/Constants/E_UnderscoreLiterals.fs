@@ -1,19 +1,17 @@
-//<Expects id="FS1156" span="(18,11-18,13)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
-//<Expects id="FS1156" span="(18,14-18,19)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
-//<Expects id="FS0599" span="(18,13-18,14)" status="error">Missing qualification after '.'</Expects>
-//<Expects id="FS1156" span="(19,11-19,19)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
-//<Expects id="FS1156" span="(20,29-20,42)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
-//<Expects id="FS1156" span="(22,10-22,13)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
+//<Expects id="FS1156" span="(16,11-16,13)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
+//<Expects id="FS1156" span="(17,11-17,19)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
+//<Expects id="FS1156" span="(18,29-18,42)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
+//<Expects id="FS1156" span="(20,10-20,13)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
+//<Expects id="FS1156" span="(21,10-21,15)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
+//<Expects id="FS1156" span="(22,10-22,15)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
 //<Expects id="FS1156" span="(23,10-23,15)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
-//<Expects id="FS1156" span="(24,10-24,15)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
+//<Expects id="FS1156" span="(24,10-24,14)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
 //<Expects id="FS1156" span="(25,10-25,15)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
-//<Expects id="FS1156" span="(26,10-26,14)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
+//<Expects id="FS1156" span="(26,10-26,15)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
 //<Expects id="FS1156" span="(27,10-27,15)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
-//<Expects id="FS1156" span="(28,10-28,15)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
-//<Expects id="FS1156" span="(29,10-29,15)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
-//<Expects id="FS1156" span="(30,11-30,18)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
-//<Expects id="FS1156" span="(31,11-31,18)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
-//<Expects id="FS1156" span="(32,11-32,16)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
+//<Expects id="FS1156" span="(28,11-28,18)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
+//<Expects id="FS1156" span="(29,11-29,18)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
+//<Expects id="FS1156" span="(30,11-30,16)" status="error">This is not a valid numeric literal. Valid numeric literals include</Expects>
 
 let pi1 = 3_.1415F
 let pi2 = 3._1415F

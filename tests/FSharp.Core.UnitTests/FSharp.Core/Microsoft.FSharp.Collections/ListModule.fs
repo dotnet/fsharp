@@ -1029,7 +1029,7 @@ type ListModule() =
     [<Test>]
     member this.Singleton() =
         Assert.AreEqual([null],List.singleton null)
-        Assert.AreEqual(["1"],List.singleton "1")
+        Assert.AreEqual(["1"],List.singleton "1")   
         Assert.AreEqual([[]],List.singleton [])
         Assert.AreEqual([[||]],List.singleton [||])
         ()
@@ -1040,3 +1040,40 @@ type ListModule() =
         Assert.AreEqual([1,2], List.pairwise [1;2])
         Assert.AreEqual([1,2; 2,3], List.pairwise [1;2;3])
         Assert.AreEqual(["H","E"; "E","L"; "L","L"; "L","O"], List.pairwise ["H";"E";"L";"L";"O"])
+
+    [<Test>]
+    member this.``Slicing with first index reverse behaves as expected``()  = 
+        let list = [ 1;2;3;4;5 ]
+
+        Assert.That(list.[^3..], Is.EquivalentTo(list.[1..]))
+
+    [<Test>]
+    member this.``Slicing with second index reverse behaves as expected``()  = 
+        let list = [ 1;2;3;4;5 ]
+
+        Assert.That(list.[..^1], Is.EquivalentTo(list.[..3]))
+
+    
+    [<Test>]
+    member this.``Slicing with both index reverse behaves as expected``()  = 
+        let list = [ 1;2;3;4;5 ]
+
+        Assert.That(list.[^3..^1], Is.EquivalentTo(list.[1..3]))
+
+    [<Test>]
+    member this.``Slicing with first index reverse and second index non reverse behaves as expected``()=
+        let list = [1;2;3;4;5]
+
+        Assert.That(list.[^3..4], Is.EquivalentTo(list.[1..4]))
+
+    [<Test>]
+    member this.``Slicing with first index non reverse and second index reverse behaves as expected``()=
+        let list = [1;2;3;4;5]
+
+        Assert.That(list.[3..^0], Is.EquivalentTo(list.[3..4]))
+
+    [<Test>]
+    member this.``Get item with reverse index behaves as expected``() = 
+        let list = [1;2;3;4;5]
+
+        Assert.That(list.[^1], Is.EqualTo(4))

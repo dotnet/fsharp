@@ -4,7 +4,7 @@
         $CommonMetadataElements$
         <language>en-US</language>
         <dependencies>
-            <group targetFramework=".NETCoreApp2.1">
+            <group targetFramework=".NETCoreApp3.0">
                 <dependency id="Microsoft.NETCore.Platforms" version="2.0.0" />
                 <dependency id="NETStandard.Library" version="2.0.0" />
                 <dependency id="System.Collections.Immutable" version="1.5.0" />
@@ -44,27 +44,30 @@
             this approach gives a very small deployment. Which is kind of necessary.
         -->
         <!-- assemblies -->
-        <file src="fsc\$Configuration$\netcoreapp2.1\fsc.exe"                                             target="lib\netcoreapp2.1" />
-        <file src="fsi\$Configuration$\netcoreapp2.1\fsi.exe"                                             target="lib\netcoreapp2.1" />
-        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"                            target="lib\netcoreapp2.1" />
-        <file src="FSharp.Compiler.Private\$Configuration$\netstandard2.0\FSharp.Compiler.Private.dll"    target="lib\netcoreapp2.1" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp2.1\FSharp.Build.dll"                           target="lib\netcoreapp2.1" />
+        <file src="fsc\$Configuration$\netcoreapp3.0\fsc.exe"                                             target="lib\netcoreapp3.0" />
+        <file src="fsi\$Configuration$\netcoreapp3.0\fsi.exe"                                             target="lib\netcoreapp3.0" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"                            target="lib\netcoreapp3.0" />
+        <file src="FSharp.Compiler.Private\$Configuration$\netstandard2.0\FSharp.Compiler.Private.dll"    target="lib\netcoreapp3.0" />
+        <file src="FSharp.Build\$Configuration$\netcoreapp3.0\FSharp.Build.dll"                           target="lib\netcoreapp3.0" />
+        <file src="FSharp.DependencyManager\$configuration$\netstandard2.0\FSharp.DependencyManager.dll"  target="lib\netcoreapp3.0" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll"
-                                                                                                          target="lib\netcoreapp2.1" />
+                                                                                                          target="lib\netcoreapp3.0" />
         <!-- additional files -->
-        <file src="fsc\$Configuration$\netcoreapp2.1\default.win32manifest"                               target="contentFiles\any\any" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp2.1\Microsoft.FSharp.Targets"                   target="contentFiles\any\any" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp2.1\Microsoft.Portable.FSharp.Targets"          target="contentFiles\any\any" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp2.1\Microsoft.FSharp.NetSdk.props"              target="contentFiles\any\any" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp2.1\Microsoft.FSharp.NetSdk.targets"            target="contentFiles\any\any" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp2.1\Microsoft.FSharp.Overrides.NetSdk.targets"  target="contentFiles\any\any" />
+        <file src="fsc\$Configuration$\netcoreapp3.0\default.win32manifest"                               target="contentFiles\any\any" />
+        <file src="FSharp.Build\$Configuration$\netcoreapp3.0\Microsoft.FSharp.Targets"                   target="contentFiles\any\any" />
+        <file src="FSharp.Build\$Configuration$\netcoreapp3.0\Microsoft.Portable.FSharp.Targets"          target="contentFiles\any\any" />
+        <file src="FSharp.Build\$Configuration$\netcoreapp3.0\Microsoft.FSharp.NetSdk.props"              target="contentFiles\any\any" />
+        <file src="FSharp.Build\$Configuration$\netcoreapp3.0\Microsoft.FSharp.NetSdk.targets"            target="contentFiles\any\any" />
+        <file src="FSharp.Build\$Configuration$\netcoreapp3.0\Microsoft.FSharp.Overrides.NetSdk.targets"  target="contentFiles\any\any" />
 
         <!-- resources -->
-        <file src="FSharp.Core\$Configuration$\netstandard2.0\**\FSharp.Core.resources.dll"               target="lib\netcoreapp2.1" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.0\**\FSharp.Core.resources.dll"               target="lib\netcoreapp3.0" />
         <file src="FSharp.Compiler.Private\$Configuration$\netstandard2.0\**\FSharp.Compiler.Private.resources.dll"
-                                                                                                          target="lib\netcoreapp2.1" />
+                                                                                                          target="lib\netcoreapp3.0" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\**\FSharp.Compiler.Interactive.Settings.resources.dll"
-                                                                                                          target="lib\netcoreapp2.1" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp2.1\**\FSharp.Build.resources.dll"              target="lib\netcoreapp2.1" />
+                                                                                                          target="lib\netcoreapp3.0" />
+        <file src="FSharp.Build\$Configuration$\netcoreapp3.0\**\FSharp.Build.resources.dll"              target="lib\netcoreapp3.0" />
+        <file src="FSharp.DependencyManager\$configuration$\netstandard2.0\**\FSharp.DependencyManager.resources.dll"
+                                                                                                          target="lib\netcoreapp3.0" />
     </files>
 </package>
