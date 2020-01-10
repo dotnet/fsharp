@@ -168,10 +168,10 @@ let config configurationName envVars =
     let fsharpBuildArchitecture = "net472"
     let fsharpCompilerInteractiveSettingsArchitecture = "net472"
 #else
-    let fscArchitecture = "netcoreapp2.1"
-    let fsiArchitecture = "netcoreapp2.1"
+    let fscArchitecture = "netcoreapp3.0"
+    let fsiArchitecture = "netcoreapp3.0"
     let fsharpCoreArchitecture = "netstandard2.0"
-    let fsharpBuildArchitecture = "netcoreapp2.1"
+    let fsharpBuildArchitecture = "netcoreapp3.0"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."

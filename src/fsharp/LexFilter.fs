@@ -2209,6 +2209,15 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
               pool.Return lessTokenTup
               true
 
+          // ..^1 will get parsed as DOT_DOT_HAT 1 while 1..^2 will get parsed as 1 DOT_DOT HAT 2
+          // because of processing rule underneath this.
+          | (DOT_DOT_HAT) -> 
+              let hatPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-1), tokenTup.EndPos, false)
+              delayToken(let rented = pool.Rent() in rented.Token <- INFIX_AT_HAT_OP("^"); rented.LexbufState <- hatPos; rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
+              delayToken(pool.UseShiftedLocation(tokenTup, DOT_DOT, 0, -1))
+              pool.Return tokenTup
+              true
+
           // Split this token to allow "1..2" for range specification 
           | INT32_DOT_DOT (i, v) ->
               let dotDotPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-2), tokenTup.EndPos, false)

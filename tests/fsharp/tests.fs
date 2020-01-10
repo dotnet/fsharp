@@ -1,4 +1,4 @@
-﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test vvvvvvvvvvvvvvvv
+﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test
 #if INTERACTIVE
 #r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "../../src/scripts/scriptlib.fsx" 
