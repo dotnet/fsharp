@@ -19,7 +19,7 @@ this file.
 
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-        <FSharpBuildAssemblyFile Condition=" '$(FSharpBuildAssemblyFile)' =='' ">FSharp.Build.dll</FSharpBuildAssemblyFile>
+        <FSharpBuildAssemblyFile Condition=" '$(FSharpBuildAssemblyFile)' =='' ">$(MSBuildThisFileDirectory)FSharp.Build.dll</FSharpBuildAssemblyFile>
     </PropertyGroup>
 
     <UsingTask TaskName="Fsc" AssemblyFile="$(FSharpBuildAssemblyFile)" />
