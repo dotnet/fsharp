@@ -122,7 +122,7 @@ let u = Case1 3
 
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test multi project 1 whole project errors`` () = 
@@ -306,7 +306,7 @@ let p = ("""
         FSharpChecker.Create(projectCacheSize=size)
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test ManyProjectsStressTest whole project errors`` () = 
@@ -819,7 +819,7 @@ let ``Test max memory gets triggered`` () =
 
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Type provider project references should not throw exceptions`` () =
@@ -909,7 +909,7 @@ let ``Type provider project references should not throw exceptions`` () =
 //------------------------------------------------------------------------------------
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #else
 [<Ignore("Getting vsunit tests passing again")>]
