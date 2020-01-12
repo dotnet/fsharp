@@ -767,24 +767,32 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | UnresolvedOverloading(denv, callerArgs, failure, m) ->
           let nl = System.Environment.NewLine
-          let displayArgType (name, ttype) =
-              let typeDisplay = NicePrint.prettyStringOfTy denv ttype
-              match name with
-              | Some name -> sprintf "%s: %s" name typeDisplay
-              | None -> sprintf "%s" typeDisplay
           let argsMessage =
               let prefix = nl + nl
               let suffix = nl + nl
               match callerArgs.ArgumentNamesAndTypes with
               | [] -> nl + nl
-              | [item] -> prefix + (item |> displayArgType |> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular) + suffix
               | items -> 
-                  let args = 
+                  // more than one argument, need to lay them out in a single pass
+                  
+                  //let cxs = []
+                  let argsL = 
+                    NicePrint.prettyLayoutOfUnresolvedMethodCallArguments 
+                      denv 
+                      [] 
+                      (items |> List.map (fun (name,tTy) -> tTy, {ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero)); Attribs = []}))
+                      //cxs
+                  let args = argsL |> List.map Layout.showL |> String.concat " "
+                  (*let args = 
                       items 
                       |> List.map displayArgType
                       |> String.concat " * "
-          
-                  prefix + (FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural args) + suffix
+                  *)
+                  let prefixMessage =
+                      match items with
+                      | [_] -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular
+                      | _ -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural
+                  prefix + (prefixMessage args) + suffix
 
           let knownReturnType (cx: TraitConstraintInfo option) =
               match cx with 

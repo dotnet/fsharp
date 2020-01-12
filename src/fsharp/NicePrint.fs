@@ -988,6 +988,37 @@ module private PrintTypes =
     and layoutType denv ty = 
         layoutTypeWithInfo denv SimplifyTypes.typeSimplificationInfo0 ty
 
+
+    let layoutArgInfos denv env argInfos =
+
+        // Format each argument, including its name and type 
+        let argL (ty, argInfo: ArgReprInfo) = 
+       
+            // Detect an optional argument 
+            let isOptionalArg = HasFSharpAttribute denv.g denv.g.attrib_OptionalArgumentAttribute argInfo.Attribs
+            let isParamArray = HasFSharpAttribute denv.g denv.g.attrib_ParamArrayAttribute argInfo.Attribs
+            match argInfo.Name, isOptionalArg, isParamArray, tryDestOptionTy denv.g ty with 
+            // Layout an optional argument 
+            | Some(id), true, _, ValueSome ty -> 
+                leftL (tagPunctuation "?") ^^ sepL (tagParameter id.idText) ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty 
+            // Layout an unnamed argument 
+            | None, _, _, _ -> 
+                layoutTypeWithInfoAndPrec denv env 2 ty
+            // Layout a named argument 
+            | Some id, _, isParamArray, _ -> 
+                let prefix =
+                    if isParamArray then
+                        layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL (tagParameter id.idText)
+                    else
+                        leftL (tagParameter id.idText)
+                prefix ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty
+
+        let allArgsL = 
+            argInfos 
+            |> List.mapSquared argL 
+            |> List.map (sepListL (wordL (tagPunctuation "*")))
+        allArgsL
+
     /// Layout a single type used as the type of a member or value 
     let layoutTopType denv env argInfos rty cxs =
         // Parenthesize the return type to match the topValInfo 
@@ -996,35 +1027,9 @@ module private PrintTypes =
         match argInfos with
         | [] -> rtyL --- cxsL
         | _ -> 
-
-            // Format each argument, including its name and type 
-            let argL (ty, argInfo: ArgReprInfo) = 
-                   
-                // Detect an optional argument 
-                let isOptionalArg = HasFSharpAttribute denv.g denv.g.attrib_OptionalArgumentAttribute argInfo.Attribs
-                let isParamArray = HasFSharpAttribute denv.g denv.g.attrib_ParamArrayAttribute argInfo.Attribs
-                match argInfo.Name, isOptionalArg, isParamArray, tryDestOptionTy denv.g ty with 
-                // Layout an optional argument 
-                | Some(id), true, _, ValueSome ty -> 
-                    leftL (tagPunctuation "?") ^^ sepL (tagParameter id.idText) ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty 
-                // Layout an unnamed argument 
-                | None, _, _, _ -> 
-                    layoutTypeWithInfoAndPrec denv env 2 ty
-                // Layout a named argument 
-                | Some id, _, isParamArray, _ -> 
-                    let prefix =
-                        if isParamArray then
-                            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL (tagParameter id.idText)
-                        else
-                            leftL (tagParameter id.idText)
-                    prefix ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty
-                        
             let delimitReturnValue = tagPunctuation (if denv.useColonForReturnType then ":" else "->")
-
             let allArgsL = 
-                argInfos 
-                |> List.mapSquared argL 
-                |> List.map (sepListL (wordL (tagPunctuation "*")))
+                layoutArgInfos denv env argInfos
                 |> List.map (fun x -> (x ^^ wordL delimitReturnValue)) 
             (List.foldBack (---) allArgsL rtyL) --- cxsL
 
@@ -1073,6 +1078,12 @@ module private PrintTypes =
         let cxs = cxs |> List.filter (fun (tp, _) -> not (parentTyparTys |> List.exists (fun ty -> match tryDestTyparTy denv.g ty with ValueSome destTypar -> typarEq tp destTypar | _ -> false))) 
         prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv argInfos retTy cxs
 
+
+    let private prettyArgInfos denv allTyparInst =
+        function 
+        | [] -> [(denv.g.unit_ty, ValReprInfo.unnamedTopArg1)] 
+        | infos -> infos |> List.map (map1Of2 (instType allTyparInst)) 
+
     // Layout: type spec - class, datatype, record, abbrev 
 
     let private prettyLayoutOfMemberSigCore denv memberToParentInst (typarInst, methTypars: Typars, argInfos, retTy) = 
@@ -1081,7 +1092,7 @@ module private PrintTypes =
             PrettyTypes.NewPrettyTypars memberToParentInst methTypars methTyparNames
 
         let retTy = instType allTyparInst retTy
-        let argInfos = argInfos |> List.map (fun infos -> if isNil infos then [(denv.g.unit_ty, ValReprInfo.unnamedTopArg1)] else infos |> List.map (map1Of2 (instType allTyparInst))) 
+        let argInfos = argInfos |> List.map (prettyArgInfos denv allTyparInst) 
 
         // Also format dummy types corresponding to any type variables on the container to make sure they 
         // aren't chosen as names for displayed variables. 
@@ -1106,6 +1117,24 @@ module private PrintTypes =
             let nameL = if denv.showTyparBinding then layoutTyparDecls denv nameL true niceMethodTypars else nameL
             nameL
         nameL ^^ wordL (tagPunctuation ":") ^^ tauL
+
+
+    let prettyLayoutOfUnresolvedMethodCallArguments denv typarInst argInfos =
+       
+        let argInfos = prettyArgInfos denv typarInst argInfos
+
+        let ___cxs = 
+          argInfos
+          |> List.map (fun (tTy, _) -> 
+            let __tTy,constraints = (PrettyTypes.PrettifyType denv.g tTy)
+            constraints
+          )
+
+        // don't really know what to do to work with CollectInfo below with all the constraints...
+        let cxs = []
+          
+        let env = SimplifyTypes.CollectInfo true (List.collect (List.map fst) [argInfos]) cxs
+        layoutArgInfos denv env [argInfos]
 
     let prettyLayoutOfType denv ty = 
         let ty, cxs = PrettyTypes.PrettifyType denv.g ty
@@ -1246,7 +1275,7 @@ let layoutConst g ty c = PrintTypes.layoutConst g ty c
 
 let prettyLayoutOfMemberSig denv x = x |> PrintTypes.prettyLayoutOfMemberSig denv 
 let prettyLayoutOfUncurriedSig denv argInfos tau = PrintTypes.prettyLayoutOfUncurriedSig denv argInfos tau
-
+let prettyLayoutOfUnresolvedMethodCallArguments = PrintTypes.prettyLayoutOfUnresolvedMethodCallArguments
 //-------------------------------------------------------------------------
 
 /// Printing info objects
