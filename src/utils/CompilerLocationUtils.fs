@@ -182,10 +182,6 @@ module internal FSharpEnvironment =
     //     - default location of fsi.exe in FSharp.VS.FSI.dll (REVIEW: check this)
     //     - default F# binaries directory in (project system) Project.fs
     let BinFolderOfDefaultFSharpCompiler(probePoint:string option) =
-#if FX_NO_WIN_REGISTRY
-        ignore probePoint
-        Some AppDomain.CurrentDomain.BaseDirectory
-#else
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
         try
@@ -200,18 +196,17 @@ module internal FSharpEnvironment =
             // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
             match probePoint with 
             | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p 
-            | _ -> 
-
-            // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
-            let result = Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
-            if not (String.IsNullOrEmpty(result)) then
-                Some result
-            else
-                // For the prototype compiler, we can just use the current domain
-                tryCurrentDomain()
+            | _ ->
+                // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
+                let result = Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
+                if not (String.IsNullOrEmpty(result)) then
+                    Some result
+                else
+                    // For the prototype compiler, we can just use the current domain
+                    tryCurrentDomain()
         with e -> None
 
-
+#if !FX_NO_WIN_REGISTRY
     // Apply the given function to the registry entry corresponding to the subKey.
     // The reg key is disposed at the end of the scope.
     let useKey subKey f =
@@ -236,7 +231,7 @@ module internal FSharpEnvironment =
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Client" ||
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" ||
         runningOnMono
-
+    
     // Check if the running framework version is 4.5 or above.
     // Use the presence of v4.5.x in the registry to distinguish between 4.0 and 4.5
     let IsRunningOnNetFx45OrAbove =
