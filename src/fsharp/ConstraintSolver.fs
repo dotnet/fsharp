@@ -835,10 +835,35 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
     (match anonInfo1.Assembly, anonInfo2.Assembly with 
         | ccu1, ccu2 -> if not (ccuEq ccu1 ccu2) then ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdCcuMismatch(ccu1.AssemblyName, ccu2.AssemblyName), csenv.m,m2)) else ResultD ()
         ) ++ (fun () -> 
+
     if not (anonInfo1.SortedNames = anonInfo2.SortedNames) then 
-        let namesText1 = sprintf "%A" (Array.toList anonInfo1.SortedNames)
-        let namesText2 = sprintf "%A" (Array.toList anonInfo2.SortedNames)
-        ErrorD (ConstraintSolverError(FSComp.SR.tcAnonRecdFieldNameMismatch(namesText1, namesText2), csenv.m,m2)) 
+        let (|Subset|Superset|Overlap|CompletelyDifferent|) (first, second) =
+            let first = Set first
+            let second = Set second
+            let secondOnly = Set.toList (second - first)
+            let firstOnly = Set.toList (first - second)
+
+            if second.IsSubsetOf first then
+                Subset firstOnly
+            elif second.IsSupersetOf first then
+                Superset secondOnly
+            elif Set.intersect first second <> Set.empty then
+                Overlap(firstOnly, secondOnly)
+            else
+                CompletelyDifferent(Seq.toList first)
+        
+        let message =
+            match anonInfo1.SortedNames, anonInfo2.SortedNames with
+            | Subset missingFields ->
+                FSComp.SR.tcAnonRecdFieldNameSubset(string missingFields)
+            | Superset extraFields ->
+                FSComp.SR.tcAnonRecdFieldNameSuperset(string extraFields)
+            | Overlap (missingFields, extraFields) ->
+                FSComp.SR.tcAnonRecdFieldNameMismatch(string missingFields, string extraFields)
+            | CompletelyDifferent missingFields ->
+                FSComp.SR.tcAnonRecdFieldNameDifferent(string missingFields)
+        
+        ErrorD (ConstraintSolverError(message, csenv.m,m2)) 
     else 
         ResultD ())
 
@@ -1710,9 +1735,9 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
               // This works because the types on the r.h.s. of subtype 
               // constraints are head-types and so any further inferences are equational. 
               let collect ty = 
-                  let res = ref [] 
-                  IterateEntireHierarchyOfType (fun x -> res := x :: !res) g amap m AllowMultiIntfInstantiations.No ty
-                  List.rev !res
+                  let mutable res = [] 
+                  IterateEntireHierarchyOfType (fun x -> res <- x :: res) g amap m AllowMultiIntfInstantiations.No ty
+                  List.rev res
               let parents1 = collect ty1
               let parents2 = collect ty2
               trackErrors {

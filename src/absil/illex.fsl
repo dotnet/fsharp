@@ -70,7 +70,6 @@ let kwdInstrTable =
     addTable (fun i -> INSTR_I32_I32 i) Int32Int32Instrs;
     addTable (fun i -> INSTR_I8 i) Int64Instrs;
     addTable (fun i -> INSTR_R i) DoubleInstrs;
-    addTable (fun i -> INSTR_METHOD i) MethodSpecInstrs;
     addTable (fun i -> INSTR_TYPE i) TypeInstrs;
     addTable (fun i -> INSTR_INT_TYPE i) IntTypeInstrs;
     addTable (fun i -> INSTR_VALUETYPE i) ValueTypeInstrs;

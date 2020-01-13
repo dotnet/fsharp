@@ -97,15 +97,15 @@ module NavigationImpl =
     /// Get information for implementation file      
     let getNavigationFromImplFile (modules: SynModuleOrNamespace list) =
         // Map for dealing with name conflicts
-        let nameMap = ref Map.empty 
+        let mutable nameMap = Map.empty 
 
         let addItemName name = 
-            let count = defaultArg (!nameMap |> Map.tryFind name) 0
-            nameMap := (Map.add name (count + 1) (!nameMap))
+            let count = defaultArg (nameMap |> Map.tryFind name) 0
+            nameMap <- (Map.add name (count + 1) (nameMap))
             (count + 1)
         
         let uniqueName name idx = 
-            let total = Map.find name (!nameMap)
+            let total = Map.find name nameMap
             sprintf "%s_%d_of_%d" name idx total
 
         // Create declaration (for the left dropdown)                
@@ -305,13 +305,13 @@ module NavigationImpl =
     /// Get information for signature file      
     let getNavigationFromSigFile (modules: SynModuleOrNamespaceSig list) =
         // Map for dealing with name conflicts
-        let nameMap = ref Map.empty 
+        let mutable nameMap = Map.empty 
         let addItemName name = 
-            let count = defaultArg (!nameMap |> Map.tryFind name) 0
-            nameMap := (Map.add name (count + 1) (!nameMap))
+            let count = defaultArg (nameMap |> Map.tryFind name) 0
+            nameMap <- (Map.add name (count + 1) (nameMap))
             (count + 1)
         let uniqueName name idx = 
-            let total = Map.find name (!nameMap)
+            let total = Map.find name nameMap
             sprintf "%s_%d_of_%d" name idx total
 
         // Create declaration (for the left dropdown)                

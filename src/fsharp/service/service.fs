@@ -54,7 +54,7 @@ type FSharpProjectOptions =
       UseScriptResolutionRules : bool      
       LoadTime : System.DateTime
       UnresolvedReferences : UnresolvedReferencesSet option
-      OriginalLoadReferences: (range * string) list
+      OriginalLoadReferences: (range * string * string) list
       ExtraProjectInfo : obj option
       Stamp : int64 option
     }
@@ -1013,7 +1013,7 @@ type FSharpChecker(legacyReferenceResolver,
         CompileHelpers.setOutputStreams execute
         
         // References used to capture the results of compilation
-        let tcImportsRef = ref (None: TcImports option)
+        let tcImportsRef = ref None
         let assemblyBuilderRef = ref None
         let tcImportsCapture = Some (fun tcImports -> tcImportsRef := Some tcImports)
 

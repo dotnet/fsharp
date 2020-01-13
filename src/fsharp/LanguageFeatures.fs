@@ -24,6 +24,10 @@ type LanguageFeature =
     | NameOf
     | ImplicitYield
     | OpenStaticClasses
+    | DotlessFloat32Literal
+    | PackageManagement
+    | FromEndSlicing
+    | FixedIndexSlice3d4d
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -31,13 +35,14 @@ type LanguageVersion (specifiedVersionAsString) =
     // When we increment language versions here preview is higher than current RTM version
     static let languageVersion46 = 4.6m
     static let languageVersion47 = 4.7m
+    static let languageVersion50 = 5.0m
     static let previewVersion = 9999m                   // Language version when preview specified
     static let defaultVersion = languageVersion47       // Language version when default specified
     static let latestVersion = defaultVersion           // Language version when latest specified
-    static let latestMajorVersion = languageVersion46   // Language version when latestmajor specified
+    static let latestMajorVersion = languageVersion47   // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
-    static let languageVersions = set [| languageVersion46; languageVersion47 |]
+    static let languageVersions = set [| languageVersion46; languageVersion47 (*; languageVersion50 *) |]
 
     static let features =
         dict [
@@ -47,9 +52,15 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.RelaxWhitespace, languageVersion47
             LanguageFeature.ImplicitYield, languageVersion47
 
+            // F# 5.0
+            LanguageFeature.FixedIndexSlice3d4d, languageVersion50
+            LanguageFeature.FromEndSlicing, languageVersion50
+
             // F# preview
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
+            LanguageFeature.DotlessFloat32Literal, languageVersion50
+            LanguageFeature.PackageManagement, previewVersion
         ]
 
     let specified =
@@ -61,6 +72,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | "latestmajor" -> latestMajorVersion
         | "4.6" -> languageVersion46
         | "4.7" -> languageVersion47
+(*      | "5.0" -> languageVersion50    *)
         | _ -> 0m
 
     /// Check if this feature is supported by the selected langversion
@@ -68,6 +80,10 @@ type LanguageVersion (specifiedVersionAsString) =
         match features.TryGetValue featureId with
         | true, v -> v <= specified
         | false, _ -> false
+
+    /// Has preview been explicitly specified
+    member __.IsPreviewEnabled =
+        specified = previewVersion
 
     /// Does the languageVersion support this version string
     member __.ContainsVersion version =
