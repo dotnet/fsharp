@@ -982,7 +982,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
         CheckTypeNoByrefs cenv env m ty
         NoLimit
 
-    | Expr.Obj (_, ty, basev, superInitCall, overrides, iimpls, m) -> 
+    | Expr.Obj (_, ty, basev, superInitCall, overrides, iimpls, _stateVars, m) -> 
         CheckExprNoByrefs cenv env superInitCall
         CheckMethods cenv env basev overrides 
         CheckInterfaceImpls cenv env basev iimpls
@@ -1554,7 +1554,7 @@ and CheckDecisionTreeTargets cenv env targets context =
     |> Array.map (CheckDecisionTreeTarget cenv env context) 
     |> (CombineLimits << List.ofArray)
 
-and CheckDecisionTreeTarget cenv env context (TTarget(vs, e, _)) = 
+and CheckDecisionTreeTarget cenv env context (TTarget(vs, e, _, _)) = 
     BindVals cenv env vs 
     vs |> List.iter (CheckValSpec PermitByRefType.All cenv env)
     CheckExpr cenv env e context 

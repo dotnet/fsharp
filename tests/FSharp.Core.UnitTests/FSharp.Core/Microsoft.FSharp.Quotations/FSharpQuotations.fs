@@ -2,7 +2,7 @@
 
 // Various tests for Microsoft.FSharp.Quotations
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Quotations
+namespace FSharp.Core.UnitTests.Quotations
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
