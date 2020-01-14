@@ -1501,7 +1501,7 @@ module rec ILBinaryReaderImpl =
             InlineNone(noPrefixes (AI_conv_ovf_un(DT_U8)))//byte OperandType.InlineNone           // conv.ovf.u8.un
             InlineNone(noPrefixes (AI_conv_ovf_un(DT_I)))//byte OperandType.InlineNone           // conv.ovf.i.un
             InlineNone(noPrefixes (AI_conv_ovf_un(DT_U)))//byte OperandType.InlineNone           // conv.ovf.u.un
-            InlineType(noPrefixes (fun ilType -> I_unbox(ilType)))//byte OperandType.InlineType           // box
+            InlineType(noPrefixes (fun ilType -> I_box(ilType)))//byte OperandType.InlineType           // box
             InlineType(noPrefixes (fun ilType -> I_newarr(ILArrayShape.SingleDimensional, ilType)))//byte OperandType.InlineType           // newarr
             InlineNone(noPrefixes I_ldlen)//byte OperandType.InlineNone           // ldlen
             InlineType(readonlyPrefix (fun ilReadonly ilType -> I_ldelema(ilReadonly, false, ILArrayShape.SingleDimensional, ilType)))//byte OperandType.InlineType           // ldelema
