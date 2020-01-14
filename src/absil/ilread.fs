@@ -1658,7 +1658,7 @@ module rec ILBinaryReaderImpl =
         if operation = 0xfe then TwoByteDecoders.[int (ilReader.ReadByte())]
         else OneByteDecoders.[operation]
 
-    let readILInstrs (cenv: cenv) (ilReader: byref<BlobReader>) =
+    let readILInstrs (cenv: cenv) _typarOffset (ilReader: byref<BlobReader>) =
         let mdReader = cenv.MetadataReader
 
         let instrs = ResizeArray()
@@ -1701,6 +1701,13 @@ module rec ILBinaryReaderImpl =
             | PrefixInlineType(f) ->
                 let handle = MetadataTokens.EntityHandle(ilReader.ReadInt32())
                 let ilType = readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle
+                let ilType =
+                    if ilType.IsNominal then
+                        let tspec = ilType.TypeSpec
+                        let tspec = mkILTySpec (tspec.TypeRef, mkILGenericArgsByCount 0 tspec.GenericArgs.Length)
+                        mkILTy ilType.Boxity tspec
+                    else
+                        ilType
                 f prefixes ilType
 
             | decoder ->
@@ -1757,6 +1764,13 @@ module rec ILBinaryReaderImpl =
                     | InlineType(f) ->
                         let handle = MetadataTokens.EntityHandle(ilReader.ReadInt32())
                         let ilType = readILType cenv SignatureTypeKind.Class (* original reader assumed object, it's ok *) handle
+                        let ilType =
+                            if ilType.IsNominal then
+                                let tspec = ilType.TypeSpec
+                                let tspec = mkILTySpec (tspec.TypeRef, mkILGenericArgsByCount 0 tspec.GenericArgs.Length)
+                                mkILTy ilType.Boxity tspec
+                            else
+                                ilType
                         f prefixes ilType
                     
                     | InlineString(f) ->
@@ -1869,9 +1883,9 @@ module rec ILBinaryReaderImpl =
         | _ ->
             List.empty
 
-    let readILCode (cenv: cenv) (_methDef: MethodDefinition) (methBodyBlock: MethodBodyBlock) : ILCode =
+    let readILCode (cenv: cenv) typarOffset (_methDef: MethodDefinition) (methBodyBlock: MethodBodyBlock) : ILCode =
         let mutable ilReader = methBodyBlock.GetILReader()
-        let instrs, rawToLabel, lab2pc, _raw2nextLab = readILInstrs cenv &ilReader
+        let instrs, rawToLabel, lab2pc, _raw2nextLab = readILInstrs cenv typarOffset &ilReader
 
         let exceptions =
             methBodyBlock.ExceptionRegions
@@ -1907,7 +1921,7 @@ module rec ILBinaryReaderImpl =
             Locals = [] //let locals = readMethodDebugInfo cenv methDef raw2nextLab - does not work yet and didn't in the original reader
         }
 
-    let readILMethodBody (cenv: cenv) (methDef: MethodDefinition) : ILMethodBody =
+    let readILMethodBody (cenv: cenv) typarOffset (methDef: MethodDefinition) : ILMethodBody =
         let peReader = cenv.PEReader
         let mdReader = cenv.MetadataReader
 
@@ -1917,7 +1931,7 @@ module rec ILBinaryReaderImpl =
             if methBodyBlock.LocalSignature.IsNil then []
             else decodeLocalSignature cenv mdReader methBodyBlock.LocalSignature
 
-        let ilCode = readILCode cenv methDef methBodyBlock
+        let ilCode = readILCode cenv typarOffset methDef methBodyBlock
     
         {
             IsZeroInit = methBodyBlock.LocalVariablesInitialized
@@ -1929,7 +1943,7 @@ module rec ILBinaryReaderImpl =
             SourceMarker = None // Note: The original reader never set this.
         }
 
-    let readMethodBody (cenv: cenv) (methDef: MethodDefinition) =
+    let readMethodBody (cenv: cenv) typarOffset (methDef: MethodDefinition) =
         let mdReader = cenv.MetadataReader
         let attrs = methDef.Attributes
         let implAttrs = methDef.ImplAttributes
@@ -1957,7 +1971,7 @@ module rec ILBinaryReaderImpl =
         elif codeType <> 0x00 || int (attrs &&& MethodAttributes.Abstract) <> 0 || int (implAttrs &&& MethodImplAttributes.InternalCall) <> 0 || int (implAttrs &&& MethodImplAttributes.Unmanaged) <> 0 then
             MethodBody.Abstract
         elif not cenv.IsMetadataOnly then
-            MethodBody.IL(readILMethodBody cenv methDef)
+            MethodBody.IL(readILMethodBody cenv typarOffset methDef)
         else
             MethodBody.NotAvailable
 
@@ -1987,7 +2001,7 @@ module rec ILBinaryReaderImpl =
                     callingConv = mkILCallingConv si.Header,
                     parameters = parameters,
                     ret = ret,
-                    body = mkMethBodyLazyAux (lazy readMethodBody cenv methDef),
+                    body = mkMethBodyLazyAux (lazy readMethodBody cenv typarOffset methDef),
                     isEntryPoint = isEntryPoint,
                     genericParams = readILGenericParameterDefs cenv (methDef.GetGenericParameters()),
                     securityDeclsStored = readILSecurityDeclsStored cenv (methDef.GetDeclarativeSecurityAttributes()),
