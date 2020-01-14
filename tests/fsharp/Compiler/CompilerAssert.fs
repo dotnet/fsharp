@@ -84,6 +84,7 @@ type CompilerAssert private () =
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <UseFSharpPreview>true</UseFSharpPreview>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
@@ -325,18 +326,69 @@ let main argv = 0"""
             compileCompilation ignoreWarnings cmpl (fun ((errors, _), _) ->
                 assertErrors ignoreWarnings errors))
 
-    static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute) =
+    static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess) =
         let ignoreWarnings = defaultArg ignoreWarnings false
         let beforeExecute = defaultArg beforeExecute (fun _ _ -> ())
+        let newProcess = defaultArg newProcess false
         lock gate (fun () -> 
             compileCompilation ignoreWarnings cmpl (fun ((errors, outputFilePath), deps) ->
                 assertErrors ignoreWarnings errors
                 beforeExecute outputFilePath deps
-                executeBuiltApp outputFilePath deps))
+                if newProcess then
+                    let mutable pinfo = ProcessStartInfo()
+                    pinfo.RedirectStandardError <- true
+                    pinfo.RedirectStandardOutput <- true
+#if !NETCOREAPP
+                    pinfo.FileName <- outputFilePath
+#else
+                    pinfo.FileName <- "dotnet"
+                    pinfo.Arguments <- outputFilePath
+
+                    let runtimeconfig =
+                        """
+{
+    "runtimeOptions": {
+        "tfm": "netcoreapp3.1",
+        "framework": {
+            "name": "Microsoft.NETCore.App",
+            "version": "3.1.0"
+        }
+    }
+}
+                        """
+
+                    let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
+                    File.WriteAllText(runtimeconfigPath, runtimeconfig)
+                    use _disposal =
+                        { new IDisposable with
+                            member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
+#endif
+                    pinfo.UseShellExecute <- false
+                    let p = Process.Start pinfo
+                    let errors = p.StandardError.ReadToEnd()
+                    Assert.True(p.WaitForExit(120000))
+                    if p.ExitCode <> 0 then
+                        Assert.Fail errors
+                else
+                    executeBuiltApp outputFilePath deps))
 
     static member Pass (source: string) =
         lock gate <| fun () ->
             let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
+
+            Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
+
+            match fileAnswer with
+            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
+
+            Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
+
+    static member PassWithOptions options (source: string) =
+        lock gate <| fun () ->
+            let options = { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions}
+
+            let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, options) |> Async.RunSynchronously
 
             Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
 
@@ -386,19 +438,25 @@ let main argv = 0"""
     static member TypeCheckSingleError (source: string) (expectedServerity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrors source [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    static member CompileExe (source: string) =
-        compile true [||] source (fun (errors, _) ->
+    static member CompileExeWithOptions options (source: string) =
+        compile true options source (fun (errors, _) ->
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors))
 
-    static member CompileExeAndRun (source: string) =
-        compile true [||] source (fun (errors, outputExe) ->
+    static member CompileExe (source: string) =
+        CompilerAssert.CompileExeWithOptions [||] source
+
+    static member CompileExeAndRunWithOptions options (source: string) =
+        compile true options source (fun (errors, outputExe) ->
 
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
             executeBuiltApp outputExe []
         )
+
+    static member CompileExeAndRun (source: string) =
+        CompilerAssert.CompileExeAndRunWithOptions [||] source
 
     static member CompileLibraryAndVerifyILWithOptions options (source: string) (f: ILVerifier -> unit) =
         compile false options source (fun (errors, outputFilePath) ->
@@ -413,7 +471,7 @@ let main argv = 0"""
     static member CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions [||] source f
 
-    static member RunScript (source: string) (expectedErrorMessages: string list) =
+    static member RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =
         lock gate <| fun () ->
             // Intialize output and input streams
             use inStream = new StringReader("")
@@ -423,10 +481,11 @@ let main argv = 0"""
             // Build command line arguments & start FSI session
             let argv = [| "C:\\fsi.exe" |]
     #if !NETCOREAPP
-            let allArgs = Array.append argv [|"--noninteractive"|]
+            let args = Array.append argv [|"--noninteractive"|]
     #else
-            let allArgs = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
+            let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
     #endif
+            let allArgs = Array.append args options
 
             let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
             use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
@@ -448,6 +507,9 @@ let main argv = 0"""
                 ||> Seq.iter2 (fun expectedErrorMessage errorMessage ->
                     Assert.AreEqual(expectedErrorMessage, errorMessage)
             )
+
+    static member RunScript source expectedErrorMessages =
+        CompilerAssert.RunScriptWithOptions [||] source expectedErrorMessages
 
     static member ParseWithErrors (source: string) expectedParseErrors =
         let sourceFileName = "test.fs"
