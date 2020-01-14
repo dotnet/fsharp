@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.AbstractIL
+module FSharp.Compiler.AbstractIL.ILBinaryReader
 
 open System
 open System.IO
@@ -2433,150 +2433,148 @@ module rec ILBinaryReaderImpl =
           Resources = readILResources cenv
         }, ilAsmRefs
 
-module ILBinaryReader =
+type ILReaderMetadataSnapshot = (obj * nativeint * int) 
+type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
-    type ILReaderMetadataSnapshot = (obj * nativeint * int) 
-    type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
+[<RequireQualifiedAccess>]
+type MetadataOnlyFlag = Yes | No
 
-    [<RequireQualifiedAccess>]
-    type MetadataOnlyFlag = Yes | No
+[<RequireQualifiedAccess>]
+type ReduceMemoryFlag = Yes | No
 
-    [<RequireQualifiedAccess>]
-    type ReduceMemoryFlag = Yes | No
+type ILReaderOptions =
+    { pdbDirPath: string option
+      ilGlobals: ILGlobals
+      reduceMemoryUsage: ReduceMemoryFlag
+      metadataOnly: MetadataOnlyFlag
+      tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
 
-    type ILReaderOptions =
-        { pdbDirPath: string option
-          ilGlobals: ILGlobals
-          reduceMemoryUsage: ReduceMemoryFlag
-          metadataOnly: MetadataOnlyFlag
-          tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
-
-    type ILModuleReader =
-        abstract ILModuleDef : ILModuleDef
-        abstract ILAssemblyRefs : ILAssemblyRef list
+type ILModuleReader =
+    abstract ILModuleDef : ILModuleDef
+    abstract ILAssemblyRefs : ILAssemblyRef list
     
-        /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
-        inherit  System.IDisposable
+    /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
+    inherit  System.IDisposable
 
-    type Statistics = 
-        { mutable rawMemoryFileCount : int
-          mutable memoryMapFileOpenedCount : int
-          mutable memoryMapFileClosedCount : int
-          mutable weakByteFileCount : int
-          mutable byteFileCount : int }
+type Statistics = 
+    { mutable rawMemoryFileCount : int
+      mutable memoryMapFileOpenedCount : int
+      mutable memoryMapFileClosedCount : int
+      mutable weakByteFileCount : int
+      mutable byteFileCount : int }
 
-    let defaultStatistics = 
-        { rawMemoryFileCount = 0
-          memoryMapFileOpenedCount = 0
-          memoryMapFileClosedCount = 0
-          weakByteFileCount = 0
-          byteFileCount = 0 }
+let defaultStatistics = 
+    { rawMemoryFileCount = 0
+      memoryMapFileOpenedCount = 0
+      memoryMapFileClosedCount = 0
+      weakByteFileCount = 0
+      byteFileCount = 0 }
 
-    let GetStatistics() = defaultStatistics
+let GetStatistics() = defaultStatistics
 
-    let OpenILModuleReaderAux (memory: ReadOnlyByteMemory) (opts: ILReaderOptions) =
-        let peReader = new PEReader(memory.AsStream())
-        let pdbReaderProviderOpt = 
-            opts.pdbDirPath
-            |> Option.bind (fun pdbDirPath ->
-                let streamProvider = System.Func<_,_>(fun pdbPath -> ByteMemory.FromFile(pdbPath, FileAccess.Read, canShadowCopy=true).AsReadOnlyStream())
-                match peReader.TryOpenAssociatedPortablePdb(pdbDirPath, streamProvider) with
-                | true, pdbReaderProvider, pdbPath -> Some(pdbReaderProvider, pdbPath)
-                | _ -> None)
-        let ilModuleDef, ilAsmRefs = readModuleDef opts.ilGlobals peReader (opts.metadataOnly = MetadataOnlyFlag.Yes) (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes) pdbReaderProviderOpt
-        {   new Object() with
+let OpenILModuleReaderAux (memory: ReadOnlyByteMemory) (opts: ILReaderOptions) =
+    let peReader = new PEReader(memory.AsStream())
+    let pdbReaderProviderOpt = 
+        opts.pdbDirPath
+        |> Option.bind (fun pdbDirPath ->
+            let streamProvider = System.Func<_,_>(fun pdbPath -> ByteMemory.FromFile(pdbPath, FileAccess.Read, canShadowCopy=true).AsReadOnlyStream())
+            match peReader.TryOpenAssociatedPortablePdb(pdbDirPath, streamProvider) with
+            | true, pdbReaderProvider, pdbPath -> Some(pdbReaderProvider, pdbPath)
+            | _ -> None)
+    let ilModuleDef, ilAsmRefs = readModuleDef opts.ilGlobals peReader (opts.metadataOnly = MetadataOnlyFlag.Yes) (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes) pdbReaderProviderOpt
+    {   new Object() with
     
-                override _.Finalize() =
-                    peReader.Dispose()
+            override _.Finalize() =
+                peReader.Dispose()
 
-            interface ILModuleReader with
+        interface ILModuleReader with
 
-                member _.ILModuleDef = ilModuleDef
+            member _.ILModuleDef = ilModuleDef
 
-                member _.ILAssemblyRefs = ilAsmRefs
+            member _.ILAssemblyRefs = ilAsmRefs
 
-            interface IDisposable with
+        interface IDisposable with
 
-                member _.Dispose() = () }
+            member _.Dispose() = () }
 
-    let OpenILModuleReaderFromBytes (_fileNameForDebugOutput: string) assemblyContents opts =
-        let memory = ByteMemory.FromArray assemblyContents
-        OpenILModuleReaderAux (memory.AsReadOnly()) opts
+let OpenILModuleReaderFromBytes (_fileNameForDebugOutput: string) assemblyContents opts =
+    let memory = ByteMemory.FromArray assemblyContents
+    OpenILModuleReaderAux (memory.AsReadOnly()) opts
 
-    let OpenILModuleReaderFromFile fileName opts =
-        let memory = ByteMemory.FromFile(fileName, FileAccess.Read, canShadowCopy=true)
-        OpenILModuleReaderAux (memory.AsReadOnly()) opts
+let OpenILModuleReaderFromFile fileName opts =
+    let memory = ByteMemory.FromFile(fileName, FileAccess.Read, canShadowCopy=true)
+    OpenILModuleReaderAux (memory.AsReadOnly()) opts
 
-    type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * writeStamp: DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag with
+type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * writeStamp: DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag with
 
-        member x.WriteStamp =
-            match x with
-            | ILModuleReaderCacheKey(writeStamp=writeStamp) -> writeStamp
+    member x.WriteStamp =
+        match x with
+        | ILModuleReaderCacheKey(writeStamp=writeStamp) -> writeStamp
 
-    let stronglyHeldReaderCacheSizeDefault = 30
-    let stronglyHeldReaderCacheSize = try (match System.Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with null -> stronglyHeldReaderCacheSizeDefault | s -> int32 s) with _ -> stronglyHeldReaderCacheSizeDefault
+let stronglyHeldReaderCacheSizeDefault = 30
+let stronglyHeldReaderCacheSize = try (match System.Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with null -> stronglyHeldReaderCacheSizeDefault | s -> int32 s) with _ -> stronglyHeldReaderCacheSizeDefault
 
-    // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
-    // Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
-    type ILModuleReaderCache1LockToken() = interface LockToken
-    let ilModuleReaderCache1 =
-        new AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>
-               (stronglyHeldReaderCacheSize, 
-                keepMax=stronglyHeldReaderCacheSize, // only strong entries
-                areSimilar=(fun (x, y) -> x = y))
-    let ilModuleReaderCache1Lock = Lock()
+// ++GLOBAL MUTABLE STATE (concurrency safe via locking)
+// Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
+type ILModuleReaderCache1LockToken() = interface LockToken
+let ilModuleReaderCache1 =
+    new AgedLookup<ILModuleReaderCache1LockToken, ILModuleReaderCacheKey, ILModuleReader>
+            (stronglyHeldReaderCacheSize, 
+            keepMax=stronglyHeldReaderCacheSize, // only strong entries
+            areSimilar=(fun (x, y) -> x = y))
+let ilModuleReaderCache1Lock = Lock()
 
-    // // Cache to reuse readers that have already been created and are not yet GC'd
-    let ilModuleReaderCache2 = new ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
+// // Cache to reuse readers that have already been created and are not yet GC'd
+let ilModuleReaderCache2 = new ConcurrentDictionary<ILModuleReaderCacheKey, System.WeakReference<ILModuleReader>>(HashIdentity.Structural)
 
-    let ClearAllILModuleReaderCache () =
-        ilModuleReaderCache1.Clear(ILModuleReaderCache1LockToken())
-        ilModuleReaderCache2.Clear()
+let ClearAllILModuleReaderCache () =
+    ilModuleReaderCache1.Clear(ILModuleReaderCache1LockToken())
+    ilModuleReaderCache2.Clear()
 
-    let OpenILModuleReader fileName opts =
-        let (ILModuleReaderCacheKey (fullPath,_,_,_,_,_) as key) = 
-            let fullPath = FileSystem.GetFullPathShim fileName
-            let writeTime = FileSystem.GetLastWriteTimeShim fileName
-            ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
+let OpenILModuleReader fileName opts =
+    let (ILModuleReaderCacheKey (fullPath,_,_,_,_,_) as key) = 
+        let fullPath = FileSystem.GetFullPathShim fileName
+        let writeTime = FileSystem.GetLastWriteTimeShim fileName
+        ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
 
-        let cacheResult1 = 
-            // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
-            if opts.pdbDirPath.IsNone then 
-                ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.TryGet(ltok, key))
-            else 
-                None
+    let cacheResult1 = 
+        // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
+        if opts.pdbDirPath.IsNone then 
+            ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.TryGet(ltok, key))
+        else 
+            None
         
-        match cacheResult1 with 
-        | Some ilModuleReader -> ilModuleReader
-        | None -> 
+    match cacheResult1 with 
+    | Some ilModuleReader -> ilModuleReader
+    | None -> 
 
-        let cacheResult2 = 
-            // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
-            if opts.pdbDirPath.IsNone then 
-                ilModuleReaderCache2.TryGetValue key
-            else 
-                false, Unchecked.defaultof<_>
+    let cacheResult2 = 
+        // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
+        if opts.pdbDirPath.IsNone then 
+            ilModuleReaderCache2.TryGetValue key
+        else 
+            false, Unchecked.defaultof<_>
 
-        let mutable res = Unchecked.defaultof<_> 
-        match cacheResult2 with 
-        | true, weak when weak.TryGetTarget(&res) -> res
-        | _ ->
+    let mutable res = Unchecked.defaultof<_> 
+    match cacheResult2 with 
+    | true, weak when weak.TryGetTarget(&res) -> res
+    | _ ->
 
-        let ilModuleReader = OpenILModuleReaderFromFile fullPath opts
-        ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.Put(ltok, key, ilModuleReader))
-        ilModuleReaderCache2.[key] <- System.WeakReference<_>(ilModuleReader)
-        ilModuleReader
+    let ilModuleReader = OpenILModuleReaderFromFile fullPath opts
+    ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.Put(ltok, key, ilModuleReader))
+    ilModuleReaderCache2.[key] <- System.WeakReference<_>(ilModuleReader)
+    ilModuleReader
         
-    [<AutoOpen>]
-    module Shim =
+[<AutoOpen>]
+module Shim =
 
-        type IAssemblyReader =
-            abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
+    type IAssemblyReader =
+        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
 
-        [<Sealed>]
-        type DefaultAssemblyReader() =
-            interface IAssemblyReader with
-                member __.GetILModuleReader(filename, readerOptions) =
-                    OpenILModuleReader filename readerOptions
+    [<Sealed>]
+    type DefaultAssemblyReader() =
+        interface IAssemblyReader with
+            member __.GetILModuleReader(filename, readerOptions) =
+                OpenILModuleReader filename readerOptions
 
-        let mutable AssemblyReader = DefaultAssemblyReader() :> IAssemblyReader
+    let mutable AssemblyReader = DefaultAssemblyReader() :> IAssemblyReader
