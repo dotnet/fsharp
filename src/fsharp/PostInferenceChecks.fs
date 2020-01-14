@@ -322,14 +322,14 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, v
     // In an ideal world we would, instead, record the solutions to these constraints as "witness variables" in expressions, 
     // rather than solely in types. 
     match ty with 
-    | TType_var (tp, _nullness) when tp.Solution.IsSome  -> 
-        tp.Constraints |> List.iter (fun cx -> 
+    | TType_var (tp, _nullness) when tp.Solution.IsSome ->
+        for cx in tp.Constraints do
             match cx with 
             | TyparConstraint.MayResolveMember((TTrait(_, _, _, _, _, soln)), _) -> 
                  match visitTraitSolutionOpt, !soln with 
                  | Some visitTraitSolution, Some sln -> visitTraitSolution sln
                  | _ -> ()
-            | _ -> ())
+            | _ -> ()
     | _ -> ()
     
     let ty =
@@ -380,10 +380,12 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, v
                     visitTyar (env, tp)
 
 and CheckTypesDeep cenv f g env tys = 
-    tys |> List.iter (CheckTypeDeep cenv f g env true)
+    for ty in tys do
+        CheckTypeDeep cenv f g env true ty
 
 and CheckTypesDeepNoInner cenv f g env tys = 
-    tys |> List.iter (CheckTypeDeep cenv f g env false)
+    for ty in tys do
+        CheckTypeDeep cenv f g env false ty
 
 and CheckTypeConstraintDeep cenv f g env x =
      match x with 
