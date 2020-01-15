@@ -754,6 +754,7 @@ let GetScopeRefAsImplementationElem cenv scoref =
     | ILScopeRef.Local -> (i_AssemblyRef, 0)
     | ILScopeRef.Assembly aref -> (i_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
     | ILScopeRef.Module mref -> (i_File, GetModuleRefAsFileIdx cenv mref)
+    | ILScopeRef.PrimaryAssembly -> (i_AssemblyRef, GetAssemblyRefAsIdx cenv cenv.ilg.primaryAssemblyRef)
  
 // -------------------------------------------------------------------- 
 // Type references, types etc.
@@ -781,6 +782,7 @@ and GetResolutionScopeAsElem cenv (scoref, enc) =
         | ILScopeRef.Local -> (rs_Module, 1) 
         | ILScopeRef.Assembly aref -> (rs_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
         | ILScopeRef.Module mref -> (rs_ModuleRef, GetModuleRefAsIdx cenv mref)
+        | ILScopeRef.PrimaryAssembly -> (rs_AssemblyRef, GetAssemblyRefAsIdx cenv cenv.ilg.primaryAssemblyRef)
     else
         let enc2, n2 = List.frontAndBack enc
         (rs_TypeRef, GetTypeDescAsTypeRefIdx cenv (scoref, enc2, n2))
@@ -866,27 +868,25 @@ and GetTypeAsTypeSpecIdx cenv env ty =
     FindOrAddSharedRow cenv TableNames.TypeSpec (GetTypeAsTypeSpecRow cenv env ty)
 
 and EmitType cenv env bb ty =
+    let ilg = cenv.ilg
     match ty with 
-  // REVIEW: what are these doing here? 
-    | ILType.Value tspec when tspec.Name = "System.String" -> bb.EmitByte et_STRING 
-    | ILType.Value tspec when tspec.Name = "System.Object" -> bb.EmitByte et_OBJECT 
-    | ty when isILSByteTy ty -> bb.EmitByte et_I1 
-    | ty when isILInt16Ty ty -> bb.EmitByte et_I2 
-    | ty when isILInt32Ty ty -> bb.EmitByte et_I4 
-    | ty when isILInt64Ty ty -> bb.EmitByte et_I8 
-    | ty when isILByteTy ty -> bb.EmitByte et_U1 
-    | ty when isILUInt16Ty ty -> bb.EmitByte et_U2 
-    | ty when isILUInt32Ty ty -> bb.EmitByte et_U4 
-    | ty when isILUInt64Ty ty -> bb.EmitByte et_U8 
-    | ty when isILDoubleTy ty -> bb.EmitByte et_R8 
-    | ty when isILSingleTy ty -> bb.EmitByte et_R4 
-    | ty when isILBoolTy ty -> bb.EmitByte et_BOOLEAN 
-    | ty when isILCharTy ty -> bb.EmitByte et_CHAR 
-    | ty when isILStringTy ty -> bb.EmitByte et_STRING 
-    | ty when isILObjectTy ty -> bb.EmitByte et_OBJECT 
-    | ty when isILIntPtrTy ty -> bb.EmitByte et_I 
-    | ty when isILUIntPtrTy ty -> bb.EmitByte et_U 
-    | ty when isILTypedReferenceTy ty -> bb.EmitByte et_TYPEDBYREF 
+    | ty when isILSByteTy ilg ty -> bb.EmitByte et_I1 
+    | ty when isILInt16Ty ilg ty -> bb.EmitByte et_I2 
+    | ty when isILInt32Ty ilg ty -> bb.EmitByte et_I4 
+    | ty when isILInt64Ty ilg ty -> bb.EmitByte et_I8 
+    | ty when isILByteTy ilg ty -> bb.EmitByte et_U1 
+    | ty when isILUInt16Ty ilg ty -> bb.EmitByte et_U2 
+    | ty when isILUInt32Ty ilg ty -> bb.EmitByte et_U4 
+    | ty when isILUInt64Ty ilg ty -> bb.EmitByte et_U8 
+    | ty when isILDoubleTy ilg ty -> bb.EmitByte et_R8 
+    | ty when isILSingleTy ilg ty -> bb.EmitByte et_R4 
+    | ty when isILBoolTy ilg ty -> bb.EmitByte et_BOOLEAN 
+    | ty when isILCharTy ilg ty -> bb.EmitByte et_CHAR 
+    | ty when isILStringTy ilg ty -> bb.EmitByte et_STRING 
+    | ty when isILObjectTy ilg ty -> bb.EmitByte et_OBJECT 
+    | ty when isILIntPtrTy ilg ty -> bb.EmitByte et_I 
+    | ty when isILUIntPtrTy ilg ty -> bb.EmitByte et_U 
+    | ty when isILTypedReferenceTy ilg ty -> bb.EmitByte et_TYPEDBYREF 
 
     | ILType.Boxed tspec -> EmitTypeSpec cenv env bb (et_CLASS, tspec)
     | ILType.Value tspec -> EmitTypeSpec cenv env bb (et_VALUETYPE, tspec)
@@ -3621,6 +3621,7 @@ let writeBinaryAndReportMappings (outfile,
                 match ilg.primaryAssemblyScopeRef with 
                 | ILScopeRef.Local -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Local" 
                 | ILScopeRef.Module(_) -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Module"
+                | ILScopeRef.PrimaryAssembly -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.PrimaryAssembly"
                 | ILScopeRef.Assembly aref ->
                     match aref.Version with
                     | Some version when version.Major = 2us -> parseILVersion "2.0.50727.0"

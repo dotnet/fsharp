@@ -515,6 +515,7 @@ let getNameOfScopeRef sref =
     | ILScopeRef.Local -> "<local>"
     | ILScopeRef.Module mref -> mref.Name
     | ILScopeRef.Assembly aref -> aref.Name
+    | ILScopeRef.PrimaryAssembly -> "<primary>"
 
 #if !NO_EXTENSIONTYPING
 let ComputeDefinitionLocationOfProvidedItem (p: Tainted<#IProvidedCustomAttributeProvider>) =

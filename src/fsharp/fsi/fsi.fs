@@ -1038,7 +1038,7 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError(fsiConsoleOutput);
             
         ReportTime tcConfig "Assembly refs Normalised"; 
-        let mainmod3 = Morphs.morphILScopeRefsInILModuleMemoized ilGlobals (NormalizeAssemblyRefs (ctok, tcImports)) ilxMainModule
+        let mainmod3 = Morphs.morphILScopeRefsInILModuleMemoized ilGlobals (NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)) ilxMainModule
         errorLogger.AbortOnError(fsiConsoleOutput);
 
 #if DEBUG

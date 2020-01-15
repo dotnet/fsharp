@@ -943,9 +943,11 @@ let p_ILAssemblyRef (x: ILAssemblyRef) st =
 
 let p_ILScopeRef x st =
     match x with
-    | ILScopeRef.Local         -> p_byte 0 st
-    | ILScopeRef.Module mref   -> p_byte 1 st; p_ILModuleRef mref st
-    | ILScopeRef.Assembly aref -> p_byte 2 st; p_ILAssemblyRef aref st
+    | ILScopeRef.Local           -> p_byte 0 st
+    | ILScopeRef.Module mref     -> p_byte 1 st; p_ILModuleRef mref st
+    | ILScopeRef.Assembly aref   -> p_byte 2 st; p_ILAssemblyRef aref st
+    // Encode primary assembly as a normal assembly ref
+    | ILScopeRef.PrimaryAssembly -> p_byte 2 st; p_ILAssemblyRef st.oglobals.ilg.primaryAssemblyRef st
 
 let u_ILPublicKey st =
     let tag = u_byte st
