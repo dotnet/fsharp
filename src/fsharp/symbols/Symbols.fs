@@ -99,7 +99,7 @@ module Impl =
             invalidOp (sprintf "The entity '%s' does not exist or is in an unresolved assembly." poorQualifiedName)
 
     /// Checking accessibility that arise from different compilations needs more care - this is a duplicate of the F# compiler code for this case
-    let checkForCrossProjectAccessibility (thisCcu2:CcuThunk, ad2) (thisCcu1, taccess1) = 
+    let checkForCrossProjectAccessibility (ilg: ILGlobals) (thisCcu2:CcuThunk, ad2) (thisCcu1, taccess1) = 
         match ad2 with 
         | AccessibleFrom(cpaths2, _) ->
             let nameOfScoRef (thisCcu:CcuThunk) scoref = 
@@ -107,6 +107,7 @@ module Impl =
                 | ILScopeRef.Local -> thisCcu.AssemblyName 
                 | ILScopeRef.Assembly aref -> aref.Name 
                 | ILScopeRef.Module mref -> mref.Name
+                | ILScopeRef.PrimaryAssembly -> ilg.primaryAssemblyName
             let canAccessCompPathFromCrossProject (CompPath(scoref1, cpath1)) (CompPath(scoref2, cpath2)) =
                 let rec loop p1 p2  = 
                     match p1, p2 with 
@@ -328,7 +329,7 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                               if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity] 
                               else Item.UnqualifiedType [entity]), 
                          (fun _this thisCcu2 ad -> 
-                             checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
+                             checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
                              // && AccessibilityLogic.IsEntityAccessible cenv.amap range0 ad entity)
                              )
 
@@ -757,7 +758,7 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
                                checkEntityIsResolved v.TyconRef
                                Item.UnionCase(UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v), false)), 
                           (fun _this thisCcu2 ad -> 
-                               checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, v.UnionCase.Accessibility)) 
+                               checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, v.UnionCase.Accessibility)) 
                                //&& AccessibilityLogic.IsUnionCaseAccessible cenv.amap range0 ad v)
                                )
 
@@ -874,7 +875,7 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
                                 | ILField f -> 
                                     Item.ILField f), 
                           (fun this thisCcu2 ad -> 
-                                checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, (this :?> FSharpField).Accessibility.Contents)) 
+                                checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, (this :?> FSharpField).Accessibility.Contents)) 
                                 //&&
                                 //match d with 
                                 //| Recd v -> AccessibilityLogic.IsRecdFieldAccessible cenv.amap range0 ad v
@@ -1366,7 +1367,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                          (fun () -> item), 
                          (fun this thisCcu2 ad -> 
                               let this = this :?> FSharpMemberOrFunctionOrValue 
-                              checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, this.Accessibility.Contents)) 
+                              checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, this.Accessibility.Contents)) 
                               //&& 
                               //match d with 
                               //| E e -> 
@@ -2462,7 +2463,12 @@ and FSharpAssembly internal (cenv, ccu: CcuThunk) =
 
     member __.Contents : FSharpAssemblySignature = FSharpAssemblySignature(cenv, ccu)
                  
-    override x.ToString() = ccu.ILScopeRef.QualifiedName
+    override x.ToString() = 
+        match ccu.ILScopeRef with
+        | ILScopeRef.PrimaryAssembly ->
+            cenv.g.ilg.primaryAssemblyRef.QualifiedName
+        | scoref ->
+            scoref.QualifiedName
 
 /// Represents open declaration in F# code.
 [<Sealed>]

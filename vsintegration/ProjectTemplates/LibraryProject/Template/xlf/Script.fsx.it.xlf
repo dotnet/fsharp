@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="it" original="../Script.fsx">
+    <body>
+      <trans-unit id="LearnMore">
+        <source>Learn more about F# at https://fsharp.org</source>
+        <target state="translated">Altre informazioni su F# disponibili all'indirizzo https://fsharp.org</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SeeTutorial">
+        <source>See the 'F# Tutorial' project for more help.</source>
+        <target state="translated">Per altre informazioni, vedere il progetto 'Esercitazione su F#'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Define">
+        <source>Define your library scripting code here</source>
+        <target state="translated">Viene definito qui il codice di script della libreria</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
