@@ -51,3 +51,7 @@ A skeleton command line tool which exercises the F# Compiler Service.
 # ItemTemplates
 
 Visual Studio item templates for F# projects.
+
+# ProjectTemplates
+
+Visual Studio project templates for .NET Framework projects.
