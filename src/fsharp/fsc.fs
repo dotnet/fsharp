@@ -1282,7 +1282,7 @@ module StaticLinker =
           mutable visited: bool }
 
     // Find all IL modules that are to be statically linked given the static linking roots.
-    let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals, ilxMainModule) = 
+    let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlobals, ilxMainModule) = 
         if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty then 
             []
         else
@@ -1298,7 +1298,7 @@ module StaticLinker =
             let assumedIndependentSet = set [ "mscorlib";  "System"; "System.Core"; "System.Xml"; "Microsoft.Build.Framework"; "Microsoft.Build.Utilities" ]      
 
             begin 
-                let mutable remaining = (computeILRefs ilxMainModule).AssemblyReferences
+                let mutable remaining = (computeILRefs ilGlobals ilxMainModule).AssemblyReferences
                 while not (isNil remaining) do
                     let ilAssemRef = List.head remaining
                     remaining <- List.tail remaining
@@ -1330,8 +1330,7 @@ module StaticLinker =
                                             None
 
                                     let opts : ILReaderOptions = 
-                                        { ilGlobals = ilGlobals
-                                          metadataOnly = MetadataOnlyFlag.No // turn this off here as we need the actual IL code
+                                        { metadataOnly = MetadataOnlyFlag.No // turn this off here as we need the actual IL code
                                           reduceMemoryUsage = tcConfig.reduceMemoryUsage
                                           pdbDirPath = pdbDirPathOption
                                           tryGetMetadataSnapshot = (fun _ -> None) } 
@@ -1591,7 +1590,7 @@ module StaticLinker =
                       if (not isMscorlib && name = PrimaryAssembly.Mscorlib.Name) then
                           error (Error(FSComp.SR.fscStaticLinkingNoProfileMismatches(), rangeCmdArgs))
                       scopeRef
-                  let rewriteAssemblyRefsToMatchLibraries = NormalizeAssemblyRefs (ctok, tcImports)
+                  let rewriteAssemblyRefsToMatchLibraries = NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)
                   Morphs.morphILTypeRefsInILModuleMemoized ilGlobals (Morphs.morphILScopeRefsInILTypeRef (validateTargetPlatform >> rewriteExternalRefsToLocalRefs >> rewriteAssemblyRefsToMatchLibraries)) ilxMainModule
 
               ilxMainModule)
