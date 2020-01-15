@@ -2973,4 +2973,6 @@ module OverloadResolution =
     module ``ad hoc code overload error messages``=
         let [<Test>] ``neg_many_many_overloads`` () = singleNegTest (testConfig "typecheck/overloads") "neg_many_many_overloads"
         let [<Test>] ``neg_interface_generics`` () = singleNegTest (testConfig "typecheck/overloads") "neg_interface_generics"
+        let [<Test>] ``neg_known_return_type_and_known_type_arguments`` () = singleNegTest (testConfig "typecheck/overloads") "neg_known_return_type_and_known_type_arguments"
+        let [<Test>] ``neg_generic_known_argument_types`` () = singleNegTest (testConfig "typecheck/overloads") "neg_generic_known_argument_types"
 #endif

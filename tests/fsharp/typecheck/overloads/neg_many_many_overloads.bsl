@@ -3,7 +3,7 @@ neg_many_many_overloads.fsx(123,1,123,13): typecheck error FS0041: A unique over
 
 
 
-Known type of argument: 'a when 'a : null
+Known type of argument: 'a0 when 'a0 : null
 
 
 
