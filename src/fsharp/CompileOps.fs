@@ -767,60 +767,55 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | UnresolvedOverloading(denv, callerArgs, failure, m) ->
           let nl = System.Environment.NewLine
-          let argsMessage =
-              let prefix = nl + nl
-              let suffix = nl + nl
+          let cx =
+              match failure with
+              | NoOverloadsFound (cx=cx)
+              | PossibleCandidates (cx=cx) -> cx
+              
+          let retTy =
+              cx 
+              |> Option.map (fun cx -> cx.ReturnType)
+              |> Option.flatten
+              |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked()))
+          
+          let genericParameters =
+              cx 
+              |> Option.map (fun cx -> cx.ArgTys)
+              |> Option.defaultValue List.empty
+
+          let argsMessage, returnType, genericParameters =
+              let argRepr = 
+                  callerArgs.ArgumentNamesAndTypes
+                  |> List.map (fun (name,tTy) -> tTy, {ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero)); ArgReprInfo.Attribs = []})
+              let argsL,retTyL,genParamTysL = NicePrint.prettyLayoutsOfUnresolvedOverloading denv argRepr retTy genericParameters
               match callerArgs.ArgumentNamesAndTypes with
-              | [] -> nl + nl
-              | items -> 
-                  // more than one argument, need to lay them out in a single pass
-                  
-                  //let cxs = []
-                  let argsL = 
-                    NicePrint.prettyLayoutOfUnresolvedMethodCallArguments 
-                      denv 
-                      [] 
-                      (items |> List.map (fun (name,tTy) -> tTy, {ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero)); Attribs = []}))
-                      //cxs
-                  let args = argsL |> List.map Layout.showL |> String.concat " "
-                  (*let args = 
-                      items 
-                      |> List.map displayArgType
-                      |> String.concat " * "
-                  *)
+              | [] -> None, Layout.showL retTyL, Layout.showL genParamTysL
+              | items ->
+                  let args = Layout.showL argsL  
                   let prefixMessage =
                       match items with
                       | [_] -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular
                       | _ -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural
-                  prefix + (prefixMessage args) + suffix
+                  Some (prefixMessage args)
+                  , Layout.showL retTyL
+                  , Layout.showL genParamTysL
 
-          let knownReturnType (cx: TraitConstraintInfo option) =
+          let knownReturnType =
               match cx with 
-              | None -> String.Empty
+              | None -> None
               | Some cx ->
-              let prefix = nl + nl
-              let suffix = nl + nl
               match cx.ReturnType with
-              | None -> String.Empty
-              | Some t ->
-                prefix + (NicePrint.prettyStringOfTy denv t |> FSComp.SR.csNoOverloadsFoundReturnType) + suffix
+              | None -> None
+              | Some _ -> Some (FSComp.SR.csNoOverloadsFoundReturnType returnType)
 
-          let genericParametersMessage (cx: TraitConstraintInfo option) =
+          let genericParametersMessage =
               match cx with 
-              | None -> String.Empty
+              | None -> None
               | Some cx ->
-              let prefix = nl + nl
-              let suffix = nl + nl
-            
               match cx.ArgTys  with
-              | [] -> nl + nl
-              | [item] -> prefix + (item |> NicePrint.prettyStringOfTy denv |> FSComp.SR.csNoOverloadsFoundTypeParametersPrefixSingular) + suffix
-              | items ->
-                let args =
-                  items
-                  |> List.map (NicePrint.prettyStringOfTy denv)
-                  |> String.concat ", "
-                prefix + (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixPlural args) + suffix
+              | [] -> None
+              | [_] -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixSingular genericParameters)
+              | _ -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixPlural genericParameters)
 
           let formatOverloads (overloads: OverloadInformation list) =
               overloads
@@ -828,45 +823,28 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               |> List.sort
               |> List.map FSComp.SR.formatDashItem
               |> String.concat nl
-          let formatTraitInfo (cx: TraitConstraintInfo) =
-
-            let prettyArgTys =
-              cx.ArgTys 
-              |> List.map (NicePrint.prettyStringOfTy denv)
-              |> String.concat ", "
-                          
-            [ sprintf "cx.ArgTys      %s" prettyArgTys
-              sprintf "cx.MemberFlags %A" cx.MemberFlags
-              sprintf "cx.MemberName  %A" cx.MemberName
-              sprintf "cx.ReturnType  %A" (cx.ReturnType |> Option.map (NicePrint.prettyStringOfTy denv))
-              sprintf "cx.Solution    %A" cx.Solution
-              sprintf "cx._Tys        %A" (cx._Tys |> List.map (NicePrint.prettyStringOfTy denv))
-            
-            ] |> String.concat nl
-          let cx, msg =
+         
+          let msg =
+              let optionalParts =
+                [knownReturnType; genericParametersMessage; argsMessage]
+                |> List.choose id
+                |> String.concat (nl + nl)
+                |> function | "" -> String.Empty
+                            | result -> nl + nl + result + nl + nl
+              
               match failure with
-              | NoOverloadsFound (methodName, overloads, cx) ->
-                cx
-                , FSComp.SR.csNoOverloadsFound methodName
-                  + (knownReturnType cx) 
-                  + (genericParametersMessage cx)
-                  + argsMessage
-                  + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
-              | PossibleCandidates (methodName, methodNames, cx) ->
-                  cx
-                  , (let msg = FSComp.SR.csMethodIsOverloaded methodName
-                     match methodNames with
-                     | [] -> msg
-                     | names -> 
-                         let overloads = FSComp.SR.csCandidates (formatOverloads names)
-                         msg 
-                         + (knownReturnType cx)
-                         + (genericParametersMessage cx)
-                         + argsMessage
-                         + overloads)
-                  
-          let traitInfo = cx |> Option.map (fun cx -> nl + nl + "TRAIIAT" + nl + formatTraitInfo cx + nl + nl) |> Option.defaultValue ""
-          os.Append (msg + traitInfo) |> ignore
+              | NoOverloadsFound (methodName, overloads, _) ->
+                  FSComp.SR.csNoOverloadsFound methodName
+                      + optionalParts                      
+                      + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
+              | PossibleCandidates (methodName, [], _) ->
+                  FSComp.SR.csMethodIsOverloaded methodName
+              | PossibleCandidates (methodName, overloads, _) ->
+                  FSComp.SR.csMethodIsOverloaded methodName
+                      + optionalParts
+                      + FSComp.SR.csCandidates (formatOverloads overloads)
+          
+          os.Append msg |> ignore
 
       | UnresolvedConversionOperator(denv, fromTy, toTy, _) -> 
           let t1, t2, _tpcs = NicePrint.minimalStringsOfTwoTypes denv fromTy toTy
