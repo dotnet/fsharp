@@ -32,10 +32,10 @@
     <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
     <NoneSubstituteText Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
       <TargetFileName>Microsoft.FSharp.NetSdk.props</TargetFileName>
-      <Pattern1>{{FSharpCoreShippedVersion}}</Pattern1>
-      <Replacement1>$(FSharpCoreShippedVersion)</Replacement1>
-      <Pattern2>{{FSharpCorePreviewVersion}}</Pattern2>
-      <Replacement2>$(FSharpCorePreviewVersion)</Replacement2>
+      <Pattern1>{{FSharpCoreShippedPackageVersion}}</Pattern1>
+      <Replacement1>$(FSharpCoreShippedPackageVersion)</Replacement1>
+      <Pattern2>{{FSharpCorePreviewPackageVersion}}</Pattern2>
+      <Replacement2>$(FSharpCorePreviewPackageVersion)</Replacement2>
     </NoneSubstituteText>
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
