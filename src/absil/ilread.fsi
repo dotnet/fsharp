@@ -46,8 +46,6 @@ type ReduceMemoryFlag = Yes | No
 type ILReaderOptions =
    { pdbDirPath: string option
 
-     ilGlobals: ILGlobals
-
      // fsc.exe does not use reduceMemoryUsage (hence keeps MORE caches in AbstractIL and MORE memory mapping and MORE memory hogging but FASTER and SIMPLER file access)
      // fsi.exe does uses reduceMemoryUsage (hence keeps FEWER caches in AbstractIL and LESS memory mapping and LESS memory hogging but slightly SLOWER file access), because its long running
      // FCS uses reduceMemoryUsage (hence keeps FEWER caches in AbstractIL and LESS memory mapping and LESS memory hogging), because it is typically long running

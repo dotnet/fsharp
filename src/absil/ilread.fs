@@ -26,6 +26,8 @@ open Internal.Utilities.Collections
 [<AutoOpen>]
 module rec ILBinaryReaderImpl =
 
+    let primaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [])
+
     type OperandType = System.Reflection.Emit.OperandType
 
     type PdbReaderProvider = MetadataReaderProvider * string
@@ -314,25 +316,25 @@ module rec ILBinaryReaderImpl =
     let mkILTypeModified isRequired typeRef unmodifiedType =
         ILType.Modified(isRequired, typeRef, unmodifiedType)
         
-    let mkILTypePrimitive (primitiveTypeCode: PrimitiveTypeCode) (ilg: ILGlobals) =
+    let mkILTypePrimitive (primitiveTypeCode: PrimitiveTypeCode) =
         match primitiveTypeCode with
-        | PrimitiveTypeCode.Boolean -> ilg.typ_Bool
-        | PrimitiveTypeCode.Byte -> ilg.typ_Byte
-        | PrimitiveTypeCode.Char -> ilg.typ_Char
-        | PrimitiveTypeCode.Double -> ilg.typ_Double
-        | PrimitiveTypeCode.Int16 -> ilg.typ_Int16
-        | PrimitiveTypeCode.Int32 -> ilg.typ_Int32
-        | PrimitiveTypeCode.Int64 -> ilg.typ_Int64
-        | PrimitiveTypeCode.IntPtr -> ilg.typ_IntPtr
-        | PrimitiveTypeCode.Object -> ilg.typ_Object
-        | PrimitiveTypeCode.SByte -> ilg.typ_SByte
-        | PrimitiveTypeCode.Single -> ilg.typ_Single
-        | PrimitiveTypeCode.String -> ilg.typ_String
-        | PrimitiveTypeCode.TypedReference -> ilg.typ_TypedReference
-        | PrimitiveTypeCode.UInt16 -> ilg.typ_UInt16
-        | PrimitiveTypeCode.UInt32 -> ilg.typ_UInt32
-        | PrimitiveTypeCode.UInt64 -> ilg.typ_UInt64
-        | PrimitiveTypeCode.UIntPtr -> ilg.typ_UIntPtr
+        | PrimitiveTypeCode.Boolean -> primaryAssemblyILGlobals.typ_Bool
+        | PrimitiveTypeCode.Byte -> primaryAssemblyILGlobals.typ_Byte
+        | PrimitiveTypeCode.Char -> primaryAssemblyILGlobals.typ_Char
+        | PrimitiveTypeCode.Double -> primaryAssemblyILGlobals.typ_Double
+        | PrimitiveTypeCode.Int16 -> primaryAssemblyILGlobals.typ_Int16
+        | PrimitiveTypeCode.Int32 -> primaryAssemblyILGlobals.typ_Int32
+        | PrimitiveTypeCode.Int64 -> primaryAssemblyILGlobals.typ_Int64
+        | PrimitiveTypeCode.IntPtr -> primaryAssemblyILGlobals.typ_IntPtr
+        | PrimitiveTypeCode.Object -> primaryAssemblyILGlobals.typ_Object
+        | PrimitiveTypeCode.SByte -> primaryAssemblyILGlobals.typ_SByte
+        | PrimitiveTypeCode.Single -> primaryAssemblyILGlobals.typ_Single
+        | PrimitiveTypeCode.String -> primaryAssemblyILGlobals.typ_String
+        | PrimitiveTypeCode.TypedReference -> primaryAssemblyILGlobals.typ_TypedReference
+        | PrimitiveTypeCode.UInt16 -> primaryAssemblyILGlobals.typ_UInt16
+        | PrimitiveTypeCode.UInt32 -> primaryAssemblyILGlobals.typ_UInt32
+        | PrimitiveTypeCode.UInt64 -> primaryAssemblyILGlobals.typ_UInt64
+        | PrimitiveTypeCode.UIntPtr -> primaryAssemblyILGlobals.typ_UIntPtr
         | PrimitiveTypeCode.Void -> ILType.Void
         | _ -> failwithf "Invalid Primitive Type Code: %A" primitiveTypeCode
 
@@ -354,13 +356,13 @@ module rec ILBinaryReaderImpl =
             ILArrayShape (List.init rank dim)
         mkILArrTy (elementType, shape)
 
-    type SignatureTypeProvider(ilg: ILGlobals) =
+    type SignatureTypeProvider() =
 
         member val cenv : cenv = Unchecked.defaultof<_> with get, set
 
         interface ISignatureTypeProvider<ILType, MethodTypeVarOffset> with
 
-            member _.GetFunctionPointerType(si) =
+            member _.GetFunctionPointerType si =
                 mkILTypeFunctionPointer si.Header (si.ParameterTypes |> Seq.toList) si.ReturnType
 
             member _.GetGenericMethodParameter(typeVarOffset, index) =
@@ -372,15 +374,15 @@ module rec ILBinaryReaderImpl =
             member _.GetModifiedType(modifier, unmodifiedType, isRequired) =
                 mkILTypeModified isRequired modifier.TypeRef unmodifiedType
 
-            member _.GetPinnedType(elementType) = elementType
+            member _.GetPinnedType elementType = elementType
 
             member this.GetTypeFromSpecification(_, _, typeSpecHandle, rawTypeKind) =
                 readILTypeFromTypeSpecification this.cenv (LanguagePrimitives.EnumOfValue rawTypeKind) typeSpecHandle
             
         interface ISimpleTypeProvider<ILType> with
 
-            member _.GetPrimitiveType(typeCode) =
-                mkILTypePrimitive typeCode ilg
+            member _.GetPrimitiveType typeCode =
+                mkILTypePrimitive typeCode
             
             member this.GetTypeFromDefinition(_, typeDefHandle, rawTypeKind) =
                 readILTypeFromTypeDefinition this.cenv (LanguagePrimitives.EnumOfValue rawTypeKind) typeDefHandle
@@ -396,48 +398,48 @@ module rec ILBinaryReaderImpl =
             member _.GetArrayType(elementType, shape) =
                 mkILTypeArray elementType shape
 
-            member _.GetByReferenceType(elementType) =
+            member _.GetByReferenceType elementType =
                 ILType.Byref(elementType)
 
-            member _.GetPointerType(elementType) =
+            member _.GetPointerType elementType =
                 ILType.Ptr(elementType)
 
         interface ISZArrayTypeProvider<ILType> with
 
-            member _.GetSZArrayType(elementType) =
+            member _.GetSZArrayType elementType =
                 mkILArr1DTy elementType
 
         interface ICustomAttributeTypeProvider<ILType> with
 
-            member _.GetSystemType() = ilg.typ_Type
+            member _.GetSystemType() = primaryAssemblyILGlobals.typ_Type
             
             member _.GetTypeFromSerializedName nm = ILType.Parse nm
 
             member _.GetUnderlyingEnumType ilType = 
-                if isILSByteTy ilType then PrimitiveTypeCode.SByte
-                elif isILByteTy ilType then PrimitiveTypeCode.Byte
-                elif isILInt16Ty ilType then PrimitiveTypeCode.Int16
-                elif isILUInt16Ty ilType then PrimitiveTypeCode.UInt16
-                elif isILInt32Ty ilType then PrimitiveTypeCode.Int32
-                elif isILUInt32Ty ilType then PrimitiveTypeCode.UInt32
-                elif isILInt64Ty ilType then PrimitiveTypeCode.Int64
-                elif isILUInt64Ty ilType then PrimitiveTypeCode.UInt64
-                elif isILCharTy ilType then PrimitiveTypeCode.Char
-                elif isILDoubleTy ilType then PrimitiveTypeCode.Double
-                elif isILSingleTy ilType then PrimitiveTypeCode.Single
-                elif isILBoolTy ilType then PrimitiveTypeCode.Boolean
+                if isILSByteTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.SByte
+                elif isILByteTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Byte
+                elif isILInt16Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Int16
+                elif isILUInt16Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.UInt16
+                elif isILInt32Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Int32
+                elif isILUInt32Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.UInt32
+                elif isILInt64Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Int64
+                elif isILUInt64Ty primaryAssemblyILGlobals ilType then PrimitiveTypeCode.UInt64
+                elif isILCharTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Char
+                elif isILDoubleTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Double
+                elif isILSingleTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Single
+                elif isILBoolTy primaryAssemblyILGlobals ilType then PrimitiveTypeCode.Boolean
                 else
                     failwith "GetUnderlyingEnumType: Invalid type"
 
-            member _.IsSystemType ilType = isILTypeTy ilType
+            member _.IsSystemType ilType = isILTypeTy primaryAssemblyILGlobals ilType
 
-    type LocalSignatureTypeProvider(ilg: ILGlobals) =
+    type LocalSignatureTypeProvider() =
 
         member val cenv : cenv = Unchecked.defaultof<_> with get, set
 
         interface ISignatureTypeProvider<ILLocal, MethodTypeVarOffset> with
 
-            member _.GetFunctionPointerType(si) =
+            member _.GetFunctionPointerType si =
                 {
                     IsPinned = false
                     Type = mkILTypeFunctionPointer si.Header (si.ParameterTypes |> Seq.map (fun x -> x.Type) |> Seq.toList) si.ReturnType.Type
@@ -465,7 +467,7 @@ module rec ILBinaryReaderImpl =
                     DebugInfo = None
                 }
 
-            member _.GetPinnedType(elementType) =
+            member _.GetPinnedType elementType =
                 {
                     IsPinned = true
                     Type = elementType.Type
@@ -481,10 +483,10 @@ module rec ILBinaryReaderImpl =
             
         interface ISimpleTypeProvider<ILLocal> with
 
-            member _.GetPrimitiveType(typeCode) =
+            member _.GetPrimitiveType typeCode =
                 {
                     IsPinned = false
-                    Type = mkILTypePrimitive typeCode ilg
+                    Type = mkILTypePrimitive typeCode
                     DebugInfo = None
                 }
             
@@ -518,14 +520,14 @@ module rec ILBinaryReaderImpl =
                     DebugInfo = None
                 }
 
-            member _.GetByReferenceType(elementType) =
+            member _.GetByReferenceType elementType =
                 {
                     IsPinned = false
                     Type = ILType.Byref(elementType.Type)
                     DebugInfo = None
                 }
 
-            member _.GetPointerType(elementType) =
+            member _.GetPointerType elementType =
                 {
                     IsPinned = false
                     Type = ILType.Ptr(elementType.Type)
@@ -534,7 +536,7 @@ module rec ILBinaryReaderImpl =
 
         interface ISZArrayTypeProvider<ILLocal> with
 
-            member _.GetSZArrayType(elementType) =
+            member _.GetSZArrayType elementType =
                 {
                     IsPinned = false
                     Type =  mkILArr1DTy elementType.Type
@@ -2348,6 +2350,7 @@ module rec ILBinaryReaderImpl =
                     | ILScopeRef.Module mref -> ILResourceLocation.File (mref, int resource.Offset)
                     | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
                     | ILScopeRef.Local -> failwith "Unexpected ILScopeRef.Local"
+                    | ILScopeRef.PrimaryAssembly -> failwith "Unexpected ILScopeRef.PrimaryAssembly"
 
             {
                 Name = readString cenv resource.Name
@@ -2359,7 +2362,7 @@ module rec ILBinaryReaderImpl =
         |> List.ofSeq
         |> mkILResources
 
-    let readModuleDef ilGlobals (peReader: PEReader) isMetadataOnly canReduceMemory (pdbReaderProviderOpt: PdbReaderProvider option) =
+    let readModuleDef (peReader: PEReader) isMetadataOnly canReduceMemory (pdbReaderProviderOpt: PdbReaderProvider option) =
         let nativeResources = readILNativeResources peReader
 
         let subsys =
@@ -2407,8 +2410,8 @@ module rec ILBinaryReaderImpl =
         let ilMetadataVersion = mdReader.MetadataVersion
     
         let cenv = 
-            let sigTyProvider = SignatureTypeProvider(ilGlobals)
-            let localSigTyProvider = LocalSignatureTypeProvider(ilGlobals)
+            let sigTyProvider = SignatureTypeProvider()
+            let localSigTyProvider = LocalSignatureTypeProvider()
             let cenv = cenv(peReader, mdReader, pdbReaderProviderOpt, entryPointToken, isMetadataOnly, canReduceMemory, sigTyProvider, localSigTyProvider)
             sigTyProvider.cenv <- cenv
             localSigTyProvider.cenv <- cenv
@@ -2458,7 +2461,6 @@ type ReduceMemoryFlag = Yes | No
 
 type ILReaderOptions =
     { pdbDirPath: string option
-      ilGlobals: ILGlobals
       reduceMemoryUsage: ReduceMemoryFlag
       metadataOnly: MetadataOnlyFlag
       tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
@@ -2495,7 +2497,7 @@ let OpenILModuleReaderAux (memory: ReadOnlyByteMemory) (opts: ILReaderOptions) =
             match peReader.TryOpenAssociatedPortablePdb(pdbDirPath, streamProvider) with
             | true, pdbReaderProvider, pdbPath -> Some(pdbReaderProvider, pdbPath)
             | _ -> None)
-    let ilModuleDef, ilAsmRefs = readModuleDef opts.ilGlobals peReader (opts.metadataOnly = MetadataOnlyFlag.Yes) (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes) pdbReaderProviderOpt
+    let ilModuleDef, ilAsmRefs = readModuleDef peReader (opts.metadataOnly = MetadataOnlyFlag.Yes) (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes) pdbReaderProviderOpt
     {   new Object() with
     
             override _.Finalize() =
@@ -2519,7 +2521,7 @@ let OpenILModuleReaderFromFile fileName opts =
     let memory = ByteMemory.FromFile(fileName, FileAccess.Read, canShadowCopy=true)
     OpenILModuleReaderAux (memory.AsReadOnly()) opts
 
-type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * writeStamp: DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag with
+type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * writeStamp: DateTime * bool * ReduceMemoryFlag * MetadataOnlyFlag with
 
     member x.WriteStamp =
         match x with
@@ -2546,10 +2548,10 @@ let ClearAllILModuleReaderCache () =
     ilModuleReaderCache2.Clear()
 
 let OpenILModuleReader fileName opts =
-    let (ILModuleReaderCacheKey (fullPath,_,_,_,_,_) as key) = 
+    let (ILModuleReaderCacheKey (fullPath,_,_,_,_) as key) = 
         let fullPath = FileSystem.GetFullPathShim fileName
         let writeTime = FileSystem.GetLastWriteTimeShim fileName
-        ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
+        ILModuleReaderCacheKey (fullPath, writeTime, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
 
     let cacheResult1 = 
         // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable

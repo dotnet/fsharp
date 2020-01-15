@@ -2474,10 +2474,9 @@ type TcConfigBuilder =
             ri, fileNameOfPath ri, ILResourceAccess.Public 
 
 
-let OpenILBinary(filename, reduceMemoryUsage, ilGlobals, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =
+let OpenILBinary(filename, reduceMemoryUsage, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =
       let opts: ILReaderOptions = 
-          { ilGlobals = ilGlobals
-            metadataOnly = MetadataOnlyFlag.Yes
+          { metadataOnly = MetadataOnlyFlag.Yes
             reduceMemoryUsage = reduceMemoryUsage
             pdbDirPath = pdbDirPath
             tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
@@ -2542,7 +2541,6 @@ type AssemblyResolution =
                 | None -> 
                     let readerSettings: ILReaderOptions = 
                         { pdbDirPath=None
-                          ilGlobals = EcmaMscorlibILGlobals
                           reduceMemoryUsage = reduceMemoryUsage
                           metadataOnly = MetadataOnlyFlag.Yes
                           tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
@@ -3981,8 +3979,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             let tcConfig = tcConfigP.Get ctok
             let ilModule, ilAssemblyRefs = 
                 let opts: ILReaderOptions = 
-                    { ilGlobals = g.ilg 
-                      reduceMemoryUsage = tcConfig.reduceMemoryUsage
+                    { reduceMemoryUsage = tcConfig.reduceMemoryUsage
                       pdbDirPath = None 
                       metadataOnly = MetadataOnlyFlag.Yes
                       tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }
@@ -4075,15 +4072,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             else
                 None
 
-        let ilGlobals =
-            // ILScopeRef.Local can be used only for primary assembly (mscorlib or System.Runtime) itself
-            // Remaining assemblies should be opened using existing ilGlobals (so they can properly locate fundamental types)
-            match ilGlobalsOpt with
-            | None -> mkILGlobals ILScopeRef.Local
-            | Some g -> g
-
         let ilILBinaryReader =
-            OpenILBinary (filename, tcConfig.reduceMemoryUsage, ilGlobals, pdbDirPath, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot)
+            OpenILBinary (filename, tcConfig.reduceMemoryUsage, pdbDirPath, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot)
 
         tcImports.AttachDisposeAction(fun _ -> (ilILBinaryReader :> IDisposable).Dispose())
         ilILBinaryReader.ILModuleDef, ilILBinaryReader.ILAssemblyRefs
@@ -4678,11 +4668,48 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
               | (_, [ResolvedImportedAssembly ccu]) -> ccu.FSharpViewOfMetadata.ILScopeRef
               | _ -> failwith "unexpected"
 
-        let ilGlobals = mkILGlobals primaryScopeRef
+        let primaryAssemblyResolvedPath =
+            match primaryAssemblyResolution with
+            | [primaryAssemblyResolution] -> primaryAssemblyResolution.resolvedPath
+            | _ -> failwith "unexpected"
+
+        let resolvedAssemblies = tcResolutions.GetAssemblyResolutions()
+
+        let readerSettings: ILReaderOptions = 
+            { pdbDirPath=None
+              reduceMemoryUsage = tcConfig.reduceMemoryUsage
+              metadataOnly = MetadataOnlyFlag.Yes
+              tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }
+
+        let tryFindAssemblyByExportedType manifest (exportedType: ILExportedTypeOrForwarder) =
+            match exportedType.ScopeRef, primaryScopeRef with
+            | ILScopeRef.Assembly aref1, ILScopeRef.Assembly aref2 when aref1.EqualsIgnoringVersion aref2 ->
+                mkRefToILAssembly manifest
+                |> Some
+            | _ -> 
+                None
+
+        let tryFindAssemblyThatForwardsToPrimaryAssembly manifest =
+            manifest.ExportedTypes.TryFindByName "System.Object"
+            |> Option.bind (tryFindAssemblyByExportedType manifest)
+
+        // Determine what other assemblies could have been the primary assembly
+        // by checking to see if "System.Object" is an exported type.
+        let assembliesThatForwardToPrimaryAssembly =
+            resolvedAssemblies
+            |> List.choose (fun resolvedAssembly ->
+                if primaryAssemblyResolvedPath <> resolvedAssembly.resolvedPath then
+                    let reader = OpenILModuleReader resolvedAssembly.resolvedPath readerSettings
+                    reader.ILModuleDef.Manifest
+                    |> Option.bind tryFindAssemblyThatForwardsToPrimaryAssembly
+                else
+                    None)
+
+        let ilGlobals = mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly)
         frameworkTcImports.SetILGlobals ilGlobals
 
         // Load the rest of the framework DLLs all at once (they may be mutually recursive)
-        let! _assemblies = frameworkTcImports.RegisterAndImportReferencedAssemblies (ctok, tcResolutions.GetAssemblyResolutions())
+        let! _assemblies = frameworkTcImports.RegisterAndImportReferencedAssemblies (ctok, resolvedAssemblies)
 
         // These are the DLLs we can search for well-known types
         let sysCcus =
@@ -4725,7 +4752,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                     (let scoref = fslibCcuInfo.ILScopeRef
                      match scoref with
                      | ILScopeRef.Assembly aref -> Some aref
-                     | ILScopeRef.Local | ILScopeRef.Module _ -> error(InternalError("not ILScopeRef.Assembly", rangeStartup)))
+                     | ILScopeRef.Local | ILScopeRef.Module _ | ILScopeRef.PrimaryAssembly -> 
+                        error(InternalError("not ILScopeRef.Assembly", rangeStartup)))
                 fslibCcuInfo.FSharpViewOfMetadata
 
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
