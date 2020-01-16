@@ -132,7 +132,7 @@ module internal Implementation =
     //-------------------------------------------------------------------------
     // Read the tables written by FSYACC.  
 
-    type AssocTable(elemTab:uint16[], offsetTab:uint16[], cache:int[], cacheSize:int) =
+    type AssocTable(elemTab: uint16[], offsetTab: uint16[], cache: int[], cacheSize: int) =
 
         member t.ReadAssoc (minElemNum,maxElemNum,defaultValueOfAssoc,keyToFind) =     
             // do a binary chop on the table 
@@ -236,9 +236,13 @@ module internal Implementation =
         // hash bucket per key.
         let actionTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
         let gotoTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
-        use _cacheDisposal = { new IDisposable with member _.Dispose() = ArrayPool<int>.Shared.Return actionTableCache; ArrayPool<int>.Shared.Return gotoTableCache }
-        let actionTable = new AssocTable(tables.actionTableElements, tables.actionTableRowOffsets, actionTableCache, cacheSize)
-        let gotoTable = new AssocTable(tables.gotos, tables.sparseGotoTableRowOffsets, gotoTableCache, cacheSize)
+        use _cacheDisposal = 
+            { new IDisposable with 
+                member _.Dispose() = 
+                    ArrayPool<int>.Shared.Return actionTableCache
+                    ArrayPool<int>.Shared.Return gotoTableCache }
+        let actionTable = AssocTable(tables.actionTableElements, tables.actionTableRowOffsets, actionTableCache, cacheSize)
+        let gotoTable = AssocTable(tables.gotos, tables.sparseGotoTableRowOffsets, gotoTableCache, cacheSize)
         let stateToProdIdxsTable = new IdxToIdxListTable(tables.stateToProdIdxsTableElements, tables.stateToProdIdxsTableRowOffsets)
 
         let parseState =                                                                                            
