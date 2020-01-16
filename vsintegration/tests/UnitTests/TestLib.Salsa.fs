@@ -79,6 +79,7 @@ module internal GlobalFunctions =
     let CreateSolution(vs) = CreateSolution(vs)
     let CloseSolution(sol) = CloseSolution(sol)
     let Cleanup(vs) = Cleanup(vs)
+    let SetOtherFlags(proj, flags) = SetOtherFlags(proj, flags)
     let AddAssemblyReference(proj, ref) = AddAssemblyReference(proj, ref)
     let AddAssemblyReferenceEx(proj, ref, v) = AddAssemblyReferenceEx(proj, ref, v)
     let SetProjectDefines(proj, d) = SetProjectDefines(proj, d)

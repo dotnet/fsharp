@@ -398,45 +398,58 @@ let main argv = 0"""
 
             Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
 
-    static member TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
+    static member TypeCheckWithErrorsAndOptionsAndAdjust options libAdjust (source: string) expectedTypeErrors =
         lock gate <| fun () ->
-            let parseResults, fileAnswer =
-                checker.ParseAndCheckFileInProject(
-                    "test.fs",
-                    0,
-                    SourceText.ofString source,
-                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
-                |> Async.RunSynchronously
+            let errors =
+                let parseResults, fileAnswer =
+                    checker.ParseAndCheckFileInProject(
+                        "test.fs",
+                        0,
+                        SourceText.ofString source,
+                        { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
+                    |> Async.RunSynchronously
 
-            Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
+                if parseResults.Errors.Length > 0 then 
+                    parseResults.Errors
+                else
 
-            match fileAnswer with
-            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
-            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
+                    match fileAnswer with
+                    | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                    | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Errors
 
             let errors =
-                typeCheckResults.Errors
+                errors
                 |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+                |> Array.map (fun info ->
+                    (info.Severity, info.ErrorNumber, (info.StartLineAlternate - libAdjust, info.StartColumn + 1, info.EndLineAlternate - libAdjust, info.EndColumn + 1), info.Message))
 
-            Assert.AreEqual(Array.length expectedTypeErrors, errors.Length, sprintf "Type check errors: %A" errors)
+            let checkEqual k a b = 
+                if a <> b then 
+                    Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
+
+            checkEqual "Type Check Errors"  (Array.length expectedTypeErrors) errors.Length 
 
             Array.zip errors expectedTypeErrors
-            |> Array.iter (fun (info, expectedError) ->
-                let (expectedServerity: FSharpErrorSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
-                Assert.AreEqual(expectedServerity, info.Severity)
-                Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
-                Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")
-                Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
+            |> Array.iter (fun (actualError, expectedError) ->
+                let (expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg) = expectedError
+                let (actualSeverity, actualErrorNumber, actualErrorRange, actualErrorMsg) = actualError
+                checkEqual "Severity" expectedSeverity actualSeverity
+                checkEqual "ErrorNumber" expectedErrorNumber actualErrorNumber
+                checkEqual "ErrorRange" expectedErrorRange actualErrorRange
+                checkEqual "Message" expectedErrorMsg actualErrorMsg
             )
+
+    static member TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
+        CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust options 0 (source: string) expectedTypeErrors
 
     static member TypeCheckWithErrors (source: string) expectedTypeErrors =
         CompilerAssert.TypeCheckWithErrorsAndOptions [||] source expectedTypeErrors
 
-    static member TypeCheckSingleErrorWithOptions options (source: string) (expectedServerity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
-        CompilerAssert.TypeCheckWithErrorsAndOptions options source [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
+    static member TypeCheckSingleErrorWithOptions options (source: string) (expectedSeverity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
+        CompilerAssert.TypeCheckWithErrorsAndOptions options source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    static member TypeCheckSingleError (source: string) (expectedServerity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
-        CompilerAssert.TypeCheckWithErrors source [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
+    static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
+        CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
     static member CompileExeWithOptions options (source: string) =
         compile true options source (fun (errors, _) ->
@@ -526,8 +539,8 @@ let main argv = 0"""
 
         Array.zip errors expectedParseErrors
         |> Array.iter (fun (info, expectedError) ->
-            let (expectedServerity: FSharpErrorSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
-            Assert.AreEqual(expectedServerity, info.Severity)
+            let (expectedSeverity: FSharpErrorSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
+            Assert.AreEqual(expectedSeverity, info.Severity)
             Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
             Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")
             Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
