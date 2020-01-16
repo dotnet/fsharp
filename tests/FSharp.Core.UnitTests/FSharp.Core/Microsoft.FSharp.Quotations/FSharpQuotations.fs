@@ -7,7 +7,8 @@ namespace FSharp.Core.UnitTests.Quotations
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
-open Microsoft.FSharp.Quotations
+open FSharp.Quotations
+open FSharp.Quotations.Patterns
 
 type E = Microsoft.FSharp.Quotations.Expr;;
 
@@ -85,3 +86,43 @@ type FSharpQuotationsTests() =
     [<Test>]
     member x.GetConstructorFiltersOutStaticConstructor() =
         ignore <@ System.Exception() @>
+
+    [<Test>]
+    member x.``NewStructTuple literal should be recognized by NewStructTuple active pattern`` () =
+        match <@ struct(1, "") @> with
+        | NewStructTuple [ Value(:? int as i, _) ; Value(:? string as s, _) ] when i = 1 && s = "" -> ()
+        | _ -> Assert.Fail()
+
+
+    [<Test>]
+    member x.``NewStructTuple literal should be recognized by NewTuple active pattern`` () =
+        match <@ struct(1, "") @> with
+        | NewTuple [ Value(:? int as i, _) ; Value(:? string as s, _) ] when i = 1 && s = "" -> ()
+        | _ -> Assert.Fail()
+
+    [<Test>]
+    member x.``NewTuple literal should not be recognized by NewStructTuple active pattern`` () =
+        match <@ (1, "") @> with
+        | NewStructTuple _ -> Assert.Fail()
+        | _ -> ()
+
+    [<Test>]
+    member x.``NewStructTuple should be recognized by NewStructTuple active pattern`` () =
+        let expr = Expr.NewStructTuple(typeof<struct(_ * _)>.Assembly, [ <@@ 1 @@>; <@@ "" @@> ])
+        match expr with
+        | NewStructTuple [ Value(:? int as i, _) ; Value(:? string as s, _) ] when i = 1 && s = "" -> ()
+        | _ -> Assert.Fail()
+
+    [<Test>]
+    member x.``NewStructTuple should be recognized by NewTuple active pattern`` () =
+        let expr = Expr.NewStructTuple(typeof<struct(_ * _)>.Assembly, [ <@@ 1 @@>; <@@ "" @@> ])
+        match expr with
+        | NewTuple [ Value(:? int as i, _) ; Value(:? string as s, _) ] when i = 1 && s = "" -> ()
+        | _ -> Assert.Fail()
+
+    [<Test>]
+    member x.``NewTuple should not be recognized by NewStructTuple active pattern`` () =
+        let expr = Expr.NewTuple [ <@@ 1 @@>; <@@ "" @@> ]
+        match expr with
+        | NewStructTuple _ -> Assert.Fail()
+        | _ -> ()

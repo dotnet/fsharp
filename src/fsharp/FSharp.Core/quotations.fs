@@ -391,6 +391,9 @@ module Patterns =
     [<CompiledName("NewTuplePattern")>]
     let (|NewTuple|_|) input = match input with E(CombTerm(NewTupleOp(_), es)) -> Some es | _ -> None
 
+    [<CompiledName("NewStructTuplePattern")>]
+    let (|NewStructTuple|_|) input = match input with E(CombTerm(NewTupleOp(ty), es)) when ty.IsValueType -> Some es | _ -> None
+
     [<CompiledName("DefaultValuePattern")>]
     let (|DefaultValue|_|) input = match input with E(CombTerm(DefaultValueOp ty, [])) -> Some ty | _ -> None
 
@@ -745,6 +748,10 @@ module Patterns =
 
     let mkNewTuple (args) =
         let ty = FSharpType.MakeTupleType(Array.map typeOf (Array.ofList args))
+        mkFEN (NewTupleOp ty) args
+
+    let mkNewStructTuple (asm, args) =
+        let ty = FSharpType.MakeStructTupleType(asm, Array.map typeOf (Array.ofList args))
         mkFEN (NewTupleOp ty) args
 
     let mkTupleGet (ty, n, x) =
@@ -1819,6 +1826,9 @@ type Expr with
 
     static member NewTuple elements =
         mkNewTuple elements
+
+    static member NewStructTuple (asm:Assembly, elements) =
+        mkNewStructTuple (asm, elements)
 
     static member NewRecord (recordType:Type, elements) =
         checkNonNull "recordType" recordType
