@@ -100,7 +100,7 @@ namespace Microsoft.FSharp.Collections
                 loop ([], state) (rev list)
 
         [<CompiledName("Iterate")>]
-        let iter action list = Microsoft.FSharp.Primitives.Basics.List.iter action list
+        let inline iter action (list:'T list) = for x in list do action x
 
         [<CompiledName("Distinct")>]
         let distinct (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctWithComparer HashIdentity.Structural<'T> list
@@ -164,7 +164,9 @@ namespace Microsoft.FSharp.Collections
         let takeWhile predicate (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.takeWhile predicate list
 
         [<CompiledName("IterateIndexed")>]
-        let iteri action list = Microsoft.FSharp.Primitives.Basics.List.iteri action list
+        let inline iteri action (list: 'T list) =
+            let mutable n = 0
+            for x in list do action n x; n <- n + 1
 
         [<CompiledName("Initialize")>]
         let init length initializer = Microsoft.FSharp.Primitives.Basics.List.init length initializer
