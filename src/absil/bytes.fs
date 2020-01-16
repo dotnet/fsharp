@@ -307,10 +307,10 @@ type ByteMemory with
             mmf, mmf.CreateViewAccessor(0L, length, memoryMappedFileAccess), length
 
         match access with
-        | FileAccess.Read when not accessor.CanRead -> failwith "Cannot read file"
-        | FileAccess.Write when not accessor.CanWrite -> failwith "Cannot write file"
-        | _ when not accessor.CanRead || not accessor.CanWrite -> failwith "Cannot read or write file"
-        | _ -> ()
+        | FileAccess.Read when not accessor.CanRead -> invalidOp "Cannot read file"
+        | FileAccess.Write when not accessor.CanWrite -> invalidOp "Cannot write file"
+        | FileAccess.ReadWrite when not accessor.CanRead || not accessor.CanWrite -> invalidOp "Cannot read or write file"
+        | _ -> invalidOp "Invalid file access"
 
         let safeHolder =
             { new obj() with
