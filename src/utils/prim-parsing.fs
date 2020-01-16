@@ -236,6 +236,9 @@ module internal Implementation =
         // hash bucket per key.
         let actionTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
         let gotoTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
+        // Clear the arrays since ArrayPool does not
+        Array.Clear(actionTableCache, 0, actionTableCache.Length)
+        Array.Clear(gotoTableCache, 0, gotoTableCache.Length)
         use _cacheDisposal = 
             { new IDisposable with 
                 member _.Dispose() = 
