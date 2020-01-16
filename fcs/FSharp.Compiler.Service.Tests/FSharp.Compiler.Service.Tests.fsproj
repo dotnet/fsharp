@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp3.0</TargetFrameworks>
@@ -23,6 +23,9 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\AssemblyReaderShim.fs">
       <Link>AssemblyReaderShim.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ExtensionTypingProviderTests.fs">
+      <Link>ExtensionTypingProviderTests.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\EditorTests.fs">
       <Link>EditorTests.fs</Link>

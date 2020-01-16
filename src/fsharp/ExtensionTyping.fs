@@ -6,9 +6,8 @@ namespace FSharp.Compiler
 
 #if !NO_EXTENSIONTYPING
 
-module internal ExtensionTyping =
+module ExtensionTyping =
     open System
-    open System.IO
     open System.Collections.Generic
     open System.Reflection
     open Microsoft.FSharp.Core.CompilerServices
@@ -33,122 +32,11 @@ module internal ExtensionTyping =
           referencedAssemblies      : string[]
           temporaryFolder           : string }
 
-    /// Load a the design-time part of a type-provider into the host process, and look for types
-    /// marked with the TypeProviderAttribute attribute.
-    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:range, compilerToolPaths:string list) =
-
-        // Report an error, blaming the particular type provider component
-        let raiseError (e: exn) =
-            raise (TypeProviderError(FSComp.SR.etProviderHasWrongDesignerAssembly(typeof<TypeProviderAssemblyAttribute>.Name, designTimeAssemblyNameString, e.Message), runTimeAssemblyFileName, m))
-
-        let designTimeAssemblyOpt = getTypeProviderAssembly (runTimeAssemblyFileName, designTimeAssemblyNameString, compilerToolPaths, raiseError)
-
-        match designTimeAssemblyOpt with
-        | Some loadedDesignTimeAssembly ->
-            try
-                let exportedTypes = loadedDesignTimeAssembly.GetExportedTypes() 
-                let filtered = 
-                    [ for t in exportedTypes do 
-                          let ca = t.GetCustomAttributes(typeof<TypeProviderAttribute>, true)
-                          if ca <> null && ca.Length > 0 then 
-                              yield t ]
-                filtered
-            with e ->
-                raiseError e
-        | None -> []
-
     let StripException (e: exn) =
         match e with
         |   :? System.Reflection.TargetInvocationException as e -> e.InnerException
         |   :? TypeInitializationException as e -> e.InnerException
         |   _ -> e
-
-    /// Create an instance of a type provider from the implementation type for the type provider in the
-    /// design-time assembly by using reflection-invoke on a constructor for the type provider.
-    let CreateTypeProvider (typeProviderImplementationType: System.Type, 
-                            runtimeAssemblyPath, 
-                            resolutionEnvironment: ResolutionEnvironment, 
-                            isInvalidationSupported: bool, 
-                            isInteractive: bool, 
-                            systemRuntimeContainsType, 
-                            systemRuntimeAssemblyVersion, 
-                            m) =
-
-        // Protect a .NET reflection call as we load the type provider component into the host process, 
-        // reporting errors.
-        let protect f =
-            try 
-                f ()
-            with err ->
-                let e = StripException (StripException err)
-                raise (TypeProviderError(FSComp.SR.etTypeProviderConstructorException(e.Message), typeProviderImplementationType.FullName, m))
-
-        if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
-
-            // Create the TypeProviderConfig to pass to the type provider constructor
-            let e = TypeProviderConfig(systemRuntimeContainsType, 
-                                       ResolutionFolder=resolutionEnvironment.resolutionFolder, 
-                                       RuntimeAssembly=runtimeAssemblyPath, 
-                                       ReferencedAssemblies=Array.copy resolutionEnvironment.referencedAssemblies, 
-                                       TemporaryFolder=resolutionEnvironment.temporaryFolder, 
-                                       IsInvalidationSupported=isInvalidationSupported, 
-                                       IsHostedExecution= isInteractive, 
-                                       SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
-
-            protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
-
-        elif typeProviderImplementationType.GetConstructor [| |] <> null then 
-            protect (fun () -> Activator.CreateInstance typeProviderImplementationType :?> ITypeProvider )
-
-        else
-            // No appropriate constructor found
-            raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), typeProviderImplementationType.FullName, m))
-
-    let GetTypeProvidersOfAssembly
-            (runTimeAssemblyFileName: string, 
-             ilScopeRefOfRuntimeAssembly: ILScopeRef, 
-             designTimeAssemblyNameString: string, 
-             resolutionEnvironment: ResolutionEnvironment, 
-             isInvalidationSupported: bool, 
-             isInteractive: bool, 
-             systemRuntimeContainsType : string -> bool, 
-             systemRuntimeAssemblyVersion : System.Version, 
-             compilerToolPaths: string list,
-             m:range) =
-
-        let providerSpecs = 
-                try
-                    let designTimeAssemblyName = 
-                        try
-                            if designTimeAssemblyNameString.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
-                                Some (System.Reflection.AssemblyName (Path.GetFileNameWithoutExtension designTimeAssemblyNameString))
-                            else
-                                Some (System.Reflection.AssemblyName designTimeAssemblyNameString)
-                        with :? ArgumentException ->
-                            errorR(Error(FSComp.SR.etInvalidTypeProviderAssemblyName(runTimeAssemblyFileName, designTimeAssemblyNameString), m))
-                            None
-
-                    [ match designTimeAssemblyName, resolutionEnvironment.outputFile with
-                      // Check if the attribute is pointing to the file being compiled, in which case ignore it
-                      // This checks seems like legacy but is included for compat.
-                      | Some designTimeAssemblyName, Some path when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
-                          ()
-                      | Some _, _ ->
-                          for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m, compilerToolPaths) do
-                            let resolver = CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported, isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
-                            match box resolver with 
-                            | null -> ()
-                            | _ -> yield (resolver, ilScopeRefOfRuntimeAssembly)
-                      |   None, _ -> 
-                          () ]
-
-                with :? TypeProviderError as tpe ->
-                    tpe.Iter(fun e -> errorR(NumberedError((e.Number, e.ContextualErrorMessage), m)) )
-                    []
-
-        let providers = Tainted<_>.CreateAll providerSpecs
-
-        providers
 
     let unmarshal (t: Tainted<_>) = t.PUntaintNoFailure id
 
@@ -1186,5 +1074,151 @@ module internal ExtensionTyping =
     /// We check by seeing if the type is absent from the remapping context.
     let IsGeneratedTypeDirectReference (st: Tainted<ProvidedType>, m) =
         st.PUntaint((fun st -> st.TryGetTyconRef() |> Option.isNone), m)
+     
+    [<AutoOpen>]
+    module Shim =  
+        open System
+        open System.IO
+        open System.Reflection
+        open Microsoft.FSharp.Core.CompilerServices
+        open FSharp.Compiler.ErrorLogger
+        open FSharp.Compiler.Range
+        open FSharp.Compiler.AbstractIL.IL
+        open FSharp.Compiler.AbstractIL.Internal.Library
+        open Internal.Utilities.FSharpEnvironment
+            
+        type IExtensionTypingProvider =
+            abstract InstantiateTypeProvidersOfAssembly : 
+              runtimeAssemblyFilename: string 
+              * ilScopeRefOfRuntimeAssembly:ILScopeRef
+              * designerAssemblyName: string 
+              * ResolutionEnvironment 
+              * bool
+              * isInteractive: bool
+              * systemRuntimeContainsType : (string -> bool)
+              * systemRuntimeAssemblyVersion : System.Version
+              * compilerToolsPath : string list
+              * range -> Tainted<ITypeProvider> list
+              
+            inherit IDisposable
 
+        [<Sealed>]
+        type DefaultExtensionTypingProvider() =
+            
+            /// Load a the design-time part of a type-provider into the host process, and look for types
+            /// marked with the TypeProviderAttribute attribute.
+            let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:range, compilerToolPaths:string list) =
+
+            // Report an error, blaming the particular type provider component
+                let raiseError (e: exn) =
+                    raise (TypeProviderError(FSComp.SR.etProviderHasWrongDesignerAssembly(typeof<TypeProviderAssemblyAttribute>.Name, designTimeAssemblyNameString, e.Message), runTimeAssemblyFileName, m))
+
+                let designTimeAssemblyOpt = getTypeProviderAssembly (runTimeAssemblyFileName, designTimeAssemblyNameString, compilerToolPaths, raiseError)
+
+                match designTimeAssemblyOpt with
+                | Some loadedDesignTimeAssembly ->
+                    try
+                        let exportedTypes = loadedDesignTimeAssembly.GetExportedTypes() 
+                        let filtered = 
+                            [ for t in exportedTypes do 
+                                let ca = t.GetCustomAttributes(typeof<TypeProviderAttribute>, true)
+                                if ca <> null && ca.Length > 0 then 
+                                    yield t ]
+                        filtered
+                    with e ->
+                        raiseError e
+                | None -> []
+            
+            /// Create an instance of a type provider from the implementation type for the type provider in the
+            /// design-time assembly by using reflection-invoke on a constructor for the type provider.
+            let CreateTypeProvider (typeProviderImplementationType: System.Type, 
+                                    runtimeAssemblyPath, 
+                                    resolutionEnvironment: ResolutionEnvironment, 
+                                    isInvalidationSupported: bool, 
+                                    isInteractive: bool, 
+                                    systemRuntimeContainsType, 
+                                    systemRuntimeAssemblyVersion, 
+                                    m) =
+
+                // Protect a .NET reflection call as we load the type provider component into the host process, 
+                // reporting errors.
+                let protect f =
+                    try 
+                        f ()
+                    with err ->
+                        let e = StripException (StripException err)
+                        raise (TypeProviderError(FSComp.SR.etTypeProviderConstructorException(e.Message), typeProviderImplementationType.FullName, m))
+
+                if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
+
+                // Create the TypeProviderConfig to pass to the type provider constructor
+                    let e = TypeProviderConfig(systemRuntimeContainsType, 
+                                               ResolutionFolder=resolutionEnvironment.resolutionFolder, 
+                                               RuntimeAssembly=runtimeAssemblyPath, 
+                                               ReferencedAssemblies=Array.copy resolutionEnvironment.referencedAssemblies, 
+                                               TemporaryFolder=resolutionEnvironment.temporaryFolder, 
+                                               IsInvalidationSupported=isInvalidationSupported, 
+                                               IsHostedExecution= isInteractive, 
+                                               SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
+
+                    protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
+
+                elif typeProviderImplementationType.GetConstructor [| |] <> null then 
+                    protect (fun () -> Activator.CreateInstance typeProviderImplementationType :?> ITypeProvider )
+
+                else
+                    // No appropriate constructor found
+                    raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), typeProviderImplementationType.FullName, m))
+            
+            interface IExtensionTypingProvider with
+                member this.InstantiateTypeProvidersOfAssembly
+                    (runTimeAssemblyFileName: string, 
+                     ilScopeRefOfRuntimeAssembly: ILScopeRef, 
+                     designTimeAssemblyNameString: string, 
+                     resolutionEnvironment: ResolutionEnvironment, 
+                     isInvalidationSupported: bool, 
+                     isInteractive: bool, 
+                     systemRuntimeContainsType : string -> bool, 
+                     systemRuntimeAssemblyVersion : System.Version, 
+                     compilerToolPaths: string list,
+                     m:range) =
+
+                     let providerSpecs = 
+                        try
+                            let designTimeAssemblyName = 
+                                try
+                                    if designTimeAssemblyNameString.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
+                                        Some (System.Reflection.AssemblyName (Path.GetFileNameWithoutExtension designTimeAssemblyNameString))
+                                    else
+                                        Some (System.Reflection.AssemblyName designTimeAssemblyNameString)
+                                with :? ArgumentException ->
+                                    errorR(Error(FSComp.SR.etInvalidTypeProviderAssemblyName(runTimeAssemblyFileName, designTimeAssemblyNameString), m))
+                                    None
+
+                            [ match designTimeAssemblyName, resolutionEnvironment.outputFile with
+                              // Check if the attribute is pointing to the file being compiled, in which case ignore it
+                              // This checks seems like legacy but is included for compat.
+                              | Some designTimeAssemblyName, Some path when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
+                                  ()
+                              | Some _, _ ->
+                                  for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m, compilerToolPaths) do
+                                    let resolver = CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported, isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
+                                    match box resolver with 
+                                    | null -> ()
+                                    | _ -> yield (resolver, ilScopeRefOfRuntimeAssembly)
+                              |   None, _ -> 
+                                  () ]
+
+                        with :? TypeProviderError as tpe ->
+                            tpe.Iter(fun e -> errorR(NumberedError((e.Number, e.ContextualErrorMessage), m)) )
+                            []
+
+                     let providers = Tainted<_>.CreateAll providerSpecs
+                     providers
+                    
+                member this.Dispose() =
+                    ()
+
+        let mutable ExtensionTypingProvider = new DefaultExtensionTypingProvider() :> IExtensionTypingProvider
+        
 #endif

@@ -4252,16 +4252,16 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
             let providers = [
                 for designTimeAssemblyName in designTimeAssemblyNames do
-                    yield! ExtensionTyping.GetTypeProvidersOfAssembly(fileNameOfRuntimeAssembly,
-                                                                      ilScopeRefOfRuntimeAssembly,
-                                                                      designTimeAssemblyName,
-                                                                      typeProviderEnvironment,
-                                                                      tcConfig.isInvalidationSupported,
-                                                                      tcConfig.isInteractive,
-                                                                      systemRuntimeContainsType,
-                                                                      primaryAssemblyVersion,
-                                                                      tcConfig.compilerToolPaths,
-                                                                      m) ]
+                    yield! Shim.ExtensionTypingProvider.InstantiateTypeProvidersOfAssembly(fileNameOfRuntimeAssembly,
+                                                                                           ilScopeRefOfRuntimeAssembly,
+                                                                                           designTimeAssemblyName,
+                                                                                           typeProviderEnvironment,
+                                                                                           tcConfig.isInvalidationSupported,
+                                                                                           tcConfig.isInteractive,
+                                                                                           systemRuntimeContainsType,
+                                                                                           primaryAssemblyVersion,
+                                                                                           tcConfig.compilerToolPaths,
+                                                                                           m) ]
             // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
             // We ignore all exceptions from provider disposal.
             for provider in providers do 
