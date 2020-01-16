@@ -6,6 +6,7 @@ namespace FSharp.Compiler.Text
 
 open System
 open System.IO
+open System.Buffers
 
 type ISourceText =
 
