@@ -766,28 +766,24 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 #endif
 
       | UnresolvedOverloading(denv, callerArgs, failure, m) ->
-          let nl = System.Environment.NewLine
-          let cx =
-              match failure with
-              | NoOverloadsFound (cx=cx)
-              | PossibleCandidates (cx=cx) -> cx
-              
-          let retTy =
-              cx 
-              |> Option.map (fun cx -> cx.ReturnType)
-              |> Option.flatten
-              |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked()))
           
-          let genericParameters =
-              cx 
-              |> Option.map (fun cx -> cx.ArgTys)
-              |> Option.defaultValue List.empty
-
-          let argsMessage, returnType, genericParameters =
+          let knownReturnType, genericParameterTypes =
+              match failure with
+              | NoOverloadsFound (cx=Some cx)
+              | PossibleCandidates (cx=Some cx) -> cx.ReturnType, cx.ArgTys
+              | _ -> None, []
+         
+          let argsMessage, returnType, genericParametersMessage =
+              
+              let retTy =
+                  knownReturnType
+                  |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked()))
+              
               let argRepr = 
                   callerArgs.ArgumentNamesAndTypes
                   |> List.map (fun (name,tTy) -> tTy, {ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero)); ArgReprInfo.Attribs = []})
-              let argsL,retTyL,genParamTysL = NicePrint.prettyLayoutsOfUnresolvedOverloading denv argRepr retTy genericParameters
+                  
+              let argsL,retTyL,genParamTysL = NicePrint.prettyLayoutsOfUnresolvedOverloading denv argRepr retTy genericParameterTypes
               match callerArgs.ArgumentNamesAndTypes with
               | [] -> None, Layout.showL retTyL, Layout.showL genParamTysL
               | items ->
@@ -801,22 +797,17 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   , Layout.showL genParamTysL
 
           let knownReturnType =
-              match cx with 
-              | None -> None
-              | Some cx ->
-              match cx.ReturnType with
+              match knownReturnType with
               | None -> None
               | Some _ -> Some (FSComp.SR.csNoOverloadsFoundReturnType returnType)
 
           let genericParametersMessage =
-              match cx with 
-              | None -> None
-              | Some cx ->
-              match cx.ArgTys  with
+              match genericParameterTypes with
               | [] -> None
-              | [_] -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixSingular genericParameters)
-              | _ -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixPlural genericParameters)
+              | [_] -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixSingular genericParametersMessage)
+              | _ -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixPlural genericParametersMessage)
 
+          let nl = System.Environment.NewLine
           let formatOverloads (overloads: OverloadInformation list) =
               overloads
               |> List.map (fun overload -> overload.OverloadMethodInfo denv m)
