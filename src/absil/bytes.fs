@@ -312,16 +312,7 @@ type ByteMemory with
         | _ when not accessor.CanRead || not accessor.CanWrite -> failwith "Cannot read or write file"
         | _ -> ()
 
-        let safeHolder =
-            { new obj() with
-                override x.Finalize() =
-                    (x :?> IDisposable).Dispose()
-              interface IDisposable with
-                member x.Dispose() =
-                    GC.SuppressFinalize x
-                    accessor.Dispose()
-                    mmf.Dispose() }
-        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, safeHolder)
+        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (accessor, mmf))
 
     static member FromUnsafePointer(addr, length, hold: obj) = 
         RawByteMemory(NativePtr.ofNativeInt addr, length, hold) :> ByteMemory
