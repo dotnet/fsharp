@@ -317,11 +317,13 @@ type FSharpType =
     static member MakeTupleType: types:Type[] -> Type
 
     /// <summary>Returns a <c>System.Type</c> representing an F# tuple type with the given element types</summary>
+    /// <param name="asm">Runtime assembly containing System.Tuple definitions.</param>
     /// <param name="types">An array of types for the tuple elements.</param>
     /// <returns>The type representing the tuple containing the input elements.</returns>
     static member MakeTupleType: asm:Assembly * types:Type[] -> Type
 
     /// <summary>Returns a <c>System.Type</c> representing an F# struct tuple type with the given element types</summary>
+    /// <param name="asm">Runtime assembly containing System.ValueTuple definitions.</param>
     /// <param name="types">An array of types for the tuple elements.</param>
     /// <returns>The type representing the struct tuple containing the input elements.</returns>
     static member MakeStructTupleType: asm:Assembly * types:Type[] -> Type
