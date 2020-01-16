@@ -189,7 +189,7 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
     override _.Slice(pos, count) =
         check pos
         check (pos + count - 1)
-        new RawByteMemory(NativePtr.add addr pos, count, holder) :> ByteMemory
+        RawByteMemory(NativePtr.add addr pos, count, holder) :> ByteMemory
 
     override x.CopyTo stream =
         use stream2 = x.AsStream()
@@ -300,7 +300,7 @@ type ByteMemory with
         RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
 
     static member FromUnsafePointer(addr, length, holder: obj) = 
-        new RawByteMemory(NativePtr.ofNativeInt addr, length, holder) :> ByteMemory
+        RawByteMemory(NativePtr.ofNativeInt addr, length, holder) :> ByteMemory
 
     static member FromArray(bytes, offset, length) =
         ByteArrayMemory(bytes, offset, length) :> ByteMemory
