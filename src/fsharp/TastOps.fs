@@ -2248,17 +2248,18 @@ let checkMemberVal membInfo arity m =
 let checkMemberValRef (vref: ValRef) =
     checkMemberVal vref.MemberInfo vref.ValReprInfo vref.Range
      
-// Get information about the as-ye-unsolved constraints for a set of typars
+/// Get information about the trait constraints for a set of typars.
+/// Put these in canonical order.
 let GetTraitConstraintInfosOfTypars g (tps: Typars) = 
-    let cxs =
-        tps |> List.collect (fun tp -> 
-            tp.Constraints 
-            |> List.choose (fun cx -> match cx with TyparConstraint.MayResolveMember(traitInfo, _) -> Some traitInfo | _ -> None)
-            |> List.sortBy (fun traitInfo -> traitInfo.MemberName, traitInfo.ArgumentTypes.Length))
-    let cxs = cxs |> ListSet.setify (traitsAEquiv g TypeEquivEnv.Empty)
-    cxs
+    [ for tp in tps do 
+            for cx in tp.Constraints do
+            match cx with 
+            | TyparConstraint.MayResolveMember(traitInfo, _) -> yield traitInfo 
+            | _ -> () ]
+    |> ListSet.setify (traitsAEquiv g TypeEquivEnv.Empty)
+    |> List.sortBy (fun traitInfo -> traitInfo.MemberName, traitInfo.ArgumentTypes.Length)
 
-// Get information about the runtime witnesses needed for a set of generalized typars
+/// Get information about the runtime witnesses needed for a set of generalized typars
 let GetTraitWitnessInfosOfTypars g numParentTypars tps = 
     let tps = tps |> List.drop numParentTypars
     let cxs = GetTraitConstraintInfosOfTypars g tps

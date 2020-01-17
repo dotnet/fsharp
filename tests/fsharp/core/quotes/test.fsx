@@ -3635,7 +3635,7 @@ module MoreWitnessTests =
 
 #if LANGVERSION_PREVIEW
 // Check we can take ReflectedDefinition of things involving witness and trait calls
-module QuotationsOfGenericTraitCalls =
+module QuotationsOfGenericCodeWithWitnesses =
     [<ReflectedDefinition>]
     let inline f1 (x: ^T) = x + x // ( ^T : (static member Foo: int -> int) (3))
 
@@ -3652,14 +3652,15 @@ module QuotationsOfGenericTraitCalls =
         let q2 = Quotations.Expr.TryGetReflectedDefinition(minfoWithWitnesses)
 
         match q2 with 
-        | Some (Lambda (witnessArgVar, Lambda(v, CallWithWitnesses(None, mi, minfoWithWitnesses, [Var witnessArgVar], [a2;b2])))) -> 
+        | Some (Lambda (witnessArgVar, Lambda(v, CallWithWitnesses(None, mi, minfoWithWitnesses, [Var witnessArgVar2], [a2;b2])))) -> 
         
-            check "cewlkjwvw01" witnessArgVar.Name "op_Addition"
+            check "cewlkjwvw0a" witnessArgVar.Name "op_Addition"
             check "cewlkjwvw0b" witnessArgVar.Type (typeof<int -> int -> int>)
-            check "cewlkjwvw1" witnessArgVar.Name "op_Addition"
+            check "cewlkjwvw1a" witnessArgVar2.Name "op_Addition"
+            check "cewlkjwvw1b" witnessArgVar2.Type (typeof<int -> int -> int>)
             check "cewlkjwvw2" minfoWithWitnesses.Name "op_Addition$W"
             check "vjnvwiowve" a2 b2 
-            check "cewlkjwvw0" witnessArgVar witnessArgVar
+            check "cewlkjwvw0" witnessArgVar witnessArgVar2
 
         | q -> report_failure (sprintf "gfwhoewvioh32 - unexpected %A" q)
             
@@ -3687,7 +3688,7 @@ module QuotationsOfGenericTraitCalls =
         check "vwroirvjkn" miw.Name "f3$W"
 
         match q4 with 
-        | Some (Lambda(witnessArgVar, Lambda(v, Application(Var witnessArgVar22, Int32 3)))) -> 
+        | Some (Lambda(witnessArgVar, Lambda(v, Application(Var witnessArgVar2, Int32 3)))) -> 
             check "vwehjrwlkj0" witnessArgVar.Name "Foo"
             check "vwehjrwlkj1" witnessArgVar.Type (typeof<int -> int>)
             check "vwehjrwlkj2" witnessArgVar2.Name "Foo"
@@ -3736,7 +3737,90 @@ module QuotationOfConcreteTraitCalls =
     // No error here because it binds to the let bound version
     let q8 = <@ foo ? uhh @>
 
+// Check we can take ReflectedDefinition of things involving multiple implicit witnesses and trait calls
+module QuotationsOfGenericCodeWithMultipleWitnesses =
 
+    // This has three type paramters and two witnesses, one for + and one for -
+    [<ReflectedDefinition>]
+    let inline f1 x y z = (x + y) - z
+
+    match <@ f1 1 2 3 @> with
+    | Quotations.Patterns.Call(_, mi, _) -> 
+        let q1 = Quotations.Expr.TryGetReflectedDefinition(mi)
+        check "vwehwevrwv" q1 None
+    | q -> report_failure (sprintf "gfwhoewvioh - unexpected %A" q)
+
+    match <@ f1 1 2 3 @> with
+    | Quotations.Patterns.CallWithWitnesses(_, mi, minfoWithWitnesses, _, _) -> 
+        let q2 = Quotations.Expr.TryGetReflectedDefinition(minfoWithWitnesses)
+
+        match q2 with 
+        | Some (Lambda (witnessArgVarAdd, 
+                 Lambda (witnessArgVarSub, 
+                    Lambda(xVar, 
+                      Lambda(yVar, 
+                        Lambda(zVar, 
+                           CallWithWitnesses(None, mi1, minfoWithWitnesses1, [Var witnessArgVarSub2], 
+                            [CallWithWitnesses(None, mi2, minfoWithWitnesses2, [Var witnessArgVarAdd2], 
+                               [Var xVar2; Var yVar2]);
+                             Var zVar2]))))))) -> 
+        
+            check "cewlkjwv54" witnessArgVarAdd.Name "op_Addition"
+            check "cewlkjwv55" witnessArgVarSub.Name "op_Subtraction"
+            check "cewlkjwv56" witnessArgVarAdd.Type (typeof<int -> int -> int>)
+            check "cewlkjwv57" witnessArgVarSub.Type (typeof<int -> int -> int>)
+            check "cewlkjwv58" witnessArgVarAdd witnessArgVarAdd2
+            check "cewlkjwv59" witnessArgVarSub witnessArgVarSub2
+            check "cewlkjwv60" xVar xVar2
+            check "cewlkjwv61" yVar yVar2
+            check "cewlkjwv62" zVar zVar2
+
+        | q -> report_failure (sprintf "gfwhoewvioh32 - unexpected %A" q)
+            
+    | q -> report_failure (sprintf "gfwhoewvioh37 - unexpected %A" q)
+    
+// Like QuotationsOfGenericCodeWithMultipleWitnesses but with implementation code the other way around
+module QuotationsOfGenericCodeWithMultipleWitnesses2 =
+
+    [<ReflectedDefinition>]
+    let inline f1 x y z = (x - y) + z
+
+    match <@ f1 1 2 3 @> with
+    | Quotations.Patterns.Call(_, mi, _) -> 
+        let q1 = Quotations.Expr.TryGetReflectedDefinition(mi)
+        check "xvwehwevrwv" q1 None
+    | q -> report_failure (sprintf "xgfwhoewvioh - unexpected %A" q)
+
+    match <@ f1 1 2 3 @> with
+    | Quotations.Patterns.CallWithWitnesses(_, mi, minfoWithWitnesses, _, _) -> 
+        let q2 = Quotations.Expr.TryGetReflectedDefinition(minfoWithWitnesses)
+
+        match q2 with 
+        | Some (Lambda (witnessArgVarAdd, 
+                 Lambda (witnessArgVarSub, 
+                    Lambda(xVar, 
+                      Lambda(yVar, 
+                        Lambda(zVar, 
+                           CallWithWitnesses(None, mi1, minfoWithWitnesses1, [Var witnessArgVarAdd2], 
+                            [CallWithWitnesses(None, mi2, minfoWithWitnesses2, [Var witnessArgVarSub2], 
+                               [Var xVar2; Var yVar2]);
+                             Var zVar2]))))))) -> 
+        
+            check "xcewlkjwv54" witnessArgVarAdd.Name "op_Addition"
+            check "xcewlkjwv55" witnessArgVarSub.Name "op_Subtraction"
+            check "xcewlkjwv56" witnessArgVarAdd.Type (typeof<int -> int -> int>)
+            check "xcewlkjwv57" witnessArgVarSub.Type (typeof<int -> int -> int>)
+            check "xcewlkjwv58" witnessArgVarAdd witnessArgVarAdd2
+            check "xcewlkjwv59" witnessArgVarSub witnessArgVarSub2
+            check "xcewlkjwv60" xVar xVar2
+            check "xcewlkjwv61" yVar yVar2
+            check "xcewlkjwv62" zVar zVar2
+
+        | q -> report_failure (sprintf "xgfwhoewvioh32 - unexpected %A" q)
+            
+    | q -> report_failure (sprintf "xgfwhoewvioh37 - unexpected %A" q)
+    
+    
 module TestOuterConstrainedClass =
     // This example where there is an outer constrained class caused numerous failures
     // because it was trying to pass witnesses for the constraint in the type 
