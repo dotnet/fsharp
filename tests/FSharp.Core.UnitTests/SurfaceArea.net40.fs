@@ -2828,7 +2828,7 @@ Microsoft.FSharp.Core.Operators: Int64 ToInt64$W[T](Microsoft.FSharp.Core.FSharp
 Microsoft.FSharp.Core.Operators: IntPtr ToIntPtr$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.IntPtr], T)
 Microsoft.FSharp.Core.Operators: SByte ToSByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.SByte], T)
 Microsoft.FSharp.Core.Operators: Single ToSingle$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Single], T)
-Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_RangeStep$W[T,TStep](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TStep,T]], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TStep], T, TStep, T)
+Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_RangeStep$W[T,TStep](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TStep], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TStep,T]], T, TStep, T)
 Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_Range$W[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,T]], T, T)
 Microsoft.FSharp.Core.Operators: System.Decimal ToDecimal$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Decimal], T)
 Microsoft.FSharp.Core.Operators: T Abs$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,T], T)
