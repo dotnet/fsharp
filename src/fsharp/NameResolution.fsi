@@ -326,6 +326,9 @@ type internal TcSymbolUses =
     /// Get the locations of all the printf format specifiers in the file
     member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]
 
+    /// Empty collection of symbol uses
+    static member Empty : TcSymbolUses
+
 /// Represents open declaration statement.
 type internal OpenDeclaration =
     { /// Long identifier as it's presented in source code.
