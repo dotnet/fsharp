@@ -3162,6 +3162,7 @@ module TestMatchBang =
 
     testSimpleMatchBang()
     
+#if LANGVERSION_PREVIEW
 module WitnessTests = 
     open FSharp.Data.UnitSystems.SI.UnitSymbols
 
@@ -3633,7 +3634,6 @@ module MoreWitnessTests =
             check "ewlknweknl6" (match FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q5 with :? int as x -> x) 6
             check "ewlknweknl7" (match FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation q6 with :? int as x -> x) 7
 
-#if LANGVERSION_PREVIEW
 // Check we can take ReflectedDefinition of things involving witness and trait calls
 module QuotationsOfGenericCodeWithWitnesses =
     [<ReflectedDefinition>]

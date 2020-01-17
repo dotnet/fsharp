@@ -692,7 +692,11 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                 // If witnesses are available, we should now always find trait witnesses in scope
                 assert not inWitnessPassingScope
         
-                let minfoOpt = ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal g cenv.amap m traitInfo args |> CommitOperationResult 
+                let minfoOpt =
+                    if g.generateWitnesses then 
+                        ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal g cenv.amap m traitInfo args |> CommitOperationResult 
+                    else
+                        None
                 match minfoOpt with
                 | None ->
                     wfail(Error(FSComp.SR.crefQuotationsCantCallTraitMembers(), m))
