@@ -4412,8 +4412,8 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv memSpfn m =
         | [ValSpecResult(_, _, id, _, _, memberConstraintTy, partialValReprInfo, _)] -> 
             let memberConstraintTypars, _ = tryDestForallTy cenv.g memberConstraintTy
             let topValInfo = TranslatePartialArity memberConstraintTypars partialValReprInfo
-            let _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm cenv.g topValInfo memberConstraintTy m
-            //if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcInvalidConstraint(), m))
+            let _, _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm cenv.g topValInfo 0 memberConstraintTy m
+            //if curriedArgInfos.Length > 1 then  error(Error(FSComp.SR.tcInvalidConstraint(), m))
             let argTys = List.concat curriedArgInfos
             let argTys = List.map fst argTys
             let logicalCompiledName = ComputeLogicalName id memberFlags
@@ -12880,7 +12880,7 @@ module IncrClassChecking =
                         InVar isCtorArg
                 | topValInfo -> 
                     //dprintfn "Representing %s as a method %s" v.LogicalName name
-                    let tps, argInfos, _, _ = GetTopValTypeInCompiledForm g topValInfo v.Type v.Range
+                    let tps, _, argInfos, _, _ = GetTopValTypeInCompiledForm g topValInfo 0 v.Type v.Range
 
                     let valSynInfo = SynValInfo(argInfos |> List.mapSquared (fun (_, argInfo) -> SynArgInfo([], false, argInfo.Name)), SynInfo.unnamedRetVal)
                     let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) MemberKind.Member
@@ -12898,6 +12898,7 @@ module IncrClassChecking =
                             let (ValReprInfo(tpNames, args, ret)) = topValInfo
                             let topValInfo = ValReprInfo(tpNames, ValReprInfo.selfMetadata :: args, ret)
                             tauTy, topValInfo
+
                     // Add the enclosing type parameters on to the function
                     let topValInfo = 
                         let (ValReprInfo(tpNames, args, ret)) = topValInfo
@@ -15881,7 +15882,7 @@ module EstablishTypeDefinitionCores =
                                   noAbstractClassAttributeCheck()
                                   noFieldsCheck userFields
                                   let ty', _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner tpenv ty
-                                  let _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm g (arity |> TranslateTopValSynInfo m (TcAttributes cenv envinner) |> TranslatePartialArity []) ty' m
+                                  let _, _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm cenv.g (arity |> TranslateTopValSynInfo m (TcAttributes cenv envinner)  |> TranslatePartialArity []) 0 ty' m
                                   if curriedArgInfos.Length < 1 then error(Error(FSComp.SR.tcInvalidDelegateSpecification(), m))
                                   if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcDelegatesCannotBeCurried(), m))
                                   let ttps = thisTyconRef.Typars m
@@ -17696,10 +17697,10 @@ let TypeCheckOneImplFile
 
             try  
                 let reportErrors = not (checkForErrors())
-
+                let tcVal = LightweightTcValForUsingInBuildMethodCall g
                 PostTypeCheckSemanticChecks.CheckTopImpl 
                    (g, cenv.amap, reportErrors, cenv.infoReader, 
-                    env.eInternalsVisibleCompPaths, cenv.topCcu, envAtEnd.DisplayEnv, 
+                    env.eInternalsVisibleCompPaths, cenv.topCcu, tcVal, envAtEnd.DisplayEnv, 
                     implFileExprAfterSig, extraAttribs, isLastCompiland, 
                     isInternalTestSpanStackReferring)
 
