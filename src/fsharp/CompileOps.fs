@@ -3758,9 +3758,9 @@ type TcConfigProvider =
 
 [<Sealed>]
 type TcImportsSafeDisposal
-    (disposeActions: (unit -> unit) list,
+    (disposeActions: ResizeArray<unit -> unit>,
 #if !NO_EXTENSIONTYPING
-     disposeTypeProviderActions: (unit -> unit) list,
+     disposeTypeProviderActions: ResizeArray<unit -> unit>,
 #endif
      compilationThread: ICompilationThread) =
 
@@ -3770,10 +3770,10 @@ type TcImportsSafeDisposal
         // disposing deliberately only closes this tcImports, not the ones up the chain 
         isDisposed <- true        
         if verbose then 
-            dprintf "disposing of TcImports, %d binaries\n" disposeActions.Length
+            dprintf "disposing of TcImports, %d binaries\n" disposeActions.Count
 #if !NO_EXTENSIONTYPING
         let actions = disposeTypeProviderActions
-        if actions.Length > 0 then
+        if actions.Count > 0 then
             compilationThread.EnqueueWork (fun _ -> for action in actions do action())
 #endif
         for action in disposeActions do action()
@@ -3832,12 +3832,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let mutable dllTable: NameMap<ImportedBinary> = NameMap.empty
     let mutable ccuInfos: ImportedAssembly list = []
     let mutable ccuTable: NameMap<ImportedAssembly> = NameMap.empty
-    let mutable disposeActions = []
+    let disposeActions = ResizeArray()
     let mutable disposed = false
     let mutable ilGlobalsOpt = ilGlobalsOpt
     let mutable tcGlobals = None
 #if !NO_EXTENSIONTYPING
-    let mutable disposeTypeProviderActions = []
+    let disposeTypeProviderActions = ResizeArray()
     let mutable generatedTypeRoots = new System.Collections.Generic.Dictionary<ILTypeRef, int * ProviderGeneratedType>()
     let mutable tcImportsWeak = TcImportsWeakHack (WeakReference<_> this)
 #endif
@@ -4065,12 +4065,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     member private tcImports.AttachDisposeAction action =
         CheckDisposed()
-        disposeActions <- action :: disposeActions
+        disposeActions.Add action
 
 #if !NO_EXTENSIONTYPING
     member private tcImports.AttachDisposeTypeProviderAction action =
         CheckDisposed()
-        disposeTypeProviderActions <- action :: disposeTypeProviderActions
+        disposeTypeProviderActions.Add action
 #endif
   
     // Note: the returned binary reader is associated with the tcImports, i.e. when the tcImports are closed 
