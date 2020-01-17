@@ -767,12 +767,15 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | UnresolvedOverloading(denv, callerArgs, failure, m) ->
           
+          // extract eventual information (return type and type parameters)
+          // from ConstraintTraitInfo
           let knownReturnType, genericParameterTypes =
               match failure with
               | NoOverloadsFound (cx=Some cx)
               | PossibleCandidates (cx=Some cx) -> cx.ReturnType, cx.ArgTys
               | _ -> None, []
          
+          // prepare message parts (known arguments, known return type, known generic parameters)
           let argsMessage, returnType, genericParametersMessage =
               
               let retTy =
@@ -784,6 +787,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   |> List.map (fun (name,tTy) -> tTy, {ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero)); ArgReprInfo.Attribs = []})
                   
               let argsL,retTyL,genParamTysL = NicePrint.prettyLayoutsOfUnresolvedOverloading denv argRepr retTy genericParameterTypes
+              
               match callerArgs.ArgumentNamesAndTypes with
               | [] -> None, Layout.showL retTyL, Layout.showL genParamTysL
               | items ->
@@ -815,6 +819,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               |> List.map FSComp.SR.formatDashItem
               |> String.concat nl
          
+          // assemble final message composing the parts
           let msg =
               let optionalParts =
                 [knownReturnType; genericParametersMessage; argsMessage]
