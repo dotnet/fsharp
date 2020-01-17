@@ -204,10 +204,10 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
         Marshal.Copy(NativePtr.toNativeInt addr, res, 0, res.Length)
         res
 
-    override this.AsStream() =
+    override _.AsStream() =
         new SafeUnmanagedMemoryStream(addr, int64 length, holder) :> Stream
 
-    override this.AsReadOnlyStream() =
+    override _.AsReadOnlyStream() =
         new SafeUnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read, holder) :> Stream            
 
 [<Struct;NoEquality;NoComparison>]
