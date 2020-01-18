@@ -278,7 +278,7 @@ module GlobalUsageAnalysis =
                      // NO: app but function is not val 
                      noInterceptF z origExpr 
 
-             | Expr.Op (TOp.TupleFieldGet (tupInfo, n), ts, [x], _) when not (evalTupInfoIsStruct tupInfo)  -> 
+             | Expr.Op (TOp.TupleFieldGet (_, n), ts, [x], _) -> 
                  let context = TupleGet (n, ts) :: context
                  recognise context x
                  
@@ -360,14 +360,19 @@ let checkTS = function
 /// explicit tuple-structure in expr 
 let rec uncheckedExprTS expr = 
     match expr with 
-    | Expr.Op (TOp.Tuple tupInfo, _tys, args, _) when not (evalTupInfoIsStruct tupInfo) -> 
+    | Expr.Op (TOp.Tuple _, _, args, _) -> 
         TupleTS (List.map uncheckedExprTS args)
     | _ -> 
         UnknownTS
 
 let rec uncheckedTypeTS g ty =
-    if isRefTupleTy g ty then 
-        let tys = destRefTupleTy g ty 
+    if isAnyTupleTy g ty then 
+        let tys =
+            if isRefTupleTy g ty then
+                destRefTupleTy g ty 
+            else
+                destStructTupleTy g ty
+                
         TupleTS (List.map (uncheckedTypeTS g) tys)
     else 
         UnknownTS
@@ -503,8 +508,12 @@ let rec zipTupleStructureAndType g ts ty =
     //  (a) (restricted) tuple-structure, and
     //  (b) type fringe for each arg position.
     match ts with
-    | TupleTS tss when isRefTupleTy g ty ->
-        let tys = destRefTupleTy g ty 
+    | TupleTS tss ->
+        let tys = 
+            if isRefTupleTy g ty then
+                destRefTupleTy g ty 
+            else
+                destStructTupleTy g ty
         let tss, tyfringe = zipTupleStructuresAndTypes g tss tys
         TupleTS tss, tyfringe
     | _ -> 
@@ -698,7 +707,7 @@ let rec collapseArg env bindings ts (x: Expr) =
     | UnknownTS, x -> 
         let bindings, vx = noEffectExpr env bindings x
         bindings, [vx]
-    | TupleTS tss, Expr.Op (TOp.Tuple tupInfo, _xtys, xs, _) when not (evalTupInfoIsStruct tupInfo) -> 
+    | TupleTS tss, Expr.Op (TOp.Tuple _, _, xs, _) -> 
         let env = suffixE env "'"
         collapseArgs env bindings 1 tss xs
     | TupleTS tss, x                      -> 
@@ -706,7 +715,11 @@ let rec collapseArg env bindings ts (x: Expr) =
         let bindings, x = noEffectExpr env bindings x
         let env  = suffixE env "_p" 
         let xty = tyOfExpr env.eg x
-        let xtys = destRefTupleTy env.eg xty
+        let xtys =
+            if isRefTupleTy env.eg xty then
+                destRefTupleTy env.eg xty 
+            else
+                destStructTupleTy env.eg xty
         let bindings, xs = buildProjections env bindings x xtys
         collapseArg env bindings (TupleTS tss) (mkRefTupled env.eg m xs xtys)
 
