@@ -5273,7 +5273,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) s
     // Workaround for .NET and Visual Studio restriction w.r.t debugger type proxys
     // Mark internal constructors in internal classes as public.
     let access =
-        if access = ILMemberAccess.Assembly && vspec.IsConstructor && IsHiddenTycon g eenv.sigToImplRemapInfo vspec.MemberApparentEntity.Deref then
+        if access = ILMemberAccess.Assembly && vspec.IsConstructor && IsHiddenTycon eenv.sigToImplRemapInfo vspec.MemberApparentEntity.Deref then
             ILMemberAccess.Public
         else
             access
@@ -6488,7 +6488,7 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
     GenLetRecBindings cenv cgbuf eenv ([bind], m)
 
   | ModuleOrNamespaceBinding.Module (mspec, mdef) ->
-    let hidden = IsHiddenTycon cenv.g eenv.sigToImplRemapInfo mspec
+    let hidden = IsHiddenTycon eenv.sigToImplRemapInfo mspec
 
     let eenvinner =
         if mspec.IsNamespace then eenv else
@@ -6827,8 +6827,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
         let ilIntfTys = tycon.ImmediateInterfaceTypesOfFSharpTycon |> List.map (GenType cenv.amap m eenvinner.tyenv)
         let ilTypeName = tref.Name
 
-        let hidden = IsHiddenTycon g eenv.sigToImplRemapInfo tycon
-        let hiddenRepr = hidden || IsHiddenTyconRepr g eenv.sigToImplRemapInfo tycon
+        let hidden = IsHiddenTycon eenv.sigToImplRemapInfo tycon
+        let hiddenRepr = hidden || IsHiddenTyconRepr eenv.sigToImplRemapInfo tycon
         let access = ComputeTypeAccess tref hidden
 
         // The implicit augmentation doesn't actually create CompareTo(object) or Object.Equals
@@ -7411,7 +7411,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
     | TExnFresh _ ->
         let ilThisTy = GenExnType cenv.amap m eenv.tyenv exncref
         let tref = ilThisTy.TypeRef
-        let isHidden = IsHiddenTycon g eenv.sigToImplRemapInfo exnc
+        let isHidden = IsHiddenTycon eenv.sigToImplRemapInfo exnc
         let access = ComputeTypeAccess tref isHidden
         let reprAccess = ComputeMemberAccess isHidden
         let fspecs = exnc.TrueInstanceFieldsAsList
