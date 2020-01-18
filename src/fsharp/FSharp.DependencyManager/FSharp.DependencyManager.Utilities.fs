@@ -281,21 +281,20 @@ $(PACKAGEREFERENCES)
           BeforeTargets='CoreCompile'
           DependsOnTargets='CollectPackageReferences'>
       <ItemGroup>
-
         <InteractiveResolvedFile Remove='@(InteractiveResolvedFile)' />
-
         <InteractiveResolvedFile Include='@(ResolvedCompileFileDefinitions->ClearMetadata())' KeepDuplicates='false'>
-            <NormlizedPathInPackage Condition=""'%(ResolvedCompileFileDefinitions.PathInPackage)'!=''"">$([System.String]::Copy('%(ResolvedCompileFileDefinitions.PathInPackage)').Replace('/', '\'))</NormlizedPathInPackage>
-            <PackageRoot Condition=""'%(InteractiveResolvedFile.NormlizedPathInPackage)'!=''"">$([System.String]::Copy('%(Identity)').Replace('%(InteractiveResolvedFile.NormlizedPathInPackage)', ''))</PackageRoot>
+            <NormalizedIdentity Condition=""'%(Identity)'!=''"">$([System.String]::Copy('%(Identity)').Replace('\', '/'))</NormalizedIdentity>
+            <NormalizedPathInPackage Condition=""'%(ResolvedCompileFileDefinitions.PathInPackage)'!=''"">$([System.String]::Copy('%(ResolvedCompileFileDefinitions.PathInPackage)').Replace('\', '/'))</NormalizedPathInPackage>
+            <PackageRoot Condition=""'%(InteractiveResolvedFile.NormalizedPathInPackage)'!=''"">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').Replace('%(InteractiveResolvedFile.NormalizedPathInPackage)', ''))</PackageRoot>
             <InitializeSourcePath>%(InteractiveResolvedFile.PackageRoot)content\%(ResolvedCompileFileDefinitions.FileName)%(ResolvedCompileFileDefinitions.Extension).fsx</InitializeSourcePath>
             <IsNotImplementationReference>$([System.String]::Copy('%(ResolvedCompileFileDefinitions.PathInPackage)').StartsWith('ref/'))</IsNotImplementationReference>
             <NuGetPackageId>%(ResolvedCompileFileDefinitions.NuGetPackageId)</NuGetPackageId>
             <NuGetPackageVersion>%(ResolvedCompileFileDefinitions.NuGetPackageVersion)</NuGetPackageVersion>
         </InteractiveResolvedFile>
-
         <InteractiveResolvedFile Include='@(RuntimeCopyLocalItems->ClearMetadata())' KeepDuplicates='false' >
-            <NormlizedPathInPackage Condition=""'%(RuntimeCopyLocalItems.PathInPackage)'!=''"">$([System.String]::Copy('%(RuntimeCopyLocalItems.PathInPackage)').Replace('/', '\'))</NormlizedPathInPackage>
-            <PackageRoot Condition=""'%(InteractiveResolvedFile.NormlizedPathInPackage)'!=''"">$([System.String]::Copy('%(Identity)').Replace('%(InteractiveResolvedFile.NormlizedPathInPackage)', ''))</PackageRoot>
+            <NormalizedIdentity Condition=""'%(Identity)'!=''"">$([System.String]::Copy('%(Identity)').Replace('\', '/'))</NormalizedIdentity>
+            <NormalizedPathInPackage Condition=""'%(RuntimeCopyLocalItems.PathInPackage)'!=''"">$([System.String]::Copy('%(RuntimeCopyLocalItems.PathInPackage)').Replace('\', '/'))</NormalizedPathInPackage>
+            <PackageRoot Condition=""'%(InteractiveResolvedFile.NormalizedPathInPackage)'!=''"">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').Replace('%(InteractiveResolvedFile.NormalizedPathInPackage)', ''))</PackageRoot>
             <InitializeSourcePath>%(InteractiveResolvedFile.PackageRoot)content\%(RuntimeCopyLocalItems.FileName)%(RuntimeCopyLocalItems.Extension).fsx</InitializeSourcePath>
             <IsNotImplementationReference>$([System.String]::Copy('%(RuntimeCopyLocalItems.PathInPackage)').StartsWith('ref/'))</IsNotImplementationReference>
             <NuGetPackageId>%(RuntimeCopyLocalItems.NuGetPackageId)</NuGetPackageId>
@@ -326,8 +325,8 @@ $(PACKAGEREFERENCES)
       <ReferenceLines Include='//' />
       <ReferenceLines Include='// Includes' />
       <ReferenceLines Include='//' />
-      <ReferenceLines Include='#I @""%(InteractiveResolvedFile.PackageRoot)""' Condition= ""$([System.String]::Copy('%(InteractiveResolvedFile.PackageRoot)').EndsWith('\')) and Exists(%(InteractiveResolvedFile.PackageRoot))"" KeepDuplicates='false' />
-      <ReferenceLines Include='#I @""%(NativeIncludeRoots.Path)""' Condition= ""'%(NativeIncludeRoots.Path)' != ''"" KeepDuplicates='false' />
+      <ReferenceLines Include='#I @""%(InteractiveResolvedFile.PackageRoot)""' Condition= ""'%(InteractiveResolvedFile.NugetPackageId)' != '' and '%(InteractiveResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(InteractiveResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(InteractiveResolvedFile.NugetPackageId)' != 'System.ValueTuple' and $([System.String]::Copy('%(InteractiveResolvedFile.PackageRoot)').EndsWith('/')) and Exists(%(InteractiveResolvedFile.PackageRoot))"" KeepDuplicates='false' />
+      <ReferenceLines Include='#I @""%(NativeIncludeRoots.Path)""' Condition= ""'%(InteractiveResolvedFile.NugetPackageId)' != '' and '%(InteractiveResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(InteractiveResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(InteractiveResolvedFile.NugetPackageId)' != 'System.ValueTuple' and '%(NativeIncludeRoots.Path)' != ''"" KeepDuplicates='false' />
       <ReferenceLines Include='//' />
       <ReferenceLines Include='// Load Sources' />
       <ReferenceLines Include='//' />
