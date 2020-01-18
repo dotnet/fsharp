@@ -63,9 +63,7 @@ neg10.fs(169,32,169,35): typecheck error FS0035: This construct is deprecated: T
 
 neg10.fs(169,32,169,33): typecheck error FS3213: The member 'X : unit -> 'a' matches multiple overloads of the same method.
 Please restrict it to one of the following:
-
    X : unit -> 'a
-
    X : unit -> 'a.
 
 neg10.fs(169,19,169,26): typecheck error FS0783: At least one override did not correctly implement its corresponding abstract member
