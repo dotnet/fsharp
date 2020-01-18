@@ -77,7 +77,7 @@ type public FSharpChecker =
     /// <param name="keepAllBackgroundResolutions">If false, do not keep full intermediate checking results from background checking suitable for returning from GetBackgroundCheckResultsForFileInProject. This reduces memory usage.</param>
     /// <param name="legacyReferenceResolver">An optional resolver for non-file references, for legacy purposes</param>
     /// <param name="tryGetMetadataSnapshot">An optional resolver to access the contents of .NET binaries in a memory-efficient way</param>
-    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  * ?legacyReferenceResolver: ReferenceResolver.Resolver * ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * ?suggestNamesForErrors: bool -> FSharpChecker
+    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  * ?legacyReferenceResolver: ReferenceResolver.Resolver * ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * ?suggestNamesForErrors: bool * ?keepAllBackgroundSymbolUses: bool -> FSharpChecker
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
