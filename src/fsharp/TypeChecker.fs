@@ -5112,13 +5112,12 @@ and TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty =
 
 and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty tyargs =
     let ty = convertToTypeWithMetadataIfPossible cenv.g ty
-    if not (isAppTy cenv.g ty) then error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
-    match ty with 
-    | TType_app(tcref, tinst) -> 
+    match tryAppTy cenv.g ty with
+    | ValueSome(tcref,tinst) ->
         let pathTypeArgs = List.truncate (max (tinst.Length - tcref.Typars(mWholeTypeApp).Length) 0) tinst
-        TcTypeApp cenv newOk checkCxs occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs 
-    | _ -> error(InternalError("TcNestedTypeApplication: expected type application", mWholeTypeApp))
-
+        TcTypeApp cenv newOk checkCxs occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs
+    | _ ->
+        error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
 
 and TryAdjustHiddenVarNameToCompGenName cenv env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with 
