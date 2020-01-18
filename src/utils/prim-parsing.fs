@@ -7,6 +7,7 @@ namespace  Internal.Utilities.Text.Parsing
 open Internal.Utilities.Text.Lexing
 
 open System
+open System.Buffers
 
 exception RecoverableParseError
 exception Accept of obj
@@ -131,11 +132,7 @@ module internal Implementation =
     //-------------------------------------------------------------------------
     // Read the tables written by FSYACC.  
 
-    type AssocTable(elemTab:uint16[], offsetTab:uint16[]) =
-        let cacheSize = 7919 // the 1000'th prime
-        // Use a simpler hash table with faster lookup, but only one
-        // hash bucket per key.
-        let cache = Array.zeroCreate<int> (cacheSize * 2)
+    type AssocTable(elemTab: uint16[], offsetTab: uint16[], cache: int[], cacheSize: int) =
 
         member t.ReadAssoc (minElemNum,maxElemNum,defaultValueOfAssoc,keyToFind) =     
             // do a binary chop on the table 
@@ -234,8 +231,21 @@ module internal Implementation =
         let ruleValues    = (Array.zeroCreate 100 : obj[])              
         let lhsPos        = (Array.zeroCreate 2 : Position[])                                            
         let reductions = tables.reductions
-        let actionTable = new AssocTable(tables.actionTableElements, tables.actionTableRowOffsets)
-        let gotoTable = new AssocTable(tables.gotos, tables.sparseGotoTableRowOffsets)
+        let cacheSize = 7919 // the 1000'th prime
+        // Use a simpler hash table with faster lookup, but only one
+        // hash bucket per key.
+        let actionTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
+        let gotoTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
+        // Clear the arrays since ArrayPool does not
+        Array.Clear(actionTableCache, 0, actionTableCache.Length)
+        Array.Clear(gotoTableCache, 0, gotoTableCache.Length)
+        use _cacheDisposal = 
+            { new IDisposable with 
+                member _.Dispose() = 
+                    ArrayPool<int>.Shared.Return actionTableCache
+                    ArrayPool<int>.Shared.Return gotoTableCache }
+        let actionTable = AssocTable(tables.actionTableElements, tables.actionTableRowOffsets, actionTableCache, cacheSize)
+        let gotoTable = AssocTable(tables.gotos, tables.sparseGotoTableRowOffsets, gotoTableCache, cacheSize)
         let stateToProdIdxsTable = new IdxToIdxListTable(tables.stateToProdIdxsTableElements, tables.stateToProdIdxsTableRowOffsets)
 
         let parseState =                                                                                            
