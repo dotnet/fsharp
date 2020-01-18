@@ -61,6 +61,8 @@ param (
 
 Set-StrictMode -version 2.0
 $ErrorActionPreference = "Stop"
+$BuildCategory = ""
+$BuildMessage = ""
 
 function Print-Usage() {
     Write-Host "Common settings:"
@@ -303,6 +305,9 @@ function EnablePreviewSdks() {
 }
 
 try {
+    $script:BuildCategory = "Build"
+    $script:BuildMessage = "Failure preparing build"
+
     Process-Arguments
 
     . (Join-Path $PSScriptRoot "build-utils.ps1")
@@ -317,9 +322,11 @@ try {
     }
 
     if ($bootstrap) {
+        $script:BuildMessage = "Failure building bootstrap compiler"
         $bootstrapDir = Make-BootstrapBuild
     }
 
+    $script:BuildMessage = "Failure building product"
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
         if ($noVisualStudio) {
             BuildCompiler
@@ -332,6 +339,8 @@ try {
         VerifyAssemblyVersionsAndSymbols
     }
 
+    $script:BuildCategory = "Test"
+    $script:BuildMessage = "Failure running tests"
     $desktopTargetFramework = "net472"
     $coreclrTargetFramework = "netcoreapp3.0"
 
@@ -421,6 +430,7 @@ catch {
     Write-Host $_
     Write-Host $_.Exception
     Write-Host $_.ScriptStackTrace
+    Write-PipelineTelemetryError -Category $script:BuildCategory -Message $script:BuildMessage
     ExitWithExitCode 1
 }
 finally {
