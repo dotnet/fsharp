@@ -4,11 +4,17 @@
 
 To run tests, use variations such as the following, depending on which test suite and build configuration you want:
 
-    build.cmd test
-    build.cmd net40 test
-    build.cmd coreclr test
-    build.cmd vs test
-    build.cmd all test
+    ./build -testAll -c Release
+    ./build -test -c Release
+    ./build -testCambridge  -c Release
+    ./build -testCompiler  -c Release
+    ./build -testDependencyManager -c Release
+    ./build -testDesktop -c Release
+    ./build -testCoreClr -c Release
+    ./build -testFSharpCore -c Release
+    ./build -testFSharpQA -c Release
+    ./build -testScripting -c Release
+    ./build -testVs -c Release
 
 You can also submit pull requests to https://github.com/dotnet/fsharp and run the tests via continuous integration. Most people do wholesale testing that way.
 
@@ -48,7 +54,7 @@ There are also negative tests checking code expected to fail compilation. See no
 
 The FSharpQA suite relies on [Perl](http://www.perl.org/get.html), StrawberryPerl package from nuget is used automatically by the test suite.
 
-These tests use the `RunAll.pl` framework to execute, however the easiest way to run them is via the `build.cmd` script, see [usage examples](https://github.com/Microsoft/visualfsharp/blob/master/build.cmd#L31).
+These tests use the `RunAll.pl` framework to execute, however the easiest way to run them is via the `./build` script, see [usage examples](https://github.com/Microsoft/visualfsharp/blob/master/build.cmd#L31).
 
 Tests are grouped in folders per area. Each folder contains a number of source code files and a single `env.lst` file. The `env.lst` file defines a series of test cases, one per line.
 
@@ -66,7 +72,7 @@ For the FSharpQA suite, the list of test areas and their associated "tags" is st
 
 Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specified, all tests will be run.
 
-If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN") and then pass that as an argument to `build.cmd`: `build.cmd test-net40-fsharpqa include RERUN`.
+If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN") and adjust `ttags` [run.fsharpqa.test.fsx script](tests/fsharpqa/run.fsharpqa.test.fsx) and run it.
 
 ### FSharp.Compiler.UnitTests, FSharp.Core.UnitTests, VisualFSharp.UnitTests
 
