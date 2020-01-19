@@ -66,10 +66,6 @@ type ByteMemory () =
 type ByteArrayMemory(bytes: byte[], offset, length) =
     inherit ByteMemory()
 
-    let checkLengthForStream () =
-        if length <= 0 then
-            raise (ArgumentOutOfRangeException("length", "Cannot create a stream with a length of zero or less."))
-
     let checkReadCount count =
         if count <= 0 then
             raise (ArgumentOutOfRangeException("count", "Count is less than or equal to zero."))
@@ -131,12 +127,16 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
             Array.empty
 
     override _.AsStream() =
-        checkLengthForStream ()
-        new MemoryStream(bytes, offset, length) :> Stream
+        if length > 0 then
+            new MemoryStream(bytes, offset, length) :> Stream
+        else
+            new MemoryStream([||], 0, 0, false) :> Stream
 
     override _.AsReadOnlyStream() =
-        checkLengthForStream ()
-        new MemoryStream(bytes, offset, length, false) :> Stream
+        if length > 0 then
+            new MemoryStream(bytes, offset, length, false) :> Stream
+        else
+            new MemoryStream([||], 0, 0, false) :> Stream
 
 [<Sealed>]
 type SafeUnmanagedMemoryStream =
@@ -179,10 +179,6 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
     let checkReadCount count =
         if count <= 0 then
             raise (ArgumentOutOfRangeException("count", "Count is less than or equal to zero."))
-
-    let checkLengthForStream () =
-        if length <= 0 then
-            raise (ArgumentOutOfRangeException("length", "Cannot create a stream with a length of zero or less."))
 
     do
         if length < 0 then
@@ -252,12 +248,16 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
             Array.empty
 
     override _.AsStream() =
-        checkLengthForStream ()
-        new SafeUnmanagedMemoryStream(addr, int64 length, hold) :> Stream
+        if length > 0 then
+            new SafeUnmanagedMemoryStream(addr, int64 length, hold) :> Stream
+        else
+            new MemoryStream([||], 0, 0, false) :> Stream
 
     override _.AsReadOnlyStream() =
-        checkLengthForStream ()
-        new SafeUnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read, hold) :> Stream
+        if length > 0 then
+            new SafeUnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read, hold) :> Stream
+        else
+            new MemoryStream([||], 0, 0, false) :> Stream
 
 [<Struct;NoEquality;NoComparison>]
 type ReadOnlyByteMemory(bytes: ByteMemory) =

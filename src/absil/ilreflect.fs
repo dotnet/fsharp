@@ -2076,9 +2076,8 @@ let buildModuleFragment cenv emEnv (asmB: AssemblyBuilder) (modB: ModuleBuilder)
         let attribs = (match r.Access with ILResourceAccess.Public -> ResourceAttributes.Public | ILResourceAccess.Private -> ResourceAttributes.Private) 
         match r.Location with 
         | ILResourceLocation.Local bytes -> 
-            if bytes.Length > 0 then
-                use stream = bytes.AsStream()
-                modB.DefineManifestResourceAndLog (r.Name, stream, attribs)
+            use stream = bytes.AsStream()
+            modB.DefineManifestResourceAndLog (r.Name, stream, attribs)
         | ILResourceLocation.File (mr, _) -> 
            asmB.AddResourceFileAndLog (r.Name, mr.Name, attribs)
         | ILResourceLocation.Assembly _ -> 
