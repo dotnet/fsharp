@@ -66,10 +66,6 @@ type ByteMemory () =
 type ByteArrayMemory(bytes: byte[], offset, length) =
     inherit ByteMemory()
 
-    let checkReadCount count =
-        if count <= 0 then
-            raise (ArgumentOutOfRangeException("count", "Count is less than or equal to zero."))
-
     let checkCount count =
         if count < 0 then
             raise (ArgumentOutOfRangeException("count", "Count is less than zero."))
@@ -88,8 +84,11 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
     override _.Length = length
 
     override _.ReadBytes(pos, count) = 
-        checkReadCount count
-        Array.sub bytes (offset + pos) count
+        checkCount count
+        if count > 0 then
+            Array.sub bytes (offset + pos) count
+        else
+            Array.empty
 
     override _.ReadInt32 pos =
         let finalOffset = offset + pos
@@ -105,8 +104,11 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         ((uint16 bytes.[finalOffset + 1]) <<< 8)
 
     override _.ReadUtf8String(pos, count) =
-        checkReadCount count
-        System.Text.Encoding.UTF8.GetString(bytes, offset + pos, count)
+        checkCount count
+        if count > 0 then
+            System.Text.Encoding.UTF8.GetString(bytes, offset + pos, count)
+        else
+            String.Empty
 
     override _.Slice(pos, count) =
         checkCount count
@@ -180,10 +182,6 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         if i < 0 || i >= length then 
             raise (ArgumentOutOfRangeException("i"))
 
-    let checkReadCount count =
-        if count <= 0 then
-            raise (ArgumentOutOfRangeException("count", "Count is less than or equal to zero."))
-
     let checkCount count =
         if count < 0 then
             raise (ArgumentOutOfRangeException("count", "Count is less than zero."))
@@ -204,18 +202,24 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
     override _.Length = length
 
     override _.ReadUtf8String(pos, count) =
-        checkReadCount count
-        check pos
-        check (pos + count - 1)
-        System.Text.Encoding.UTF8.GetString(NativePtr.add addr pos, count)
+        checkCount count
+        if count > 0 then
+            check pos
+            check (pos + count - 1)
+            System.Text.Encoding.UTF8.GetString(NativePtr.add addr pos, count)
+        else
+            String.Empty
 
     override _.ReadBytes(pos, count) = 
-        checkReadCount count
-        check pos
-        check (pos + count - 1)
-        let res = Bytes.zeroCreate count
-        Marshal.Copy(NativePtr.toNativeInt addr + nativeint pos, res, 0, count)
-        res
+        checkCount count
+        if count > 0 then
+            check pos
+            check (pos + count - 1)
+            let res = Bytes.zeroCreate count
+            Marshal.Copy(NativePtr.toNativeInt addr + nativeint pos, res, 0, count)
+            res
+        else
+            Array.empty
 
     override _.ReadInt32 pos =
         check pos
