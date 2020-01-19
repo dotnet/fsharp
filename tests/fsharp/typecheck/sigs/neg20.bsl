@@ -161,16 +161,11 @@ but here has type
 
 neg20.fs(131,5,131,24): typecheck error FS0041: No overloads match for method 'OM3'.
 
-
-
 Known types of arguments: string * obj
 
-
-
 Available overloads:
- - static member C.OM3 : x:'b * y:'b -> int
-
- - static member C.OM3 : x:'b * y:int -> int
+ - static member C.OM3 : x:'b * y:'b -> int // Argument 'y' doesn't match
+ - static member C.OM3 : x:'b * y:int -> int // Argument 'y' doesn't match
 
 neg20.fs(152,13,152,23): typecheck error FS0033: The type 'Test.BadNumberOfGenericParameters.C<_>' expects 1 type argument(s) but is given 2
 
@@ -202,16 +197,11 @@ neg20.fs(167,13,167,31): typecheck error FS0502: The member or object constructo
 
 neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method 'M'.
 
-
-
 Known types of arguments: string * obj
 
-
-
 Available overloads:
- - static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string
-
- - static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string
+ - static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string // Argument 'args' doesn't match
+ - static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string // Argument at index 1 doesn't match
 
 neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to have type
     'int'    
@@ -260,16 +250,11 @@ but here has type
 
 neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method 'M'.
 
-
-
 Known types of arguments: string * obj
 
-
-
 Available overloads:
- - static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string
-
- - static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string
+ - static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string // Argument 'args' doesn't match
+ - static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string // Argument at index 1 doesn't match
 
 neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to have type
     'string'    
@@ -394,30 +379,19 @@ neg20.fs(322,8,322,18): typecheck error FS3132: This type definition may not hav
 
 neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'String' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
-
-
-Known type of argument: 'a
-
-
+Known type of argument: 'a0
 
 Candidates:
  - System.String(value: char []) : System.String
-
  - System.String(value: nativeptr<char>) : System.String
-
  - System.String(value: nativeptr<sbyte>) : System.String
 
 neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'Guid' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
-
-
-Known type of argument: 'a
-
-
+Known type of argument: 'a0
 
 Candidates:
  - System.Guid(b: byte []) : System.Guid
-
  - System.Guid(g: string) : System.Guid
 
 neg20.fs(355,19,355,38): typecheck error FS1124: Multiple types exist called 'OverloadedClassName', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. 'OverloadedClassName<_>'.

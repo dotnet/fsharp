@@ -98,7 +98,6 @@ type OverloadInformation =
         amap : ImportMap
         error: exn
     }
-    member OverloadMethodInfo : displayEnv: DisplayEnv -> m: range -> string
 
 /// Cases for overload resolution failure that exists in the implementation of the compiler.
 type OverloadResolutionFailure =
@@ -124,7 +123,7 @@ exception ErrorFromAddingConstraint             of displayEnv: DisplayEnv * exn 
 exception UnresolvedConversionOperator          of displayEnv: DisplayEnv * TType * TType * range
 exception UnresolvedOverloading                 of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range
 exception NonRigidTypar                         of displayEnv: DisplayEnv * string option * range * TType * TType * range
-
+exception ArgDoesNotMatchError                  of error: ErrorsFromAddingSubsumptionConstraint * calledMeth: CalledMeth<Expr> * calledArg: CalledArg * callerArg: CallerArg<Expr>
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
 type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
 

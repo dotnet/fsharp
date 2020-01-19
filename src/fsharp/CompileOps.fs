@@ -811,10 +811,23 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | [_] -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixSingular genericParametersMessage)
               | _ -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixPlural genericParametersMessage)
 
+          let overloadMethodInfo displayEnv m (x: OverloadInformation) =
+              let paramInfo =
+                  match x.error with
+                  | :? ArgDoesNotMatchError as x ->
+                      let nameOrOneBasedIndexMessage =
+                          x.calledArg.NameOpt
+                          |> Option.map (fun n -> FSComp.SR.csOverloadCandidateNamedArgumentTypeMismatch n.idText)
+                          |> Option.defaultValue (FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((snd x.calledArg.Position) + 1))
+                      sprintf " // %s" nameOrOneBasedIndexMessage
+                  | _ -> ""
+                  
+              (NicePrint.stringOfMethInfo x.amap m displayEnv x.methodSlot.Method) + paramInfo
+              
           let nl = System.Environment.NewLine
           let formatOverloads (overloads: OverloadInformation list) =
               overloads
-              |> List.map (fun overload -> overload.OverloadMethodInfo denv m)
+              |> List.map (overloadMethodInfo denv m)
               |> List.sort
               |> List.map FSComp.SR.formatDashItem
               |> String.concat nl

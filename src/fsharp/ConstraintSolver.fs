@@ -190,7 +190,6 @@ type OverloadInformation =
         amap : ImportMap
         error: exn
     }
-    member x.OverloadMethodInfo displayEnv m = NicePrint.stringOfMethInfo x.amap m displayEnv x.methodSlot.Method
 
 /// Cases for overload resolution failure that exists in the implementation of the compiler.
 type OverloadResolutionFailure =
@@ -522,6 +521,11 @@ exception AbortForFailedOverloadResolution
 /// AbortForFailedOverloadResolution is caught and processing continues.
 let inline TryD_IgnoreAbortForFailedOverloadResolution f1 f2 =
     TryD f1 (function AbortForFailedOverloadResolution -> CompleteD | exn -> f2 exn)
+
+exception LocallyAbortOperationThatFailsToResolveOverload
+
+/// used to provide detail about non matched argument in overload resolution error message
+exception ArgDoesNotMatchError of error: ErrorsFromAddingSubsumptionConstraint * calledMeth: CalledMeth<Expr> * calledArg: CalledArg * callerArg: CallerArg<Expr>
 
 /// Represents a very local condition where we prefer to report errors before stripping type abbreviations.
 exception LocallyAbortOperationThatLosesAbbrevs 
@@ -2180,7 +2184,6 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
                     CompleteD
                 | _ -> 
                     ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))
-
 // Parameterized compatibility relation between member signatures.  The real work
 // is done by "equateTypes" and "subsumeTypes" and "subsumeArg"
 and CanMemberSigsMatchUpToCheck 
@@ -2280,7 +2283,7 @@ and CanMemberSigsMatchUpToCheck
 //
 // "ty2 casts to ty1"
 // "a value of type ty2 can be used where a value of type ty1 is expected"
-and private SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 =
+and private SolveTypeSubsumesTypeWithWrappedContextualReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 wrapper =
     TryD_IgnoreAbortForFailedOverloadResolution
         (fun () -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
         (fun res ->
@@ -2288,10 +2291,13 @@ and private SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m
             | ContextInfo.RuntimeTypeTest isOperator ->
                 // test if we can cast other way around
                 match CollectThenUndo (fun newTrace -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m (OptionalTrace.WithTrace newTrace) cxsln ty2 ty1) with 
-                | OkResult _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.DowncastUsedInsteadOfUpcast isOperator, m))
-                | _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.NoContext, m))
-            | _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, csenv.eContextInfo, m)))
+                | OkResult _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.DowncastUsedInsteadOfUpcast isOperator, m)))
+                | _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.NoContext, m)))
+            | _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, csenv.eContextInfo, m))))
 
+and private SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 =
+        SolveTypeSubsumesTypeWithWrappedContextualReport (csenv) ndeep m trace cxsln ty1 ty2 id
+        
 // ty1: actual
 // ty2: expected
 and private SolveTypeEqualsTypeWithReport (csenv: ConstraintSolverEnv) ndeep  m trace cxsln actual expected = 
@@ -2324,9 +2330,9 @@ and MustUnify csenv ndeep trace cxsln ty1 ty2 =
 and MustUnifyInsideUndo csenv ndeep trace cxsln ty1 ty2 = 
     SolveTypeEqualsTypeWithReport csenv ndeep csenv.m (WithTrace trace) cxsln ty1 ty2
 
-and ArgsMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln isConstraint calledArg callerArg = 
+and ArgsMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln isConstraint calledMeth calledArg callerArg = 
     let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
-    SolveTypeSubsumesTypeWithReport csenv ndeep callerArg.Range (WithTrace trace) cxsln calledArgTy callerArg.ArgumentType 
+    SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep callerArg.Range (WithTrace trace) cxsln calledArgTy callerArg.ArgumentType (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg)) 
 
 and TypesMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgTy callerArgTy = 
     SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy 
@@ -2499,7 +2505,7 @@ and ResolveOverloading
           // Exact match rule.
           //
           // See what candidates we have based on current inferred type information 
-          // and _exact_ matches of argument types. 
+          // and _exact_ matches of argument types.
           match candidates |> FilterEachThenUndo (fun newTrace calledMeth -> 
                      let cxsln = Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs)) cx
                      CanMemberSigsMatchUpToCheck 
@@ -2525,7 +2531,7 @@ and ResolveOverloading
                                    alwaysCheckReturn
                                    (MustUnifyInsideUndo csenv ndeep newTrace cxsln) 
                                    (TypesMustSubsumeOrConvertInsideUndo csenv ndeep (WithTrace newTrace) cxsln m)
-                                   (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace cxsln cx.IsSome) 
+                                   (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace cxsln cx.IsSome candidate) 
                                    reqdRetTyOpt 
                                    candidate)
 
@@ -2561,11 +2567,12 @@ and ResolveOverloading
                                              alwaysCheckReturn
                                              (MustUnifyInsideUndo csenv ndeep newTrace cxsln) 
                                              (TypesMustSubsumeOrConvertInsideUndo csenv ndeep (WithTrace newTrace) cxsln m)
-                                             (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace cxsln cx.IsSome) 
+                                             (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace cxsln cx.IsSome calledMeth) 
                                              reqdRetTyOpt 
                                              calledMeth) with 
                             | OkResult _ -> None
-                            | ErrorResult(_, exn) -> Some {methodSlot = calledMeth; amap = amap; error = exn })
+                            | ErrorResult(_warnings, exn) ->
+                                Some {methodSlot = calledMeth; amap = amap; error = exn })
 
                 None, ErrorD (failOverloading (NoOverloadsFound (methodName, errors, cx))), NoTrace
 
@@ -2635,7 +2642,7 @@ and ResolveOverloading
                     // Prefer methods with more precise param array arg type
                     let c = 
                         if candidate.UsesParamArrayConversion && other.UsesParamArrayConversion then
-                            compareTypes (candidate.GetParamArrayElementType()) (other.GetParamArrayElementType())
+                            compareTypes candidate.ParamArrayElementType other.ParamArrayElementType
                         else
                             0
                     if c <> 0 then c else

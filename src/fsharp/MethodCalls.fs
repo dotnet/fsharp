@@ -350,7 +350,7 @@ type CalledMeth<'T>
 
     let fullCurriedCalledArgs = MakeCalledArgs infoReader.amap m minfo calledTyArgs
     do assert (fullCurriedCalledArgs.Length = fullCurriedCalledArgs.Length)
-
+ 
     let argSetInfos = 
         (callerArgs.CurriedCallerArgs, fullCurriedCalledArgs) 
         ||> List.map2 (fun (unnamedCallerArgs, namedCallerArgs) fullCalledArgs -> 
@@ -544,8 +544,7 @@ type CalledMeth<'T>
 
     member x.ParamArrayCallerArgs = x.ArgSets |> List.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
 
-    member x.GetParamArrayElementType () =
-        // turned into a method to avoid assert to run while inspecting CalledMeth in debugger
+    member x.ParamArrayElementType = 
         assert (x.UsesParamArrayConversion)
         x.ParamArrayCalledArgOpt.Value.CalledArgumentType |> destArrayTy x.amap.g 
 

@@ -3,51 +3,31 @@ neg106.fs(8,59,8,61): typecheck error FS3230: A value defined in a module must b
 
 neg106.fs(13,18,13,72): typecheck error FS0041: No overloads match for method 'CompareExchange'.
 
-
-
 Known types of arguments: inref<int> * int * int
 
-
-
 Available overloads:
- - System.Threading.Interlocked.CompareExchange(location1: byref<float32>, value: float32, comparand: float32) : float32
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<float>, value: float, comparand: float) : float
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<int64>, value: int64, comparand: int64) : int64
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<nativeint>, value: nativeint, comparand: nativeint) : nativeint
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<obj>, value: obj, comparand: obj) : obj
-
- - System.Threading.Interlocked.CompareExchange<'T when 'T : not struct>(location1: byref<'T>, value: 'T, comparand: 'T) : 'T
+ - System.Threading.Interlocked.CompareExchange(location1: byref<float32>, value: float32, comparand: float32) : float32 // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange(location1: byref<float>, value: float, comparand: float) : float // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange(location1: byref<int64>, value: int64, comparand: int64) : int64 // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange(location1: byref<nativeint>, value: nativeint, comparand: nativeint) : nativeint // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange(location1: byref<obj>, value: obj, comparand: obj) : obj // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange<'T when 'T : not struct>(location1: byref<'T>, value: 'T, comparand: 'T) : 'T // Argument 'location1' doesn't match
 
 neg106.fs(17,59,17,61): typecheck error FS3236: Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.
 
 neg106.fs(17,14,17,68): typecheck error FS0041: No overloads match for method 'CompareExchange'.
 
-
-
 Known types of arguments: inref<int> * int * int
 
-
-
 Available overloads:
- - System.Threading.Interlocked.CompareExchange(location1: byref<float32>, value: float32, comparand: float32) : float32
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<float>, value: float, comparand: float) : float
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<int64>, value: int64, comparand: int64) : int64
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<nativeint>, value: nativeint, comparand: nativeint) : nativeint
-
- - System.Threading.Interlocked.CompareExchange(location1: byref<obj>, value: obj, comparand: obj) : obj
-
- - System.Threading.Interlocked.CompareExchange<'T when 'T : not struct>(location1: byref<'T>, value: 'T, comparand: 'T) : 'T
+ - System.Threading.Interlocked.CompareExchange(location1: byref<float32>, value: float32, comparand: float32) : float32 // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange(location1: byref<float>, value: float, comparand: float) : float // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange(location1: byref<int64>, value: int64, comparand: int64) : int64 // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange(location1: byref<int>, value: int, comparand: int) : int // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange(location1: byref<nativeint>, value: nativeint, comparand: nativeint) : nativeint // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange(location1: byref<obj>, value: obj, comparand: obj) : obj // Argument 'location1' doesn't match
+ - System.Threading.Interlocked.CompareExchange<'T when 'T : not struct>(location1: byref<'T>, value: 'T, comparand: 'T) : 'T // Argument 'location1' doesn't match
 
 neg106.fs(23,35,23,39): typecheck error FS0001: Type mismatch. Expecting a
     'byref<int>'    
@@ -63,29 +43,19 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
 neg106.fs(40,18,40,32): typecheck error FS0041: No overloads match for method 'M'.
 
-
-
 Known types of arguments: string * inref<int>
 
-
-
 Available overloads:
- - static member C.M : a:int * x:byref<int> -> unit
-
- - static member C.M : a:string * x:byref<int> -> unit
+ - static member C.M : a:int * x:byref<int> -> unit // Argument 'a' doesn't match
+ - static member C.M : a:string * x:byref<int> -> unit // Argument 'x' doesn't match
 
 neg106.fs(41,19,41,31): typecheck error FS0041: No overloads match for method 'M'.
 
-
-
 Known types of arguments: int * inref<int>
 
-
-
 Available overloads:
- - static member C.M : a:int * x:byref<int> -> unit
-
- - static member C.M : a:string * x:byref<int> -> unit
+ - static member C.M : a:int * x:byref<int> -> unit // Argument 'x' doesn't match
+ - static member C.M : a:string * x:byref<int> -> unit // Argument 'a' doesn't match
 
 neg106.fs(49,22,49,26): typecheck error FS0001: Type mismatch. Expecting a
     'byref<int>'    

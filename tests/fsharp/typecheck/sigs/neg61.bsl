@@ -85,16 +85,11 @@ neg61.fs(171,13,171,18): typecheck error FS3099: 'sumBy' is used with an incorre
 
 neg61.fs(174,22,174,23): typecheck error FS0041: No overloads match for method 'Source'.
 
-
-
 Known type of argument: int
 
-
-
 Available overloads:
- - member Linq.QueryBuilder.Source : source:System.Collections.Generic.IEnumerable<'T> -> Linq.QuerySource<'T,System.Collections.IEnumerable>
-
- - member Linq.QueryBuilder.Source : source:System.Linq.IQueryable<'T> -> Linq.QuerySource<'T,'Q>
+ - member Linq.QueryBuilder.Source : source:System.Collections.Generic.IEnumerable<'T> -> Linq.QuerySource<'T,System.Collections.IEnumerable> // Argument 'source' doesn't match
+ - member Linq.QueryBuilder.Source : source:System.Linq.IQueryable<'T> -> Linq.QuerySource<'T,'Q> // Argument 'source' doesn't match
 
 neg61.fs(180,19,180,31): typecheck error FS3153: Arguments to query operators may require parentheses, e.g. 'where (x > y)' or 'groupBy (x.Length / 10)'
 

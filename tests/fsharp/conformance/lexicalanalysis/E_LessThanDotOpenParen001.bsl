@@ -14,22 +14,22 @@ Known return type:  ^?8227
 Known type parameters: < (string -> int) , TestType<int,string> >
 
 Available overloads:
- - static member TestType.( +++ ) : a:'T * b:TestType<'T,'S> -> 'T
- - static member TestType.( +++ ) : a:(int -> 'T) * b:TestType<'T,int> ->  ^a when  ^T1 : (static member ( + ) :  ^T1 *  ^T1 ->  ^a)
- - static member TestType.( +++ ) : a:TestType<'T,'S> * b:'T -> 'T
- - static member TestType.( +++ ) : a:TestType<'T,'S> * b:('T -> 'S) -> 'T
- - static member TestType.( +++ ) : a:TestType<'T,'S> * b:TestType<'T,'S> -> 'T
+ - static member TestType.( +++ ) : a:'T * b:TestType<'T,'S> -> 'T // Argument 'a' doesn't match
+ - static member TestType.( +++ ) : a:(int -> 'T) * b:TestType<'T,int> ->  ^a when  ^T1 : (static member ( + ) :  ^T1 *  ^T1 ->  ^a) // Argument 'a' doesn't match
+ - static member TestType.( +++ ) : a:TestType<'T,'S> * b:'T -> 'T // Argument 'a' doesn't match
+ - static member TestType.( +++ ) : a:TestType<'T,'S> * b:('T -> 'S) -> 'T // Argument 'a' doesn't match
+ - static member TestType.( +++ ) : a:TestType<'T,'S> * b:TestType<'T,'S> -> 'T // Argument 'a' doesn't match
 
 E_LessThanDotOpenParen001.fsx(33,10,33,45): typecheck error FS0041: No overloads match for method 'op_PlusPlusPlus'.
 
 Known types of arguments: (string -> int) * TestType<int,string>
 
 Available overloads:
- - static member TestType.( +++ ) : a:'T * b:TestType<'T,'S> -> 'T
- - static member TestType.( +++ ) : a:(int -> 'T) * b:TestType<'T,int> ->  ^a when  ^T1 : (static member ( + ) :  ^T1 *  ^T1 ->  ^a)
- - static member TestType.( +++ ) : a:TestType<'T,'S> * b:'T -> 'T
- - static member TestType.( +++ ) : a:TestType<'T,'S> * b:('T -> 'S) -> 'T
- - static member TestType.( +++ ) : a:TestType<'T,'S> * b:TestType<'T,'S> -> 'T
+ - static member TestType.( +++ ) : a:'T * b:TestType<'T,'S> -> 'T // Argument 'a' doesn't match
+ - static member TestType.( +++ ) : a:(int -> 'T) * b:TestType<'T,int> ->  ^a when  ^T1 : (static member ( + ) :  ^T1 *  ^T1 ->  ^a) // Argument 'a' doesn't match
+ - static member TestType.( +++ ) : a:TestType<'T,'S> * b:'T -> 'T // Argument 'a' doesn't match
+ - static member TestType.( +++ ) : a:TestType<'T,'S> * b:('T -> 'S) -> 'T // Argument 'a' doesn't match
+ - static member TestType.( +++ ) : a:TestType<'T,'S> * b:TestType<'T,'S> -> 'T // Argument 'a' doesn't match
 
 E_LessThanDotOpenParen001.fsx(34,44,34,54): typecheck error FS0001: This expression was expected to have type
     'int'    
@@ -41,8 +41,8 @@ E_LessThanDotOpenParen001.fsx(34,10,34,68): typecheck error FS0041: No overloads
 Known types of arguments: (int -> 'a) * TestType<int,string>
 
 Available overloads:
- - static member TestType.( +++ ) : a:'T * b:TestType<'T,'S> -> 'T
- - static member TestType.( +++ ) : a:(int -> 'T) * b:TestType<'T,int> ->  ^a when  ^T1 : (static member ( + ) :  ^T1 *  ^T1 ->  ^a)
- - static member TestType.( +++ ) : a:TestType<'T,'S> * b:'T -> 'T
- - static member TestType.( +++ ) : a:TestType<'T,'S> * b:('T -> 'S) -> 'T
- - static member TestType.( +++ ) : a:TestType<'T,'S> * b:TestType<'T,'S> -> 'T
+ - static member TestType.( +++ ) : a:'T * b:TestType<'T,'S> -> 'T // Argument 'a' doesn't match
+ - static member TestType.( +++ ) : a:(int -> 'T) * b:TestType<'T,int> ->  ^a when  ^T1 : (static member ( + ) :  ^T1 *  ^T1 ->  ^a) // Argument 'b' doesn't match
+ - static member TestType.( +++ ) : a:TestType<'T,'S> * b:'T -> 'T // Argument 'a' doesn't match
+ - static member TestType.( +++ ) : a:TestType<'T,'S> * b:('T -> 'S) -> 'T // Argument 'a' doesn't match
+ - static member TestType.( +++ ) : a:TestType<'T,'S> * b:TestType<'T,'S> -> 'T // Argument 'a' doesn't match
