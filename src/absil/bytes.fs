@@ -70,6 +70,10 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         if length = 0 then
             raise (ArgumentOutOfRangeException("length", "Cannot create a stream with a length of zero."))
 
+    let checkReadCount count =
+        if count <= 0 then
+            raise (ArgumentOutOfRangeException("count", "Count is less than or equal to zero."))
+
     do
         if length < 0 || length > bytes.Length then
             raise (ArgumentOutOfRangeException("length"))
@@ -84,6 +88,7 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
     override _.Length = length
 
     override _.ReadBytes(pos, count) = 
+        checkReadCount count
         Array.sub bytes (offset + pos) count
 
     override _.ReadInt32 pos =
@@ -100,13 +105,17 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         ((uint16 bytes.[finalOffset + 1]) <<< 8)
 
     override _.ReadUtf8String(pos, count) =
+        checkReadCount count
         System.Text.Encoding.UTF8.GetString(bytes, offset + pos, count)
 
     override _.Slice(pos, count) =
-        if count = 0 then
-            ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
-        else
+        if count > 0 then
             ByteArrayMemory(bytes, offset + pos, count) :> ByteMemory
+        else
+            if count < 0 then
+                raise (ArgumentOutOfRangeException("count", "Count is less than zero."))
+
+            ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
 
     override _.CopyTo stream =
         if length > 0 then
@@ -117,7 +126,10 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
             Array.blit bytes (offset + srcOffset) dest destOffset count
 
     override _.ToArray() =
-        Array.sub bytes offset length
+        if length > 0 then
+            Array.sub bytes offset length
+        else
+            Array.empty
 
     override _.AsStream() =
         checkLengthForStream ()
@@ -165,6 +177,10 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         if i < 0 || i >= length then 
             raise (ArgumentOutOfRangeException("i"))
 
+    let checkReadCount count =
+        if count <= 0 then
+            raise (ArgumentOutOfRangeException("count", "Count is less than or equal to zero."))
+
     let checkLengthForStream () =
         if length = 0 then
             raise (ArgumentOutOfRangeException("length", "Cannot create a stream with a length of zero."))
@@ -185,11 +201,13 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
     override _.Length = length
 
     override _.ReadUtf8String(pos, count) =
+        checkReadCount count
         check pos
         check (pos + count - 1)
         System.Text.Encoding.UTF8.GetString(NativePtr.add addr pos, count)
 
     override _.ReadBytes(pos, count) = 
+        checkReadCount count
         check pos
         check (pos + count - 1)
         let res = Bytes.zeroCreate count
@@ -207,12 +225,14 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         uint16(Marshal.ReadInt16(NativePtr.toNativeInt addr + nativeint pos))
 
     override _.Slice(pos, count) =
-        if count = 0 then
-            ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
-        else
+        if count > 0 then
             check pos
             check (pos + count - 1)
             RawByteMemory(NativePtr.add addr pos, count, hold) :> ByteMemory
+        else
+            if count < 0 then
+                raise (ArgumentOutOfRangeException("count", "Count is less than zero."))
+            ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
 
     override x.CopyTo stream =
         if length > 0 then
