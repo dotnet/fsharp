@@ -70,6 +70,10 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         if count <= 0 then
             raise (ArgumentOutOfRangeException("count", "Count is less than or equal to zero."))
 
+    let checkCount count =
+        if count < 0 then
+            raise (ArgumentOutOfRangeException("count", "Count is less than zero."))
+
     do
         if length < 0 || length > bytes.Length then
             raise (ArgumentOutOfRangeException("length"))
@@ -105,11 +109,10 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         System.Text.Encoding.UTF8.GetString(bytes, offset + pos, count)
 
     override _.Slice(pos, count) =
+        checkCount count
         if count > 0 then
             ByteArrayMemory(bytes, offset + pos, count) :> ByteMemory
         else
-            if count < 0 then
-                raise (ArgumentOutOfRangeException("count", "Count is less than zero."))
             ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
 
     override _.CopyTo stream =
@@ -117,6 +120,7 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
             stream.Write(bytes, offset, length)
 
     override _.Copy(srcOffset, dest, destOffset, count) =
+        checkCount count
         if count > 0 then
             Array.blit bytes (offset + srcOffset) dest destOffset count
 
@@ -180,6 +184,10 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         if count <= 0 then
             raise (ArgumentOutOfRangeException("count", "Count is less than or equal to zero."))
 
+    let checkCount count =
+        if count < 0 then
+            raise (ArgumentOutOfRangeException("count", "Count is less than zero."))
+
     do
         if length < 0 then
             raise (ArgumentOutOfRangeException("length"))
@@ -220,13 +228,12 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         uint16(Marshal.ReadInt16(NativePtr.toNativeInt addr + nativeint pos))
 
     override _.Slice(pos, count) =
+        checkCount count
         if count > 0 then
             check pos
             check (pos + count - 1)
             RawByteMemory(NativePtr.add addr pos, count, hold) :> ByteMemory
         else
-            if count < 0 then
-                raise (ArgumentOutOfRangeException("count", "Count is less than zero."))
             ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
 
     override x.CopyTo stream =
@@ -235,6 +242,7 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
             stream2.CopyTo stream
 
     override _.Copy(srcOffset, dest, destOffset, count) =
+        checkCount count
         if count > 0 then
             check srcOffset
             Marshal.Copy(NativePtr.toNativeInt addr + nativeint srcOffset, dest, destOffset, count)
