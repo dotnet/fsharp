@@ -1156,6 +1156,7 @@ module private PrintTypes =
                 yield 2uy, ty
             ]
           let typesWithDiscrimants,typarsAndCxs = PrettyTypes.PrettifyDiscriminantAndTypePairs denv.g typesWithDiscrimants
+          let retTy = typesWithDiscrimants |> List.find (function (0uy, _) -> true | _ -> false) |> snd
           let argInfos = 
             typesWithDiscrimants 
             |> List.choose (function (1uy,ty) -> Some ty | _ -> None)
@@ -1164,6 +1165,7 @@ module private PrintTypes =
           let genParamTys = 
             typesWithDiscrimants
             |> List.choose (function (2uy,ty) -> Some ty | _ -> None)
+          
           argInfos, retTy, genParamTys, typarsAndCxs
 
         let env = SimplifyTypes.CollectInfo true (List.collect (List.map fst) [argInfos]) cxs
