@@ -289,8 +289,6 @@ type ByteMemory with
 
     member x.AsReadOnly() = ReadOnlyByteMemory x
 
-    static member Empty = ByteArrayMemory(null, 0, 0)
-
     static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
         let length = int64 bytes.Length
         let mmf = 
