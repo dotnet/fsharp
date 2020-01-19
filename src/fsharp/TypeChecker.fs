@@ -6876,7 +6876,7 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
     match tryDestAppTy cenv.g objTy with
     | ValueNone -> error(Error(FSComp.SR.tcNewMustBeUsedWithNamedType(), mNewExpr))
     | ValueSome tcref ->
-    let isRecordTy = isRecdTy cenv.g objTy
+    let isRecordTy = tcref.IsRecordTycon
     if not isRecordTy && not (isInterfaceTy cenv.g objTy) && isSealedTy cenv.g objTy then errorR(Error(FSComp.SR.tcCannotCreateExtensionOfSealedType(), mNewExpr))
     
     CheckSuperType cenv objTy synObjTy.Range 
@@ -7265,12 +7265,12 @@ and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigSynExpr, unsortedF
                    for (i, id) in Array.indexed anonInfo.SortedIds do 
                        yield id, Choice2Of2 (mkAnonRecdFieldGetViaExprAddr (anonInfo, oldveaddr, tinst, i, mOrigExpr))
                | ValueNone -> 
-                    if isRecdTy cenv.g origExprTy then
-                        let tcref, tinst = destAppTy cenv.g origExprTy
+                    match tryAppTy cenv.g origExprTy with
+                    | ValueSome(tcref, tinst) when tcref.IsRecordTycon ->
                         let fspecs = tcref.Deref.TrueInstanceFieldsAsList
                         for fspec in fspecs do
                             yield fspec.Id, Choice2Of2 (mkRecdFieldGetViaExprAddr (oldveaddr, tcref.MakeNestedRecdFieldRef fspec, tinst, mOrigExpr)) 
-                    else
+                    | _ ->
                         error (Error (FSComp.SR.tcCopyAndUpdateNeedsRecordType(), mOrigExpr)) |]
             |> Array.distinctBy (fst >> textOfId)
 
