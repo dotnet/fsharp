@@ -212,8 +212,8 @@ let g (t : T) = t.Count()
 Argument given: float
 
 Available overloads:
- - new : bool -> X
- - new : int -> X""" ]
+ - new : bool -> X // Argument at index 1 doesn't match
+ - new : int -> X // Argument at index 1 doesn't match""" ]
 
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
             
@@ -294,7 +294,7 @@ let x =
         """
         let expectedMessages = [ """A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
-Argument given: 'a when 'a : null
+Known type of argument: 'a0 when 'a0 : null
 
 Candidates:
  - System.Console.WriteLine(buffer: char []) : unit
@@ -317,9 +317,7 @@ b.Do(1, 1)
         """
         let expectedMessages = [ """A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
-Arguments given:
- - int
- - int
+Known types of arguments: int * int
 
 Candidates:
  - member A.Do : a:int * b:'T -> unit
