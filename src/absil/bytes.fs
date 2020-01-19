@@ -67,8 +67,8 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
     inherit ByteMemory()
 
     let checkLengthForStream () =
-        if length = 0 then
-            raise (ArgumentOutOfRangeException("length", "Cannot create a stream with a length of zero."))
+        if length <= 0 then
+            raise (ArgumentOutOfRangeException("length", "Cannot create a stream with a length of zero or less."))
 
     let checkReadCount count =
         if count <= 0 then
@@ -182,8 +182,8 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
             raise (ArgumentOutOfRangeException("count", "Count is less than or equal to zero."))
 
     let checkLengthForStream () =
-        if length = 0 then
-            raise (ArgumentOutOfRangeException("length", "Cannot create a stream with a length of zero."))
+        if length <= 0 then
+            raise (ArgumentOutOfRangeException("length", "Cannot create a stream with a length of zero or less."))
 
     do
         if length < 0 then
