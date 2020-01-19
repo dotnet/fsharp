@@ -66,6 +66,10 @@ type ByteMemory () =
 type ByteArrayMemory(bytes: byte[], offset, length) =
     inherit ByteMemory()
 
+    let checkLengthForStream () =
+        if length = 0 then
+            raise (ArgumentOutOfRangeException("length", "Cannot create a stream with a length of zero."))
+
     do
         if length < 0 || length > bytes.Length then
             raise (ArgumentOutOfRangeException("length"))
@@ -99,21 +103,28 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         System.Text.Encoding.UTF8.GetString(bytes, offset + pos, count)
 
     override _.Slice(pos, count) =
-        ByteArrayMemory(bytes, offset + pos, count) :> ByteMemory
+        if count = 0 then
+            ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
+        else
+            ByteArrayMemory(bytes, offset + pos, count) :> ByteMemory
 
     override _.CopyTo stream =
-        stream.Write(bytes, offset, length)
+        if length > 0 then
+            stream.Write(bytes, offset, length)
 
     override _.Copy(srcOffset, dest, destOffset, count) =
-        Array.blit bytes (offset + srcOffset) dest destOffset count
+        if count > 0 then
+            Array.blit bytes (offset + srcOffset) dest destOffset count
 
     override _.ToArray() =
         Array.sub bytes offset length
 
     override _.AsStream() =
+        checkLengthForStream ()
         new MemoryStream(bytes, offset, length) :> Stream
 
     override _.AsReadOnlyStream() =
+        checkLengthForStream ()
         new MemoryStream(bytes, offset, length, false) :> Stream
 
 [<Sealed>]
@@ -154,6 +165,10 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         if i < 0 || i >= length then 
             raise (ArgumentOutOfRangeException("i"))
 
+    let checkLengthForStream () =
+        if length = 0 then
+            raise (ArgumentOutOfRangeException("length", "Cannot create a stream with a length of zero."))
+
     do
         if length < 0 then
             raise (ArgumentOutOfRangeException("length"))
@@ -192,27 +207,37 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         uint16(Marshal.ReadInt16(NativePtr.toNativeInt addr + nativeint pos))
 
     override _.Slice(pos, count) =
-        check pos
-        check (pos + count - 1)
-        RawByteMemory(NativePtr.add addr pos, count, hold) :> ByteMemory
+        if count = 0 then
+            ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
+        else
+            check pos
+            check (pos + count - 1)
+            RawByteMemory(NativePtr.add addr pos, count, hold) :> ByteMemory
 
     override x.CopyTo stream =
-        use stream2 = x.AsStream()
-        stream2.CopyTo stream
+        if length > 0 then
+            use stream2 = x.AsStream()
+            stream2.CopyTo stream
 
     override _.Copy(srcOffset, dest, destOffset, count) =
-        check srcOffset
-        Marshal.Copy(NativePtr.toNativeInt addr + nativeint srcOffset, dest, destOffset, count)
+        if count > 0 then
+            check srcOffset
+            Marshal.Copy(NativePtr.toNativeInt addr + nativeint srcOffset, dest, destOffset, count)
 
     override _.ToArray() =
-        let res = Array.zeroCreate<byte> length
-        Marshal.Copy(NativePtr.toNativeInt addr, res, 0, res.Length)
-        res
+        if length > 0 then
+            let res = Array.zeroCreate<byte> length
+            Marshal.Copy(NativePtr.toNativeInt addr, res, 0, res.Length)
+            res
+        else
+            Array.empty
 
     override _.AsStream() =
+        checkLengthForStream ()
         new SafeUnmanagedMemoryStream(addr, int64 length, hold) :> Stream
 
     override _.AsReadOnlyStream() =
+        checkLengthForStream ()
         new SafeUnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read, hold) :> Stream
 
 [<Struct;NoEquality;NoComparison>]
@@ -243,6 +268,8 @@ type ReadOnlyByteMemory(bytes: ByteMemory) =
 type ByteMemory with
 
     member x.AsReadOnly() = ReadOnlyByteMemory x
+
+    static member Empty = ByteArrayMemory(null, 0, 0)
 
     static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
         let length = int64 bytes.Length
