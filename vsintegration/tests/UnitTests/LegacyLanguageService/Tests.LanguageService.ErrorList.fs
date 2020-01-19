@@ -209,7 +209,7 @@ let g (t : T) = t.Count()
 
         let expectedMessages = [ """No overloads match for method 'X'.
 
-Argument given: float
+Known type of argument: float
 
 Available overloads:
  - new : bool -> X // Argument at index 1 doesn't match
