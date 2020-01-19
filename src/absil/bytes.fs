@@ -114,7 +114,6 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         else
             if count < 0 then
                 raise (ArgumentOutOfRangeException("count", "Count is less than zero."))
-
             ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
 
     override _.CopyTo stream =
