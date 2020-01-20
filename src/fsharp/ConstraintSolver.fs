@@ -433,30 +433,29 @@ exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TTyp
 /// unresolved overload constraint in the tree and skip any further process related to the
 /// overall constraint being added.
 ///
-/// NOTE: This local-abort is a mistake which has crept into F# type inference,
-/// and its status is currently under review, though we have to be very careful before changing
-/// anything. 
-///
-/// Here is the history (as of 20 Jan 2020):
-///    1. The local abort was added as part of an attempted performance optimization https://github.com/dotnet/fsharp/pull/1650
-///       This change was released in VS2015.
-///
-///    2. However, it also impacts the logic of type inference, by skipping checking.
-///       Because of this an attempt was made to revert it in https://github.com/dotnet/fsharp/pull/4173.
-///
-///       Unfortunately, existing code had begun to depend on the new behaviours enabled by the
-///       change, and the revert was abandoned before release in https://github.com/dotnet/fsharp/pull/4348
-///
-/// Comments on soundness:
-///    The addition of the local abort when an SRTP method overload constraint has not
-///    been resolved is sound w.r.t. the method overload constraint itself, because that constraint
-///    will be subject to further processing at a later point.
-///
-///    It appears possible, however, that the local abort may, however, result in the skipping 
-///    other processing associated with the assertion of an overall constraint (e.g. the
-///    processing related to each element of a tuple.
-///
-
+// NOTE: This local-abort is a mistake which has crept into F# type inference,
+// and its status is currently under review, though we have to be very careful before changing
+// anything. 
+//
+// Here is the history (as of 20 Jan 2020):
+//    1. The local abort was added as part of an attempted performance optimization https://github.com/dotnet/fsharp/pull/1650
+//       This change was released in VS2015.
+//
+//    2. However, it also impacts the logic of type inference, by skipping checking.
+//       Because of this an attempt was made to revert it in https://github.com/dotnet/fsharp/pull/4173.
+//
+//       Unfortunately, existing code had begun to depend on the new behaviours enabled by the
+//       change, and the revert was abandoned before release in https://github.com/dotnet/fsharp/pull/4348
+//
+// Comments on soundness:
+//    The addition of the local abort when an SRTP method overload constraint has not
+//    been resolved is sound w.r.t. the method overload constraint itself, because that constraint
+//    will be subject to further processing at a later point.
+//
+//    It appears possible, however, that the local abort may, however, result in the skipping 
+//    other processing associated with the assertion of an overall constraint (e.g. the
+//    processing related to each element of a tuple.
+//
 exception LocallyAbortOperationThatFailsToResolveOverload
 
 exception LocallyAbortOperationThatLosesAbbrevs 
