@@ -2357,7 +2357,7 @@ and
     | SupportsNull of range 
     
     /// Indicates a constraint that a type has a member with the given signature 
-    | MayResolveMember of TraitConstraintInfo * range 
+    | MayResolveMember of TraitConstraintInfo * range
     
     /// Indicates a constraint that a type is a non-Nullable value type 
     /// These are part of .NET's model of generic constraints, and in order to 
@@ -4899,7 +4899,7 @@ and
     | Label of ILCodeLabel
 
     /// Pseudo method calls. This is used for overloaded operations like op_Addition. 
-    | TraitCall of TraitConstraintInfo  
+    | TraitCall of TraitConstraintInfo 
 
     /// Operation nodes representing C-style operations on byrefs and mutable vals (l-values) 
     | LValueOp of LValueOperation * ValRef 

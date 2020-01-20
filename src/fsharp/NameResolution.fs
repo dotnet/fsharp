@@ -550,15 +550,30 @@ let AllPropInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad fi
     @ ExtensionPropInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad m ty
 
 /// Get the available methods of a type (both declared and inherited)
-let IntrinsicMethInfosOfType (infoReader:InfoReader) optFilter ad allowMultiIntfInst findFlag m ty =
+let IntrinsicMethInfosOfType (infoReader: InfoReader) optFilter ad allowMultiIntfInst findFlag m ty =
     let g = infoReader.g
     let amap = infoReader.amap
     let minfos = GetIntrinsicMethInfoSetsOfType infoReader optFilter ad allowMultiIntfInst findFlag m ty
     let minfos = minfos |> ExcludeHiddenOfMethInfos g amap m
     minfos
 
+let TrySelectExtensionMethInfoOfILExtMem m amap apparentTy (actualParent, minfo, pri) = 
+    match minfo with 
+    | ILMeth(_,ilminfo,_) -> 
+        MethInfo.CreateILExtensionMeth (amap, m, apparentTy, actualParent, Some pri, ilminfo.RawMetadata) |> Some
+    // F#-defined IL-style extension methods are not seen as extension methods in F# code
+    | FSMeth(g,_,vref,_) -> 
+        FSMeth(g, apparentTy, vref, Some pri) |> Some
+#if !NO_EXTENSIONTYPING
+    // // Provided extension methods are not yet supported
+    | ProvidedMeth(amap,providedMeth,_,m) -> 
+        ProvidedMeth(amap, providedMeth, Some pri,m) |> Some
+#endif
+    | DefaultStructCtor _ -> 
+        None
+
 /// Select from a list of extension methods
-let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m extMemInfos =
+let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy m extMemInfos =
     let g = infoReader.g
     // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers
     let seen = HashSet(ExtensionMember.Comparer g)
@@ -575,24 +590,14 @@ let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m
                         | _ -> ()
                 | ILExtMem (actualParent, minfo, pri) when (match optFilter with None -> true | Some nm -> nm = minfo.LogicalName) ->
                     // Make a reference to the type containing the extension members
-                    match minfo with
-                    | ILMeth(_, ilminfo, _) ->
-                         yield (MethInfo.CreateILExtensionMeth (infoReader.amap, m, apparentTy, actualParent, Some pri, ilminfo.RawMetadata))
-                    // F#-defined IL-style extension methods are not seen as extension methods in F# code
-                    | FSMeth(g, _, vref, _) ->
-                         yield (FSMeth(g, apparentTy, vref, Some pri))
-#if !NO_EXTENSIONTYPING
-                    // // Provided extension methods are not yet supported
-                    | ProvidedMeth(amap, providedMeth, _, m) ->
-                         yield (ProvidedMeth(amap, providedMeth, Some pri, m))
-#endif
-                    | DefaultStructCtor _ ->
-                         ()
+                    match TrySelectExtensionMethInfoOfILExtMem m infoReader.amap apparentTy (actualParent, minfo, pri) with 
+                    | Some minfo -> yield minfo
+                    | None -> ()
                 | _ -> ()
     ]
 
 /// Query the available extension properties of a methods (including extension methods for inherited types)
-let ExtensionMethInfosOfTypeInScope (collectionSettings:ResultCollectionSettings) (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
+let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
     let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
     if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
         extMemsDangling
@@ -3209,11 +3214,12 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
             |> List.map (fun x -> ResolutionInfo.Empty, FieldResolution(x, false))
 
-        if isAppTy g ty then
+        match tryDestAppTy g ty with
+        | ValueSome tcref ->
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText, m, ty) with
             | ValueSome (RecdFieldInfo(_, rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref, false)]
             | _ ->
-                if isRecdTy g ty then
+                if tcref.IsRecordTycon then
                     // record label doesn't belong to record type -> suggest other labels of same record
                     let suggestLabels (addToBuffer: string -> unit) = 
                         for label in SuggestOtherLabelsOfSameRecordType g nenv ty id allFields do
@@ -3224,7 +3230,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
                     error(ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
                 else
                     lookup()
-        else
+        | _ ->
             lookup()
     | _ ->
         let lid = (mp@[id])
