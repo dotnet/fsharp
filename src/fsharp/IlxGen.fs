@@ -2786,32 +2786,30 @@ and GenNewArray cenv cgbuf eenv (elems: Expr list, elemTy, m) sequel =
            GenNewArraySimple cenv cgbuf eenv (elems, elemTy, m) sequel
 
 and GenCoerce cenv cgbuf eenv (e, tgty, m, srcty) sequel =
-  let g = cenv.g
-  // Is this an upcast?
-  if TypeRelations.TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgty srcty &&
-     // Do an extra check - should not be needed
-     TypeRelations.TypeFeasiblySubsumesType 0 g cenv.amap m tgty TypeRelations.NoCoerce srcty then
-     begin
-       if (isInterfaceTy g tgty) then (
-           GenExpr cenv cgbuf eenv SPSuppress e Continue
-           let ilToTy = GenType cenv.amap m eenv.tyenv tgty
-           // Section "III.1.8.1.3 Merging stack states" of ECMA-335 implies that no unboxing
-           // is required, but we still push the coerced type on to the code gen buffer.
-           CG.EmitInstrs cgbuf (pop 1) (Push [ilToTy]) []
-           GenSequel cenv eenv.cloc cgbuf sequel
-       ) else (
-           GenExpr cenv cgbuf eenv SPSuppress e sequel
-       )
-     end   
-  else
-    GenExpr cenv cgbuf eenv SPSuppress e Continue      
-    if not (isObjTy g srcty) then
-       let ilFromTy = GenType cenv.amap m eenv.tyenv srcty
-       CG.EmitInstrs cgbuf (pop 1) (Push [g.ilg.typ_Object]) [ I_box ilFromTy ]
-    if not (isObjTy g tgty) then
-        let ilToTy = GenType cenv.amap m eenv.tyenv tgty
-        CG.EmitInstrs cgbuf (pop 1) (Push [ilToTy]) [ I_unbox_any ilToTy ]
-    GenSequel cenv eenv.cloc cgbuf sequel
+    let g = cenv.g
+    // Is this an upcast?
+    if TypeRelations.TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgty srcty &&
+        // Do an extra check - should not be needed
+        TypeRelations.TypeFeasiblySubsumesType 0 g cenv.amap m tgty TypeRelations.NoCoerce srcty 
+    then
+        if isInterfaceTy g tgty then
+            GenExpr cenv cgbuf eenv SPSuppress e Continue
+            let ilToTy = GenType cenv.amap m eenv.tyenv tgty
+            // Section "III.1.8.1.3 Merging stack states" of ECMA-335 implies that no unboxing
+            // is required, but we still push the coerced type on to the code gen buffer.
+            CG.EmitInstrs cgbuf (pop 1) (Push [ilToTy]) []
+            GenSequel cenv eenv.cloc cgbuf sequel
+        else
+            GenExpr cenv cgbuf eenv SPSuppress e sequel
+    else
+        GenExpr cenv cgbuf eenv SPSuppress e Continue
+        if not (isObjTy g srcty) then
+            let ilFromTy = GenType cenv.amap m eenv.tyenv srcty
+            CG.EmitInstrs cgbuf (pop 1) (Push [g.ilg.typ_Object]) [ I_box ilFromTy ]
+        if not (isObjTy g tgty) then
+            let ilToTy = GenType cenv.amap m eenv.tyenv tgty
+            CG.EmitInstrs cgbuf (pop 1) (Push [ilToTy]) [ I_unbox_any ilToTy ]
+        GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenReraise cenv cgbuf eenv (rtnty, m) sequel = 
     let ilReturnTy = GenType cenv.amap m eenv.tyenv rtnty
