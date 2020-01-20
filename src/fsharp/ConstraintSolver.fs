@@ -247,6 +247,7 @@ type ConstraintSolverEnv =
       m: range
 
       EquivEnv: TypeEquivEnv
+
       DisplayEnv: DisplayEnv
     }
 
@@ -285,6 +286,22 @@ let rec occursCheck g un ty =
 //-------------------------------------------------------------------------
 // Predicates on types
 //------------------------------------------------------------------------- 
+
+/// Some additional solutions are forced prior to generalization (permitWeakResolution=true).  These are, roughly speaking, rules
+/// for binary-operand constraints arising from constructs such as "1.0 + x" where "x" is an unknown type. THe constraint here
+/// involves two type parameters - one for the left, and one for the right.  The left is already known to be Double.
+/// In this situation (and in the absence of other evidence prior to generalization), constraint solving forces an assumption that 
+/// the right is also Double - this is "weak" because there is only weak evidence for it.
+///
+/// permitWeakResolution also applies to resolutions of multi-type-variable constraints via method overloads.  Method overloading gets applied even if
+/// only one of the two type variables is known.
+///
+/// During code gen we run with permitWeakResolution on, but we only apply it where one of the argument types for the built-in constraint resolution is
+/// a variable type.
+type PermitWeakResolution = 
+    | Yes of codegen: bool
+    | No
+    member x.Permit = match x with Yes _ -> true | No -> false
 
 let rec isNativeIntegerTy g ty =
     typeEquivAux EraseMeasures g g.nativeint_ty ty || 
@@ -338,22 +355,6 @@ let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
 let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
 
 let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
-
-/// Some additional solutions are forced prior to generalization (permitWeakResolution=true).  These are, roughly speaking, rules
-/// for binary-operand constraints arising from constructs such as "1.0 + x" where "x" is an unknown type. THe constraint here
-/// involves two type parameters - one for the left, and one for the right.  The left is already known to be Double.
-/// In this situation (and in the absence of other evidence prior to generalization), constraint solving forces an assumption that 
-/// the right is also Double - this is "weak" because there is only weak evidence for it.
-///
-/// permitWeakResolution also applies to resolutions of multi-type-variable constraints via method overloads.  Method overloading gets applied even if
-/// only one of the two type variables is known.
-///
-/// During code gen we run with permitWeakResolution on, but we only apply it where one of the argument types for the built-in constraint resolution is
-/// a variable type.
-type PermitWeakResolution = 
-    | Yes of codegen: bool
-    | No
-    member x.Permit = match x with Yes _ -> true | No -> false
 
 // Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
 let GetMeasureOfType g ty =
@@ -871,7 +872,6 @@ let rec SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optio
       
       // Only solve constraints if this is not an error var 
       if r.IsFromError then () else
-
       // Check to see if this type variable is relevant to any trait constraints. 
       // If so, re-solve the relevant constraints. 
       if csenv.SolverState.ExtraCxs.ContainsKey r.Stamp then 
@@ -1214,12 +1214,12 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
         match tys, traitObjAndArgTys with 
         | [ty], (h :: _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace h ty 
         | _ -> do! ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m, m2))
-
     // Trait calls are only supported on pseudo type (variables) 
     for e in tys do
         do! SolveTypStaticReq csenv trace HeadTypeStaticReq e
     
     let argtys = if memFlags.IsInstance then List.tail traitObjAndArgTys else traitObjAndArgTys 
+
     let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
         
     let! res = 
@@ -2988,7 +2988,6 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
                 let argTypes =
                     minfo.GetParamTypes(amap, m, methArgTys) 
                     |> List.concat 
-
                 // do not apply coercion to the 'receiver' argument
                 let receiverArgOpt, argExprs = 
                     if minfo.IsInstance then
@@ -2996,7 +2995,6 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
                         | h :: t -> Some h, t
                         | argExprs -> None, argExprs
                     else None, argExprs
-
                 let convertedArgs = (argExprs, argTypes) ||> List.map2 (fun expr expectedTy -> mkCoerceIfNeeded g expectedTy (tyOfExpr g expr) expr)
                 match receiverArgOpt with
                 | Some r -> r :: convertedArgs

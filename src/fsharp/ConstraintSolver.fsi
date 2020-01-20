@@ -173,7 +173,4 @@ val CodegenWitnessThatTypeSupportsTraitConstraint : TcValF -> TcGlobals -> Impor
 
 val ChooseTyparSolutionAndSolve : ConstraintSolverState -> DisplayEnv -> Typar -> unit
 
-/// Get the type variables that may help provide solutions to a statically resolved member trait constraint
-val GetSupportOfMemberConstraint : ConstraintSolverEnv -> TraitConstraintInfo -> Typar list
-
 val IsApplicableMethApprox : TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool

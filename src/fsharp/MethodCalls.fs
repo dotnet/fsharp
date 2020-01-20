@@ -1040,7 +1040,7 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
 let BuildFSharpMethodCall g m (vref: ValRef) valUseFlags declaringTypeInst minst args =
     let vexp = Expr.Val (vref, valUseFlags, m)
     let vexpty = vref.Type
-    let tpsorig,tau =  vref.TypeScheme
+    let tpsorig, tau =  vref.TypeScheme
     let vtinst = declaringTypeInst @ minst
     if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected typar length mismatch",m))
     let expr = mkTyAppExpr m (vexp, vexpty) vtinst

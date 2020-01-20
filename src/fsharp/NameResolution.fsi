@@ -174,7 +174,6 @@ type NameResolutionEnv =
       /// Modules accessible via "." notation. Note this is a multi-map. 
       /// Adding a module abbreviation adds it a local entry to this List.map. 
       /// Likewise adding a ccu or opening a path adds entries to this List.map. 
-      
       eModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
       
       /// Fully qualified modules and namespaces. 'open' does not change this. 

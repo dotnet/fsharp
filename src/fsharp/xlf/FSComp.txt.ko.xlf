@@ -5312,11 +5312,6 @@
         <target state="translated">'System.Diagnostics.ConditionalAttribute' 특성은 메서드 또는 특성 클래스에만 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcMemberOperatorDefinitionInExtrinsic">
-        <source>Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</source>
-        <target state="translated">확장 멤버가 연산자 오버로드를 제공할 수 없습니다.  대신 연산자를 형식 정의의 일부분으로 정의하세요.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
         <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
         <target state="translated">MDB 파일의 이름은 &lt;어셈블리 파일 이름&gt;.mdb여야 합니다. --pdb 옵션은 무시됩니다.</target>

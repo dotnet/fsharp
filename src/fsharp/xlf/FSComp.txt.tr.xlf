@@ -5312,11 +5312,6 @@
         <target state="translated">'System.Diagnostics.ConditionalAttribute' özniteliği yalnızca metotlarda veya öznitelik sınıflarında geçerlidir</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcMemberOperatorDefinitionInExtrinsic">
-        <source>Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</source>
-        <target state="translated">Uzantı üyeleri işleç aşırı yüklemeleri sağlayamaz. Bunun yerine işleci tür tanımının parçası olarak tanımlamayı düşünün.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
         <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
         <target state="translated">MDB dosyasının adı &lt;assembly-file-name&gt;.mdb olmalıdır. --pdb seçeneği yoksayılacak.</target>

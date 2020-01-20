@@ -62,7 +62,6 @@ type TyconRefMap<'T>(imap: StampMap<'T>) =
     member m.Add (v: TyconRef) x = TyconRefMap (imap.Add (v.Stamp, x))
     member m.Remove (v: TyconRef) = TyconRefMap (imap.Remove v.Stamp)
     member m.IsEmpty = imap.IsEmpty
-    member m.Contents = imap
     static member Empty: TyconRefMap<'T> = TyconRefMap Map.empty
     static member OfList vs = (vs, TyconRefMap<'T>.Empty) ||> List.foldBack (fun (x, y) acc -> acc.Add x y) 
 
