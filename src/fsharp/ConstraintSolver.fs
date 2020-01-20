@@ -27,8 +27,18 @@
 // can-unify predicates used in method overload resolution and trait constraint
 // satisfaction.
 //
+// The two main principles are:
+//   1. Ensure any solution that is found is sound (no logic is skipped), 
+//   2. Because of method overloading and SRTP constraints and other constructs, processing of
+//      constraints is algorithmic and must proceed in a definite, fixed order.
+//      Once we start doing resolutions in a particular order we must keep doing them
+//      in the same order.
+//
+// There is little use of back-tracking/undo or "retry" in the constraint solver, except in the
+// limited case ofs of SRTP solving and method overloading, and some other adhoc limited cases
+// like checking for "printf" format strings.  As a result there are cases involving
+// method overloading and SRTP that the solver "can't solve". This is intentional and by-design.
 //------------------------------------------------------------------------- 
-
 
 module internal FSharp.Compiler.ConstraintSolver
 
