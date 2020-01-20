@@ -9,3 +9,7 @@ open FSharp.Compiler.Range
 module public UnusedOpens =
     /// Get all unused open declarations in a file
     val getUnusedOpens : checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) -> Async<range list>
+
+module public SimplifyNames = 
+    /// Get all ranges that can be simplified in a file
+    val getUnnecessaryRanges : checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) * sleep: int option -> Async<(range*string) list>

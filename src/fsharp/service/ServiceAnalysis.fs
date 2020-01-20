@@ -227,3 +227,66 @@ module UnusedOpens =
             let openStatements = getOpenStatements checkFileResults.OpenDeclarations
             return! filterOpenStatements symbolUses openStatements
         }
+ 
+module SimplifyNames = 
+    let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length    
+
+    /// Get all ranges that can be simplified in a file
+    let getUnnecessaryRanges (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string, sleep: int option) : Async<(range*string) list> =
+        async {
+            let result = ResizeArray()
+            let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile()
+            let symbolUses =
+                symbolUses
+                |> Array.filter (fun symbolUse -> not symbolUse.IsFromOpenStatement)
+                |> Array.Parallel.map (fun symbolUse ->
+                    let lineStr = getSourceLineStr symbolUse.RangeAlternate.StartLine
+                    // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
+                    let partialName = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1)
+                    // `symbolUse.RangeAlternate.Start` does not point to the start of plid, it points to start of `name`,
+                    // so we have to calculate plid's start ourselves.
+                    let plidStartCol = symbolUse.RangeAlternate.EndColumn - partialName.PartialIdent.Length - (getPlidLength partialName.QualifyingIdents)
+                    symbolUse, partialName.QualifyingIdents, plidStartCol, partialName.PartialIdent)
+                |> Array.filter (fun (_, plid, _, name) -> name <> "" && not (List.isEmpty plid))
+                |> Array.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
+                |> Array.map (fun (_, xs) -> xs |> Array.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
+
+            for symbolUse, plid, plidStartCol, name in symbolUses do
+                if not symbolUse.IsFromDefinition then
+                    let posAtStartOfName =
+                        let r = symbolUse.RangeAlternate
+                        if r.StartLine = r.EndLine then Range.mkPos r.StartLine (r.EndColumn - name.Length)
+                        else r.Start   
+
+                    let getNecessaryPlid (plid: string list) : Async<string list> =
+                        let rec loop (rest: string list) (current: string list) =
+                            async {
+                                match rest with
+                                | [] -> return current
+                                | headIdent :: restPlid ->
+                                    let! res = checkFileResults.IsRelativeNameResolvableFromSymbol(posAtStartOfName, current, symbolUse.Symbol)
+                                    if res then return current
+                                    else return! loop restPlid (headIdent :: current)
+                            }
+                        loop (List.rev plid) []
+                    
+                    if sleep.IsNone then
+                        do! Async.Sleep sleep.Value  // be less intrusive, give other work priority most of the time
+
+                    let! necessaryPlid = getNecessaryPlid plid 
+                    
+                    match necessaryPlid with
+                    | necessaryPlid when necessaryPlid = plid -> ()
+                    | necessaryPlid ->
+                        let r = symbolUse.RangeAlternate
+                        let necessaryPlidStartCol = r.EndColumn - name.Length - (getPlidLength necessaryPlid)
+                    
+                        let unnecessaryRange = 
+                            Range.mkRange r.FileName (Range.mkPos r.StartLine plidStartCol) (Range.mkPos r.EndLine necessaryPlidStartCol)
+                    
+                        let relativeName = (String.concat "." plid) + "." + name
+                        result.Add(unnecessaryRange, relativeName)
+
+        
+            return List.ofSeq result
+        }
