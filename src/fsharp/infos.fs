@@ -308,8 +308,8 @@ let FreshenTrait traitFreshner traitInfo =
     let extSlns2, ad2 = 
         match traitFreshner with 
         | None -> extSlns, ad
-        | Some f -> 
-            let extSlns2, ad2 = f traitInfo
+        | Some freshner -> 
+            let extSlns2, ad2 = freshner traitInfo
             extSlns2, Some ad2
 
     TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns2, ad2)

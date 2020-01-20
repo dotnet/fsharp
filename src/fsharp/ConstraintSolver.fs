@@ -40,6 +40,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
+open FSharp.Compiler.Features
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.NameResolution
@@ -1725,11 +1726,15 @@ and SolveRelevantMemberConstraints (csenv: ConstraintSolverEnv) ndeep permitWeak
                 | ValueNone -> 
                     ResultD false)) 
 
-and GetTraitFreshner (ad: AccessorDomain) (nenv: NameResolutionEnv) (traitInfo: TraitConstraintInfo) =
-    let slns = 
-        NameMultiMap.find traitInfo.MemberName nenv.eExtensionMembersByName
-        |> List.map (fun extMem -> (extMem :> TraitPossibleExtensionMemberSolution))
-    slns, (ad :> TraitAccessorDomain)
+and GetTraitFreshner (g: TcGlobals) (ad: AccessorDomain) (nenv: NameResolutionEnv) (traitInfo: TraitConstraintInfo) =
+    
+    if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+        let slns = 
+            NameMultiMap.find traitInfo.MemberName nenv.eExtensionMembersByName
+            |> List.map (fun extMem -> (extMem :> TraitPossibleExtensionMemberSolution))
+        slns, (ad :> TraitAccessorDomain)
+    else
+        [], (AccessorDomain.AccessibleFromEverywhere :> TraitAccessorDomain)
 
 and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep (permitWeakResolution: PermitWeakResolution) (trace:OptionalTrace) tp =
     let cxst = csenv.SolverState.ExtraCxs

@@ -52,7 +52,7 @@ val FreshenTypars : TraitFreshener option -> range -> Typars -> TType list
 val FreshenMethInfo : TraitFreshener option -> range -> MethInfo -> TType list
 
 /// Get the trait freshener for a particular location
-val GetTraitFreshner : AccessorDomain -> NameResolutionEnv -> TraitFreshener
+val GetTraitFreshner : TcGlobals -> AccessorDomain -> NameResolutionEnv -> TraitFreshener
 
 [<RequireQualifiedAccess>] 
 /// Information about the context of a type equation, for better error reporting

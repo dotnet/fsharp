@@ -164,7 +164,9 @@ type UngeneralizableItem(computeFreeTyvars: (unit -> FreeTyvars)) =
 /// and other information about the scope.
 [<NoEquality; NoComparison>]
 type TcEnv =
-    { /// Name resolution information 
+    { g: TcGlobals
+    
+      /// Name resolution information 
       eNameResEnv: NameResolutionEnv 
 
       /// The list of items in the environment that may contain free inference 
@@ -219,7 +221,7 @@ type TcEnv =
 
     member tenv.AccessRights = tenv.eAccessRights
 
-    member tenv.TraitFreshner =  Some (GetTraitFreshner tenv.AccessRights tenv.NameEnv)
+    member tenv.TraitFreshner =  Some (GetTraitFreshner tenv.g tenv.AccessRights tenv.NameEnv)
 
     override tenv.ToString() = "TcEnv(...)"
 
@@ -229,7 +231,8 @@ let computeAccessRights eAccessPath eInternalsVisibleCompPaths eFamilyType =
 
 let emptyTcEnv g =
     let cpath = compPathInternal // allow internal access initially
-    { eNameResEnv = NameResolutionEnv.Empty g
+    { g = g
+      eNameResEnv = NameResolutionEnv.Empty g
       eUngeneralizableItems = []
       ePath = []
       eCompPath = cpath // dummy 
@@ -1069,6 +1072,10 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, optIm
             if n<>2 && not opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonPairArgument(name, n), m))
             if n<>3 && opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonTripleArgument(name, n), m))
             if not (isNil otherArgs) then warning(Error(FSComp.SR.memberOperatorDefinitionWithCurriedArguments name, m))
+
+    if isExtrinsic && IsMangledOpName id.idText then
+        if not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions) then
+            warning(Error(FSComp.SR.tcMemberOperatorDefinitionInExtrinsic(), id.idRange))
 
     ValMemberInfoTransient(memberInfo, logicalName, compiledName)
 

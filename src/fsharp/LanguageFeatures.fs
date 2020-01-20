@@ -28,6 +28,7 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
+    | ExtensionConstraintSolutions
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -61,6 +62,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.DotlessFloat32Literal, languageVersion50
             LanguageFeature.PackageManagement, previewVersion
+            LanguageFeature.ExtensionConstraintSolutions, previewVersion
         ]
 
     let specified =
