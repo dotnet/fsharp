@@ -761,37 +761,33 @@ let seekReadIndexedRows (numRows, rowReader, keyFunc, keyComparer, binaryChop, r
             // now read off rows, forward and backwards 
             let mid = (low + high) / 2
             // read forward 
-            begin 
-                let mutable fin = false
-                let mutable curr = mid
-                while not fin do 
-                  if curr > numRows then 
-                      fin <- true
-                  else 
-                      let currrow = rowReader curr
-                      if keyComparer (keyFunc currrow) = 0 then 
-                          res <- rowConverter currrow :: res
-                      else 
-                          fin <- true
-                      curr <- curr + 1
-                done
-            end
+            let mutable fin = false
+            let mutable curr = mid
+            while not fin do 
+                if curr > numRows then 
+                    fin <- true
+                else 
+                    let currrow = rowReader curr
+                    if keyComparer (keyFunc currrow) = 0 then 
+                        res <- rowConverter currrow :: res
+                    else 
+                        fin <- true
+                    curr <- curr + 1
+
             res <- List.rev res
             // read backwards 
-            begin 
-                let mutable fin = false
-                let mutable curr = mid - 1
-                while not fin do 
-                  if curr = 0 then 
+            let mutable fin = false
+            let mutable curr = mid - 1
+            while not fin do 
+                if curr = 0 then 
                     fin <- true
-                  else  
+                else  
                     let currrow = rowReader curr
                     if keyComparer (keyFunc currrow) = 0 then 
                         res <- rowConverter currrow :: res
                     else 
                         fin <- true
                     curr <- curr - 1
-            end
         // sanity check 
 #if CHECKING
         if checking then 
