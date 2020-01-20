@@ -2882,52 +2882,72 @@ let AddCxMethodConstraint denv css m trace traitInfo  =
                     SolveMemberConstraint (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) true PermitWeakResolution.No 0 m trace traitInfo
                     |> OperationResult.ignore
             })
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeMustSupportNull denv css m trace ty =
     TryD (fun () -> SolveTypeSupportsNull (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+         | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+         | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeMustSupportComparison denv css m trace ty =
     TryD (fun () -> SolveTypeSupportsComparison (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+         | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+         | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeMustSupportEquality denv css m trace ty =
     TryD (fun () -> SolveTypeSupportsEquality (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+         | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+         | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeMustSupportDefaultCtor denv css m trace ty =
     TryD (fun () -> SolveTypeRequiresDefaultConstructor (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+         | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+         | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsReferenceType denv css m trace ty =
     TryD (fun () -> SolveTypeIsReferenceType (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+         | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+         | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsValueType denv css m trace ty =
     TryD (fun () -> SolveTypeIsNonNullableValueType (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+         | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+         | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
     
 let AddCxTypeIsUnmanaged denv css m trace ty =
     TryD (fun () -> SolveTypeIsUnmanaged (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+         | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+         | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsEnum denv css m trace ty underlying =
     TryD (fun () -> SolveTypeIsEnum (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty underlying)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+         | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+         | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsDelegate denv css m trace ty aty bty =
     TryD (fun () -> SolveTypeIsDelegate (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty aty bty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+         | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+         | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: TraitConstraintInfo) argExprs = trackErrors {
@@ -3057,7 +3077,9 @@ let ChooseTyparSolutionAndSolve css denv tp =
     let max, m = ChooseTyparSolutionAndRange g amap tp 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     TryD (fun () -> SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) max)
-         (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
     |> RaiseOperationResult
 
 

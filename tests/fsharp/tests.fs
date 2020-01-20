@@ -529,7 +529,7 @@ module CoreTests =
     [<Test>]
     let extconstraint () = 
         let cfg = testConfig "core/extconstraint"
-        let cfg = { cfg with fsc_flags = fsc_flags + " --langversion:preview" }
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --langversion:preview" }
 
         fsc cfg "%s" cfg.fsc_flags ["test.fsx"]
 
