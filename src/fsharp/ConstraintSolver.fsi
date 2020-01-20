@@ -48,34 +48,48 @@ val FreshenMethInfo : range -> MethInfo -> TType list
 [<RequireQualifiedAccess>] 
 /// Information about the context of a type equation.
 type ContextInfo =
-/// No context was given.
-| NoContext
-/// The type equation comes from an IF expression.
-| IfExpression of range
-/// The type equation comes from an omitted else branch.
-| OmittedElseBranch of range
-/// The type equation comes from a type check of the result of an else branch.
-| ElseBranchResult of range
-/// The type equation comes from the verification of record fields.
-| RecordFields
-/// The type equation comes from the verification of a tuple in record fields.
-| TupleInRecordFields
-/// The type equation comes from a list or array constructor
-| CollectionElement of bool * range
-/// The type equation comes from a return in a computation expression.
-| ReturnInComputationExpression
-/// The type equation comes from a yield in a computation expression.
-| YieldInComputationExpression
-/// The type equation comes from a runtime type test.
-| RuntimeTypeTest of bool
-/// The type equation comes from an downcast where a upcast could be used.
-| DowncastUsedInsteadOfUpcast of bool
-/// The type equation comes from a return type of a pattern match clause (not the first clause).
-| FollowingPatternMatchClause of range
-/// The type equation comes from a pattern match guard.
-| PatternMatchGuard of range
-/// The type equation comes from a sequence expression.
-| SequenceExpression of TType
+
+    /// No context was given.
+    | NoContext
+
+    /// The type equation comes from an IF expression.
+    | IfExpression of range
+
+    /// The type equation comes from an omitted else branch.
+    | OmittedElseBranch of range
+
+    /// The type equation comes from a type check of the result of an else branch.
+    | ElseBranchResult of range
+
+    /// The type equation comes from the verification of record fields.
+    | RecordFields
+
+    /// The type equation comes from the verification of a tuple in record fields.
+    | TupleInRecordFields
+
+    /// The type equation comes from a list or array constructor
+    | CollectionElement of bool * range
+
+    /// The type equation comes from a return in a computation expression.
+    | ReturnInComputationExpression
+
+    /// The type equation comes from a yield in a computation expression.
+    | YieldInComputationExpression
+
+    /// The type equation comes from a runtime type test.
+    | RuntimeTypeTest of bool
+
+    /// The type equation comes from an downcast where a upcast could be used.
+    | DowncastUsedInsteadOfUpcast of bool
+
+    /// The type equation comes from a return type of a pattern match clause (not the first clause).
+    | FollowingPatternMatchClause of range
+
+    /// The type equation comes from a pattern match guard.
+    | PatternMatchGuard of range
+
+    /// The type equation comes from a sequence expression.
+    | SequenceExpression of TType
 
 exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
@@ -121,7 +135,10 @@ type OptionalTrace =
 val SimplifyMeasuresInTypeScheme             : TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
 val SolveTyparEqualsType                     : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
 val SolveTypeEqualsTypeKeepAbbrevs           : ConstraintSolverEnv -> int -> range -> OptionalTrace -> TType -> TType -> OperationResult<unit>
+
+/// Canonicalize constraints prior to generalization 
 val CanonicalizeRelevantMemberConstraints    : ConstraintSolverEnv -> int -> OptionalTrace -> Typars -> OperationResult<unit>
+
 val ResolveOverloading                       : ConstraintSolverEnv -> OptionalTrace -> string -> ndeep: int -> TraitConstraintInfo option -> int * int -> AccessorDomain -> CalledMeth<Expr> list ->  bool -> TType option -> CalledMeth<Expr> option * OperationResult<unit>
 val UnifyUniqueOverloading                   : ConstraintSolverEnv -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool> 
 val EliminateConstraintsForGeneralizedTypars : ConstraintSolverEnv -> OptionalTrace -> Typars -> unit 

@@ -141,25 +141,68 @@ val ItemWithNoInst : Item -> ItemWithInst
 type FieldResolution = FieldResolution of RecdFieldRef * bool
 
 /// Information about an extension member held in the name resolution environment
-[<Sealed>]
-type ExtensionMember 
+type ExtensionMember =
+   /// F#-style Extrinsic extension member, defined in F# code
+   | FSExtMem of ValRef * ExtensionMethodPriority
+
+   /// ILExtMem(declaringTyconRef, ilMetadata, pri)
+   ///
+   /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
+   | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
+
+   /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
+   /// later through 'open' get priority in overload resolution.
+   member Priority : ExtensionMethodPriority
 
 /// The environment of information used to resolve names
 [<NoEquality; NoComparison>]
 type NameResolutionEnv =
-    {eDisplayEnv: DisplayEnv
-     eUnqualifiedItems: LayeredMap<string,Item>
-     ePatItems: NameMap<Item>
-     eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
-     eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
-     eFieldLabels: NameMultiMap<RecdFieldRef>
-     eTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
-     eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
-     eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
-     eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
-     eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
-     eUnindexedExtensionMembers: ExtensionMember list
-     eTypars: NameMap<Typar> }
+    { /// Display environment information for output 
+      eDisplayEnv: DisplayEnv 
+
+      /// Values and Data Tags available by unqualified name 
+      eUnqualifiedItems: LayeredMap<string,Item>
+
+      /// Data Tags and Active Pattern Tags available by unqualified name 
+      ePatItems: NameMap<Item>
+
+      /// Modules accessible via "." notation. Note this is a multi-map. 
+      /// Adding a module abbreviation adds it a local entry to this List.map. 
+      /// Likewise adding a ccu or opening a path adds entries to this List.map. 
+      eModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
+
+      /// Fully qualified modules and namespaces. 'open' does not change this. 
+      eFullyQualifiedModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
+
+      /// RecdField labels in scope.  RecdField labels are those where type are inferred 
+      /// by label rather than by known type annotation. 
+      /// Bools indicate if from a record, where no warning is given on indeterminate lookup 
+      eFieldLabels: NameMultiMap<Tast.RecdFieldRef>
+
+      /// Tycons indexed by the various names that may be used to access them, e.g. 
+      ///     "List" --> multiple TyconRef's for the various tycons accessible by this name. 
+      ///     "List`1" --> TyconRef 
+      eTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
+
+      eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
+
+      /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef) 
+      eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
+
+      /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef) 
+      eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
+
+      /// Extension members by type and name 
+      eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
+
+      /// Other extension members unindexed by type
+      eUnindexedExtensionMembers: ExtensionMember list
+
+      /// Typars (always available by unqualified names). Further typars can be 
+      /// in the tpenv, a structure folded through each top-level definition. 
+      eTypars: NameMap<Typar>
+
+    } 
     static member Empty : g:TcGlobals -> NameResolutionEnv
     member DisplayEnv : DisplayEnv
     member FindUnqualifiedItem : string -> Item
@@ -325,6 +368,9 @@ type internal TcSymbolUses =
 
     /// Get the locations of all the printf format specifiers in the file
     member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]
+
+    /// Empty collection of symbol uses
+    static member Empty : TcSymbolUses
 
 /// Represents open declaration statement.
 type internal OpenDeclaration =
@@ -542,3 +588,6 @@ val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> Resolv
 val GetVisibleNamespacesAndModulesAtPoint : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> ModuleOrNamespaceRef list
 
 val IsItemResolvable : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool
+
+val TrySelectExtensionMethInfoOfILExtMem : range -> ImportMap -> TType -> TyconRef * MethInfo * ExtensionMethodPriority -> MethInfo option 
+ 

@@ -306,10 +306,11 @@ type ByteMemory with
                         leaveOpen=false)
             mmf, mmf.CreateViewAccessor(0L, length, memoryMappedFileAccess), length
 
+        // Validate MMF with the access that was intended.
         match access with
-        | FileAccess.Read when not accessor.CanRead -> failwith "Cannot read file"
-        | FileAccess.Write when not accessor.CanWrite -> failwith "Cannot write file"
-        | _ when not accessor.CanRead || not accessor.CanWrite -> failwith "Cannot read or write file"
+        | FileAccess.Read when not accessor.CanRead -> invalidOp "Cannot read file"
+        | FileAccess.Write when not accessor.CanWrite -> invalidOp "Cannot write file"
+        | FileAccess.ReadWrite when not accessor.CanRead || not accessor.CanWrite -> invalidOp "Cannot read or write file"
         | _ -> ()
 
         let safeHolder =

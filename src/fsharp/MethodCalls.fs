@@ -501,6 +501,8 @@ type CalledMeth<'T>
 
     member x.TotalNumAssignedNamedArgs = x.ArgSets |> List.sumBy (fun x -> x.NumAssignedNamedArgs)
 
+    override x.ToString() = "call to " + minfo.ToString()
+
 let NamesOfCalledArgs (calledArgs: CalledArg list) = 
     calledArgs |> List.choose (fun x -> x.NameOpt) 
 
@@ -1053,15 +1055,20 @@ let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags minst args =
 /// calls to the type-directed solutions to member constraints.
 let MakeMethInfoCall amap m minfo minst args =
     let valUseFlags = NormalValUse // correct unless if we allow wild trait constraints like "T has a ctor and can be used as a parent class" 
+
     match minfo with 
+
     | ILMeth(g, ilminfo, _) -> 
         let direct = not minfo.IsVirtual
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         BuildILMethInfoCall g amap m isProp ilminfo valUseFlags minst  direct args |> fst
+
     | FSMeth(g, ty, vref, _) -> 
         BuildFSharpMethodCall g m (ty, vref) valUseFlags minst args |> fst
+
     | DefaultStructCtor(_, ty) -> 
        mkDefault (m, ty)
+
 #if !NO_EXTENSIONTYPING
     | ProvidedMeth(amap, mi, _, m) -> 
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 

@@ -3879,6 +3879,38 @@ type TcConfigProvider =
 // TcImports
 //--------------------------------------------------------------------------
 
+[<Sealed>]
+type TcImportsSafeDisposal
+    (disposeActions: ResizeArray<unit -> unit>,
+#if !NO_EXTENSIONTYPING
+     disposeTypeProviderActions: ResizeArray<unit -> unit>,
+#endif
+     compilationThread: ICompilationThread) =
+
+    let mutable isDisposed = false
+
+    let dispose () =
+        // disposing deliberately only closes this tcImports, not the ones up the chain 
+        isDisposed <- true        
+        if verbose then 
+            dprintf "disposing of TcImports, %d binaries\n" disposeActions.Count
+#if !NO_EXTENSIONTYPING
+        let actions = disposeTypeProviderActions
+        if actions.Count > 0 then
+            compilationThread.EnqueueWork (fun _ -> for action in actions do action())
+#endif
+        for action in disposeActions do action()
+
+    override _.Finalize() =
+        dispose ()
+
+    interface IDisposable with
+
+        member this.Dispose()  =
+            if not isDisposed then
+                GC.SuppressFinalize this
+                dispose ()
+
 #if !NO_EXTENSIONTYPING
 // These are hacks in order to allow TcImports to be held as a weak reference inside a type provider.
 // The reason is due to older type providers compiled using an older TypeProviderSDK, that SDK used reflection on fields and properties to determine the contract.
@@ -3923,34 +3955,24 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let mutable dllTable: NameMap<ImportedBinary> = NameMap.empty
     let mutable ccuInfos: ImportedAssembly list = []
     let mutable ccuTable: NameMap<ImportedAssembly> = NameMap.empty
-    let mutable disposeActions = []
+    let disposeActions = ResizeArray()
     let mutable disposed = false
     let mutable ilGlobalsOpt = ilGlobalsOpt
     let mutable tcGlobals = None
 #if !NO_EXTENSIONTYPING
-    let mutable disposeTypeProviderActions = []
+    let disposeTypeProviderActions = ResizeArray()
     let mutable generatedTypeRoots = new System.Collections.Generic.Dictionary<ILTypeRef, int * ProviderGeneratedType>()
     let mutable tcImportsWeak = TcImportsWeakHack (WeakReference<_> this)
 #endif
+
+    let disposal = new TcImportsSafeDisposal(disposeActions, disposeTypeProviderActions, compilationThread)
     
     let CheckDisposed() =
         if disposed then assert false
 
     let dispose () =
         CheckDisposed()
-        // disposing deliberately only closes this tcImports, not the ones up the chain 
-        disposed <- true        
-        if verbose then 
-            dprintf "disposing of TcImports, %d binaries\n" disposeActions.Length
-#if !NO_EXTENSIONTYPING
-        let actions = disposeTypeProviderActions
-        disposeTypeProviderActions <- []
-        if actions.Length > 0 then
-            compilationThread.EnqueueWork (fun _ -> for action in actions do action())
-#endif
-        let actions = disposeActions
-        disposeActions <- []
-        for action in actions do action()
+        (disposal :> IDisposable).Dispose()
 
     static let ccuHasType (ccu: CcuThunk) (nsname: string list) (tname: string) =
         let matchNameSpace (entityOpt: Entity option) n =
@@ -4174,12 +4196,12 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     member private tcImports.AttachDisposeAction action =
         CheckDisposed()
-        disposeActions <- action :: disposeActions
+        disposeActions.Add action
 
 #if !NO_EXTENSIONTYPING
     member private tcImports.AttachDisposeTypeProviderAction action =
         CheckDisposed()
-        disposeTypeProviderActions <- action :: disposeTypeProviderActions
+        disposeTypeProviderActions.Add action
 #endif
   
     // Note: the returned binary reader is associated with the tcImports, i.e. when the tcImports are closed 
@@ -4912,9 +4934,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         knownUnresolved
         |> List.map (function UnresolvedAssemblyReference(file, originalReferences) -> file, originalReferences)
         |> List.iter reportAssemblyNotResolved
-
-    override tcImports.Finalize () =
-        dispose ()
         
     static member BuildNonFrameworkTcImports (ctok, tcConfigP: TcConfigProvider, tcGlobals: TcGlobals, baseTcImports, nonFrameworkReferences, knownUnresolved) = 
       cancellable {
@@ -4940,7 +4959,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     interface System.IDisposable with 
         member tcImports.Dispose() = 
             dispose ()
-            GC.SuppressFinalize tcImports
 
     override tcImports.ToString() = "TcImports(...)"
         
