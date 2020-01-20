@@ -284,6 +284,8 @@ type ExtensionMember =
    /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
    | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
 
+   interface TraitPossibleExtensionMemberSolution 
+
    /// Check if two extension members refer to the same definition
    static member Equality g e1 e2 =
        match e1, e2 with
@@ -309,7 +311,12 @@ type ExtensionMember =
        | FSExtMem (_, pri) -> pri
        | ILExtMem (_, _, pri) -> pri
 
-type FullyQualifiedFlag =
+   member x.LogicalName = 
+       match x with 
+       | FSExtMem (vref, _) -> vref.LogicalName
+       | ILExtMem (_, minfo, _) -> minfo.LogicalName
+       
+type FullyQualifiedFlag = 
     /// Only resolve full paths
     | FullyQualified
     /// Resolve any paths accessible via 'open'
@@ -369,6 +376,9 @@ type NameResolutionEnv =
       /// Extension members by type and name
       eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
 
+      /// Extension members by name  
+      eExtensionMembersByName: NameMultiMap<ExtensionMember>
+
       /// Other extension members unindexed by type
       eUnindexedExtensionMembers: ExtensionMember list
 
@@ -391,6 +401,7 @@ type NameResolutionEnv =
           eFullyQualifiedTyconsByAccessNames = LayeredMultiMap.Empty
           eFullyQualifiedTyconsByDemangledNameAndArity = LayeredMap.Empty
           eIndexedExtensionMembers = TyconRefMultiMap<_>.Empty
+          eExtensionMembersByName = NameMultiMap<_>.Empty
           eUnindexedExtensionMembers = []
           eTypars = Map.empty }
 
@@ -658,6 +669,17 @@ let AddValRefToExtensionMembers pri (eIndexedExtensionMembers: TyconRefMultiMap<
     else
         eIndexedExtensionMembers
 
+/// Add an F# value to the table of available extension members, if necessary, as an FSharp-style extension member
+let AddValRefToExtensionMembersByNameTable logicalName (eExtensionMembersByName: NameMultiMap<_>) extMemInfo =
+    NameMultiMap.add logicalName extMemInfo eExtensionMembersByName
+
+/// Add an F# value to the table of available extension members, if necessary, as an FSharp-style extension member
+let AddValRefToExtensionMembersByName pri (eExtensionMembersByName: NameMultiMap<_>) (vref:ValRef) =
+    if vref.IsMember && vref.IsExtensionMember then
+        AddValRefToExtensionMembersByNameTable vref.LogicalName eExtensionMembersByName (FSExtMem (vref,pri))
+    else
+        eExtensionMembersByName
+
 
 /// This entry point is used to add some extra items to the environment for Visual Studio, e.g. static members
 let AddFakeNamedValRefToNameEnv nm nenv vref =
@@ -688,6 +710,7 @@ let AddValRefsToNameEnvWithPriority bulkAddMode pri nenv (vrefs: ValRef []) =
     { nenv with
         eUnqualifiedItems = AddValRefsToItems bulkAddMode nenv.eUnqualifiedItems vrefs
         eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers, vrefs) ||> Array.fold (AddValRefToExtensionMembers pri)
+        eExtensionMembersByName = (nenv.eExtensionMembersByName, vrefs) ||> Array.fold (AddValRefToExtensionMembersByName pri)
         ePatItems = (nenv.ePatItems, vrefs) ||> Array.fold AddValRefsToActivePatternsNameEnv }
 
 /// Add a single F# value to the environment.
@@ -700,6 +723,7 @@ let AddValRefToNameEnv nenv (vref: ValRef) =
             else
                 nenv.eUnqualifiedItems
         eIndexedExtensionMembers = AddValRefToExtensionMembers pri nenv.eIndexedExtensionMembers vref
+        eExtensionMembersByName = AddValRefToExtensionMembersByName pri nenv.eExtensionMembersByName vref
         ePatItems = AddValRefsToActivePatternsNameEnv nenv.ePatItems vref }
 
 
@@ -808,12 +832,12 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
     let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef
     let flds =  if isIL then [| |] else tcref.AllFieldsArray
 
-    let eIndexedExtensionMembers, eUnindexedExtensionMembers =
+    let eIndexedExtensionMembers, eExtensionMembersByName, eUnindexedExtensionMembers = 
         let ilStyleExtensionMeths = GetCSharpStyleIndexedExtensionMembersForTyconRef amap m  tcref
-        ((nenv.eIndexedExtensionMembers, nenv.eUnindexedExtensionMembers), ilStyleExtensionMeths) ||> List.fold (fun (tab1, tab2) extMemInfo ->
+        ((nenv.eIndexedExtensionMembers, nenv.eExtensionMembersByName, nenv.eUnindexedExtensionMembers),ilStyleExtensionMeths) ||> List.fold (fun (tab1,tab2,tab3) extMemInfo -> 
             match extMemInfo with
-            | Choice1Of2 (tcref, extMemInfo) -> tab1.Add (tcref, extMemInfo), tab2
-            | Choice2Of2 extMemInfo -> tab1, extMemInfo :: tab2)
+            | Choice1Of2 (tcref, extMemInfo) -> tab1.Add (tcref, extMemInfo), AddValRefToExtensionMembersByNameTable extMemInfo.LogicalName tab2 extMemInfo, tab3
+            | Choice2Of2 extMemInfo -> tab1, AddValRefToExtensionMembersByNameTable extMemInfo.LogicalName tab2 extMemInfo, extMemInfo :: tab3)  
 
     let isILOrRequiredQualifiedAccess = isIL || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs)
     let eFieldLabels =
@@ -871,6 +895,7 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
             eUnqualifiedItems = eUnqualifiedItems
             ePatItems = ePatItems
             eIndexedExtensionMembers = eIndexedExtensionMembers
+            eExtensionMembersByName = eExtensionMembersByName
             eUnindexedExtensionMembers = eUnindexedExtensionMembers }
 
     let nenv = 

@@ -488,6 +488,8 @@ type TyconRefMultiMap<'T> =
     /// Make a new map, containing a new entry for the given type definition
     member Add : TyconRef * 'T -> TyconRefMultiMap<'T>
 
+    member Contents : TyconRefMap<'T list>
+
     /// The empty map
     static member Empty : TyconRefMultiMap<'T>
 
@@ -529,9 +531,18 @@ type ValRemap = ValMap<ValRef>
 [<NoEquality; NoComparison>]
 type Remap =
     { tpinst : TyparInst
+
+      /// Values to remap
       valRemap: ValRemap
+
+      /// TyconRefs to remap
       tyconRefRemap : TyconRefRemap
-      removeTraitSolutions: bool }
+
+      /// Remove existing trait solutions?
+      removeTraitSolutions: bool 
+
+      /// A map indicating how to fill in extSlns for traits as we copy an expression. Indexed by the member name of the trait
+      extSlnsMap: Map<string, TraitPossibleExtensionMemberSolutions> }
 
     static member Empty : Remap
 
@@ -552,6 +563,7 @@ val instTypes              : TyparInst -> TypeInst -> TypeInst
 val instTyparConstraints  : TyparInst -> TyparConstraint list -> TyparConstraint list 
 
 val instTrait              : TyparInst -> TraitConstraintInfo -> TraitConstraintInfo 
+val instValRef              : TyparInst -> ValRef -> ValRef
 
 //-------------------------------------------------------------------------
 // From typars to types 
@@ -1453,6 +1465,10 @@ type TypeDefMetadata =
 
 /// Extract metadata from a type definition
 val metadataOfTycon : Tycon -> TypeDefMetadata
+
+#if EXTENSIONTYPING
+val extensionInfoOfTy : TcGlobals -> TType -> TyconRepresentation
+#endif
 
 /// Extract metadata from a type
 val metadataOfTy : TcGlobals -> TType -> TypeDefMetadata

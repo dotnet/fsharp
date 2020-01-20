@@ -1504,7 +1504,8 @@ let p_trait_sln sln st =
          p_byte 5 st; p_tup3 p_anonInfo p_tys p_int (a, b, c) st
 
 
-let p_trait (TTrait(a, b, c, d, e, f)) st  =
+let p_trait (TTrait(a, b, c, d, e, f, _extSlns, _ad)) st  = 
+    // The _extSlns do not get pickled. We are assuming this is a generic or solved constraint
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, !f) st
 
 let u_anonInfo_data st =
@@ -1536,10 +1537,10 @@ let u_trait_sln st =
          FSAnonRecdFieldSln(a, b, c)
     | _ -> ufailwith st "u_trait_sln"
 
-let u_trait st =
+let u_trait st = 
     let a, b, c, d, e, f = u_tup6 u_tys u_string u_MemberFlags u_tys (u_option u_ty) (u_option u_trait_sln) st
-    TTrait (a, b, c, d, e, ref f)
-
+    // extSlns starts empty.  TODO: check the ramifications of this when inlining solved trait calls from other assemblies
+    TTrait (a, b, c, d, e, ref f, [], None)
 
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
 

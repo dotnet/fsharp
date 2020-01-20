@@ -135,7 +135,7 @@ and accOp cenv env (op, tyargs, args, _m) =
         accTypeInst cenv env enclTypeArgs
         accTypeInst cenv env methTypeArgs
         accTypeInst cenv env tys
-    | TOp.TraitCall (TTrait(tys, _nm, _, argtys, rty, _sln)) -> 
+    | TOp.TraitCall (TTrait(tys, _nm, _, argtys, rty, _sln, _extSlns, _ad)) -> 
         argtys |> accTypeInst cenv env 
         rty |> Option.iter (accTy cenv env)
         tys |> List.iter (accTy cenv env)

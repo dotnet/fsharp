@@ -2344,6 +2344,14 @@ and
 
     override x.ToString() = x.Name
 
+and TraitPossibleExtensionMemberSolutions = TraitPossibleExtensionMemberSolution list 
+
+/// Only satisfied by type 'ExtensionMember'. Not stored in TastPickle.
+and TraitPossibleExtensionMemberSolution = interface end 
+
+/// Only satisfied by 'AccessorDomain'. Not stored in TastPickle.
+and TraitAccessorDomain = interface end 
+
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
     TyparConstraint = 
@@ -2399,25 +2407,34 @@ and
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TraitConstraintInfo = 
 
-    /// TTrait(tys, nm, memFlags, argtys, rty, solution)
+    /// TTrait(tys, nm, memFlags, argtys, rty, solutionCell, extSlns, ad)
     ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of TTypes * string * MemberFlags * TTypes * TType option * TraitConstraintSln option ref 
+    | TTrait of TTypes * string * MemberFlags * TTypes * TType option * TraitConstraintSln option ref * extSlns: TraitPossibleExtensionMemberSolutions * ad: TraitAccessorDomain option
+
+    /// Get the support types that can help provide members to solve the constraint
+    member x.SupportTypes= (let (TTrait(tys,_,_,_,_,_,_,_)) = x in tys)
 
     /// Get the member name associated with the member constraint.
-    member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
+    member x.MemberName = (let (TTrait(_, nm, _, _, _, _, _, _)) = x in nm)
 
     /// Get the argument types required of a member in order to solve the constraint
-    member x.ArgumentTypes = (let (TTrait(_, _, _, argtys, _, _)) = x in argtys)
+    member x.ArgumentTypes = (let (TTrait(_, _, _, argtys, _, _, _, _)) = x in argtys)
 
     /// Get the return type recorded in the member constraint.
-    member x.ReturnType = (let (TTrait(_, _, _, _, ty, _)) = x in ty)
+    member x.ReturnType = (let (TTrait(_, _, _, _, rty, _, _, _)) = x in rty)
 
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
-        with get() = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value)
-        and set v = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value <- v)
+        with get() = (let (TTrait(_, _, _, _, _, sln, _, _)) = x in sln.Value)
+        and set v = (let (TTrait(_, _, _, _, _, sln, _, _)) = x in sln.Value <- v)
+
+    /// Get possible extension member solutions available for a use of a trait at a particular location
+    member x.PossibleExtensionSolutions = (let (TTrait(_, _, _, _, _, _, extSlns, _)) = x in extSlns)
+
+    /// Get access rights for a use of a trait at a particular location
+    member x.AccessorDomain = (let (TTrait(_, _, _, _, _, _, _, ad)) = x in ad)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
