@@ -77,6 +77,11 @@
         <target state="translated">Atrybutów nie można stosować do rozszerzeń typu.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMemberOperatorDefinitionInExtrinsic">
+        <source>Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</source>
+        <target state="new">Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">Nie zdefiniowano przestrzeni nazw „{0}”.</target>

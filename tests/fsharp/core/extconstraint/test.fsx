@@ -13,7 +13,9 @@ let reportFailure (s : string) =
 
 let check s e r = 
     if r = e then stdout.WriteLine (s + ": YES") 
-    else (stdout.WriteLine ("\n***** " + s + ": FAIL\n"); reportFailure s)
+    else 
+        printf "\n***** %s: FAIL, expected %A, got %A\n" s r e
+        reportFailure s
 
 let test s b =      
     if b then ()
@@ -50,7 +52,7 @@ module DotNetPrimtiveWithAmbiguousNewOperator =
     
     do check "jfs9dlfdhsx2" 1 (f "2")
     // TODO: this gives an internal error
-    // let f x = 1 ++ x
+    //let f x = 1 ++ x
 
 /// Extending a .NET primitive type with new _internal_ operator
 module DotNetPrimtiveWithInternalOperator1 = 
@@ -401,18 +403,18 @@ module SystematicTests =
         
         let r3 = { F = 3 }
         let r4 = { F = 4 }
-        check "qvwoiwvoi0" (-r3).F 7
-        check "qvwoiwvoi1" (CallStaticMethod1 r3).F 7
-        check "qvwoiwvoi2" (CallStaticMethod2 (r3, r4)).F 11
-        check "qvwoiwvoi2b" ((+) r3 r4).F 11
-        check "qvwoiwvoi2c" ((-) r3 r4).F 12
-        check "qvwoiwvoi2c" ((/) r3 r4).F 13
-        check "qvwoiwvoi3" (CallStaticMethod3 (r3, r4)).F 11
-        check "qvwoiwvoi4" (CallOverloadedStaticMethod4 (r3, 4)).F 11
-        check "qvwoiwvoi5" (CallOverloadedStaticMethod4 (r3, "four")).F 11
-        //check "qvwoiwvoi6" (CallInstanceMethod1 (r3, r4)).F 12  // TODO - FAILING
-        //check "qvwoiwvoi7" (CallInstanceProperty1 (r3)).F 7     // TODO - FAILING
-        check "qvwoiwvoi8" (CallStaticProperty1().F : int32) 4
+        check "aqvwoiwvoi0" (-r3).F 7
+        check "aqvwoiwvoi1" (CallStaticMethod1 r3).F 7
+        check "aqvwoiwvoi2" (CallStaticMethod2 (r3, r4)).F 11
+        check "aqvwoiwvoi2b" ((+) r3 r4).F 11
+        check "aqvwoiwvoi2c" ((-) r3 r4).F 12
+        check "aqvwoiwvoi2c" ((/) r3 r4).F 13
+        check "aqvwoiwvoi3" (CallStaticMethod3 (r3, r4)).F 11
+        check "aqvwoiwvoi4" (CallOverloadedStaticMethod4 (r3, 4)).F 11
+        check "aqvwoiwvoi5" (CallOverloadedStaticMethod4 (r3, "four")).F 11
+        //check "aqvwoiwvoi6" (CallInstanceMethod1 (r3, r4)).F 12  // TODO - FAILING
+        //check "aqvwoiwvoi7" (CallInstanceProperty1 (r3)).F 7     // TODO - FAILING
+        check "aqvwoiwvoi8" (CallStaticProperty1().F : int32) 4
 
 
     module MixedOverloadedOperatorMethodsOnStructType =
@@ -477,14 +479,14 @@ module SystematicTests =
                 static member StaticProperty1 = 4
                 member x.InstanceProperty1 = x + 4
 
-        check "vwoiwvoi1" (CallStaticMethod1 3) 7
-        check "vwoiwvoi2" (CallStaticMethod2 (3, 4)) 11
-        check "vwoiwvoi3" (CallStaticMethod3 (3, 4)) 11
-        check "vwoiwvoi4" (CallOverloadedStaticMethod4 (3, 4)) 11
-        check "vwoiwvoi5" (CallOverloadedStaticMethod4 (3, "four")) 11
-        //check "vwoiwvoi6" (CallInstanceMethod1 (3, 4)) 12  // TODO- BUG - CODEGEN
-        //check "vwoiwvoi7" (CallInstanceProperty1 (3)) 7    // TODO- BUG - CODEGEN
-        check "vwoiwvoi8" (CallStaticProperty1 () : int32) 4
+        check "2vwoiwvoi1" (CallStaticMethod1 3) 7
+        check "2vwoiwvoi2" (CallStaticMethod2 (3, 4)) 11
+        check "2vwoiwvoi3" (CallStaticMethod3 (3, 4)) 11
+        check "2vwoiwvoi4" (CallOverloadedStaticMethod4 (3, 4)) 11
+        check "2vwoiwvoi5" (CallOverloadedStaticMethod4 (3, "four")) 11
+        //check "2vwoiwvoi6" (CallInstanceMethod1 (3, 4)) 12  // TODO- BUG - CODEGEN
+        //check "2vwoiwvoi7" (CallInstanceProperty1 (3)) 7    // TODO- BUG - CODEGEN
+        check "2vwoiwvoi8" (CallStaticProperty1 () : int32) 4
 
 
 module Test1 = 

@@ -1631,7 +1631,6 @@ and TransactMemberConstraintSolution traitInfo (trace: OptionalTrace) sln  =
 
 and GetRelevantExtensionMethodsForTrait m (amap: Import.ImportMap) (traitInfo: TraitConstraintInfo) =
 
-    // TODO: check the use of 'allPairs' - not all these extensions apply to each type variable.
     (traitInfo.SupportTypes, traitInfo.PossibleExtensionSolutions) 
     ||> List.allPairs 
     |> List.choose (fun (traitSupportTy,extMem) -> 
