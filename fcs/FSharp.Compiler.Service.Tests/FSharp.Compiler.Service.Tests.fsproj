@@ -11,9 +11,6 @@
     <IsTestProject>true</IsTestProject>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- Tests won't run without this, at least on OSX, see https://github.com/NuGet/Home/issues/4837#issuecomment-354536302 -->
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
-    <DefineConstants>$(DefineConstants);NO_PROJECTCRACKER</DefineConstants>
-  </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
@@ -50,9 +47,6 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\CSharpProjectAnalysis.fs">
       <Link>CSharpProjectAnalysis.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ProjectOptionsTests.fs">
-      <Link>ProjectOptionsTests.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\StructureTests.fs">
       <Link>StructureTests.fs</Link>
