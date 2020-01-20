@@ -53,14 +53,14 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
                         let! sourceText = document.GetTextAsync()
                         let checker = getChecker document
                         let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName=userOpName)
-                        let! result = SimplifyNames.getUnnecessaryRanges(checkResults, (fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()), Some (DefaultTuning.SimplifyNameEachItemDelay) ) |> liftAsync
+                        let! result = SimplifyNames.getSimplifiableNames(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
                         let mutable diag = ResizeArray()
-                        for (unnecessaryRange,relativeName) in result do
+                        for r in result do
                             diag.Add(
                                 Diagnostic.Create(
                                    descriptor,
-                                   RoslynHelpers.RangeToLocation(unnecessaryRange, sourceText, document.FilePath),
-                                   properties = (dict [SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, relativeName]).ToImmutableDictionary()))
+                                   RoslynHelpers.RangeToLocation(r.Range, sourceText, document.FilePath),
+                                   properties = (dict [SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, r.RelativeName]).ToImmutableDictionary()))
                         let diagnostics = diag.ToImmutableArray()
                         cache.Remove(key) |> ignore
                         let data = { Hash = textVersionHash; Diagnostics=diagnostics }

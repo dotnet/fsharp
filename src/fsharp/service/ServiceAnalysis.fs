@@ -229,10 +229,14 @@ module UnusedOpens =
         }
  
 module SimplifyNames = 
+    type SimplifiableRange = {
+        Range: range
+        RelativeName: string
+    }
+
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length    
 
-    /// Get all ranges that can be simplified in a file
-    let getUnnecessaryRanges (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string, sleep: int option) : Async<(range*string) list> =
+    let getSimplifiableNames (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<SimplifiableRange list> =
         async {
             let result = ResizeArray()
             let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile()
@@ -270,9 +274,6 @@ module SimplifyNames =
                             }
                         loop (List.rev plid) []
                     
-                    if sleep.IsNone then
-                        do! Async.Sleep sleep.Value  // be less intrusive, give other work priority most of the time
-
                     let! necessaryPlid = getNecessaryPlid plid 
                     
                     match necessaryPlid with
@@ -285,9 +286,8 @@ module SimplifyNames =
                             Range.mkRange r.FileName (Range.mkPos r.StartLine plidStartCol) (Range.mkPos r.EndLine necessaryPlidStartCol)
                     
                         let relativeName = (String.concat "." plid) + "." + name
-                        result.Add(unnecessaryRange, relativeName)
+                        result.Add({Range = unnecessaryRange; RelativeName = relativeName})
 
-        
             return List.ofSeq result
         }
 
@@ -330,29 +330,6 @@ module UnusedDeclarations =
             |> Array.filter (fun (_, defSus) -> defSus |> Array.forall (fun (_, isUsed) -> not isUsed))
             |> Array.map (fun (m, _) -> m)
 
-        //#if DEBUG
-        //let formatRange (x: FSharp.Compiler.Range.range) = sprintf "(%d, %d) - (%d, %d)" x.StartLine x.StartColumn x.EndLine x.EndColumn
-
-        //symbolsUses
-        //|> Array.map (fun su -> sprintf "%s, %s, is definition = %b, Symbol (def range = %A)" 
-        //                                (formatRange su.RangeAlternate) su.Symbol.DisplayName su.IsFromDefinition
-        //                                (su.Symbol.DeclarationLocation |> Option.map formatRange))
-        //|> Logging.Logging.logInfof "SymbolUses:\n%+A"
-        //
-        //definitions
-        //|> Seq.map (fun su -> sprintf "su range = %s, symbol range = %A, symbol name = %s" 
-        //                              (formatRange su.RangeAlternate) (su.Symbol.DeclarationLocation |> Option.map formatRange) su.Symbol.DisplayName)
-        //|> Logging.Logging.logInfof "Definitions:\n%A"
-        //
-        //usages
-        //|> Seq.map formatRange
-        //|> Seq.toArray
-        //|> Logging.Logging.logInfof "Used ranges:\n%A"
-        //
-        //unusedRanges
-        //|> Array.map formatRange
-        //|> Logging.Logging.logInfof "Unused ranges: %A"
-        //#endif
         Array.toList unusedRanges
     
     let getUnusedDeclarations(checkFileResults: FSharpCheckFileResults, isScriptFile: bool) : Async<range list> = 
