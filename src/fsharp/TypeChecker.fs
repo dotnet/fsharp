@@ -5605,11 +5605,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
     | SynPat.Record (flds, m) ->
         let tcref, fldsmap, _fldsList = BuildFieldMap cenv env true ty flds m
         // REVIEW: use _fldsList to type check pattern in code order not field defn order 
-<<<<<<< HEAD
-        let _, inst, tinst, gtyp = infoOfTyconRef cenv.g m tcref
-=======
-        let _, inst, tinst, gtyp = FreshenTyconRef2 m tcref
->>>>>>> e07132b09f3c9aec2624ed07dc356fff875a979e
+        let _, inst, tinst, gtyp = FreshenTyconRef2 cenv.g m tcref
         UnifyTypes cenv env m ty gtyp
         let fields = tcref.TrueInstanceFieldsAsList
         let ftys = fields |> List.map (fun fsp -> actualTyOfRecdField inst fsp, fsp) 
@@ -7179,11 +7175,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         | [] -> []
         | _ ->
             let tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
-<<<<<<< HEAD
-            let _, _, _, gtyp = infoOfTyconRef cenv.g mWholeExpr tcref
-=======
-            let _, _, _, gtyp = FreshenTyconRef2 mWholeExpr tcref
->>>>>>> e07132b09f3c9aec2624ed07dc356fff875a979e
+            let _, _, _, gtyp = FreshenTyconRef2 cenv.g mWholeExpr tcref
             UnifyTypes cenv env mWholeExpr overallTy gtyp
 
             [ for n, v in fldsList do
@@ -9097,13 +9089,8 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                   mkConstrApp, [ucaseAppTy], [ for (s, m) in apinfo.ActiveTagsWithRanges -> mkSynId m s ]
               | _ ->
                   let ucref = mkChoiceCaseRef g mItem aparity n
-<<<<<<< HEAD
-                  let _, _, tinst = FreshenTypeInst mItem (ucref.TyconRef.Typars mItem)
+                  let _, _, tinst, _ = FreshenTyconRef2 g mItem ucref.TyconRef
                   let ucinfo = UnionCaseInfo(tinst, ucref)
-=======
-                  let _, _, tinst, _ = FreshenTyconRef2 mItem ucref.TyconRef
-                  let ucinfo = UnionCaseInfo (tinst, ucref)
->>>>>>> e07132b09f3c9aec2624ed07dc356fff875a979e
                   ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy (Item.UnionCase(ucinfo, false))
           | _ -> 
               ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy item
@@ -9499,15 +9486,9 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         | DelayedSet(e2, mStmt) :: otherDelayed ->
             if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
             UnifyTypes cenv env mStmt overallTy g.unit_ty
-<<<<<<< HEAD
-            vref.Deref.SetHasBeenReferenced() 
-            CheckValAccessible mItem env.eAccessRights vref
-            CheckValAttributes g vref mItem  |> CommitOperationResult
-=======
             vref.Deref.SetHasBeenReferenced()
             CheckValAccessible mItem env.AccessRights vref
             CheckValAttributes g vref mItem |> CommitOperationResult
->>>>>>> e07132b09f3c9aec2624ed07dc356fff875a979e
             let vty = vref.Type
             let vty2 = 
                 if isByrefTy g vty then 
