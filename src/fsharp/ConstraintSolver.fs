@@ -429,6 +429,34 @@ let ShowAccessDomain ad =
 
 exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TType * TType * range
 
+/// Signal that there is still an unresolved overload in the constraint problem. Leave the
+/// unresolved overload constraint in the tree and skip any further process related to the
+/// overall constraint being added.
+///
+/// NOTE: This local-abort is a mistake which has crept into F# type inference,
+/// and its status is currently under review, though we have to be very careful before changing
+/// anything. 
+///
+/// Here is the history (as of 20 Jan 2020):
+///    1. The local abort was added as part of an attempted performance optimization https://github.com/dotnet/fsharp/pull/1650
+///       This change was released in VS2015.
+///
+///    2. However, it also impacts the logic of type inference, by skipping checking.
+///       Because of this an attempt was made to revert it in https://github.com/dotnet/fsharp/pull/4173.
+///
+///       Unfortunately, existing code had begun to depend on the new behaviours enabled by the
+///       change, and the revert was abandoned before release in https://github.com/dotnet/fsharp/pull/4348
+///
+/// Comments on soundness:
+///    The addition of the local abort when an SRTP method overload constraint has not
+///    been resolved is sound w.r.t. the method overload constraint itself, because that constraint
+///    will be subject to further processing at a later point.
+///
+///    It appears possible, however, that the local abort may, however, result in the skipping 
+///    other processing associated with the assertion of an overall constraint (e.g. the
+///    processing related to each element of a tuple.
+///
+
 exception LocallyAbortOperationThatFailsToResolveOverload
 
 exception LocallyAbortOperationThatLosesAbbrevs 
@@ -929,8 +957,9 @@ and private SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln t
    // Back out of expansions of type abbreviations to give improved error messages. 
    // Note: any "normalization" of equations on type variables must respect the trace parameter
    TryD (fun () -> SolveTypeEqualsType csenv ndeep m2 trace cxsln ty1 ty2)
-        (function LocallyAbortOperationThatLosesAbbrevs -> ErrorD(ConstraintSolverTypesNotInEqualityRelation(csenv.DisplayEnv, ty1, ty2, csenv.m, m2, csenv.eContextInfo))
-                | err -> ErrorD err)
+        (function
+        | LocallyAbortOperationThatLosesAbbrevs -> ErrorD(ConstraintSolverTypesNotInEqualityRelation(csenv.DisplayEnv, ty1, ty2, csenv.m, m2, csenv.eContextInfo))
+        | err -> ErrorD err)
 
 and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 = 
    match origl1, origl2 with 
@@ -1059,8 +1088,9 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
 and SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m2 trace cxsln ty1 ty2 = 
    let denv = csenv.DisplayEnv
    TryD (fun () -> SolveTypeSubsumesType csenv ndeep m2 trace cxsln ty1 ty2)
-        (function LocallyAbortOperationThatLosesAbbrevs -> ErrorD(ConstraintSolverTypesNotInSubsumptionRelation(denv, ty1, ty2, csenv.m, m2))
-                | err -> ErrorD err)
+        (function 
+         | LocallyAbortOperationThatLosesAbbrevs -> ErrorD(ConstraintSolverTypesNotInSubsumptionRelation(denv, ty1, ty2, csenv.m, m2))
+         | err -> ErrorD err)
 
 //-------------------------------------------------------------------------
 // Solve and record non-equality constraints
@@ -1451,7 +1481,9 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                           Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo, m, AccessibleFromEverywhere, minfo, minst, minst, None, objtys, [(callerArgs, [])], false, false, None)))
               
               let methOverloadResult, errors = 
-                  trace.CollectThenUndoOrCommit (fun (a, _) -> Option.isSome a) (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) (0, 0) AccessibleFromEverywhere calledMethGroup false (Some rty))
+                  trace.CollectThenUndoOrCommit
+                      (fun (a, _) -> Option.isSome a)
+                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) (0, 0) AccessibleFromEverywhere calledMethGroup false (Some rty))
 
               match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
               | Some (anonInfo, tinst, i), None, None -> 
@@ -2677,16 +2709,22 @@ and ResolveOverloading
     | None -> 
         None, errors        
 
+let ResolveOverloadingForCall denv css m  methodName ndeep cx callerArgCounts ad calledMethGroup permitOptArgs reqdRetTyOpt =
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    ResolveOverloading csenv NoTrace methodName ndeep cx callerArgCounts ad calledMethGroup permitOptArgs reqdRetTyOpt
 
 /// This is used before analyzing the types of arguments in a single overload resolution
 let UnifyUniqueOverloading 
-         (csenv: ConstraintSolverEnv) 
+         denv
+         css 
+         m 
          callerArgCounts 
          methodName 
          ad 
          (calledMethGroup: CalledMeth<SynExpr> list) 
          reqdRetTy    // The expected return type, if known 
    =
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     let m = csenv.m
     // See what candidates we have based on name and arity 
     let candidates = calledMethGroup |> List.filter (fun cmeth -> cmeth.IsCandidate(m, ad)) 
@@ -2716,15 +2754,17 @@ let UnifyUniqueOverloading
     | _ -> 
         ResultD false
 
-let EliminateConstraintsForGeneralizedTypars csenv (trace: OptionalTrace) (generalizedTypars: Typars) =
-    // Remove the global constraints where this type variable appears in the support of the constraint 
-    generalizedTypars 
-    |> List.iter (fun tp -> 
+/// Remove the global constraints where these type variables appear in the support of the constraint 
+let EliminateConstraintsForGeneralizedTypars denv css m (trace: OptionalTrace) (generalizedTypars: Typars) =
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    for tp in generalizedTypars do
         let tpn = tp.Stamp
         let cxst = csenv.SolverState.ExtraCxs
         let cxs = cxst.FindAll tpn
-        cxs |> List.iter (fun cx -> trace.Exec (fun () -> cxst.Remove tpn) (fun () -> (csenv.SolverState.ExtraCxs.Add (tpn, cx))))
-    )
+        for cx in cxs do 
+            trace.Exec
+                (fun () -> cxst.Remove tpn)
+                (fun () -> (csenv.SolverState.ExtraCxs.Add (tpn, cx)))
 
 
 //-------------------------------------------------------------------------
@@ -2735,7 +2775,8 @@ let EliminateConstraintsForGeneralizedTypars csenv (trace: OptionalTrace) (gener
 //------------------------------------------------------------------------- 
 
 let AddCxTypeEqualsType contextInfo denv css m actual expected  = 
-    SolveTypeEqualsTypeWithReport (MakeConstraintSolverEnv contextInfo css m denv) 0 m NoTrace None actual expected
+    let csenv = MakeConstraintSolverEnv contextInfo css m denv
+    SolveTypeEqualsTypeWithReport csenv 0 m NoTrace None actual expected
     |> RaiseOperationResult
 
 let UndoIfFailed f =
@@ -2770,17 +2811,23 @@ let UndoIfFailedOrWarnings f =
         false
 
 let AddCxTypeEqualsTypeUndoIfFailed denv css m ty1 ty2 =
-    UndoIfFailed (fun trace -> SolveTypeEqualsTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) ty1 ty2)
+    UndoIfFailed (fun trace -> 
+     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+     SolveTypeEqualsTypeKeepAbbrevs csenv 0 m (WithTrace trace) ty1 ty2)
 
 let AddCxTypeEqualsTypeUndoIfFailedOrWarnings denv css m ty1 ty2 =
-    UndoIfFailedOrWarnings (fun trace -> SolveTypeEqualsTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) ty1 ty2)
+    UndoIfFailedOrWarnings (fun trace -> 
+        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+        SolveTypeEqualsTypeKeepAbbrevs csenv 0 m (WithTrace trace) ty1 ty2)
 
 let AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 =
     let csenv = { MakeConstraintSolverEnv ContextInfo.NoContext css m denv with MatchingOnly = true }
     UndoIfFailed (fun trace -> SolveTypeEqualsTypeKeepAbbrevs csenv 0 m (WithTrace trace) ty1 ty2)
 
 let AddCxTypeMustSubsumeTypeUndoIfFailed denv css m ty1 ty2 = 
-    UndoIfFailed (fun trace -> SolveTypeSubsumesTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) None ty1 ty2)
+    UndoIfFailed (fun trace ->
+        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+        SolveTypeSubsumesTypeKeepAbbrevs csenv 0 m (WithTrace trace) None ty1 ty2)
 
 let AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 = 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
@@ -2788,63 +2835,134 @@ let AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv css m ty1 ty2 =
     UndoIfFailed (fun trace -> SolveTypeSubsumesTypeKeepAbbrevs csenv 0 m (WithTrace trace) None ty1 ty2)
 
 let AddCxTypeMustSubsumeType contextInfo denv css m trace ty1 ty2 = 
-    SolveTypeSubsumesTypeWithReport (MakeConstraintSolverEnv contextInfo css m denv) 0 m trace None ty1 ty2
+    let csenv = MakeConstraintSolverEnv contextInfo css m denv
+    SolveTypeSubsumesTypeWithReport csenv 0 m trace None ty1 ty2
     |> RaiseOperationResult
 
 let AddCxMethodConstraint denv css m trace traitInfo  =
     TryD (fun () ->
             trackErrors {
+                let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
                 do! 
-                    SolveMemberConstraint (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) true false 0 m trace traitInfo
+                    SolveMemberConstraint csenv true false 0 m trace traitInfo
                     |> OperationResult.ignore
             })
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+         | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+         | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeMustSupportNull denv css m trace ty =
-    TryD (fun () -> SolveTypeSupportsNull (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+    TryD (fun () -> 
+              let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+              SolveTypeSupportsNull csenv 0 m trace ty)
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeMustSupportComparison denv css m trace ty =
-    TryD (fun () -> SolveTypeSupportsComparison (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+    TryD (fun () -> 
+              let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+              SolveTypeSupportsComparison csenv 0 m trace ty)
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeMustSupportEquality denv css m trace ty =
-    TryD (fun () -> SolveTypeSupportsEquality (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+    TryD (fun () -> 
+              let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+              SolveTypeSupportsEquality csenv 0 m trace ty)
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeMustSupportDefaultCtor denv css m trace ty =
-    TryD (fun () -> SolveTypeRequiresDefaultConstructor (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+    TryD (fun () ->
+              let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+              SolveTypeRequiresDefaultConstructor csenv 0 m trace ty)
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsReferenceType denv css m trace ty =
-    TryD (fun () -> SolveTypeIsReferenceType (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+    TryD (fun () -> 
+              let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+              SolveTypeIsReferenceType csenv 0 m trace ty)
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsValueType denv css m trace ty =
-    TryD (fun () -> SolveTypeIsNonNullableValueType (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+    TryD (fun () -> 
+              let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+              SolveTypeIsNonNullableValueType csenv 0 m trace ty)
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
     
 let AddCxTypeIsUnmanaged denv css m trace ty =
-    TryD (fun () -> SolveTypeIsUnmanaged (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+    TryD (fun () -> 
+              let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+              SolveTypeIsUnmanaged csenv 0 m trace ty)
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsEnum denv css m trace ty underlying =
-    TryD (fun () -> SolveTypeIsEnum (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty underlying)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+    TryD (fun () -> 
+              let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+              SolveTypeIsEnum csenv 0 m trace ty underlying)
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeIsDelegate denv css m trace ty aty bty =
-    TryD (fun () -> SolveTypeIsDelegate (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty aty bty)
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+    TryD (fun () -> 
+              let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+              SolveTypeIsDelegate csenv 0 m trace ty aty bty)
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
+
+let AddCxTyparDefaultsTo denv css m ctxtInfo tp ridx ty =
+    TryD (fun () -> 
+           let csenv = MakeConstraintSolverEnv ctxtInfo css m denv
+           AddConstraint csenv 0 m NoTrace tp (TyparConstraint.DefaultsTo(ridx, ty, m)))
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+    |> RaiseOperationResult
+
+let SolveTypeAsError denv css m ty =
+    let ty2 = NewErrorType ()
+    assert((destTyparTy css.g ty2).IsFromError)
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    SolveTypeEqualsTypeKeepAbbrevs csenv 0 m NoTrace ty ty2 |> ignore
+    
+let ApplyTyparDefaultAtPriority denv css priority (tp: Typar) =
+    tp.Constraints |> List.iter (fun tpc -> 
+        match tpc with 
+        | TyparConstraint.DefaultsTo(priority2, ty2, m) when priority2 = priority -> 
+            let ty1 = mkTyparTy tp
+            if not tp.IsSolved && not (typeEquiv css.g ty1 ty2) then
+                let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+                TryD (fun () -> SolveTyparEqualsType csenv 0 m NoTrace ty1 ty2)
+                     (function
+                     | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+                     | res -> 
+                         SolveTypeAsError denv css m ty1
+                         ErrorD(ErrorFromApplyingDefault(css.g, denv, tp, ty2, res, m)))
+                |> RaiseOperationResult
+        | _ -> ())
 
 let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: TraitConstraintInfo) argExprs = trackErrors {
     let css = 
@@ -2959,17 +3077,31 @@ let ChooseTyparSolutionAndSolve css denv tp =
     let max, m = ChooseTyparSolutionAndRange g amap tp 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     TryD (fun () -> SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) max)
-         (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
     |> RaiseOperationResult
 
 
 let CheckDeclaredTypars denv css m typars1 typars2 = 
     TryD (fun () -> 
             CollectThenUndo (fun trace -> 
-               SolveTypeEqualsTypeEqns (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m (WithTrace trace) None 
+               let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+               SolveTypeEqualsTypeEqns csenv 0 m (WithTrace trace) None 
                    (List.map mkTyparTy typars1) 
                    (List.map mkTyparTy typars2)))
-         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
+    |> RaiseOperationResult
+
+let CanonicalizePartialInferenceProblem css denv m tps =
+    // Canonicalize constraints prior to generalization 
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    TryD (fun () -> CanonicalizeRelevantMemberConstraints csenv 0 NoTrace tps)
+         (function
+         | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+         | res -> ErrorD (ErrorFromAddingConstraint(denv, res, m))) 
     |> RaiseOperationResult
 
 /// An approximation used during name resolution for intellisense to eliminate extension members which will not
