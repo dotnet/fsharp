@@ -171,13 +171,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Initialize")>]
         let init length initializer = Microsoft.FSharp.Primitives.Basics.List.init length initializer
 
-        let rec initConstAcc n x acc =
-            if n <= 0 then acc else initConstAcc (n-1) x (x :: acc)
-
         [<CompiledName("Replicate")>]
         let replicate count initial =
             if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            initConstAcc count initial []
+            let mutable result = []
+            for i in 0..count-1 do
+               result <- initial :: result
+            result
 
         [<CompiledName("Iterate2")>]
         let iter2 action list1 list2 =
