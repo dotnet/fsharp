@@ -2349,6 +2349,7 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<nativeint>)  then unboxPrim<'T> (box 0n)
                 elif aty.Equals(typeof<byte>)       then unboxPrim<'T> (box 0uy)
                 elif aty.Equals(typeof<uint16>)     then unboxPrim<'T> (box 0us)
+                elif aty.Equals(typeof<char>)       then unboxPrim<'T> (box '\000')
                 elif aty.Equals(typeof<uint32>)     then unboxPrim<'T> (box 0u)
                 elif aty.Equals(typeof<uint64>)     then unboxPrim<'T> (box 0UL)
                 elif aty.Equals(typeof<unativeint>) then unboxPrim<'T> (box 0un)
@@ -2372,7 +2373,7 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<nativeint>)  then unboxPrim<'T> (box 1n)
                 elif aty.Equals(typeof<byte>)       then unboxPrim<'T> (box 1uy)
                 elif aty.Equals(typeof<uint16>)     then unboxPrim<'T> (box 1us)
-                elif aty.Equals(typeof<char>)       then unboxPrim<'T> (box (retype 1us : char))
+                elif aty.Equals(typeof<char>)       then unboxPrim<'T> (box '\001')
                 elif aty.Equals(typeof<uint32>)     then unboxPrim<'T> (box 1u)
                 elif aty.Equals(typeof<uint64>)     then unboxPrim<'T> (box 1UL)
                 elif aty.Equals(typeof<unativeint>) then unboxPrim<'T> (box 1un)
@@ -2400,6 +2401,7 @@ namespace Microsoft.FSharp.Core
             when ^T : unativeint  = 0un
             when ^T : int16       = 0s
             when ^T : uint16      = 0us
+            when ^T : char        = '\000'
             when ^T : sbyte       = 0y
             when ^T : byte        = 0uy
             when ^T : decimal     = 0M
@@ -2420,7 +2422,7 @@ namespace Microsoft.FSharp.Core
             when ^T : unativeint  = 1un
             when ^T : int16       = 1s
             when ^T : uint16      = 1us
-            when ^T : char        = (retype 1us : char)
+            when ^T : char        = '\001'
             when ^T : sbyte       = 1y
             when ^T : byte        = 1uy
             when ^T : decimal     = 1M
