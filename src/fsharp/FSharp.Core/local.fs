@@ -83,7 +83,7 @@ open System.Collections.Generic
 
 module internal List =
 
-    let arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
+    let inline arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
 
     [<SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")>]
     let nonempty x = match x with [] -> false | _ -> true
