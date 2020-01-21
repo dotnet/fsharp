@@ -449,7 +449,7 @@ exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TTyp
 //
 // Here is the history:
 //    1. The local abort was added as part of an attempted performance optimization https://github.com/dotnet/fsharp/pull/1650
-//       This change was released in VS2015.
+//       This change was released in the VS2017 GA release.
 //
 //    2. However, it also impacts the logic of type inference, by skipping checking.
 //       Because of this an attempt was made to revert it in https://github.com/dotnet/fsharp/pull/4173.
