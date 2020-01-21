@@ -67,7 +67,7 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
     inherit ByteMemory()
 
     do
-        if length <= 0 || length > bytes.Length then
+        if length < 0 || length > bytes.Length then
             raise (ArgumentOutOfRangeException("length"))
 
         if offset < 0 || (offset + length) > bytes.Length then
@@ -155,7 +155,7 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
             raise (ArgumentOutOfRangeException("i"))
 
     do
-        if length <= 0 then
+        if length < 0 then
             raise (ArgumentOutOfRangeException("length"))
 
     override _.Item 
