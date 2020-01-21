@@ -286,7 +286,7 @@ $(PACKAGEREFERENCES)
             <NormalizedIdentity Condition=""'%(Identity)'!=''"">$([System.String]::Copy('%(Identity)').Replace('\', '/'))</NormalizedIdentity>
             <NormalizedPathInPackage Condition=""'%(ResolvedCompileFileDefinitions.PathInPackage)'!=''"">$([System.String]::Copy('%(ResolvedCompileFileDefinitions.PathInPackage)').Replace('\', '/'))</NormalizedPathInPackage>
             <PositionPathInPackage Condition=""'%(InteractiveResolvedFile.NormalizedPathInPackage)'!=''"">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').IndexOf('%(InteractiveResolvedFile.NormalizedPathInPackage)'))</PositionPathInPackage>
-            <PackageRoot Condition=""'%(InteractiveResolvedFile.NormalizedPathInPackage)'!='' and '%(InteractiveResolvedFile.PositionPathInPackage)'!='0'"">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').Substring(0, %(InteractiveResolvedFile.PositionPathInPackage)))</PackageRoot>
+            <PackageRoot Condition=""'%(InteractiveResolvedFile.NormalizedPathInPackage)'!='' and '%(InteractiveResolvedFile.PositionPathInPackage)'!='-1'"">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').Substring(0, %(InteractiveResolvedFile.PositionPathInPackage)))</PackageRoot>
             <InitializeSourcePath>%(InteractiveResolvedFile.PackageRoot)content\%(ResolvedCompileFileDefinitions.FileName)%(ResolvedCompileFileDefinitions.Extension).fsx</InitializeSourcePath>
             <IsNotImplementationReference>$([System.String]::Copy('%(ResolvedCompileFileDefinitions.PathInPackage)').StartsWith('ref/'))</IsNotImplementationReference>
             <NuGetPackageId>%(ResolvedCompileFileDefinitions.NuGetPackageId)</NuGetPackageId>
@@ -296,7 +296,7 @@ $(PACKAGEREFERENCES)
             <NormalizedIdentity Condition=""'%(Identity)'!=''"">$([System.String]::Copy('%(Identity)').Replace('\', '/'))</NormalizedIdentity>
             <NormalizedPathInPackage Condition=""'%(RuntimeCopyLocalItems.PathInPackage)'!=''"">$([System.String]::Copy('%(RuntimeCopyLocalItems.PathInPackage)').Replace('\', '/'))</NormalizedPathInPackage>
             <PositionPathInPackage Condition=""'%(InteractiveResolvedFile.NormalizedPathInPackage)'!=''"">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').IndexOf('%(InteractiveResolvedFile.NormalizedPathInPackage)'))</PositionPathInPackage>
-            <PackageRoot Condition=""'%(InteractiveResolvedFile.NormalizedPathInPackage)'!='' and '%(InteractiveResolvedFile.PositionPathInPackage)'!='0'"">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').Substring(0, %(InteractiveResolvedFile.PositionPathInPackage)))</PackageRoot>
+            <PackageRoot Condition=""'%(InteractiveResolvedFile.NormalizedPathInPackage)'!='' and '%(InteractiveResolvedFile.PositionPathInPackage)'!='-1'"">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').Substring(0, %(InteractiveResolvedFile.PositionPathInPackage)))</PackageRoot>
             <InitializeSourcePath>%(InteractiveResolvedFile.PackageRoot)content\%(RuntimeCopyLocalItems.FileName)%(RuntimeCopyLocalItems.Extension).fsx</InitializeSourcePath>
             <IsNotImplementationReference>$([System.String]::Copy('%(RuntimeCopyLocalItems.PathInPackage)').StartsWith('ref/'))</IsNotImplementationReference>
             <NuGetPackageId>%(RuntimeCopyLocalItems.NuGetPackageId)</NuGetPackageId>
