@@ -2510,6 +2510,7 @@ module PrettyTypes =
     let PrettifyType g x = PrettifyThings g id id x
     let PrettifyTypePair g x = PrettifyThings g (fun f -> foldPair (f, f)) (fun f -> mapPair (f, f)) x
     let PrettifyTypes g x = PrettifyThings g List.fold List.map x
+    
     let PrettifyDiscriminantAndTypePairs g x = 
       let tys, cxs = (PrettifyThings g List.fold List.map (x |> List.map snd))
       List.zip (List.map fst x) tys, cxs

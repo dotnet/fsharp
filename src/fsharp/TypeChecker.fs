@@ -10380,8 +10380,8 @@ and TcMethodApplication
     
     // STEP 3. Resolve overloading 
     /// Select the called method that's the result of overload resolution
-    let finalCalledMeth =
-      
+    let finalCalledMeth = 
+
         let callerArgs = { Unnamed = unnamedCurriedCallerArgs ; Named = namedCurriedCallerArgs }
 
         let postArgumentTypeCheckingCalledMethGroup = 

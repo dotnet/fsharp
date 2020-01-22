@@ -1147,32 +1147,36 @@ module private PrintTypes =
         let retTy = instType typarInst retTy
         let argInfos = prettyArgInfos denv typarInst argInfos
         let argInfos,retTy,genParamTys, cxs =
-          let typesWithDiscrimants =
-            [
-              yield 0uy,retTy 
-              for ty,_ in argInfos do
-                yield 1uy, ty
-              for ty in genParamTys do
-                yield 2uy, ty
-            ]
-          let typesWithDiscrimants,typarsAndCxs = PrettyTypes.PrettifyDiscriminantAndTypePairs denv.g typesWithDiscrimants
-          let retTy = typesWithDiscrimants |> List.find (function (0uy, _) -> true | _ -> false) |> snd
-          let argInfos = 
-            typesWithDiscrimants 
-            |> List.choose (function (1uy,ty) -> Some ty | _ -> None)
-            |> List.zip argInfos 
-            |> List.map (fun ((_,argInfo),tTy) -> tTy, argInfo)
-          let genParamTys = 
-            typesWithDiscrimants
-            |> List.choose (function (2uy,ty) -> Some ty | _ -> None)
-          
-          argInfos, retTy, genParamTys, typarsAndCxs
+            // using 0, 1, 2 as discriminant for return, arguments and generic parameters
+            // respectively, in order to easily retrieve each of the types with their
+            // expected quality below.
+            let typesWithDiscrimants =
+                [
+                    yield 0,retTy 
+                    for ty,_ in argInfos do
+                        yield 1, ty
+                    for ty in genParamTys do
+                        yield 2, ty
+                ]
+            let typesWithDiscrimants,typarsAndCxs = PrettyTypes.PrettifyDiscriminantAndTypePairs denv.g typesWithDiscrimants
+            let retTy = typesWithDiscrimants |> List.find (function (0, _) -> true | _ -> false) |> snd
+            let argInfos = 
+                typesWithDiscrimants 
+                |> List.choose (function (1,ty) -> Some ty | _ -> None)
+                |> List.zip argInfos 
+                |> List.map (fun ((_,argInfo),tTy) -> tTy, argInfo)
+            let genParamTys = 
+                typesWithDiscrimants
+                |> List.choose (function (2,ty) -> Some ty | _ -> None)
+              
+            argInfos, retTy, genParamTys, typarsAndCxs
 
         let env = SimplifyTypes.CollectInfo true (List.collect (List.map fst) [argInfos]) cxs
         let cxsL = layoutConstraintsWithInfo denv env env.postfixConstraints
-        List.foldBack (---) (layoutArgInfos denv env [argInfos]) cxsL
-        , layoutReturnType denv env retTy
-        , layoutGenericParameterTypes denv env genParamTys
+
+        (List.foldBack (---) (layoutArgInfos denv env [argInfos]) cxsL,
+            layoutReturnType denv env retTy,
+            layoutGenericParameterTypes denv env genParamTys)
 
     let prettyLayoutOfType denv ty = 
         let ty, cxs = PrettyTypes.PrettifyType denv.g ty

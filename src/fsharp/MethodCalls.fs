@@ -114,14 +114,15 @@ type CallerNamedArg<'T> =
     member x.CallerArg = (let (CallerNamedArg(_, a)) = x in a)
 
 /// Represents the list of unnamed / named arguments at method call site
-// todo: figure out / document why we are using list²
+/// remark: The usage of list list is due to tupling and currying of arguments,
+/// stemming from SynValInfo in the AST.
 [<Struct>]
 type CallerArgs<'T> = 
     { 
         Unnamed: CallerArg<'T> list list
         Named: CallerNamedArg<'T> list list 
     }
-    static member Empty : CallerArgs<'T> = { Unnamed = List.empty; Named = List.empty }
+    static member Empty : CallerArgs<'T> = { Unnamed = []; Named = [] }
     member x.CallerArgCounts = (List.length x.Unnamed, List.length x.Named)
     member x.CurriedCallerArgs = List.zip x.Unnamed x.Named
     member x.LayoutArgumentTypes denv =

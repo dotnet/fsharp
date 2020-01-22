@@ -932,6 +932,9 @@ module PrettyTypes =
 
     val PrettifyTypes : TcGlobals -> TTypes -> TTypes * TyparConstraintsWithTypars
     
+    /// same as PrettifyTypes, but allows passing the types along with a discriminant value
+    /// useful to prettify many types that need to be sorted out after prettifying operation
+    /// took place.
     val PrettifyDiscriminantAndTypePairs : TcGlobals -> ('Discriminant * TType) list -> ('Discriminant * TType) list * TyparConstraintsWithTypars
 
     val PrettifyInst : TcGlobals -> TyparInst -> TyparInst * TyparConstraintsWithTypars

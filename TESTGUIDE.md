@@ -4,17 +4,17 @@
 
 To run tests, use variations such as the following, depending on which test suite and build configuration you want:
 
-    ./build -testAll -c Release
-    ./build -test -c Release
-    ./build -testCambridge  -c Release
-    ./build -testCompiler  -c Release
-    ./build -testDependencyManager -c Release
-    ./build -testDesktop -c Release
-    ./build -testCoreClr -c Release
-    ./build -testFSharpCore -c Release
-    ./build -testFSharpQA -c Release
-    ./build -testScripting -c Release
-    ./build -testVs -c Release
+    .\build -testAll -c Release
+    .\build -test -c Release
+    .\build -testCambridge  -c Release
+    .\build -testCompiler  -c Release
+    .\build -testDependencyManager -c Release
+    .\build -testDesktop -c Release
+    .\build -testCoreClr -c Release
+    .\build -testFSharpCore -c Release
+    .\build -testFSharpQA -c Release
+    .\build -testScripting -c Release
+    .\build -testVs -c Release
 
 You can also submit pull requests to https://github.com/dotnet/fsharp and run the tests via continuous integration. Most people do wholesale testing that way.
 
