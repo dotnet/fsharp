@@ -2682,6 +2682,12 @@ module TypecheckTests =
     let ``type check neg120`` () = singleNegTest (testConfig "typecheck/sigs") "neg120"
 
     [<Test>] 
+    let ``type check neg121`` () = singleNegTest (testConfig "typecheck/sigs") "neg121"
+
+    [<Test>] 
+    let ``type check neg122`` () = singleNegTest (testConfig "typecheck/sigs") "neg122"
+
+    [<Test>] 
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
 
     [<Test>] 
