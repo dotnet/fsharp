@@ -1,3 +1,4 @@
+
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Solves constraints using a mutable constraint-solver state
@@ -20,7 +21,7 @@ open FSharp.Compiler.InfoReader
 val NewAnonTypar : TyparKind * range * TyparRigidity * TyparStaticReq * TyparDynamicReq -> Typar
 
 /// Create an inference type variable 
-val NewInferenceType : unit -> TType
+val NewInferenceType : TcGlobals -> TType
 
 /// Create an inference type variable for the kind of a byref pointer
 val NewByRefKindInferenceType : TcGlobals -> range -> TType
@@ -32,7 +33,7 @@ val NewErrorType : unit -> TType
 val NewErrorMeasure : unit -> Measure
 
 /// Create a list of inference type variables, one for each element in the input list
-val NewInferenceTypes : 'a list -> TType list
+val NewInferenceTypes : TcGlobals -> 'a list -> TType list
 
 /// Given a set of formal type parameters and their constraints, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted to refer to these.
@@ -95,6 +96,10 @@ exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEn
 exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
 exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * TType * TType * range * range
 exception ConstraintSolverMissingConstraint             of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
+exception ConstraintSolverNullnessWarningEquivWithTypes of DisplayEnv * TType * TType * NullnessInfo * NullnessInfo * range  * range 
+exception ConstraintSolverNullnessWarningWithTypes      of DisplayEnv * TType * TType * NullnessInfo * NullnessInfo * range  * range 
+exception ConstraintSolverNullnessWarningWithType       of DisplayEnv * TType * NullnessInfo * range  * range 
+exception ConstraintSolverNonNullnessWarningWithType    of DisplayEnv * TType * NullnessInfo * range  * range 
 exception ConstraintSolverError                         of string * range * range
 exception ConstraintSolverRelatedInformation            of string option * range * exn
 
@@ -149,7 +154,9 @@ val AddCxTypeMustSubsumeType                  : ContextInfo -> DisplayEnv -> Con
 val AddCxTypeMustSubsumeTypeUndoIfFailed      : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 val AddCxMethodConstraint                     : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
-val AddCxTypeMustSupportNull                  : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeDefnNotSupportsNull               : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeDefnSupportsNull               : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeUseSupportsNull               : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 val AddCxTypeMustSupportComparison            : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 val AddCxTypeMustSupportEquality              : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 val AddCxTypeMustSupportDefaultCtor           : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit

@@ -1816,8 +1816,8 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                 let resultExprAfterConvertToResultTy = 
                     match reqdResultInfo, exprIsEnumerableInfo with 
                     | Some _, Some _ | None, None -> resultExpr // the expression is a QuerySource, the result is a QuerySource, nothing to do
-                    | Some resultElemTy, None -> mkCallGetQuerySourceAsEnumerable cenv.g expr.Range resultElemTy (TType_app(cenv.g.tcref_System_Collections_IEnumerable, [])) resultExpr
-                    | None, Some (resultElemTy, qTy) -> mkCallNewQuerySource cenv.g expr.Range resultElemTy qTy resultExpr 
+                    | Some resultElemTy, None -> mkCallGetQuerySourceAsEnumerable cenv.g expr.Range resultElemTy (TType_app(cenv.g.tcref_System_Collections_IEnumerable, [], g.knownWithoutNull)) resultExpr
+                    | None, Some (resultElemTy, qTy)  ->  mkCallNewQuerySource cenv.g expr.Range resultElemTy qTy resultExpr 
                 Some resultExprAfterConvertToResultTy
             | None -> 
                 None
@@ -1854,10 +1854,11 @@ let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
     
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
+    let g = cenv.g
 
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
-    let expr = NormalizeAndAdjustPossibleSubsumptionExprs cenv.g expr
+    let expr = NormalizeAndAdjustPossibleSubsumptionExprs g expr
 
     let expr = stripExpr expr
 
@@ -1898,7 +1899,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     | Expr.Lambda (_lambdaId, _, _, argvs, _body, m, rty) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
-        let ty = mkMultiLambdaTy m argvs rty
+        let ty = mkMultiLambdaTy cenv.g m argvs rty
         OptimizeLambdas None cenv env topValInfo expr ty
 
     | Expr.TyLambda (_lambdaId, tps, _body, _m, rty) -> 
@@ -1906,8 +1907,8 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         let ty = mkForallTyIfNeeded tps rty
         OptimizeLambdas None cenv env topValInfo expr ty
 
-    | Expr.TyChoose _ -> 
-        OptimizeExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
+    | Expr.TyChoose _  -> 
+        OptimizeExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars g cenv.amap expr)
 
     | Expr.Match (spMatch, exprm, dtree, targets, m, ty) -> 
         OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty)
@@ -2914,7 +2915,7 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
         let env = BindInternalValsToUnknown cenv (Option.toList baseValOpt) env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
-        let exprR = mkMemberLambdas m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyty)
+        let exprR = mkMemberLambdas cenv.g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyty)
         let arities = vsl.Length
         let arities = if isNil tps then arities else 1+arities
         let bsize = bodyinfo.TotalSize
@@ -2955,7 +2956,7 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
               if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
                   UnknownValue
               else 
-                  let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (bodyR, bodyty)
+                  let expr2 = mkMemberLambdas cenv.g m tps ctorThisValOpt None vsl (bodyR, bodyty)
                   CurriedLambdaValue (lambdaId, arities, bsize, expr2, ety) 
                   
 
@@ -3042,9 +3043,9 @@ and ConsiderSplitToMethod flag threshold cenv env (e, einfo) =
             match env.latestBoundId with 
             | Some id -> id.idText+suffixForVariablesThatMayNotBeEliminated 
             | None -> suffixForVariablesThatMayNotBeEliminated 
-        let fv, fe = mkCompGenLocal m nm (cenv.g.unit_ty --> ty)
+        let fv, fe = mkCompGenLocal m nm (mkFunTy cenv.g cenv.g.unit_ty ty)
         mkInvisibleLet m fv (mkLambda m uv (e, ty)) 
-          (primMkApp (fe, (cenv.g.unit_ty --> ty)) [] [mkUnit cenv.g m] m), 
+          (primMkApp (fe, (mkFunTy cenv.g cenv.g.unit_ty ty)) [] [mkUnit cenv.g m] m), 
         {einfo with FunctionSize=callSize }
     else
         e, einfo 
@@ -3168,6 +3169,7 @@ and OptimizeSwitchFallback cenv env (eR, einfo, cases, dflt, m) =
 
 and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
     try 
+        let g = cenv.g
         
         // The aim here is to stop method splitting for direct-self-tailcalls. We do more than that: if an expression
         // occurs in the body of recursively defined values RVS, then we refuse to split
@@ -3229,7 +3231,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     if mbrTyconRef.TryDeref.IsSome then
                         // Check if this is a subtype of MarshalByRefObject
                         assert (cenv.g.system_MarshalByRefObject_ty.IsSome)
-                        ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef tcref) cenv.g.system_MarshalByRefObject_ty.Value
+                        ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef g tcref) cenv.g.system_MarshalByRefObject_ty.Value
                     else 
                         false
                 | ParentNone -> false) ||

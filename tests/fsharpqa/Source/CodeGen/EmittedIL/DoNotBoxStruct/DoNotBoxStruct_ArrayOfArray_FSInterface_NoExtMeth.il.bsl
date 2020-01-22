@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
@@ -29,20 +29,24 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000000 Length: 0x00000291
+  // Offset: 0x00000000 Length: 0x0000028D
+}
+.mresource public FSharpSignatureDataB.DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
+{
+  // Offset: 0x00000298 Length: 0x00000008
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000298 Length: 0x000000BA
+  // Offset: 0x000002A8 Length: 0x000000BA
 }
 .module DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.exe
-// MVID: {59B1920A-1475-D984-A745-03830A92B159}
+// MVID: {5E172EEA-1475-D984-A745-0383EA2E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x015B0000
+// Image base: 0x05130000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -73,7 +77,7 @@
       .maxstack  5
       .locals init ([0] int32 V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.fs'
       IL_0000:  ldarg.2
       IL_0001:  stloc.0
       .line 6,6 : 80,82 ''

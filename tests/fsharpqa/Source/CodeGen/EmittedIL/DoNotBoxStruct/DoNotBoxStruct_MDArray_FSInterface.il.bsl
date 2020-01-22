@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly DoNotBoxStruct_MDArray_FSInterface
 {
@@ -29,20 +29,24 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_MDArray_FSInterface
 {
-  // Offset: 0x00000000 Length: 0x00000260
+  // Offset: 0x00000000 Length: 0x0000025C
+}
+.mresource public FSharpSignatureDataB.DoNotBoxStruct_MDArray_FSInterface
+{
+  // Offset: 0x00000260 Length: 0x00000007
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_MDArray_FSInterface
 {
-  // Offset: 0x00000268 Length: 0x0000009C
+  // Offset: 0x00000270 Length: 0x0000009C
 }
 .module DoNotBoxStruct_MDArray_FSInterface.exe
-// MVID: {59B1920A-8279-DA45-A745-03830A92B159}
+// MVID: {5E172EEA-8279-DA45-A745-0383EA2E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F20000
+// Image base: 0x05790000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -51,7 +55,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'F@5-6'
+  .class auto ansi serializable sealed nested assembly beforefieldinit F@5
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .method assembly specialname rtspecialname 
@@ -64,7 +68,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor()
       IL_0006:  ret
-    } // end of method 'F@5-6'::.ctor
+    } // end of method F@5::.ctor
 
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Core.Unit 
             Invoke(int32 x) cil managed
@@ -72,12 +76,12 @@
       // Code size       2 (0x2)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 68,70 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_MDArray_FSInterface.fs'
+      .line 5,5 : 68,70 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_MDArray_FSInterface.fs'
       IL_0000:  ldnull
       IL_0001:  ret
-    } // end of method 'F@5-6'::Invoke
+    } // end of method F@5::Invoke
 
-  } // end of class 'F@5-6'
+  } // end of class F@5
 
   .method public static void  F<(class [FSharp.Core]Microsoft.FSharp.Control.IEvent`2<class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>,int32>) T>(!!T[0...,0...] x) cil managed
   {
@@ -91,7 +95,7 @@
                                                           int32)
     IL_0008:  box        !!T
     IL_000d:  unbox.any  class [mscorlib]System.IObservable`1<int32>
-    IL_0012:  newobj     instance void DoNotBoxStruct_MDArray_FSInterface/'F@5-6'::.ctor()
+    IL_0012:  newobj     instance void DoNotBoxStruct_MDArray_FSInterface/F@5::.ctor()
     IL_0017:  tail.
     IL_0019:  call       void [FSharp.Core]Microsoft.FSharp.Control.CommonExtensions::AddToObservable<int32>(class [mscorlib]System.IObservable`1<!!0>,
                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)

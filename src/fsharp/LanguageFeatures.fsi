@@ -16,7 +16,7 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
-
+    | NullnessChecking
 
 /// LanguageVersion management
 type LanguageVersion =

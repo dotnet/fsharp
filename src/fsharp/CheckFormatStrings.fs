@@ -257,27 +257,27 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
               | 'O' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol 1
-                  parseLoop ((posi, NewInferenceType ()) :: acc) (i+1, relLine, relCol+1)
+                  parseLoop ((posi, NewInferenceType g) :: acc) (i+1, relLine, relCol+1)
 
               | 'A' ->
                   match info.numPrefixIfPos with
                   | None     // %A has BindingFlags=Public, %+A has BindingFlags=Public | NonPublic
                   | Some '+' -> 
                       collectSpecifierLocation relLine relCol 1
-                      parseLoop ((posi, NewInferenceType ()) :: acc)  (i+1, relLine, relCol+1)
+                      parseLoop ((posi, NewInferenceType g) :: acc)  (i+1, relLine, relCol+1)
                   | Some _   -> failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), (Option.get info.numPrefixIfPos).ToString())
 
               | 'a' ->
                   checkOtherFlags ch
-                  let xty = NewInferenceType () 
-                  let fty = bty --> (xty --> cty)
+                  let xty = NewInferenceType g 
+                  let fty = mkFunTy g bty (mkFunTy g xty cty)
                   collectSpecifierLocation relLine relCol 2
                   parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) (i+1, relLine, relCol+1)
 
               | 't' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol 1
-                  parseLoop ((posi, bty --> cty) :: acc)  (i+1, relLine, relCol+1)
+                  parseLoop ((posi, mkFunTy g bty cty) :: acc)  (i+1, relLine, relCol+1)
 
               | c -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c) 
           
@@ -289,7 +289,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
 
 let ParseFormatString m g formatStringCheckContext fmt bty cty dty = 
     let argtys, specifierLocations = parseFormatStringInternal m g formatStringCheckContext fmt bty cty
-    let aty = List.foldBack (-->) argtys dty
+    let aty = List.foldBack (mkFunTy g) argtys dty
     let ety = mkRefTupledTy g argtys
     (aty, ety), specifierLocations 
 

@@ -117,9 +117,9 @@ let ActivePatternElemsOfModuleOrNamespace (modref: ModuleOrNamespaceRef) : NameM
 /// Detect a use of a nominal type, including type abbreviations.
 ///
 /// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols
-let (|AbbrevOrAppTy|_|) (ty: TType) =
-    match stripTyparEqns ty with
-    | TType_app (tcref, _) -> Some tcref
+let (|AbbrevOrAppTy|_|) (ty: TType) = 
+    match stripTyparEqns ty with 
+    | TType_app (tcref, _, _) -> Some tcref
     | _ -> None
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -436,8 +436,8 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.Impor
     // Type must be non-generic and have 'Extension' attribute
     if isNil(tcrefOfStaticClass.Typars m) && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcrefOfStaticClass then
         let pri = NextExtensionMethodPriority()
-        let ty = generalizedTyconRef tcrefOfStaticClass
-
+        let ty = generalizedTyconRef g tcrefOfStaticClass
+        
         // Get the 'plain' methods, not interpreted as extension methods
         let minfos = GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
         [ for minfo in minfos do
@@ -713,10 +713,9 @@ let AddActivePatternResultTagsToNameEnv (apinfo: PrettyNaming.ActivePatternInfo)
             ||> List.foldBack (fun (j, nm) acc -> acc.Add(nm, Item.ActivePatternResult(apinfo, ty, j, m))) }
 
 /// Generalize a union case, from Cons --> List<T>.Cons
-let GeneralizeUnionCaseRef (ucref: UnionCaseRef) =
-    UnionCaseInfo (fst (generalizeTyconRef ucref.TyconRef), ucref)
-
-
+let GeneralizeUnionCaseRef (ucref: UnionCaseRef) = 
+    UnionCaseInfo (generalTyconRefInst ucref.TyconRef, ucref)
+    
 /// Add type definitions to the sub-table of the environment indexed by name and arity
 let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[]) (tab: LayeredMap<NameArityPair, TyconRef>) =
     if tcrefs.Length = 0 then tab else
@@ -766,7 +765,7 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: UnqualifiedItems) (ucrefs: Un
 let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (tcref:TyconRef) =
     // If OpenStaticClasses is not enabled then don't do this
     if amap.g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses then
-        let ty = generalizedTyconRef tcref
+        let ty = generalizedTyconRef g tcref
         let infoReader = InfoReader(g,amap)
         let items =
             [| let methGroups = 
@@ -836,11 +835,11 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
             // This may explore into an unreferenced assembly if the name
             // is a type abbreviation. If it does, assume the name does not
             // have a constructor.
-            let mayHaveConstruction =
-                protectAssemblyExploration
-                    false
-                    (fun () ->
-                        let ty = generalizedTyconRef tcref
+            let mayHaveConstruction = 
+                protectAssemblyExploration 
+                    false 
+                    (fun () -> 
+                        let ty = generalizedTyconRef g tcref
                         isClassTy g ty || isStructTy g ty)
 
             if mayHaveConstruction then
@@ -1044,7 +1043,7 @@ let AddDeclaredTyparsToNameEnv check nenv typars =
 /// a fresh set of inference type variables for the type parameters of the union type.
 let FreshenTycon (ncenv: NameResolver) m (tcref: TyconRef) =
     let tinst = ncenv.InstantiationGenerator m (tcref.Typars m)
-    let improvedTy = ncenv.g.decompileType tcref tinst
+    let improvedTy = ncenv.g.decompileType tcref tinst ncenv.g.knownWithoutNull
     improvedTy
 
 /// Convert a reference to a union case into a UnionCaseInfo that includes
@@ -1315,7 +1314,7 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
             //if staticResInfo.NumStaticArgs > 0 then
             //    error(Error(FSComp.SR.etNestedProvidedTypesDoNotTakeStaticArgumentsOrGenericParameters(), m))
             []
-        | nestedSty ->
+        | Tainted.NonNull nestedSty -> 
             [AddEntityForProvidedType (amap, modref, resolutionEnvironment, nestedSty, m) ]
     | _ -> []
 #endif
@@ -1569,7 +1568,7 @@ let ItemsAreEffectivelyEqual g orig other =
         nm1 = nm2 &&
         (typeEquiv g (mkTyparTy tp1) (mkTyparTy tp2) ||
          match stripTyparEqns (mkTyparTy tp1), stripTyparEqns (mkTyparTy tp2) with
-         | TType_var tp1, TType_var tp2 ->
+         | TType_var (tp1, _), TType_var (tp2, _) ->
             not tp1.IsCompilerGenerated && not tp1.IsFromError &&
             not tp2.IsCompilerGenerated && not tp2.IsFromError &&
             Range.equals tp1.Range tp2.Range
@@ -3807,10 +3806,13 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
       // e.g. <val-id>.<recdfield-id>.<more>
       (rfinfos |> List.collect (fun x -> x.FieldType |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
 
-      // e.g. <val-id>.<property-id>.<more>
-      let FullTypeOfPinfo(pinfo: PropInfo) =
-          let rty = pinfo.GetPropertyType(amap, m)
-          let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else rty
+      // e.g. <val-id>.<property-id>.<more> 
+      let FullTypeOfPinfo (pinfo: PropInfo) = 
+          let rty = pinfo.GetPropertyType(amap, m) 
+          let rty = 
+              if pinfo.IsIndexer then 
+                  mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty
+              else rty 
           rty
 
       (ty
@@ -3997,10 +3999,11 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
 
       @ (LookupTypeNameInEntityNoArity m id modref.ModuleOrNamespaceType
          |> List.collect (fun tycon ->
-             let tcref = modref.NestedTyconRef tycon
-             if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m tcref allowObsolete) then
-                 tcref |> generalizedTyconRef |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest
-             else
+             let tcref = modref.NestedTyconRef tycon 
+             if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m tcref allowObsolete) then 
+                 let ty = generalizedTyconRef g tcref 
+                 ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest ty
+             else 
                  []))
 
 /// Try to resolve a long identifier as type.
@@ -4253,8 +4256,8 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
        let recdFields =
            nenv.eFieldLabels
            |> Seq.collect (fun (KeyValue(_, v)) -> v)
-           |> Seq.map (fun fref ->
-                let typeInsts = fref.TyconRef.TyparsNoRange |> List.map (fun tyar -> tyar.AsType)
+           |> Seq.map (fun fref -> 
+                let typeInsts = fref.TyconRef.TyparsNoRange |> List.map mkTyparTy
                 Item.RecdField(RecdFieldInfo(typeInsts, fref)))
            |> List.ofSeq
 
@@ -4490,13 +4493,17 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
           // e.g. <val-id>.<recdfield-id>.<more>
           for rfinfo in rfinfos do
               yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item rfinfo.FieldType
-
-          // e.g. <val-id>.<property-id>.<more>
-          let fullTypeOfPinfo (pinfo: PropInfo) =
-              let rty = pinfo.GetPropertyType(amap, m)
-              let rty = if pinfo.IsIndexer then mkRefTupledTy g (pinfo.GetParamTypes(amap, m)) --> rty else  rty
-              rty
-
+    
+          // e.g. <val-id>.<property-id>.<more> 
+          let fullTypeOfPinfo (pinfo: PropInfo) = 
+              let rty = pinfo.GetPropertyType(amap, m) 
+              let rty = 
+                  if pinfo.IsIndexer then 
+                      mkFunTy g (mkRefTupledTy g (pinfo.GetParamTypes(amap, m))) rty
+                  else
+                      rty 
+              rty      
+          
           let pinfos =
               ty
               |> AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv (Some id) ad IgnoreOverrides m
@@ -4606,9 +4613,10 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
             | _ -> ()
 
             for tycon in LookupTypeNameInEntityNoArity m id modref.ModuleOrNamespaceType do
-                 let tcref = modref.NestedTyconRef tycon
-                 if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m tcref true) then
-                     yield! tcref |> generalizedTyconRef |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad true rest item
+                 let tcref = modref.NestedTyconRef tycon 
+                 if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m tcref true) then 
+                     let ty = tcref |> generalizedTyconRef g
+                     yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad true rest item ty
     }
 
 let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f plid (modref: ModuleOrNamespaceRef) =
