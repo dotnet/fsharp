@@ -2183,7 +2183,7 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
                     CompleteD
                 | _ -> 
                     ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))
-                    
+
 // Parameterized compatibility relation between member signatures.  The real work
 // is done by "equateTypes" and "subsumeTypes" and "subsumeArg"
 and CanMemberSigsMatchUpToCheck 
