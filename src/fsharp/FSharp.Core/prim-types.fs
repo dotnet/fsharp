@@ -4258,7 +4258,10 @@ namespace Microsoft.FSharp.Core
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> int32) (value))
 
         [<CompiledName("ToInt")>]
-        let inline int value = int32  value         
+        let inline int value = int32  value
+
+        [<CompiledName("ToUInt")>]
+        let inline uint value = uint32 value
 
         [<CompiledName("ToEnum")>]
         let inline enum< ^T when ^T : enum<int32> > (value:int32) : ^T = EnumOfValue value

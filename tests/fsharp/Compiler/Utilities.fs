@@ -120,7 +120,7 @@ type CompilationUtil private () =
                 [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
                 references.As<MetadataReference>().AddRange additionalReferences,
                 CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
-        Some (TestCompilation.CSharp (c, flags))
+        TestCompilation.CSharp (c, flags)
 
     static member CreateILCompilation (source: string) =
         let compute =
@@ -139,4 +139,4 @@ type CompilationUtil private () =
                     try File.Delete ilFilePath with | _ -> ()
                     try File.Delete tmp with | _ -> ()
                     try File.Delete dllFilePath with | _ -> ()
-        Some (TestCompilation.IL (source, compute))
+        TestCompilation.IL (source, compute)

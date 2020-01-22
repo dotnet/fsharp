@@ -839,19 +839,22 @@ module internal SymbolHelpers =
         // This may explore assemblies that are not in the reference set.
         // In this case just assume the item is not suppressed.
         protectAssemblyExploration true (fun () -> 
-         match item with 
-         | Item.Types(it, [ty]) -> 
-             isAppTy g ty &&
-             g.suppressed_types 
-             |> List.exists (fun supp -> 
-                let generalizedSupp = generalizedTyconRef supp
-                // check the display name is precisely the one we're suppressing
-                isAppTy g generalizedSupp && it = supp.DisplayName &&
-                // check if they are the same logical type (after removing all abbreviations)
-                let tcr1 = tcrefOfAppTy g ty
-                let tcr2 = tcrefOfAppTy g generalizedSupp
-                tyconRefEq g tcr1 tcr2) 
-         | _ -> false)
+            match item with 
+            | Item.Types(it, [ty]) -> 
+                match tryDestAppTy g ty with
+                | ValueSome tcr1 ->
+                    g.suppressed_types 
+                    |> List.exists (fun supp ->
+                        let generalizedSupp = generalizedTyconRef supp
+                        // check the display name is precisely the one we're suppressing
+                        match tryDestAppTy g generalizedSupp with
+                        | ValueSome tcr2 ->
+                            it = supp.DisplayName &&
+                            // check if they are the same logical type (after removing all abbreviations) 
+                            tyconRefEq g tcr1 tcr2
+                        | _ -> false) 
+                | _ -> false
+            | _ -> false)
 
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
     let RemoveExplicitlySuppressed (g: TcGlobals) (items: ItemWithInst list) = 
