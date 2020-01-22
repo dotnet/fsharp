@@ -250,7 +250,7 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.CoercesTo(ty, m) -> 
              Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty, m))
          | TyparConstraint.MayResolveMember(traitInfo, m) -> 
-             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo,m))
+             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo, m))
          | TyparConstraint.DefaultsTo(priority, ty, m) ->
              Some(TyparConstraint.DefaultsTo(priority, remapTypeAux tyenv ty, m))
          | TyparConstraint.IsEnum(uty, m) -> 
@@ -259,8 +259,8 @@ and remapTyparConstraintsAux tyenv cs =
              Some(TyparConstraint.IsDelegate(remapTypeAux tyenv uty1, remapTypeAux tyenv uty2, m))
          | TyparConstraint.SimpleChoice(tys, m) ->
              Some(TyparConstraint.SimpleChoice(remapTypesAux tyenv tys, m))
-         | TyparConstraint.SupportsComparison  _ 
-         | TyparConstraint.SupportsEquality  _ 
+         | TyparConstraint.SupportsComparison _ 
+         | TyparConstraint.SupportsEquality _ 
          | TyparConstraint.SupportsNull _ 
          | TyparConstraint.IsUnmanaged _ 
          | TyparConstraint.IsNonNullableStruct _ 
