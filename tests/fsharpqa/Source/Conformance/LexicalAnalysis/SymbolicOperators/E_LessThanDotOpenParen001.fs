@@ -1,3 +1,10 @@
+// #Regression #Conformance #LexicalAnalysis #Operators 
+// Regression test for FSHARP1.0:4805
+// We are not really after the actual error messages here (some of them have been omitted), rather we
+// want to verify we do not crash!
+//<Expects status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'S has been constrained to be type 'int'</Expects>
+//<Expects status="error" id="FS0670">This code is not sufficiently generic\. The type variable  \^T when  \^T : \(static member \( \+ \) :  \^T \*  \^T ->  \^a\) could not be generalized because it would escape its scope</Expects>
+
 type public TestType<'T,'S>() =
     
     member public s.Value with get() = Unchecked.defaultof<'T>
@@ -5,9 +12,7 @@ type public TestType<'T,'S>() =
     static member public (+++) (a : TestType<'T,'S>, b : 'T) = b
     static member public (+++) (a : 'T, b : TestType<'T,'S>) = a
     static member public (+++) (a : TestType<'T,'S>, b : 'T -> 'S) = a.Value
-    
-    // this is triggering https://github.com/dotnet/fsharp/issues/6725 and make the error reported by compiler flaky
-    //static member public (+++) (a : 'S -> 'T, b : TestType<'T,'S>) = (a 17) + b.Value 
+    static member public (+++) (a : 'S -> 'T, b : TestType<'T,'S>) = (a 17) + b.Value
 
 let inline (+++) (a : ^a) (b : ^b) = ((^a or ^b): (static member (+++): ^a * ^b -> ^c) (a,b) )
 
