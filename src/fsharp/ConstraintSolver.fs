@@ -387,8 +387,7 @@ let IsBinaryOpOtherArgType g permitWeakResolution ty =
 
     | PermitWeakResolution.Yes -> true
 
-/// Checks if the knowledge we have of the argument types is enough to commit to a path that simulates that
-/// a type supports the get_Sign instance member
+/// Checks the argument type for a built-in solution to a get_Sign constraint.
 let IsSignType g ty =
     isSignedIntegerTy g ty || isFpTy g ty || isDecimalTy g ty
 
@@ -1305,21 +1304,21 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty ty
           return TTraitBuiltIn
 
-      | [], _, false, ("DivideByInt"), [argty1;argty2] 
+      | [], _, false, "DivideByInt", [argty1;argty2] 
           when isFpTy g argty1 || isDecimalTy g argty1 -> 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 g.int_ty 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           return TTraitBuiltIn
 
       // We pretend for uniformity that the 'string' and 'array' types have an indexer property called 'Item' 
-      | [], [ty], true, ("get_Item"), [argty1] 
+      | [], [ty], true, "get_Item", [argty1] 
           when isStringTy g ty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty1 g.int_ty 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty g.char_ty
           return TTraitBuiltIn
 
-      | [], [ty], true, ("get_Item"), argtys
+      | [], [ty], true, "get_Item", argtys
           when isArrayTy g ty -> 
 
           if rankOfArrayTy g ty <> argtys.Length then do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), argtys.Length), m, m2))
@@ -1329,7 +1328,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty ety
           return TTraitBuiltIn
 
-      | [], [ty], true, ("set_Item"), argtys
+      | [], [ty], true, "set_Item", argtys
           when isArrayTy g ty -> 
           
           if rankOfArrayTy g ty <> argtys.Length - 1 then do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), (argtys.Length - 1)), m, m2))
@@ -1357,19 +1356,19 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty1
           return TTraitBuiltIn
 
-      | _, _, false, ("op_UnaryPlus"), [argty] 
+      | _, _, false, "op_UnaryPlus", [argty] 
           when IsNumericOrIntegralEnumType g argty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           return TTraitBuiltIn
 
-      | _, _, false, ("op_UnaryNegation"), [argty] 
+      | _, _, false, "op_UnaryNegation", [argty] 
           when isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           return TTraitBuiltIn
 
-      | _, _, true, ("get_Sign"), [] 
+      | _, _, true, "get_Sign", [] 
           when IsSignType g tys.Head -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty g.int32_ty
@@ -1382,7 +1381,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty
           return TTraitBuiltIn
 
-      | _, _, false, ("Abs"), [argty] 
+      | _, _, false, "Abs", [argty] 
           when isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
@@ -1407,7 +1406,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           return TTraitBuiltIn
 
-      | _, _, false, ("op_Explicit"), [argty] 
+      | _, _, false, "op_Explicit", [argty] 
           when (// The input type. 
                 (IsNonDecimalNumericOrIntegralEnumType g argty || isStringTy g argty || isCharTy g argty) &&
                 // The output type
@@ -1420,7 +1419,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           return TTraitBuiltIn
 
 
-      | _, _, false, ("op_Explicit"), [argty] 
+      | _, _, false, "op_Explicit", [argty] 
           when (// The input type. 
                 (IsNumericOrIntegralEnumType g argty || isStringTy g argty) &&
                 // The output type
@@ -1436,7 +1435,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           return TTraitBuiltIn
 
-      | _, _, false, ("Atan2"), [argty1; argty2] 
+      | _, _, false, "Atan2", [argty1; argty2] 
           when isFpTy g argty1 -> 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1
           match GetMeasureOfType g argty1 with
