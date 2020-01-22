@@ -3037,6 +3037,11 @@ let ApplyTyparDefaultAtPriority denv css priority (tp: Typar) =
                 |> RaiseOperationResult
         | _ -> ())
 
+let ObjArgExprNeedsAddressOf g argExprs =
+    match argExprs with 
+    | [] -> false 
+    | h :: _ -> not (isByrefTy g (tyOfExpr g h))
+
 let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: TraitConstraintInfo) argExprs = trackErrors {
     let css = 
         { g = g
@@ -3113,7 +3118,7 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
 
             // Fix bug 1281: If we resolve to an instance method on a struct and we haven't yet taken 
             // the address of the object then go do that 
-            if minfo.IsStruct && minfo.IsInstance && (match argExprs with [] -> false | h :: _ -> not (isByrefTy g (tyOfExpr g h))) then 
+            if minfo.IsStruct && minfo.IsInstance && (minfo.ObjArgNeedsAddress(amap, m)) && ObjArgExprNeedsAddressOf g argExprs then 
                 let h, t = List.headAndTail argExprs
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
                 ResultD (Some (wrap (Expr.Op (TOp.TraitCall (traitInfo), [], (h' :: t), m))))
@@ -3123,26 +3128,35 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
         | Choice2Of5 (tinst, rfref, isSet) -> 
             let res = 
                 match isSet, rfref.RecdField.IsStatic, argExprs.Length with 
+
+                // static setter
                 | true, true, 1 -> 
-                        Some (mkStaticRecdFieldSet (rfref, tinst, argExprs.[0], m))
+                    Some (mkStaticRecdFieldSet (rfref, tinst, argExprs.[0], m))
+
+                // instance setter
                 | true, false, 2 -> 
-                        // If we resolve to an instance field on a struct and we haven't yet taken 
-                        // the address of the object then go do that 
-                        if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
-                            let h = List.head argExprs
-                            let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
-                            Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs.[1], m)))
-                        else        
-                            Some (mkRecdFieldSetViaExprAddr (argExprs.[0], rfref, tinst, argExprs.[1], m))
+                    // If we resolve to an instance field on a struct and we haven't yet taken 
+                    // the address of the object then go do that 
+                    if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
+                        let h = List.head argExprs
+                        let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
+                        Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs.[1], m)))
+                    else        
+                        Some (mkRecdFieldSetViaExprAddr (argExprs.[0], rfref, tinst, argExprs.[1], m))
+
+                // static getter
                 | false, true, 0 -> 
-                        Some (mkStaticRecdFieldGet (rfref, tinst, m))
+                    Some (mkStaticRecdFieldGet (rfref, tinst, m))
+
+                // instance getter
                 | false, false, 1 -> 
-                        if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs.[0]) then 
-                            Some (mkRecdFieldGetViaExprAddr (argExprs.[0], rfref, tinst, m))
-                        else 
-                            Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
+                    if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs.[0]) then 
+                        Some (mkRecdFieldGetViaExprAddr (argExprs.[0], rfref, tinst, m))
+                    else 
+                        Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
                 | _ -> None 
             ResultD res
+
         | Choice3Of5 (anonInfo, tinst, i) -> 
             let res = 
                 let tupInfo = anonInfo.TupInfo

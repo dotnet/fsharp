@@ -1209,7 +1209,8 @@ type MethInfo =
         | ILMeth (_, _, Some _) -> true
         | _ -> false
 
-    /// Indicates if this is an extension member (e.g. on a struct) that takes a byref arg
+    /// Indicates if this is an instance member on a struct, or
+    /// an extension instance member on a struct that takes a byref arg.
     member x.ObjArgNeedsAddress (amap: Import.ImportMap, m) =
         (x.IsStruct && not x.IsExtensionMember) ||
         match x.GetObjArgTypes (amap, m, x.FormalMethodInst) with
