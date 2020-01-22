@@ -28,6 +28,7 @@ namespace Microsoft.FSharp.Core
     type bool = System.Boolean
     type decimal = System.Decimal
     type int = int32
+    type uint = uint32
 
     type ``[]``<'T> = (# "!0[]" #)
     type ``[,]``<'T> = (# "!0[0 ...,0 ...]" #)

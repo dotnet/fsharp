@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.UnitTests.Utilities
 
 [<TestFixture>]
 module ByrefTests =
@@ -195,4 +196,44 @@ let test1 () =
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
             |]
+#endif
+
+#if NETCOREAPP
+    [<Test>]
+    let ``Consume CSharp interface with a method that has a readonly byref`` () =
+        let cs =
+            """
+using System;
+using System.Buffers;
+
+namespace Example
+{
+    public interface IMessageReader
+    {
+        bool TryParseMessage(in byte input);
+    }
+}
+            """
+        let fs =
+            """
+module Module1
+
+open Example
+
+type MyClass() =
+
+  interface IMessageReader with
+      member this.TryParseMessage(input: inref<byte>): bool = 
+          failwith "Not Implemented"
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(cs, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fs, Fsx, Library, cmplRefs = [csCmpl])
+
+        CompilerAssert.Compile fsCmpl
+        
 #endif

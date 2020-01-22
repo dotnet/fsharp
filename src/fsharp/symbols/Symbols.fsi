@@ -1101,3 +1101,5 @@ type public FSharpSymbolUse =
     /// The range of text representing the reference to the symbol
     member RangeAlternate: range
 
+    /// Indicates if the FSharpSymbolUse is declared as private
+    member IsPrivateToFile : bool 
