@@ -247,16 +247,18 @@ and remapTypesAux tyenv types = List.mapq (remapTypeAux tyenv) types
 and remapTyparConstraintsAux tyenv cs =
    cs |> List.choose (fun x -> 
          match x with 
-         | TyparConstraint.CoercesTo(ty,m) -> 
-             Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty,m))
+         | TyparConstraint.CoercesTo(ty, m) -> 
+             Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty, m))
          | TyparConstraint.MayResolveMember(traitInfo, m) -> 
              Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo,m))
-         | TyparConstraint.DefaultsTo(priority,ty,m) -> Some(TyparConstraint.DefaultsTo(priority,remapTypeAux tyenv ty,m))
-         | TyparConstraint.IsEnum(uty,m) -> 
-             Some(TyparConstraint.IsEnum(remapTypeAux tyenv uty,m))
-         | TyparConstraint.IsDelegate(uty1,uty2,m) -> 
-             Some(TyparConstraint.IsDelegate(remapTypeAux tyenv uty1,remapTypeAux tyenv uty2,m))
-         | TyparConstraint.SimpleChoice(tys,m) -> Some(TyparConstraint.SimpleChoice(remapTypesAux tyenv tys,m))
+         | TyparConstraint.DefaultsTo(priority, ty, m) ->
+             Some(TyparConstraint.DefaultsTo(priority, remapTypeAux tyenv ty, m))
+         | TyparConstraint.IsEnum(uty, m) -> 
+             Some(TyparConstraint.IsEnum(remapTypeAux tyenv uty, m))
+         | TyparConstraint.IsDelegate(uty1, uty2, m) -> 
+             Some(TyparConstraint.IsDelegate(remapTypeAux tyenv uty1, remapTypeAux tyenv uty2, m))
+         | TyparConstraint.SimpleChoice(tys, m) ->
+             Some(TyparConstraint.SimpleChoice(remapTypesAux tyenv tys, m))
          | TyparConstraint.SupportsComparison  _ 
          | TyparConstraint.SupportsEquality  _ 
          | TyparConstraint.SupportsNull _ 
@@ -291,7 +293,7 @@ and remapTraitAux tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell, extSlns, ad))
         if tyenv.extSlnsMap.ContainsKey nm then
             tyenv.extSlnsMap.[nm]
         else
-            extSlns // TODO: do we need to remap here???
+            extSlns
 
     // Note: we reallocate a new solution cell (though keep existing solutions unless 'removeTraitSolutions'=true) on every traversal of a trait constraint
     // This feels incorrect for trait constraints that are quantified: it seems we should have 
@@ -1430,7 +1432,6 @@ type TyconRefMultiMap<'T>(contents: TyconRefMap<'T list>) =
         | _ -> []
 
     member m.Add (v, x) = TyconRefMultiMap<'T>(contents.Add v (x :: m.Find v))
-    member m.Contents = contents
     static member Empty = TyconRefMultiMap<'T>(TyconRefMap<_>.Empty)
     static member OfList vs = (vs, TyconRefMultiMap<'T>.Empty) ||> List.foldBack (fun (x, y) acc -> acc.Add (x, y)) 
 

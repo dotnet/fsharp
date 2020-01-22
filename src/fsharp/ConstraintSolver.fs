@@ -333,10 +333,10 @@ let isUnsignedIntegerTy g ty =
     typeEquivAux EraseMeasures g g.unativeint_ty ty || 
     typeEquivAux EraseMeasures g g.uint64_ty ty 
 
-let rec isIntegerOrIntegerEnumTy g ty =
+let rec IsIntegerOrIntegerEnumTy g ty =
     isSignedIntegerTy g ty || 
     isUnsignedIntegerTy g ty || 
-    (isEnumTy g ty && isIntegerOrIntegerEnumTy g (underlyingTypeOfEnumTy g ty))
+    (isEnumTy g ty && IsIntegerOrIntegerEnumTy g (underlyingTypeOfEnumTy g ty))
     
 let isIntegerTy g ty =
     isSignedIntegerTy g ty || 
@@ -357,7 +357,7 @@ let isFpTy g ty =
 let isDecimalTy g ty = 
     typeEquivAux EraseMeasures g g.decimal_ty ty 
 
-let IsNonDecimalNumericOrIntegralEnumType g ty = isIntegerOrIntegerEnumTy g ty || isFpTy g ty
+let IsNonDecimalNumericOrIntegralEnumType g ty = IsIntegerOrIntegerEnumTy g ty || isFpTy g ty
 
 let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g ty || isDecimalTy g ty
 
@@ -380,7 +380,7 @@ let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
 
 let IsAddSubModType nm g ty = IsNumericOrIntegralEnumType g ty || (nm = "op_Addition" && IsCharOrStringType g ty)
 
-let IsBitwiseOpType g ty = isIntegerOrIntegerEnumTy g ty || (isEnumTy g ty)
+let IsBitwiseOpType g ty = IsIntegerOrIntegerEnumTy g ty || (isEnumTy g ty)
 
 // For weak resolution, require a relevant primitive on one side
 // For strong resolution
@@ -443,8 +443,7 @@ let IsMulDivTypeArgPair permitWeakResolution minfos g ty1 ty2 =
     IsMulDivTypeArgPairOneWay permitWeakResolution minfos g ty1 ty2 || 
     IsMulDivTypeArgPairOneWay permitWeakResolution minfos g ty2 ty1
 
-/// Checks if the knowledge we have of the argument types is enough to commit to a path that simulates that
-/// a type supports the get_Sign instance member
+/// Checks the argument type for a built-in solution to a get_Sign constraint.
 let IsSignType g ty =
     isSignedIntegerTy g ty || isFpTy g ty || isDecimalTy g ty
 
@@ -1366,7 +1365,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           return TTraitBuiltIn
 
       | _, false, ("op_LeftShift" | "op_RightShift"), [argty1;argty2] 
-          when isIntegerOrIntegerEnumTy g argty1  -> 
+          when IsIntegerOrIntegerEnumTy g argty1  -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 g.int_ty
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
@@ -1386,13 +1385,13 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           return TTraitBuiltIn
 
       | _, true, "get_Sign", [] 
-          when (let argty = tys.Head in isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty) -> 
+          when IsSignType g tys.Head -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty g.int32_ty
           return TTraitBuiltIn
 
       | _, false, ("op_LogicalNot" | "op_OnesComplement"), [argty] 
-          when isIntegerOrIntegerEnumTy g argty  -> 
+          when IsIntegerOrIntegerEnumTy g argty  -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty
@@ -3053,45 +3052,45 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let! _res = SolveMemberConstraint csenv true (PermitWeakResolution.Yes true) 0 m NoTrace traitInfo
     let sln = 
-              match traitInfo.Solution with 
-              | None -> Choice5Of5()
-              | Some sln ->
+        match traitInfo.Solution with 
+        | None -> Choice5Of5()
+        | Some sln ->
 
-                  // Given the solution information, reconstruct the MethInfo for the solution
-                  match sln with 
-                  | ILMethSln(apparentTy, extOpt, mref, minst) ->
+            // Given the solution information, reconstruct the MethInfo for the solution
+            match sln with 
+            | ILMethSln(apparentTy, extOpt, mref, minst) ->
 
-                       let metadataTy = convertToTypeWithMetadataIfPossible g apparentTy
+                let metadataTy = convertToTypeWithMetadataIfPossible g apparentTy
 
-                       // Find the actual type containing the solution
-                       let actualTyconRef = 
-                           match extOpt with 
-                           | None -> tcrefOfAppTy g metadataTy
-                           | Some ilActualTypeRef -> Import.ImportILTypeRef amap m ilActualTypeRef 
+                // Find the actual type containing the solution
+                let actualTyconRef = 
+                    match extOpt with 
+                    | None -> tcrefOfAppTy g metadataTy
+                    | Some ilActualTypeRef -> Import.ImportILTypeRef amap m ilActualTypeRef 
 
-                       let mdef = IL.resolveILMethodRef actualTyconRef.ILTyconRawMetadata mref
+                let mdef = IL.resolveILMethodRef actualTyconRef.ILTyconRawMetadata mref
 
-                       let ilMethInfo =
-                           match extOpt with 
-                           | None -> MethInfo.CreateILMeth(amap, m, apparentTy, mdef)
-                           | Some _ -> MethInfo.CreateILExtensionMeth(amap, m, apparentTy, actualTyconRef, None, mdef)
+                let ilMethInfo =
+                    match extOpt with 
+                    | None -> MethInfo.CreateILMeth(amap, m, apparentTy, mdef)
+                    | Some _ -> MethInfo.CreateILExtensionMeth(amap, m, apparentTy, actualTyconRef, None, mdef)
 
-                       Choice1Of5 (ilMethInfo, minst)
+                Choice1Of5 (ilMethInfo, minst)
 
-                  | FSMethSln(ty, vref, minst) ->
-                       Choice1Of5  (FSMeth(g, ty, vref, None), minst)
+            | FSMethSln(ty, vref, minst) ->
+                Choice1Of5  (FSMeth(g, ty, vref, None), minst)
 
-                  | FSRecdFieldSln(tinst, rfref, isSetProp) ->
-                       Choice2Of5  (tinst, rfref, isSetProp)
+            | FSRecdFieldSln(tinst, rfref, isSetProp) ->
+                Choice2Of5  (tinst, rfref, isSetProp)
 
-                  | FSAnonRecdFieldSln(anonInfo, tinst, i) -> 
-                       Choice3Of5  (anonInfo, tinst, i)
+            | FSAnonRecdFieldSln(anonInfo, tinst, i) -> 
+                Choice3Of5  (anonInfo, tinst, i)
 
-                  | BuiltInSln -> 
-                       Choice5Of5 ()
+            | BuiltInSln -> 
+                Choice5Of5 ()
 
-                  | ClosedExprSln expr -> 
-                       Choice4Of5 expr
+            | ClosedExprSln expr -> 
+                Choice4Of5 expr
     return!
         match sln with
         | Choice1Of5(minfo, methArgTys) -> 
@@ -3166,9 +3165,11 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
                     Some (mkAnonRecdFieldGet g (anonInfo, argExprs.[0], tinst, i, m))
             ResultD res
 
-        | Choice4Of5 expr -> ResultD (Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m)))
+        | Choice4Of5 expr ->
+            ResultD (Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m)))
 
-        | Choice5Of5 () -> ResultD None
+        | Choice5Of5 () ->
+            ResultD None
   }
 
 let ChooseTyparSolutionAndSolve css denv tp =

@@ -1539,7 +1539,9 @@ let u_trait_sln st =
 
 let u_trait st = 
     let a, b, c, d, e, f = u_tup6 u_tys u_string u_MemberFlags u_tys (u_option u_ty) (u_option u_trait_sln) st
-    // extSlns starts empty.  TODO: check the ramifications of this when inlining solved trait calls from other assemblies
+    // extSlns starts empty when reading trait constraints from pickled
+    // data. This is ok as only generalized (pre-solution, pre-freshened)
+    // or solved constraints are propagated across assembly boundaries.
     TTrait (a, b, c, d, e, ref f, [], None)
 
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
