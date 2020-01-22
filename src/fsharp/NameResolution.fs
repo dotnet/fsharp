@@ -547,11 +547,11 @@ let ExtensionPropInfosOfTypeInScope collectionSettings (infoReader:InfoReader) (
         let extMemsFromHierarchy =
             infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
             |> List.collect (fun ty ->
-                 if isAppTy g ty then
-                    let tcref = tcrefOfAppTy g ty
+                 match tryDestAppTy g ty with
+                 | ValueSome tcref ->
                     let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
                     SelectPropInfosFromExtMembers infoReader ad optFilter ty m extMemInfos
-                 else [])
+                 | _ -> [])
 
         extMemsDangling @ extMemsFromHierarchy
 
@@ -617,11 +617,11 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSetting
             infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
             |> List.collect (fun ty ->
                 let g = infoReader.g
-                if isAppTy g ty then
-                    let tcref = tcrefOfAppTy g ty
+                match tryDestAppTy g ty with
+                | ValueSome tcref ->
                     let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
                     SelectMethInfosFromExtMembers infoReader optFilter ty  m extValRefs
-                else [])
+                | _ -> [])
         extMemsDangling @ extMemsFromHierarchy
 
 /// Get all the available methods of a type (both intrinsic and extension)
@@ -2377,10 +2377,11 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
             match lookupKind with
             | LookupKind.Expr | LookupKind.Pattern ->
-                if isAppTy g ty then
-                    let tcref = tcrefOfAppTy g ty
+                match tryDestAppTy g ty with
+                | ValueSome tcref ->
                     for uc in tcref.UnionCasesArray do
                         addToBuffer uc.DisplayName
+                | _ -> ()
             | _ -> ()
 
         raze (UndefinedName (depth, FSComp.SR.undefinedNameFieldConstructorOrMember, id, suggestMembers))
@@ -2388,7 +2389,12 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 and ResolveLongIdentInNestedTypes (ncenv: NameResolver) nenv lookupKind resInfo depth id m ad (id2: Ident) (rest: Ident list) findFlag typeNameResInfo tys =
     tys
     |> CollectAtMostOneResult (fun ty ->
-        let resInfo = if isAppTy ncenv.g ty then resInfo.AddEntity(id.idRange, tcrefOfAppTy ncenv.g ty) else resInfo
+        let resInfo = 
+             match tryDestAppTy ncenv.g ty with
+             | ValueSome tcref ->
+                resInfo.AddEntity(id.idRange, tcref) 
+             | _ ->
+                resInfo
         ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad id2 rest findFlag typeNameResInfo ty
         |> AtMostOneResult m)
 
@@ -2903,8 +2909,10 @@ let ResolvePatternLongIdent sink (ncenv: NameResolver) warnOnUpper newDef m ad n
 // X.ListEnumerator // does not resolve
 //
 let ResolveNestedTypeThroughAbbreviation (ncenv: NameResolver) (tcref: TyconRef) m =
-    if tcref.IsTypeAbbrev && tcref.Typars(m).IsEmpty && isAppTy ncenv.g tcref.TypeAbbrev.Value && isNil (argsOfAppTy ncenv.g tcref.TypeAbbrev.Value) then
-        tcrefOfAppTy ncenv.g tcref.TypeAbbrev.Value
+    if tcref.IsTypeAbbrev && tcref.Typars(m).IsEmpty then 
+        match tryAppTy ncenv.g tcref.TypeAbbrev.Value with
+        | ValueSome (abbrevTcref, []) -> abbrevTcref
+        | _ -> tcref
     else
         tcref
 
@@ -3552,7 +3560,10 @@ let ItemOfTyconRef ncenv m (x: TyconRef) =
     Item.Types (x.DisplayName, [FreshenTycon ncenv m x])
 
 let ItemOfTy g x =
-    let nm = if isAppTy g x then (tcrefOfAppTy g x).DisplayName else "?"
+    let nm = 
+        match tryDestAppTy g x with
+        | ValueSome tcref -> tcref.DisplayName 
+        | _ -> "?"
     Item.Types (nm, [x])
 
 // Filter out 'PrivateImplementationDetail' classes

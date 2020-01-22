@@ -16,6 +16,7 @@ open FSharp.Compiler.Range
 open System.Runtime.Caching
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+open FSharp.Compiler.SourceCodeServices
 
 type private TextVersionHash = int
 type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }
@@ -26,7 +27,7 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
     static let userOpName = "SimplifyNameDiagnosticAnalyzer"
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
-    let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
+
     static let cache = new MemoryCache("FSharp.Editor." + userOpName)
     // Make sure only one document is being analyzed at a time, to be nice
     static let guard = new SemaphoreSlim(1)
@@ -52,62 +53,15 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
                         let! sourceText = document.GetTextAsync()
                         let checker = getChecker document
                         let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName=userOpName)
-                        let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
-                        let mutable result = ResizeArray()
-                        let symbolUses =
-                            symbolUses
-                            |> Array.filter (fun symbolUse -> not symbolUse.IsFromOpenStatement)
-                            |> Array.Parallel.map (fun symbolUse ->
-                                let lineStr = sourceText.Lines.[Line.toZ symbolUse.RangeAlternate.StartLine].ToString()
-                                // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
-                                let partialName = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1)
-                                // `symbolUse.RangeAlternate.Start` does not point to the start of plid, it points to start of `name`,
-                                // so we have to calculate plid's start ourselves.
-                                let plidStartCol = symbolUse.RangeAlternate.EndColumn - partialName.PartialIdent.Length - (getPlidLength partialName.QualifyingIdents)
-                                symbolUse, partialName.QualifyingIdents, plidStartCol, partialName.PartialIdent)
-                            |> Array.filter (fun (_, plid, _, name) -> name <> "" && not (List.isEmpty plid))
-                            |> Array.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
-                            |> Array.map (fun (_, xs) -> xs |> Array.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
-                    
-                        for symbolUse, plid, plidStartCol, name in symbolUses do
-                            if not symbolUse.IsFromDefinition then
-                                let posAtStartOfName =
-                                    let r = symbolUse.RangeAlternate
-                                    if r.StartLine = r.EndLine then Range.mkPos r.StartLine (r.EndColumn - name.Length)
-                                    else r.Start
-                    
-                                let getNecessaryPlid (plid: string list) : Async<string list> =
-                                    let rec loop (rest: string list) (current: string list) =
-                                        async {
-                                            match rest with
-                                            | [] -> return current
-                                            | headIdent :: restPlid ->
-                                                let! res = checkResults.IsRelativeNameResolvableFromSymbol(posAtStartOfName, current, symbolUse.Symbol, userOpName=userOpName)
-                                                if res then return current
-                                                else return! loop restPlid (headIdent :: current)
-                                        }
-                                    loop (List.rev plid) []
-                               
-                                do! Async.Sleep DefaultTuning.SimplifyNameEachItemDelay |> liftAsync // be less intrusive, give other work priority most of the time
-                                let! necessaryPlid = getNecessaryPlid plid |> liftAsync
-                                
-                                match necessaryPlid with
-                                | necessaryPlid when necessaryPlid = plid -> ()
-                                | necessaryPlid ->
-                                    let r = symbolUse.RangeAlternate
-                                    let necessaryPlidStartCol = r.EndColumn - name.Length - (getPlidLength necessaryPlid)
-                    
-                                    let unnecessaryRange = 
-                                        Range.mkRange r.FileName (Range.mkPos r.StartLine plidStartCol) (Range.mkPos r.EndLine necessaryPlidStartCol)
-                                
-                                    let relativeName = (String.concat "." plid) + "." + name
-                                    result.Add(
-                                        Diagnostic.Create(
-                                           descriptor,
-                                           RoslynHelpers.RangeToLocation(unnecessaryRange, sourceText, document.FilePath),
-                                           properties = (dict [SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, relativeName]).ToImmutableDictionary()))
-                    
-                        let diagnostics = result.ToImmutableArray()
+                        let! result = SimplifyNames.getSimplifiableNames(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
+                        let mutable diag = ResizeArray()
+                        for r in result do
+                            diag.Add(
+                                Diagnostic.Create(
+                                   descriptor,
+                                   RoslynHelpers.RangeToLocation(r.Range, sourceText, document.FilePath),
+                                   properties = (dict [SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, r.RelativeName]).ToImmutableDictionary()))
+                        let diagnostics = diag.ToImmutableArray()
                         cache.Remove(key) |> ignore
                         let data = { Hash = textVersionHash; Diagnostics=diagnostics }
                         let cacheItem = CacheItem(key, data)
