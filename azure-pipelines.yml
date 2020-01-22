@@ -187,6 +187,14 @@ stages:
               publishLocation: Container
             continueOnError: true
             condition: eq(variables['_testKind'], 'testFSharpQA')
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Windows $(_testKind)'
+              publishLocation: Container
+            continueOnError: true
+            condition: always()
 
         # Linux
         - job: Linux
@@ -206,6 +214,14 @@ stages:
               testResultsFormat: 'NUnit'
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+            continueOnError: true
+            condition: always()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Linux'
+              publishLocation: Container
             continueOnError: true
             condition: always()
 
@@ -229,6 +245,14 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Mac'
+              publishLocation: Container
+            continueOnError: true
+            condition: always()
 
         # Source Build Linux
         - job: SourceBuild_Linux
@@ -239,6 +263,14 @@ stages:
             clean: true
           - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
             displayName: Build
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents SourceBuild_Linux'
+              publishLocation: Container
+            continueOnError: true
+            condition: always()
 
         # Source Build Windows
         - job: SourceBuild_Windows
@@ -249,6 +281,14 @@ stages:
             clean: true
           - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
             displayName: Build
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents SourceBuild_Windows'
+              publishLocation: Container
+            continueOnError: true
+            condition: always()
 
         # Up-to-date
         - job: UpToDate_Windows
