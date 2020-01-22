@@ -371,58 +371,21 @@ let GetMeasureOfType g ty =
 
 let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
 
+/// Checks the argument type for a built-in solution to an op_Addition, op_Subtraction or op_Modulus constraint.
 let IsAddSubModType nm g ty = IsNumericOrIntegralEnumType g ty || (nm = "op_Addition" && IsCharOrStringType g ty)
 
+/// Checks the argument type for a built-in solution to a bitwise operator constraint
 let IsBitwiseOpType g ty = IsIntegerOrIntegerEnumTy g ty || (isEnumTy g ty)
 
-// For weak resolution, require a relevant primitive on one side
-// For strong resolution
-//    - if there are relevant methods require an exact primitive on the other side.
-//    - if there are no relevant methods just require a non-variable type on the other side.
+/// Check the other type in a built-in solution for a binary operator.
+/// For weak resolution, require a relevant primitive on one side.
+/// For strong resolution, a variable type is permitted.
 let IsBinaryOpOtherArgType g permitWeakResolution ty = 
     match permitWeakResolution with 
     | PermitWeakResolution.No -> 
         not (isTyparTy g ty) 
 
     | PermitWeakResolution.Yes -> true
-
-(*
-let IsSymmetricBinaryOpArgTypePair p permitWeakResolution minfos g ty1 ty2 = 
-    IsBinaryOpArgTypePair p p permitWeakResolution minfos g ty1 ty2 ||
-    IsBinaryOpArgTypePair p p permitWeakResolution minfos g ty2 ty1
-
-/// Checks if the knowledge we have of the argument types is enough to commit to a path that simulates that a
-/// type supports the op_Addition, op_Subtraction or op_Modulus static members
-let IsAddSubModTypePair nm permitWeakResolution minfos g ty1 ty2 =
-    IsSymmetricBinaryOpArgTypePair (IsAddSubModType nm g) permitWeakResolution minfos g ty1 ty2  
-
-/// Checks if the knowledge we have of the argument types is enough to commit to a path that simulates that
-/// a type supports the op_LessThan, op_LessThanOrEqual, op_GreaterThan, op_GreaterThanOrEqual, op_Equality or op_Inequality static members
-let IsRelationalOpArgTypePair permitWeakResolution minfos g ty1 ty2 =
-    IsSymmetricBinaryOpArgTypePair (IsRelationalType g) permitWeakResolution minfos g ty1 ty2  
-
-/// Checks if the knowledge we have of the argument types is enough to commit to a path that simulates that
-/// a type supports the op_BitwiseAnd, op_BitwiseOr or op_ExclusiveOr static members
-let IsBitwiseOpArgTypePair permitWeakResolution minfos g ty1 ty2 =
-    IsSymmetricBinaryOpArgTypePair (IsBitwiseOpType g) permitWeakResolution minfos g ty1 ty2  
-
-let IsMulDivTypeArgPairOneWay permitWeakResolution minfos g ty1 ty2 =
-    IsBinaryOpArgTypePair 
-        (IsNumericOrIntegralEnumType g) 
-        // This next condition checks that either 
-        //   - Neither type contributes any methods OR
-        //   - We have the special case "decimal<_> * decimal". In this case we have some 
-        //     possibly-relevant methods from "decimal" but we ignore them in this case.
-        (fun ty2 -> IsNumericOrIntegralEnumType g ty2 || (Option.isSome (GetMeasureOfType g ty1) && isDecimalTy g ty2))
-        permitWeakResolution 
-        minfos 
-        g 
-        ty1 ty2  
-
-let IsMulDivTypeArgPair permitWeakResolution minfos g ty1 ty2 =
-    IsMulDivTypeArgPairOneWay permitWeakResolution minfos g ty1 ty2 || 
-    IsMulDivTypeArgPairOneWay permitWeakResolution minfos g ty2 ty1
-*)
 
 /// Checks if the knowledge we have of the argument types is enough to commit to a path that simulates that
 /// a type supports the get_Sign instance member
