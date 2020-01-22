@@ -488,8 +488,6 @@ type TyconRefMultiMap<'T> =
     /// Make a new map, containing a new entry for the given type definition
     member Add : TyconRef * 'T -> TyconRefMultiMap<'T>
 
-    member Contents : TyconRefMap<'T list>
-
     /// The empty map
     static member Empty : TyconRefMultiMap<'T>
 
