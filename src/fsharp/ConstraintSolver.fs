@@ -521,8 +521,6 @@ exception AbortForFailedOverloadResolution
 let inline TryD_IgnoreAbortForFailedOverloadResolution f1 f2 =
     TryD f1 (function AbortForFailedOverloadResolution -> CompleteD | exn -> f2 exn)
 
-exception LocallyAbortOperationThatFailsToResolveOverload
-
 /// used to provide detail about non matched argument in overload resolution error message
 exception ArgDoesNotMatchError of error: ErrorsFromAddingSubsumptionConstraint * calledMeth: CalledMeth<Expr> * calledArg: CalledArg * callerArg: CallerArg<Expr>
 
