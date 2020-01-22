@@ -191,6 +191,25 @@ printfn ""%A"" result
 #endif
 
     [<Test>]
+    member __.``ML - use assembly with ref dependencies``() =
+        let code = @"
+#r ""nuget:Microsoft.ML.OnnxTransformer,1.4.0""
+
+open System
+open System.Numerics.Tensors
+let inputValues = [| 12.0; 10.0; 17.0; 5.0 |]
+let tInput = new DenseTensor<float>(inputValues.AsMemory(), new ReadOnlySpan<int>([|4|]))
+tInput.Length
+"
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable assemblyRefCount = 0;
+        Event.add (fun _ -> assemblyRefCount <- assemblyRefCount + 1) script.AssemblyReferenceAdded
+        let opt = script.Eval(code)  |> getValue
+        let value = opt.Value
+        Assert.AreEqual(4L, value.ReflectionValue :?> int64)
+
+
+    [<Test>]
     member __.``Simple pinvoke should not be impacted by native resolver``() =
         let code = @"
 open System

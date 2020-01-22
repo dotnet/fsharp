@@ -78,6 +78,9 @@ namespace Microsoft.FSharp.Core
     /// <summary>An abbreviation for the CLI type <c>System.Int32</c>.</summary>
     type int = int32
 
+    /// <summary>An abbreviation for the CLI type <c>System.UInt32</c>.</summary>
+    type uint = uint32
+
     /// <summary>Single dimensional, zero-based arrays, written <c>int[]</c>, <c>string[]</c> etc.</summary>
     /// <remarks>Use the values in the <c>Array</c> module to manipulate values 
     /// of this type, or the notation <c>arr.[x]</c> to get/set array

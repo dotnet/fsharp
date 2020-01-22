@@ -8,6 +8,7 @@ open System.Diagnostics
 open System.IO
 open System.Text
 open System.Diagnostics
+open System.Collections.Generic
 open System.Reflection
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
@@ -17,6 +18,9 @@ open System.Runtime.Loader
 #endif
 open NUnit.Framework
 open System.Reflection.Emit
+open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CSharp
+open FSharp.Compiler.UnitTests.Utilities
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
@@ -52,11 +56,17 @@ type CompileOutput =
     | Library
     | Exe
 
-type CompilationReference = private CompilationReference of Compilation * staticLink: bool with
+type CompilationReference = 
+    private 
+    | CompilationReference of Compilation * staticLink: bool 
+    | TestCompilationReference of TestCompilation
 
     static member CreateFSharp(cmpl: Compilation, ?staticLink) =
         let staticLink = defaultArg staticLink false
         CompilationReference(cmpl, staticLink)
+
+    static member Create(cmpl: TestCompilation) =
+        TestCompilationReference cmpl
 
 and Compilation = private Compilation of string * SourceKind * CompileOutput * options: string[] * CompilationReference list with
 
@@ -257,7 +267,14 @@ let main argv = 0"""
                     |> List.map (fun cmpl ->
                             match cmpl with
                             | CompilationReference (cmpl, staticLink) ->
-                                compileCompilationAux disposals ignoreWarnings cmpl, staticLink)
+                                compileCompilationAux disposals ignoreWarnings cmpl, staticLink
+                            | TestCompilationReference (cmpl) -> 
+                                let tmp = Path.GetTempFileName()
+                                disposals.Add({ new IDisposable with 
+                                                    member _.Dispose() = 
+                                                        try File.Delete tmp with | _ -> () })
+                                cmpl.EmitAsFile tmp
+                                (([||], tmp), []), false)
 
                 let compilationRefs =
                     compiledRefs
