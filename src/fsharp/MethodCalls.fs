@@ -1665,31 +1665,38 @@ let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) =
 let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
     let sln = 
-          match traitInfo.Solution with 
-          | None -> Choice5Of5()
-          | Some sln ->
-              match sln with 
-              | ILMethSln(origTy, extOpt, mref, minst) ->
-                   let metadataTy = convertToTypeWithMetadataIfPossible g origTy
-                   let tcref = tcrefOfAppTy g metadataTy
-                   let mdef = resolveILMethodRef tcref.ILTyconRawMetadata mref
-                   let ilMethInfo =
-                       match extOpt with 
-                       | None -> MethInfo.CreateILMeth(amap, m, origTy, mdef)
-                       | Some ilActualTypeRef -> 
-                           let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
-                           MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, None, mdef)
-                   Choice1Of5 (ilMethInfo, minst)
-              | FSMethSln(ty, vref, minst) ->
-                   Choice1Of5  (FSMeth(g, ty, vref, None), minst)
-              | FSRecdFieldSln(tinst, rfref, isSetProp) ->
-                   Choice2Of5  (tinst, rfref, isSetProp)
-              | FSAnonRecdFieldSln(anonInfo, tinst, i) -> 
-                   Choice3Of5  (anonInfo, tinst, i)
-              | ClosedExprSln expr -> 
-                   Choice4Of5 expr
-              | BuiltInSln -> 
-                   Choice5Of5 ()
+        match traitInfo.Solution with 
+        | None -> Choice5Of5()
+        | Some sln ->
+
+            // Given the solution information, reconstruct the MethInfo for the solution
+            match sln with 
+            | ILMethSln(origTy, extOpt, mref, minst) ->
+                let metadataTy = convertToTypeWithMetadataIfPossible g origTy
+                let tcref = tcrefOfAppTy g metadataTy
+                let mdef = resolveILMethodRef tcref.ILTyconRawMetadata mref
+                let ilMethInfo =
+                    match extOpt with 
+                    | None -> MethInfo.CreateILMeth(amap, m, origTy, mdef)
+                    | Some ilActualTypeRef -> 
+                        let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
+                        MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, None, mdef)
+                Choice1Of5 (ilMethInfo, minst)
+
+            | FSMethSln(ty, vref, minst) ->
+                Choice1Of5  (FSMeth(g, ty, vref, None), minst)
+
+            | FSRecdFieldSln(tinst, rfref, isSetProp) ->
+                Choice2Of5  (tinst, rfref, isSetProp)
+
+            | FSAnonRecdFieldSln(anonInfo, tinst, i) -> 
+                Choice3Of5  (anonInfo, tinst, i)
+
+            | ClosedExprSln expr -> 
+                Choice4Of5 expr
+
+            | BuiltInSln -> 
+                Choice5Of5 ()
 
     match sln with
     | Choice1Of5(minfo, methArgTys) -> 
@@ -1725,24 +1732,32 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
     | Choice2Of5 (tinst, rfref, isSet) -> 
         match isSet, rfref.RecdField.IsStatic, argExprs.Length with 
+        // static setter
         | true, true, 1 -> 
-                Some (mkStaticRecdFieldSet (rfref, tinst, argExprs.[0], m))
+            Some (mkStaticRecdFieldSet (rfref, tinst, argExprs.[0], m))
+
+        // instance setter
         | true, false, 2 -> 
-                // If we resolve to an instance field on a struct and we haven't yet taken 
-                // the address of the object then go do that 
-                if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
-                    let h = List.head argExprs
-                    let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
-                    Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs.[1], m)))
-                else        
-                    Some (mkRecdFieldSetViaExprAddr (argExprs.[0], rfref, tinst, argExprs.[1], m))
+            // If we resolve to an instance field on a struct and we haven't yet taken 
+            // the address of the object then go do that 
+            if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
+                let h = List.head argExprs
+                let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
+                Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs.[1], m)))
+            else        
+                Some (mkRecdFieldSetViaExprAddr (argExprs.[0], rfref, tinst, argExprs.[1], m))
+
+        // static getter
         | false, true, 0 -> 
-                Some (mkStaticRecdFieldGet (rfref, tinst, m))
+            Some (mkStaticRecdFieldGet (rfref, tinst, m))
+
+        // instance getter
         | false, false, 1 -> 
-                if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs.[0]) then 
-                    Some (mkRecdFieldGetViaExprAddr (argExprs.[0], rfref, tinst, m))
-                else 
-                    Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
+            if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs.[0]) then 
+                Some (mkRecdFieldGetViaExprAddr (argExprs.[0], rfref, tinst, m))
+            else 
+                Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
+
         | _ -> None 
 
     | Choice3Of5 (anonInfo, tinst, i) -> 
