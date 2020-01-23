@@ -24,7 +24,7 @@ type ItemKeyReader(mmf: MemoryMappedFile, length, hold: IDisposable) =
     let mutable isDisposed = false
     let checkDispose() =
         if isDisposed then
-            invalidOp "FSharpSymbolKeyReader already disposed"
+            raise (ObjectDisposedException("ItemKeyReader"))
 
     let viewAccessor = mmf.CreateViewAccessor()
 
@@ -53,7 +53,7 @@ type ItemKeyReader(mmf: MemoryMappedFile, length, hold: IDisposable) =
 
         struct(readRange (), readKeyString ())
 
-    member this.FindAll(item: Item) =
+    member _.FindAll(item: Item) =
         checkDispose ()
 
         let builder = ItemKeyBuilder()
