@@ -772,7 +772,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           let knownReturnType, genericParameterTypes =
               match failure with
               | NoOverloadsFound (cx=Some cx)
-              | PossibleCandidates (cx=Some cx) -> cx.ReturnType, cx.ArgTys
+              | PossibleCandidates (cx=Some cx) -> cx.ReturnType, cx.ArgumentTypes
               | _ -> None, []
          
           // prepare message parts (known arguments, known return type, known generic parameters)
