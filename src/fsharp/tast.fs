@@ -2419,7 +2419,7 @@ and
 
     /// Get the return type recorded in the member constraint.
     member x.ReturnType = (let (TTrait(_, _, _, _, ty, _)) = x in ty)
-    
+
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
         with get() = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value)
