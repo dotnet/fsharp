@@ -1,6 +1,10 @@
-<Project>
+<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Used as a diagnostic tool to view the state of the NuGet package cache as it existed immediately after a restore/build. -->
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageRootFiles Include="$(NuGetPackageRoot)/**" />

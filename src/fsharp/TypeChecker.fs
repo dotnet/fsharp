@@ -2284,13 +2284,6 @@ module GeneralizationHelpers =
             ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denv tp)
         generalizedTypars
 
-    let CanonicalizePartialInferenceProblem (cenv, denv, m) tps =
-        // Canonicalize constraints prior to generalization 
-        let csenv = (MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv)
-        TryD (fun () -> ConstraintSolver.CanonicalizeRelevantMemberConstraints csenv 0 NoTrace tps)
-             (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m))) 
-        |> RaiseOperationResult
-
     let ComputeAndGeneralizeGenericTypars (cenv,
                                            denv: DisplayEnv,
                                            m,
@@ -2333,8 +2326,7 @@ module GeneralizationHelpers =
         generalizedTypars |> List.iter (SetTyparRigid cenv.g denv m)
         
         // Generalization removes constraints related to generalized type variables
-        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv
-        EliminateConstraintsForGeneralizedTypars csenv NoTrace generalizedTypars
+        EliminateConstraintsForGeneralizedTypars denv cenv.css m NoTrace generalizedTypars
         
         generalizedTypars
 
@@ -4333,8 +4325,7 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
     | WhereTyparDefaultsToType(tp, ty, m) ->
         let ty', tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty
         let tp', tpenv = TcTypar cenv env newOk tpenv tp
-        let csenv = MakeConstraintSolverEnv env.eContextInfo cenv.css m env.DisplayEnv
-        AddConstraint csenv 0 m NoTrace tp' (TyparConstraint.DefaultsTo(ridx, ty', m)) |> CommitOperationResult
+        AddCxTyparDefaultsTo env.DisplayEnv cenv.css m env.eContextInfo tp' ridx ty'
         tpenv
 
     | WhereTyparSubtypeOfType(tp, ty, m) ->
@@ -5595,11 +5586,7 @@ and TcPatterns warnOnUpper cenv env vFlags s argTys args =
     assert (List.length args = List.length argTys)
     List.mapFold (fun s (ty, pat) -> TcPat warnOnUpper cenv env None vFlags s ty pat) s (List.zip argTys args)
 
-
-and solveTypAsError cenv denv m ty =
-    let ty2 = NewErrorType ()
-    assert((destTyparTy cenv.g ty2).IsFromError)
-    SolveTypeEqualsTypeKeepAbbrevs (MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denv) 0 m NoTrace ty ty2 |> ignore
+and solveTypAsError cenv denv m ty = ConstraintSolver.SolveTypeAsError denv cenv.css m ty
 
 and RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv expr =
     // This function is motivated by cases like
@@ -6782,7 +6769,7 @@ and TcObjectExprBinding cenv (env: TcEnv) implty tpenv (absSlotInfo, bind) =
             | _ -> 
                 declaredTypars
         // Canonicalize constraints prior to generalization 
-        GeneralizationHelpers.CanonicalizePartialInferenceProblem (cenv, denv, m) declaredTypars
+        ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css denv m declaredTypars
 
         let freeInEnv = GeneralizationHelpers.ComputeUngeneralizableTypars env
 
@@ -9638,7 +9625,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         
     // Canonicalize inference problem prior to '.' lookup on variable types 
     if isTyparTy cenv.g objExprTy then 
-        GeneralizationHelpers.CanonicalizePartialInferenceProblem (cenv, env.DisplayEnv, mExprAndLongId) (freeInTypeLeftToRight cenv.g false objExprTy)
+        ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css env.DisplayEnv mExprAndLongId (freeInTypeLeftToRight cenv.g false objExprTy)
     
     let item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver mExprAndLongId ad env.NameEnv objExprTy longId findFlag false
     let mExprAndItem = unionRanges mObjExpr mItem
@@ -10089,8 +10076,7 @@ and TcMethodApplication
                     yield makeOneCalledMeth (minfo, pinfoOpt, false) ]
 
         let uniquelyResolved =
-            let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css mMethExpr denv
-            UnifyUniqueOverloading csenv callerArgCounts methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
+            UnifyUniqueOverloading denv cenv.css mMethExpr callerArgCounts methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
 
         uniquelyResolved, preArgumentTypeCheckingCalledMethGroup
 
@@ -10182,17 +10168,15 @@ and TcMethodApplication
                 CalledMeth<Expr>(cenv.infoReader, Some(env.NameEnv), isCheckingAttributeCall, FreshenMethInfo, mMethExpr, ad, minfo, minst, callerTyArgs, pinfoOpt, callerObjArgTys, callerArgs, usesParamArrayConversion, true, objTyOpt))
           
         let callerArgCounts = (unnamedCurriedCallerArgs.Length, namedCurriedCallerArgs.Length)
-        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css mMethExpr denv
         
         // Commit unassociated constraints prior to member overload resolution where there is ambiguity 
         // about the possible target of the call. 
         if not uniquelyResolved then 
-            GeneralizationHelpers.CanonicalizePartialInferenceProblem (cenv, denv, mItem)
+            ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css denv mItem
                  (//freeInTypeLeftToRight cenv.g false returnTy @
                   (unnamedCurriedCallerArgs |> List.collectSquared (fun callerArg -> freeInTypeLeftToRight cenv.g false callerArg.Type)))
 
-        let result, errors = 
-            ResolveOverloading csenv NoTrace methodName 0 None callerArgCounts ad postArgumentTypeCheckingCalledMethGroup true (Some returnTy) 
+        let result, errors = ResolveOverloadingForCall denv cenv.css mMethExpr methodName 0 None callerArgCounts ad postArgumentTypeCheckingCalledMethGroup true (Some returnTy) 
 
         match afterResolution, result with
         | AfterResolution.DoNothing, _ -> ()
@@ -11150,7 +11134,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
     
     // Canonicalize constraints prior to generalization 
     let denv = env.DisplayEnv
-    GeneralizationHelpers.CanonicalizePartialInferenceProblem (cenv, denv, synBindsRange) 
+    ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css denv synBindsRange
         (checkedBinds |> List.collect (fun tbinfo -> 
             let (CheckedBindingInfo(_, _, _, _, flex, _, _, _, tauTy, _, _, _, _, _)) = tbinfo
             let (ExplicitTyparInfo(_, declaredTypars, _)) = flex
@@ -12025,7 +12009,7 @@ and TcIncrementalLetRecGeneralization cenv scopem
             else
                 
                 let supportForBindings = newGeneralizableBindings |> List.collect (TcLetrecComputeSupportForBinding cenv)
-                GeneralizationHelpers.CanonicalizePartialInferenceProblem (cenv, denv, scopem) supportForBindings 
+                ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css denv scopem supportForBindings 
                  
                 let generalizedTyparsL = newGeneralizableBindings |> List.map (TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv) 
                 
@@ -17530,27 +17514,15 @@ let ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs =
     try
         let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
-        GeneralizationHelpers.CanonicalizePartialInferenceProblem (cenv, denvAtEnd, m) unsolved
+        ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css denvAtEnd m unsolved
 
-        let applyDefaults priority =
-              unsolved |> List.iter (fun tp -> 
+        // The priority order comes from the order of declaration of the defaults in FSharp.Core.
+        for priority = 10 downto 0 do
+            unsolved |> List.iter (fun tp -> 
                 if not tp.IsSolved then 
                     // Apply the first default. If we're defaulting one type variable to another then 
                     // the defaults will be propagated to the new type variable. 
-                    tp.Constraints |> List.iter (fun tpc -> 
-                        match tpc with 
-                        | TyparConstraint.DefaultsTo(priority2, ty2, m) when priority2 = priority -> 
-                            let ty1 = mkTyparTy tp
-                            if not tp.IsSolved && not (typeEquiv cenv.g ty1 ty2) then
-                                let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css m denvAtEnd
-                                TryD (fun () -> ConstraintSolver.SolveTyparEqualsType csenv 0 m NoTrace ty1 ty2)
-                                      (fun e -> solveTypAsError cenv denvAtEnd m ty1
-                                                ErrorD(ErrorFromApplyingDefault(g, denvAtEnd, tp, ty2, e, m)))
-                                |> RaiseOperationResult
-                        | _ -> ()))
-                    
-        for priority = 10 downto 0 do
-            applyDefaults priority
+                    ConstraintSolver.ApplyTyparDefaultAtPriority denvAtEnd cenv.css priority tp)
 
         // OK, now apply defaults for any unsolved HeadTypeStaticReq 
         unsolved |> List.iter (fun tp ->     
