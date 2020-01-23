@@ -221,12 +221,9 @@ module Utilities =
         let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None
         succeeded, resultOutFile
 
-    // Generate a project files for dependencymanager projects
-    let generateLibrarySource = @"// Generated dependencymanager library
-namespace lib"
-
     let generateProjectBody = @"
 <Project Sdk='Microsoft.NET.Sdk'>
+
   <PropertyGroup>
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
     <IsPackable>false</IsPackable>
@@ -235,47 +232,8 @@ namespace lib"
     <FSharpCoreImplicitPackageVersion Condition=""'$(FSharpCoreImplicitPackageVersion)' == '{{FSharpCoreShippedPackageVersion}}'"">4.7.0</FSharpCoreImplicitPackageVersion>
     <FSharpCoreImplicitPackageVersion Condition=""'$(FSharpCoreImplicitPackageVersion)' == '{{FSharpCorePreviewPackageVersion}}'"">4.7.1-*</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include='Library.fs' />
-  </ItemGroup>
+
 $(PACKAGEREFERENCES)
-
-  <Target Name='CollectFSharpDesignTimeTools' BeforeTargets='BeforeCompile' DependsOnTargets='_GetFrameworkAssemblyReferences'>
-    <ItemGroup>
-      <PropertyNames Include = ""Pkg$([System.String]::Copy('%(PackageReference.FileName)').Replace('.','_'))"" Condition = "" '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' == '' ""/>
-      <PropertyNames Include = ""Pkg$([System.String]::Copy('%(PackageReference.FileName)%(PackageReference.Extension)').Replace('.','_'))"" Condition = "" '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' != '' ""/>
-      <FscCompilerTools Include = ""$(%(PropertyNames.Identity))"" />
-    </ItemGroup>
-  </Target>
-
-  <Target Name=""PackageFSharpDesignTimeTools"" DependsOnTargets=""_GetFrameworkAssemblyReferences"">
-    <PropertyGroup>
-      <FSharpDesignTimeProtocol Condition = "" '$(FSharpDesignTimeProtocol)' == '' "">fsharp41</FSharpDesignTimeProtocol>
-      <FSharpToolsDirectory Condition = "" '$(FSharpToolsDirectory)' == '' "">tools</FSharpToolsDirectory>
-    </PropertyGroup>
-
-    <Error Text=""'$(FSharpToolsDirectory)' is an invalid value for 'FSharpToolsDirectory' valid values are 'typeproviders' and 'tools'."" Condition=""'$(FSharpToolsDirectory)' != 'typeproviders' and '$(FSharpToolsDirectory)' != 'tools'"" />
-    <Error Text=""The 'FSharpDesignTimeProtocol'  property can be only 'fsharp41'"" Condition=""'$(FSharpDesignTimeProtocol)' != 'fsharp41'"" />
-
-    <ItemGroup>
-      <_ResolvedOutputFiles
-          Include=""%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/*""
-          Exclude=""%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/FSharp.Core.dll;%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/System.ValueTuple.dll""
-          Condition=""'%(_ResolvedProjectReferencePaths.IsFSharpDesignTimeProvider)' == 'true'"">
-        <NearestTargetFramework>%(_ResolvedProjectReferencePaths.NearestTargetFramework)</NearestTargetFramework>
-      </_ResolvedOutputFiles>
-
-      <_ResolvedOutputFiles
-          Include=""@(BuiltProjectOutputGroupKeyOutput)""
-          Condition=""'$(IsFSharpDesignTimeProvider)' == 'true' and '%(BuiltProjectOutputGroupKeyOutput->Filename)%(BuiltProjectOutputGroupKeyOutput->Extension)' != 'FSharp.Core.dll' and '%(BuiltProjectOutputGroupKeyOutput->Filename)%(BuiltProjectOutputGroupKeyOutput->Extension)' != 'System.ValueTuple.dll'"">
-        <NearestTargetFramework>$(TargetFramework)</NearestTargetFramework>
-      </_ResolvedOutputFiles>
-
-      <TfmSpecificPackageFile Include=""@(_ResolvedOutputFiles)"">
-         <PackagePath>$(FSharpToolsDirectory)/$(FSharpDesignTimeProtocol)/%(_ResolvedOutputFiles.NearestTargetFramework)/%(_ResolvedOutputFiles.FileName)%(_ResolvedOutputFiles.Extension)</PackagePath>
-      </TfmSpecificPackageFile>
-    </ItemGroup>
-  </Target>
 
   <Target Name='ComputePackageRootsForInteractivePackageManagement'
           BeforeTargets='CoreCompile'
@@ -305,7 +263,7 @@ $(PACKAGEREFERENCES)
         <NativeIncludeRoots
             Include='@(RuntimeTargetsCopyLocalItems)'
             Condition=""'%(RuntimeTargetsCopyLocalItems.AssetType)' == 'native'"">
-           <Path>$([MSBuild]::EnsureTrailingSlash('$([System.String]::Copy('%(FullPath)').Substring(0, $([System.String]::Copy('%(FullPath)').LastIndexOf('runtimes'))))'))</Path>
+            <Path>$([MSBuild]::EnsureTrailingSlash('$([System.String]::Copy('%(FullPath)').Substring(0, $([System.String]::Copy('%(FullPath)').LastIndexOf('runtimes'))))'))</Path>
         </NativeIncludeRoots>
       </ItemGroup>
   </Target>
