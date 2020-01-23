@@ -607,3 +607,27 @@ module NestedModule =
 """
     => [ (4, 0, 5, 15), (4, 13, 5, 15)
          (9, 0, 10, 15), (9, 19, 10, 15) ]
+
+[<Test>]
+let ``Member val`` () =
+    """
+type T() =
+    member val field1 =
+        ()
+
+    [<CompiledName("Field2")>]
+    member val field2 =
+        ()
+
+    static member val field3 =
+        ()
+
+    [<CompiledName("Field4")>]
+    static member val field4 =
+        ()
+"""
+    => [ (2, 5, 15, 10), (2, 7, 15, 10)
+         (3, 4, 4, 10), (3, 4, 4, 10)
+         (6, 4, 8, 10), (6, 4, 8, 10)
+         (10, 4, 11, 10), (10, 4, 11, 10)
+         (13, 4, 15, 10), (13, 4, 15, 10) ]
