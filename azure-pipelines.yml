@@ -187,6 +187,9 @@ stages:
               publishLocation: Container
             continueOnError: true
             condition: eq(variables['_testKind'], 'testFSharpQA')
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
           - task: PublishBuildArtifacts@1
             displayName: Publish NuGet cache contents
             inputs:
@@ -194,7 +197,7 @@ stages:
               ArtifactName: 'NuGetPackageContents Windows $(_testKind)'
               publishLocation: Container
             continueOnError: true
-            condition: always()
+            condition: failed()
 
         # Linux
         - job: Linux
@@ -216,6 +219,9 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
           - task: PublishBuildArtifacts@1
             displayName: Publish NuGet cache contents
             inputs:
@@ -223,7 +229,7 @@ stages:
               ArtifactName: 'NuGetPackageContents Linux'
               publishLocation: Container
             continueOnError: true
-            condition: always()
+            condition: failed()
 
         # MacOS
         - job: MacOS
@@ -245,6 +251,9 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
           - task: PublishBuildArtifacts@1
             displayName: Publish NuGet cache contents
             inputs:
@@ -252,7 +261,7 @@ stages:
               ArtifactName: 'NuGetPackageContents Mac'
               publishLocation: Container
             continueOnError: true
-            condition: always()
+            condition: failed()
 
         # Source Build Linux
         - job: SourceBuild_Linux
@@ -263,6 +272,9 @@ stages:
             clean: true
           - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
             displayName: Build
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
           - task: PublishBuildArtifacts@1
             displayName: Publish NuGet cache contents
             inputs:
@@ -270,7 +282,7 @@ stages:
               ArtifactName: 'NuGetPackageContents SourceBuild_Linux'
               publishLocation: Container
             continueOnError: true
-            condition: always()
+            condition: failed()
 
         # Source Build Windows
         - job: SourceBuild_Windows
@@ -281,6 +293,9 @@ stages:
             clean: true
           - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
             displayName: Build
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
           - task: PublishBuildArtifacts@1
             displayName: Publish NuGet cache contents
             inputs:
@@ -288,7 +303,7 @@ stages:
               ArtifactName: 'NuGetPackageContents SourceBuild_Windows'
               publishLocation: Container
             continueOnError: true
-            condition: always()
+            condition: failed()
 
         # Up-to-date
         - job: UpToDate_Windows
