@@ -1475,6 +1475,7 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3301,chkInvalidFunctionReturnType,"The function or method has an invalid return type '%s'. This is not permitted by the rules of Common IL."
 3302,packageManagementRequiresVFive,"The package management feature requires language version 5.0 use /langversion:preview"
 3303,fromEndSlicingRequiresVFive,"From the end slicing with requires language version 5.0, use /langversion:preview."
+3401,ilxgenInvalidConstructInStateMachineDuringCodegen,"The resumable code construct '%s' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code."
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
 fSharpBannerVersion,"%s for F# %s"
 optsLangVersion,"Display the allowed values for language version, specify language version such as 'latest' or 'preview'"

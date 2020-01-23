@@ -29,7 +29,6 @@ exception ExnconstrNotContained   of DisplayEnv * Tycon * Tycon * (string * stri
 exception FieldNotContained       of DisplayEnv * RecdField * RecdField * (string * string -> string)
 exception InterfaceNotRevealed    of DisplayEnv * TType * range
 
-
 // Use a type to capture the constant, common parameters 
 type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) = 
 
