@@ -1152,7 +1152,7 @@ module private PrintTypes =
             // expected quality below.
             let typesWithDiscrimants =
                 [
-                    yield 0,retTy 
+                    yield 0, retTy 
                     for ty,_ in argInfos do
                         yield 1, ty
                     for ty in genParamTys do
