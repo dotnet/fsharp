@@ -527,7 +527,7 @@ module CoreTests =
         exec cfg ("." ++ "testcs.exe") ""
 
     [<Test>]
-    let extconstraint () = 
+    let ``extconstraint-fsc`` () = 
         let cfg = testConfig "core/extconstraint"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --langversion:preview" }
 
@@ -535,21 +535,22 @@ module CoreTests =
 
         peverify cfg "test.exe"
 
-        begin 
-            use testOkFile = fileguard cfg "test.ok"
+        use testOkFile = fileguard cfg "test.ok"
 
-            exec cfg ("." ++ "test.exe") ""
+        exec cfg ("." ++ "test.exe") ""
 
-            testOkFile.CheckExists()
-        end
+        testOkFile.CheckExists()
 
-        begin 
-            use testOkFile = fileguard cfg "test.ok"
+    [<Test>]
+    let ``extconstraint-fsi`` () = 
+        let cfg = testConfig "core/extconstraint"
+        let cfg = { cfg with fsi_flags = cfg.fsi_flags + " --langversion:preview" }
 
-            fsi cfg "" ["test.fsx"]
+        use testOkFile = fileguard cfg "test.ok"
 
-            testOkFile.CheckExists()
-        end
+        fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
+
+        testOkFile.CheckExists()
 
     //
     // Shadowcopy does not work for public signed assemblies
