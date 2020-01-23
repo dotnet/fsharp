@@ -3,11 +3,9 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System
-open System.Text
 open System.IO
 open System.IO.MemoryMappedFiles
 open System.Reflection.Metadata
-open System.Collections.Immutable
 open FSharp.NativeInterop
 open FSharp.Compiler
 open FSharp.Compiler.Range
@@ -19,7 +17,7 @@ open FSharp.Compiler.AbstractIL.IL
 #nowarn "9"
 
 [<Sealed>]
-type ItemKeyReader(mmf: MemoryMappedFile, length, hold: IDisposable) =
+type ItemKeyStore(mmf: MemoryMappedFile, length) =
 
     let mutable isDisposed = false
     let checkDispose() =
@@ -46,8 +44,6 @@ type ItemKeyReader(mmf: MemoryMappedFile, length, hold: IDisposable) =
         let size = reader.ReadInt32()
         reader.ReadUTF16 size
 
-    member _.Hold = hold
-
     member _.ReadSingleKeyInfo() =
         checkDispose ()
 
@@ -56,13 +52,13 @@ type ItemKeyReader(mmf: MemoryMappedFile, length, hold: IDisposable) =
     member _.FindAll(item: Item) =
         checkDispose ()
 
-        let builder = ItemKeyBuilder()
+        let builder = ItemKeyStoreBuilder()
         builder.Write(Range.range0, item)
         match builder.TryBuildAndReset() with
         | None -> Seq.empty
-        | Some(singleReader : ItemKeyReader) ->
-            let struct(_, keyString1) = singleReader.ReadSingleKeyInfo()
-            (singleReader :> IDisposable).Dispose()
+        | Some(singleStore : ItemKeyStore) ->
+            let struct(_, keyString1) = singleStore.ReadSingleKeyInfo()
+            (singleStore :> IDisposable).Dispose()
 
             let results = ResizeArray()
 
@@ -80,9 +76,9 @@ type ItemKeyReader(mmf: MemoryMappedFile, length, hold: IDisposable) =
         member _.Dispose() =
             isDisposed <- true
             viewAccessor.Dispose()
-            hold.Dispose()
+            mmf.Dispose()
 
-and [<Sealed>] ItemKeyBuilder() =
+and [<Sealed>] ItemKeyStoreBuilder() =
 
     let b = BlobBuilder()
 
@@ -359,15 +355,7 @@ and [<Sealed>] ItemKeyBuilder() =
 
             b.Clear()
 
-            let safeHolder =
-                { new obj() with
-                    override x.Finalize() =
-                        (x :?> IDisposable).Dispose()
-                  interface IDisposable with
-                    member x.Dispose() =
-                        GC.SuppressFinalize x
-                        mmf.Dispose() }
-
-            Some(new ItemKeyReader(mmf, length, safeHolder))       
+            Some(new ItemKeyStore(mmf, length))       
         else
+            b.Clear()
             None
