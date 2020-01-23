@@ -1403,21 +1403,22 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     let tcSymbolUses = if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty
                     
                     // Build symbol keys
-                    let itemKeyStore =
+                    let itemKeyStore, semanticClassification =
                         if enableBackgroundItemKeyStoreAndSemanticClassification then
+                            let sResolutions = sink.GetResolutions()
                             let builder = ItemKeyStoreBuilder()
                             let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
                                                                 member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Range.posEq s1 s2 && Range.posEq e1 e2
                                                                 member _.GetHashCode o = o.GetHashCode() })
-                            sink.GetResolutions().CapturedNameResolutions
+                            sResolutions.CapturedNameResolutions
                             |> Seq.iter (fun cnr ->
                                 let r = cnr.Range
                                 if preventDuplicates.Add struct(r.Start, r.End) then
                                     builder.Write(cnr.Range, cnr.Item))
 
-                            builder.TryBuildAndReset()
+                            builder.TryBuildAndReset(), sResolutions.GetSemanticClassification(tcAcc.tcGlobals, tcAcc.tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
                         else
-                            None
+                            None, [||]
                     
                     RequireCompilationThread ctok // Note: events get raised on the CompilationThread
 
@@ -1434,7 +1435,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                        tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
                                        tcModuleNamesDict = moduleNamesDict
                                        tcDependencyFiles = filename :: tcAcc.tcDependencyFiles
-                                       itemKeyStore = itemKeyStore } 
+                                       itemKeyStore = itemKeyStore
+                                       semanticClassification = semanticClassification } 
                 }
                     
             // Run part of the Eventually<_> computation until a timeout is reached. If not complete, 
