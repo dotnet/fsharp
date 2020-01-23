@@ -23,7 +23,6 @@ of `InteractiveChecker`:
 *)
 // Reference F# compiler API
 #r "FSharp.Compiler.Service.dll"
-#r "FSharp.Compiler.Service.ProjectCracker.dll"
 
 open System
 open System.Collections.Generic
@@ -305,61 +304,6 @@ correctly and then analyze each project in turn.
   still be required on disk.
 
 *)
-
-(**
-Cracking a legacy project file
------------------------------
-
-F# projects normally use the '.fsproj' project file format.
-A project cracking facility for legacy old-style .fsproj is provided as a separate NuGet package:
-FSharp.Compiler.Service.ProjectCracker. 
-
-Project cracking for modern project files should be done using a library such as DotNetProjInfo.
-See FsAutoComplete for example code.
-
-The legacy NuGet package `FSharp.Compiler.Service.ProjectCracker` contains a
-library `FSharp.Compiler.Service.ProjectCracker.dll`, which should be
-referenced by your application directly, and an executable
-`FSharp.Compiler.Service.ProjectCrackerTool.exe`, which should be copied
-into the output folder of your application by the build process. If
-you install using Paket or NuGet, then this will be configured for you
-automatically. If not, you should reference the provided `.targets`
-file manually in your application. This can be found in the NuGet
-package at `build/net461/FSharp.Compiler.Service.ProjectCrackerTool.targets`.
-
-The reason for this split was so the analysis of an F# project
-file is performed out of process, in order that the necessary assembly
-binding redirects can be applied without requiring the caller to
-arrange this. In this way MSBuild versions from 4 up to 14 can be
-accommodated transparently.
-
-In this example we get the project options for one of the
-project files in the F# Compiler Service project itself - you should also be able to use this technique
-for any project that builds cleanly using the command line tools 'xbuild' or 'msbuild'.
-
-
-*)
-
-let projectFile  = __SOURCE_DIRECTORY__ + @"/../../src/fsharp/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj"
-
-ProjectCracker.GetProjectOptionsFromProjectFile(projectFile)
-
-
-(**
-
-You can also request RELEASE mode and set other build configuration parameters:
-
-*)
-
-ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Release")])
-
-(**
-
-For debugging purposes it is also possible to obtain a detailed log from the assembly resolution process.
-
-*)
-
-let options, logs = ProjectCracker.GetProjectOptionsFromProjectFileLogged(projectFile, [("Configuration", "Release")])
 
 (**
 Summary

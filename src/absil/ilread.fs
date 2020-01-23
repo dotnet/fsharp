@@ -775,37 +775,33 @@ let seekReadIndexedRows (numRows, rowReader, keyFunc, keyComparer, binaryChop, r
             // now read off rows, forward and backwards 
             let mid = (low + high) / 2
             // read forward 
-            begin 
-                let mutable fin = false
-                let mutable curr = mid
-                while not fin do 
-                  if curr > numRows then 
-                      fin <- true
-                  else 
-                      let currrow = rowReader curr
-                      if keyComparer (keyFunc currrow) = 0 then 
-                          res <- rowConverter currrow :: res
-                      else 
-                          fin <- true
-                      curr <- curr + 1
-                done
-            end
+            let mutable fin = false
+            let mutable curr = mid
+            while not fin do 
+                if curr > numRows then 
+                    fin <- true
+                else 
+                    let currrow = rowReader curr
+                    if keyComparer (keyFunc currrow) = 0 then 
+                        res <- rowConverter currrow :: res
+                    else 
+                        fin <- true
+                    curr <- curr + 1
+
             res <- List.rev res
             // read backwards 
-            begin 
-                let mutable fin = false
-                let mutable curr = mid - 1
-                while not fin do 
-                  if curr = 0 then 
+            let mutable fin = false
+            let mutable curr = mid - 1
+            while not fin do 
+                if curr = 0 then 
                     fin <- true
-                  else  
+                else  
                     let currrow = rowReader curr
                     if keyComparer (keyFunc currrow) = 0 then 
                         res <- rowConverter currrow :: res
                     else 
                         fin <- true
                     curr <- curr - 1
-            end
         // sanity check 
 #if CHECKING
         if checking then 
@@ -2477,15 +2473,11 @@ and seekReadImplMap (ctxt: ILMetadataReader) nm midx =
 and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start seqpoints = 
    let labelsOfRawOffsets = new Dictionary<_, _>(sz/2)
    let ilOffsetsOfLabels = new Dictionary<_, _>(sz/2)
-   let tryRawToLabel rawOffset =
-       match labelsOfRawOffsets.TryGetValue rawOffset with
-       | true, v -> Some v
-       | _ -> None
-
+   
    let rawToLabel rawOffset = 
-       match tryRawToLabel rawOffset with 
-       | Some l -> l
-       | None -> 
+       match labelsOfRawOffsets.TryGetValue rawOffset with 
+       | true, l -> l
+       | _ -> 
            let lab = generateCodeLabel()
            labelsOfRawOffsets.[rawOffset] <- lab
            lab
@@ -2714,9 +2706,9 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
    // the start of the next instruction referred to by the raw offset. 
    let raw2nextLab rawOffset = 
        let isInstrStart x = 
-           match tryRawToLabel x with 
-           | None -> false
-           | Some lab -> ilOffsetsOfLabels.ContainsKey lab
+           match labelsOfRawOffsets.TryGetValue x with 
+           | true, lab -> ilOffsetsOfLabels.ContainsKey lab
+           | _ -> false
        if isInstrStart rawOffset then rawToLabel rawOffset 
        elif isInstrStart (rawOffset+1) then rawToLabel (rawOffset+1)
        else failwith ("the bytecode raw offset "+string rawOffset+" did not refer either to the start or end of an instruction")

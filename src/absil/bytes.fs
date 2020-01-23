@@ -120,34 +120,29 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
 type SafeUnmanagedMemoryStream =
     inherit UnmanagedMemoryStream
 
-    val mutable private hold: obj
+    val mutable private holder: obj
     val mutable private isDisposed: bool
 
-    new (addr, length, hold) =
+    new (addr, length, holder) =
         {
             inherit UnmanagedMemoryStream(addr, length)
-            hold = hold
+            holder = holder
             isDisposed = false
         }
 
-    new (addr: nativeptr<byte>, length: int64, capacity: int64, access: FileAccess, hold) =
+    new (addr: nativeptr<byte>, length: int64, capacity: int64, access: FileAccess, holder) =
         {
             inherit UnmanagedMemoryStream(addr, length, capacity, access)
-            hold = hold
+            holder = holder
             isDisposed = false
         }
-
-    override x.Finalize() =
-        x.Dispose false
 
     override x.Dispose disposing =
         base.Dispose disposing
-        if not x.isDisposed then
-            x.hold <- null // Null out so it can be collected.
-            x.isDisposed <- true
+        x.holder <- null // Null out so it can be collected.
 
 [<Sealed>]
-type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
+type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
     inherit ByteMemory ()
 
     let check i =
@@ -159,7 +154,7 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
             raise (ArgumentOutOfRangeException("length"))
 
     override _.Item 
-        with get i = 
+        with get i =
             check i
             NativePtr.add addr i
             |> NativePtr.read 
@@ -174,7 +169,7 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         check (pos + count - 1)
         System.Text.Encoding.UTF8.GetString(NativePtr.add addr pos, count)
 
-    override _.ReadBytes(pos, count) = 
+    override _.ReadBytes(pos, count) =
         check pos
         check (pos + count - 1)
         let res = Bytes.zeroCreate count
@@ -194,7 +189,7 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
     override _.Slice(pos, count) =
         check pos
         check (pos + count - 1)
-        RawByteMemory(NativePtr.add addr pos, count, hold) :> ByteMemory
+        RawByteMemory(NativePtr.add addr pos, count, holder) :> ByteMemory
 
     override x.CopyTo stream =
         use stream2 = x.AsStream()
@@ -210,10 +205,10 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, hold: obj) =
         res
 
     override _.AsStream() =
-        new SafeUnmanagedMemoryStream(addr, int64 length, hold) :> Stream
+        new SafeUnmanagedMemoryStream(addr, int64 length, holder) :> Stream
 
     override _.AsReadOnlyStream() =
-        new SafeUnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read, hold) :> Stream
+        new SafeUnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read, holder) :> Stream            
 
 [<Struct;NoEquality;NoComparison>]
 type ReadOnlyByteMemory(bytes: ByteMemory) =
@@ -259,17 +254,7 @@ type ByteMemory with
             mmf
 
         let accessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.ReadWrite)
-
-        let safeHolder =
-            { new obj() with
-                override x.Finalize() =
-                    (x :?> IDisposable).Dispose()
-              interface IDisposable with
-                member x.Dispose() =
-                    GC.SuppressFinalize x
-                    accessor.Dispose()
-                    mmf.Dispose() }
-        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, safeHolder)
+        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
 
     static member FromFile(path, access, ?canShadowCopy: bool) =
         let canShadowCopy = defaultArg canShadowCopy false
@@ -313,19 +298,10 @@ type ByteMemory with
         | FileAccess.ReadWrite when not accessor.CanRead || not accessor.CanWrite -> invalidOp "Cannot read or write file"
         | _ -> ()
 
-        let safeHolder =
-            { new obj() with
-                override x.Finalize() =
-                    (x :?> IDisposable).Dispose()
-              interface IDisposable with
-                member x.Dispose() =
-                    GC.SuppressFinalize x
-                    accessor.Dispose()
-                    mmf.Dispose() }
-        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, safeHolder)
+        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
 
-    static member FromUnsafePointer(addr, length, hold: obj) = 
-        RawByteMemory(NativePtr.ofNativeInt addr, length, hold) :> ByteMemory
+    static member FromUnsafePointer(addr, length, holder: obj) = 
+        RawByteMemory(NativePtr.ofNativeInt addr, length, holder) :> ByteMemory
 
     static member FromArray(bytes, offset, length) =
         ByteArrayMemory(bytes, offset, length) :> ByteMemory
