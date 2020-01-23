@@ -5,7 +5,6 @@ open System.ComponentModel.Composition
 open System.Runtime.InteropServices
 open System.Windows
 open System.Windows.Controls
-open FSharp.Compiler.LanguageServer
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.FSharp.UIResources
 
@@ -92,17 +91,10 @@ type CodeLensOptions =
 [<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool
-      IsOutliningEnabled: bool
-      UsePreviewTextHover: bool
-      UsePreviewDiagnostics: bool }
+      IsOutliningEnabled: bool }
     static member Default =
       { IsBlockStructureEnabled = true
-        IsOutliningEnabled = true
-        UsePreviewTextHover = false
-        UsePreviewDiagnostics = false }
-    member this.AsLspOptions(): Options =
-        { usePreviewTextHover = this.UsePreviewTextHover
-          usePreviewDiagnostics = this.UsePreviewDiagnostics }
+        IsOutliningEnabled = true }
 
 [<CLIMutable>]
 type FormattingOptions =
@@ -203,14 +195,6 @@ module internal OptionsUI =
         inherit AbstractOptionPage<AdvancedOptions>()
         override __.CreateView() =
             upcast AdvancedOptionsControl()
-        override this.OnApply(args) =
-            base.OnApply(args)
-            async {
-                let lspService = this.GetService<LspService>()
-                let settings = this.GetService<EditorOptions>()
-                let options = settings.Advanced.AsLspOptions()
-                do! lspService.SetOptions options
-            } |> Async.Start
 
     [<Guid(Guids.formattingOptionPageIdString)>]
     type internal FormattingOptionPage() =

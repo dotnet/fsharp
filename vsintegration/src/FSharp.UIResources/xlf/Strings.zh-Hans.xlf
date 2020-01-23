@@ -202,11 +202,6 @@
         <target state="translated">为未解析标识符建议名称</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_out_of_process_language_server">
-        <source>(Preview) Use out of process language server</source>
-        <target state="translated">(预览)使用进程外语言服务器</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>

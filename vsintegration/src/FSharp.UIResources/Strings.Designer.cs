@@ -419,14 +419,5 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
                 return ResourceManager.GetString("Unused_opens_code_fix", resourceCulture);
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to (Preview) Use out of process language server.
-        /// </summary>
-        public static string Use_out_of_process_language_server {
-            get {
-                return ResourceManager.GetString("Use_out_of_process_language_server", resourceCulture);
-            }
-        }
     }
 }

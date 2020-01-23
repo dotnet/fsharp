@@ -202,11 +202,6 @@
         <target state="translated">확인되지 않은 식별자의 이름 제안</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_out_of_process_language_server">
-        <source>(Preview) Use out of process language server</source>
-        <target state="translated">(미리 보기) Out of Process 언어 서버 사용</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>
