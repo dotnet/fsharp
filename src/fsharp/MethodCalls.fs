@@ -353,8 +353,7 @@ type CalledMeth<'T>
     do assert (fullCurriedCalledArgs.Length = fullCurriedCalledArgs.Length)
  
     let argSetInfos = 
-        (callerArgs.CurriedCallerArgs, fullCurriedCalledArgs) 
-        ||> List.map2 (fun (unnamedCallerArgs, namedCallerArgs) fullCalledArgs -> 
+        (callerArgs.CurriedCallerArgs, fullCurriedCalledArgs) ||> List.map2 (fun (unnamedCallerArgs, namedCallerArgs) fullCalledArgs -> 
             // Find the arguments not given by name 
             let unnamedCalledArgs = 
                 fullCalledArgs |> List.filter (fun calledArg -> 
