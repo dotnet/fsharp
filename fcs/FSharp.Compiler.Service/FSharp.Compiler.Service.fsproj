@@ -573,6 +573,18 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\Reactor.fs">
       <Link>Service/Reactor.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\SemanticClassification.fsi">
+      <Link>Service/SemanticClassification.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\SemanticClassification.fs">
+      <Link>Service/SemanticClassification.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ItemKey.fsi">
+      <Link>Service/ItemKey.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ItemKey.fs">
+      <Link>Service/ItemKey.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>

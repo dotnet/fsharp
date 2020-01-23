@@ -51,9 +51,8 @@ type internal FSharpClassificationService
                 let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = false, userOpName=userOpName) 
-                // it's crucial to not return duplicated or overlapping `ClassifiedSpan`s because Find Usages service crashes.
                 let targetRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
-                let classificationData = checkResults.GetSemanticClassification (Some targetRange) |> Array.distinctBy fst
+                let classificationData = checkResults.GetSemanticClassification (Some targetRange)
                 
                 for (range, classificationType) in classificationData do
                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
