@@ -54,7 +54,7 @@ There are also negative tests checking code expected to fail compilation. See no
 
 The FSharpQA suite relies on [Perl](http://www.perl.org/get.html), StrawberryPerl package from nuget is used automatically by the test suite.
 
-These tests use the `RunAll.pl` framework to execute, however the easiest way to run them is via the `./build` script, see [usage examples](https://github.com/Microsoft/visualfsharp/blob/master/build.cmd#L31).
+These tests use the `RunAll.pl` framework to execute, however the easiest way to run them is via the `.\build` script, see [usage examples](#quick-start-running-tests).
 
 Tests are grouped in folders per area. Each folder contains a number of source code files and a single `env.lst` file. The `env.lst` file defines a series of test cases, one per line.
 
