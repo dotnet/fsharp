@@ -237,7 +237,7 @@ $(PACKAGEREFERENCES)
 
   <Target Name='ComputePackageRootsForInteractivePackageManagement'
           BeforeTargets='CoreCompile'
-          DependsOnTargets='CollectPackageReferences'>
+          DependsOnTargets='ResolveAssemblyReferences;GenerateBuildDependencyFile;ResolvePackageAssets;CollectPackageReferences'>
       <ItemGroup>
         <InteractiveResolvedFile Remove='@(InteractiveResolvedFile)' />
         <InteractiveResolvedFile Include='@(ResolvedCompileFileDefinitions->ClearMetadata())' KeepDuplicates='false'>
@@ -268,7 +268,7 @@ $(PACKAGEREFERENCES)
       </ItemGroup>
   </Target>
 
-  <Target Name='InteractivePackageManagement' DependsOnTargets='ResolvePackageAssets;ComputePackageRootsForInteractivePackageManagement'>
+  <Target Name='InteractivePackageManagement' DependsOnTargets='ComputePackageRootsForInteractivePackageManagement'>
     <ItemGroup>
       <ReferenceLines Remove='@(ReferenceLines)' />
       <ReferenceLines Include='// Generated from #r ""nuget:Package References""' />
