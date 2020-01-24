@@ -1,6 +1,7 @@
 type Class () =
   let mutable v = 0
   member x.Prop with set(value) = v <- value
+                 and private get () = v
 
 let a = csharp.Class(Prop=1)
 let b = basic.BasicClass(Prop=1)
