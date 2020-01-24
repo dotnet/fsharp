@@ -96,6 +96,9 @@ module Commands =
     let csc exec cscExe flags srcFiles =
         exec cscExe (sprintf "%s %s"  flags (srcFiles |> Seq.ofList |> String.concat " "))
 
+    let vbc exec vbcExe flags srcFiles =
+        exec vbcExe (sprintf "%s %s"  flags (srcFiles |> Seq.ofList |> String.concat " "))
+
     let fsi exec fsiExe flags sources =
         exec fsiExe (sprintf "%s %s"  flags (sources |> Seq.ofList |> String.concat " "))
 
@@ -123,6 +126,8 @@ type TestConfig =
     { EnvironmentVariables : Map<string, string>
       CSC : string
       csc_flags : string
+      VBC : string
+      vbc_flags : string
       BUILD_CONFIG : string
       FSC : string
       fsc_flags : string
@@ -183,11 +188,13 @@ let config configurationName envVars =
     let artifactsBinPath = artifactsPath ++ "bin"
     let coreClrRuntimePackageVersion = "3.0.0-preview-27318-01"
     let csc_flags = "/nologo" 
+    let vbc_flags = "/nologo" 
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
     let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
     let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
     let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
     let CSC = requireFile (packagesDir ++ "Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "csc.exe")
+    let VBC = requireFile (packagesDir ++ "Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "vbc.exe")
     let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
     let ILASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ilasm.exe")
     let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
@@ -223,6 +230,7 @@ let config configurationName envVars =
       ILDASM = ILDASM
       ILASM = ILASM
       PEVERIFY = PEVERIFY
+      VBC = VBC
       CSC = CSC 
       BUILD_CONFIG = configurationName
       FSC = FSC
@@ -235,7 +243,8 @@ let config configurationName envVars =
       FSharpCompilerInteractiveSettings = FSharpCompilerInteractiveSettings
       csc_flags = csc_flags
       fsc_flags = fsc_flags 
-      fsi_flags = fsi_flags 
+      fsi_flags = fsi_flags
+      vbc_flags = vbc_flags
       Directory="" 
       DotNetExe = dotNetExe
       DefaultPlatform = defaultPlatform }
@@ -462,6 +471,7 @@ let fscBothToOut cfg out arg = Printf.ksprintf (Commands.fsc cfg.Directory (exec
 let fscBothToOutExpectFail cfg out arg = Printf.ksprintf (Commands.fsc cfg.Directory (execBothToOutExpectFail cfg cfg.Directory out) cfg.DotNetExe  cfg.FSC) arg
 let fscAppendErrExpectFail cfg errPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendErrExpectFail cfg errPath) cfg.DotNetExe  cfg.FSC) arg
 let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
+let vbc cfg arg = Printf.ksprintf (Commands.vbc (exec cfg) cfg.VBC) arg
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 let ilasm cfg arg = Printf.ksprintf (Commands.ilasm (exec cfg) cfg.ILASM) arg
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"

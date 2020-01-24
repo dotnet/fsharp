@@ -288,7 +288,7 @@ module CoreTests =
 
             testOkFile.CheckExists()
         end
-
+    
     [<Test>]
     let span () =
 
@@ -1813,6 +1813,15 @@ module CoreTests =
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
+        
+        
+    [<Test>]
+    let ``property setter in method or constructor`` () =
+        let cfg = testConfig "core/members/set-only-property"
+        csc cfg @"%s /target:library /out:cs.dll" cfg.csc_flags ["cs.cs"]
+        vbc cfg @"%s /target:library /out:vb.dll" cfg.vbc_flags ["vb.vb"]
+        fsc cfg @"%s -r:cs.dll -r:vb.dll -o:fs.exe" cfg.fsc_flags ["fs.fs"]
+
 #endif
 
 module VersionTests =
