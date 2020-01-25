@@ -727,16 +727,17 @@ type ILMethodBody =
       SourceMarker: ILSourceMarker option }
 
 /// Member Access
+// important: order of definition matters for AccessibilityLogic.GetILAccessOfILPropInfo
 [<RequireQualifiedAccess>]
 type ILMemberAccess = 
-    | Assembly
     | CompilerControlled
+    | Private
     | FamilyAndAssembly
+    | Assembly
     | FamilyOrAssembly
     | Family
-    | Private 
-    | Public 
-
+    | Public
+    
 [<RequireQualifiedAccess>]
 type ILAttribElem = 
     /// Represents a custom attribute parameter of type 'string'. These may be null, in which case they are encoded in a special

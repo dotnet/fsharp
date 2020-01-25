@@ -1243,12 +1243,12 @@ type ILMethodBody =
 
 [<RequireQualifiedAccess>]
 type ILMemberAccess =
-    | Assembly
     | CompilerControlled
+    | Private
     | FamilyAndAssembly
+    | Assembly
     | FamilyOrAssembly
     | Family
-    | Private
     | Public
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
