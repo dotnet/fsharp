@@ -8,11 +8,11 @@ type Maker =
 // so long https://github.com/dotnet/fsharp/issues/8351 isn't fixed, Prop1 setters are failing
 let a = csharp.Class(Prop1=1)
 let b = basic.BasicClass(Prop1=1)
-let c = fsharp.Class(Prop1=1)
+let c = fsharp.Class(Prop1=1) // this one works, inconsistent but correct.
 
 let aa = Maker.mkCs(Prop1=1)
 let bb = Maker.mkVb(Prop1=1)
-let cc = Maker.mkFs(Prop1=1)
+let cc = Maker.mkFs(Prop1=1) // this one works, inconsistent but correct.
 
 // those are expected to fail, albeit with inconsistent error messages / marked ranges
 let aaa = csharp.Class(Prop2=1)
