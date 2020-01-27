@@ -221,7 +221,7 @@ module Utilities =
         let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None
         succeeded, resultOutFile
 
-    let generateProjectBody = @"
+    let generateProjectBody = """
 <Project Sdk='Microsoft.NET.Sdk'>
 
   <PropertyGroup>
@@ -229,41 +229,65 @@ module Utilities =
     <IsPackable>false</IsPackable>
 
     <!-- Temporary fix some sdks, shipped internally with broken parameterization -->
-    <FSharpCoreImplicitPackageVersion Condition=""'$(FSharpCoreImplicitPackageVersion)' == '{{FSharpCoreShippedPackageVersion}}'"">4.7.0</FSharpCoreImplicitPackageVersion>
-    <FSharpCoreImplicitPackageVersion Condition=""'$(FSharpCoreImplicitPackageVersion)' == '{{FSharpCorePreviewPackageVersion}}'"">4.7.1-*</FSharpCoreImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion Condition="'$(FSharpCoreImplicitPackageVersion)' == '{{FSharpCoreShippedPackageVersion}}'">4.7.0</FSharpCoreImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion Condition="'$(FSharpCoreImplicitPackageVersion)' == '{{FSharpCorePreviewPackageVersion}}'">4.7.1-*</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
 $(PACKAGEREFERENCES)
 
-  <Target Name='ComputePackageRootsForInteractivePackageManagement'
-          BeforeTargets='CoreCompile'
-          DependsOnTargets='ResolveAssemblyReferences;GenerateBuildDependencyFile;ResolvePackageAssets;CollectPackageReferences'>
+  <Target Name="ComputePackageRootsForInteractivePackageManagement"
+          DependsOnTargets="ResolveReferences;ResolveSdkReferences;ResolveTargetingPackAssets;ResolveSDKReferences;GenerateBuildDependencyFile">
+
       <ItemGroup>
-        <InteractiveReferencedAssembliesCopyLocal Include = ""@(RuntimeCopyLocalItems)"" Condition=""'$(TargetFrameworkIdentifier)'!='.NETFramework'"" />
-        <InteractiveReferencedAssembliesCopyLocal Include = ""@(ReferenceCopyLocalPaths)"" Condition=""'$(TargetFrameworkIdentifier)'=='.NETFramework'"" />
-        <InteractiveResolvedFile Include='@(InteractiveReferencedAssembliesCopyLocal)' KeepDuplicates='false'>
-            <NormalizedIdentity Condition=""'%(Identity)'!=''"">$([System.String]::Copy('%(Identity)').Replace('\', '/'))</NormalizedIdentity>
-            <NormalizedPathInPackage Condition=""'%(InteractiveReferencedAssembliesCopyLocal.PathInPackage)'!=''"">$([System.String]::Copy('%(InteractiveReferencedAssembliesCopyLocal.PathInPackage)').Replace('\', '/'))</NormalizedPathInPackage>
-            <PositionPathInPackage Condition=""'%(InteractiveResolvedFile.NormalizedPathInPackage)'!=''"">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').IndexOf('%(InteractiveResolvedFile.NormalizedPathInPackage)'))</PositionPathInPackage>
-            <PackageRoot Condition=""'%(InteractiveResolvedFile.NormalizedPathInPackage)'!='' and '%(InteractiveResolvedFile.PositionPathInPackage)'!='-1'"">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').Substring(0, %(InteractiveResolvedFile.PositionPathInPackage)))</PackageRoot>
-            <InitializeSourcePath>%(InteractiveResolvedFile.PackageRoot)content\%(InteractiveReferencedAssembliesCopyLocal.FileName)%(InteractiveReferencedAssembliesCopyLocal.Extension).fsx</InitializeSourcePath>
-            <IsNotImplementationReference>$([System.String]::Copy('%(InteractiveReferencedAssembliesCopyLocal.PathInPackage)').StartsWith('ref/'))</IsNotImplementationReference>
-            <NuGetPackageId>%(InteractiveReferencedAssembliesCopyLocal.NuGetPackageId)</NuGetPackageId>
-            <NuGetPackageVersion>%(InteractiveReferencedAssembliesCopyLocal.NuGetPackageVersion)</NuGetPackageVersion>
+        <__InteractiveReferencedAssemblies Include = "@(ReferencePath)" />
+        <__InteractiveReferencedAssembliesCopyLocal Include = "@(RuntimeCopyLocalItems)" Condition="'$(TargetFrameworkIdentifier)'!='.NETFramework'" />
+        <__InteractiveReferencedAssembliesCopyLocal Include = "@(ReferenceCopyLocalPaths)" Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'" />
+        <__ConflictsList Include="(_ConflictPackageFiles.ConflictItemType)=%(_ConflictPackageFiles.Filename)%(_ConflictPackageFiles.Extension)" />
+      </ItemGroup>
+      <PropertyGroup>
+        <__Conflicts>@(__ConflictsList, ';')</__Conflicts>
+      </PropertyGroup>
+
+      <ItemGroup>
+        <InteractiveResolvedFile Include="@(__InteractiveReferencedAssemblies)"
+                                 Condition="$([System.String]::new($(__Conflicts)).Contains($([System.String]::new('Reference=%(__InteractiveReferencedAssemblies.Filename)%(__InteractiveReferencedAssemblies.Extension)'))))"
+                                 KeepDuplicates="false">
+            <NormalizedIdentity Condition="'%(Identity)'!=''">$([System.String]::Copy('%(Identity)').Replace('\', '/'))</NormalizedIdentity>
+            <NormalizedPathInPackage Condition="'%(__InteractiveReferencedAssemblies.PathInPackage)'!=''">$([System.String]::Copy('%(__InteractiveReferencedAssemblies.PathInPackage)').Replace('\', '/'))</NormalizedPathInPackage>
+            <PositionPathInPackage Condition="'%(InteractiveResolvedFile.NormalizedPathInPackage)'!=''">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').IndexOf('%(InteractiveResolvedFile.NormalizedPathInPackage)'))</PositionPathInPackage>
+            <PackageRoot Condition="'%(InteractiveResolvedFile.NormalizedPathInPackage)'!='' and '%(InteractiveResolvedFile.PositionPathInPackage)'!='-1'">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').Substring(0, %(InteractiveResolvedFile.PositionPathInPackage)))</PackageRoot>
+            <InitializeSourcePath>%(InteractiveResolvedFile.PackageRoot)content\%(__InteractiveReferencedAssemblies.FileName)%(__InteractiveReferencedAssemblies.Extension).fsx</InitializeSourcePath>
+            <IsNotImplementationReference>$([System.String]::Copy('%(__InteractiveReferencedAssemblies.PathInPackage)').StartsWith('ref/'))</IsNotImplementationReference>
+            <NuGetPackageId>%(__InteractiveReferencedAssemblies.NuGetPackageId)</NuGetPackageId>
+            <NuGetPackageVersion>%(__InteractiveReferencedAssemblies.NuGetPackageVersion)</NuGetPackageVersion>
+        </InteractiveResolvedFile>
+
+        <InteractiveResolvedFile Include="@(__InteractiveReferencedAssembliesCopyLocal)" KeepDuplicates="false">
+            <NormalizedIdentity Condition="'%(Identity)'!=''">$([System.String]::Copy('%(Identity)').Replace('\', '/'))</NormalizedIdentity>
+            <NormalizedPathInPackage Condition="'%(__InteractiveReferencedAssembliesCopyLocal.PathInPackage)'!=''">$([System.String]::Copy('%(__InteractiveReferencedAssembliesCopyLocal.PathInPackage)').Replace('\', '/'))</NormalizedPathInPackage>
+            <PositionPathInPackage Condition="'%(InteractiveResolvedFile.NormalizedPathInPackage)'!=''">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').IndexOf('%(InteractiveResolvedFile.NormalizedPathInPackage)'))</PositionPathInPackage>
+            <PackageRoot Condition="'%(InteractiveResolvedFile.NormalizedPathInPackage)'!='' and '%(InteractiveResolvedFile.PositionPathInPackage)'!='-1'">$([System.String]::Copy('%(InteractiveResolvedFile.NormalizedIdentity)').Substring(0, %(InteractiveResolvedFile.PositionPathInPackage)))</PackageRoot>
+            <InitializeSourcePath>%(InteractiveResolvedFile.PackageRoot)content\%(__InteractiveReferencedAssembliesCopyLocal.FileName)%(__InteractiveReferencedAssembliesCopyLocal.Extension).fsx</InitializeSourcePath>
+            <IsNotImplementationReference>$([System.String]::Copy('%(__InteractiveReferencedAssembliesCopyLocal.PathInPackage)').StartsWith('ref/'))</IsNotImplementationReference>
+            <NuGetPackageId>%(__InteractiveReferencedAssembliesCopyLocal.NuGetPackageId)</NuGetPackageId>
+            <NuGetPackageVersion>%(__InteractiveReferencedAssembliesCopyLocal.NuGetPackageVersion)</NuGetPackageVersion>
         </InteractiveResolvedFile>
 
         <NativeIncludeRoots
-            Include='@(RuntimeTargetsCopyLocalItems)'
-            Condition=""'%(RuntimeTargetsCopyLocalItems.AssetType)' == 'native'"">
+            Include="@(RuntimeTargetsCopyLocalItems)"
+            Condition="'%(RuntimeTargetsCopyLocalItems.AssetType)' == 'native'">
             <Path>$([MSBuild]::EnsureTrailingSlash('$([System.String]::Copy('%(FullPath)').Substring(0, $([System.String]::Copy('%(FullPath)').LastIndexOf('runtimes'))))'))</Path>
         </NativeIncludeRoots>
       </ItemGroup>
   </Target>
 
-  <Target Name='InteractivePackageManagement' DependsOnTargets='ComputePackageRootsForInteractivePackageManagement'>
+  <Target Name="InteractivePackageManagement"
+          DependsOnTargets="ComputePackageRootsForInteractivePackageManagement"
+          BeforeTargets="CoreCompile"
+          AfterTargets="PrepareForBuild">
     <ItemGroup>
       <ReferenceLines Remove='@(ReferenceLines)' />
-      <ReferenceLines Include='// Generated from #r ""nuget:Package References""' />
+      <ReferenceLines Include='// Generated from #r "nuget:Package References"' />
       <ReferenceLines Include='// ============================================' />
       <ReferenceLines Include='//' />
       <ReferenceLines Include='// DOTNET_HOST_PATH:($(DOTNET_HOST_PATH))' />
@@ -272,16 +296,16 @@ $(PACKAGEREFERENCES)
       <ReferenceLines Include='//' />
       <ReferenceLines Include='// References' />
       <ReferenceLines Include='//' />
-      <ReferenceLines Include='#r @""%(InteractiveResolvedFile.FullPath)""' Condition = ""'%(InteractiveResolvedFile.NugetPackageId)' != '' and '%(InteractiveResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(InteractiveResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(InteractiveResolvedFile.NugetPackageId)' != 'System.ValueTuple' and '%(InteractiveResolvedFile.IsNotImplementationReference)' != 'true' and Exists('%(InteractiveResolvedFile.FullPath)')"" KeepDuplicates='false' />
+      <ReferenceLines Include='#r @"%(InteractiveResolvedFile.FullPath)"' Condition = "'%(InteractiveResolvedFile.NugetPackageId)' != '' and '%(InteractiveResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(InteractiveResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(InteractiveResolvedFile.NugetPackageId)' != 'System.ValueTuple' and '%(InteractiveResolvedFile.IsNotImplementationReference)' != 'true' and Exists('%(InteractiveResolvedFile.FullPath)')" KeepDuplicates="false" />
       <ReferenceLines Include='//' />
       <ReferenceLines Include='// Includes' />
       <ReferenceLines Include='//' />
-      <ReferenceLines Include='#I @""%(InteractiveResolvedFile.PackageRoot)""' Condition= ""'%(InteractiveResolvedFile.NugetPackageId)' != '' and '%(InteractiveResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(InteractiveResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(InteractiveResolvedFile.NugetPackageId)' != 'System.ValueTuple' and $([System.String]::Copy('%(InteractiveResolvedFile.PackageRoot)').EndsWith('/')) and Exists(%(InteractiveResolvedFile.PackageRoot))"" KeepDuplicates='false' />
-      <ReferenceLines Include='#I @""%(NativeIncludeRoots.Path)""' Condition= ""'%(InteractiveResolvedFile.NugetPackageId)' != '' and '%(InteractiveResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(InteractiveResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(InteractiveResolvedFile.NugetPackageId)' != 'System.ValueTuple' and '%(NativeIncludeRoots.Path)' != ''"" KeepDuplicates='false' />
+      <ReferenceLines Include='#I @"%(InteractiveResolvedFile.PackageRoot)"' Condition= "'%(InteractiveResolvedFile.NugetPackageId)' != '' and '%(InteractiveResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(InteractiveResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(InteractiveResolvedFile.NugetPackageId)' != 'System.ValueTuple' and $([System.String]::Copy('%(InteractiveResolvedFile.PackageRoot)').EndsWith('/')) and Exists(%(InteractiveResolvedFile.PackageRoot))" KeepDuplicates="false" />
+      <ReferenceLines Include='#I @"%(NativeIncludeRoots.Path)"' Condition= "'%(InteractiveResolvedFile.NugetPackageId)' != '' and '%(InteractiveResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(InteractiveResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(InteractiveResolvedFile.NugetPackageId)' != 'System.ValueTuple' and '%(NativeIncludeRoots.Path)' != ''" KeepDuplicates="false" />
       <ReferenceLines Include='//' />
       <ReferenceLines Include='// Load Sources' />
       <ReferenceLines Include='//' />
-      <ReferenceLines Include='#load @""%(InteractiveResolvedFile.InitializeSourcePath)""'  Condition = ""'%(InteractiveResolvedFile.InitializeSourcePath)' != '' and '%(InteractiveResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(InteractiveResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(InteractiveResolvedFile.NugetPackageId)' != 'System.ValueTuple' and Exists('%(InteractiveResolvedFile.InitializeSourcePath)')"" KeepDuplicates='false' />
+      <ReferenceLines Include='#load @"%(InteractiveResolvedFile.InitializeSourcePath)"'  Condition = "'%(InteractiveResolvedFile.InitializeSourcePath)' != '' and '%(InteractiveResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(InteractiveResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(InteractiveResolvedFile.NugetPackageId)' != 'System.ValueTuple' and Exists('%(InteractiveResolvedFile.InitializeSourcePath)')" KeepDuplicates="false" />
     </ItemGroup>
 
     <WriteLinesToFile Lines='@(ReferenceLines)' File='$(MSBuildProjectFullPath).fsx' Overwrite='True' WriteOnlyWhenDifferent='True' />
@@ -290,4 +314,4 @@ $(PACKAGEREFERENCES)
     </ItemGroup>
   </Target>
 
-</Project>"
+</Project>"""
