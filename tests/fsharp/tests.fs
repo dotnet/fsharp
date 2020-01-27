@@ -531,13 +531,32 @@ module CoreTests =
         let cfg = testConfig "core/extconstraint"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --langversion:preview" }
 
-        fsc cfg "%s" cfg.fsc_flags ["test.fsx"]
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
+        fsc cfg "%s -o:test.exe -r cslib.dll -g --optimize+" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         use testOkFile = fileguard cfg "test.ok"
 
         exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``extconstraint-fsc-no-optimize`` () = 
+        let cfg = testConfig "core/extconstraint"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --langversion:preview" }
+
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
+        fsc cfg "%s -o:test-debug.exe -r cslib.dll -g --optimize-" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test-debug.exe"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        exec cfg ("." ++ "test-debug.exe") ""
 
         testOkFile.CheckExists()
 
@@ -551,6 +570,41 @@ module CoreTests =
         fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
 
         testOkFile.CheckExists()
+
+    [<Test>]
+    let ``extconstraint-compat`` () = 
+        let cfg = testConfig "core/extconstraint"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --define:LANGVERSION_PREVIEW --langversion:preview" }
+
+        let outFile = "test-compat.output.txt" 
+        let expectedFile = "test-compat.output.bsl" 
+
+        fscBothToOut cfg outFile "%s -i  --nologo" cfg.fsc_flags ["test-compat.fsx"]
+
+        let diff = fsdiff cfg outFile expectedFile 
+
+        match diff with 
+        | "" -> () 
+        | _ -> 
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff) 
+
+    [<Test>]
+    let ``extconstraint-compat2`` () = 
+        let cfg = testConfig "core/extconstraint"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --langversion:4.6" }
+
+        let outFile = "test-compat.output.feature-disabled.txt" 
+        let expectedFile = "test-compat.output.feature-disabled.bsl" 
+
+        fscBothToOut cfg outFile "%s -i  --nologo" cfg.fsc_flags ["test-compat.fsx"]
+
+        let diff = fsdiff cfg outFile expectedFile 
+
+        match diff with 
+        | "" -> () 
+        | _ -> 
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff) 
+
 
     //
     // Shadowcopy does not work for public signed assemblies

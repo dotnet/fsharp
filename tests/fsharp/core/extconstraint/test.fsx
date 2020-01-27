@@ -538,7 +538,6 @@ module Test2 =
     let z = "Bar".Foo("foo")
     let z0 = (Bar "Bar").Foo("foo")
 
-
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
