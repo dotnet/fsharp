@@ -12,11 +12,6 @@ open System.Runtime.Versioning
 
 open Internal.Utilities.FSharpEnvironment
 
-#if !(NETSTANDARD || NETCOREAPP)
-open Microsoft.Build.Evaluation
-open Microsoft.Build.Framework
-#endif
-
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
 type DependencyManagerAttribute() = inherit System.Attribute()
 
@@ -86,7 +81,6 @@ module Utilities =
 
     let sdks = "Sdks"
 
-#if !(NETSTANDARD || NETCOREAPP)
     let msbuildExePath =
         // Find msbuild.exe when invoked from desktop compiler.
         // 1. Look relative to F# compiler location                 Normal retail build
@@ -120,7 +114,7 @@ module Utilities =
             | _ -> None
 
         roots |> Array.tryFind(fun root -> msbuildPathExists root) |> msbuildOption
-#else
+
     let dotnetHostPath =
         // How to find dotnet.exe --- woe is me; probing rules make me sad.
         // Algorithm:
@@ -156,7 +150,6 @@ module Utilities =
                         Some dotnet
         else
             None
-#endif
 
     let drainStreamToFile (stream: StreamReader) filename =
         use file = File.OpenWrite(filename)
@@ -210,13 +203,13 @@ module Utilities =
         let workingDir = Path.GetDirectoryName projectPath
 
         let succeeded =
-#if !(NETSTANDARD || NETCOREAPP)
-            // The Desktop build uses "msbuild" to build
-            executeBuild msbuildExePath (arguments "") workingDir
-#else
-            // The coreclr uses "dotnet msbuild" to build
-            executeBuild dotnetHostPath (arguments "msbuild") workingDir
-#endif
+            if not (isRunningOnCoreClr) then
+                // The Desktop build uses "msbuild" to build
+                executeBuild msbuildExePath (arguments "") workingDir
+            else
+                // The coreclr uses "dotnet msbuild" to build
+                executeBuild dotnetHostPath (arguments "msbuild") workingDir
+
         let outputFile = projectPath + ".fsx"
         let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None
         succeeded, resultOutFile
