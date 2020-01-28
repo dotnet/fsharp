@@ -28,10 +28,10 @@ module FSharpDependencyManager =
         let { Include=inc; Version=ver; RestoreSources=src; Script=script } = p
         seq {
             match not (String.IsNullOrEmpty(inc)), not (String.IsNullOrEmpty(ver)), not (String.IsNullOrEmpty(script)) with
-            | true, true, false  -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc ver
-            | true, true, true   -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc ver script
-            | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc
-            | true, false, true  -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc script
+            | true, true, false  -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' /></ItemGroup>" inc ver
+            | true, true, true   -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s' /></ItemGroup>" inc ver script
+            | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' /></ItemGroup>" inc
+            | true, false, true  -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s' /></ItemGroup>" inc script
             | _ -> ()
             match not (String.IsNullOrEmpty(src)) with
             | true -> yield sprintf @"  <PropertyGroup><RestoreAdditionalProjectSources>%s</RestoreAdditionalProjectSources></PropertyGroup>" (concat "$(RestoreAdditionalProjectSources)" src)
@@ -158,7 +158,6 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
                 generateProjectBody.Replace("$(TARGETFRAMEWORK)", tfm)
                                    .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
 
-            writeFile (Path.Combine(scriptsPath, "Library.fs")) generateLibrarySource
             writeFile fsProjectPath generateProjBody
 
             let succeeded, resultingFsx = buildProject fsProjectPath binLogPath
