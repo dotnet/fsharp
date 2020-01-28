@@ -8052,7 +8052,7 @@ let TypeNullIsExtraValueOld g m ty =
 /// The F# 5.0 logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueNew g m ty = 
     let sty = stripTyparEqns ty
-    (match tryDestAppTy g sty with 
+    (match tryTcrefOfAppTy g sty with 
      | ValueSome tcref -> 
         not tcref.IsStructOrEnumTycon &&
         not (isByrefLikeTyconRef g m tcref) && 

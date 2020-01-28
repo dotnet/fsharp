@@ -8525,7 +8525,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         let varSpace = 
                             addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                                     use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (consumePat, None) 
+                                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType cenv.g) env tpenv (consumePat, None) 
                                     vspecs, envinner)
 
                         Some (transBind q varSpace bindRange bindNName sources consumePat letSpBind innerComp translatedCtxt)
@@ -8583,7 +8583,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         let varSpace = 
                             addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                                     use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (consumePat, None) 
+                                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType cenv.g) env tpenv (consumePat, None) 
                                     vspecs, envinner)
 
                         // Build the 'Bind' call

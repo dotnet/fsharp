@@ -3210,21 +3210,21 @@ let AddCxMethodConstraint denv css m trace traitInfo  =
 let AddCxTypeDefnSupportsNull denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeSupportsNull csenv 0 m trace ty)
+        (fun () -> SolveTypeDefnSupportsNull csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeDefnNotSupportsNull denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeDefnNotSupportsNull (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
+        (fun () -> SolveTypeDefnNotSupportsNull csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
 let AddCxTypeUseSupportsNull denv css m trace ty =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> SolveTypeUseSupportsNull (MakeConstraintSolverEnv ContextInfo.NoContext css m denv) 0 m trace ty)
+        (fun () -> SolveTypeUseSupportsNull csenv 0 m trace ty)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
