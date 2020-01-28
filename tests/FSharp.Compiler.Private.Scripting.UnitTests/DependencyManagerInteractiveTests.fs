@@ -40,7 +40,7 @@ type DependencyManagerInteractiveTests() =
         let value = opt.Value
         Assert.AreEqual(typeof<int>, value.ReflectionType)
         Assert.AreEqual(0, value.ReflectionValue :?> int)
-        Assert.AreEqual(1, assemblyResolveEventCount)
+        Assert.Greater(assemblyResolveEventCount, 0)
         Assert.AreEqual(true, foundAssemblyReference)
 
     [<Test>]
