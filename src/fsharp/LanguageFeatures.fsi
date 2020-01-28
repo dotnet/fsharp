@@ -16,8 +16,8 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
+    | AndBang
     | ExtensionConstraintSolutions
-
 
 /// LanguageVersion management
 type LanguageVersion =

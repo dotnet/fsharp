@@ -703,9 +703,13 @@ module ParsedInput =
                 addLongIdentWithDots ident
                 List.iter walkExpr [e1; e2; e3]
             | SynExpr.JoinIn (e1, _, e2, _) -> List.iter walkExpr [e1; e2]
-            | SynExpr.LetOrUseBang (_, _, _, pat, e1, e2, _) ->
+            | SynExpr.LetOrUseBang (_, _, _, pat, e1, es, e2, _) ->
                 walkPat pat
-                List.iter walkExpr [e1; e2]
+                walkExpr e1
+                for (_,_,_,patAndBang,eAndBang,_) in es do
+                    walkPat patAndBang
+                    walkExpr eAndBang
+                walkExpr e2
             | SynExpr.TraitCall (ts, sign, e, _) ->
                 List.iter walkTypar ts
                 walkMemberSig sign

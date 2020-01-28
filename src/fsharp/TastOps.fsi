@@ -678,7 +678,7 @@ val destAppTy      : TcGlobals -> TType -> TyconRef * TypeInst
 
 val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
 
-val tryDestAppTy   : TcGlobals -> TType -> ValueOption<TyconRef>
+val tryTcrefOfAppTy   : TcGlobals -> TType -> ValueOption<TyconRef>
 
 val tryDestTyparTy : TcGlobals -> TType -> ValueOption<Typar>
 

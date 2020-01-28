@@ -233,10 +233,12 @@ rule token args skip = parse
      { YIELD_BANG(false) } 
  | "match!"
      { MATCH_BANG }
+ | "and!"
+     { AND_BANG(false) }
  | ident '!' 
      { let tok = Keywords.KeywordOrIdentifierToken args lexbuf (lexemeTrimRight lexbuf 1) 
        match tok with 
-       | LET _ -> BINDER (lexemeTrimRight lexbuf 1) 
+       | LET _ -> BINDER (lexemeTrimRight lexbuf 1)
        | _ -> fail args lexbuf (FSComp.SR.lexIdentEndInMarkReserved("!")) (Keywords.KeywordOrIdentifierToken args lexbuf (lexeme lexbuf)) } 
  | ident ('#')  
      { fail args lexbuf (FSComp.SR.lexIdentEndInMarkReserved("#")) (Keywords.KeywordOrIdentifierToken args lexbuf (lexeme lexbuf)) }

@@ -547,7 +547,7 @@ let ExtensionPropInfosOfTypeInScope collectionSettings (infoReader:InfoReader) (
         let extMemsFromHierarchy =
             infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
             |> List.collect (fun ty ->
-                 match tryDestAppTy g ty with
+                 match tryTcrefOfAppTy g ty with
                  | ValueSome tcref ->
                     let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
                     SelectPropInfosFromExtMembers infoReader ad optFilter ty m extMemInfos
@@ -617,7 +617,7 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSetting
             infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
             |> List.collect (fun ty ->
                 let g = infoReader.g
-                match tryDestAppTy g ty with
+                match tryTcrefOfAppTy g ty with
                 | ValueSome tcref ->
                     let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
                     SelectMethInfosFromExtMembers infoReader optFilter ty  m extValRefs
@@ -2377,7 +2377,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
             match lookupKind with
             | LookupKind.Expr | LookupKind.Pattern ->
-                match tryDestAppTy g ty with
+                match tryTcrefOfAppTy g ty with
                 | ValueSome tcref ->
                     for uc in tcref.UnionCasesArray do
                         addToBuffer uc.DisplayName
@@ -2390,7 +2390,7 @@ and ResolveLongIdentInNestedTypes (ncenv: NameResolver) nenv lookupKind resInfo 
     tys
     |> CollectAtMostOneResult (fun ty ->
         let resInfo = 
-             match tryDestAppTy ncenv.g ty with
+             match tryTcrefOfAppTy ncenv.g ty with
              | ValueSome tcref ->
                 resInfo.AddEntity(id.idRange, tcref) 
              | _ ->
@@ -3247,7 +3247,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
             |> List.map (fun x -> ResolutionInfo.Empty, FieldResolution(x, false))
 
-        match tryDestAppTy g ty with
+        match tryTcrefOfAppTy g ty with
         | ValueSome tcref ->
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText, m, ty) with
             | ValueSome (RecdFieldInfo(_, rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref, false)]
@@ -3561,7 +3561,7 @@ let ItemOfTyconRef ncenv m (x: TyconRef) =
 
 let ItemOfTy g x =
     let nm = 
-        match tryDestAppTy g x with
+        match tryTcrefOfAppTy g x with
         | ValueSome tcref -> tcref.DisplayName 
         | _ -> "?"
     Item.Types (nm, [x])
