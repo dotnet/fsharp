@@ -5246,14 +5246,13 @@ module ScriptPreprocessClosure =
                                         yield! loop subSource
                                 else
                                     yield ClosureFile(subFile, m, None, [], [], []) 
+
                             yield ClosureFile(filename, m, Some parsedScriptAst, parseDiagnostics, errorLogger.Diagnostics, noWarns)
 
                         | None -> 
-                            printfn "yielding source %s (failed parse)" filename
                             yield ClosureFile(filename, m, None, parseDiagnostics, [], [])
                     else 
                         // Don't traverse into .fs leafs.
-                        printfn "yielding non-script source %s" filename
                         yield ClosureFile(filename, m, None, [], [], []) ]
 
         closureSources |> List.collect loop, tcConfig

@@ -82,6 +82,11 @@
         <target state="translated">屬性無法套用到類型延伸模組。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMemberOperatorDefinitionInExtrinsic">
+        <source>Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</source>
+        <target state="new">Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="new">use! may not be combined with and!</target>
@@ -5325,11 +5330,6 @@
       <trans-unit id="tcConditionalAttributeUsage">
         <source>Attribute 'System.Diagnostics.ConditionalAttribute' is only valid on methods or attribute classes</source>
         <target state="translated">屬性 'System.Diagnostics.ConditionalAttribute' 只有在方法或屬性類別上才有效</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcMemberOperatorDefinitionInExtrinsic">
-        <source>Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</source>
-        <target state="translated">擴充成員無法提供運算子多載。請考慮將運算子改成定義為類型定義的一部分。</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">

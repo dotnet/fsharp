@@ -29,6 +29,7 @@ type LanguageFeature =
     | FromEndSlicing
     | FixedIndexSlice3d4d
     | AndBang
+    | ExtensionConstraintSolutions
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -62,6 +63,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.PackageManagement, previewVersion
+            LanguageFeature.ExtensionConstraintSolutions, previewVersion
             LanguageFeature.AndBang, previewVersion
         ]
 

@@ -82,6 +82,11 @@
         <target state="translated">Attribute können nicht auf Typerweiterungen angewendet werden.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcMemberOperatorDefinitionInExtrinsic">
+        <source>Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</source>
+        <target state="new">Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="new">use! may not be combined with and!</target>
@@ -5325,11 +5330,6 @@
       <trans-unit id="tcConditionalAttributeUsage">
         <source>Attribute 'System.Diagnostics.ConditionalAttribute' is only valid on methods or attribute classes</source>
         <target state="translated">Das Attribut "System.Diagnostics.ConditionalAttribute" ist nur bei Methoden oder Attributklassen gültig.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcMemberOperatorDefinitionInExtrinsic">
-        <source>Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</source>
-        <target state="translated">Erweiterungsmember können keine Operatorüberladungen bereitstellen. Definieren Sie den Operator stattdessen als Teil der Typdefinition.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
