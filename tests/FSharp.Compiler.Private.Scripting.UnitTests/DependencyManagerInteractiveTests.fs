@@ -27,20 +27,20 @@ type DependencyManagerInteractiveTests() =
     [<Test>]
     member __.``SmokeTest - #r nuget``() =
         let text = """
-#r @"nuget:System.Collections.Immutable, version=1.5.0"
+#r @"nuget:Newtonsoft.Json, Version=9.0.1"
 0"""
         use script = scriptHost()
         let mutable assemblyResolveEventCount = 0
         let mutable foundAssemblyReference = false
         Event.add (fun (assembly: string) ->
             assemblyResolveEventCount <- assemblyResolveEventCount + 1
-            foundAssemblyReference <- String.Compare("System.Collections.Immutable.dll", Path.GetFileName(assembly), StringComparison.OrdinalIgnoreCase) = 0)
+            foundAssemblyReference <- String.Compare("Newtonsoft.Json.dll", Path.GetFileName(assembly), StringComparison.OrdinalIgnoreCase) = 0)
             script.AssemblyReferenceAdded
         let opt = script.Eval(text) |> getValue
         let value = opt.Value
         Assert.AreEqual(typeof<int>, value.ReflectionType)
         Assert.AreEqual(0, value.ReflectionValue :?> int)
-        Assert.AreEqual(1, assemblyResolveEventCount)
+        Assert.Greater(assemblyResolveEventCount, 0)
         Assert.AreEqual(true, foundAssemblyReference)
 
     [<Test>]
@@ -61,7 +61,7 @@ type DependencyManagerInteractiveTests() =
 
     [<Test>]
     member __.``Dependency add events successful``() =
-        let referenceText = "System.Collections.Immutable, version=1.5.0"
+        let referenceText = "Newtonsoft.Json, Version=9.0.1"
         let text = referenceText |> sprintf """
 #r @"nuget:%s"
 0"""
@@ -118,6 +118,6 @@ type DependencyManagerInteractiveTests() =
         use script = scriptHost()
         let mutable dependencyAddingEventCount = 0
         Event.add (fun _ -> dependencyAddingEventCount <- dependencyAddingEventCount + 1) script.DependencyAdding
-        script.Eval("#r \"nuget:System.Collections.Immutable, Version=1.5.0\"") |> ignoreValue
+        script.Eval("#r \"nuget:NUnit.ConsoleRunner, Version=3.10.0\"") |> ignoreValue
         script.Eval("#r \"nuget:Newtonsoft.Json, Version=9.0.1\"\n0") |> ignoreValue
         Assert.AreEqual(2, dependencyAddingEventCount)

@@ -1074,23 +1074,28 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) =
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then mkEquals mkRecdEquality 
     else []
 
-let rec TypeDefinitelyHasEquality g ty = 
-    if isAppTy g ty && HasFSharpAttribute g g.attrib_NoEqualityAttribute (tcrefOfAppTy g ty).Attribs then
+let rec TypeDefinitelyHasEquality g ty =
+    let appTy = tryAppTy g ty
+    match appTy with
+    | ValueSome(tcref,_) when HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs ->
         false
-    elif isTyparTy g ty && 
-         (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then
-        true
-    else 
-        match ty with 
-        | SpecialEquatableHeadType g tinst -> 
-            tinst |> List.forall (TypeDefinitelyHasEquality g)
-        | SpecialNotEquatableHeadType g _ -> 
-            false
-        | _ -> 
-           // The type is equatable because it has Object.Equals(...)
-           isAppTy g ty &&
-           let tcref, tinst = destAppTy g ty 
-           // Give a good error for structural types excluded from the equality relation because of their fields
-           not (TyconIsCandidateForAugmentationWithEquals g tcref.Deref && Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues) &&
-           // Check the (possibly inferred) structural dependencies
-           (tinst, tcref.TyparsNoRange) ||> List.lengthsEqAndForall2 (fun ty tp -> not tp.EqualityConditionalOn || TypeDefinitelyHasEquality  g ty)
+    | _ ->
+        if isTyparTy g ty && 
+             (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then
+            true
+        else 
+            match ty with 
+            | SpecialEquatableHeadType g tinst -> 
+                tinst |> List.forall (TypeDefinitelyHasEquality g)
+            | SpecialNotEquatableHeadType g _ -> 
+                false
+            | _ -> 
+               // The type is equatable because it has Object.Equals(...)
+               match appTy with
+               | ValueSome(tcref,tinst) ->
+                   // Give a good error for structural types excluded from the equality relation because of their fields
+                   not (TyconIsCandidateForAugmentationWithEquals g tcref.Deref && Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues) &&
+                   // Check the (possibly inferred) structural dependencies
+                   (tinst, tcref.TyparsNoRange) 
+                   ||> List.lengthsEqAndForall2 (fun ty tp -> not tp.EqualityConditionalOn || TypeDefinitelyHasEquality  g ty)
+               | _ -> false

@@ -719,9 +719,9 @@ module internal SymbolHelpers =
             // In this case just bail out and assume items are not equal
             protectAssemblyExploration false (fun () -> 
               let equalHeadTypes(ty1, ty2) =
-                  match tryDestAppTy g ty1 with
+                  match tryTcrefOfAppTy g ty1 with
                   | ValueSome tcref1 ->
-                    match tryDestAppTy g ty2 with
+                    match tryTcrefOfAppTy g ty2 with
                     | ValueSome tcref2 -> tyconRefEq g tcref1 tcref2
                     | _ -> typeEquiv g ty1 ty2
                   | _ -> typeEquiv g ty1 ty2
@@ -780,7 +780,7 @@ module internal SymbolHelpers =
             protectAssemblyExploration 1027 (fun () -> 
               match item with 
               | ItemWhereTypIsPreferred ty -> 
-                  match tryDestAppTy g ty with
+                  match tryTcrefOfAppTy g ty with
                   | ValueSome tcref -> hash tcref.LogicalName
                   | _ -> 1010
               | Item.ILField(ILFieldInfo(_, fld)) -> 
@@ -841,16 +841,19 @@ module internal SymbolHelpers =
         protectAssemblyExploration true (fun () -> 
          match item with 
          | Item.Types(it, [ty]) -> 
-             isAppTy g ty &&
-             g.suppressed_types 
-             |> List.exists (fun supp -> 
-                let generalizedSupp = generalizedTyconRef g supp
-                // check the display name is precisely the one we're suppressing
-                isAppTy g generalizedSupp && it = supp.DisplayName &&
-                // check if they are the same logical type (after removing all abbreviations)
-                let tcr1 = tcrefOfAppTy g ty
-                let tcr2 = tcrefOfAppTy g generalizedSupp
-                tyconRefEq g tcr1 tcr2) 
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcr1 ->
+                 g.suppressed_types 
+                 |> List.exists (fun supp -> 
+                    let generalizedSupp = generalizedTyconRef g supp
+                    // check the display name is precisely the one we're suppressing
+                    match tryTcrefOfAppTy g generalizedSupp with
+                    | ValueSome tcr2 ->
+                        it = supp.DisplayName &&
+                        // check if they are the same logical type (after removing all abbreviations)
+                        tyconRefEq g tcr1 tcr2
+                        | _ -> false) 
+                | _ -> false
          | _ -> false)
 
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
@@ -892,7 +895,7 @@ module internal SymbolHelpers =
         | Item.FakeInterfaceCtor ty 
         | Item.DelegateCtor ty 
         | Item.Types(_, ty :: _) -> 
-            match tryDestAppTy g ty with
+            match tryTcrefOfAppTy g ty with
             | ValueSome tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 

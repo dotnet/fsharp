@@ -384,7 +384,7 @@ module internal DescriptionListsImpl =
          
          /// Find the glyph for the given type representation.
          let typeToGlyph ty = 
-            match tryDestAppTy denv.g ty with
+            match tryTcrefOfAppTy denv.g ty with
             | ValueSome tcref -> tcref.TypeReprInfo |> reprToGlyph
             | _ ->
                 if isStructTupleTy denv.g ty then FSharpGlyph.Struct

@@ -82,7 +82,7 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy 
                 GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy betterMetadataTy
                   |> List.filter (fun minfo -> not minfo.IsInstance)
             else
-                match tryDestAppTy g metadataTy with
+                match tryTcrefOfAppTy g metadataTy with
                 | ValueNone -> []
                 | ValueSome tcref ->
                     SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter origTy None) tcref
@@ -170,7 +170,7 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy 
                 let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
                 GetImmediateIntrinsicPropInfosOfTypeAux (optFilter, ad) g amap m origTy betterMetadataTy
             else
-                match tryDestAppTy g metadataTy with
+                match tryTcrefOfAppTy g metadataTy with
                 | ValueNone -> []
                 | ValueSome tcref ->
                     let propCollector = new PropertyCollector(g, amap, m, origTy, optFilter, ad)
@@ -189,7 +189,7 @@ let rec GetImmediateIntrinsicPropInfosOfType (optFilter, ad) g amap m ty =
 let IsIndexerType g amap ty = 
     isArray1DTy g ty ||
     isListTy g ty ||
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref ->
         let entityTy = generalizedTyconRef g tcref
         let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g amap range0 entityTy
@@ -269,7 +269,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
 
     /// Get the F#-declared record fields or class 'val' fields of a type
     let GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter, _ad) _m ty =
-        match tryDestAppTy g ty with 
+        match tryTcrefOfAppTy g ty with 
         | ValueNone -> []
         | ValueSome tcref -> 
             // Note;secret fields are not allowed in lookups here, as we're only looking
@@ -424,7 +424,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
         | flds ->
             // multiple fields with the same name can come from different classes,
             // so filter them by the given type name
-            match tryDestAppTy g ty with 
+            match tryTcrefOfAppTy g ty with 
             | ValueNone -> ValueNone
             | ValueSome tcref ->
                 match flds |> List.filter (fun rfinfo -> tyconRefEq g tcref rfinfo.TyconRef) with
@@ -470,7 +470,7 @@ let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader: InfoReader) m origTy 
             let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
             GetIntrinsicConstructorInfosOfTypeAux infoReader m origTy betterMetadataTy
         else
-            match tryDestAppTy g metadataTy with
+            match tryTcrefOfAppTy g metadataTy with
             | ValueNone -> []
             | ValueSome tcref -> 
                 tcref.MembersOfFSharpTyconByName 

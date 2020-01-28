@@ -251,12 +251,14 @@ and remapTyparConstraintsAux tyenv cs =
              Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty, m))
          | TyparConstraint.MayResolveMember(traitInfo, m) -> 
              Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo, m))
-         | TyparConstraint.DefaultsTo(priority, ty, m) -> Some(TyparConstraint.DefaultsTo(priority, remapTypeAux tyenv ty, m))
+         | TyparConstraint.DefaultsTo(priority, ty, m) ->
+             Some(TyparConstraint.DefaultsTo(priority, remapTypeAux tyenv ty, m))
          | TyparConstraint.IsEnum(uty, m) -> 
              Some(TyparConstraint.IsEnum(remapTypeAux tyenv uty, m))
          | TyparConstraint.IsDelegate(uty1, uty2, m) -> 
              Some(TyparConstraint.IsDelegate(remapTypeAux tyenv uty1, remapTypeAux tyenv uty2, m))
-         | TyparConstraint.SimpleChoice(tys, m) -> Some(TyparConstraint.SimpleChoice(remapTypesAux tyenv tys, m))
+         | TyparConstraint.SimpleChoice(tys, m) ->
+             Some(TyparConstraint.SimpleChoice(remapTypesAux tyenv tys, m))
          | TyparConstraint.SupportsComparison _ 
          | TyparConstraint.SupportsEquality _ 
          | TyparConstraint.SupportsNull _ 
@@ -832,9 +834,9 @@ let destAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst, _)
 let tcrefOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> tcref | _ -> failwith "tcrefOfAppTy") 
 let nullnessOfTy g ty = ty |> stripTyEqns g |> (function TType_app(_, _, nullness) | TType_fun (_, _, nullness) | TType_var (_, nullness) -> nullness | _ -> g.knownWithoutNull) 
 let argsOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(_, tinst, _) -> tinst | _ -> [])
-let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _nullness) -> ValueSome v | _ -> ValueNone)
-let tryDestFunTy g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau, _nullness) -> ValueSome(tyv, tau) | _ -> ValueNone)
-let tryDestAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> ValueSome tcref | _ -> ValueNone)
+let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _) -> ValueSome v | _ -> ValueNone)
+let tryDestFunTy g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau, _) -> ValueSome(tyv, tau) | _ -> ValueNone)
+let tryTcrefOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _, _) -> ValueSome tcref | _ -> ValueNone)
 let tryDestAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, tys) -> ValueSome (anonInfo, tys) | _ -> ValueNone)
 
 let tryAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var (v, _nullness) -> ValueSome v | TType_measure unt when isUnitParMeasure g unt -> ValueSome(destUnitParMeasure g unt) | _ -> ValueNone)
@@ -1724,17 +1726,17 @@ let isFSharpObjModelRefTy g ty =
     | TTyconStruct | TTyconEnum -> false
 
 let isFSharpClassTy g ty =
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.Deref.IsFSharpClassTycon
     | _ -> false
 
 let isFSharpStructTy g ty =
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.Deref.IsFSharpStructOrEnumTycon
     | _ -> false
 
 let isFSharpInterfaceTy g ty = 
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.Deref.IsFSharpInterfaceTycon
     | _ -> false
 
@@ -1745,7 +1747,7 @@ let isDelegateTy g ty =
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsDelegate
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-        match tryDestAppTy g ty with
+        match tryTcrefOfAppTy g ty with
         | ValueSome tcref -> tcref.Deref.IsFSharpDelegateTycon
         | _ -> false
 
@@ -1766,12 +1768,12 @@ let isClassTy g ty =
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpClassTy g ty
 
 let isStructOrEnumTyconTy g ty = 
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.Deref.IsStructOrEnumTycon
     | _ -> false
 
 let isStructRecordOrUnionTyconTy g ty = 
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.Deref.IsStructRecordOrUnionTycon
     | _ -> false
 
@@ -1780,7 +1782,7 @@ let isStructTyconRef (tcref: TyconRef) =
     tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
 
 let isStructTy g ty =
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> 
         isStructTyconRef tcref
     | _ -> 
@@ -1811,7 +1813,7 @@ let isRefTy g ty =
 // [Note: Constructed types and type-parameters are never unmanaged-types. end note]
 let rec isUnmanagedTy g ty =
     let ty = stripTyEqnsAndMeasureEqns g ty
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref ->
         let isEq tcref2 = tyconRefEq g tcref tcref2 
         if isEq g.nativeptr_tcr || isEq g.nativeint_tcr ||
@@ -1843,7 +1845,7 @@ let isInterfaceTycon x =
 let isInterfaceTyconRef (tcref: TyconRef) = isInterfaceTycon tcref.Deref
 
 let isEnumTy g ty = 
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> tcref.IsEnumTycon
 
@@ -3122,7 +3124,7 @@ let destNativePtrTy g ty =
     | _ -> failwith "destNativePtrTy: not a native ptr type"
 
 let isRefCellTy g ty = 
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> tyconRefEq g g.refcell_tcr_canon tcref
 
@@ -3147,7 +3149,7 @@ let mkOptionTy (g: TcGlobals) ty = TType_app (g.option_tcr_nice, [ty], g.knownWi
 let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty], g.knownWithoutNull)
 
 let isOptionTy (g: TcGlobals) ty = 
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> tyconRefEq g g.option_tcr_canon tcref
 
@@ -3162,7 +3164,7 @@ let destOptionTy g ty =
     | ValueNone -> failwith "destOptionTy: not an option type"
 
 let isNullableTy (g: TcGlobals) ty = 
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> tyconRefEq g g.system_Nullable_tcref tcref
 
@@ -3187,7 +3189,7 @@ let (|StripNullableTy|) g ty =
     | _ -> ty
 
 let isLinqExpressionTy g ty = 
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> tyconRefEq g g.system_LinqExpression_tcref tcref
 
@@ -4939,7 +4941,7 @@ let decideStaticOptimizationConstraint g c =
        checkTypes a b
     | TTyconIsStruct a -> 
        let a = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g a)
-       match tryDestAppTy g a with 
+       match tryTcrefOfAppTy g a with 
        | ValueSome tcref1 -> if tcref1.IsStructOrEnumTycon then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
        | ValueNone -> StaticOptimizationAnswer.Unknown
             
@@ -6048,7 +6050,7 @@ let isRecdOrStructTyconRefReadOnly g m tcref =
     isRecdOrStructTyconRefReadOnlyAux g m false tcref
 
 let isRecdOrStructTyReadOnlyAux (g: TcGlobals) m isInref ty =
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> isRecdOrStructTyconRefReadOnlyAux g m isInref tcref
 
@@ -6594,7 +6596,7 @@ let mkMinusOne g m = mkInt g m (-1)
 let destInt32 = function Expr.Const (Const.Int32 n, _, _) -> Some n | _ -> None
 
 let isIDelegateEventType g ty =
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tyconRefEq g g.fslib_IDelegateEvent_tcr tcref
     | _ -> false
 
@@ -8031,7 +8033,7 @@ let TyconRefNullIsExtraValueNew g m tcref = TyconRefNullIsExtraValue true g m tc
 /// The F# 4.5 logic about whether a type admits the use of 'null' as a value.
 let TypeNullIsExtraValueOld g m ty = 
     if isILReferenceTy g ty || isDelegateTy g ty then
-        match tryDestAppTy g ty with 
+        match tryTcrefOfAppTy g ty with 
         | ValueSome tcref -> 
             // In F# 4.x, putting AllowNullLiteralAttribute(false) on an IL or provided 
             // type means 'null' can't be used with that type, otherwise it can
@@ -8043,7 +8045,7 @@ let TypeNullIsExtraValueOld g m ty =
         false
     else 
         // In F# 4.x, putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
-        match tryDestAppTy g ty with 
+        match tryTcrefOfAppTy g ty with 
         | ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true 
         | _ -> false
 
@@ -8064,7 +8066,7 @@ let TypeNullIsExtraValueNew g m ty =
 
 /// The F# 4.5 and 5.0 logic about whether a type uses 'null' as a true representation value
 let TypeNullIsTrueValue g ty =
-    (match tryDestAppTy g ty with
+    (match tryTcrefOfAppTy g ty with
      | ValueSome tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
      | _ -> false) 
    || (isUnitTy g ty)

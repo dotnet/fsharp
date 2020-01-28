@@ -255,7 +255,7 @@ let RefuteDiscrimSet g m path discrims =
             match c' with
             | None -> raise CannotRefute
             | Some c ->
-                match tryDestAppTy g ty with
+                match tryTcrefOfAppTy g ty with
                 | ValueSome tcref when tcref.IsEnumTycon ->
                     // We must distinguish between F#-defined enums and other .NET enums, as they are represented differently in the TAST
                     let enumValues =

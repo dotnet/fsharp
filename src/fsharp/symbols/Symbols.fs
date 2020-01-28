@@ -2544,5 +2544,30 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
     member __.Range = Range.toZ range
 
     member __.RangeAlternate = range
+     
+    member this.IsPrivateToFile = 
+        let isPrivate =
+            match this.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || m.Accessibility.IsPrivate
+            | :? FSharpEntity as m -> m.Accessibility.IsPrivate
+            | :? FSharpGenericParameter -> true
+            | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
+            | :? FSharpField as m -> m.Accessibility.IsPrivate
+            | _ -> false
+            
+        let declarationLocation =
+            match this.Symbol.SignatureLocation with
+            | Some x -> Some x
+            | _ ->
+                match this.Symbol.DeclarationLocation with
+                | Some x -> Some x
+                | _ -> this.Symbol.ImplementationLocation
+            
+        let declaredInTheFile = 
+            match declarationLocation with
+            | Some declRange -> declRange.FileName = this.RangeAlternate.FileName
+            | _ -> false
+            
+        isPrivate && declaredInTheFile   
 
     override __.ToString() = sprintf "%O, %O, %O" symbol itemOcc range 

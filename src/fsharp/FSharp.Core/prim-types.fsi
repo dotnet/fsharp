@@ -2737,6 +2737,15 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToInt")>]
         val inline int        : value:^T -> int        when ^T : (static member op_Explicit : ^T -> int)        and default ^T : int
         
+        /// <summary>Converts the argument to an unsigned 32-bit integer. This is a direct conversion for all 
+        /// primitive numeric types. For strings, the input is converted using <c>UInt32.Parse()</c>  
+        /// with InvariantCulture settings. Otherwise the operation requires an appropriate
+        /// static conversion method on the input type.</summary>
+        /// <param name="value">The input value.</param>
+        /// <returns>The converted int</returns>
+        [<CompiledName("ToUInt")>]
+        val inline uint: value:^T -> uint when ^T: (static member op_Explicit: ^T -> uint) and default ^T: uint
+
         /// <summary>Converts the argument to a particular enum type.</summary>
         /// <param name="value">The input value.</param>
         /// <returns>The converted enum type.</returns>

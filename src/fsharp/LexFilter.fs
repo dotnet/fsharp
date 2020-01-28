@@ -1807,6 +1807,13 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             pushCtxt tokenTup (CtxtLetDecl(blockLet, tokenStartPos))
             returnToken tokenLexbufState (if blockLet then OBINDER b else token)
 
+        //  and!  ... ~~~> CtxtLetDecl 
+        | AND_BANG isUse, (ctxt :: _) -> 
+            let blockLet = match ctxt with CtxtSeqBlock _ -> true | _ -> false
+            if debug then dprintf "AND!: entering CtxtLetDecl(blockLet=%b), awaiting EQUALS to go to CtxtSeqBlock (%a)\n" blockLet outputPos tokenStartPos
+            pushCtxt tokenTup (CtxtLetDecl(blockLet,tokenStartPos))
+            returnToken tokenLexbufState (if blockLet then OAND_BANG isUse else token)
+
         | (VAL | STATIC | ABSTRACT | MEMBER | OVERRIDE | DEFAULT), ctxtStack when thereIsACtxtMemberBodyOnTheStackAndWeShouldPopStackForUpcomingMember ctxtStack -> 
             if debug then dprintf "STATIC/MEMBER/OVERRIDE/DEFAULT: already inside CtxtMemberBody, popping all that context before starting next member...\n"
             // save this token, we'll consume it again later...

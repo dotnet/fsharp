@@ -38,6 +38,7 @@
     <Compile Include="Compiler\CodeGen\EmittedIL\LiteralValue.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\TailCalls.fs" />
+    <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
     <Compile Include="Compiler\ErrorMessages\ConstructorTests.fs" />
     <Compile Include="Compiler\ErrorMessages\ClassesTests.fs" />
@@ -59,6 +60,7 @@
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
+    <Compile Include="Compiler\Language\UIntTests.fs" />
     <Compile Include="Compiler\Language\FixedIndexSliceTests.fs" />
     <Compile Include="Compiler\Language\SlicingQuotationTests.fs" />
     <Compile Include="Compiler\Language\CustomCollectionTests.fs" />

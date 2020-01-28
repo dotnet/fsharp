@@ -28,6 +28,7 @@
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Tasks.Core.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Reflection.Metadata.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Collections.Immutable.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Buffers.dll" />
     </ItemGroup>
   </Target>
 

@@ -66,6 +66,10 @@ type ByteMemory () =
 type ByteArrayMemory(bytes: byte[], offset, length) =
     inherit ByteMemory()
 
+    let checkCount count =
+        if count < 0 then
+            raise (ArgumentOutOfRangeException("count", "Count is less than zero."))
+
     do
         if length < 0 || length > bytes.Length then
             raise (ArgumentOutOfRangeException("length"))
@@ -80,7 +84,11 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
     override _.Length = length
 
     override _.ReadBytes(pos, count) = 
-        Array.sub bytes (offset + pos) count
+        checkCount count
+        if count > 0 then
+            Array.sub bytes (offset + pos) count
+        else
+            Array.empty
 
     override _.ReadInt32 pos =
         let finalOffset = offset + pos
@@ -96,25 +104,45 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
         ((uint16 bytes.[finalOffset + 1]) <<< 8)
 
     override _.ReadUtf8String(pos, count) =
-        System.Text.Encoding.UTF8.GetString(bytes, offset + pos, count)
+        checkCount count
+        if count > 0 then
+            System.Text.Encoding.UTF8.GetString(bytes, offset + pos, count)
+        else
+            String.Empty
 
     override _.Slice(pos, count) =
-        ByteArrayMemory(bytes, offset + pos, count) :> ByteMemory
+        checkCount count
+        if count > 0 then
+            ByteArrayMemory(bytes, offset + pos, count) :> ByteMemory
+        else
+            ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
 
     override _.CopyTo stream =
-        stream.Write(bytes, offset, length)
+        if length > 0 then
+            stream.Write(bytes, offset, length)
 
     override _.Copy(srcOffset, dest, destOffset, count) =
-        Array.blit bytes (offset + srcOffset) dest destOffset count
+        checkCount count
+        if count > 0 then
+            Array.blit bytes (offset + srcOffset) dest destOffset count
 
     override _.ToArray() =
-        Array.sub bytes offset length
+        if length > 0 then
+            Array.sub bytes offset length
+        else
+            Array.empty
 
     override _.AsStream() =
-        new MemoryStream(bytes, offset, length) :> Stream
+        if length > 0 then
+            new MemoryStream(bytes, offset, length) :> Stream
+        else
+            new MemoryStream([||], 0, 0, false) :> Stream
 
     override _.AsReadOnlyStream() =
-        new MemoryStream(bytes, offset, length, false) :> Stream
+        if length > 0 then
+            new MemoryStream(bytes, offset, length, false) :> Stream
+        else
+            new MemoryStream([||], 0, 0, false) :> Stream
 
 [<Sealed>]
 type SafeUnmanagedMemoryStream =
@@ -149,6 +177,10 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
         if i < 0 || i >= length then 
             raise (ArgumentOutOfRangeException("i"))
 
+    let checkCount count =
+        if count < 0 then
+            raise (ArgumentOutOfRangeException("count", "Count is less than zero."))
+
     do
         if length < 0 then
             raise (ArgumentOutOfRangeException("length"))
@@ -165,16 +197,24 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
     override _.Length = length
 
     override _.ReadUtf8String(pos, count) =
-        check pos
-        check (pos + count - 1)
-        System.Text.Encoding.UTF8.GetString(NativePtr.add addr pos, count)
+        checkCount count
+        if count > 0 then
+            check pos
+            check (pos + count - 1)
+            System.Text.Encoding.UTF8.GetString(NativePtr.add addr pos, count)
+        else
+            String.Empty
 
-    override _.ReadBytes(pos, count) =
-        check pos
-        check (pos + count - 1)
-        let res = Bytes.zeroCreate count
-        Marshal.Copy(NativePtr.toNativeInt addr + nativeint pos, res, 0, count)
-        res
+    override _.ReadBytes(pos, count) = 
+        checkCount count
+        if count > 0 then
+            check pos
+            check (pos + count - 1)
+            let res = Bytes.zeroCreate count
+            Marshal.Copy(NativePtr.toNativeInt addr + nativeint pos, res, 0, count)
+            res
+        else
+            Array.empty
 
     override _.ReadInt32 pos =
         check pos
@@ -187,28 +227,44 @@ type RawByteMemory(addr: nativeptr<byte>, length: int, holder: obj) =
         uint16(Marshal.ReadInt16(NativePtr.toNativeInt addr + nativeint pos))
 
     override _.Slice(pos, count) =
-        check pos
-        check (pos + count - 1)
-        RawByteMemory(NativePtr.add addr pos, count, holder) :> ByteMemory
+        checkCount count
+        if count > 0 then
+            check pos
+            check (pos + count - 1)
+            RawByteMemory(NativePtr.add addr pos, count, holder) :> ByteMemory
+        else
+            ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
 
     override x.CopyTo stream =
-        use stream2 = x.AsStream()
-        stream2.CopyTo stream
+        if length > 0 then
+            use stream2 = x.AsStream()
+            stream2.CopyTo stream
 
     override _.Copy(srcOffset, dest, destOffset, count) =
-        check srcOffset
-        Marshal.Copy(NativePtr.toNativeInt addr + nativeint srcOffset, dest, destOffset, count)
+        checkCount count
+        if count > 0 then
+            check srcOffset
+            Marshal.Copy(NativePtr.toNativeInt addr + nativeint srcOffset, dest, destOffset, count)
 
     override _.ToArray() =
-        let res = Array.zeroCreate<byte> length
-        Marshal.Copy(NativePtr.toNativeInt addr, res, 0, res.Length)
-        res
+        if length > 0 then
+            let res = Array.zeroCreate<byte> length
+            Marshal.Copy(NativePtr.toNativeInt addr, res, 0, res.Length)
+            res
+        else
+            Array.empty
 
     override _.AsStream() =
-        new SafeUnmanagedMemoryStream(addr, int64 length, holder) :> Stream
+        if length > 0 then
+            new SafeUnmanagedMemoryStream(addr, int64 length, holder) :> Stream
+        else
+            new MemoryStream([||], 0, 0, false) :> Stream
 
     override _.AsReadOnlyStream() =
-        new SafeUnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read, holder) :> Stream            
+        if length > 0 then
+            new SafeUnmanagedMemoryStream(addr, int64 length, int64 length, FileAccess.Read, holder) :> Stream
+        else
+            new MemoryStream([||], 0, 0, false) :> Stream
 
 [<Struct;NoEquality;NoComparison>]
 type ReadOnlyByteMemory(bytes: ByteMemory) =
