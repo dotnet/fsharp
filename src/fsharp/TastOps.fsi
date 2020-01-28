@@ -668,7 +668,7 @@ val destAppTy      : TcGlobals -> TType -> TyconRef * TypeInst
 
 val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
 
-val tryDestAppTy   : TcGlobals -> TType -> ValueOption<TyconRef>
+val tryTcrefOfAppTy   : TcGlobals -> TType -> ValueOption<TyconRef>
 
 val tryDestTyparTy : TcGlobals -> TType -> ValueOption<Typar>
 
@@ -1208,16 +1208,16 @@ val MakeExportRemapping : CcuThunk -> ModuleOrNamespace -> Remap
 val ApplyExportRemappingToEntity :  TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace 
 
 /// Determine if a type definition is hidden by a signature
-val IsHiddenTycon     : TcGlobals -> (Remap * SignatureHidingInfo) list -> Tycon -> bool
+val IsHiddenTycon: (Remap * SignatureHidingInfo) list -> Tycon -> bool
 
 /// Determine if the representation of a type definition is hidden by a signature
-val IsHiddenTyconRepr : TcGlobals -> (Remap * SignatureHidingInfo) list -> Tycon -> bool
+val IsHiddenTyconRepr: (Remap * SignatureHidingInfo) list -> Tycon -> bool
 
 /// Determine if a member, function or value is hidden by a signature
-val IsHiddenVal       : (Remap * SignatureHidingInfo) list -> Val -> bool
+val IsHiddenVal: (Remap * SignatureHidingInfo) list -> Val -> bool
 
 /// Determine if a record field is hidden by a signature
-val IsHiddenRecdField : (Remap * SignatureHidingInfo) list -> RecdFieldRef -> bool
+val IsHiddenRecdField: (Remap * SignatureHidingInfo) list -> RecdFieldRef -> bool
 
 /// Adjust marks in expressions, replacing all marks by the given mark.
 /// Used when inlining.

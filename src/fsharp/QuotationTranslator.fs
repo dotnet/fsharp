@@ -988,6 +988,7 @@ and ConvILTypeRef cenv (tr: ILTypeRef) =
         let assemblyRef =
             match tr.Scope with
             | ILScopeRef.Local -> "."
+            | ILScopeRef.PrimaryAssembly -> cenv.g.ilg.primaryAssemblyScopeRef.QualifiedName
             | _ -> tr.Scope.QualifiedName
 
         QP.Named(tr.BasicQualifiedName, assemblyRef)

@@ -102,7 +102,7 @@ let ConsoleErrorLoggerUpToMaxErrors (tcConfigB: TcConfigBuilder, exiter : Exiter
             member __.HandleIssue(tcConfigB, err, isError) =
                 DoWithErrorColor isError (fun () -> 
                     let diag = OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, isError)
-                    writeViaBufferWithEnvironmentNewLines stderr diag err
+                    writeViaBuffer stderr diag err
                     stderr.WriteLine())
     } :> ErrorLogger
 
@@ -316,7 +316,7 @@ module InterfaceFileWriter =
 
         for (TImplFile (_, _, mexpr, _, _, _)) in declaredImpls do
             let denv = BuildInitialDisplayEnvForSigFileGeneration tcGlobals
-            writeViaBufferWithEnvironmentNewLines os (fun os s -> Printf.bprintf os "%s\n\n" s)
+            writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
               (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Layout.squashTo 80 |> Layout.showL)
        
         if tcConfig.printSignatureFile <> "" then os.Dispose()
@@ -1282,7 +1282,7 @@ module StaticLinker =
           mutable visited: bool }
 
     // Find all IL modules that are to be statically linked given the static linking roots.
-    let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals, ilxMainModule) = 
+    let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlobals, ilxMainModule) = 
         if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty then 
             []
         else
@@ -1298,7 +1298,7 @@ module StaticLinker =
             let assumedIndependentSet = set [ "mscorlib";  "System"; "System.Core"; "System.Xml"; "Microsoft.Build.Framework"; "Microsoft.Build.Utilities" ]      
 
             begin 
-                let mutable remaining = (computeILRefs ilxMainModule).AssemblyReferences
+                let mutable remaining = (computeILRefs ilGlobals ilxMainModule).AssemblyReferences
                 while not (isNil remaining) do
                     let ilAssemRef = List.head remaining
                     remaining <- List.tail remaining
@@ -1330,8 +1330,7 @@ module StaticLinker =
                                             None
 
                                     let opts : ILReaderOptions = 
-                                        { ilGlobals = ilGlobals
-                                          metadataOnly = MetadataOnlyFlag.No // turn this off here as we need the actual IL code
+                                        { metadataOnly = MetadataOnlyFlag.No // turn this off here as we need the actual IL code
                                           reduceMemoryUsage = tcConfig.reduceMemoryUsage
                                           pdbDirPath = pdbDirPathOption
                                           tryGetMetadataSnapshot = (fun _ -> None) } 
@@ -1591,7 +1590,7 @@ module StaticLinker =
                       if (not isMscorlib && name = PrimaryAssembly.Mscorlib.Name) then
                           error (Error(FSComp.SR.fscStaticLinkingNoProfileMismatches(), rangeCmdArgs))
                       scopeRef
-                  let rewriteAssemblyRefsToMatchLibraries = NormalizeAssemblyRefs (ctok, tcImports)
+                  let rewriteAssemblyRefsToMatchLibraries = NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)
                   Morphs.morphILTypeRefsInILModuleMemoized ilGlobals (Morphs.morphILScopeRefsInILTypeRef (validateTargetPlatform >> rewriteExternalRefsToLocalRefs >> rewriteAssemblyRefsToMatchLibraries)) ilxMainModule
 
               ilxMainModule)
@@ -1979,7 +1978,7 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)            
     let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
-    let tcState,topAttrs,typedAssembly,_tcEnvAtEnd = 
+    let tcState, topAttrs, typedAssembly, _tcEnvAtEnd = 
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs,exiter)
 
     let generatedCcu = tcState.Ccu
@@ -2025,7 +2024,7 @@ let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlo
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
     
     let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
-   
+
     let importMap = tcImports.GetImportMap()
     let metadataVersion = 
         match tcConfig.metadataVersion with

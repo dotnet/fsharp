@@ -477,7 +477,7 @@ let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
         let visitType ty =         
             // We deliberately only check the fully stripped type for accessibility, 
             // because references to private type abbreviations are permitted
-            match tryDestAppTy cenv.g ty with 
+            match tryTcrefOfAppTy cenv.g ty with 
             | ValueNone -> ()
             | ValueSome tcref ->
                 let thisCompPath = compPathOfCcu cenv.viewCcu
@@ -493,7 +493,7 @@ let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
         let visitType ty =         
             // We deliberately only check the fully stripped type for accessibility, 
             // because references to private type abbreviations are permitted
-            match tryDestAppTy cenv.g ty with 
+            match tryTcrefOfAppTy cenv.g ty with 
             | ValueNone -> ()
             | ValueSome tcref ->
                 let thisCompPath = compPathOfCcu cenv.viewCcu
@@ -618,7 +618,7 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
         let visitAppTy (tcref, tinst) = 
             if isByrefLikeTyconRef cenv.g m tcref then
                 let visitType ty0 =
-                    match tryDestAppTy cenv.g ty0 with
+                    match tryTcrefOfAppTy cenv.g ty0 with
                     | ValueNone -> ()
                     | ValueSome tcref2 ->  
                         if isByrefTyconRef cenv.g tcref2 then 
@@ -1024,7 +1024,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
           when not virt && baseVal.BaseOrThisInfo = BaseVal ->
         
         // Disallow calls to abstract base methods on IL types. 
-        match tryDestAppTy g baseVal.Type with
+        match tryTcrefOfAppTy g baseVal.Type with
         | ValueSome tcref when tcref.IsILTycon ->
             try
                 // This is awkward - we have to explicitly re-resolve back to the IL metadata to determine if the method is abstract.
@@ -1926,8 +1926,8 @@ let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) =
     let m = rfield.Range
     let fieldTy = stripTyEqns cenv.g rfield.FormalType
     let isHidden = 
-        IsHiddenTycon cenv.g env.sigToImplRemapInfo tycon || 
-        IsHiddenTyconRepr cenv.g env.sigToImplRemapInfo tycon || 
+        IsHiddenTycon env.sigToImplRemapInfo tycon || 
+        IsHiddenTyconRepr env.sigToImplRemapInfo tycon || 
         (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef rfield))
     let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
     CheckTypeForAccess cenv env (fun () -> rfield.Name) access m fieldTy
@@ -2189,7 +2189,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             uc.RecdFieldsArray |> Array.iter (CheckRecdField true cenv env tycon))
 
     // Access checks
-    let access =  AdjustAccess (IsHiddenTycon g env.sigToImplRemapInfo tycon) (fun () -> tycon.CompilationPath) tycon.Accessibility
+    let access =  AdjustAccess (IsHiddenTycon env.sigToImplRemapInfo tycon) (fun () -> tycon.CompilationPath) tycon.Accessibility
     let visitType ty = CheckTypeForAccess cenv env (fun () -> tycon.DisplayNameWithStaticParametersAndUnderscoreTypars) access tycon.Range ty    
 
     abstractSlotValsOfTycons [tycon] |> List.iter (typeOfVal >> visitType) 

@@ -202,11 +202,6 @@
         <target state="translated">Sugerir nomes para identificadores não resolvidos</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_out_of_process_language_server">
-        <source>(Preview) Use out of process language server</source>
-        <target state="translated">(Versão Prévia) Usar um servidor de idioma fora do processo</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>

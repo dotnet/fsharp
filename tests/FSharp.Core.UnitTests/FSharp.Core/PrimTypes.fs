@@ -16,6 +16,12 @@ type m
 [<TestFixture>]
 type LanguagePrimitivesModule() =
 
+    [<Test>]    
+    member _.CastingUint () =
+        let expected = 12u
+        let actual = uint 12
+        Assert.AreEqual(expected, actual)
+
     [<Test>]
     member this.CastingUnits() =
         let f = 2.5
