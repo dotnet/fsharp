@@ -1171,8 +1171,8 @@ type PartialCheckResults =
           TimeStamp = timestamp 
           LatestImplementationFile = tcAcc.latestImplFile 
           LatestCcuSigForFile = tcAcc.latestCcuSigForFile
-          ItemKeyStore = None
-          SemanticClassification = [||] }
+          ItemKeyStore = tcAcc.itemKeyStore
+          SemanticClassification = tcAcc.semanticClassification }
 
 
 [<AutoOpen>]

@@ -108,7 +108,15 @@ type internal FSharpClassificationService
 
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken)  |> Async.AwaitTask
-                result.AddRange(Tokenizer.getClassifiedSpans(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
+
+                // For closed documents, only get classification for the text within the span.
+                // This may be inaccurate for multi-line tokens such as string literals, but this is ok for now
+                //     as it's better than having to tokenize a big part of a file.
+                // This is to handle syntactic classification for find all references.
+                if not (document.Project.Solution.Workspace.IsDocumentOpen document.Id) then
+                    result.AddRange(Tokenizer.getClassifiedSpans(document.Id, sourceText.GetSubText(textSpan), TextSpan(0, textSpan.Length), None, defines, cancellationToken))
+                else
+                    result.AddRange(Tokenizer.getClassifiedSpans(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
             } |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         member __.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
