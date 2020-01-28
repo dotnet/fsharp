@@ -242,15 +242,15 @@ $(PACKAGEREFERENCES)
         <__InteractiveReferencedAssemblies Include = "@(ReferencePath)" />
         <__InteractiveReferencedAssembliesCopyLocal Include = "@(RuntimeCopyLocalItems)" Condition="'$(TargetFrameworkIdentifier)'!='.NETFramework'" />
         <__InteractiveReferencedAssembliesCopyLocal Include = "@(ReferenceCopyLocalPaths)" Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'" />
-        <__ConflictsList Include="(_ConflictPackageFiles.ConflictItemType)=%(_ConflictPackageFiles.Filename)%(_ConflictPackageFiles.Extension)" />
+        <__ConflictsList Include="%(_ConflictPackageFiles.ConflictItemType)=%(_ConflictPackageFiles.Filename)%(_ConflictPackageFiles.Extension)" />
       </ItemGroup>
       <PropertyGroup>
-        <__Conflicts>@(__ConflictsList, ';')</__Conflicts>
+        <__Conflicts>@(__ConflictsList, ';');</__Conflicts>
       </PropertyGroup>
 
       <ItemGroup>
         <InteractiveResolvedFile Include="@(__InteractiveReferencedAssemblies)"
-                                 Condition="$([System.String]::new($(__Conflicts)).Contains($([System.String]::new('Reference=%(__InteractiveReferencedAssemblies.Filename)%(__InteractiveReferencedAssemblies.Extension)'))))"
+                                 Condition="$([System.String]::new($(__Conflicts)).Contains($([System.String]::new('Reference=%(__InteractiveReferencedAssemblies.Filename)%(__InteractiveReferencedAssemblies.Extension);'))))"
                                  KeepDuplicates="false">
             <NormalizedIdentity Condition="'%(Identity)'!=''">$([System.String]::Copy('%(Identity)').Replace('\', '/'))</NormalizedIdentity>
             <NormalizedPathInPackage Condition="'%(__InteractiveReferencedAssemblies.PathInPackage)'!=''">$([System.String]::Copy('%(__InteractiveReferencedAssemblies.PathInPackage)').Replace('\', '/'))</NormalizedPathInPackage>

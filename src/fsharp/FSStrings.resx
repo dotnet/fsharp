@@ -564,6 +564,9 @@
   <data name="Parser.TOKEN.AND" xml:space="preserve">
     <value>keyword 'and'</value>
   </data>
+  !<data name="Parser.TOKEN.AND.BANG" xml:space="preserve">
+    <value>keyword 'and!'</value>
+  </data>
   <data name="Parser.TOKEN.AS" xml:space="preserve">
     <value>keyword 'as'</value>
   </data>

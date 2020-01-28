@@ -28,6 +28,7 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
+    | AndBang
     | WitnessPassing
 
 /// LanguageVersion management
@@ -62,6 +63,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.PackageManagement, previewVersion
+            LanguageFeature.AndBang, previewVersion
             LanguageFeature.WitnessPassing, previewVersion
         ]
 
