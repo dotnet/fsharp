@@ -451,6 +451,8 @@ type CalledMeth<'T>
       /// the instantiation of the method we're attempting to call 
     member x.CalledTyArgs = calledTyArgs
 
+    member x.AllCalledArgs = fullCurriedCalledArgs
+
       /// the instantiation of the method we're attempting to call 
     member x.CalledTyparInst = 
         let tps = minfo.FormalMethodTypars 
