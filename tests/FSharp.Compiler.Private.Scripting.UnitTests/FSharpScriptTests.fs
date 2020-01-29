@@ -75,7 +75,7 @@ stacktype.Name = "Stack"
         Assert.AreEqual(true, value.ReflectionValue :?> bool)
 
     [<Test>]
-    member __.``Assembly reference event unsuccessful``() =
+    member __.``Assembly reference unsuccessful``() =
         use script = new FSharpScript()
         let testAssembly = "not-an-assembly-that-can-be-found.dll"
         let _result, errors = script.Eval(sprintf "#r \"%s\"" testAssembly)
