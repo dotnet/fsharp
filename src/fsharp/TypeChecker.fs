@@ -10647,7 +10647,6 @@ and TcMethodNamedArg cenv env (lambdaPropagationInfo, tpenv) (CallerNamedArg(id,
     CallerNamedArg(id, arg'), (lambdaPropagationInfo, tpenv)
 
 and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoForArg, CallerArg(argTy, mArg, isOpt, argExpr)) = 
-
     // Apply the F# 3.1 rule for extracting information for lambdas
     //
     // Before we check the argument, check to see if we can propagate info from a called lambda expression into the arguments of a received lambda
