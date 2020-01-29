@@ -2328,14 +2328,14 @@ and MustUnify csenv ndeep trace cxsln ty1 ty2 =
 and MustUnifyInsideUndo csenv ndeep trace cxsln ty1 ty2 = 
     SolveTypeEqualsTypeWithReport csenv ndeep csenv.m (WithTrace trace) cxsln ty1 ty2
 
-and ArgsMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln isConstraint calledMeth calledArg callerArg = 
+and ArgsMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln isConstraint calledMeth calledArg (CallerArg(callerArgTy, m, _, _) as callerArg) = 
     let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
     SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep callerArg.Range (WithTrace trace) cxsln calledArgTy callerArg.ArgumentType (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg)) 
 
 and TypesMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgTy callerArgTy = 
     SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy 
 
-and ArgsEquivInsideUndo (csenv: ConstraintSolverEnv) isConstraint calledArg callerArg = 
+and ArgsEquivInsideUndo (csenv: ConstraintSolverEnv) isConstraint calledArg (CallerArg(callerArgTy, m, _, _) as callerArg) = 
     let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
     if typeEquiv csenv.g calledArgTy callerArg.ArgumentType then CompleteD else ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(), callerArg.Range))
 
