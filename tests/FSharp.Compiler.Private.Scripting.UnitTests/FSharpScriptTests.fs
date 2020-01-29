@@ -65,26 +65,21 @@ type InteractiveTests() =
     [<Test>]
     member __.``Assembly reference event successful``() =
         use script = new FSharpScript()
-        let testAssembly = "System.dll"
-        let mutable assemblyResolveEventCount = 0
-        let mutable foundAssemblyReference = false
-        Event.add (fun (assembly: string) ->
-            assemblyResolveEventCount <- assemblyResolveEventCount + 1
-            foundAssemblyReference <- String.Compare(testAssembly, Path.GetFileName(assembly), StringComparison.OrdinalIgnoreCase) = 0)
-            script.AssemblyReferenceAdded
-        script.Eval(sprintf "#r \"%s\"" testAssembly) |> ignoreValue
-        Assert.AreEqual(1, assemblyResolveEventCount)
-        Assert.True(foundAssemblyReference)
+        let testCode = """
+#r "System.dll"
+let stacktype= typeof<System.Collections.Stack>
+stacktype.Name = "Stack"
+"""
+        let opt = script.Eval(testCode) |> getValue
+        let value = opt.Value
+        Assert.AreEqual(true, value.ReflectionValue :?> bool)
 
     [<Test>]
     member __.``Assembly reference event unsuccessful``() =
         use script = new FSharpScript()
         let testAssembly = "not-an-assembly-that-can-be-found.dll"
-        let mutable foundAssemblyReference = false
-        Event.add (fun _ -> foundAssemblyReference <- true) script.AssemblyReferenceAdded
         let _result, errors = script.Eval(sprintf "#r \"%s\"" testAssembly)
         Assert.AreEqual(1, errors.Length)
-        Assert.False(foundAssemblyReference)
 
     [<Test>]
     member __.``Add include path event successful``() =
@@ -130,13 +125,10 @@ type InteractiveTests() =
     [<Test>]
     member __.``Nuget reference fires multiple events``() =
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
-        let mutable assemblyRefCount = 0
         let mutable includeAddCount = 0
-        Event.add (fun _ -> assemblyRefCount <- assemblyRefCount + 1) script.AssemblyReferenceAdded
         Event.add (fun _ -> includeAddCount <- includeAddCount + 1) script.IncludePathAdded
         script.Eval("#r \"nuget:include=NUnitLite, version=3.11.0\"") |> ignoreValue
         script.Eval("0") |> ignoreValue
-        Assert.GreaterOrEqual(assemblyRefCount, 2)
         Assert.GreaterOrEqual(includeAddCount, 1)
 
 /// Native dll resolution is not implemented on desktop
@@ -183,8 +175,6 @@ printfn ""%A"" result
 123
 "
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
-        let mutable assemblyRefCount = 0;
-        Event.add (fun _ -> assemblyRefCount <- assemblyRefCount + 1) script.AssemblyReferenceAdded
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.AreEqual(123, value.ReflectionValue :?> int32)
@@ -202,8 +192,6 @@ let tInput = new DenseTensor<float>(inputValues.AsMemory(), new ReadOnlySpan<int
 tInput.Length
 "
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
-        let mutable assemblyRefCount = 0;
-        Event.add (fun _ -> assemblyRefCount <- assemblyRefCount + 1) script.AssemblyReferenceAdded
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.AreEqual(4L, value.ReflectionValue :?> int64)
@@ -230,7 +218,6 @@ else
 123
 "
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
-        let mutable assemblyRefCount = 0;
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.AreEqual(123, value.ReflectionValue :?> int32)

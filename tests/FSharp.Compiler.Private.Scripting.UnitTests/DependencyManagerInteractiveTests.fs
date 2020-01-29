@@ -41,15 +41,10 @@ type DependencyManagerInteractiveTests() =
 #r @"nuget:System.Collections.Immutable.DoesNotExist, version=1.5.0"
 0"""
         use script = scriptHost()
-        let mutable assemblyResolveEventCount = 0
-        Event.add (fun (assembly: string) ->
-            assemblyResolveEventCount <- assemblyResolveEventCount + 1)
-            script.AssemblyReferenceAdded
         let opt = script.Eval(text) |> getValue
         let value = opt.Value
         Assert.AreEqual(typeof<int>, value.ReflectionType)
         Assert.AreEqual(0, value.ReflectionValue :?> int)
-        Assert.AreEqual(0, assemblyResolveEventCount)
 
     [<Test>]
     member __.``Dependency add events successful``() =
