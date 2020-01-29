@@ -168,8 +168,7 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
             calledArgTy
 
         | NotOptional -> 
-            // This condition is caught later
-            //warning(InternalError("Unexpected NotOptional", m))
+            // This condition represents an error but the error is raised in later processing
             calledArgTy
     else
         match calledArg.OptArgInfo with 
@@ -1182,7 +1181,8 @@ let AdjustCallerArgForOptional tcFieldInit eCallerMemberName (infoReader: InfoRe
                         let callerArgExprCoerced = mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr
                         mkSome g calledNonOptTy callerArgExprCoerced m
                     else 
-                        callerArgExpr // should be unreachable 
+                        assert false
+                        callerArgExpr // defensive code - this case is unreachable 
                         
         let callerArg2 = CallerArg(tyOfExpr g callerArgExpr2, m, isOptCallerArg, callerArgExpr2)
         { assignedArg with CallerArg=callerArg2 }
