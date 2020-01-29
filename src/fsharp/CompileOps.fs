@@ -5240,20 +5240,12 @@ module ScriptPreprocessClosure =
                             let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
 
                             yield! resolveDependencyManagerSources filename
-#if DEBUG
-                            for (_,subFile) in sources do
-                               printfn "visiting %s - has subsource of %s " filename subFile
-#endif
                             for (m, subFile) in sources do
                                 if IsScript subFile then 
                                     for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
                                         yield! loop subSource
                                 else
                                     yield ClosureFile(subFile, m, None, [], [], []) 
-
-#if DEBUG
-                            printfn "yielding source %s" filename
-#endif
                             yield ClosureFile(filename, m, Some parsedScriptAst, parseDiagnostics, errorLogger.Diagnostics, noWarns)
 
                         | None -> 
