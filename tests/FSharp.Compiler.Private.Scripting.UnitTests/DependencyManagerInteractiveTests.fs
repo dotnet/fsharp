@@ -30,18 +30,10 @@ type DependencyManagerInteractiveTests() =
 #r @"nuget:Newtonsoft.Json, Version=9.0.1"
 0"""
         use script = scriptHost()
-        let mutable assemblyResolveEventCount = 0
-        let mutable foundAssemblyReference = false
-        Event.add (fun (assembly: string) ->
-            assemblyResolveEventCount <- assemblyResolveEventCount + 1
-            foundAssemblyReference <- String.Compare("Newtonsoft.Json.dll", Path.GetFileName(assembly), StringComparison.OrdinalIgnoreCase) = 0)
-            script.AssemblyReferenceAdded
         let opt = script.Eval(text) |> getValue
         let value = opt.Value
         Assert.AreEqual(typeof<int>, value.ReflectionType)
         Assert.AreEqual(0, value.ReflectionValue :?> int)
-        Assert.Greater(assemblyResolveEventCount, 0)
-        Assert.AreEqual(true, foundAssemblyReference)
 
     [<Test>]
     member __.``SmokeTest - #r nuget package not found``() =
