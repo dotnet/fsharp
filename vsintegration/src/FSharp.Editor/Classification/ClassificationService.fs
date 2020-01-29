@@ -114,7 +114,14 @@ type internal FSharpClassificationService
                 //     as it's better than having to tokenize a big part of a file.
                 // This is to handle syntactic classification for find all references.
                 if not (document.Project.Solution.Workspace.IsDocumentOpen document.Id) then
-                    result.AddRange(Tokenizer.getClassifiedSpans(document.Id, sourceText.GetSubText(textSpan), TextSpan(0, textSpan.Length), None, defines, cancellationToken))
+                    let tokenizer = FSharpSourceTokenizer(defines, Some document.FilePath)
+                    let tokenizer = tokenizer.CreateLineTokenizer(sourceText.ToFSharpSourceText())
+                    let rec scan (state) =
+                        match tokenizer.ScanToken state with
+                        | Some info, state ->
+                            
+                    while 
+                    tokenizer.ScanToken(FSharpTokenizerLexState.Initial)
                 else
                     result.AddRange(Tokenizer.getClassifiedSpans(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
             } |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
