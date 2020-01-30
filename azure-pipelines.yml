@@ -355,6 +355,7 @@ stages:
               testResultsFormat: 'NUnit'
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+              publishRunAttachments: true
             continueOnError: true
             condition: always()
 
@@ -380,6 +381,7 @@ stages:
               testResultsFormat: 'NUnit'
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+              publishRunAttachments: true
             continueOnError: true
             condition: always()
 
@@ -405,6 +407,7 @@ stages:
               testResultsFormat: 'NUnit'
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+              publishRunAttachments: true
             continueOnError: true
             condition: always()
 
