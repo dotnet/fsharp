@@ -295,77 +295,95 @@ type ByteMemory with
 
     member x.AsReadOnly() = ReadOnlyByteMemory x
 
-    /// Mono and .Net Framework/CoreCLR have different implementations of memory-mapped files.
-    /// The mono implementation _requires_ a mapName, but the CoreCLR implementation _requires_ a name not be specified.
-    /// This member papers over those changes while mono bug https://github.com/mono/mono/issues/10245 is still active,
-    /// or until the implementations are unified
-    static member private CreateReadWriteMemoryMappedFileSafe(length: int64) =
-        let name =
+    static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
+        let _makeMMFile (bytes: ReadOnlyByteMemory) =
+            let length = int64 bytes.Length
+            let mmf =
+                let mmf = MemoryMappedFile.CreateNew(null, length, MemoryMappedFileAccess.ReadWrite, MemoryMappedFileOptions.None, HandleInheritability.None)
+                use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
+                bytes.CopyTo stream
+                mmf
+
+            let accessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.ReadWrite)
+            RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
+
+        let _makeBAM (bytes: ReadOnlyByteMemory) =
+            ByteArrayMemory.FromArray (bytes.ToArray()) :> ByteMemory
+
 #if NET461 || NET472 // These two are from the FcsTargetNetFxFramework and/or the proto .netfx TFM
-            // trying to detect here if we're running on mono (ie running on a non-windows platform while targeting net4x)
-            match Environment.OSVersion.Platform with
-            | PlatformID.MacOSX | PlatformID.Unix ->
-                Path.GetTempFileName() // mono requires a mapName parameter for now
-            | _ -> null
+        // trying to detect here if we're running on mono (ie running on a non-windows platform while targeting net4x)
+        match Environment.OSVersion.Platform with
+        | PlatformID.MacOSX | PlatformID.Unix ->
+            _makeBAM bytes
+        | _ ->
+            _makeMMFile bytes
 #endif
 #if NETSTANDARD2_0 || NETCOREAPP3_0 // these two are from the FCS library target + FSC TFMs
-            null
+        _makeMMFile bytes
 #endif
-        MemoryMappedFile.CreateNew(
-            name,
-            length,
-            MemoryMappedFileAccess.ReadWrite,
-            MemoryMappedFileOptions.None,
-            HandleInheritability.None)
-
-    static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
-        let length = int64 bytes.Length
-        let mmf = 
-            let mmf = ByteMemory.CreateReadWriteMemoryMappedFileSafe length
-            use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
-            bytes.CopyTo stream
-            mmf
-
-        let accessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.ReadWrite)
-        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
 
     static member FromFile(path, access, ?canShadowCopy: bool) =
         let canShadowCopy = defaultArg canShadowCopy false
 
-        let memoryMappedFileAccess =
-            match access with
-            | FileAccess.Read -> MemoryMappedFileAccess.Read
-            | FileAccess.Write -> MemoryMappedFileAccess.Write
-            | _ -> MemoryMappedFileAccess.ReadWrite
+        let _makeMMFile (path: string, access: FileAccess, canShadowCopy: bool) =
+            let memoryMappedFileAccess =
+                match access with
+                | FileAccess.Read -> MemoryMappedFileAccess.Read
+                | FileAccess.Write -> MemoryMappedFileAccess.Write
+                | _ -> MemoryMappedFileAccess.ReadWrite
 
-        let mmf, accessor, length = 
             let fileStream = File.Open(path, FileMode.Open, access, FileShare.Read)
+
             let length = fileStream.Length
-            let mmf = 
-                if canShadowCopy then
-                    let mmf = ByteMemory.CreateReadWriteMemoryMappedFileSafe length
-                    use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
-                    fileStream.CopyTo(stream)
-                    fileStream.Dispose()
-                    mmf
-                else
-                    MemoryMappedFile.CreateFromFile(
-                        fileStream, 
-                        null, 
-                        length, 
-                        memoryMappedFileAccess, 
-                        HandleInheritability.None, 
-                        leaveOpen=false)
-            mmf, mmf.CreateViewAccessor(0L, length, memoryMappedFileAccess), length
 
-        // Validate MMF with the access that was intended.
-        match access with
-        | FileAccess.Read when not accessor.CanRead -> invalidOp "Cannot read file"
-        | FileAccess.Write when not accessor.CanWrite -> invalidOp "Cannot write file"
-        | FileAccess.ReadWrite when not accessor.CanRead || not accessor.CanWrite -> invalidOp "Cannot read or write file"
-        | _ -> ()
+            let mmf, accessor, length =
+                let mmf =
+                    if canShadowCopy then
+                        let mmf =
+                            MemoryMappedFile.CreateNew(
+                                null,
+                                length,
+                                MemoryMappedFileAccess.ReadWrite,
+                                MemoryMappedFileOptions.None,
+                                HandleInheritability.None)
+                        use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
+                        fileStream.CopyTo(stream)
+                        fileStream.Dispose()
+                        mmf
+                    else
+                        MemoryMappedFile.CreateFromFile(
+                            fileStream,
+                            null,
+                            length,
+                            memoryMappedFileAccess,
+                            HandleInheritability.None,
+                            leaveOpen=false)
+                mmf, mmf.CreateViewAccessor(0L, length, memoryMappedFileAccess), length
 
-        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
+            // Validate MMF with the access that was intended.
+            match access with
+            | FileAccess.Read when not accessor.CanRead -> invalidOp "Cannot read file"
+            | FileAccess.Write when not accessor.CanWrite -> invalidOp "Cannot write file"
+            | FileAccess.ReadWrite when not accessor.CanRead || not accessor.CanWrite -> invalidOp "Cannot read or write file"
+            | _ -> ()
+
+            RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
+
+        let _makeByteMemory (path: string) =
+            let bytes = File.ReadAllBytes path
+            ByteArrayMemory.FromArray bytes
+
+#if NET461 || NET472 // These two are from the FcsTargetNetFxFramework and/or the proto .netfx TFM
+        // trying to detect here if we're running on mono (ie running on a non-windows platform while targeting net4x)
+        match Environment.OSVersion.Platform with
+        | PlatformID.MacOSX | PlatformID.Unix ->
+            _makeByteMemory path
+        | _ ->
+            _makeMMFile (path, access, canShadowCopy)
+#endif
+#if NETSTANDARD2_0 || NETCOREAPP3_0 // these two are from the FCS library target + FSC TFMs
+        _makeMMFile (path, access, canShadowCopy)
+#endif
 
     static member FromUnsafePointer(addr, length, holder: obj) = 
         RawByteMemory(NativePtr.ofNativeInt addr, length, holder) :> ByteMemory
