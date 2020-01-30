@@ -4835,10 +4835,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file, assemblyReferenceAdded: string -> unit) =
+let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file) =
     let resolutions = CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, AssemblyReference(m, file, None), ResolveAssemblyReferenceMode.ReportErrors))
     let dllinfos, ccuinfos = tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions) |> Cancellable.runWithoutCancellation
-   
+
     let asms = 
         ccuinfos |> List.map (function
             | ResolvedImportedAssembly asm -> asm
@@ -4847,11 +4847,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file, as
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
     let buildTcEnv tcEnv asm =
-        let tcEnv = AddCcuToTcEnv(g, amap, m, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
-        match asm.FSharpViewOfMetadata.FileName with
-        | Some asmPath -> assemblyReferenceAdded asmPath
-        | None -> ()
-        tcEnv
+        AddCcuToTcEnv(g, amap, m, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
     let tcEnv = (tcEnv, asms) ||> List.fold buildTcEnv
     tcEnv, (dllinfos, asms)
 
