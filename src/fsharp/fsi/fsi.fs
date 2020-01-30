@@ -956,7 +956,6 @@ type internal FsiDynamicCompiler
     let outfile = "TMPFSCI.exe"
     let assemblyName = "FSI-ASSEMBLY"
 
-    let assemblyReferenceAddedEvent = Control.Event<string>()
     let valueBoundEvent = Control.Event<_>()
     let dependencyAddingEvent = Control.Event<string * string>()
     let dependencyAddedEvent = Control.Event<string * string>()
@@ -1260,7 +1259,7 @@ type internal FsiDynamicCompiler
         let tcState = istate.tcState 
         let tcEnv,(_dllinfos,ccuinfos) = 
             try
-                RequireDLL (ctok, tcImports, tcState.TcEnvFromImpls, assemblyName, m, path, assemblyReferenceAddedEvent.Trigger)
+                RequireDLL (ctok, tcImports, tcState.TcEnvFromImpls, assemblyName, m, path)
             with e ->
                 tcConfigB.RemoveReferencedAssemblyByPath(m,path)
                 reraise()
@@ -1401,8 +1400,6 @@ type internal FsiDynamicCompiler
 
     member __.FormatValue(obj:obj, objTy) = 
         valuePrinter.FormatValue(obj, objTy)
-
-    member __.AssemblyReferenceAdded = assemblyReferenceAddedEvent.Publish
 
     member __.ValueBound = valueBoundEvent.Publish
 
@@ -1908,8 +1905,6 @@ type internal FsiInteractionProcessor
                              initialInteractiveState) = 
 
     let referencedAssemblies = Dictionary<string, DateTime>()
-
-    let assemblyReferencedEvent = Control.Event<string>()
 
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
@@ -2451,8 +2446,6 @@ type internal FsiInteractionProcessor
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
-    member __.AssemblyReferenceAdded = assemblyReferencedEvent.Publish
-
 
 //----------------------------------------------------------------------------
 // Server mode:
@@ -2861,10 +2854,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiInteractionProcessor.EvalScript(ctok, scriptPath, errorLogger)
         |> commitResultNonThrowing errorOptions scriptPath errorLogger
         |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
-
-    [<CLIEvent>]
-    /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
-    member __.AssemblyReferenceAdded = fsiDynamicCompiler.AssemblyReferenceAdded
 
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
     member __.ValueBound = fsiDynamicCompiler.ValueBound
