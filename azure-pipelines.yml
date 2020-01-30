@@ -364,6 +364,14 @@ stages:
             clean: true
           - script: ./fcs/build.sh Test
             displayName: Build / Test
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'NUnit'
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+            continueOnError: true
+            condition: always()
 
         - job: MacOS_FCS
           pool:
@@ -376,6 +384,14 @@ stages:
             clean: true
           - script: ./fcs/build.sh Test
             displayName: Build / Test
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'NUnit'
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+            continueOnError: true
+            condition: always()
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    Post Build                                                       #
