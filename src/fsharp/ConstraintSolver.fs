@@ -312,7 +312,6 @@ let rec occursCheck g un ty =
 type PermitWeakResolution = 
     | Yes of codegen: bool
     | No
-    member x.Permit = match x with Yes _ -> true | No -> false
 
 let rec isNativeIntegerTy g ty =
     typeEquivAux EraseMeasures g g.nativeint_ty ty || 
@@ -1587,16 +1586,17 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   // If there's nothing left to learn then raise the errors.
                   // Note: we should likely call MemberConstraintIsReadyForResolution here when permitWeakResolution=false but for stability
                   // reasons we use the more restrictive isNil frees.
-                  if (permitWeakResolution.Permit && MemberConstraintIsReadyForWeakResolution csenv traitInfo) || isNil frees then 
+                  if isNil frees then 
                       do! errors  
+                      match errors with
+                      | ErrorResult (_, UnresolvedOverloading _) when not ignoreUnresolvedOverload && (not (nm = "op_Explicit" || nm = "op_Implicit")) ->
+                          return! ErrorD AbortForFailedOverloadResolution
+                      | _ -> 
+                          return TTraitUnsolved
                   // Otherwise re-record the trait waiting for canonicalization 
                   else
                       do! AddMemberConstraint csenv ndeep m2 trace traitInfo support frees
 
-                  match errors with
-                  | ErrorResult (_, UnresolvedOverloading _) when not ignoreUnresolvedOverload && (not (nm = "op_Explicit" || nm = "op_Implicit")) ->
-                      return! ErrorD AbortForFailedOverloadResolution
-                  | _ -> 
                       return TTraitUnsolved
      }
     return! RecordMemberConstraintSolution csenv.SolverState m trace traitInfo res
@@ -1691,7 +1691,7 @@ and GetRelevantExtensionMethodsForTrait m (amap: Import.ImportMap) (traitInfo: T
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
 and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm (TTrait(tys, _, memFlags, argtys, rty, soln, extSlns, ad) as traitInfo) : MethInfo list =
     let results = 
-        if permitWeakResolution.Permit || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
+        if MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
             let minfos = 
                 match memFlags.MemberKind with
