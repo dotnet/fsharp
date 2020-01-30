@@ -362,20 +362,20 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./fcs/build.sh
-            displayName: Build
+          - script: ./fcs/build.sh Test
+            displayName: Build / Test
 
-        # - job: MacOS_FCS
-        #   pool:
-        #     vmImage: macOS-latest
-        #   variables:
-        #   - name: _SignType
-        #     value: Test
-        #   steps:
-        #   - checkout: self
-        #     clean: true
-        #   - script: ./fcs/build.sh
-        #     displayName: Build
+        - job: MacOS_FCS
+          pool:
+            vmImage: macOS-latest
+          variables:
+          - name: _SignType
+            value: Test
+          steps:
+          - checkout: self
+            clean: true
+          - script: ./fcs/build.sh Test
+            displayName: Build / Test
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    Post Build                                                       #
