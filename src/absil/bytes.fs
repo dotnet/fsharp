@@ -295,16 +295,33 @@ type ByteMemory with
 
     member x.AsReadOnly() = ReadOnlyByteMemory x
 
+    /// Mono and .Net Framework/CoreCLR have different implementations of memory-mapped files.
+    /// The mono implementation _requires_ a mapName, but the CoreCLR implementation _requires_ a name not be specified.
+    /// This member papers over those changes while mono bug https://github.com/mono/mono/issues/10245 is still active,
+    /// or until the implementations are unified
+    static member private CreateReadWriteMemoryMappedFileSafe(length: int64) =
+        let name =
+#if NET461 || NET472 // These two are from the FcsTargetNetFxFramework and/or the proto .netfx TFM
+            // trying to detect here if we're running on mono (ie running on a non-windows platform while targeting net4x)
+            match Environment.OSVersion.Platform with
+            | PlatformID.MacOSX | PlatformID.Unix ->
+                Path.GetTempFileName() // mono requires a mapName parameter for now
+            | _ -> null
+#endif
+#if NETSTANDARD2_0 || NETCOREAPP3_0 // these two are from the FCS library target + FSC TFMs
+            null
+#endif
+        MemoryMappedFile.CreateNew(
+            name,
+            length,
+            MemoryMappedFileAccess.ReadWrite,
+            MemoryMappedFileOptions.None,
+            HandleInheritability.None)
+
     static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
         let length = int64 bytes.Length
         let mmf = 
-            let mmf =
-                MemoryMappedFile.CreateNew(
-                    null, 
-                    length, 
-                    MemoryMappedFileAccess.ReadWrite, 
-                    MemoryMappedFileOptions.None, 
-                    HandleInheritability.None)
+            let mmf = ByteMemory.CreateReadWriteMemoryMappedFileSafe length
             use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
             bytes.CopyTo stream
             mmf
@@ -326,13 +343,7 @@ type ByteMemory with
             let length = fileStream.Length
             let mmf = 
                 if canShadowCopy then
-                    let mmf = 
-                        MemoryMappedFile.CreateNew(
-                            null, 
-                            length, 
-                            MemoryMappedFileAccess.ReadWrite, 
-                            MemoryMappedFileOptions.None, 
-                            HandleInheritability.None)
+                    let mmf = ByteMemory.CreateReadWriteMemoryMappedFileSafe length
                     use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
                     fileStream.CopyTo(stream)
                     fileStream.Dispose()
