@@ -342,6 +342,11 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - task: UseDotNet@2
+            displayName: 'Use .NET Core sdk'
+            inputs:
+              useGlobalJson: true
+              workingDirectory: fcs
           - script: fcs\build.cmd TestAndNuget
             displayName: Build / Test
           - task: PublishTestResults@2
@@ -362,6 +367,11 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - task: UseDotNet@2
+            displayName: 'Use .NET Core sdk'
+            inputs:
+              useGlobalJson: true
+              workingDirectory: fcs
           - script: ./fcs/build.sh Test
             displayName: Build / Test
           - task: PublishTestResults@2
@@ -382,6 +392,11 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - task: UseDotNet@2
+            displayName: 'Use .NET Core sdk'
+            inputs:
+              useGlobalJson: true
+              workingDirectory: fcs
           - script: ./fcs/build.sh Test
             displayName: Build / Test
           - task: PublishTestResults@2
