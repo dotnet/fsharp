@@ -94,7 +94,7 @@ module ProjectFile =
                                          File.Exists(r.FullPath)) 
             |> Array.fold(fun acc r -> acc + poundRprefix + r.FullPath + "\"" + Environment.NewLine) ""
 
-        let fsxTemplate ="""
+        let projectTemplate ="""
 // Generated from #r "nuget:Package References"
 // ============================================
 //
@@ -107,7 +107,7 @@ module ProjectFile =
 $(POUND_R)
 
 """
-        fsxTemplate.Replace("$(POUND_R)", expandReferences)
+        projectTemplate.Replace("$(POUND_R)", expandReferences)
 
     let generateProjectBody = """
 <Project Sdk='Microsoft.NET.Sdk'>
