@@ -21,7 +21,12 @@ let condition s =
 
 let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
-let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+let dispose (x:System.IDisposable) =
+#else
+let dispose (x:System.IDisposable?) = 
+#endif
+    match x with null -> () | NonNull x -> x.Dispose()
 
 //-------------------------------------------------------------------------
 // Library: bits
@@ -104,11 +109,10 @@ module Check =
         | Some x -> x
 
     /// Throw <c>System.ArgumentNullException()</c> if argument is <c>null</c>.
-    let ArgumentNotNull arg argName = 
+    let ArgumentNotNull arg argname = 
         match box(arg) with 
-        | null -> raise (new System.ArgumentNullException(argName))
+        | null -> raise (new System.ArgumentNullException(argname))
         | _ -> ()
-       
         
     /// Throw <c>System.ArgumentNullException()</c> if array argument is <c>null</c>.
     /// Throw <c>System.ArgumentOutOfRangeException()</c> is array argument is empty.
@@ -353,22 +357,23 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
 // with care.
 //----------------------------------------------------------------------------
 
-// The following DEBUG code does not currently compile.
-//#if DEBUG
-//type 'T NonNullSlot = 'T option 
-//let nullableSlotEmpty() = None 
-//let nullableSlotFull(x) = Some x
+//#if BUILDING_WITH_LKG
+type NonNullSlot<'T when 'T : not struct> = 'T
 //#else
-type NonNullSlot<'T> = 'T
-let nullableSlotEmpty() = Unchecked.defaultof<'T>
-let nullableSlotFull x = x
+//type NonNullSlot<'T when (* 'T : not null and *)  'T : not struct> = 'T?
 //#endif
+let nullableSlotEmpty() : NonNullSlot<'T> = Unchecked.defaultof<_>
+let nullableSlotFull (x: 'T) : NonNullSlot<'T> = x
 
 //---------------------------------------------------------------------------
 // Caches, mainly for free variables
 //---------------------------------------------------------------------------
 
-type cache<'T> = { mutable cacheVal: 'T NonNullSlot }
+//#if BUILDING_WITH_LKG
+type cache<'T when 'T : not struct> = { mutable cacheVal: NonNullSlot<'T> }
+//#else
+//type cache<'T when 'T : (* not null and *) 'T : not struct> = { mutable cacheVal: NonNullSlot<'T> }
+//#endif
 let newCache() = { cacheVal = nullableSlotEmpty() }
 
 let inline cached cache resF = 
@@ -457,10 +462,15 @@ module internal AsyncUtil =
                         // Continuations that Async.FromContinuations provide do QUWI/SyncContext.Post,
                         // so the order is not overly relevant but still. 
                         List.rev savedConts)
-            let postOrQueue (sc:SynchronizationContext, cont) =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+            let postOrQueue (sc: SynchronizationContext, cont) =
+#else
+            let postOrQueue (sc: SynchronizationContext?, cont) =
+#endif
                 match sc with
-                |   null -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
-                |   sc -> sc.Post((fun _ -> cont res), state=null)
+                | null -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
+                | NonNull sc ->
+                    sc.Post((fun _ -> cont res), state=null)
 
             // Run continuations outside the lock
             match grabbedConts with

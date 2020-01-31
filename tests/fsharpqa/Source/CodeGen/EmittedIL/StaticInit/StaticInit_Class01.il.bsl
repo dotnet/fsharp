@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly StaticInit_Class01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Class01
 {
-  // Offset: 0x00000000 Length: 0x00000335
+  // Offset: 0x00000000 Length: 0x0000032F
+}
+.mresource public FSharpSignatureDataB.StaticInit_Class01
+{
+  // Offset: 0x00000338 Length: 0x00000011
 }
 .mresource public FSharpOptimizationData.StaticInit_Class01
 {
-  // Offset: 0x00000340 Length: 0x000000AD
+  // Offset: 0x00000350 Length: 0x000000AD
+}
+.mresource public FSharpOptimizationDataB.StaticInit_Class01
+{
+  // Offset: 0x00000408 Length: 0x00000003
 }
 .module StaticInit_Class01.dll
-// MVID: {59B19250-EC34-E66E-A745-03835092B159}
+// MVID: {5E172EE8-EC34-E66E-A745-0383E82E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00FE0000
+// Image base: 0x06510000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -56,14 +64,14 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly int32 x
-    .field static assembly int32 'init@4-1'
+    .field static assembly int32 init@4
     .method public specialname rtspecialname 
             instance void  .ctor(valuetype [mscorlib]System.DateTime s) cil managed
     {
       // Code size       9 (0x9)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Class01.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Class01.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -79,7 +87,7 @@
       .maxstack  8
       .line 7,7 : 23,37 ''
       IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 StaticInit_ClassS01/C::'init@4-1'
+      IL_0002:  ldsfld     int32 StaticInit_ClassS01/C::init@4
       IL_0007:  ldc.i4.1
       IL_0008:  bge.s      IL_000c
 
@@ -138,7 +146,7 @@
     IL_000a:  stsfld     int32 StaticInit_ClassS01/C::x
     IL_000f:  ldc.i4.1
     IL_0010:  volatile.
-    IL_0012:  stsfld     int32 StaticInit_ClassS01/C::'init@4-1'
+    IL_0012:  stsfld     int32 StaticInit_ClassS01/C::init@4
     .line 4,4 : 6,7 ''
     IL_0017:  ret
   } // end of method $StaticInit_ClassS01::.cctor

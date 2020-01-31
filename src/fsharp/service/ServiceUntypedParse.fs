@@ -745,6 +745,7 @@ module UntypedParseImpl =
             | SynTypeConstraint.WhereTyparIsReferenceType(t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparIsUnmanaged(t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparSupportsNull (t, _) -> walkTypar t
+            | SynTypeConstraint.WhereTyparNotSupportsNull (t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparIsComparable(t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparIsEquatable(t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparSubtypeOfType(t, ty, _) -> walkTypar t |> Option.orElse (walkType ty)

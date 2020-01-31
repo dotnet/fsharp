@@ -269,6 +269,7 @@ type
     | UserNum of value: string * suffix: string
 
     /// F# syntax: verbatim or regular string, e.g. "abc"
+    /// May be null coming from parser in type provider instantiation but is always treated as an error.
     | String of text: string * range: range
 
     /// F# syntax: verbatim or regular byte string, e.g. "abc"B.
@@ -451,7 +452,10 @@ and
     /// F# syntax is 'typar: null
     | WhereTyparSupportsNull of genericName: SynTypar * range: range
 
-    /// F# syntax is 'typar: comparison
+    /// F# syntax is 'typar : null
+    | WhereTyparNotSupportsNull of genericName: SynTypar * range: range
+
+    /// F# syntax is 'typar : comparison
     | WhereTyparIsComparable of genericName: SynTypar * range: range
 
     /// F# syntax is 'typar: equality
@@ -527,11 +531,17 @@ and
     /// For the dimensionless units i.e. 1, and static parameters to provided types
     | StaticConstant of constant: SynConst * range: range
 
-    /// F# syntax: const expr, used in static parameters to type providers
+    /// F# syntax : nul used in parameters to type providers
+    | StaticConstantNull of range: range
+
+    /// F# syntax : const expr, used in static parameters to type providers
     | StaticConstantExpr of expr: SynExpr * range: range
 
     /// F# syntax: ident=1 etc., used in static parameters to type providers
     | StaticConstantNamed of expr: SynType * SynType * range: range
+
+    /// F# syntax : type | null
+    | WithNull of SynType * ambivalent: bool * range:range
 
     /// Get the syntactic range of source code covered by this construct.
     member x.Range =
@@ -546,10 +556,12 @@ and
         | SynType.Anon (range=m)
         | SynType.WithGlobalConstraints (range=m)
         | SynType.StaticConstant (range=m)
+        | SynType.StaticConstantNull (range=m)
         | SynType.StaticConstantExpr (range=m)
         | SynType.StaticConstantNamed (range=m)
         | SynType.HashConstraint (range=m)
         | SynType.MeasureDivide (range=m)
+        | SynType.WithNull (range=m)
         | SynType.MeasurePower (range=m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 

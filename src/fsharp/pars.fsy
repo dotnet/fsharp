@@ -206,6 +206,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token GREATER_RBRACK STRUCT SIG 
 %token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT 
 %token EXTERN VOID PUBLIC PRIVATE INTERNAL GLOBAL
+%token HACKNULL AMBIVALENT
 
 /* for parser 'escape hatch' out of expression context without consuming the 'recover' token */
 %token TYPE_COMING_SOON TYPE_IS_HERE MODULE_COMING_SOON MODULE_IS_HERE
@@ -2238,6 +2239,10 @@ typeConstraint:
   | typar COLON NULL 
       { WhereTyparSupportsNull($1,lhs parseState) }
 
+  | typar COLON IDENT NULL
+      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3))  
+        WhereTyparNotSupportsNull($1,lhs parseState) }
+
   | typar COLON LPAREN classMemberSpfn rparen 
       { let tp = $1
         WhereTyparSupportsMember([ SynType.Var(tp, tp.Range) ],$4,lhs parseState) }
@@ -2570,6 +2575,9 @@ cType:
   | cType STAR 
      { let m = lhs parseState 
        SynType.App(SynType.LongIdent(LongIdentWithDots([ident("nativeptr",m)],[])),None,[$1],[],None,true,m) } 
+
+  | cType QMARK
+    { SynType.WithNull($1, false, lhs parseState) }
 
   | cType AMP  
      { let m = lhs parseState 
@@ -4525,6 +4533,19 @@ appTypeConPower:
     { $1 }
 
 appType:
+  | appType HACKNULL
+    { SynType.WithNull($1, false, lhs parseState) }
+
+  | appType AMBIVALENT
+    { SynType.WithNull($1, true, lhs parseState) }
+
+  | appType QMARK
+    { SynType.WithNull($1, false, lhs parseState) }
+
+/*
+| appType OR NULL
+    { SynType.WithNull($1, false lhs parseState) }
+*/
   | appType arrayTypeSuffix 
       {  SynType.Array($2,$1,lhs parseState) }
 
@@ -4657,7 +4678,7 @@ atomType:
 
   | NULL
      { let m = rhs parseState 1
-       SynType.StaticConstant(SynConst.String (null, m), m) }
+       SynType.StaticConstantNull(m) }
 
   | CONST atomicExpr
      {  let e,_ = $2

@@ -522,7 +522,7 @@ let ComputeDefinitionLocationOfProvidedItem (p: Tainted<#IProvidedCustomAttribut
     let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure id))
     match attrs with
     | None | Some (null, _, _) -> None
-    | Some (filePath, line, column) -> 
+    | Some (NonNull filePath, line, column) -> 
         // Coordinates from type provider are 1-based for lines and columns
         // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
         let pos = Range.mkPos line (max 0 (column - 1)) 
@@ -2017,7 +2017,7 @@ and Construct =
         let lazyBaseTy = 
             LazyWithContext.Create 
                 ((fun (m, objTy) -> 
-                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (nonNull ty)), m)
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t),
@@ -2032,6 +2032,8 @@ and Construct =
                                    let baseType = st.BaseType 
                                    match baseType with 
                                    | null -> false
+                                   | NonNull x -> 
+                                   match x with 
                                    | x when x.IsGenericType -> false
                                    | x when x.DeclaringType <> null -> false
                                    | x -> x.FullName = "System.Delegate" || x.FullName = "System.MulticastDelegate"), m))
@@ -2300,14 +2302,18 @@ and
         | None -> ()
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
-    member x.AsType = 
-        let ty = x.typar_astype
-        match box ty with 
-        | null -> 
-            let ty2 = TType_var x
-            x.typar_astype <- ty2
-            ty2
-        | _ -> ty
+    member x.AsType nullness = 
+        match nullness with 
+        | Nullness.Known NullnessInfo.AmbivalentToNull -> 
+            let ty = x.typar_astype
+            match box ty with 
+            | null -> 
+                let ty2 = TType_var (x, Nullness.Known NullnessInfo.AmbivalentToNull)
+                x.typar_astype <- ty2
+                ty2
+            | _ -> ty
+        | _ -> 
+            TType_var (x, nullness)
 
     /// Indicates if a type variable has been linked. Only used during unpickling of F# metadata.
     member x.IsLinked = x.typar_stamp <> -1L
@@ -2355,6 +2361,9 @@ and
     
     /// Indicates a constraint that a type has a 'null' value 
     | SupportsNull of range 
+    
+    /// Indicates a constraint that a type doesn't support nullness
+    | NotSupportsNull            of range 
     
     /// Indicates a constraint that a type has a member with the given signature 
     | MayResolveMember of TraitConstraintInfo * range
@@ -3149,7 +3158,7 @@ and
             let rec tryResolveNestedTypeOf(parentEntity: Entity, resolutionEnvironment, st: Tainted<ProvidedType>, i) = 
                 match st.PApply((fun st -> st.GetNestedType path.[i]), m) with
                 | Tainted.Null -> ValueNone
-                | st -> 
+                | Tainted.NonNull st -> 
                     let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
                     parentEntity.ModuleOrNamespaceType.AddProvidedTypeEntity newEntity
                     if i = path.Length-1 then ValueSome newEntity
@@ -3179,13 +3188,16 @@ and
                 assert (j >= 0)
                 assert (j <= path.Length - 1)
                 let matched = 
-                    [ for resolver in resolvers do
-                        let moduleOrNamespace = if j = 0 then null else path.[0..j-1]
+                    [ for resolver in resolvers  do
+                        let moduleOrNamespace = if j = 0 then [| |] else path.[0..j-1]
                         let typename = path.[j]
                         let resolution = ExtensionTyping.TryLinkProvidedType(resolver, moduleOrNamespace, typename, m)
                         match resolution with
-                        | None | Some (Tainted.Null) -> ()
-                        | Some st -> yield (resolver, st) ]
+                        | None -> ()
+                        | Some st -> 
+                            match st with
+                            | Tainted.Null -> ()
+                            | Tainted.NonNull st -> yield (resolver, st) ]
                 match matched with
                 | [(_, st)] ->
                     // 'entity' is at position i in the dereference chain. We resolved to position 'j'.
@@ -3986,6 +3998,63 @@ and
 
     override x.ToString() = x.FieldName
 
+and Nullness = 
+   | Known of NullnessInfo
+   | Variable of NullnessVar
+
+   member n.Evaluate() = 
+       match n with 
+       | Known info -> info
+       | Variable v -> v.Evaluate()
+
+   member n.TryEvaluate() = 
+       match n with 
+       | Known info -> ValueSome info
+       | Variable v -> v.TryEvaluate()
+
+   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
+
+// Note, nullness variables are only created if the nullness checking feature is on
+and NullnessVar() = 
+    let mutable solution: Nullness option = None
+
+    member nv.Evaluate() = 
+       match solution with 
+       | None -> NullnessInfo.WithoutNull
+       | Some soln -> soln.Evaluate()
+
+    member nv.TryEvaluate() = 
+       match solution with 
+       | None -> ValueNone
+       | Some soln -> soln.TryEvaluate()
+
+    member nv.IsSolved = solution.IsSome
+
+    member nv.Set(nullness) = 
+       assert (not nv.IsSolved) 
+       solution <- Some nullness
+
+    member nv.Unset() = 
+       assert nv.IsSolved
+       solution <- None
+
+    member nv.Solution = 
+       assert nv.IsSolved
+       solution.Value
+
+and 
+    [<RequireQualifiedAccess>]
+    NullnessInfo = 
+
+    /// we know that there is an extra null value in the type
+    | WithNull
+
+    /// we know that there is no extra null value in the type
+    | WithoutNull
+
+    /// we know we don't care
+    | AmbivalentToNull
+
 and 
   /// The algebra of types
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -3996,10 +4065,10 @@ and
     /// Indicates the type is a universal type, only used for types of values and members 
     | TType_forall of Typars * TType
 
-    /// TType_app(tyconRef, typeInstantiation).
+    /// TType_app(tyconRef, typeInstantiation, nullness).
     ///
     /// Indicates the type is built from a named type and a number of type arguments
-    | TType_app of TyconRef * TypeInst
+    | TType_app of TyconRef * TypeInst * Nullness
 
     /// TType_anon
     ///
@@ -4011,10 +4080,10 @@ and
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
     | TType_tuple of TupInfo * TTypes
 
-    /// TType_fun(domainType, rangeType).
+    /// TType_fun(domainType, rangeType, nullness).
     ///
     /// Indicates the type is a function type 
-    | TType_fun of TType * TType
+    | TType_fun of TType * TType * Nullness
 
     /// TType_ucase(unionCaseRef, typeInstantiation)
     ///
@@ -4024,22 +4093,23 @@ and
     | TType_ucase of UnionCaseRef * TypeInst
 
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter  
-    | TType_var of Typar 
+    | TType_var of Typar * Nullness
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of Measure
+
 
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/Microsoft/visualfsharp/issues/2561
     member x.GetAssemblyName() =
         match x with
-        | TType_forall (_tps, ty) -> ty.GetAssemblyName()
-        | TType_app (tcref, _tinst) -> tcref.CompilationPath.ILScopeRef.QualifiedName
-        | TType_tuple (_tupInfo, _tinst) -> ""
+        | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
+        | TType_app (tcref, _tinst, _) -> tcref.CompilationPath.ILScopeRef.QualifiedName
+        | TType_tuple _ -> ""
         | TType_anon (anonInfo, _tinst) -> defaultArg anonInfo.Assembly.QualifiedName ""
-        | TType_fun (_d, _r) -> ""
-        | TType_measure _ms -> ""
-        | TType_var tp -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
+        | TType_fun _ -> ""
+        | TType_measure _ -> ""
+        | TType_var (tp, _nullness) -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
         | TType_ucase (_uc, _tinst) ->
             let (TILObjectReprData(scope, _nesting, _definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
@@ -4049,21 +4119,21 @@ and
 
     override x.ToString() =  
         match x with 
-        | TType_forall (_tps, ty) -> "forall ... " + ty.ToString()
-        | TType_app (tcref, tinst) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
+        | TType_forall (_tps, ty) -> "forall ...  " + ty.ToString()
+        | TType_app (tcref, tinst, nullness) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">") + nullness.ToString() 
         | TType_tuple (tupInfo, tinst) -> 
             (match tupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
-             + String.concat "," (List.map string tinst) 
+             + String.concat "," (List.map string tinst) + ")"
+        | TType_fun (d,r,nullness) -> "(" + string d + " -> " + string r + ")" + nullness.ToString()
         | TType_anon (anonInfo, tinst) -> 
             (match anonInfo.TupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
              + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") anonInfo.SortedNames tinst) + ")" + "|}"
-        | TType_fun (d, r) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc, tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_var tp -> 
+        | TType_var (tp, _nullness) -> 
             match tp.Solution with 
             | None -> tp.DisplayName
             | Some _ -> tp.DisplayName + " (solved)"
@@ -4114,7 +4184,7 @@ and [<RequireQualifiedAccess>] AnonRecdTypeInfo =
         x.Stamp <- d.Stamp
         x.SortedNames <- sortedNames
 
-    member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
+    member x.IsLinked = (match box x.SortedIds with null -> true | _ -> false)
     
 and [<RequireQualifiedAccess>] TupInfo = 
     /// Some constant, e.g. true or false for tupInfo
@@ -4230,8 +4300,12 @@ and CcuReference = string // ILAssemblyRef
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     CcuThunk = 
-    { mutable target: CcuData
-
+    { 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+      mutable target: CcuData
+#else
+      mutable target: CcuData?
+#endif
       /// ccu.orphanfixup is true when a reference is missing in the transitive closure of static references that
       /// may potentially be required for the metadata of referenced DLLs. It is set to true if the "loader"
       /// used in the F# metadata-deserializer or the .NET metadata reader returns a failing value (e.g. None).
@@ -4241,12 +4315,23 @@ and
 
       name: CcuReference }
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     member ccu.Deref = 
-        if isNull (ccu.target :> obj) || ccu.orphanfixup then 
+        if isNull (box ccu.target) || ccu.orphanfixup then 
             raise(UnresolvedReferenceNoRange ccu.name)
         ccu.target
+
+    member ccu.IsUnresolvedReference = isNull (box ccu.target) || ccu.orphanfixup
+#else
+    member ccu.Deref = 
+        match ccu.target with 
+        | null -> raise(UnresolvedReferenceNoRange ccu.name)
+        | _ when ccu.orphanfixup -> raise(UnresolvedReferenceNoRange ccu.name)
+        | NonNull tg -> tg
+
+    member ccu.IsUnresolvedReference = isNull ccu.target || ccu.orphanfixup
+#endif
    
-    member ccu.IsUnresolvedReference = isNull (ccu.target :> obj) || ccu.orphanfixup
 
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.
     member ccu.EnsureDerefable(requiringPath: string[]) = 
@@ -5217,7 +5302,7 @@ and
 /// non-generic types.
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
-    CompiledTypeRepr = 
+    CompiledTypeRepr =  
 
     /// An AbstractIL type representation that is just the name of a type.
     ///
@@ -5392,9 +5477,16 @@ let ccuOfTyconRef eref =
 // Type parameters and inference unknowns
 //-------------------------------------------------------------------------
 
-let mkTyparTy (tp: Typar) = 
+
+let NewNullnessVar() = Nullness.Variable (NullnessVar()) // we don't known (and if we never find out then it's non-null)
+
+let KnownAmbivalentToNull = Nullness.Known NullnessInfo.AmbivalentToNull
+let KnownWithNull = Nullness.Known NullnessInfo.WithNull
+let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
+
+let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
-    | TyparKind.Type -> tp.AsType 
+    | TyparKind.Type -> tp.AsType KnownWithoutNull // TODO NULLNESS: check various callers
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
 let copyTypar (tp: Typar) = 
@@ -5434,9 +5526,49 @@ let rec stripUnitEqnsAux canShortcut unt =
     | Measure.Var r when r.IsSolved -> stripUnitEqnsAux canShortcut (tryShortcutSolvedUnitPar canShortcut r)
     | _ -> unt
 
-let rec stripTyparEqnsAux canShortcut ty = 
+let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
+    match nullnessOrig.Evaluate() with
+    | NullnessInfo.WithoutNull -> nullnessNew
+    | NullnessInfo.AmbivalentToNull -> nullnessOrig
+    | NullnessInfo.WithNull -> 
+        match nullnessNew.Evaluate() with
+        | NullnessInfo.WithoutNull -> nullnessOrig
+        | NullnessInfo.AmbivalentToNull -> nullnessNew
+        | NullnessInfo.WithNull -> nullnessOrig
+
+let tryAddNullnessToTy nullnessNew (ty:TType) = 
+    match ty with
+    | TType_var (tp, nullnessOrig) -> 
+        // TODO NULLNESS: make this avoid allocation if no change
+        Some (TType_var (tp, combineNullness nullnessOrig nullnessNew))
+    | TType_app (tcr, tinst, nullnessOrig) -> 
+        // TODO NULLNESS: make this avoid allocation if no change
+        Some (TType_app (tcr, tinst, combineNullness nullnessOrig nullnessNew))
+    | TType_ucase _ -> None // TODO NULLNESS
+    | TType_tuple _ -> None // TODO NULLNESS
+    | TType_anon _ -> None // TODO NULLNESS
+    | TType_fun (d, r, nullnessOrig) ->
+        // TODO NULLNESS: make this avoid allocation if no change
+        Some (TType_fun (d, r, combineNullness nullnessOrig nullnessNew))
+    | TType_forall _ -> None
+    | TType_measure _ -> None
+
+let addNullnessToTy (nullness: Nullness) (ty:TType) =
+    match nullness.Evaluate() with
+    | NullnessInfo.WithoutNull -> ty
+    | _ -> 
+    match ty with
+    | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)
+    | TType_app (tcr, tinst, nullnessOrig) -> TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
+    | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
+    //| TType_ucase _ -> None // TODO NULLNESS
+    //| TType_tuple _ -> None // TODO NULLNESS
+    //| TType_anon _ -> None // TODO NULLNESS
+    | _ -> ty
+
+let rec stripTyparEqnsAux nullness0 canShortcut ty = 
     match ty with 
-    | TType_var r -> 
+    | TType_var (r, nullness) -> 
         match r.Solution with
         | Some soln -> 
             if canShortcut then 
@@ -5445,21 +5577,35 @@ let rec stripTyparEqnsAux canShortcut ty =
                 // This is only because IterType likes to walk _all_ the constraints _everywhere_ in a type, including
                 // those attached to _solved_ type variables. In an ideal world this would never be needed - see the notes
                 // on IterType.
-                | TType_var r2 when r2.Constraints.IsEmpty -> 
-                   match r2.Solution with
-                   | None -> ()
-                   | Some _ as soln2 -> 
-                      r.typar_solution <- soln2
+                | TType_var (r2, nullness2) when r2.Constraints.IsEmpty -> 
+                   match nullness2.Evaluate() with 
+                   | NullnessInfo.WithoutNull -> 
+                       match r2.Solution with
+                       | None -> ()
+                       | Some _ as soln2 -> 
+                          r.typar_solution <- soln2
+                   | _ -> ()
                 | _ -> () 
-            stripTyparEqnsAux canShortcut soln
+            stripTyparEqnsAux (combineNullness nullness0 nullness) canShortcut soln
         | None -> 
-            ty
+            addNullnessToTy nullness0 ty
     | TType_measure unt -> 
         TType_measure (stripUnitEqnsAux canShortcut unt)
     | _ -> ty
 
-let stripTyparEqns ty = stripTyparEqnsAux false ty
+let stripTyparEqns ty = stripTyparEqnsAux KnownWithoutNull false ty
 let stripUnitEqns unt = stripUnitEqnsAux false unt
+
+let replaceNullnessOfTy nullness (ty:TType) =
+    match stripTyparEqns ty with
+    | TType_var (tp, _nullnessOrig) -> TType_var (tp, nullness)
+    | TType_app (tcr, tinst, _nullnessOrig) -> TType_app (tcr, tinst, nullness)
+    | TType_fun (d, r, _nullnessOrig) -> TType_fun (d, r, nullness)
+    //| TType_ucase _ -> None // TODO NULLNESS
+    //| TType_tuple _ -> None // TODOTODO NULLNESS
+    //| TType_anon _ -> None // TODO NULLNESS
+    | sty -> sty
+
 
 //---------------------------------------------------------------------------
 // These make local/non-local references to values according to whether
@@ -5926,5 +6072,5 @@ let FSharpSignatureDataResourceName = "FSharpSignatureData."
 let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo." 
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 
-
-
+let FSharpOptimizationDataResourceNameB = "FSharpOptimizationDataB."
+let FSharpSignatureDataResourceNameB = "FSharpSignatureDataB."

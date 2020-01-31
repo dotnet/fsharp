@@ -539,11 +539,13 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkTypar typar
     
-        and walkTypeConstraint = function
+        and walkTypeConstraint cx = 
+            match cx with 
             | SynTypeConstraint.WhereTyparIsValueType (t, _)
             | SynTypeConstraint.WhereTyparIsReferenceType (t, _)
             | SynTypeConstraint.WhereTyparIsUnmanaged (t, _)
             | SynTypeConstraint.WhereTyparSupportsNull (t, _)
+            | SynTypeConstraint.WhereTyparNotSupportsNull (t, _)
             | SynTypeConstraint.WhereTyparIsComparable (t, _)
             | SynTypeConstraint.WhereTyparIsEquatable (t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparDefaultsToType (t, ty, _)
@@ -552,8 +554,9 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparIsDelegate (t, ts, _) -> walkTypar t; List.iter walkType ts
             | SynTypeConstraint.WhereTyparSupportsMember (ts, sign, _) -> List.iter walkType ts; walkMemberSig sign
     
-        and walkPat = function
-            | SynPat.Tuple (_,pats, _)
+        and walkPat pat = 
+            match pat with
+            | SynPat.Tuple (_, pats, _)
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
             | SynPat.Named (pat, ident, _, _, _) ->
@@ -588,11 +591,13 @@ module ParsedInput =
     
         and walkInterfaceImpl (InterfaceImpl(_, bindings, _)) = List.iter walkBinding bindings
     
-        and walkIndexerArg = function
+        and walkIndexerArg arg =
+            match arg with
             | SynIndexerArg.One (e, _, _) -> walkExpr e
             | SynIndexerArg.Two (e1, _, e2, _, _, _) -> List.iter walkExpr [e1; e2]
     
-        and walkType = function
+        and walkType ty =
+            match ty with 
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
             | SynType.MeasurePower (t, _, _) -> walkType t
@@ -611,13 +616,15 @@ module ParsedInput =
             walkExpr e2
             e1 |> Option.iter walkExpr
     
-        and walkSimplePats = function
+        and walkSimplePats spats = 
+            match spats with
             | SynSimplePats.SimplePats (pats, _) -> List.iter walkSimplePat pats
             | SynSimplePats.Typed (pats, ty, _) -> 
                 walkSimplePats pats
                 walkType ty
     
-        and walkExpr = function
+        and walkExpr expr =
+            match expr with
             | SynExpr.Paren (e, _, _, _)
             | SynExpr.Quote (_, _, e, _, _)
             | SynExpr.Typed (e, _, _)
@@ -717,7 +724,8 @@ module ParsedInput =
             | SynExpr.Const (SynConst.Measure(_, m), _) -> walkMeasure m
             | _ -> ()
     
-        and walkMeasure = function
+        and walkMeasure synMeasure =
+            match synMeasure with
             | SynMeasure.Product (m1, m2, _)
             | SynMeasure.Divide (m1, m2, _) -> walkMeasure m1; walkMeasure m2
             | SynMeasure.Named (longIdent, _) -> addLongIdent longIdent
@@ -727,7 +735,8 @@ module ParsedInput =
             | SynMeasure.One
             | SynMeasure.Anon _ -> ()
     
-        and walkSimplePat = function
+        and walkSimplePat spat = 
+            match spat with
             | SynSimplePat.Attrib (pat, Attributes attrs, _) ->
                 walkSimplePat pat
                 List.iter walkAttribute attrs
