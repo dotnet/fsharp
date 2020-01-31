@@ -292,7 +292,6 @@ module internal FSharpEnvironment =
         // We look in the directories stepping up from the location of the runtime assembly.
         let loadFromLocation designTimeAssemblyPath =
             try
-                printfn "Using: %s" designTimeAssemblyPath
                 Some (Assembly.UnsafeLoadFrom designTimeAssemblyPath)
             with e ->
                 raiseError e
@@ -315,8 +314,6 @@ module internal FSharpEnvironment =
             let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
             let paths = searchParentDirChain (Some runTimeAssemblyPath) designTimeAssemblyName
             paths
-            |> Seq.iter(function res -> printfn ">>>> %s" res)
-            paths
             |> Seq.tryHead
             |> function
                | Some res -> loadFromLocation res
@@ -325,7 +322,6 @@ module internal FSharpEnvironment =
                     let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
                     loadFromLocation (Path.Combine (runTimeAssemblyPath, designTimeAssemblyName))
 
-        printfn "=============== S T A R T =========================================="
         if designTimeAssemblyName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
             loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName
         else
