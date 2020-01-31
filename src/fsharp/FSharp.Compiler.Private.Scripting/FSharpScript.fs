@@ -22,9 +22,6 @@ type FSharpScript(?additionalArgs: string[]) =
     member __.ValueBound = fsi.ValueBound
 
     [<CLIEvent>]
-    member __.IncludePathAdded = fsi.IncludePathAdded
-
-    [<CLIEvent>]
     member __.DependencyAdding = fsi.DependencyAdding
 
     [<CLIEvent>]
