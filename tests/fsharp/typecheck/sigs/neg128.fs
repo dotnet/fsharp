@@ -1,6 +1,6 @@
 module Neg128
 
-module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentGenericOutputSelector = 
+module Negative_SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentGenericOutputSelector = 
     open System
     open System.Numerics
     let _uint8max = bigint (uint32 Byte.MaxValue)

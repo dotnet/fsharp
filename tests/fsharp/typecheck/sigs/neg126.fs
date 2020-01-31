@@ -19,7 +19,7 @@ module Neg126
 //
 // This test exists to pin down that we get a warning produced saying ^a has been instantiated to "sbyte"
 
-module SelectOverloadedWitnessBasedOnInputTypeOneWitness = 
+module Negative_SelectOverloadedWitnessBasedOnInputTypeOneWitness = 
     type witnesses = 
       static member inline foo_witness (x : sbyte) : byte = byte x
 

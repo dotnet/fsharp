@@ -45,7 +45,7 @@ module SelectOverloadedWitnessBasedOnInputType =
 // Variation on the previous test case
 //
 // Note, this adds output as a selector though that shouldn't make any difference
-module SelectOverloadedWitnessBasedOnInputTypePlusNeedlessOutputTypePossibility = 
+module SelectOverloadedWitnessBasedOnInputTypePlusNeedlessOutputTypeSelector = 
     type witnesses = 
       static member inline unsigned_witness (x : sbyte) = uint8 x
       static member inline unsigned_witness (x : byte) = x
@@ -77,7 +77,7 @@ module SelectOverloadedWitnessBasedOnInputTypePlusNeedlessOutputTypePossibility 
     let g4 : int64 -> _ = unsigned
 
 // Variation on test case mentioned in https://github.com/dotnet/fsharp/pull/6805#issuecomment-580368303
-module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgument = 
+module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentAndUsingOutputSelector = 
     open System
     open System.Numerics
     let _uint8max = bigint (uint32 Byte.MaxValue)
@@ -224,7 +224,7 @@ module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentNoOutputSel
 // parameter is generic 'output rather than SRTP ^output
 //
 
-module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentGenericOutputSelector = 
+module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentGenericOutputType = 
     open System
     open System.Numerics
     let _uint8max = bigint (uint32 Byte.MaxValue)
