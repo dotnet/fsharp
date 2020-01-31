@@ -82,30 +82,6 @@ stacktype.Name = "Stack"
         Assert.AreEqual(1, errors.Length)
 
     [<Test>]
-    member __.``Add include path event successful``() =
-        use script = new FSharpScript()
-        let includePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-        let mutable includePathEventCount = 0
-        let mutable foundIncludePath = false
-        Event.add (fun (inc: string) ->
-            includePathEventCount <- includePathEventCount + 1
-            foundIncludePath <- foundIncludePath || String.Compare(includePath, inc, StringComparison.OrdinalIgnoreCase) = 0)
-            script.IncludePathAdded
-        script.Eval(sprintf "#I @\"%s\"" includePath) |> ignoreValue
-        Assert.AreEqual(1, includePathEventCount)
-        Assert.True(foundIncludePath)
-
-    [<Test>]
-    member __.``Add include path event unsuccessful``() =
-        use script = new FSharpScript()
-        let includePath = Path.Combine("a", "path", "that", "can't", "be", "found")
-        let mutable foundIncludePath = false
-        Event.add (fun _ -> foundIncludePath <- true) script.IncludePathAdded
-        let _result, errors = script.Eval(sprintf "#I @\"%s\"" includePath)
-        Assert.AreEqual(1, errors.Length)
-        Assert.False(foundIncludePath)
-
-    [<Test>]
     member _.``Compilation errors report a specific exception``() =
         use script = new FSharpScript()
         let result, _errors = script.Eval("abc")
@@ -121,15 +97,6 @@ stacktype.Name = "Stack"
         match result with
         | Ok(_) -> Assert.Fail("expected a failure")
         | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
-
-    [<Test>]
-    member __.``Nuget reference fires multiple events``() =
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
-        let mutable includeAddCount = 0
-        Event.add (fun _ -> includeAddCount <- includeAddCount + 1) script.IncludePathAdded
-        script.Eval("#r \"nuget:include=NUnitLite, version=3.11.0\"") |> ignoreValue
-        script.Eval("0") |> ignoreValue
-        Assert.GreaterOrEqual(includeAddCount, 1)
 
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
