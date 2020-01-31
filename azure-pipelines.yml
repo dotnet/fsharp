@@ -234,7 +234,7 @@ stages:
         # MacOS
         - job: MacOS
           pool:
-            vmImage: macOS-10.13
+            vmImage: macOS-latest
           variables:
           - name: _SignType
             value: Test
@@ -367,7 +367,7 @@ stages:
 
         # - job: MacOS_FCS
         #   pool:
-        #     vmImage: macOS-10.13
+        #     vmImage: macOS-latest
         #   variables:
         #   - name: _SignType
         #     value: Test
