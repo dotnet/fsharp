@@ -12,6 +12,25 @@ open FSharp.NativeInterop
 
 #nowarn "9"
 
+module Utils =
+    let runningOnMono =
+    #if ENABLE_MONO_SUPPORT
+        // Officially supported way to detect if we are running on Mono.
+        // See http://www.mono-project.com/FAQ:_Technical
+        // "How can I detect if am running in Mono?" section
+        try
+            System.Type.GetType ("Mono.Runtime") <> null
+        with _ ->
+            // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
+            // that is not reliable.
+            // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
+            // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
+            // their issue fixed but we need to be robust here anyway.
+            false
+    #else
+        false
+    #endif
+
 module internal Bytes = 
     let b0 n =  (n &&& 0xFF)
     let b1 n =  ((n >>> 8) &&& 0xFF)
@@ -296,7 +315,11 @@ type ByteMemory with
     member x.AsReadOnly() = ReadOnlyByteMemory x
 
     static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
-        let _makeMMFile (bytes: ReadOnlyByteMemory) =
+        if Utils.runningOnMono
+        then
+            // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/10245
+            ByteArrayMemory.FromArray (bytes.ToArray()) :> ByteMemory
+        else
             let length = int64 bytes.Length
             let mmf =
                 let mmf = MemoryMappedFile.CreateNew(null, length, MemoryMappedFileAccess.ReadWrite, MemoryMappedFileOptions.None, HandleInheritability.None)
@@ -307,25 +330,15 @@ type ByteMemory with
             let accessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.ReadWrite)
             RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
 
-        let _makeBAM (bytes: ReadOnlyByteMemory) =
-            ByteArrayMemory.FromArray (bytes.ToArray()) :> ByteMemory
-
-#if NET461 || NET472 // These two are from the FcsTargetNetFxFramework and/or the proto .netfx TFM
-        // trying to detect here if we're running on mono (ie running on a non-windows platform while targeting net4x)
-        match Environment.OSVersion.Platform with
-        | PlatformID.MacOSX | PlatformID.Unix ->
-            _makeBAM bytes
-        | _ ->
-            _makeMMFile bytes
-#endif
-#if NETSTANDARD2_0 || NETCOREAPP3_0 // these two are from the FCS library target + FSC TFMs
-        _makeMMFile bytes
-#endif
-
     static member FromFile(path, access, ?canShadowCopy: bool) =
         let canShadowCopy = defaultArg canShadowCopy false
 
-        let _makeMMFile (path: string, access: FileAccess, canShadowCopy: bool) =
+        if Utils.runningOnMono
+        then
+            // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/10245
+            let bytes = File.ReadAllBytes path
+            ByteArrayMemory.FromArray bytes
+        else
             let memoryMappedFileAccess =
                 match access with
                 | FileAccess.Read -> MemoryMappedFileAccess.Read
@@ -368,22 +381,6 @@ type ByteMemory with
             | _ -> ()
 
             RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
-
-        let _makeByteMemory (path: string) =
-            let bytes = File.ReadAllBytes path
-            ByteArrayMemory.FromArray bytes
-
-#if NET461 || NET472 // These two are from the FcsTargetNetFxFramework and/or the proto .netfx TFM
-        // trying to detect here if we're running on mono (ie running on a non-windows platform while targeting net4x)
-        match Environment.OSVersion.Platform with
-        | PlatformID.MacOSX | PlatformID.Unix ->
-            _makeByteMemory path
-        | _ ->
-            _makeMMFile (path, access, canShadowCopy)
-#endif
-#if NETSTANDARD2_0 || NETCOREAPP3_0 // these two are from the FCS library target + FSC TFMs
-        _makeMMFile (path, access, canShadowCopy)
-#endif
 
     static member FromUnsafePointer(addr, length, holder: obj) = 
         RawByteMemory(NativePtr.ofNativeInt addr, length, holder) :> ByteMemory
