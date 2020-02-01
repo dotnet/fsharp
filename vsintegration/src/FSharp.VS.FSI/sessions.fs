@@ -70,6 +70,7 @@ module SessionsProperties =
     let mutable fsiArgs = "--optimize"
     let mutable fsiShadowCopy = true
     let mutable fsiDebugMode = false
+    let mutable fsiPreview = false
 
 // This code pre-dates the events/object system.
 // Later: Tidy up.
@@ -218,7 +219,7 @@ let fsiStartInfo channelName =
 
     let addBoolOption name value args = sprintf "%s --%s%s" args name (if value then "+" else "-")
     let addStringOption name value args = sprintf "%s --%s:%O" args name value
-    
+
     let procArgs =
         ""
         |> addStringOption "fsi-server-output-codepage" outCP
@@ -227,11 +228,18 @@ let fsiStartInfo channelName =
         |> addStringOption "fsi-server" channelName
         |> (fun s -> s +  sprintf " %s" SessionsProperties.fsiArgs)
         |> addBoolOption "shadowcopyreferences" SessionsProperties.fsiShadowCopy
-        |> (fun args -> if SessionsProperties.fsiDebugMode then
-                            // for best debug experience, need optimizations OFF and debug info ON
-                            // tack these on the the end, they will override whatever comes earlier
-                            args |> addBoolOption "optimize" false |> addBoolOption "debug" true
-                        else args)
+        |> (fun args ->
+            // for best debug experience, need optimizations OFF and debug info ON
+            // tack these on the the end, they will override whatever comes earlier
+            if SessionsProperties.fsiDebugMode then
+                args |> addBoolOption "optimize" false |> addBoolOption "debug" true
+            else
+                args)
+        |> (fun args ->
+            if SessionsProperties.fsiPreview then
+                args |> addStringOption "langversion" "preview"
+            else
+                args)
 
     procInfo.Arguments <- procArgs
     procInfo.CreateNoWindow <- true
