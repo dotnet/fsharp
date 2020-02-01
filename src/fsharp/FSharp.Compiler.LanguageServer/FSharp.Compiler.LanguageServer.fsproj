@@ -8,6 +8,7 @@
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <PackageDescription>Implements the Language Server Protocol (LSP) for F#.</PackageDescription>
+    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
   </PropertyGroup>
 
   <ItemGroup>

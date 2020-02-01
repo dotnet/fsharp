@@ -95,3 +95,8 @@ module ILChecker =
 
     let checkIL dllFilePath expectedIL =
         checkILAux [] dllFilePath expectedIL
+
+    let reassembleIL ilFilePath dllFilePath =
+        let ilasmPath = config.ILASM
+        let errors, _ = exec ilasmPath ([ sprintf "%s /output=%s /dll" ilFilePath dllFilePath ])
+        errors

@@ -278,6 +278,25 @@ function Prepare-TempDir() {
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.targets") $TempDir
 }
 
+function EnablePreviewSdks() {
+  if (Test-Path variable:global:_MSBuildExe) {
+    return
+  }
+  $vsInfo = LocateVisualStudio
+  if ($vsInfo -eq $null) {
+    # Preview SDKs are allowed when no Visual Studio instance is installed
+    return
+  }
+
+  $vsId = $vsInfo.instanceId
+  $vsMajorVersion = $vsInfo.installationVersion.Split('.')[0]
+
+  $instanceDir = Join-Path ${env:USERPROFILE} "AppData\Local\Microsoft\VisualStudio\$vsMajorVersion.0_$vsId"
+  Create-Directory $instanceDir
+  $sdkFile = Join-Path $instanceDir "sdk.txt"
+  'UsePreviews=True' | Set-Content $sdkFile
+}
+
 try {
     Process-Arguments
 
@@ -289,6 +308,7 @@ try {
 
     if ($ci) {
         Prepare-TempDir
+        EnablePreviewSdks
 
         # enable us to build netcoreapp2.1 binaries
         $global:_DotNetInstallDir = Join-Path $RepoRoot ".dotnet"
