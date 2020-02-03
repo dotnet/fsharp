@@ -561,7 +561,6 @@ val instTypes              : TyparInst -> TypeInst -> TypeInst
 val instTyparConstraints  : TyparInst -> TyparConstraint list -> TyparConstraint list 
 
 val instTrait              : TyparInst -> TraitConstraintInfo -> TraitConstraintInfo 
-val instValRef              : TyparInst -> ValRef -> ValRef
 
 //-------------------------------------------------------------------------
 // From typars to types 

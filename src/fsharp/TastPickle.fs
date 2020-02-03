@@ -1537,7 +1537,7 @@ let u_trait_sln st =
          FSAnonRecdFieldSln(a, b, c)
     | _ -> ufailwith st "u_trait_sln"
 
-let u_trait st = 
+let u_trait st =
     let a, b, c, d, e, f = u_tup6 u_tys u_string u_MemberFlags u_tys (u_option u_ty) (u_option u_trait_sln) st
     // extSlns starts empty when reading trait constraints from pickled
     // data. This is ok as only generalized (pre-solution, pre-freshened)
