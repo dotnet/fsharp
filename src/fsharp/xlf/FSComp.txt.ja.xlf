@@ -82,11 +82,6 @@
         <target state="translated">属性を型拡張に適用することはできません。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcMemberOperatorDefinitionInExtrinsic">
-        <source>Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</source>
-        <target state="new">Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="new">use! may not be combined with and!</target>
@@ -5330,6 +5325,11 @@
       <trans-unit id="tcConditionalAttributeUsage">
         <source>Attribute 'System.Diagnostics.ConditionalAttribute' is only valid on methods or attribute classes</source>
         <target state="translated">属性 'System.Diagnostics.ConditionalAttribute' はメソッド クラスまたは属性クラスでのみ有効です</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMemberOperatorDefinitionInExtrinsic">
+        <source>Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</source>
+        <target state="translated">拡張メンバーでは演算子のオーバーロードを実行できません。代わりに型定義の一部として演算子を定義してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">

@@ -32,6 +32,12 @@ module DotNetPrimtiveWithNewOperator =
         static member (++)(a: int, b: int) = a 
     do check "jfs9dlfdh" 1 (1 ++ 2)
 
+/// Extending a .NET primitive type with new instance of an operator
+module DotNetPrimtiveExistingOperator1 = 
+    type System.Double with
+        static member (+)(a: int, b: float) = float a + b
+    do check "jfs9dlfdh" 3.0 (2.0 + 1)
+
 /// Extending a .NET primitive type with new operator
 module DotNetPrimtiveWithAmbiguousNewOperator = 
     [<AutoOpen>]

@@ -1974,12 +1974,16 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 |> List.filter (fun minfo -> minfo.IsVirtual)
             | None -> []
 
-        let namesOfMethodsThatMayDifferOnlyInReturnType = ["op_Explicit";"op_Implicit"] (* hardwired *)
-        let methodUniquenessIncludesReturnType (minfo: MethInfo) = List.contains minfo.LogicalName namesOfMethodsThatMayDifferOnlyInReturnType
+        let methodUniquenessIncludesReturnType (minfo: MethInfo) =
+            minfo.LogicalName = "op_Explicit" ||
+            minfo.LogicalName = "op_Implicit" ||
+            (AttributeChecking.MethInfoHasAttribute g m g.attrib_AllowOverloadByReturnTypeAttribute minfo)
+
         let MethInfosEquivWrtUniqueness eraseFlag m minfo minfo2 =
-            if methodUniquenessIncludesReturnType minfo
-            then MethInfosEquivByNameAndSig        eraseFlag true g cenv.amap m minfo minfo2
-            else MethInfosEquivByNameAndPartialSig eraseFlag true g cenv.amap m minfo minfo2 (* partial ignores return type *)
+            if methodUniquenessIncludesReturnType minfo then
+                MethInfosEquivByNameAndSig eraseFlag true g cenv.amap m minfo minfo2
+            else
+                MethInfosEquivByNameAndPartialSig eraseFlag true g cenv.amap m minfo minfo2 (* partial ignores return type *)
 
         let immediateMeths = 
             [ for v in tycon.AllGeneratedValues do yield FSMeth (g, ty, v, None)

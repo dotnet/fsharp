@@ -323,14 +323,14 @@ let FreshenTrait traitFreshner traitInfo =
 /// Note: this now looks identical to constraint instantiation.
 
 let CopyTyparConstraints traitFreshner m tprefInst (tporig: Typar) =
-    tporig.Constraints 
-    |>  List.map (fun tpc -> 
-           match tpc with 
-           | TyparConstraint.CoercesTo(ty, _) -> 
+    tporig.Constraints
+    |>  List.map (fun tpc ->
+           match tpc with
+           | TyparConstraint.CoercesTo(ty, _) ->
                TyparConstraint.CoercesTo (instType tprefInst ty, m)
-           | TyparConstraint.DefaultsTo(priority, ty, _) -> 
+           | TyparConstraint.DefaultsTo(priority, ty, _) ->
                TyparConstraint.DefaultsTo (priority, instType tprefInst ty, m)
-           | TyparConstraint.SupportsNull _ -> 
+           | TyparConstraint.SupportsNull _ ->
                TyparConstraint.SupportsNull m
            | TyparConstraint.IsEnum (uty, _) ->
                TyparConstraint.IsEnum (instType tprefInst uty, m)
@@ -354,8 +354,8 @@ let CopyTyparConstraints traitFreshner m tprefInst (tporig: Typar) =
                let traitInfo2 = FreshenTrait traitFreshner traitInfo 
                TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo2, m))
 
-/// The constraints for each typar copied from another typar can only be fixed up once 
-/// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ... 
+/// The constraints for each typar copied from another typar can only be fixed up once
+/// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ...
 let FixupNewTypars traitFreshner m (formalEnclosingTypars:Typars) (tinst: TType list) (tpsorig: Typars) (tps: Typars) =
     // Checks.. These are defensive programming against early reported errors.
     let n0 = formalEnclosingTypars.Length
@@ -368,7 +368,7 @@ let FixupNewTypars traitFreshner m (formalEnclosingTypars:Typars) (tinst: TType 
     // The real code..
     let renaming, tptys = mkTyparToTyparRenaming tpsorig tps
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
-    (tpsorig, tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints traitFreshner m tprefInst tporig)) 
+    (tpsorig, tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints traitFreshner m tprefInst tporig))
     renaming, tptys
 
 
