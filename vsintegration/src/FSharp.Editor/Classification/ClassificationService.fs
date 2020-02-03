@@ -71,27 +71,24 @@ type internal FSharpClassificationService
     static let getLexicalClassifications(filePath: string, defines, text: SourceText, textSpan: TextSpan, ct) =
         let result = ImmutableArray.CreateBuilder()
         let tokenCallback =
-            let textRange = RoslynHelpers.TextSpanToFSharpRange(filePath, textSpan, text)
             fun (tok: FSharpSyntaxToken) ->
-                if rangeContainsRange textRange tok.Range then
-                    let spanKind =
-                        if tok.IsKeyword then
-                            ClassificationTypeNames.Keyword
-                        elif tok.IsNumericLiteral then
-                            ClassificationTypeNames.NumericLiteral
-                        elif tok.IsCommentTrivia then
-                            ClassificationTypeNames.Comment
-                        elif tok.IsStringLiteral then
-                            ClassificationTypeNames.StringLiteral
-                        else
-                            ClassificationTypeNames.Text
-
-                    match RoslynHelpers.TryFSharpRangeToTextSpan(text, tok.Range) with
-                    | Some span -> result.Add(ClassifiedSpan(spanKind, span))
-                    | _ -> ()
+                let spanKind =
+                    if tok.IsKeyword then
+                        ClassificationTypeNames.Keyword
+                    elif tok.IsNumericLiteral then
+                        ClassificationTypeNames.NumericLiteral
+                    elif tok.IsCommentTrivia then
+                        ClassificationTypeNames.Comment
+                    elif tok.IsStringLiteral then
+                        ClassificationTypeNames.StringLiteral
+                    else
+                        ClassificationTypeNames.Text
+                match RoslynHelpers.TryFSharpRangeToTextSpan(text, tok.Range) with
+                | Some span -> result.Add(ClassifiedSpan(TextSpan(textSpan.Start + span.Start, span.Length), spanKind))
+                | _ -> ()
                 
         let flags = FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling
-        FSharpLexer.Lex(text.ToFSharpSourceText(), tokenCallback, langVersion = "preview", filePath = filePath, conditionalCompilationDefines = defines, flags = flags, ct = ct)
+        FSharpLexer.Lex(text.GetSubText(textSpan).ToFSharpSourceText(), tokenCallback, langVersion = "preview", filePath = filePath, conditionalCompilationDefines = defines, flags = flags, ct = ct)
 
         result.ToImmutable()
 

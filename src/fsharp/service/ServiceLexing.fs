@@ -1329,7 +1329,9 @@ module Lexer =
             // virtual
             // volatile
             | FSharpSyntaxTokenKind.Reserved
-            | FSharpSyntaxTokenKind.KeywordString -> true
+            | FSharpSyntaxTokenKind.KeywordString
+            | FSharpSyntaxTokenKind.Binder
+            | FSharpSyntaxTokenKind.OffsideBinder -> true
             | _ -> false
 
         member this.IsIdentifier =
