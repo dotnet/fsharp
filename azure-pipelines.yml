@@ -373,7 +373,7 @@ stages:
             inputs:
               useGlobalJson: true
               workingDirectory: fcs
-          - script: ./fcs/build.sh Test
+          - script: ./fcs/build.sh
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
@@ -399,7 +399,7 @@ stages:
             inputs:
               useGlobalJson: true
               workingDirectory: fcs
-          - script: ./fcs/build.sh Test
+          - script: ./fcs/build.sh
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
