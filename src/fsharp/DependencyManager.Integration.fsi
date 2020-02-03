@@ -10,7 +10,7 @@ type IDependencyManagerProvider =
     abstract Key: string
     abstract ResolveDependencies: scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
     abstract DependencyAdding: IEvent<string * string>
-    abstract DependencyAdded: IEvent<string * string>
+    abstract DependencyAdded: IEvent<string * string * string list * string list>
     abstract DependencyFailed: IEvent<string * string>
 
 [<RequireQualifiedAccess>]
