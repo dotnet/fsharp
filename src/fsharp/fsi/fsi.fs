@@ -1302,7 +1302,7 @@ type internal FsiDynamicCompiler
                             Event.add dependencyAddingEvent.Trigger packageManager.DependencyAdding
                             Event.add dependencyAddedEvent.Trigger packageManager.DependencyAdded
                             Event.add dependencyFailedEvent.Trigger packageManager.DependencyFailed
-                        match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" "stdin.fsx" m packageManagerTextLines with
+                        match DependencyManagerIntegration.resolve packageManager ".fsx" m packageManagerTextLines with
                         | None -> istate // error already reported
                         | Some (succeeded, generatedScripts, additionalIncludeFolders) ->    //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                             if succeeded then
@@ -2540,8 +2540,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | None -> SimulatedMSBuildReferenceResolver.getResolver()
         | Some rr -> rr
 
-    let includePathAddedEvent = Control.Event<_>()
-
     let tcConfigB =
         TcConfigBuilder.CreateNew(legacyReferenceResolver, 
             defaultFSharpBinariesDir=defaultFSharpBinariesDir, 
@@ -2550,8 +2548,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             isInteractive=true, 
             isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-            includePathAdded=includePathAddedEvent.Trigger)
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
 
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
     do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
@@ -2857,10 +2854,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
     member __.ValueBound = fsiDynamicCompiler.ValueBound
-
-    [<CLIEvent>]
-    /// Event fires every time a path is added to the include search list, e.g., via `#I`.
-    member __.IncludePathAdded = includePathAddedEvent.Publish
 
     [<CLIEvent>]
     /// Event fires at the start of adding a dependency via the dependency manager.

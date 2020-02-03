@@ -400,18 +400,34 @@ let IsBinaryOpArgTypePair p1 p2 permitWeakResolution minfos g ty1 ty2 =
     | PermitWeakResolution.No -> 
         if isNil minfos then 
             // compat path
-            not (isTyparTy g ty2) 
+            not (isTyparTy g ty2) &&
+            // All built-in rules only apply in cases where left and right operator types are equal (after
+            // erasing units)
+            typeEquivAux EraseMeasures g ty1 ty2
         else
-            // normal path
-            p2 ty2
+            // normal path - for builtin binary op solutions we check the underlying types are equivalent
+            p2 ty2 &&
+            // all built-in rules only apply in cases where left and right operator types are equal (after
+            // erasing units)
+            typeEquivAux EraseMeasures g ty1 ty2
 
     // During regular canonicalization (weak resolution) we don't do any check on the other type at all - we 
     // ignore the possibility that method overloads may resolve the constraint
-    | PermitWeakResolution.YesAtInlineGeneralization -> true
-    | PermitWeakResolution.YesAtResolution -> true
+    | PermitWeakResolution.YesAtInlineGeneralization
+    | PermitWeakResolution.YesAtResolution -> 
+        // weak resolution lets the other type be a variable type
+        isTyparTy g ty2 || 
+        // If the other type is not a variable type, it is nominal,
+        // and all built-in rules only apply in cases where left and right operator types are equal (after
+        // erasing units)
+        typeEquivAux EraseMeasures g ty1 ty2
     
     // During codegen we only apply a builtin resolution if both the types are correct
     | PermitWeakResolution.YesAtCodeGen -> p2 ty2
+        p2 ty2 &&
+        // All built-in rules only apply in cases where left and right operator types are equal (after
+        // erasing units)
+        typeEquivAux EraseMeasures g ty1 ty2
     
 let IsSymmetricBinaryOpArgTypePair p permitWeakResolution minfos g ty1 ty2 = 
     IsBinaryOpArgTypePair p p permitWeakResolution minfos g ty1 ty2 ||
@@ -1593,16 +1609,17 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   // reasons we use the more restrictive isNil frees.
                   if (permitWeakResolution.PerformWeakOverloadResolution && MemberConstraintIsReadyForWeakResolution csenv traitInfo) || isNil frees then 
                       do! errors  
+                  else
+                      do! AddMemberConstraint csenv ndeep m2 trace traitInfo support frees
+                  
+                  if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then 
+                      return TTraitUnsolved
+                  else
                       match errors with
                       | ErrorResult (_, UnresolvedOverloading _) when not ignoreUnresolvedOverload && (not (nm = "op_Explicit" || nm = "op_Implicit")) ->
                           return! ErrorD AbortForFailedOverloadResolution
                       | _ -> 
                           return TTraitUnsolved
-                  // Otherwise re-record the trait waiting for canonicalization 
-                  else
-                      do! AddMemberConstraint csenv ndeep m2 trace traitInfo support frees
-
-                      return TTraitUnsolved
      }
     return! RecordMemberConstraintSolution csenv.SolverState m trace traitInfo res
   }
@@ -2533,8 +2550,13 @@ and ResolveOverloading
 
           // - Always take the return type into account for
           //      -- op_Explicit, op_Implicit
-          //      -- candidate method sets that potentially use tupling of unfilled out args
-          let alwaysCheckReturn = isOpConversion || candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs)
+          //      -- candidate method sets that potentially use tupling of unfilled out args or overloading on return type
+          let alwaysCheckReturn =
+              isOpConversion ||
+              candidates |> List.exists (fun cmeth -> 
+                 cmeth.HasOutArgs ||
+                 (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions &&
+                  AttributeChecking.MethInfoHasAttribute g m g.attrib_AllowOverloadByReturnTypeAttribute cmeth.Method))
 
           // Exact match rule.
           //

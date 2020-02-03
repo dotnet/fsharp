@@ -2170,8 +2170,6 @@ type TcConfigBuilder =
       mutable pathMap: PathMap
 
       mutable langVersion: LanguageVersion
-
-      mutable includePathAdded: string -> unit
       }
 
     static member Initial =
@@ -2312,18 +2310,16 @@ type TcConfigBuilder =
           noConditionalErasure = false
           pathMap = PathMap.empty
           langVersion = LanguageVersion("default")
-          includePathAdded = ignore
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
-                            isInteractive, isInvalidationSupported, defaultCopyFSharpCore, tryGetMetadataSnapshot, ?includePathAdded: string -> unit) =
+                            isInteractive, isInvalidationSupported, defaultCopyFSharpCore, tryGetMetadataSnapshot) =
 
         Debug.Assert(FileSystem.IsPathRootedShim implicitIncludeDir, sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
 
         if (String.IsNullOrEmpty defaultFSharpBinariesDir) then
             failwith "Expected a valid defaultFSharpBinariesDir"
 
-        let includePathAdded = defaultArg includePathAdded ignore
         { TcConfigBuilder.Initial with 
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
@@ -2334,7 +2330,6 @@ type TcConfigBuilder =
             copyFSharpCore = defaultCopyFSharpCore
             tryGetMetadataSnapshot = tryGetMetadataSnapshot
             useFsiAuxLib = isInteractive
-            includePathAdded = includePathAdded
         }
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) = 
@@ -2410,7 +2405,6 @@ type TcConfigBuilder =
             | None -> false
         if ok && not (List.contains absolutePath tcConfigB.includes) then 
            tcConfigB.includes <- tcConfigB.includes ++ absolutePath
-           tcConfigB.includePathAdded absolutePath
 
     member tcConfigB.AddLoadedSource(m, originalPath, pathLoadedFrom) =
         if FileSystem.IsInvalidPathShim originalPath then
@@ -5158,7 +5152,7 @@ module ScriptPreprocessClosure =
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false), nowarns
     
-    let FindClosureFiles(mainFile, _m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager: Lexhelp.LexResourceManager) =
+    let FindClosureFiles(_mainFile, _m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager: Lexhelp.LexResourceManager) =
         let mutable tcConfig = origTcConfig
         
         let observedSources = Observed()
@@ -5182,7 +5176,7 @@ module ScriptPreprocessClosure =
                                 let inline snd3 (_, b, _) = b
                                 let packageManagerTextLines = packageManagerLines |> List.map snd3
 
-                                match DependencyManagerIntegration.resolve packageManager tcConfig.implicitIncludeDir mainFile scriptName m packageManagerTextLines with
+                                match DependencyManagerIntegration.resolve packageManager ".fsx" m packageManagerTextLines with
                                 | None -> () // error already reported
                                 | Some (succeeded, generatedScripts, additionalIncludeFolders) ->  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
                                     // This may incrementally update tcConfig too with new #r references

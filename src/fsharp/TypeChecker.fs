@@ -331,7 +331,7 @@ let AddLocalValMap tcSink scopem (vals: Val NameMap) env =
             { env with
                 eNameResEnv = AddValMapToNameEnv vals env.eNameResEnv
                 eUngeneralizableItems = NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
 /// Add a list of local values to TcEnv and report them to the sink
@@ -343,7 +343,7 @@ let AddLocalVals tcSink scopem (vals: Val list) env =
             { env with
                 eNameResEnv = AddValListToNameEnv vals env.eNameResEnv
                 eUngeneralizableItems = List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
 /// Add a local value to TcEnv and report it to the sink
@@ -359,7 +359,7 @@ let AddLocalExnDefnAndReport tcSink scopem env (exnc: Tycon) =
     let env = { env with eNameResEnv = AddExceptionDeclsToNameEnv BulkAdd.No env.eNameResEnv (mkLocalEntityRef exnc) }
     // Also make VisualStudio think there is an identifier in scope at the range of the identifier text of its binding location
     CallEnvSink tcSink (exnc.Range, env.NameEnv, env.AccessRights)
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
  
 /// Add a list of type definitions to TcEnv
@@ -375,7 +375,7 @@ let AddLocalTycons g amap m (tycons: Tycon list) env =
 /// Add a list of type definitions to TcEnv and report them to the sink
 let AddLocalTyconsAndReport tcSink scopem g amap m tycons env = 
     let env = AddLocalTycons g amap m tycons env
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
 /// Adjust the TcEnv to account for opening the set of modules, namespaces or static classes implied by an `open` declaration
@@ -451,7 +451,7 @@ let AddLocalSubModule g amap m env (modul: ModuleOrNamespace) =
 /// Add a "module X = ..." definition to the TcEnv and report it to the sink
 let AddLocalSubModuleAndReport tcSink scopem g amap m env (modul: ModuleOrNamespace) =
     let env = AddLocalSubModule g amap m env modul 
-    CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
+    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
  
 /// Add a set of explicitly declared type parameters as being available in the TcEnv
@@ -2012,7 +2012,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
 
                     // Record the precise resolution of the field for intellisense
                     let item = FreshenRecdFieldRef cenv.nameResolver m fref2
-                    CallNameResolutionSink cenv.tcSink ((snd fld).idRange, env.eNameResEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, ad)
+                    CallNameResolutionSink cenv.tcSink ((snd fld).idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, ad)
 
                     CheckRecdFieldAccessible cenv.amap m env.eAccessRights fref2 |> ignore
                     CheckFSharpAttributes cenv.g fref2.PropertyAttribs m |> CommitOperationResult
@@ -2740,9 +2740,9 @@ let TcValEarlyGeneralizationConsistencyCheck cenv (env: TcEnv) (v: Val, vrec, ti
 /// F# object model member, in which case the optInst is the type instantiation
 /// inferred by member overload resolution, and vrefFlags indicate if the
 /// member is being used in a special way, i.e. may be one of:
-///    | CtorValUsedAsSuperInit    "inherit Panel()"
-///    | CtorValUsedAsSelfInit     "new() = new OwnType(3)"
-///    | VSlotDirectCall           "base.OnClick(eventArgs)"
+///    | CtorValUsedAsSuperInit "inherit Panel()"
+///    | CtorValUsedAsSelfInit "new() = new OwnType(3)"
+///    | VSlotDirectCall "base.OnClick(eventArgs)"
 let TcVal traitFreshner checkAttributes cenv env tpenv (vref: ValRef) optInst optAfterResolution m =
     let (tpsorig, _, _, _, tinst, _) as res = 
         let v = vref.Deref
@@ -2794,8 +2794,8 @@ let TcVal traitFreshner checkAttributes cenv env tpenv (vref: ValRef) optInst op
                               tpsorig, NormalValUse, tinst, tau, tpenv
                           | ValInRecScope true 
                           | ValNotInRecScope ->
-                              let tpsorig, _, tptys, tau = FreshenPossibleForallTy traitFreshner cenv.g m TyparRigidity.Flexible vty 
-                              tpsorig, NormalValUse, tptys, tau, tpenv
+                              let tpsorig, _, tinst, tau = FreshenPossibleForallTy traitFreshner cenv.g m TyparRigidity.Flexible vty 
+                              tpsorig, NormalValUse, tinst, tau, tpenv
 
                       // If we have got an explicit instantiation then use that 
                       | Some(vrefFlags, checkTys) -> 
@@ -4588,7 +4588,7 @@ and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk tpenv (Typar(id, _, _) a
     | None -> 
         if newOk = NoNewTypars then
             let suggestTypeParameters (addToBuffer: string -> unit) =
-                for p in env.NameEnv.eTypars do
+                for p in env.eNameResEnv.eTypars do
                     addToBuffer ("'" + p.Key)
 
                 match tpenv with
@@ -5961,7 +5961,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
 
     | SynExpr.ObjExpr (objTy, argopt, binds, extraImpls, mNewExpr, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
         TcObjectExpr cenv overallTy env tpenv (objTy, argopt, binds, extraImpls, mNewExpr, m)
             
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) -> 
@@ -6614,7 +6614,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExprInfo objTy fldsList
     // Check accessibility: this is also done in BuildFieldMap, but also need to check 
     // for fields in { new R with a=1 and b=2 } constructions and { r with a=1 } copy-and-update expressions 
     rfrefs |> List.iter (fun rfref -> 
-        CheckRecdFieldAccessible cenv.amap m env.AccessRights rfref |> ignore
+        CheckRecdFieldAccessible cenv.amap m env.eAccessRights  rfref |> ignore
         CheckFSharpAttributes cenv.g rfref.PropertyAttribs m |> CommitOperationResult)        
 
     let args = List.map snd fldsList
@@ -6711,7 +6711,8 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty: TType) virtNameAndArit
         
     | [(_, absSlot)] -> 
         
-        let typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot = FreshenAbstractSlot env.TraitFreshner cenv.g cenv.amap mBinding synTyparDecls absSlot
+        let typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot
+            = FreshenAbstractSlot env.TraitFreshner cenv.g cenv.amap mBinding synTyparDecls absSlot
 
         // Work out the required type of the member 
         let bindingTy = implty --> (mkMethodTy cenv.g argTysFromAbsSlot retTyFromAbsSlot) 
@@ -9269,7 +9270,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                   let mkConstrApp _mArgs = function [arg] -> arg | _ -> error(InternalError("ApplyUnionCaseOrExn", mItem))
                   mkConstrApp, [ucaseAppTy], [ for (s, m) in apinfo.ActiveTagsWithRanges -> mkSynId m s ]
               | _ ->
-                  let ucref = mkChoiceCaseRef cenv.g mItem aparity n
+                  let ucref = mkChoiceCaseRef g mItem aparity n
                   let _, _, tinst, _ = FreshenTyconRef2 env.TraitFreshner mItem ucref.TyconRef
                   let ucinfo = UnionCaseInfo (tinst, ucref)
                   ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy (Item.UnionCase(ucinfo, false))
@@ -14500,7 +14501,7 @@ module MutRecBindingChecking =
         for tp in unsolvedTyparsForRecursiveBlockInvolvingGeneralizedVariables do
             //printfn "solving unsolvedTyparsInvolvingGeneralizedVariable: %s #%d" tp.DisplayName tp.Stamp
             if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
-                ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denv tp 
+                ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denv tp
           
         // Now that we know what we've generalized we can adjust the recursive references 
         let defnsCs = TcMutRecBindings_Phase2C_FixupRecursiveReferences cenv (denv, defnsBs, generalizedTyparsForRecursiveBlock, generalizedRecBinds, scopem)
