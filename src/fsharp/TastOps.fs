@@ -400,14 +400,12 @@ let mkInstRemap tpinst =
       extSlnsMap = Map.empty }
 
 // entry points for "typar -> TType" instantiation 
-let instType              tpinst x = if isNil tpinst then x else remapTypeAux  (mkInstRemap tpinst) x
-let instTypes             tpinst x = if isNil tpinst then x else remapTypesAux (mkInstRemap tpinst) x
-let instTrait             tpinst x = if isNil tpinst then x else remapTraitAux (mkInstRemap tpinst) x
-let instValRef            tpinst x = if isNil tpinst then x else remapValRef (mkInstRemap tpinst) x
+let instType tpinst x = if isNil tpinst then x else remapTypeAux (mkInstRemap tpinst) x
+let instTypes tpinst x = if isNil tpinst then x else remapTypesAux (mkInstRemap tpinst) x
+let instTrait tpinst x = if isNil tpinst then x else remapTraitAux (mkInstRemap tpinst) x
 let instTyparConstraints tpinst x = if isNil tpinst then x else remapTyparConstraintsAux (mkInstRemap tpinst) x
 let instSlotSig tpinst ss = remapSlotSig (fun _ -> []) (mkInstRemap tpinst) ss
 let copySlotSig ss = remapSlotSig (fun _ -> []) Remap.Empty ss
-
 
 let mkTyparToTyparRenaming tpsOrig tps = 
     let tinst = generalizeTypars tps
@@ -4305,7 +4303,7 @@ let IsHidden setF accessF remapF =
             check rest (remapF rpi x))
     fun mrmi x -> 
         check mrmi x
-        
+
 let IsHiddenTycon mrmi x = IsHidden (fun mhi -> mhi.HiddenTycons) (fun tc -> tc.Accessibility) (fun rpi x -> (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) mrmi x
 
 let IsHiddenTyconRepr mrmi x = IsHidden (fun mhi -> mhi.HiddenTyconReprs) (fun v -> v.TypeReprAccessibility) (fun rpi x -> (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) mrmi x
