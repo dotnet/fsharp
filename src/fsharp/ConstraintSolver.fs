@@ -423,7 +423,7 @@ let IsBinaryOpArgTypePair p1 p2 permitWeakResolution minfos g ty1 ty2 =
         typeEquivAux EraseMeasures g ty1 ty2
     
     // During codegen we only apply a builtin resolution if both the types are correct
-    | PermitWeakResolution.YesAtCodeGen -> p2 ty2
+    | PermitWeakResolution.YesAtCodeGen ->
         p2 ty2 &&
         // All built-in rules only apply in cases where left and right operator types are equal (after
         // erasing units)
