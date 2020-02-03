@@ -29,7 +29,7 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
     // This has to be mutable because BlobReader is a struct and we have to mutate its contents.
     let mutable reader = BlobReader(viewAccessor.SafeMemoryMappedViewHandle.DangerousGetHandle() |> NativePtr.ofNativeInt, int length)
 
-    let readRange () =
+    member _.ReadRange() =
         let startLine = reader.ReadInt32()
         let startColumn = reader.ReadInt32()
         let endLine = reader.ReadInt32()
@@ -40,16 +40,13 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
         let posEnd = mkPos endLine endColumn
         mkFileIndexRange fileIndex posStart posEnd
 
-    let readKeyString () =
+    member _.ReadKeyString() =
         let size = reader.ReadInt32()
-        reader.ReadUTF16 size
+        let keyString = ReadOnlySpan<byte>(reader.CurrentPointer |> NativePtr.toVoidPtr, size)
+        reader.Offset <- reader.Offset + size
+        keyString
 
-    member _.ReadSingleKeyInfo() =
-        checkDispose ()
-
-        struct(readRange (), readKeyString ())
-
-    member _.FindAll(item: Item) =
+    member this.FindAll(item: Item) =
         checkDispose ()
 
         let builder = ItemKeyStoreBuilder()
@@ -57,17 +54,19 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
         match builder.TryBuildAndReset() with
         | None -> Seq.empty
         | Some(singleStore : ItemKeyStore) ->
-            let struct(_, keyString1) = singleStore.ReadSingleKeyInfo()
-            (singleStore :> IDisposable).Dispose()
+            singleStore.ReadRange() |> ignore
+            let keyString1 = singleStore.ReadKeyString()
 
             let results = ResizeArray()
 
             reader.Offset <- 0
             while reader.Offset < reader.Length do
-                let m = readRange()
-                let keyString2 = readKeyString()
-                if keyString1 = keyString2 then
+                let m = this.ReadRange()
+                let keyString2 = this.ReadKeyString()
+                if keyString1.SequenceEqual keyString2 then
                     results.Add m
+
+            (singleStore :> IDisposable).Dispose()
 
             results :> range seq
 

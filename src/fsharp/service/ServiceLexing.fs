@@ -1384,6 +1384,9 @@ module Lexer =
             else
                 lexer
 
+        use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
+
         usingLexbufForParsing (lexbuf, filePath) (fun lexbuf -> 
             while not lexbuf.IsPastEndOfStream do
                 ct.ThrowIfCancellationRequested ()
