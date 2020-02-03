@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.Diagnostics
 open System.Threading
 open System.Runtime.Caching
@@ -21,7 +22,11 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 // IVT, we'll maintain the status quo.
 #nowarn "44"
 
+#nowarn "57"
+
+open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.Lexer
 
 type SemanticClassificationData = (struct(FSharp.Compiler.Range.range * SemanticClassificationType)[])
 type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<struct(FSharp.Compiler.Range.range * SemanticClassificationType)>>
@@ -62,6 +67,33 @@ type internal FSharpClassificationService
         projectInfoManager: FSharpProjectOptionsManager
     ) =
     static let userOpName = "SemanticColorization"
+
+    static let getLexicalClassifications(filePath: string, defines, text: SourceText, textSpan: TextSpan, ct) =
+        let result = ImmutableArray.CreateBuilder()
+        let tokenCallback =
+            let textRange = RoslynHelpers.TextSpanToFSharpRange(filePath, textSpan, text)
+            fun (tok: FSharpSyntaxToken) ->
+                if rangeContainsRange textRange tok.Range then
+                    let spanKind =
+                        if tok.IsKeyword then
+                            ClassificationTypeNames.Keyword
+                        elif tok.IsNumericLiteral then
+                            ClassificationTypeNames.NumericLiteral
+                        elif tok.IsCommentTrivia then
+                            ClassificationTypeNames.Comment
+                        elif tok.IsStringLiteral then
+                            ClassificationTypeNames.StringLiteral
+                        else
+                            ClassificationTypeNames.Text
+
+                    match RoslynHelpers.TryFSharpRangeToTextSpan(text, tok.Range) with
+                    | Some span -> result.Add(ClassifiedSpan(spanKind, span))
+                    | _ -> ()
+                
+        let flags = FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling
+        FSharpLexer.Lex(text.ToFSharpSourceText(), tokenCallback, langVersion = "preview", filePath = filePath, conditionalCompilationDefines = defines, flags = flags, ct = ct)
+
+        result.ToImmutable()
 
     static let addSemanticClassification sourceText (targetSpan: TextSpan) items (outputResult: List<ClassifiedSpan>) =
         for struct(range, classificationType) in items do
@@ -111,17 +143,9 @@ type internal FSharpClassificationService
 
                 // For closed documents, only get classification for the text within the span.
                 // This may be inaccurate for multi-line tokens such as string literals, but this is ok for now
-                //     as it's better than having to tokenize a big part of a file.
-                // This is to handle syntactic classification for find all references.
+                //     as it's better than having to tokenize a big part of a file which in return will allocate a lot and hurt find all references performance.
                 if not (document.Project.Solution.Workspace.IsDocumentOpen document.Id) then
-                    let tokenizer = FSharpSourceTokenizer(defines, Some document.FilePath)
-                    let tokenizer = tokenizer.CreateLineTokenizer(sourceText.ToFSharpSourceText())
-                    let rec scan (state) =
-                        match tokenizer.ScanToken state with
-                        | Some info, state ->
-                            
-                    while 
-                    tokenizer.ScanToken(FSharpTokenizerLexState.Initial)
+                    result.AddRange(getLexicalClassifications(document.FilePath, defines, sourceText, textSpan, cancellationToken))
                 else
                     result.AddRange(Tokenizer.getClassifiedSpans(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
             } |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
