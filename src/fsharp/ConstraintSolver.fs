@@ -310,9 +310,12 @@ let rec occursCheck g un ty =
 /// During code gen we run with permitWeakResolution on, but we only apply it where one of the argument types for the built-in constraint resolution is
 /// a variable type.
 type PermitWeakResolution = 
-    | Yes of codegen: bool
+    | YesAtInlineGeneralization
+    | YesAtResolution
+    | YesAtCodeGen
     | No
-    member x.Permit = match x with Yes _ -> true | No -> false
+    member x.PerformWeakBuiltInResolution = match x with YesAtInlineGeneralization | YesAtResolution | YesAtCodeGen -> true | No -> false
+    member x.PerformWeakOverloadResolution = match x with YesAtResolution -> true | YesAtInlineGeneralization | YesAtCodeGen  | No -> false
 
 let rec isNativeIntegerTy g ty =
     typeEquivAux EraseMeasures g g.nativeint_ty ty || 
@@ -410,7 +413,8 @@ let IsBinaryOpArgTypePair p1 p2 permitWeakResolution minfos g ty1 ty2 =
 
     // During regular canonicalization (weak resolution) we don't do any check on the other type at all - we 
     // ignore the possibility that method overloads may resolve the constraint
-    | PermitWeakResolution.Yes false ->
+    | PermitWeakResolution.YesAtInlineGeneralization
+    | PermitWeakResolution.YesAtResolution -> 
         // weak resolution lets the other type be a variable type
         isTyparTy g ty2 || 
         // If the other type is not a variable type, it is nominal,
@@ -419,7 +423,7 @@ let IsBinaryOpArgTypePair p1 p2 permitWeakResolution minfos g ty1 ty2 =
         typeEquivAux EraseMeasures g ty1 ty2
     
     // During codegen we only apply a builtin resolution if both the types are correct
-    | PermitWeakResolution.Yes true ->
+    | PermitWeakResolution.YesAtCodeGen ->
         p2 ty2 &&
         // All built-in rules only apply in cases where left and right operator types are equal (after
         // erasing units)
@@ -1603,7 +1607,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   // If there's nothing left to learn then raise the errors.
                   // Note: we should likely call MemberConstraintIsReadyForResolution here when permitWeakResolution=false but for stability
                   // reasons we use the more restrictive isNil frees.
-                  if (permitWeakResolution.Permit && MemberConstraintIsReadyForWeakResolution csenv traitInfo) || isNil frees then 
+                  if (permitWeakResolution.PerformWeakOverloadResolution && MemberConstraintIsReadyForWeakResolution csenv traitInfo) || isNil frees then 
                       do! errors  
                   else
                       do! AddMemberConstraint csenv ndeep m2 trace traitInfo support frees
@@ -1709,7 +1713,7 @@ and GetRelevantExtensionMethodsForTrait m (amap: Import.ImportMap) (traitInfo: T
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
 and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm (TTrait(tys, _, memFlags, argtys, rty, soln, extSlns, ad) as traitInfo) : MethInfo list =
     let results = 
-        if permitWeakResolution.Permit || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
+        if permitWeakResolution.PerformWeakOverloadResolution || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
             let minfos = 
                 match memFlags.MemberKind with
@@ -1816,8 +1820,9 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep (pe
         let csenv = { csenv with m = m2 }
         SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo)
 
-and CanonicalizeRelevantMemberConstraints (csenv: ConstraintSolverEnv) ndeep trace tps =
-    SolveRelevantMemberConstraints csenv ndeep (PermitWeakResolution.Yes false) trace tps
+and CanonicalizeRelevantMemberConstraints (csenv: ConstraintSolverEnv) ndeep trace tps isInline =
+    let permitWeakResolution = (if isInline then PermitWeakResolution.YesAtInlineGeneralization else PermitWeakResolution.YesAtResolution)
+    SolveRelevantMemberConstraints csenv ndeep permitWeakResolution trace tps
   
 and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) traitInfo support (frees: Typar list) =
     let g = csenv.g
@@ -3080,7 +3085,7 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
 
-    let! _res = SolveMemberConstraint csenv true (PermitWeakResolution.Yes true) 0 m NoTrace traitInfo
+    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.YesAtCodeGen 0 m NoTrace traitInfo
 
     let sln = 
         match traitInfo.Solution with 
@@ -3225,11 +3230,11 @@ let CheckDeclaredTypars denv css m typars1 typars2 =
             ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let CanonicalizePartialInferenceProblem css denv m tps =
+let CanonicalizePartialInferenceProblem css denv m tps isInline =
     // Canonicalize constraints prior to generalization 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> CanonicalizeRelevantMemberConstraints csenv 0 NoTrace tps)
+        (fun () -> CanonicalizeRelevantMemberConstraints csenv 0 NoTrace tps isInline)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m))) 
     |> RaiseOperationResult
 
