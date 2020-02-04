@@ -254,6 +254,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.RecdField info ->
             writeString "d$"
             writeEntityRef info.TyconRef
+            writeString info.Name
             writeType info.FieldType
 
         | Item.AnonRecdField(info, tys, i, _) ->
