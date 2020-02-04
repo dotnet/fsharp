@@ -416,10 +416,8 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
 
         ]
 
-    if fileExists cfg (testname + "-pre.fs")
-        then
-            fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
-        else ()
+    if fileExists cfg (testname + "-pre.fs") then
+        fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
 
     if fileExists cfg (testname + "-pre.fsx") then
         fsi_script cfg "--exec %s %s %s"

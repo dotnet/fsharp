@@ -1979,6 +1979,34 @@ module TestConverter =
     test "cenwceoiwe2" ((id |> toConverter |> fromConverter |> toConverter2 |> implicitConv) 6 = 6)
 #endif
 
+// See https://github.com/dotnet/fsharp/issues/3814#issuecomment-441048460
+module TestAnotherCaseOfSRTP = 
+
+    type X =
+        static member Method (a: int) = 2
+        static member Method (a: int64) = 3
+
+
+    let inline Test< ^t, ^a when (^t or ^a): (static member Method: ^a -> int)> (value: ^a) =
+        ( (^t or ^a): (static member Method: ^a -> int)(value))
+        
+    let inline Test2< ^t when (X or  ^t) : (static member Method :  ^t -> int)> a = Test<X, ^t> a
+
+    check "fweew-0wve" (Test2<int> 0) 2
+
+// See https://github.com/dotnet/fsharp/issues/3814#issuecomment-395686007
+module YetTestAnotherCaseOfSRTP = 
+    type X =
+        static member Method (a: int) = 2
+        static member Method (a: int64) = 3
+
+
+    let inline Test< ^t, ^a when ^t: (static member Method: ^a -> int)> (value: ^a) =
+        ( ^t: (static member Method: ^a -> int)(value))
+
+    let inline Test2< ^t> a = Test<X, ^t> a
+
+    check "vwevwepovwe" (Test2<int> 0) 2
 
 #if TESTS_AS_APP
 let RUN() = !failures

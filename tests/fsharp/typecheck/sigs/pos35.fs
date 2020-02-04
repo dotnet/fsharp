@@ -308,8 +308,8 @@ module PositiveTestCase3 =
     let inline CallQuackWitness (x: ^a, output: ^Output, witnesses: ^Witnesses) =
         ((^a or ^Output or ^Witnesses) : (static member QuackWitness : _*_*_ -> _) (x, output, witnesses))
 
-    // This becomes a negative test when RFC FS-1043 is enabled, because the existence of the extension 
-    // members is now taken into account
+    // This requires the rule "Weak resolution no longer forces overload resolution for SRTP constraints prior 
+    // to generalizing inline code" that is part of RFC FS-1043
     let inline call (x: seq< ^b >  ) : ^Output = 
         CallQuackWitness (x, Unchecked.defaultof< ^Output >, Unchecked.defaultof<Witnesses>) 
 

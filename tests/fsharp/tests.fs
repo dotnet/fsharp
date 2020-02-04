@@ -2259,10 +2259,11 @@ module TypecheckTests =
         fsc cfg "%s --target:library -o:pos35.dll --warnaserror" cfg.fsc_flags ["pos35.fs"]
         peverify cfg "pos35.dll"
 
-    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>] 
-    let ``sigs pos35 preview (now negative)`` () =
-         singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "pos35"
+    let ``sigs pos35 preview`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos35.dll --warnaserror --langversion:preview" cfg.fsc_flags ["pos35.fs"]
+        peverify cfg "pos35.dll"
 
     // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>]
@@ -2749,8 +2750,9 @@ module TypecheckTests =
     [<Test>] 
     let ``type check neg93`` () = singleNegTest (testConfig "typecheck/sigs") "neg93"
 
+    // The code in the "pre" file no longer compiles in "preview".  This is by design - an extra type annotation is needed.
     [<Test>] 
-    let ``type check neg94`` () = singleNegTest (testConfig "typecheck/sigs") "neg94"
+    let ``type check neg94 langversion 4_7`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg94"
 
     [<Test>] 
     let ``type check neg95`` () = singleNegTest (testConfig "typecheck/sigs") "neg95"
@@ -2822,81 +2824,130 @@ module TypecheckTests =
     [<Test>] 
     let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"
 
+    // We also run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    // This test can replace the one above once RFC-1043 is activated in default language version
+    [<Test>] 
+    let ``type check neg117 preview`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:neg117-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg117.fs"]
+        peverify cfg "neg117-preview.dll"
+
     [<Test>] 
     let ``type check neg118`` () = singleNegTest (testConfig "typecheck/sigs") "neg118"
 
     [<Test>] 
     let ``type check neg119`` () = singleNegTest (testConfig "typecheck/sigs") "neg119"
 
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
     [<Test>] 
     let ``type check neg120`` () = singleNegTest (testConfig "typecheck/sigs") "neg120"
 
     [<Test>] 
+    let ``type check neg120 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg120"
+
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
+    [<Test>] 
     let ``type check neg121`` () = singleNegTest (testConfig "typecheck/sigs") "neg121"
 
+    // The code in this test fails to compile even when FS-1043 is enabled - this is expected.
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and may be affected by RFC FS-1043
+    [<Test>] 
+    let ``type check neg121 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg121"
+
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
     [<Test>] 
     let ``type check neg122`` () = singleNegTest (testConfig "typecheck/sigs") "neg122"
 
     [<Test>] 
+    let ``type check neg122 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg122"
+
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
+    [<Test>] 
     let ``type check neg123`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg123"
 
+    [<Test>] 
+    let ``type check neg123 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg123"
+
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
     [<Test>] 
     let ``type check neg124`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg124"
 
     [<Test>] 
+    let ``type check neg124 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg124"
+
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
+    [<Test>] 
     let ``type check neg125`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg125"
 
     [<Test>] 
-    let ``type check neg126`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg126"
-
-    [<Test>] 
-    let ``type check neg127`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg127"
-
-    [<Test>] 
-    let ``type check neg128`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg128"
-
-    [<Test>] 
-    let ``type check neg129`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg129"
-
-    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
-    [<Test>] 
-    let ``type check neg120 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg120"
-
-    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
-    [<Test>] 
-    let ``type check neg121 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg121"
-
-    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
-    [<Test>] 
-    let ``type check neg122 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg122"
-
-    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
-    [<Test>] 
-    let ``type check neg123 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg123"
-
-    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
-    [<Test>] 
-    let ``type check neg124 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg124"
-
-    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
-    [<Test>] 
     let ``type check neg125 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg125"
 
+    // The code in this test starts to compile once FS-1043 is enabled.
+    //
     // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>] 
-    let ``type check neg126 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg126"
+    let ``type check neg126`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg126"
 
-    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>] 
-    let ``type check neg127 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg127"
+    let ``type check neg126 preview`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:neg126-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg126.fs"]
+        peverify cfg "neg126-preview.dll"
 
-    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:4.7 and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
     [<Test>] 
-    let ``type check neg128 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg128"
+    let ``type check neg127 4_7`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg127"
 
-    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>] 
-    let ``type check neg129 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg129"
+    let ``type check neg127 preview`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg127"
+
+    // The code in this test starts to compile once FS-1043 is enabled.
+    [<Test>] 
+    let ``type check neg128 4_7`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg128"
+
+    [<Test>] 
+    let ``type check neg128 preview`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:neg128-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg128.fs"]
+        peverify cfg "neg128-preview.dll"
+
+    // The code in this test starts to compile once FS-1043 is enabled.
+    [<Test>] 
+    let ``type check neg129 4_7`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg129"
+
+    [<Test>] 
+    let ``type check neg129 preview`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:neg129-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg129.fs"]
+        peverify cfg "neg129-preview.dll"
 
     [<Test>] 
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
