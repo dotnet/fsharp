@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Script.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">File.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
@@ -429,17 +429,17 @@
       </trans-unit>
       <trans-unit id="7001">
         <source>Customizes the environment to maximize code editor screen space and improve the visibility of F# commands and tool windows.</source>
-        <target state="translated">自訂環境，將程式編輯器的螢幕空間最大化，並且改善 F# 命令及工具視窗的可視性。</target>
+        <target state="translated">自訂環境，將程式編輯器的螢幕空間最大化，並且改善 F# 命令及工具視窗的可見度。</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
         <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
-        <target state="needs-review-translation">適用於 F# {{FSLanguageVersion}} 的 Microsoft Visual F# Tools {{FSProductVersion}}</target>
+        <target state="translated">適用於 F# {{FSLanguageVersion}} 的 Microsoft Visual F# Tools {{FSProductVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
         <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
-        <target state="needs-review-translation">適用於 F# {{FSLanguageVersion}} 的 Microsoft Visual F# Tools {{FSProductVersion}}</target>
+        <target state="translated">適用於 F# {{FSLanguageVersion}} 的 Microsoft Visual F# Tools {{FSProductVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -454,7 +454,7 @@
       </trans-unit>
       <trans-unit id="9001">
         <source>Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
-        <target state="needs-review-translation">適用於 F# {{FSLanguageVersion}} 的 Visual F# Tools {{FSProductVersion}}</target>
+        <target state="translated">適用於 F# {{FSLanguageVersion}} 的 Visual F# Tools {{FSProductVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

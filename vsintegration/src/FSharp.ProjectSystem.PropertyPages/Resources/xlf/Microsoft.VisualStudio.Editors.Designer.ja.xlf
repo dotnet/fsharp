@@ -2729,7 +2729,7 @@ app.config ファイルでの新しい値は '{1}' です
       </trans-unit>
       <trans-unit id="PPG_WPFApp_CantOpenOrCreateAppXaml_1Arg">
         <source>There was an error trying to open or create the application definition file for this project.  {0}</source>
-        <target state="translated">このプロジェクトのアプリケーション定義ファイル {0} を開くときまたは作成するときにエラーが発生しました。{0}</target>
+        <target state="translated">このプロジェクトのアプリケーション定義ファイルを開くときまたは作成するときにエラーが発生しました。{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_ErrorControlMessage_1Arg">
@@ -2754,7 +2754,7 @@ app.config ファイルでの新しい値は '{1}' です
       </trans-unit>
       <trans-unit id="PPG_WPFApp_CouldntCreateApplicationEventsFile_1Arg">
         <source>An error occurred trying to create the application events file.  {0}</source>
-        <target state="translated">アプリケーション イベント ファイル {0} を作成するときにエラーが発生しました。{0}</target>
+        <target state="translated">アプリケーション イベント ファイルを作成するときにエラーが発生しました。{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="General_InvalidArgument_1Arg">
