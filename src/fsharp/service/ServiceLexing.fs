@@ -1373,7 +1373,7 @@ module Lexer =
 
         let lexbuf = UnicodeLexing.SourceTextAsLexbuf(supportsFeature, text)
         let lightSyntaxStatus = LightSyntaxStatus(isLightSyntaxOn, true) 
-        let lexargs = mkLexargs (filePath, conditionalCompilationDefines, lightSyntaxStatus, Lexhelp.LexResourceManager(), [], errorLogger, pathMap)
+        let lexargs = mkLexargs (filePath, conditionalCompilationDefines, lightSyntaxStatus, Lexhelp.LexResourceManager(0), [], errorLogger, pathMap)
         let lexargs = { lexargs with applyLineDirectives = isCompiling }
 
         let getNextToken =
