@@ -87,7 +87,7 @@ type internal FSharpClassificationService
                 | Some span -> result.Add(ClassifiedSpan(TextSpan(textSpan.Start + span.Start, span.Length), spanKind))
                 | _ -> ()
                 
-        let flags = FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling
+        let flags = FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling &&& ~~~FSharpLexerFlags.UseLexFilter
         FSharpLexer.Lex(text.GetSubText(textSpan).ToFSharpSourceText(), tokenCallback, langVersion = "preview", filePath = filePath, conditionalCompilationDefines = defines, flags = flags, ct = ct)
 
         result.ToImmutable()
