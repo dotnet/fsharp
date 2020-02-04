@@ -1,106 +1,106 @@
 // #Regression #Conformance #TypeConstraints 
 // Regression test for CTP bug reported at http://cs.hubfs.net/forums/thread/9313.aspx
 // In CTP, this was a stack overflow in the compiler. Now we give 64 errors
-//<Expects id="FS0001" span="(244,23)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(244,27)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(245,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(245,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(246,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(246,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(247,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(247,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(248,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(248,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(249,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(249,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(250,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(250,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(251,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(251,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(252,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(252,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(253,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(253,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(254,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(254,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(255,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(255,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(256,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(256,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(257,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(257,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(258,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(258,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(259,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(259,25)" status="error">The value or constructor 'P1' is not defined</Expects>
-//<Expects id="FS0001" span="(261,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(261,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(262,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(262,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(263,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(263,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(264,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(264,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(265,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(265,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(266,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(266,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(267,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(267,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(268,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(268,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(269,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(269,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(270,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(270,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(271,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(271,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(272,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(272,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(273,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(273,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(274,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(274,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(275,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(275,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(276,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(276,25)" status="error">The value or constructor 'P2' is not defined</Expects>
-//<Expects id="FS0001" span="(278,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(278,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(279,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(279,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(280,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(280,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(281,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(281,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(282,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(282,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(283,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(283,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(284,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(284,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(285,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(285,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(286,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(286,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(287,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(287,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(288,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(288,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(289,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(289,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(290,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(290,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(291,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(291,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(292,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(292,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(293,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(293,25)" status="error">The value or constructor 'P3' is not defined</Expects>
-//<Expects id="FS0001" span="(295,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(295,25)" status="error">The value or constructor 'P4' is not defined</Expects>
-//<Expects id="FS0001" span="(296,22)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
-//<Expects id="FS0039" span="(296,25)" status="error">The value or constructor 'P4' is not defined</Expects>
+//<Expects id="FS0001" span="(244,23)" status="error">The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0039" span="(244,27)" status="error">The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(245,22)" status="error">The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0039" span="(245,25)" status="error">The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(246,22)" status="error">The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0039" span="(246,25)" status="error">The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(247,22)" status="error">The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0039" span="(247,25)" status="error">The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(248,22)" status="error">The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0039" span="(248,25)" status="error">The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(249,22)" status="error">The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(249,25)" status="error"> FS0039: The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(250,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(250,25)" status="error"> FS0039: The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(251,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(251,25)" status="error"> FS0039: The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(252,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(252,25)" status="error"> FS0039: The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(253,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(253,25)" status="error"> FS0039: The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(254,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(254,25)" status="error"> FS0039: The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(255,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(255,25)" status="error"> FS0039: The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(256,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(256,25)" status="error"> FS0039: The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(257,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(257,25)" status="error"> FS0039: The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(258,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(258,25)" status="error"> FS0039: The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(259,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(259,25)" status="error"> FS0039: The value or constructor 'P1' is not defined.</Expects>
+//<Expects id="FS0001" span="(261,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(261,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(262,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(262,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(263,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(263,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(264,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(264,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(265,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(265,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(266,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(266,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(267,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(267,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(268,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(268,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(269,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(269,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(270,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(270,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(271,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(271,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(272,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(272,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(273,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(273,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(274,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(274,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(275,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(275,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(276,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(276,25)" status="error"> FS0039: The value or constructor 'P2' is not defined.</Expects>
+//<Expects id="FS0001" span="(278,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(278,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(279,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(279,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(280,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(280,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(281,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(281,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(282,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(282,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(283,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(283,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(284,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(284,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(285,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(285,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(286,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(286,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(287,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(287,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(288,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(288,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(289,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(289,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(290,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(290,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(291,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(291,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(292,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(292,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(293,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(293,25)" status="error"> FS0039: The value or constructor 'P3' is not defined.</Expects>
+//<Expects id="FS0001" span="(295,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(295,25)" status="error"> FS0039: The value or constructor 'P4' is not defined.</Expects>
+//<Expects id="FS0001" span="(296,22)" status="error"> FS0001: The types 'int32, uint32' do not support the operator '+'</Expects>
+//<Expects id="FS0001" span="(296,25)" status="error"> FS0039: The value or constructor 'P4' is not defined.</Expects>
 module SmartHashUtils =
     let ByteToUInt (array:byte[]) offset length endian =
 

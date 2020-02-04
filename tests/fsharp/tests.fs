@@ -2815,6 +2815,10 @@ module TypecheckTests =
     [<Test>] 
     let ``type check neg116`` () = singleNegTest (testConfig "typecheck/sigs") "neg116"
 
+    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    [<Test>] 
+    let ``type check neg116 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg116"
+
     [<Test>] 
     let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"
 

@@ -30,13 +30,90 @@ type MyType =
 module DotNetPrimtiveWithNewOperator = 
     type System.Int32 with
         static member (++)(a: int, b: int) = a 
-    do check "jfs9dlfdh" 1 (1 ++ 2)
+    do check "jfs9dlfdhQ" 1 (1 ++ 2)
 
 /// Extending a .NET primitive type with new instance of an operator
 module DotNetPrimtiveExistingOperator1 = 
     type System.Double with
         static member (+)(a: int, b: float) = float a + b
-    do check "jfs9dlfdh" 3.0 (2.0 + 1)
+    do check "jfs9dlfdhA" 3.0 (2 + 1.0)
+
+/// Extending a .NET primitive type with new instance of an operator
+module DotNetPrimtiveExistingOperator2 = 
+    type System.Double with
+        static member (+)(a: float, b: int) = a + float b
+    do check "jfs9dlfdh0" 3.0 (1.0 + 2)
+    do check "jfs9dlfdh1" 3.0 (1.0 + 2.0)
+
+/// Extending a .NET primitive type with new instance of an operator
+module DotNetPrimtiveExistingOperator3 = 
+    type System.Double with
+        static member (+)(a: float, b: int) = a + float b
+        static member (+)(a: int, b: float) = float a + b
+    do check "jfs9dlfdh2" 3 (2 + 1)
+    do check "jfs9dlfdh3" 3.0 (2 + 1.0)
+    do check "jfs9dlfdh4" 3.0 (1.0 + 2)
+    do check "jfs9dlfdh5" 3.0 (1.0 + 2.0)
+
+/// Extension members take precedence in most-recently-opened order
+module ExtensionPrecedence1 = 
+    [<AutoOpen>]
+    module M1 = 
+        type System.Int32 with
+            static member (+)(a: int, b: float) = float a + b
+
+    [<AutoOpen>]
+    module M2 = 
+        type System.Double with
+            static member (+)(a: int, b: float) = float a + b + 4.0
+    do check "jfs9dlfdh6" 7.0 (2 + 1.0) // note we call the second one
+
+/// Extension members take precedence in most-recently-opened order
+/// 
+/// Like the previous test but we change the declarations a little
+module ExtensionPrecedence2 = 
+    [<AutoOpen>]
+    module M1 = 
+        type System.Int32 with
+            static member (+)(a: int, b: float) = float a + b
+
+    [<AutoOpen>]
+    module M2 = 
+        type System.Int32 with
+            static member (+)(a: int, b: float) = float a + b + 4.0
+
+    do check "jfs9dlfdh6" 7.0 (2 + 1.0) // note we call the second one
+
+/// Extension members take precedence in most-recently-opened order
+/// 
+/// Like the previous test but we change the declarations a little
+module ExtensionPrecedence3 = 
+    module Extensions1 = 
+        type System.Int32 with
+            static member (+)(a: int, b: float) = float a + b
+
+    module Extensions2 = 
+        type System.Int32 with
+            static member (+)(a: int, b: float) = float a + b + 4.0
+    open Extensions1
+    open Extensions2
+    do check "jfs9dlfdh7" 7.0 (2 + 1.0) // note we call the second one
+
+/// Extension members take precedence in most-recently-opened order
+/// 
+/// Like the previous test but we change the declarations a little
+module ExtensionPrecedence4 = 
+    module Extensions2 = 
+        type System.Int32 with
+            static member (+)(a: int, b: float) = float a + b + 4.0
+
+    module Extensions1 = 
+        type System.Int32 with
+            static member (+)(a: int, b: float) = float a + b
+
+    open Extensions1
+    open Extensions2
+    do check "jfs9dlfdh8" 7.0 (2 + 1.0) // note we call the Extensions2 one
 
 /// Extending a .NET primitive type with new operator
 module DotNetPrimtiveWithAmbiguousNewOperator = 
