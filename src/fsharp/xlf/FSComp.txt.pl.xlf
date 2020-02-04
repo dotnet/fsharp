@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="new">From the end slicing with requires language version 5.0, use /langversion:preview.</target>
+        <target state="translated">Wycinanie od końca wymaga języka w wersji 5.0, użyj parametru /langversion:preview.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <target state="translated">Funkcja zarządzania pakietami wymaga języka w wersji 5.0, użyj parametru /langversion:preview</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -59,17 +59,17 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
+        <target state="translated">To jest nieprawidłowy rekord anonimowy. Powinien zawierać pola {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSubset">
         <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
+        <target state="translated">Ten rekord anonimowy nie ma wystarczającej liczby pól. Dodaj brakujące pola {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
+        <target state="translated">Ten rekord anonimowy ma za dużo pól. Usuń dodatkowe pola {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -7154,7 +7154,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="needs-review-translation">Dwa typy rekordów anonimowych mają niezgodne zestawy nazw pól „{0}” i „{1}”</target>
+        <target state="translated">Ten rekord anonimowy nie jest dokładnie zgodny z oczekiwanym kształtem. Dodaj brakujące pola {0} i usuń dodatkowe pola {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
@@ -7239,7 +7239,7 @@
       </trans-unit>
       <trans-unit id="fscPathMapDebugRequiresPortablePdb">
         <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Argumentu --pathmap można używać tylko z przenośnymi plikami PDB  (--debug:portable lub --debug:embedded)</target>
+        <target state="translated">Argumentu --pathmap można używać tylko z przenośnymi plikami PDB (--debug:portable lub --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
@@ -7249,22 +7249,22 @@
       </trans-unit>
       <trans-unit id="optsCompilerTool">
         <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
-        <target state="new">Reference an assembly or directory containing a design time tool (Short form: -t)</target>
+        <target state="translated">Odwołuje się do zestawu lub katalogu zawierającego narzędzie czasu projektowania (krótka wersja: -t)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <target state="translated">Klucz menedżera pakietów „{0}” nie został zarejestrowany w elemencie {1}. Obecnie zarejestrowane: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
         <source>{0}</source>
-        <target state="new">{0}</target>
+        <target state="translated">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadDependencyManagerExtension">
         <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
-        <target state="new">The dependency manager extension {0} could not be loaded. Message: {1}</target>
+        <target state="translated">Nie można załadować rozszerzenia menedżera zależności {0}. Komunikat: {1}</target>
         <note />
       </trans-unit>
     </body>
