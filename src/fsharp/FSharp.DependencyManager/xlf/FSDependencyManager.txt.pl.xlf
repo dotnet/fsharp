@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="notUsed">
         <source>Not used.</source>
-        <target state="new">Not used.</target>
+        <target state="translated">Nieużywane.</target>
         <note />
       </trans-unit>
     </body>
