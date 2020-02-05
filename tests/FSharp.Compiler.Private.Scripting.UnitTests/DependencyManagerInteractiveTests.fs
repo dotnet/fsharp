@@ -57,18 +57,26 @@ type DependencyManagerInteractiveTests() =
         let mutable dependencyAddedEventCount = 0
         let mutable foundDependencyAdding = false
         let mutable foundDependencyAdded = false
+        let mutable packageRootsCount = 0
+        let mutable generatedScriptsCount = 0
         Event.add (fun (dep: string * string) ->
             let key, dependency = dep
             dependencyAddingEventCount <- dependencyAddingEventCount + 1
             foundDependencyAdding <- foundDependencyAdding || (key = "nuget" && dependency = referenceText))
             script.DependencyAdding
-        Event.add (fun (dep: string * string) ->
-            let key, dependency = dep
+        Event.add (fun (dep: string * string * string list * string list) ->
+            let key, dependency, _generatedScripts, _packageRoots = dep
+            generatedScriptsCount <- _generatedScripts.Length
+            packageRootsCount <- _packageRoots.Length
             dependencyAddedEventCount <- dependencyAddedEventCount + 1
             foundDependencyAdded <- foundDependencyAdded || (key = "nuget" && dependency = referenceText))
             script.DependencyAdded
         script.Eval(text) |> ignoreValue
         Assert.AreEqual(1, dependencyAddingEventCount)
+        Assert.AreEqual(1, dependencyAddedEventCount)
+        Assert.AreEqual(1, dependencyAddingEventCount)
+        Assert.AreEqual(1, dependencyAddedEventCount)
+        Assert.AreEqual(1, generatedScriptsCount)
         Assert.AreEqual(1, dependencyAddedEventCount)
         Assert.AreEqual(true, foundDependencyAdding)
         Assert.AreEqual(true, foundDependencyAdded)

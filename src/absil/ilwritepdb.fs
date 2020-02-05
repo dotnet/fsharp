@@ -15,6 +15,7 @@ open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Support 
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
 
@@ -244,7 +245,7 @@ let pdbGetDebugInfo (contentId: byte[]) (timestamp: int32) (filepath: string)
 // This function takes output file name and returns debug file name.
 let getDebugFileName outfile (portablePDB: bool) =
 #if ENABLE_MONO_SUPPORT
-  if IL.runningOnMono && not portablePDB then
+  if runningOnMono && not portablePDB then
       outfile + ".mdb"
   else 
 #else
