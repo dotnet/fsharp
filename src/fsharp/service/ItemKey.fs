@@ -234,16 +234,14 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString "u$"
             writeEntityRef info.TyconRef
             
-        | Item.ActivePatternResult(info, ty, _, _) ->
+        | Item.ActivePatternResult(info, _, _, _) ->
             writeString "r$"
             info.ActiveTagsWithRanges
             |> List.iter (fun (nm, _) ->
                 writeString nm)
-            writeType ty
 
         | Item.ActivePatternCase elemRef ->
-            writeString "c$"
-            writeValRef elemRef.ActivePatternVal
+            writeString "r$"
             elemRef.ActivePatternInfo.ActiveTagsWithRanges
             |> List.iter (fun (nm, _) -> writeString nm)
 
