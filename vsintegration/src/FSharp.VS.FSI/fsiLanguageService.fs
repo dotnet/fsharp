@@ -36,30 +36,35 @@ module internal ContentType =
 [<ClassInterface(ClassInterfaceType.AutoDual)>]
 [<Guid("4489e9de-6ac1-3cd6-bff8-a904fd0e82d4")>]
 type FsiPropertyPage() = 
-    inherit DialogPage()    
-       
+    inherit DialogPage()
+
     [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
-    [<ResourceDisplayName(SRProperties.FSharpInteractive64Bit)>] 
-    [<ResourceDescription(SRProperties.FSharpInteractive64BitDescr)>] 
+    [<ResourceDisplayName(SRProperties.FSharpInteractive64Bit)>]
+    [<ResourceDescription(SRProperties.FSharpInteractive64BitDescr)>]
     member this.FsiPreferAnyCPUVersion with get() = SessionsProperties.useAnyCpuVersion and set (x:bool) = SessionsProperties.useAnyCpuVersion <- x
 
     [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
     [<ResourceDisplayName(SRProperties.FSharpInteractiveOptions)>]
-    [<ResourceDescription(SRProperties.FSharpInteractiveOptionsDescr)>] 
+    [<ResourceDescription(SRProperties.FSharpInteractiveOptionsDescr)>]
     member this.FsiCommandLineArgs with get() = SessionsProperties.fsiArgs and set (x:string) = SessionsProperties.fsiArgs <- x
 
     [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
     [<ResourceDisplayName(SRProperties.FSharpInteractiveShadowCopy)>]
-    [<ResourceDescription(SRProperties.FSharpInteractiveShadowCopyDescr)>] 
+    [<ResourceDescription(SRProperties.FSharpInteractiveShadowCopyDescr)>]
     member this.FsiShadowCopy with get() = SessionsProperties.fsiShadowCopy and set (x:bool) = SessionsProperties.fsiShadowCopy <- x
 
     [<ResourceCategory(SRProperties.FSharpInteractiveDebugging)>]
     [<ResourceDisplayName(SRProperties.FSharpInteractiveDebugMode)>]
-    [<ResourceDescription(SRProperties.FSharpInteractiveDebugModeDescr)>] 
+    [<ResourceDescription(SRProperties.FSharpInteractiveDebugModeDescr)>]
     member this.FsiDebugMode with get() = SessionsProperties.fsiDebugMode and set (x:bool) = SessionsProperties.fsiDebugMode <- x
 
+    [<ResourceCategory(SRProperties.FSharpInteractivePreview)>]
+    [<ResourceDisplayName(SRProperties.FSharpInteractivePreviewMode)>]
+    [<ResourceDescription(SRProperties.FSharpInteractivePreviewModeDescr)>]
+    member this.FsiPreview with get() = SessionsProperties.fsiPreview and set (x:bool) = SessionsProperties.fsiPreview <- x
+
 // CompletionSet
-type internal FsiCompletionSet(imageList,source:Source) = 
+type internal FsiCompletionSet(imageList,source:Source) =
     inherit CompletionSet(imageList, source)
 
 // Declarations

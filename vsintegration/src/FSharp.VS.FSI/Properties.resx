@@ -148,4 +148,14 @@
   <data name="FSharpInteractiveDebugging" xml:space="preserve">
     <value>Debugging</value>
   </data>
+  <data name="FSharpInteractivePreview" xml:space="preserve">
+    <value>FSI Preview</value>
+  </data>
+  <data name="FSharpInteractivePreviewModeDescr" xml:space="preserve">
+    <value>Enable preview of in-development language features in F# Interactive</value>
+  </data>
+  <data name="FSharpInteractivePreviewMode" xml:space="preserve">
+    <value>Enable preview language features</value>
+  </data>
+
 </root>
