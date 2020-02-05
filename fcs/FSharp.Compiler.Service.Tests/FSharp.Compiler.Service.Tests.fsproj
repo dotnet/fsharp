@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
+  <Import Project="..\..\eng\Versions.props"/>   <!-- keep our test deps in line with the overall compiler -->
   <PropertyGroup>
     <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp3.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -60,6 +61,9 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\TreeVisitorTests.fs">
       <Link>TreeVisitorTests.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ScriptOptionsTests.fs">
+      <Link>ScriptOptionsTests.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
       <Link>Program.fs</Link>
     </Compile>
@@ -71,10 +75,10 @@
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="$(FcsFSharpCorePkgVersion)" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
-    <PackageReference Include="NUnit" Version="3.9.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
-    <PackageReference Include="NunitXml.TestLogger" Version="2.1.36" />
     <PackageReference Include="Dotnet.ProjInfo" Version="0.20.0" />
+    <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
+    <PackageReference Include="NUnit3TestAdapter" Version="$(NUnit3TestAdapterVersion)" />
+    <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
     <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == '$(FcsTargetNetFxFramework)'">

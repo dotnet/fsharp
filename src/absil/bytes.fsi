@@ -5,10 +5,11 @@ namespace FSharp.Compiler.AbstractIL.Internal
 
 open System.IO
 open Internal.Utilities
-
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.Internal 
 
+module Utils =
+    val runningOnMono: bool
 
 module internal Bytes = 
     /// returned int will be 0 <= x <= 255
