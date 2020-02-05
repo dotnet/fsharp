@@ -12,6 +12,25 @@ open FSharp.NativeInterop
 
 #nowarn "9"
 
+module Utils =
+    let runningOnMono =
+    #if ENABLE_MONO_SUPPORT
+        // Officially supported way to detect if we are running on Mono.
+        // See http://www.mono-project.com/FAQ:_Technical
+        // "How can I detect if am running in Mono?" section
+        try
+            System.Type.GetType ("Mono.Runtime") <> null
+        with _ ->
+            // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
+            // that is not reliable.
+            // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
+            // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
+            // their issue fixed but we need to be robust here anyway.
+            false
+    #else
+        false
+    #endif
+
 module internal Bytes = 
     let b0 n =  (n &&& 0xFF)
     let b1 n =  ((n >>> 8) &&& 0xFF)
@@ -296,65 +315,72 @@ type ByteMemory with
     member x.AsReadOnly() = ReadOnlyByteMemory x
 
     static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
-        let length = int64 bytes.Length
-        let mmf = 
+        if Utils.runningOnMono
+        then
+            // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/10245
+            ByteArrayMemory.FromArray (bytes.ToArray()) :> ByteMemory
+        else
+            let length = int64 bytes.Length
             let mmf =
-                MemoryMappedFile.CreateNew(
-                    null, 
-                    length, 
-                    MemoryMappedFileAccess.ReadWrite, 
-                    MemoryMappedFileOptions.None, 
-                    HandleInheritability.None)
-            use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
-            bytes.CopyTo stream
-            mmf
+                let mmf = MemoryMappedFile.CreateNew(null, length, MemoryMappedFileAccess.ReadWrite, MemoryMappedFileOptions.None, HandleInheritability.None)
+                use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
+                bytes.CopyTo stream
+                mmf
 
-        let accessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.ReadWrite)
-        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
+            let accessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.ReadWrite)
+            RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
 
     static member FromFile(path, access, ?canShadowCopy: bool) =
         let canShadowCopy = defaultArg canShadowCopy false
 
-        let memoryMappedFileAccess =
-            match access with
-            | FileAccess.Read -> MemoryMappedFileAccess.Read
-            | FileAccess.Write -> MemoryMappedFileAccess.Write
-            | _ -> MemoryMappedFileAccess.ReadWrite
+        if Utils.runningOnMono
+        then
+            // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/10245
+            let bytes = File.ReadAllBytes path
+            ByteArrayMemory.FromArray bytes
+        else
+            let memoryMappedFileAccess =
+                match access with
+                | FileAccess.Read -> MemoryMappedFileAccess.Read
+                | FileAccess.Write -> MemoryMappedFileAccess.Write
+                | _ -> MemoryMappedFileAccess.ReadWrite
 
-        let mmf, accessor, length = 
             let fileStream = File.Open(path, FileMode.Open, access, FileShare.Read)
+
             let length = fileStream.Length
-            let mmf = 
-                if canShadowCopy then
-                    let mmf = 
-                        MemoryMappedFile.CreateNew(
-                            null, 
-                            length, 
-                            MemoryMappedFileAccess.ReadWrite, 
-                            MemoryMappedFileOptions.None, 
-                            HandleInheritability.None)
-                    use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
-                    fileStream.CopyTo(stream)
-                    fileStream.Dispose()
-                    mmf
-                else
-                    MemoryMappedFile.CreateFromFile(
-                        fileStream, 
-                        null, 
-                        length, 
-                        memoryMappedFileAccess, 
-                        HandleInheritability.None, 
-                        leaveOpen=false)
-            mmf, mmf.CreateViewAccessor(0L, length, memoryMappedFileAccess), length
 
-        // Validate MMF with the access that was intended.
-        match access with
-        | FileAccess.Read when not accessor.CanRead -> invalidOp "Cannot read file"
-        | FileAccess.Write when not accessor.CanWrite -> invalidOp "Cannot write file"
-        | FileAccess.ReadWrite when not accessor.CanRead || not accessor.CanWrite -> invalidOp "Cannot read or write file"
-        | _ -> ()
+            let mmf, accessor, length =
+                let mmf =
+                    if canShadowCopy then
+                        let mmf =
+                            MemoryMappedFile.CreateNew(
+                                null,
+                                length,
+                                MemoryMappedFileAccess.ReadWrite,
+                                MemoryMappedFileOptions.None,
+                                HandleInheritability.None)
+                        use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
+                        fileStream.CopyTo(stream)
+                        fileStream.Dispose()
+                        mmf
+                    else
+                        MemoryMappedFile.CreateFromFile(
+                            fileStream,
+                            null,
+                            length,
+                            memoryMappedFileAccess,
+                            HandleInheritability.None,
+                            leaveOpen=false)
+                mmf, mmf.CreateViewAccessor(0L, length, memoryMappedFileAccess), length
 
-        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
+            // Validate MMF with the access that was intended.
+            match access with
+            | FileAccess.Read when not accessor.CanRead -> invalidOp "Cannot read file"
+            | FileAccess.Write when not accessor.CanWrite -> invalidOp "Cannot write file"
+            | FileAccess.ReadWrite when not accessor.CanRead || not accessor.CanWrite -> invalidOp "Cannot read or write file"
+            | _ -> ()
+
+            RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
 
     static member FromUnsafePointer(addr, length, holder: obj) = 
         RawByteMemory(NativePtr.ofNativeInt addr, length, holder) :> ByteMemory

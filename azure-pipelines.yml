@@ -342,6 +342,11 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - task: UseDotNet@2
+            displayName: 'Use .NET Core sdk'
+            inputs:
+              useGlobalJson: true
+              workingDirectory: fcs
           - script: fcs\build.cmd TestAndNuget
             displayName: Build / Test
           - task: PublishTestResults@2
@@ -350,6 +355,7 @@ stages:
               testResultsFormat: 'NUnit'
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+              publishRunAttachments: true
             continueOnError: true
             condition: always()
 
@@ -362,20 +368,48 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - task: UseDotNet@2
+            displayName: 'Use .NET Core sdk'
+            inputs:
+              useGlobalJson: true
+              workingDirectory: fcs
           - script: ./fcs/build.sh
-            displayName: Build
+            displayName: Build / Test
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'NUnit'
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+              publishRunAttachments: true
+            continueOnError: true
+            condition: always()
 
-        # - job: MacOS_FCS
-        #   pool:
-        #     vmImage: macOS-latest
-        #   variables:
-        #   - name: _SignType
-        #     value: Test
-        #   steps:
-        #   - checkout: self
-        #     clean: true
-        #   - script: ./fcs/build.sh
-        #     displayName: Build
+        - job: MacOS_FCS
+          pool:
+            vmImage: macOS-latest
+          variables:
+          - name: _SignType
+            value: Test
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: 'Use .NET Core sdk'
+            inputs:
+              useGlobalJson: true
+              workingDirectory: fcs
+          - script: ./fcs/build.sh
+            displayName: Build / Test
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'NUnit'
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+              publishRunAttachments: true
+            continueOnError: true
+            condition: always()
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    Post Build                                                       #

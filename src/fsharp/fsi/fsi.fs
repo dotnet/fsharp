@@ -29,6 +29,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open FSharp.Compiler.Lib
 open FSharp.Compiler.AccessibilityLogic
@@ -959,7 +960,7 @@ type internal FsiDynamicCompiler
 
     let valueBoundEvent = Control.Event<_>()
     let dependencyAddingEvent = Control.Event<string * string>()
-    let dependencyAddedEvent = Control.Event<string * string>()
+    let dependencyAddedEvent = Control.Event<string * string * string list * string list>()
     let dependencyFailedEvent = Control.Event<string * string>()
 
     let mutable fragmentId = 0
