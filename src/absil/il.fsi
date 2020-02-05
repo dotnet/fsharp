@@ -2012,8 +2012,6 @@ type ILPropertyRef =
      member Name: string
      interface System.IComparable
 
-val runningOnMono: bool
-
 type ILReferences = 
     { AssemblyReferences: ILAssemblyRef list 
       ModuleReferences: ILModuleRef list }
