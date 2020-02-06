@@ -18,6 +18,7 @@ type LanguageFeature =
     | FixedIndexSlice3d4d
     | AndBang
     | NullableOptionalInterop
+    | ExtensionConstraintSolutions
 
 /// LanguageVersion management
 type LanguageVersion =

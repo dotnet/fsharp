@@ -150,6 +150,11 @@ type ExtensionMember =
    /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
    | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
 
+   interface TraitPossibleExtensionMemberSolution 
+
+   /// The logical name, e.g. for constraint solving
+   member LogicalName : string
+
    /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
    /// later through 'open' get priority in overload resolution.
    member Priority : ExtensionMethodPriority
@@ -170,7 +175,7 @@ type NameResolutionEnv =
       /// Adding a module abbreviation adds it a local entry to this List.map. 
       /// Likewise adding a ccu or opening a path adds entries to this List.map. 
       eModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
-
+      
       /// Fully qualified modules and namespaces. 'open' does not change this. 
       eFullyQualifiedModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
 
@@ -194,6 +199,9 @@ type NameResolutionEnv =
 
       /// Extension members by type and name 
       eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
+
+      /// Extension members by name 
+      eExtensionMembersByName: NameMultiMap<ExtensionMember>
 
       /// Other extension members unindexed by type
       eUnindexedExtensionMembers: ExtensionMember list
@@ -589,5 +597,5 @@ val GetVisibleNamespacesAndModulesAtPoint : NameResolver -> NameResolutionEnv ->
 
 val IsItemResolvable : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool
 
-val TrySelectExtensionMethInfoOfILExtMem : range -> ImportMap -> TType -> TyconRef * MethInfo * ExtensionMethodPriority -> MethInfo option 
- 
+val TrySelectExtensionMethInfoOfILExtMem : range -> ImportMap -> TType -> TyconRef * MethInfo * ExtensionMethodPriority -> MethInfo option
+

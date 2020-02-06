@@ -297,6 +297,23 @@ let ImportReturnTypeFromMetadata amap m ilty cattrs scoref tinst minst =
     | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy cattrs)
 
 
+
+/// Search for the relevant extension values again if a name resolution environment is provided
+/// Basically, if you use a generic thing, then the extension members in scope at the point of _use_
+/// are the ones available to solve the constraint
+let FreshenTrait traitFreshner traitInfo =
+    let (TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns, ad)) = traitInfo
+
+    // Call the trait freshner if it is provided
+    let extSlns2, ad2 = 
+        match traitFreshner with 
+        | None -> extSlns, ad
+        | Some freshner -> 
+            let extSlns2, ad2 = freshner traitInfo
+            extSlns2, Some ad2
+
+    TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns2, ad2)
+
 /// Copy constraints.  If the constraint comes from a type parameter associated
 /// with a type constructor then we are simply renaming type variables.  If it comes
 /// from a generic method in a generic class (e.g. ty.M<_>) then we may be both substituting the
@@ -305,7 +322,7 @@ let ImportReturnTypeFromMetadata amap m ilty cattrs scoref tinst minst =
 ///
 /// Note: this now looks identical to constraint instantiation.
 
-let CopyTyparConstraints m tprefInst (tporig: Typar) =
+let CopyTyparConstraints traitFreshner m tprefInst (tporig: Typar) =
     tporig.Constraints
     |>  List.map (fun tpc ->
            match tpc with
@@ -333,12 +350,13 @@ let CopyTyparConstraints m tprefInst (tporig: Typar) =
                TyparConstraint.SimpleChoice (List.map (instType tprefInst) tys, m)
            | TyparConstraint.RequiresDefaultConstructor _ ->
                TyparConstraint.RequiresDefaultConstructor m
-           | TyparConstraint.MayResolveMember(traitInfo, _) ->
-               TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo, m))
+           | TyparConstraint.MayResolveMember(traitInfo, _) -> 
+               let traitInfo2 = FreshenTrait traitFreshner traitInfo 
+               TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo2, m))
 
 /// The constraints for each typar copied from another typar can only be fixed up once
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ...
-let FixupNewTypars m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsorig: Typars) (tps: Typars) =
+let FixupNewTypars traitFreshner m (formalEnclosingTypars:Typars) (tinst: TType list) (tpsorig: Typars) (tps: Typars) =
     // Checks.. These are defensive programming against early reported errors.
     let n0 = formalEnclosingTypars.Length
     let n1 = tinst.Length
@@ -350,7 +368,7 @@ let FixupNewTypars m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsori
     // The real code..
     let renaming, tptys = mkTyparToTyparRenaming tpsorig tps
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
-    (tpsorig, tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints  m tprefInst tporig))
+    (tpsorig, tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints traitFreshner m tprefInst tporig))
     renaming, tptys
 
 
@@ -1191,7 +1209,8 @@ type MethInfo =
         | ILMeth (_, _, Some _) -> true
         | _ -> false
 
-    /// Indicates if this is an extension member (e.g. on a struct) that takes a byref arg
+    /// Indicates if this is an instance member on a struct, or
+    /// an extension instance member on a struct that takes a byref arg.
     member x.ObjArgNeedsAddress (amap: Import.ImportMap, m) =
         (x.IsStruct && not x.IsExtensionMember) ||
         match x.GetObjArgTypes (amap, m, x.FormalMethodInst) with
@@ -1526,10 +1545,10 @@ type MethInfo =
             let tcref =  tcrefOfAppTy g x.ApparentEnclosingAppType
             let formalEnclosingTyparsOrig = tcref.Typars m
             let formalEnclosingTypars = copyTypars formalEnclosingTyparsOrig
-            let _, formalEnclosingTyparTys = FixupNewTypars m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
+            let _, formalEnclosingTyparTys = FixupNewTypars None m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
             let formalMethTypars = copyTypars x.FormalMethodTypars
-            let _, formalMethTyparTys = FixupNewTypars m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
-            let formalRetTy, formalParams =
+            let _, formalMethTyparTys = FixupNewTypars None m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
+            let formalRetTy, formalParams = 
                 match x with
                 | ILMeth(_, ilminfo, _) ->
                     let ftinfo = ILTypeInfo.FromType g (TType_app(tcref, formalEnclosingTyparTys))

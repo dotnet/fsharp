@@ -7,6 +7,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Range
 open FSharp.Compiler.Import
@@ -34,18 +35,27 @@ val NewErrorMeasure: unit -> Measure
 /// Create a list of inference type variables, one for each element in the input list
 val NewInferenceTypes: 'a list -> TType list
 
+/// Freshen a trait for use at a particular location
+type TraitFreshener = (TraitConstraintInfo -> TraitPossibleExtensionMemberSolutions * TraitAccessorDomain)
+
 /// Given a set of formal type parameters and their constraints, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted to refer to these.
-val FreshenAndFixupTypars: range -> TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInst * TType list
+val FreshenAndFixupTypars : TraitFreshener option -> range -> TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInst * TType list
 
-val FreshenTypeInst: range -> Typars -> Typars * TyparInst * TType list
+/// Make new type inference variables for the use of a generic construct at a particular location
+val FreshenTypeInst : TraitFreshener option -> range -> Typars -> Typars * TyparInst * TType list
 
-val FreshenTypars: range -> Typars -> TType list
+/// Make new type inference variables for the use of a generic construct at a particular location
+val FreshenTypars : TraitFreshener option -> range -> Typars -> TType list
 
-val FreshenMethInfo: range -> MethInfo -> TType list
+/// Make new type inference variables for the use of a method at a particular location
+val FreshenMethInfo : TraitFreshener option -> range -> MethInfo -> TType list
+
+/// Get the trait freshener for a particular location
+val GetTraitFreshner : TcGlobals -> AccessorDomain -> NameResolutionEnv -> TraitFreshener
 
 [<RequireQualifiedAccess>] 
-/// Information about the context of a type equation.
+/// Information about the context of a type equation, for better error reporting
 type ContextInfo =
 
     /// No context was given.
@@ -180,4 +190,4 @@ val ChooseTyparSolutionAndSolve: ConstraintSolverState -> DisplayEnv -> Typar ->
 
 val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool
 
-val CanonicalizePartialInferenceProblem:  ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+val CanonicalizePartialInferenceProblem:  ConstraintSolverState -> DisplayEnv -> range -> Typars -> bool -> unit

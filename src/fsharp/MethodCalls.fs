@@ -768,12 +768,12 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
     retTy
     
 /// Build a call to an F# method.
-let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags minst args =
+let BuildFSharpMethodCall g m (vref: ValRef) valUseFlags declaringTypeInst minst args =
     let vexp = Expr.Val (vref, valUseFlags, m)
     let vexpty = vref.Type
     let tpsorig, tau =  vref.TypeScheme
-    let vtinst = argsOfAppTy g ty @ minst
-    if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected List.length mismatch", m))
+    let vtinst = declaringTypeInst @ minst
+    if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected typar length mismatch",m))
     let expr = mkTyAppExpr m (vexp, vexpty) vtinst
     let exprty = instType (mkTyparInst tpsorig vtinst) tau
     BuildFSharpMethodApp g m vref expr exprty args
@@ -791,8 +791,8 @@ let MakeMethInfoCall amap m minfo minst args =
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         BuildILMethInfoCall g amap m isProp ilminfo valUseFlags minst  direct args |> fst
 
-    | FSMeth(g, ty, vref, _) -> 
-        BuildFSharpMethodCall g m (ty, vref) valUseFlags minst args |> fst
+    | FSMeth(g, _, vref, _) -> 
+        BuildFSharpMethodCall g m vref valUseFlags minfo.DeclaringTypeInst minst args |> fst
 
     | DefaultStructCtor(_, ty) -> 
        mkDefault (m, ty)
