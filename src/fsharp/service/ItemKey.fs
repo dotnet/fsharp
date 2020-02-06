@@ -16,13 +16,95 @@ open FSharp.Compiler.AbstractIL.IL
 
 #nowarn "9"
 
+/// These tags are used to create unique item key strings to decrease possible key string collisions when the Items are actually completely different.
+[<RequireQualifiedAccess>]
+module ItemKeyTags =
+
+    [<Literal>]
+    let entityRef = "#E#"
+
+    [<Literal>]
+    let typeTuple = "#T#"
+
+    [<Literal>]
+    let typeAnonymousRecord = "#N#"
+
+    [<Literal>]
+    let typeFunction = "#F#"
+
+    [<Literal>]
+    let typeMeasure = "#M#"
+
+    [<Literal>]
+    let typeUnionCase = "#U#"
+
+    [<Literal>]
+    let typeMeasureVar = "#p#"
+
+    [<Literal>]
+    let typeMeasureCon = "#c#"
+
+    [<Literal>]
+    let typeMeasureProd = "#r#"
+
+    [<Literal>]
+    let typeMeasureInv = "#i#"
+
+    [<Literal>]
+    let typeMeasureOne = "#1#"
+
+    [<Literal>]
+    let typeMeasureRationalPower = "#z#"
+
+    [<Literal>]
+    let itemValueMember = "m$"
+
+    [<Literal>]
+    let itemValue = "v$"
+
+    [<Literal>]
+    let itemUnionCase = "u$"
+
+    [<Literal>]
+    let itemActivePattern = "r$"
+
+    [<Literal>]
+    let itemExnCase = "e$"
+
+    [<Literal>]
+    let itemRecordField = "d$"
+
+    [<Literal>]
+    let itemAnonymousRecordField = "a$"
+
+    [<Literal>]
+    let itemNewDef = "n$"
+
+    [<Literal>]
+    let itemILField = "l$"
+
+    [<Literal>]
+    let itemEvent = "t$"
+
+    [<Literal>]
+    let itemProperty = "p$"
+
+    [<Literal>]
+    let itemTypeVar = "y$"
+
+    [<Literal>]
+    let itemModuleOrNamespace = "o$"
+
+    [<Literal>]
+    let itemDelegateCtor = "g$"
+
 [<Sealed>]
 type ItemKeyStore(mmf: MemoryMappedFile, length) =
 
     let mutable isDisposed = false
     let checkDispose() =
         if isDisposed then
-            raise (ObjectDisposedException("ItemKeyReader"))
+            raise (ObjectDisposedException("ItemKeyStore"))
 
     let viewAccessor = mmf.CreateViewAccessor()
 
@@ -104,7 +186,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         b.WriteInt32(m.FileIndex)
 
     let writeEntityRef (eref: EntityRef) =
-        writeString "#E#"
+        writeString ItemKeyTags.entityRef
         writeString eref.CompiledName
         eref.CompilationPath.MangledPath
         |> List.iter (fun str -> writeString str)
@@ -149,47 +231,47 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | TType_app (tcref, _) ->
             writeEntityRef tcref
         | TType_tuple (_, tinst) ->
-            writeString "#T#"
+            writeString ItemKeyTags.typeTuple
             tinst |> List.iter writeType
         | TType_anon (anonInfo, tinst) ->
-            writeString "#N#"
+            writeString ItemKeyTags.typeAnonymousRecord
             writeString anonInfo.ILTypeRef.BasicQualifiedName
             tinst |> List.iter writeType
         | TType_fun (d, r) ->
-            writeString "#F#"
+            writeString ItemKeyTags.typeFunction
             writeType d
             writeType r
         | TType_measure ms -> 
-            writeString "#M#"
+            writeString ItemKeyTags.typeMeasure
             writeMeasure ms
         | TType_var tp ->
             writeTypar tp
         | TType_ucase (uc, _) ->
             match uc with
             | UnionCaseRef.UCRef(tcref, nm) ->
-                writeString "#U#"
+                writeString ItemKeyTags.typeUnionCase
                 writeEntityRef tcref
                 writeString nm
 
     and writeMeasure (ms: Measure) =
         match ms with
         | Measure.Var typar -> 
-            writeString "#p#"
+            writeString ItemKeyTags.typeMeasureVar
             writeTypar typar
         | Measure.Con tcref -> 
-            writeString "#c#"
+            writeString ItemKeyTags.typeMeasureCon
             writeEntityRef tcref
         | Measure.Prod(ms1, ms2) ->
-            writeString "#r#"
+            writeString ItemKeyTags.typeMeasureProd
             writeMeasure ms1
             writeMeasure ms2
         | Measure.Inv ms ->
-            writeString "#i#"
+            writeString ItemKeyTags.typeMeasureInv
             writeMeasure ms
         | Measure.One ->
-            writeString "#1#"
+            writeString ItemKeyTags.typeMeasureOne
         | Measure.RationalPower _ ->
-            writeString "#z#"
+            writeString ItemKeyTags.typeMeasureRationalPower
 
     and writeTypar (typar: Typar) =
         match typar.Solution with
@@ -222,67 +304,67 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.Value vref ->
             match vref.MemberInfo with
             | Some memberInfo ->
-                writeString "m$"
+                writeString ItemKeyTags.itemValueMember
                 writeEntityRef memberInfo.ApparentEnclosingEntity
                 writeString vref.LogicalName
                 writeType vref.Type
             | _ ->
-                writeString "v$"
+                writeString ItemKeyTags.itemValue
                 writeValRef vref
 
         | Item.UnionCase(info, _) -> 
-            writeString "u$"
+            writeString ItemKeyTags.typeUnionCase
             writeEntityRef info.TyconRef
             
         | Item.ActivePatternResult(info, _, _, _) ->
-            writeString "r$"
+            writeString ItemKeyTags.itemActivePattern
             info.ActiveTagsWithRanges
             |> List.iter (fun (nm, _) ->
                 writeString nm)
 
         | Item.ActivePatternCase elemRef ->
-            writeString "r$"
+            writeString ItemKeyTags.itemActivePattern
             elemRef.ActivePatternInfo.ActiveTagsWithRanges
             |> List.iter (fun (nm, _) -> writeString nm)
 
         | Item.ExnCase tcref ->
-            writeString "e$"
+            writeString ItemKeyTags.itemExnCase
             writeEntityRef tcref
 
         | Item.RecdField info ->
-            writeString "d$"
+            writeString ItemKeyTags.itemRecordField
             writeEntityRef info.TyconRef
             writeString info.Name
             writeType info.FieldType
 
         | Item.AnonRecdField(info, tys, i, _) ->
-            writeString "a$"
+            writeString ItemKeyTags.itemAnonymousRecordField
             writeString info.ILTypeRef.BasicQualifiedName
             tys |> List.iter writeType
             writeInt32 i
 
         | Item.NewDef ident ->
-            writeString "n$"
+            writeString ItemKeyTags.itemNewDef
             writeString ident.idText
 
         | Item.ILField info ->
-            writeString "l$"
+            writeString ItemKeyTags.itemILField
             writeString info.ILTypeRef.BasicQualifiedName
             writeString info.FieldName
 
         | Item.Event info ->
-            writeString "t$"
+            writeString ItemKeyTags.itemEvent
             writeString info.EventName
             writeEntityRef info.DeclaringTyconRef
 
         | Item.Property(nm, infos) ->
-            writeString "p$"
+            writeString ItemKeyTags.itemProperty
             writeString nm
             infos
             |> List.iter (fun info -> writeEntityRef info.DeclaringTyconRef)
 
         | Item.TypeVar(nm, typar) ->
-            writeString "y$"
+            writeString ItemKeyTags.itemTypeVar
             writeString nm
             writeTypar typar
 
@@ -309,7 +391,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
                 writeString info.LogicalName
 
         | Item.ModuleOrNamespaces [x] ->
-            writeString "o$"
+            writeString ItemKeyTags.itemModuleOrNamespace
             x.CompilationPath.DemangledPath
             |> List.iter (fun x -> 
                 writeString x
@@ -317,7 +399,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString x.LogicalName
 
         | Item.DelegateCtor ty ->
-            writeString "g$"
+            writeString ItemKeyTags.itemDelegateCtor
             writeType ty
 
         | Item.MethodGroup _ -> ()
