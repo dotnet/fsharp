@@ -2569,6 +2569,9 @@ let GetAutoOpenAttributes ilg ilModule =
 let GetInternalsVisibleToAttributes ilg ilModule = 
     ilModule |> GetCustomAttributesOfILModule |> List.choose (TryFindInternalsVisibleToAttr ilg)
 
+[<Literal>]
+let tname_System_Runtime_InteropServices_TypeIdentifierAttribute = "System.Runtime.InteropServices.TypeIdentifierAttribute"
+
 let findPrimaryAssembly (data: TcConfigBuilder) =
     let assemblies =
         data.referencedDLLs
@@ -2576,7 +2579,6 @@ let findPrimaryAssembly (data: TcConfigBuilder) =
 
     let readerSettings: ILReaderOptions = 
         { pdbDirPath=None
-          ilGlobals = EcmaMscorlibILGlobals
           reduceMemoryUsage = data.reduceMemoryUsage
           metadataOnly = MetadataOnlyFlag.Yes
           tryGetMetadataSnapshot = data.tryGetMetadataSnapshot }
@@ -2588,7 +2590,7 @@ let findPrimaryAssembly (data: TcConfigBuilder) =
         reader.ILModuleDef.TypeDefs.AsArray
         |> Array.exists (fun (ilTypeDef: ILTypeDef) ->
             ilTypeDef.CustomAttrs.AsArray
-            |> Array.exists (fun attr -> attr.Method.MethodRef.DeclaringTypeRef.Name = "System.Runtime.InteropServices.TypeIdentifierAttribute"))
+            |> Array.exists (fun attr -> attr.Method.MethodRef.DeclaringTypeRef.Name = tname_System_Runtime_InteropServices_TypeIdentifierAttribute))
 
     let hasBaselessObjectClass (reader: ILModuleReader) =
         reader.ILModuleDef.TypeDefs.AsArrayOfPreTypeDefs
