@@ -19,7 +19,7 @@ this file.
 
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-        <FSharpBuildAssemblyFile Condition=" '$(FSharpBuildAssemblyFile)' =='' ">FSharp.Build.dll</FSharpBuildAssemblyFile>
+        <FSharpBuildAssemblyFile Condition=" '$(FSharpBuildAssemblyFile)' =='' ">$(MSBuildThisFileDirectory)FSharp.Build.dll</FSharpBuildAssemblyFile>
     </PropertyGroup>
 
     <UsingTask TaskName="Fsc" AssemblyFile="$(FSharpBuildAssemblyFile)" />
@@ -29,6 +29,7 @@ this file.
     <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="$(FSharpBuildAssemblyFile)" />
     <UsingTask TaskName="WriteCodeFragment" AssemblyFile="$(FSharpBuildAssemblyFile)" />
     <UsingTask TaskName="FSharpPlatformInformation" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="SubstituteText" AssemblyFile="$(FSharpBuildAssemblyFile)" />
 
     <PropertyGroup>
         <ImportByWildcardBeforeMicrosoftFSharpTargets Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == ''">true</ImportByWildcardBeforeMicrosoftFSharpTargets>
@@ -210,6 +211,7 @@ this file.
                 @(CompileBefore);
                 @(Compile);
                 @(CompileAfter);
+                @(FscCompilerTools);
                 @(_CoreCompileResourceInputs);
                 @(ManifestNonResxWithNoCultureOnDisk);
                 $(ApplicationIcon);
@@ -278,6 +280,7 @@ this file.
               BaseAddress="$(BaseAddress)"
               ChecksumAlgorithm="$(PdbChecksumAlgorithm)"
               CodePage="$(CodePage)"
+              CompilerTools="@(FscCompilerTools)"
               DebugSymbols="$(DebugSymbols)"
               DebugType="$(DebugType)"
               DefineConstants="$(DefineConstants)"

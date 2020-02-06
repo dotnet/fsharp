@@ -8,7 +8,7 @@ open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.AbstractIL.IL // runningOnMono 
+open FSharp.Compiler.AbstractIL.Internal.Utils // runningOnMono
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 
@@ -263,10 +263,6 @@ module Driver =
 #if RESIDENT_COMPILER
         if runningOnMono && hasArgument "resident" argv then 
             let argv = stripArgument "resident" argv
-
-            //if not (hasArgument "nologo" argv) then 
-            //    printfn "%s" (FSComp.SR.buildProductName(FSharpEnvironment.FSharpTeamVersionNumber))
-            //    printfn "%s" (FSComp.SR.optsCopyright())
 
             let fscServerExe = typeof<TypeInThisAssembly>.Assembly.Location
             let exitCodeOpt = FSharpResidentCompiler.FSharpCompilationServer.TryCompileUsingServer (fscServerExe, argv)

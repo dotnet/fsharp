@@ -1101,7 +1101,7 @@ module internal Salsa =
             
             member file.GetFileName() = filename
             member file.GetProjectOptionsOfScript() = 
-                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, FSharp.Compiler.Text.SourceText.ofString file.CombinedLines, System.DateTime(2000,1,1), [| |]) 
+                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, FSharp.Compiler.Text.SourceText.ofString file.CombinedLines, false, System.DateTime(2000,1,1), [| |]) 
                 |> Async.RunSynchronously
                 |> fst // drop diagnostics
                  

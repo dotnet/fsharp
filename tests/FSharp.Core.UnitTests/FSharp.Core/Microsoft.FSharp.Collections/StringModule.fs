@@ -183,3 +183,99 @@ type StringModule() =
 
         let e3 = String.length null
         Assert.AreEqual(0, e3)
+
+    [<Test>]
+    member this.``Slicing with both index reverse behaves as expected``()  = 
+        let str = "abcde"
+
+        Assert.That(str.[^3..^1], Is.EquivalentTo(str.[1..3]))
+
+    [<Test>]
+    member this.``Indexer with reverse index behaves as expected``() =
+        let str = "abcde"
+
+        Assert.That(str.[^1], Is.EqualTo('d'))
+
+    [<Test>] 
+    member this.SlicingUnboundedEnd() = 
+        let str = "123456"
+
+        Assert.AreEqual(str.[-1..], str)
+        Assert.AreEqual(str.[0..], str)
+        Assert.AreEqual(str.[1..], "23456")
+        Assert.AreEqual(str.[2..], "3456")
+        Assert.AreEqual(str.[5..], "6")
+        Assert.AreEqual(str.[6..], (""))
+        Assert.AreEqual(str.[7..], (""))
+
+    
+    [<Test>] 
+    member this.SlicingUnboundedStart() = 
+        let str = "123456"
+
+        Assert.AreEqual(str.[..(-1)], (""))
+        Assert.AreEqual(str.[..0], "1")
+        Assert.AreEqual(str.[..1], "12")
+        Assert.AreEqual(str.[..2], "123")
+        Assert.AreEqual(str.[..3], "1234")
+        Assert.AreEqual(str.[..4], "12345")
+        Assert.AreEqual(str.[..5], "123456")
+        Assert.AreEqual(str.[..6], "123456")
+        Assert.AreEqual(str.[..7], "123456")
+
+
+    [<Test>]
+    member this.SlicingBoundedStartEnd() =
+        let str = "123456"
+
+        Assert.AreEqual(str.[*], str)
+
+        Assert.AreEqual(str.[0..0], "1")
+        Assert.AreEqual(str.[0..1], "12")
+        Assert.AreEqual(str.[0..2], "123")
+        Assert.AreEqual(str.[0..3], "1234")
+        Assert.AreEqual(str.[0..4], "12345")
+        Assert.AreEqual(str.[0..5], "123456")
+
+        Assert.AreEqual(str.[1..1], "2")
+        Assert.AreEqual(str.[1..2], "23")
+        Assert.AreEqual(str.[1..3], "234")
+        Assert.AreEqual(str.[1..4], "2345")
+        Assert.AreEqual(str.[1..5], "23456")
+
+        Assert.AreEqual(str.[0..1], "12")
+        Assert.AreEqual(str.[1..1], "2")
+        Assert.AreEqual(str.[2..1], (""))
+        Assert.AreEqual(str.[3..1], (""))
+        Assert.AreEqual(str.[4..1], (""))
+
+
+    [<Test>]
+    member this.SlicingEmptyString() = 
+
+        let empty = ""
+        Assert.AreEqual(empty.[*], (""))
+        Assert.AreEqual(empty.[5..3], (""))
+        Assert.AreEqual(empty.[0..], (""))
+        Assert.AreEqual(empty.[0..0], (""))
+        Assert.AreEqual(empty.[0..1], (""))
+        Assert.AreEqual(empty.[3..5], (""))
+
+
+    [<Test>]
+    member this.SlicingOutOfBounds() = 
+        let str = "123456"
+       
+        Assert.AreEqual(str.[..6], "123456")
+        Assert.AreEqual(str.[6..], (""))
+
+        Assert.AreEqual(str.[0..(-1)], (""))
+        Assert.AreEqual(str.[1..(-1)], (""))
+        Assert.AreEqual(str.[1..0], (""))
+        Assert.AreEqual(str.[0..6], "123456")
+        Assert.AreEqual(str.[1..6], "23456")
+
+        Assert.AreEqual(str.[-1..1], "12")
+        Assert.AreEqual(str.[-3..(-4)], (""))
+        Assert.AreEqual(str.[-4..(-3)], (""))
+

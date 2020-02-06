@@ -54,7 +54,7 @@ type public FSharpProjectOptions =
       UnresolvedReferences : UnresolvedReferencesSet option
 
       /// Unused in this API and should be '[]' when used as user-specified input
-      OriginalLoadReferences: (range * string) list
+      OriginalLoadReferences: (range * string * string) list
 
       /// Extra information passed back on event trigger
       ExtraProjectInfo : obj option
@@ -77,7 +77,7 @@ type public FSharpChecker =
     /// <param name="keepAllBackgroundResolutions">If false, do not keep full intermediate checking results from background checking suitable for returning from GetBackgroundCheckResultsForFileInProject. This reduces memory usage.</param>
     /// <param name="legacyReferenceResolver">An optional resolver for non-file references, for legacy purposes</param>
     /// <param name="tryGetMetadataSnapshot">An optional resolver to access the contents of .NET binaries in a memory-efficient way</param>
-    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  * ?legacyReferenceResolver: ReferenceResolver.Resolver * ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * ?suggestNamesForErrors: bool -> FSharpChecker
+    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  * ?legacyReferenceResolver: ReferenceResolver.Resolver * ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * ?suggestNamesForErrors: bool * ?keepAllBackgroundSymbolUses: bool -> FSharpChecker
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
@@ -228,7 +228,7 @@ type public FSharpChecker =
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetProjectOptionsFromScript : filename: string * sourceText: ISourceText * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?assumeDotNetFramework: bool * ?extraProjectInfo: obj * ?optionsStamp: int64 * ?userOpName: string -> Async<FSharpProjectOptions * FSharpErrorInfo list>
+    member GetProjectOptionsFromScript : filename: string * sourceText: ISourceText * ?previewEnabled:bool * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?assumeDotNetFramework: bool * ?extraProjectInfo: obj * ?optionsStamp: int64 * ?userOpName: string -> Async<FSharpProjectOptions * FSharpErrorInfo list>
 
     /// <summary>
     /// <para>Get the FSharpProjectOptions implied by a set of command line arguments.</para>

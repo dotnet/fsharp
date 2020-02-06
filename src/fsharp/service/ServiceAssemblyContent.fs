@@ -589,8 +589,8 @@ module ParsedInput =
         and walkInterfaceImpl (InterfaceImpl(_, bindings, _)) = List.iter walkBinding bindings
     
         and walkIndexerArg = function
-            | SynIndexerArg.One e -> walkExpr e
-            | SynIndexerArg.Two (e1, e2) -> List.iter walkExpr [e1; e2]
+            | SynIndexerArg.One (e, _, _) -> walkExpr e
+            | SynIndexerArg.Two (e1, _, e2, _, _, _) -> List.iter walkExpr [e1; e2]
     
         and walkType = function
             | SynType.Array (_, t, _)
@@ -703,9 +703,13 @@ module ParsedInput =
                 addLongIdentWithDots ident
                 List.iter walkExpr [e1; e2; e3]
             | SynExpr.JoinIn (e1, _, e2, _) -> List.iter walkExpr [e1; e2]
-            | SynExpr.LetOrUseBang (_, _, _, pat, e1, e2, _) ->
+            | SynExpr.LetOrUseBang (_, _, _, pat, e1, es, e2, _) ->
                 walkPat pat
-                List.iter walkExpr [e1; e2]
+                walkExpr e1
+                for (_,_,_,patAndBang,eAndBang,_) in es do
+                    walkPat patAndBang
+                    walkExpr eAndBang
+                walkExpr e2
             | SynExpr.TraitCall (ts, sign, e, _) ->
                 List.iter walkTypar ts
                 walkMemberSig sign
@@ -860,8 +864,8 @@ module ParsedInput =
         // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
         use _ignoreAllDiagnostics = new ErrorScope()  
 
-        let result: (Scope * pos * (* finished *) bool) option ref = ref None
-        let ns: string[] option ref = ref None
+        let mutable result = None
+        let mutable ns = None
         let modules = ResizeArray<Module>()  
 
         let inline longIdentToIdents ident = ident |> Seq.map (fun x -> string x) |> Seq.toArray
@@ -873,17 +877,17 @@ module ParsedInput =
 
         let doRange kind (scope: LongIdent) line col =
             if line <= currentLine then
-                match !result, insertionPoint with
+                match result, insertionPoint with
                 | None, _ -> 
-                    result := Some ({ Idents = longIdentToIdents scope; Kind = kind }, mkPos line col, false)
+                    result <- Some ({ Idents = longIdentToIdents scope; Kind = kind }, mkPos line col, false)
                 | Some (_, _, true), _ -> ()
                 | Some (oldScope, oldPos, false), OpenStatementInsertionPoint.TopLevel when kind <> OpenDeclaration ->
-                    result := Some (oldScope, oldPos, true)
+                    result <- Some (oldScope, oldPos, true)
                 | Some (oldScope, oldPos, _), _ ->
                     match kind, oldScope.Kind with
                     | (Namespace | NestedModule | TopModule), OpenDeclaration
                     | _ when oldPos.Line <= line ->
-                        result := 
+                        result <-
                             Some ({ Idents = 
                                         match scope with 
                                         | [] -> oldScope.Idents 
@@ -916,11 +920,11 @@ module ParsedInput =
             if range.EndLine >= currentLine then
                 let isModule = kind.IsModule
                 match isModule, parent, ident with
-                | false, _, _ -> ns := Some (longIdentToIdents ident)
+                | false, _, _ -> ns <- Some (longIdentToIdents ident)
                 // top level module with "inlined" namespace like Ns1.Ns2.TopModule
                 | true, [], _f :: _s :: _ -> 
                     let ident = longIdentToIdents ident
-                    ns := Some (ident.[0..ident.Length - 2])
+                    ns <- Some (ident.[0..ident.Length - 2])
                 | _ -> ()
                 
                 let fullIdent = parent @ ident
@@ -958,9 +962,9 @@ module ParsedInput =
         | ParsedInput.ImplFile input -> walkImplFileInput input
 
         let res =
-            !result
+            result
             |> Option.map (fun (scope, pos, _) ->
-                let ns = !ns |> Option.map longIdentToIdents
+                let ns = ns |> Option.map longIdentToIdents
                 scope, ns, mkPos (pos.Line + 1) pos.Column)
         
         let modules = 

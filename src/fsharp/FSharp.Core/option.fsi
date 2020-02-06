@@ -173,7 +173,6 @@ module Option =
     [<CompiledName("ToList")>]
     val toList: option:'T option -> 'T list
 
-
     /// <summary>Convert the option to a Nullable value.</summary>
     /// <param name="option">The input option.</param>
     /// <returns>The result value.</returns>

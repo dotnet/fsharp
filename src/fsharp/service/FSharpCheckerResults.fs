@@ -193,7 +193,7 @@ type internal TypeCheckInfo
         // We guarantee to only refine to a more nested environment.  It may not be strictly  
         // the right environment, but will always be at least as rich 
 
-        let bestAlmostIncludedSoFar = ref None 
+        let mutable bestAlmostIncludedSoFar = None 
 
         sResolutions.CapturedEnvs |> ResizeArray.iter (fun (possm,env,ad) -> 
             // take only ranges that strictly do not include cursorPos (all ranges that touch cursorPos were processed during 'Strict Inclusion' part)
@@ -204,15 +204,15 @@ type internal TypeCheckInfo
                     | None -> true 
                 
                 if contained then 
-                    match !bestAlmostIncludedSoFar with 
+                    match bestAlmostIncludedSoFar with 
                     | Some (rightm:range,_,_) -> 
                         if posGt possm.End rightm.End || 
                           (posEq possm.End rightm.End && posGt possm.Start rightm.Start) then
-                            bestAlmostIncludedSoFar := Some (possm,env,ad)
-                    | _ -> bestAlmostIncludedSoFar := Some (possm,env,ad))
+                            bestAlmostIncludedSoFar <- Some (possm,env,ad)
+                    | _ -> bestAlmostIncludedSoFar <- Some (possm,env,ad))
         
         let resEnv = 
-            match !bestAlmostIncludedSoFar, mostDeeplyNestedEnclosingScope with 
+            match bestAlmostIncludedSoFar, mostDeeplyNestedEnclosingScope with 
             | Some (_,env,ad), None -> env, ad
             | Some (_,almostIncludedEnv,ad), Some (_,mostDeeplyNestedEnv,_) 
                 when almostIncludedEnv.eFieldLabels.Count >= mostDeeplyNestedEnv.eFieldLabels.Count -> 
@@ -622,7 +622,7 @@ type internal TypeCheckInfo
 
             let getType() =
                 match NameResolution.TryToResolveLongIdentAsType ncenv nenv m plid with
-                | Some x -> tryDestAppTy g x
+                | Some x -> tryTcrefOfAppTy g x
                 | None ->
                     match lastDotPos |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)) with
                     | Some p when lineStr.[p] = '.' ->
@@ -630,7 +630,7 @@ type internal TypeCheckInfo
                         | Some colAtEndOfNames ->                 
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
                             match TryGetTypeFromNameResolution(line, colAtEndOfNames, residueOpt, resolveOverloads) with
-                            | Some x -> tryDestAppTy g x
+                            | Some x -> tryTcrefOfAppTy g x
                             | _ -> ValueNone
                         | None -> ValueNone
                     | _ -> ValueNone
@@ -675,7 +675,7 @@ type internal TypeCheckInfo
                             // it appears we're getting some typings recorded for non-atomic expressions like "f x"
                             when isNil plid ->
                         // lookup based on expression typings successful
-                        Some (items |> List.map (CompletionItem (tryDestAppTy g ty) ValueNone), denv, m)
+                        Some (items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone), denv, m)
                     | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
                         // There was an error, e.g. we have "<expr>." and there is an error determining the type of <expr>  
                         // In this case, we don't want any of the fallback logic, rather, we want to produce zero results.
@@ -708,7 +708,7 @@ type internal TypeCheckInfo
                            
                            // Try again with the qualItems
                            | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty) ->
-                               ValueSome(items |> List.map (CompletionItem (tryDestAppTy g ty) ValueNone), denv, m)
+                               ValueSome(items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone), denv, m)
                            
                            | _ -> ValueNone
 
@@ -1525,7 +1525,7 @@ module internal ParseAndCheckFile =
         
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
-        let lexargs = mkLexargs(fileName, defines, lightSyntaxStatus, lexResourceManager, ref [], errHandler.ErrorLogger, PathMap.empty)
+        let lexargs = mkLexargs(fileName, defines, lightSyntaxStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
         let lexargs = { lexargs with applyLineDirectives = false }
 
         let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)

@@ -103,16 +103,16 @@ let BindSubExprOfInput g amap gtps (PBind(v, tyscheme)) m (SubExpr(accessf, (ve2
             accessf [] ve2
         else
             let tyargs =
-                let someSolved = ref false
+                let mutable someSolved = false
                 let freezeVar gtp =
                     if isBeingGeneralized gtp tyscheme then
                         mkTyparTy gtp
                     else
-                        someSolved := true
+                        someSolved <- true
                         TypeRelations.ChooseTyparSolution g amap gtp
 
                 let solutions = List.map freezeVar gtps
-                if !someSolved then
+                if someSolved then
                     TypeRelations.IterativelySubstituteTyparSolutions g gtps solutions
                 else
                     solutions
@@ -255,7 +255,7 @@ let RefuteDiscrimSet g m path discrims =
             match c' with
             | None -> raise CannotRefute
             | Some c ->
-                match tryDestAppTy g ty with
+                match tryTcrefOfAppTy g ty with
                 | ValueSome tcref when tcref.IsEnumTycon ->
                     // We must distinguish between F#-defined enums and other .NET enums, as they are represented differently in the TAST
                     let enumValues =
@@ -1268,10 +1268,10 @@ let CompilePatternBasic
             BindProjectionPatterns newActives s
 
         | TPat_range (c1, c2, m) ->
-            let res = ref []
+            let mutable res = []
             for i = int c1 to int c2 do
-                res :=  BindProjectionPattern (Active(path, subExpr, TPat_const(Const.Char(char i), m))) s @ !res
-            !res
+                res <- BindProjectionPattern (Active(path, subExpr, TPat_const(Const.Char(char i), m))) s @ res
+            res
         // Assign an identifier to each TPat_query based on our knowledge of the 'identity' of the active pattern, if any
         | TPat_query ((_, _, apatVrefOpt, _, _), _, _) ->
             let uniqId =

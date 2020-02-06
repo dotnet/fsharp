@@ -23,6 +23,7 @@
                 <dependency id="System.Linq.Queryable" version="4.0.1" />
                 <dependency id="System.Net.Requests" version="4.0.11" />
                 <dependency id="System.Reflection.Emit" version="4.0.1" />
+                <dependency id="System.Reflection.Extensions" version="4.0.1" />
                 <dependency id="System.Reflection.Metadata" version="1.6.0" />
                 <dependency id="System.Reflection.TypeExtensions" version="4.1.0" />
                 <dependency id="System.Runtime.InteropServices" version="4.1.0" />
@@ -32,6 +33,7 @@
                 <dependency id="System.Threading.Thread" version="4.0.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
                 <dependency id="System.ValueTuple" version="4.3.0" />
+                <dependency id="System.Buffers" version="4.5.0" />
             </group>
         </dependencies>
     </metadata>

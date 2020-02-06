@@ -1,4 +1,4 @@
-﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test vvvvvvvvvvvvvvvv
+﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test
 #if INTERACTIVE
 #r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "../../src/scripts/scriptlib.fsx" 
@@ -642,25 +642,47 @@ module CoreTests =
 
         csc cfg """/nologo /target:library /r:"%s" /out:lib3.dll  /langversion:7.2""" cfg.FSCOREDLLPATH ["lib3.cs"]
 
-        fsc cfg "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        // some features missing in 4.7
+        for version in ["4.7"] do
+            let outFile = "compilation.langversion.old.output.txt" 
+            let expectedFile = "compilation.langversion.old.output.bsl" 
+            fscBothToOutExpectFail cfg outFile "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --nologo --define:LANGVERSION_%s --langversion:%s" cfg.fsc_flags (version.Replace(".","_")) version ["test.fsx"]
+
+            let diffs = fsdiff cfg outFile expectedFile 
+            match diffs with
+            | "" -> ()
+            | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outFile expectedFile diffs)
+
+        // all features available in preview
+        fsc cfg "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --define:LANGVERSION_PREVIEW --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
 
         // Same with library references the other way around
-        fsc cfg "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g --define:LANGVERSION_PREVIEW --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
 
         // Same without the reference to lib.dll - testing an incomplete reference set, but only compiling a subset of the code
-        fsc cfg "%s -r:System.Runtime.dll --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -r:System.Runtime.dll --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g --define:LANGVERSION_PREVIEW --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
+
+        // check error messages for some cases
+        let outFile = "compilation.errors.output.txt" 
+        let expectedFile = "compilation.errors.output.bsl" 
+        fscBothToOutExpectFail cfg outFile "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --nologo --define:LANGVERSION_PREVIEW --langversion:preview --define:CHECK_ERRORS" cfg.fsc_flags ["test.fsx"]
+
+        let diffs = fsdiff cfg outFile expectedFile 
+        match diffs with
+        | "" -> ()
+        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outFile expectedFile diffs)
 
     [<Test>]
     let ``fsi-reference`` () = 
@@ -2162,6 +2184,18 @@ module TypecheckTests =
         peverify cfg "pos33.dll"
 
     [<Test>]
+    let ``sigs pos34`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos34.dll --warnaserror" cfg.fsc_flags ["pos34.fs"]
+        peverify cfg "pos34.dll"
+
+    [<Test>]
+    let ``sigs pos35`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos35.dll --warnaserror" cfg.fsc_flags ["pos35.fs"]
+        peverify cfg "pos35.dll"
+
+    [<Test>]
     let ``sigs pos23`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]
@@ -2659,6 +2693,48 @@ module TypecheckTests =
 
     [<Test>] 
     let ``type check neg115`` () = singleNegTest (testConfig "typecheck/sigs") "neg115"
+
+    [<Test>] 
+    let ``type check neg116`` () = singleNegTest (testConfig "typecheck/sigs") "neg116"
+
+    [<Test>] 
+    let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"
+
+    [<Test>] 
+    let ``type check neg118`` () = singleNegTest (testConfig "typecheck/sigs") "neg118"
+
+    [<Test>] 
+    let ``type check neg119`` () = singleNegTest (testConfig "typecheck/sigs") "neg119"
+
+    [<Test>] 
+    let ``type check neg120`` () = singleNegTest (testConfig "typecheck/sigs") "neg120"
+
+    [<Test>] 
+    let ``type check neg121`` () = singleNegTest (testConfig "typecheck/sigs") "neg121"
+
+    [<Test>] 
+    let ``type check neg122`` () = singleNegTest (testConfig "typecheck/sigs") "neg122"
+
+    [<Test>] 
+    let ``type check neg123`` () = singleNegTest (testConfig "typecheck/sigs") "neg123"
+
+    [<Test>] 
+    let ``type check neg124`` () = singleNegTest (testConfig "typecheck/sigs") "neg124"
+
+    [<Test>] 
+    let ``type check neg125`` () = singleNegTest (testConfig "typecheck/sigs") "neg125"
+
+    [<Test>] 
+    let ``type check neg126`` () = singleNegTest (testConfig "typecheck/sigs") "neg126"
+
+    [<Test>] 
+    let ``type check neg127`` () = singleNegTest (testConfig "typecheck/sigs") "neg127"
+
+    [<Test>] 
+    let ``type check neg128`` () = singleNegTest (testConfig "typecheck/sigs") "neg128"
+
+    [<Test>] 
+    let ``type check neg129`` () = singleNegTest (testConfig "typecheck/sigs") "neg129"
 
     [<Test>] 
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"

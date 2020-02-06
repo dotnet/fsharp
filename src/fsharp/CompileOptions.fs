@@ -6,11 +6,13 @@ module internal FSharp.Compiler.CompileOptions
 
 open Internal.Utilities
 open System
+open System.IO
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompileOps
@@ -502,8 +504,10 @@ let SetDebugSwitch (tcConfigB: TcConfigBuilder) (dtype: string option) (s: Optio
 let SetEmbedAllSourceSwitch (tcConfigB: TcConfigBuilder) switch = 
     if (switch = OptionSwitch.On) then tcConfigB.embedAllSource <- true else tcConfigB.embedAllSource <- false
 
-let setOutFileName tcConfigB s = 
-    tcConfigB.outputFile <- Some s
+let setOutFileName tcConfigB path =
+    let outputDir = Path.GetDirectoryName(path)
+    tcConfigB.outputDir <- Some outputDir
+    tcConfigB.outputFile <- Some path
 
 let setSignatureFile tcConfigB s = 
     tcConfigB.printSignature <- true 
@@ -559,17 +563,24 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
 // OptionBlock: Input files
 //-------------------------
 
-let inputFileFlagsBoth (tcConfigB: TcConfigBuilder) =
-    [ CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some (FSComp.SR.optsReference()))
+let inputFileFlagsBoth (tcConfigB : TcConfigBuilder) = [
+    CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some (FSComp.SR.optsReference()))
+    CompilerOption("compilertool", tagFile, OptionString (fun s -> tcConfigB.AddCompilerToolsByPath s), None, Some (FSComp.SR.optsCompilerTool()))
     ]
 
-let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB 
+let referenceFlagAbbrev (tcConfigB : TcConfigBuilder) =
+    CompilerOption("r", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some(FSComp.SR.optsShortFormOf("--reference")))
+
+let compilerToolFlagAbbrev (tcConfigB : TcConfigBuilder) =
+    CompilerOption("t", tagFile, OptionString (fun s -> tcConfigB.AddCompilerToolsByPath s), None, Some(FSComp.SR.optsShortFormOf("--compilertool")))
+
+let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
 let inputFileFlagsFsiBase (_tcConfigB: TcConfigBuilder) =
 #if NETSTANDARD
-        [ CompilerOption("usesdkrefs", tagNone, OptionSwitch (SetUseSdkSwitch _tcConfigB), None, Some (FSComp.SR.useSdkRefs())) ]
+    [ CompilerOption("usesdkrefs", tagNone, OptionSwitch (SetUseSdkSwitch _tcConfigB), None, Some (FSComp.SR.useSdkRefs())) ]
 #else
-        List.empty<CompilerOption>
+    List.empty<CompilerOption>
 #endif
 
 let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
@@ -1004,7 +1015,7 @@ let testFlag tcConfigB =
                 match s with
                 | "StackSpan"        -> tcConfigB.internalTestSpanStackReferring <- true
                 | "ErrorRanges"      -> tcConfigB.errorStyle <- ErrorStyle.TestErrors
-                | "Tracking"         -> Lib.tracking := true (* general purpose on/off diagnostics flag *)
+                | "Tracking"         -> Lib.tracking <- true (* general purpose on/off diagnostics flag *)
                 | "NoNeedToTailcall" -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportNoNeedToTailcall = true }
                 | "FunctionSizes"    -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportFunctionSizes = true }
                 | "TotalSizes"       -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportTotalSizes = true }
@@ -1231,7 +1242,7 @@ let compilingFsLibFlag (tcConfigB: TcConfigBuilder) =
             tcConfigB.compilingFslib <- true 
             tcConfigB.TurnWarningOff(rangeStartup, "42") 
             ErrorLogger.reportLibraryOnlyFeatures <- false
-            IlxSettings.ilxCompilingFSharpCoreLib := true),
+            IlxSettings.ilxCompilingFSharpCoreLib <- true),
          Some(InternalCommandLineOption("--compiling-fslib", rangeCmdArgs)), None)
 
 let compilingFsLib20Flag =
@@ -1301,7 +1312,7 @@ let deprecatedFlagsFsc tcConfigB =
 
     CompilerOption
        ("progress", tagNone,
-        OptionUnit (fun () -> progress := true),
+        OptionUnit (fun () -> progress <- true),
         Some(DeprecatedCommandLineOptionNoDescription("--progress", rangeCmdArgs)), None)
 
     compilingFsLibFlag tcConfigB
@@ -1577,14 +1588,13 @@ let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string list, c
 // PrintWholeAssemblyImplementation
 //----------------------------------------------------------------------------
 
-let showTermFileCount = ref 0    
+let mutable showTermFileCount = 0    
 let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then 
             let filename = outfile + ".terms"
-            let n = !showTermFileCount
-            showTermFileCount := n+1
-            use f = System.IO.File.CreateText (filename + "-" + string n + "-" + header)
+            use f = System.IO.File.CreateText (filename + "-" + string showTermFileCount + "-" + header)
+            showTermFileCount <- showTermFileCount + 1
             Layout.outL f (Layout.squashTo 192 (DebugPrint.implFilesL g expr))
         else 
             dprintf "\n------------------\nshowTerm: %s:\n" header
@@ -1595,11 +1605,11 @@ let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
 // ReportTime 
 //----------------------------------------------------------------------------
 
-let tPrev = ref None
-let nPrev = ref None
+let mutable tPrev = None
+let mutable nPrev = None
 let ReportTime (tcConfig:TcConfig) descr =
     
-    match !nPrev with
+    match nPrev with
     | None -> ()
     | Some prevDescr ->
         if tcConfig.pause then 
@@ -1640,7 +1650,7 @@ let ReportTime (tcConfig:TcConfig) descr =
         let ptime = System.Diagnostics.Process.GetCurrentProcess()
         let wsNow = ptime.WorkingSet64/1000000L
 
-        match !tPrev, !nPrev with
+        match tPrev, nPrev with
         | Some (timePrev, gcPrev:int []), Some prevDescr ->
             let spanGC = [| for i in 0 .. maxGen -> System.GC.CollectionCount i - gcPrev.[i] |]
             dprintf "TIME: %4.1f Delta: %4.1f Mem: %3d" 
@@ -1651,9 +1661,9 @@ let ReportTime (tcConfig:TcConfig) descr =
                 prevDescr
 
         | _ -> ()
-        tPrev := Some (timeNow, gcNow)
+        tPrev <- Some (timeNow, gcNow)
 
-    nPrev := Some descr
+    nPrev <- Some descr
 
 //----------------------------------------------------------------------------
 // OPTIMIZATION - support - addDllToOptEnv
@@ -1813,14 +1823,17 @@ let GenerateIlxCode
 // by the same references. Only used for static linking.
 //----------------------------------------------------------------------------
 
-let NormalizeAssemblyRefs (ctok, tcImports:TcImports) scoref =
+let NormalizeAssemblyRefs (ctok, ilGlobals: ILGlobals, tcImports:TcImports) scoref =
+    let normalizeAssemblyRefByName nm =
+        match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, nm, lookupOnly=false) with 
+        | Some dllInfo -> dllInfo.ILScopeRef
+        | None -> scoref
+
     match scoref with 
     | ILScopeRef.Local 
     | ILScopeRef.Module _ -> scoref
-    | ILScopeRef.Assembly aref -> 
-        match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
-        | Some dllInfo -> dllInfo.ILScopeRef
-        | None -> scoref
+    | ILScopeRef.PrimaryAssembly -> normalizeAssemblyRefByName ilGlobals.primaryAssemblyName
+    | ILScopeRef.Assembly aref -> normalizeAssemblyRefByName aref.Name
 
 let GetGeneratedILModuleName (t:CompilerTarget) (s:string) = 
     // return the name of the file as a module name

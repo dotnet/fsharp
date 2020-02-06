@@ -764,12 +764,13 @@ and
     /// Computation expressions only
     | YieldOrReturnFrom of (bool * bool) * expr: SynExpr * range: range
 
-    /// SynExpr.LetOrUseBang (spBind, isUse, isFromSource, pat, rhsExpr, bodyExpr, mWholeExpr).
+    /// SynExpr.LetOrUseAndBang (spBind, isUse, isFromSource, pat, rhsExpr, mLetBangExpr, [(andBangSpBind, andBangIsUse, andBangIsFromSource, andBangPat, andBangRhsExpr, mAndBangExpr)], bodyExpr).
     ///
     /// F# syntax: let! pat = expr in expr
     /// F# syntax: use! pat = expr in expr
+    /// F# syntax: let! pat = expr and! ... and! ... and! pat = expr in expr
     /// Computation expressions only
-    | LetOrUseBang of bindSeqPoint: SequencePointInfoForBinding * isUse: bool * isFromSource: bool * SynPat * SynExpr * SynExpr * range: range
+    | LetOrUseBang of bindSeqPoint: SequencePointInfoForBinding * isUse: bool * isFromSource: bool * SynPat * rhs: SynExpr * andBangs:(SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * body:SynExpr * range: range 
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of  matchSeqPoint: SequencePointInfoForBinding * expr: SynExpr * clauses: SynMatchClause list * range: range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
@@ -898,13 +899,13 @@ and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     SynIndexerArg =
 
-    | Two of SynExpr * SynExpr
+    | Two of SynExpr * fromEnd1: bool * SynExpr * fromEnd2: bool * range1: range * range2: range
 
-    | One of SynExpr
+    | One of SynExpr * fromEnd: bool * range
 
-    member x.Range = match x with Two (e1, e2) -> unionRanges e1.Range e2.Range | One e -> e.Range
+    member x.Range = match x with Two (e1, _, e2, _, _, _) -> unionRanges e1.Range e2.Range | One (e, _, _) -> e.Range
 
-    member x.Exprs = match x with Two (e1, e2) -> [e1;e2] | One e -> [e]
+    member x.Exprs = match x with Two (e1, _, e2, _, _, _) -> [e1;e2] | One (e, _, _) -> [e]
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1944,19 +1945,12 @@ let mkSynApp3 f x1 x2 x3 m = mkSynApp1 (mkSynApp2 f x1 x2 m) x3 m
 let mkSynApp4 f x1 x2 x3 x4 m = mkSynApp1 (mkSynApp3 f x1 x2 x3 m) x4 m
 let mkSynApp5 f x1 x2 x3 x4 x5 m = mkSynApp1 (mkSynApp4 f x1 x2 x3 x4 m) x5 m
 let mkSynDotParenSet  m a b c = mkSynTrifix m parenSet a b c
-let mkSynDotBrackGet  m mDot a b   = SynExpr.DotIndexedGet (a, [SynIndexerArg.One b], mDot, m)
+let mkSynDotBrackGet  m mDot a b fromEnd   = SynExpr.DotIndexedGet (a, [SynIndexerArg.One (b, fromEnd, m)], mDot, m)
 let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
 let mkSynDotBrackSliceGet  m mDot arr sliceArg = SynExpr.DotIndexedGet (arr, [sliceArg], mDot, m)
 
 let mkSynDotBrackSeqSliceGet  m mDot arr (argsList: list<SynIndexerArg>) =
-    let notSliced=[ for arg in argsList do
-                       match arg with
-                       | SynIndexerArg.One x -> yield x
-                       | _ -> () ]
-    if notSliced.Length = argsList.Length then
-        SynExpr.DotIndexedGet (arr, [SynIndexerArg.One (SynExpr.Tuple (false, notSliced, [], unionRanges (List.head notSliced).Range (List.last notSliced).Range))], mDot, m)
-    else
-        SynExpr.DotIndexedGet (arr, argsList, mDot, m)
+    SynExpr.DotIndexedGet (arr, argsList, mDot, m)
 
 let mkSynDotParenGet lhsm dotm a b   =
     match b with
@@ -2229,7 +2223,7 @@ let noInferredTypars = SynValTyparDecls([], false, [])
 
 type LexerIfdefStackEntry = IfDefIf | IfDefElse
 type LexerIfdefStackEntries = (LexerIfdefStackEntry * range) list
-type LexerIfdefStack = LexerIfdefStackEntries ref
+type LexerIfdefStack = LexerIfdefStackEntries
 
 /// Specifies how the 'endline' function in the lexer should continue after
 /// it reaches end of line or eof. The options are to continue with 'token' function
@@ -2482,6 +2476,6 @@ let rec synExprContainsError inpExpr =
 
           | SynExpr.MatchBang (_, e, cl, _) ->
               walkExpr e || walkMatchClauses cl
-          | SynExpr.LetOrUseBang  (_, _, _, _, e1, e2, _) ->
-              walkExpr e1 || walkExpr e2
+          | SynExpr.LetOrUseBang  (rhs=e1;body=e2;andBangs=es) ->
+              walkExpr e1 || walkExprs [ for (_,_,_,_,e,_) in es do yield e ] || walkExpr e2
     walkExpr inpExpr

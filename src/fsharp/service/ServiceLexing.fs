@@ -54,6 +54,7 @@ module FSharpTokenTag =
     let COMMA = tagOfToken COMMA
     let DOT = tagOfToken DOT
     let DOT_DOT = tagOfToken DOT_DOT
+    let DOT_DOT_HAT = tagOfToken DOT_DOT_HAT
     let INT32_DOT_DOT = tagOfToken (INT32_DOT_DOT(0, true))
     let UNDERSCORE = tagOfToken UNDERSCORE
     let BAR = tagOfToken BAR
@@ -210,7 +211,7 @@ module internal TokenClassifications =
         | INFIX_AMP_OP _ ->
                 (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.None)
 
-        | DOT_DOT ->
+        | DOT_DOT | DOT_DOT_HAT ->
             (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.MemberSelect)
 
         | COMMA ->
@@ -260,14 +261,14 @@ module internal TokenClassifications =
         | MEMBER | STATIC | NAMESPACE
         | OASSERT | OLAZY | ODECLEND | OBLOCKSEP | OEND | OBLOCKBEGIN | ORIGHT_BLOCK_END
         | OBLOCKEND | OBLOCKEND_COMING_SOON | OBLOCKEND_IS_HERE | OTHEN | OELSE | OLET(_)
-        | OBINDER _ | BINDER _ | ODO | OWITH | OFUNCTION | OFUN | ORESET | ODUMMY _ | DO_BANG
+        | OBINDER _ | OAND_BANG _ | BINDER _ | ODO | OWITH | OFUNCTION | OFUN | ORESET | ODUMMY _ | DO_BANG
         | ODO_BANG | YIELD _ | YIELD_BANG  _ | OINTERFACE_MEMBER
         | ELIF | RARROW | LARROW | SIG | STRUCT
         | UPCAST   | DOWNCAST   | NULL   | RESERVED    | MODULE    | AND    | AS   | ASSERT   | ASR
         | DOWNTO   | EXCEPTION   | FALSE   | FOR   | FUN   | FUNCTION
         | FINALLY   | LAZY   | MATCH  | MATCH_BANG  | MUTABLE   | NEW   | OF    | OPEN   | OR | VOID | EXTERN
         | INTERFACE | REC   | TO   | TRUE   | TRY   | TYPE   |  VAL   | INLINE   | WHEN  | WHILE   | WITH
-        | IF | THEN  | ELSE | DO | DONE | LET(_) | IN (*| NAMESPACE*) | CONST
+        | IF | THEN  | ELSE | DO | DONE | LET _ | AND_BANG _ | IN | CONST
         | HIGH_PRECEDENCE_PAREN_APP | FIXED
         | HIGH_PRECEDENCE_BRACK_APP
         | TYPE_COMING_SOON | TYPE_IS_HERE | MODULE_COMING_SOON | MODULE_IS_HERE ->
@@ -475,10 +476,10 @@ module internal LexerStateEncoding =
 
     let callLexCont lexcont args skip lexbuf =
         let argsWithIfDefs ifd =
-            if !args.ifdefStack = ifd then
+            if args.ifdefStack = ifd then
                 args
             else
-                {args with ifdefStack = ref ifd}
+                {args with ifdefStack = ifd}
         match lexcont with
         | LexCont.EndLine cont -> Lexer.endline cont args skip lexbuf
         | LexCont.Token ifd -> Lexer.token (argsWithIfDefs ifd) skip lexbuf
@@ -775,8 +776,8 @@ type FSharpSourceTokenizer(defineConstants: string list, filename: string option
  
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
-    let lexArgsLightOn = mkLexargs(filename, defineConstants, LightSyntaxStatus(true, false), lexResourceManager, ref [], DiscardErrorsLogger, PathMap.empty)
-    let lexArgsLightOff = mkLexargs(filename, defineConstants, LightSyntaxStatus(false, false), lexResourceManager, ref [], DiscardErrorsLogger, PathMap.empty)
+    let lexArgsLightOn = mkLexargs(filename, defineConstants, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
+    let lexArgsLightOff = mkLexargs(filename, defineConstants, LightSyntaxStatus(false, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
 
     member this.CreateLineTokenizer(lineText: string) =
         let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, lineText)

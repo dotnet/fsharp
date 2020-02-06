@@ -175,6 +175,7 @@ type internal FSharpSignatureHelpProvider
             let prefixParts = 
                 [| TaggedText(TextTags.Method, methodGroup.MethodName);  
                    TaggedText(TextTags.Punctuation, (if isStaticArgTip then "<" else "(")) |]
+
             let separatorParts = [| TaggedText(TextTags.Punctuation, ","); TaggedText(TextTags.Space, " ") |]
             let suffixParts = [| TaggedText(TextTags.Punctuation, (if isStaticArgTip then ">" else ")")) |]
 

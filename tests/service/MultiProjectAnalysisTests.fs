@@ -122,7 +122,7 @@ let u = Case1 3
 
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test multi project 1 whole project errors`` () = 
@@ -306,7 +306,7 @@ let p = ("""
         FSharpChecker.Create(projectCacheSize=size)
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test ManyProjectsStressTest whole project errors`` () = 
@@ -819,11 +819,10 @@ let ``Test max memory gets triggered`` () =
 
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Type provider project references should not throw exceptions`` () =
-    //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
     let options = 
           {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/TypeProviderConsole.fsproj";
            ProjectId = None
@@ -909,13 +908,12 @@ let ``Type provider project references should not throw exceptions`` () =
 //------------------------------------------------------------------------------------
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #else
 [<Ignore("Getting vsunit tests passing again")>]
 #endif
 let ``Projects creating generated types should not utilize cross-project-references but should still analyze oK once project is built`` () =
-    //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
     let options = 
           {ProjectFileName =
             __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/TestConsole.fsproj";

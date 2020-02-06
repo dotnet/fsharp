@@ -324,6 +324,9 @@
   <data name="Parser.TOKEN.DOT.DOT" xml:space="preserve">
     <value>symbol '..'</value>
   </data>
+  <data name="Parser.TOKEN.DOT.DOT.HAT" xml:space="preserve">
+    <value>symbol '..^'</value>
+  </data>
   <data name="Parser.TOKEN.QUOTE" xml:space="preserve">
     <value>quote symbol</value>
   </data>
@@ -560,6 +563,9 @@
   </data>
   <data name="Parser.TOKEN.AND" xml:space="preserve">
     <value>keyword 'and'</value>
+  </data>
+  !<data name="Parser.TOKEN.AND.BANG" xml:space="preserve">
+    <value>keyword 'and!'</value>
   </data>
   <data name="Parser.TOKEN.AS" xml:space="preserve">
     <value>keyword 'as'</value>

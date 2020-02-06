@@ -59,12 +59,11 @@ type HashIfExpression()     =
                     member x.ErrorCount         = errors.Count
             }
 
-        let stack           : LexerIfdefStack = ref []
         let lightSyntax     = LightSyntaxStatus(true, false)
         let resourceManager = LexResourceManager ()
         let defines         = []
         let startPos        = Position.Empty
-        let args            = mkLexargs ("dummy", defines, lightSyntax, resourceManager, stack, errorLogger, PathMap.empty)
+        let args            = mkLexargs ("dummy", defines, lightSyntax, resourceManager, [], errorLogger, PathMap.empty)
 
         CompileThreadStatic.ErrorLogger <- errorLogger
 

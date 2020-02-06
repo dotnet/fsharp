@@ -13,8 +13,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 /// is this the developer-debug build? 
 let debug = false 
 let verbose = false
-let progress = ref false 
-let tracking = ref false // intended to be a general hook to control diagnostic output when tracking down bugs
+let mutable progress = false 
+let mutable tracking = false // intended to be a general hook to control diagnostic output when tracking down bugs
 
 let condition s = 
     try (System.Environment.GetEnvironmentVariable(s) <> null) with _ -> false
@@ -313,19 +313,12 @@ let bufs f =
     f buf 
     buf.ToString()
 
-let buff (os: TextWriter) f x = 
+// writing to output stream via a string buffer.
+let writeViaBuffer (os: TextWriter) f x = 
     let buf = System.Text.StringBuilder 100 
     f buf x 
     os.Write(buf.ToString())
 
-// Converts "\n" into System.Environment.NewLine before writing to os. See lib.fs:buff
-let writeViaBufferWithEnvironmentNewLines (os: TextWriter) f x = 
-    let buf = System.Text.StringBuilder 100 
-    f buf x
-    let text = buf.ToString()
-    let text = text.Replace("\n", System.Environment.NewLine)
-    os.Write text
-        
 //---------------------------------------------------------------------------
 // Imperative Graphs 
 //---------------------------------------------------------------------------
@@ -387,8 +380,19 @@ let inline cached cache resF =
     | _ -> 
         cache.cacheVal
 
+let inline cacheOptByref (cache: byref<'T option>) f = 
+    match cache with 
+    | Some v -> v
+    | None -> 
+       let res = f()
+       cache <- Some res
+       res
+
+// REVIEW: this is only used because we want to mutate a record field,
+// and because you cannot take a byref<_> of such a thing directly,
+// we cannot use 'cacheOptByref'. If that is changed, this can be removed.
 let inline cacheOptRef cache f = 
-    match !cache with 
+    match !cache with
     | Some v -> v
     | None -> 
        let res = f()
