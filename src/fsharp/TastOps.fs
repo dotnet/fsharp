@@ -1344,6 +1344,7 @@ let mkUnionCaseFieldGetUnprovenViaExprAddr (e1, cref, tinst, j, m) = mkUnionCase
 let mkUnionCaseFieldSet (e1, cref, tinst, j, e2, m) = Expr.Op (TOp.UnionCaseFieldSet (cref, j), tinst, [e1;e2], m)
 
 let mkExnCaseFieldGet (e1, ecref, j, m) = Expr.Op (TOp.ExnFieldGet (ecref, j), [], [e1], m)
+
 let mkExnCaseFieldSet (e1, ecref, j, e2, m) = Expr.Op (TOp.ExnFieldSet (ecref, j), [], [e1;e2], m)
 
 let mkDummyLambda (g: TcGlobals) (e: Expr, ety) = 
@@ -3106,6 +3107,8 @@ let mkPrintfFormatTy (g: TcGlobals) aty bty cty dty ety = TType_app(g.format_tcr
 
 let mkOptionTy (g: TcGlobals) ty = TType_app (g.option_tcr_nice, [ty])
 
+let mkNullableTy (g: TcGlobals) ty = TType_app (g.system_Nullable_tcref, [ty])
+
 let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty])
 
 let isOptionTy (g: TcGlobals) ty = 
@@ -3164,11 +3167,14 @@ let destLinqExpressionTy g ty =
     | None -> failwith "destLinqExpressionTy: not an expression type"
 
 let mkNoneCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "None"
+
 let mkSomeCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "Some"
 
 let mkSome g ty arg m = mkUnionCaseExpr(mkSomeCase g, [ty], [arg], m)
 
 let mkNone g ty m = mkUnionCaseExpr(mkNoneCase g, [ty], [], m)
+
+let mkOptionGetValueUnprovenViaAddr g expr ty m = mkUnionCaseFieldGetUnprovenViaExprAddr (expr, mkSomeCase g, [ty], 0, m)
 
 type ValRef with 
     member vref.IsDispatchSlot = 
@@ -6728,7 +6734,6 @@ let mkInitializeArrayMethSpec (g: TcGlobals) =
 let mkInvalidCastExnNewobj (g: TcGlobals) = 
   mkNormalNewobj (mkILCtorMethSpecForTy (mkILNonGenericBoxedTy (g.FindSysILTypeRef "System.InvalidCastException"), []))
 
-
 let typedExprForIntrinsic _g m (IntrinsicValRef(_, _, _, ty, _) as i) =
     let vref = ValRefForIntrinsic i
     exprForValRef m vref, ty
@@ -6998,6 +7003,12 @@ let mkCallFailStaticInit g m =
 let mkCallQuoteToLinqLambdaExpression g m ty e1 = 
     mkApps g (typedExprForIntrinsic g m g.quote_to_linq_lambda_info, [[ty]], [e1], m)
 
+let mkOptionToNullable g m ty e1 = 
+    mkApps g (typedExprForIntrinsic g m g.option_toNullable_info, [[ty]], [e1], m)
+
+let mkOptionDefaultValue g m ty e1 e2 = 
+    mkApps g (typedExprForIntrinsic g m g.option_defaultValue_info, [[ty]], [e1; e2], m)
+
 let mkLazyDelayed g m ty f = mkApps g (typedExprForIntrinsic g m g.lazy_create_info, [[ty]], [ f ], m) 
 
 let mkLazyForce g m ty e = mkApps g (typedExprForIntrinsic g m g.lazy_force_info, [[ty]], [ e; mkUnit g m ], m) 
@@ -7008,7 +7019,6 @@ let mkGetStringChar = mkGetString
 
 let mkGetStringLength g m e =
     let mspec = mspec_String_Length g
-    /// ILCall(useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, noTailCall, mref, actualTypeInst, actualMethInst, retTy)
     Expr.Op (TOp.ILCall (false, false, false, false, ValUseFlag.NormalValUse, true, false, mspec.MethodRef, [], [], [g.int32_ty]), [], [e], m)
 
 let mkStaticCall_String_Concat2 g m arg1 arg2 =
