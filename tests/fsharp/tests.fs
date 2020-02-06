@@ -959,7 +959,7 @@ module CoreTests =
 
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
-        fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s --define:LANGVERSION_PREVIEW --langversion:preview -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 

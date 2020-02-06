@@ -18,6 +18,7 @@ type LanguageFeature =
     | FixedIndexSlice3d4d
     | AndBang
     | NullableOptionalInterop
+    | WitnessPassing
 
 /// LanguageVersion management
 type LanguageVersion =

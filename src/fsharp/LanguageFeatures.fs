@@ -30,6 +30,7 @@ type LanguageFeature =
     | FixedIndexSlice3d4d
     | AndBang
     | NullableOptionalInterop
+    | WitnessPassing
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -65,6 +66,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.AndBang, previewVersion
             LanguageFeature.NullableOptionalInterop, previewVersion
+            LanguageFeature.WitnessPassing, previewVersion
         ]
 
     let specified =
