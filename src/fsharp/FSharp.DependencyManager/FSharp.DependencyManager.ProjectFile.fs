@@ -28,7 +28,6 @@ type Resolution = {
     FullPath : string
     IsNotImplementationReference: string
     NativePath : string
-    AppHostRuntimeIdentifier : string
     InitializeSourcePath : string }
 
 
@@ -72,7 +71,7 @@ module ProjectFile =
 
         [| for line in lines do
             let fields = line.Split(',')
-            if fields.Length < 8 then raise (new System.InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
+            if fields.Length < 7 then raise (new System.InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
             else {
                 NugetPackageId = fields.[0]
                 NugetPackageVersion = fields.[1]
@@ -81,7 +80,6 @@ module ProjectFile =
                 IsNotImplementationReference = fields.[4]
                 InitializeSourcePath = fields.[5]
                 NativePath = fields.[6]
-                AppHostRuntimeIdentifier = fields.[7]
             }
         |]
 
@@ -179,7 +177,7 @@ $(PACKAGEREFERENCES)
 
     <ItemGroup>
       <ResolvedReferenceLines Remove='*' />
-      <ResolvedReferenceLines Include='%(InteractiveResolvedFile.NugetPackageId),%(InteractiveResolvedFile.NugetPackageVersion),%(InteractiveResolvedFile.PackageRoot),%(InteractiveResolvedFile.FullPath),%(InteractiveResolvedFile.IsNotImplementationReference),%(InteractiveResolvedFile.InitializeSourcePath),%(NativeIncludeRoots.Path),$(AppHostRuntimeIdentifier)' KeepDuplicates="false" />
+      <ResolvedReferenceLines Include='%(InteractiveResolvedFile.NugetPackageId),%(InteractiveResolvedFile.NugetPackageVersion),%(InteractiveResolvedFile.PackageRoot),%(InteractiveResolvedFile.FullPath),%(InteractiveResolvedFile.IsNotImplementationReference),%(InteractiveResolvedFile.InitializeSourcePath),%(NativeIncludeRoots.Path)' KeepDuplicates="false" />
     </ItemGroup>
 
     <WriteLinesToFile Lines='@(ResolvedReferenceLines)' 
