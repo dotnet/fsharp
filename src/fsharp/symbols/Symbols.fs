@@ -1219,7 +1219,7 @@ and FSharpAbstractSignature(cenv, info: SlotSig) =
     member __.DeclaringType = FSharpType(cenv, info.ImplementedType)
 
 and FSharpGenericParameterMemberConstraint(cenv, info: TraitConstraintInfo) = 
-    let (TTrait(tys, nm, flags, atys, rty, _, _extSlns, _ad)) = info 
+    let (TTrait(tys, nm, flags, atys, rty, _, _traitCtxt)) = info 
 
     member __.MemberSources = 
         tys   |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection

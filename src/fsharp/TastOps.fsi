@@ -539,8 +539,8 @@ type Remap =
       /// Remove existing trait solutions?
       removeTraitSolutions: bool 
 
-      /// A map indicating how to fill in extSlns for traits as we copy an expression. Indexed by the member name of the trait
-      extSlnsMap: Map<string, TraitPossibleExtensionMemberSolutions> }
+      /// A map indicating how to fill in trait contexts for traits as we copy an expression. Indexed by the member name of the trait
+      traitCtxtsMap: Map<string, ITraitContext> }
 
     static member Empty : Remap
 

@@ -864,7 +864,7 @@ module private PrintTypes =
                     WordL.arrow ^^
                     (layoutTyparRefWithInfo denv env tp)) |> longConstraintPrefix]
 
-    and private layoutTraitWithInfo denv env (TTrait(tys, nm, memFlags, argtys, rty, _, _, _)) =
+    and private layoutTraitWithInfo denv env (TTrait(tys, nm, memFlags, argtys, rty, _, _)) =
         let nm = DemangleOperatorName nm
         if denv.shortConstraints then 
             WordL.keywordMember ^^ wordL (tagMember nm)

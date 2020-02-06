@@ -559,8 +559,8 @@ let BuildObjCtorCall (g: TcGlobals) m =
     Expr.Op (TOp.ILCall (false, false, false, false, CtorValUsedAsSuperInit, false, true, ilMethRef, [], [], [g.obj_ty]), [], [], m)
 
 /// Implements the elaborated form of adhoc conversions from functions to delegates at member callsites
-let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, invokeMethInfo: MethInfo, delArgTys, f, fty, m) =
-    let slotsig = invokeMethInfo.GetSlotSig(amap, m)
+let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, traitCtxt, delegateTy, invokeMethInfo: MethInfo, delArgTys, f, fty, m) =
+    let slotsig = invokeMethInfo.GetSlotSig(amap, m, traitCtxt)
     let delArgVals, expr = 
         let topValInfo = ValReprInfo([], List.replicate (max 1 (List.length delArgTys)) ValReprInfo.unnamedTopArg, ValReprInfo.unnamedRetVal)
 
@@ -599,12 +599,12 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, i
     let meth = TObjExprMethod(slotsig, [], [], [delArgVals], expr, m)
     mkObjExpr(delegateTy, None, BuildObjCtorCall g m, [meth], [], m)
 
-let CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgExpr delegateTy =    
+let CoerceFromFSharpFuncToDelegate g amap traitCtxt infoReader ad callerArgTy m callerArgExpr delegateTy =    
     let (SigOfFunctionForDelegate(invokeMethInfo, delArgTys, _, _)) = GetSigOfFunctionForDelegate infoReader delegateTy m ad
-    BuildNewDelegateExpr (None, g, amap, delegateTy, invokeMethInfo, delArgTys, callerArgExpr, callerArgTy, m)
+    BuildNewDelegateExpr (None, g, amap, traitCtxt, delegateTy, invokeMethInfo, delArgTys, callerArgExpr, callerArgTy, m)
 
 // Handle adhoc argument conversions
-let AdjustCallerArgExprForCoercions (g: TcGlobals) amap infoReader ad isOutArg calledArgTy (reflArgInfo: ReflectedArgInfo) callerArgTy m callerArgExpr = 
+let AdjustCallerArgExprForCoercions (g: TcGlobals) amap traitCtxt infoReader ad isOutArg calledArgTy (reflArgInfo: ReflectedArgInfo) callerArgTy m callerArgExpr = 
 
    if isByrefTy g calledArgTy && isRefCellTy g callerArgTy then 
        None, Expr.Op (TOp.RefAddrGet false, [destRefCellTy g callerArgTy], [callerArgExpr], m) 
@@ -616,11 +616,11 @@ let AdjustCallerArgExprForCoercions (g: TcGlobals) amap infoReader ad isOutArg c
 #endif
 
    elif isDelegateTy g calledArgTy && isFunTy g callerArgTy then 
-       None, CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgExpr calledArgTy
+       None, CoerceFromFSharpFuncToDelegate g amap traitCtxt infoReader ad callerArgTy m callerArgExpr calledArgTy
 
    elif isLinqExpressionTy g calledArgTy && isDelegateTy g (destLinqExpressionTy g calledArgTy) && isFunTy g callerArgTy then 
        let delegateTy = destLinqExpressionTy g calledArgTy
-       let expr = CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgExpr delegateTy
+       let expr = CoerceFromFSharpFuncToDelegate g amap traitCtxt infoReader ad callerArgTy m callerArgExpr delegateTy
        None, mkCallQuoteToLinqLambdaExpression g m delegateTy (Expr.Quote (expr, ref None, false, m, mkQuotedExprTy g delegateTy))
 
    // auto conversions to quotations (to match auto conversions to LINQ expressions)
@@ -814,7 +814,7 @@ let AdjustOutCallerArgExprs g (calledMeth: CalledMeth<_>) mMethExpr =
         outArg, outArgExpr, mkCompGenBind outv expr) 
         |> List.unzip3
 
-let AdjustParamArrayCallerArgExprs g amap infoReader ad (calledMeth: CalledMeth<_>) mMethExpr =
+let AdjustParamArrayCallerArgExprs g amap traitCtxt infoReader ad (calledMeth: CalledMeth<_>) mMethExpr =
     let argSets = calledMeth.ArgSets
 
     let paramArrayCallerArgs = argSets |> List.collect (fun argSet -> argSet.ParamArrayCallerArgs)
@@ -828,7 +828,7 @@ let AdjustParamArrayCallerArgExprs g amap infoReader ad (calledMeth: CalledMeth<
             paramArrayCallerArgs  
             |> List.map (fun callerArg -> 
                 let (CallerArg(callerArgTy, m, isOutArg, callerArgExpr)) = callerArg
-                AdjustCallerArgExprForCoercions g amap infoReader ad isOutArg paramArrayCalledArgElementType paramArrayCalledArg.ReflArgInfo callerArgTy m callerArgExpr)
+                AdjustCallerArgExprForCoercions g amap traitCtxt infoReader ad isOutArg paramArrayCalledArgElementType paramArrayCalledArg.ReflArgInfo callerArgTy m callerArgExpr)
             |> List.unzip
 
         let arg = 
@@ -840,7 +840,7 @@ let AdjustParamArrayCallerArgExprs g amap infoReader ad (calledMeth: CalledMeth<
 /// Build the argument list for a method call. Adjust for param array, optional arguments, byref arguments and coercions.
 /// For example, if you pass an F# reference cell to a byref then we must get the address of the 
 /// contents of the ref. Likewise lots of adjustments are made for optional arguments etc.
-let AdjustCallerArgExprs tcFieldInit eCallerMemberName g amap infoReader ad (calledMeth: CalledMeth<_>) objArgs lambdaVars mItem mMethExpr =
+let AdjustCallerArgExprs tcFieldInit eCallerMemberName g amap traitCtxt infoReader ad (calledMeth: CalledMeth<_>) objArgs lambdaVars mItem mMethExpr =
     let calledMethInfo = calledMeth.Method
 
     // Some of the code below must allocate temporary variables or bind other variables to particular values. 
@@ -863,7 +863,7 @@ let AdjustCallerArgExprs tcFieldInit eCallerMemberName g amap infoReader ad (cal
 
     // Handle param array and optional arguments
     let paramArrayPreBinders, paramArrayArgs =
-        AdjustParamArrayCallerArgExprs g amap infoReader ad calledMeth mMethExpr
+        AdjustParamArrayCallerArgExprs g amap traitCtxt infoReader ad calledMeth mMethExpr
 
     let optArgs, optArgPreBinder, adjustedNormalUnnamedArgs, adjustedFinalAssignedNamedArgs = 
         AdjustOptionalCallerArgExprs tcFieldInit eCallerMemberName g calledMeth mItem mMethExpr
@@ -889,7 +889,7 @@ let AdjustCallerArgExprs tcFieldInit eCallerMemberName g amap infoReader ad (cal
             let calledArgTy = assignedArg.CalledArg.CalledArgumentType
             let (CallerArg(callerArgTy, m, _, e)) = assignedArg.CallerArg
     
-            AdjustCallerArgExprForCoercions g amap infoReader ad isOutArg calledArgTy reflArgInfo callerArgTy m e)
+            AdjustCallerArgExprForCoercions g amap traitCtxt infoReader ad isOutArg calledArgTy reflArgInfo callerArgTy m e)
         |> List.unzip
 
     objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds
@@ -1293,7 +1293,12 @@ module ProvidedMethodCalls =
             (thisArg: Expr option,
              allArgs: Exprs,
              paramVars: Tainted<ProvidedVar>[],
-             g, amap, mut, isProp, isSuperInit, m,
+             g,
+             amap, 
+             traitCtxt,
+             mut,
+             isProp,
+             isSuperInit, m,
              expr: Tainted<ProvidedExpr>) = 
 
         let varConv =
@@ -1433,7 +1438,7 @@ module ProvidedMethodCalls =
                 let lambdaExpr = mkLambdas m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
                 let lambdaExprTy = tyOfExpr g lambdaExpr
                 let infoReader = InfoReader(g, amap)
-                let exprT = CoerceFromFSharpFuncToDelegate g amap infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyT
+                let exprT = CoerceFromFSharpFuncToDelegate g amap traitCtxt infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyT
                 None, (exprT, tyOfExpr g exprT)
             | None -> 
 #if PROVIDED_ADDRESS_OF
@@ -1553,7 +1558,7 @@ module ProvidedMethodCalls =
 
         
     // fill in parameter holes in the expression   
-    let TranslateInvokerExpressionForProvidedMethodCall tcVal (g, amap, mut, isProp, isSuperInit, mi: Tainted<ProvidedMethodBase>, objArgs, allArgs, m) =        
+    let TranslateInvokerExpressionForProvidedMethodCall tcVal (g, amap, traitCtxt, mut, isProp, isSuperInit, mi: Tainted<ProvidedMethodBase>, objArgs, allArgs, m) =        
         let parameters = 
             mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m)
         let paramTys = 
@@ -1579,12 +1584,12 @@ module ProvidedMethodCalls =
             
         let ea = mi.PApplyWithProvider((fun (methodInfo, provider) -> ExtensionTyping.GetInvokerExpression(provider, methodInfo, [| for p in paramVars -> p.PUntaintNoFailure id |])), m)
 
-        convertProvidedExpressionToExprAndWitness tcVal (thisArg, allArgs, paramVars, g, amap, mut, isProp, isSuperInit, m, ea)
+        convertProvidedExpressionToExprAndWitness tcVal (thisArg, allArgs, paramVars, g, amap, traitCtxt, mut, isProp, isSuperInit, m, ea)
 
             
-    let BuildInvokerExpressionForProvidedMethodCall tcVal (g, amap, mi: Tainted<ProvidedMethodBase>, objArgs, mut, isProp, isSuperInit, allArgs, m) =
+    let BuildInvokerExpressionForProvidedMethodCall tcVal (g, amap, traitCtxt, mi: Tainted<ProvidedMethodBase>, objArgs, mut, isProp, isSuperInit, allArgs, m) =
         try                   
-            let methInfoOpt, (expr, retTy) = TranslateInvokerExpressionForProvidedMethodCall tcVal (g, amap, mut, isProp, isSuperInit, mi, objArgs, allArgs, m)
+            let methInfoOpt, (expr, retTy) = TranslateInvokerExpressionForProvidedMethodCall tcVal (g, amap, traitCtxt, mut, isProp, isSuperInit, mi, objArgs, allArgs, m)
 
             let exprty = GetCompiledReturnTyOfProvidedMethodInfo amap m mi |> GetFSharpViewOfReturnType g
             let expr = mkCoerceIfNeeded g exprty retTy expr

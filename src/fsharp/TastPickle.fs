@@ -1504,7 +1504,7 @@ let p_trait_sln sln st =
          p_byte 5 st; p_tup3 p_anonInfo p_tys p_int (a, b, c) st
 
 
-let p_trait (TTrait(a, b, c, d, e, f, _extSlns, _ad)) st  = 
+let p_trait (TTrait(a, b, c, d, e, f, _traitCtxt)) st  = 
     // The _extSlns do not get pickled. We are assuming this is a generic or solved constraint
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, !f) st
 
@@ -1542,7 +1542,7 @@ let u_trait st =
     // extSlns starts empty when reading trait constraints from pickled
     // data. This is ok as only generalized (pre-solution, pre-freshened)
     // or solved constraints are propagated across assembly boundaries.
-    TTrait (a, b, c, d, e, ref f, [], None)
+    TTrait (a, b, c, d, e, ref f, None)
 
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
 

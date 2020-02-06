@@ -18,7 +18,7 @@ open FSharp.Compiler.Text
 
 /// A NameResolver is a context for name resolution. It primarily holds an InfoReader.
 type NameResolver =
-    new : g:TcGlobals * amap:ImportMap * infoReader:InfoReader * instantiationGenerator:(range -> Typars -> TypeInst) -> NameResolver
+    new : g:TcGlobals * amap:ImportMap * infoReader:InfoReader * instantiationGenerator: (range -> Typars -> ITraitContext option -> TypeInst) -> NameResolver
     member InfoReader : InfoReader
     member amap : ImportMap
     member g : TcGlobals
@@ -150,14 +150,14 @@ type ExtensionMember =
    /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
    | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
 
-   interface TraitPossibleExtensionMemberSolution 
-
    /// The logical name, e.g. for constraint solving
    member LogicalName : string
 
    /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
    /// later through 'open' get priority in overload resolution.
    member Priority : ExtensionMethodPriority
+
+/// Freshen a trait for use at a particular location
 
 /// The environment of information used to resolve names
 [<NoEquality; NoComparison>]
@@ -499,7 +499,7 @@ exception internal IndeterminateType of range
 exception internal UpperCaseIdentifierInPattern of range
 
 /// Generate a new reference to a record field with a fresh type instantiation
-val FreshenRecdFieldRef :NameResolver -> Range.range -> Tast.RecdFieldRef -> Item
+val FreshenRecdFieldRef: NameResolver -> ITraitContext option -> Range.range -> Tast.RecdFieldRef -> Item
 
 /// Indicates the kind of lookup being performed. Note, this type should be made private to nameres.fs.
 [<RequireQualifiedAccess>]
@@ -530,28 +530,25 @@ val internal ResolveLongIndentAsModuleOrNamespaceOrStaticClass   : TcResultsSink
 val internal ResolveObjectConstructor               : NameResolver -> DisplayEnv -> range -> AccessorDomain -> TType -> ResultOrException<Item>
 
 /// Resolve a long identifier using type-qualified name resolution.
-val internal ResolveLongIdentInType                 : TcResultsSink -> NameResolver -> NameResolutionEnv -> LookupKind -> range -> AccessorDomain -> Ident -> FindMemberFlag -> TypeNameResolutionInfo -> TType -> Item * Ident list
+val internal ResolveLongIdentInType: TcResultsSink -> NameResolver -> NameResolutionEnv -> LookupKind -> range -> AccessorDomain -> ITraitContext option -> Ident -> FindMemberFlag -> TypeNameResolutionInfo -> TType -> Item * Ident list
 
 /// Resolve a long identifier when used in a pattern.
-val internal ResolvePatternLongIdent                : TcResultsSink -> NameResolver -> WarnOnUpperFlag -> bool -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item
+val internal ResolvePatternLongIdent                : TcResultsSink -> NameResolver -> WarnOnUpperFlag -> bool -> range -> AccessorDomain -> ITraitContext option -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item
 
 /// Resolve a long identifier representing a type name 
-val internal ResolveTypeLongIdentInTyconRef         : TcResultsSink -> NameResolver -> NameResolutionEnv -> TypeNameResolutionInfo -> AccessorDomain -> range -> ModuleOrNamespaceRef -> Ident list -> TyconRef 
+val internal ResolveTypeLongIdentInTyconRef: TcResultsSink -> NameResolver -> NameResolutionEnv -> TypeNameResolutionInfo -> AccessorDomain -> ITraitContext option -> range -> ModuleOrNamespaceRef -> Ident list -> TyconRef 
 
 /// Resolve a long identifier to a type definition
-val internal ResolveTypeLongIdent                   : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TyconRef>
+val internal ResolveTypeLongIdent: TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> ITraitContext option -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TyconRef>
 
 /// Resolve a long identifier to a field
-val internal ResolveField                           : TcResultsSink -> NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> Ident list -> FieldResolution list
+val internal ResolveField: TcResultsSink -> NameResolver -> NameResolutionEnv -> AccessorDomain -> ITraitContext option -> TType -> Ident list * Ident -> Ident list -> FieldResolution list
 
 /// Resolve a long identifier occurring in an expression position
-val internal ResolveExprLongIdent                   : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * Ident list
-
-/// Resolve a (possibly incomplete) long identifier to a loist of possible class or record fields
-val internal ResolvePartialLongIdentToClassOrRecdFields : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> Item list
+val internal ResolveExprLongIdent: TcResultsSink -> NameResolver -> range -> AccessorDomain -> ITraitContext option -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * Ident list
 
 /// Return the fields for the given class or record
-val internal ResolveRecordOrClassFieldsOfType       : NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
+val internal ResolveRecordOrClassFieldsOfType: NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
 
 /// Specifies extra work to do after overload resolution 
 [<RequireQualifiedAccess>]
@@ -571,16 +568,19 @@ type AfterResolution =
     | RecordResolution of Item option * (TyparInst -> unit) * (MethInfo * PropInfo option * TyparInst -> unit) * (unit -> unit)
 
 /// Resolve a long identifier occurring in an expression position.
-val internal ResolveLongIdentAsExprAndComputeRange  : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * range * Ident list * AfterResolution
+val internal ResolveLongIdentAsExprAndComputeRange  : TcResultsSink -> NameResolver -> range -> AccessorDomain -> ITraitContext option -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * range * Ident list * AfterResolution
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
-val internal ResolveExprDotLongIdentAndComputeRange : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TType -> Ident list -> FindMemberFlag -> bool -> Item * range * Ident list * AfterResolution
+val internal ResolveExprDotLongIdentAndComputeRange : TcResultsSink -> NameResolver -> range -> AccessorDomain -> ITraitContext option -> NameResolutionEnv -> TType -> Ident list -> FindMemberFlag -> bool -> Item * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
-val FakeInstantiationGenerator : range -> Typar list -> TType list
+val FakeInstantiationGenerator : (range -> Typars -> ITraitContext option -> TypeInst)
 
 /// Try to resolve a long identifier as type.
 val TryToResolveLongIdentAsType : NameResolver -> NameResolutionEnv -> range -> string list -> TType option
+
+/// Resolve a (possibly incomplete) long identifier to a loist of possible class or record fields
+val internal ResolvePartialLongIdentToClassOrRecdFields : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> Item list
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
 val ResolvePartialLongIdent : NameResolver -> NameResolutionEnv -> (MethInfo -> TType -> bool) -> range -> AccessorDomain -> string list -> bool -> Item list
@@ -599,3 +599,6 @@ val IsItemResolvable : NameResolver -> NameResolutionEnv -> range -> AccessorDom
 
 val TrySelectExtensionMethInfoOfILExtMem : range -> ImportMap -> TType -> TyconRef * MethInfo * ExtensionMethodPriority -> MethInfo option
 
+val traitCtxtNone: ITraitContext option
+
+val ExtensionMethInfosOfTypeInScope: ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> range -> TType -> MethInfo list

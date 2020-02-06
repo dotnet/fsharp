@@ -22,6 +22,8 @@ type TcEnv =
     member NameEnv : NameResolution.NameResolutionEnv
     member AccessRights : AccessorDomain
 
+    interface ITraitContext
+
 val CreateInitialTcEnv : TcGlobals * ImportMap * range * assemblyName: string * (CcuThunk * string list * string list) list -> TcEnv 
 val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * assemblyName: string * ccu: CcuThunk * autoOpens: string list * internalsVisibleToAttributes: string list -> TcEnv 
 val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
@@ -106,4 +108,4 @@ exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileNam
 
 val TcFieldInit : range -> ILFieldInit -> Tast.Const
 
-val LightweightTcValForUsingInBuildMethodCall : g : TcGlobals -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType
+val LightweightTcValForUsingInBuildMethodCall : g: TcGlobals -> traitCtxt: ITraitContext option -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType

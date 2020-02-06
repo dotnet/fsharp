@@ -1014,7 +1014,7 @@ type internal FsiDynamicCompiler
         let importMap = tcImports.GetImportMap()
 
         // optimize: note we collect the incremental optimization environment 
-        let optimizedImpls, _optData, optEnv = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, isIncrementalFragment, optEnv, tcState.Ccu, declaredImpls)
+        let optimizedImpls, _optData, optEnv = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone), outfile, importMap, isIncrementalFragment, optEnv, tcState.Ccu, declaredImpls)
         errorLogger.AbortOnError(fsiConsoleOutput);
             
         let fragName = textOfLid prefixPath 
@@ -1384,7 +1384,7 @@ type internal FsiDynamicCompiler
 
         let tcState = GetInitialTcState (rangeStdin, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv)
 
-        let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu)
+        let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone), tcState.Ccu)
         {optEnv    = optEnv0
          emEnv     = emEnv
          tcGlobals = tcGlobals
@@ -2430,12 +2430,12 @@ type internal FsiInteractionProcessor
 
         let tcState = istate.tcState
         let amap = istate.tcImports.GetImportMap()
-        let infoReader = new InfoReader(istate.tcGlobals,amap)
-        let ncenv = new NameResolver(istate.tcGlobals,amap,infoReader,FakeInstantiationGenerator)
+        let infoReader = new InfoReader(istate.tcGlobals, amap)
+        let ncenv = new NameResolver(istate.tcGlobals, amap, infoReader, FakeInstantiationGenerator)
         let ad = tcState.TcEnvFromImpls.AccessRights
         let nenv = tcState.TcEnvFromImpls.NameEnv
 
-        let nItems = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox istate.tcGlobals amap rangeStdin) rangeStdin ad lid false
+        let nItems = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox istate.tcGlobals amap rangeStdin traitCtxtNone) rangeStdin ad lid false
         let names  = nItems |> List.map (fun d -> d.DisplayName) 
         let names  = names |> List.filter (fun name -> name.StartsWithOrdinal(stem)) 
         names
