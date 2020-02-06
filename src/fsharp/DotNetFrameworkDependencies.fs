@@ -100,7 +100,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | _, -1 ->
             if isRunningOnCoreClr then
                 // Running on coreclr but no deps.json was deployed with the host so default to 3.0
-                Some "netcoreapp3.0"
+                Some "netcoreapp3.1"
             else
                 // Running on desktop
                 None
