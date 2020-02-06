@@ -181,10 +181,15 @@ function TestUsingNUnit() {
     exit 1
   fi
 
+  filterArgs=""
+  if [[ "${RunningAsPullRequest:-}" != "true" ]]; then
+    filterArgs=" --filter TestCategory!=PullRequest"
+  fi
+
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\""
+  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\"$filterArgs"
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
