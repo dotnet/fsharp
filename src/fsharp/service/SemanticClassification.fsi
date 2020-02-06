@@ -20,6 +20,7 @@ type SemanticClassificationType =
     | Operator
     | Disposable
 
+/// Extension methods for the TcResolutions type.
 [<AutoOpen>]
 module internal TcResolutionsExtensions =
     open FSharp.Compiler
