@@ -64,7 +64,7 @@ type internal IDependencyManagerProvider =
     abstract Key: string
     abstract ResolveDependencies: scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
     abstract DependencyAdding: IEvent<string * string>
-    abstract DependencyAdded: IEvent<string * string>
+    abstract DependencyAdded: IEvent<string * string * string list * string list>
     abstract DependencyFailed: IEvent<string * string>
 
 [<RequireQualifiedAccess>]
@@ -96,9 +96,12 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
             Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, resolveDependenciesMethod, outputDir) :> IDependencyManagerProvider)
 
     interface IDependencyManagerProvider with
+
         member __.Name     = instance |> nameProperty
+
         member __.Key      = instance |> keyProperty
         member this.ResolveDependencies(scriptDir, packageManagerTextLines, tfm) =
+
             let key = (this :> IDependencyManagerProvider).Key
             let triggerEvent (evt: Event<string * string>) =
                 for prLine in packageManagerTextLines do
@@ -106,12 +109,21 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
             triggerEvent dependencyAddingEvent
             let arguments = [| box scriptDir; box packageManagerTextLines; box tfm |]
             let succeeded, generatedScripts, additionalIncludeFolders = resolveDeps.Invoke(instance, arguments) :?> _
-            if succeeded then triggerEvent dependencyAddedEvent
-            else triggerEvent dependencyFailedEvent
+
+            for prLine in packageManagerTextLines do
+                if succeeded then
+                    dependencyAddedEvent.Trigger(key, prLine, generatedScripts, additionalIncludeFolders)
+                else
+                    dependencyFailedEvent.Trigger(key, prLine)
+
             succeeded, generatedScripts, additionalIncludeFolders
+
         member __.DependencyAdding = dependencyAddingEvent.Publish
+
         member __.DependencyAdded = dependencyAddedEvent.Publish
+
         member __.DependencyFailed = dependencyFailedEvent.Publish
+
 
 // Resolution Path = Location of FSharp.Compiler.Private.dll
 let assemblySearchPaths = lazy (
