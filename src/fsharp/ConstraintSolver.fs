@@ -2377,14 +2377,15 @@ and ArgsMustSubsumeOrConvert
         trace
         cxsln
         isConstraint
+        enforceNullableOptionalsKnownTypes // use known types from nullable optional args?
         (calledArg: CalledArg) 
         (callerArg: CallerArg<'T>)  = trackErrors {
         
     let g = csenv.g
     let m = callerArg.Range
-    let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg    
-    do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArg.Type
-    if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.Type) then 
+    let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint enforceNullableOptionalsKnownTypes calledArg callerArg    
+    do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArg.CallerArgumentType
+    if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.CallerArgumentType) then 
         return! ErrorD(Error(FSComp.SR.csMethodExpectsParams(), m))
     else ()
   }
@@ -2396,14 +2397,14 @@ and MustUnifyInsideUndo csenv ndeep trace cxsln ty1 ty2 =
     SolveTypeEqualsTypeWithReport csenv ndeep csenv.m (WithTrace trace) cxsln ty1 ty2
 
 and ArgsMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln isConstraint calledArg (CallerArg(callerArgTy, m, _, _) as callerArg) = 
-    let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
+    let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint true calledArg callerArg
     SolveTypeSubsumesTypeWithReport csenv ndeep  m (WithTrace trace) cxsln calledArgTy callerArgTy 
 
 and TypesMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgTy callerArgTy = 
     SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy 
 
 and ArgsEquivInsideUndo (csenv: ConstraintSolverEnv) isConstraint calledArg (CallerArg(callerArgTy, m, _, _) as callerArg) = 
-    let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
+    let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint true calledArg callerArg
     if typeEquiv csenv.g calledArgTy callerArgTy then CompleteD else ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(), m))
 
 and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nNamedCallerArgs) methodName ad (calledMethGroup: CalledMeth<_> list) isSequential =
@@ -2686,11 +2687,18 @@ and ResolveOverloading
                             | _ when isInByrefTy csenv.g ty2 && typeEquiv csenv.g ty1 (destByrefTy csenv.g ty2) -> 
                                 true
 
+                            // T is always better than Nullable<T> from F# 5.0 onwards
+                            | _ when g.langVersion.SupportsFeature(Features.LanguageFeature.NullableOptionalInterop) &&
+                                     isNullableTy csenv.g ty2 &&
+                                     typeEquiv csenv.g ty1 (destNullableTy csenv.g ty2) -> 
+                                true
+
                             | _ -> false)
                                  
                     if c <> 0 then c else
                     0
 
+                /// Check whether one overload is better than another
                 let better (candidate: CalledMeth<_>, candidateWarnings, _) (other: CalledMeth<_>, otherWarnings, _) =
                     let candidateWarnCount = List.length candidateWarnings
                     let otherWarnCount = List.length otherWarnings
@@ -2707,7 +2715,7 @@ and ResolveOverloading
                     // Prefer methods with more precise param array arg type
                     let c = 
                         if candidate.UsesParamArrayConversion && other.UsesParamArrayConversion then
-                            compareTypes candidate.ParamArrayElementType other.ParamArrayElementType
+                            compareTypes (candidate.GetParamArrayElementType()) (other.GetParamArrayElementType())
                         else
                             0
                     if c <> 0 then c else
@@ -2722,7 +2730,7 @@ and ResolveOverloading
                     let c = compare (not candidate.HasOptArgs) (not other.HasOptArgs)
                     if c <> 0 then c else
 
-                    // check regular args. The argument counts will only be different if one is using param args
+                    // check regular unnamed args. The argument counts will only be different if one is using param args
                     let c = 
                         if candidate.TotalNumUnnamedCalledArgs = other.TotalNumUnnamedCalledArgs then
                            // For extension members, we also include the object argument type, if any in the comparison set
@@ -2763,12 +2771,37 @@ and ResolveOverloading
                             0
                     if c <> 0 then c else
 
-
                     // Prefer non-generic methods 
                     // Note: Relies on 'compare' respecting true > false
                     let c = compare candidate.CalledTyArgs.IsEmpty other.CalledTyArgs.IsEmpty
                     if c <> 0 then c else
                     
+                    // F# 5.0 rule - prior to F# 5.0 named arguments (on the caller side) were not being taken 
+                    // into account when comparing overloads.  So adding a name to an argument might mean 
+                    // overloads ould no longer be distinguished.  We thus look at *all* arguments (whether
+                    // optional or not) as an additional comparison technique.
+                    let c = 
+                        if g.langVersion.SupportsFeature(Features.LanguageFeature.NullableOptionalInterop) then
+                            let cs = 
+                                let args1 = candidate.AllCalledArgs |> List.concat
+                                let args2 = other.AllCalledArgs |> List.concat
+                                if args1.Length = args2.Length then 
+                                    (args1, args2) ||> List.map2 compareArg
+                                else
+                                    []
+                            // "all args are at least as good, and one argument is actually better"
+                            if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 
+                                1
+                            // "all args are at least as bad, and one argument is actually worse"
+                            elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then 
+                                -1
+                            // "argument lists are incomparable"
+                            else
+                                0
+                        else
+                            0
+                    if c <> 0 then c else
+
                     0
                     
 
@@ -2827,7 +2860,7 @@ and ResolveOverloading
                                  true
                                  (MustUnify csenv ndeep trace cxsln) 
                                  (TypesMustSubsumeOrConvertInsideUndo csenv ndeep trace cxsln m)// REVIEW: this should not be an "InsideUndo" operation
-                                 (ArgsMustSubsumeOrConvert csenv ndeep trace cxsln cx.IsSome) 
+                                 (ArgsMustSubsumeOrConvert csenv ndeep trace cxsln cx.IsSome true) 
                                  reqdRetTyOpt 
                                  calledMeth
                         | WithTrace calledMethTrc ->
@@ -2880,7 +2913,7 @@ let UnifyUniqueOverloading
             true // always check return type
             (MustUnify csenv ndeep NoTrace None) 
             (TypesMustSubsumeOrConvertInsideUndo csenv ndeep NoTrace None m)
-            (ArgsMustSubsumeOrConvert csenv ndeep NoTrace None false) // UnifyUniqueOverloading is not called in case of trait call - pass isConstraint=false 
+            (ArgsMustSubsumeOrConvert csenv ndeep NoTrace None false false) // UnifyUniqueOverloading is not called in case of trait call - pass isConstraint=false 
             (Some reqdRetTy)
             calledMeth
       return true

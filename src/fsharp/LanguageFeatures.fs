@@ -29,6 +29,7 @@ type LanguageFeature =
     | FromEndSlicing
     | FixedIndexSlice3d4d
     | AndBang
+    | NullableOptionalInterop
     | ExtensionConstraintSolutions
 
 /// LanguageVersion management
@@ -65,6 +66,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.ExtensionConstraintSolutions, previewVersion
             LanguageFeature.AndBang, previewVersion
+            LanguageFeature.NullableOptionalInterop, previewVersion
         ]
 
     let specified =
