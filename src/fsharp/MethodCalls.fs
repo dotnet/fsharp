@@ -1787,3 +1787,149 @@ let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) =
     if not rfinfo.RecdField.IsMutable then
         errorR (FieldNotMutable (denv, rfinfo.RecdFieldRef, m))
 
+
+let ObjArgExprNeedsAddressOf g argExprs =
+    match argExprs with 
+    | [] -> false 
+    | h :: _ -> not (isByrefTy g (tyOfExpr g h))
+
+/// Generate a witness for the given (solved) constraint.  Five possiblilities are taken
+/// into account.
+///   1. The constraint is solved by a .NET-declared method or an F#-declared method
+///   2. The constraint is solved by an F# record field
+///   3. The constraint is solved by an F# anonymous record field
+///   4. The constraint is considered solved by a "built in" solution
+///   5. The constraint is solved by a closed expression given by a provided method from a type provider
+/// 
+/// In each case an expression is returned where the method is applied to the given arguments, or the
+/// field is dereferenced.
+/// 
+/// None is returned in the cases where the trait has not been solved (e.g. is part of generic code)
+/// or there is an unexpected mismatch of some kind.
+let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
+
+    let sln = 
+        match traitInfo.Solution with 
+        | None -> Choice5Of5()
+        | Some sln ->
+
+            // Given the solution information, reconstruct the MethInfo for the solution
+            match sln with 
+            | ILMethSln(apparentTy, extOpt, mref, minst) ->
+
+                let metadataTy = convertToTypeWithMetadataIfPossible g apparentTy
+
+                // Find the actual type containing the solution
+                let actualTyconRef = 
+                    match extOpt with 
+                    | None -> tcrefOfAppTy g metadataTy
+                    | Some ilActualTypeRef -> Import.ImportILTypeRef amap m ilActualTypeRef 
+
+                let mdef = IL.resolveILMethodRef actualTyconRef.ILTyconRawMetadata mref
+                
+                let minfo =
+                    match extOpt with 
+                    | None -> MethInfo.CreateILMeth(amap, m, apparentTy, mdef)
+                    | Some _ -> 
+
+                        let pri = 0UL // irrelevant for post-typecheck processing of solution
+                        MethInfo.CreateILExtensionMeth(amap, m, apparentTy, actualTyconRef, Some pri, mdef)
+
+                Choice1Of5 (minfo, minst)
+
+            | FSMethSln(ty, vref, minst, isExt) ->
+                let minfo =
+                    if isExt then 
+                        let pri = 0UL // irrelevant for post-typecheck processing of solution
+                        FSMeth(g, ty, vref, Some pri)
+                    else
+                        FSMeth(g, ty, vref, None)
+
+                Choice1Of5 (minfo, minst)
+
+            | FSRecdFieldSln(tinst, rfref, isSetProp) ->
+                Choice2Of5  (tinst, rfref, isSetProp)
+
+            | FSAnonRecdFieldSln(anonInfo, tinst, i) -> 
+                Choice3Of5  (anonInfo, tinst, i)
+
+            | BuiltInSln -> 
+                Choice5Of5 ()
+
+            | ClosedExprSln expr -> 
+                Choice4Of5 expr
+    match sln with
+    | Choice1Of5(minfo, methArgTys) -> 
+        let argExprs = 
+            // FIX for #421894 - typechecker assumes that coercion can be applied for the trait calls arguments but codegen doesn't emit coercion operations
+            // result - generation of non-verifiable code
+            // fix - apply coercion for the arguments (excluding 'receiver' argument in instance calls)
+
+            // flatten list of argument types (looks like trait calls with curried arguments are not supported so we can just convert argument list in straightforward way)
+            let argTypes =
+                minfo.GetParamTypes(amap, m, methArgTys) 
+                |> List.concat 
+            // do not apply coercion to the 'receiver' argument
+            let receiverArgOpt, argExprs = 
+                if minfo.IsInstance then
+                    match argExprs with
+                    | h :: t -> Some h, t
+                    | argExprs -> None, argExprs
+                else None, argExprs
+            let convertedArgs = (argExprs, argTypes) ||> List.map2 (fun expr expectedTy -> mkCoerceIfNeeded g expectedTy (tyOfExpr g expr) expr)
+            match receiverArgOpt with
+            | Some r -> r :: convertedArgs
+            | None -> convertedArgs
+
+        // Fix bug 1281: If we resolve to an instance method on a struct and we haven't yet taken 
+        // the address of the object then go do that 
+        if minfo.IsStruct && minfo.IsInstance && (minfo.ObjArgNeedsAddress(amap, m)) && ObjArgExprNeedsAddressOf g argExprs then
+            let h, t = List.headAndTail argExprs
+            let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
+            Some (wrap (Expr.Op (TOp.TraitCall (traitInfo), [], (h' :: t), m)))
+        else        
+            Some (MakeMethInfoCall amap m minfo methArgTys argExprs )
+
+    | Choice2Of5 (tinst, rfref, isSet) -> 
+        match isSet, rfref.RecdField.IsStatic, argExprs.Length with 
+
+        // static setter
+        | true, true, 1 -> 
+            Some (mkStaticRecdFieldSet (rfref, tinst, argExprs.[0], m))
+
+        // instance setter
+        | true, false, 2 -> 
+            // If we resolve to an instance field on a struct and we haven't yet taken 
+            // the address of the object then go do that 
+            if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
+                let h = List.head argExprs
+                let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
+                Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs.[1], m)))
+            else        
+                Some (mkRecdFieldSetViaExprAddr (argExprs.[0], rfref, tinst, argExprs.[1], m))
+
+        // static getter
+        | false, true, 0 -> 
+            Some (mkStaticRecdFieldGet (rfref, tinst, m))
+
+        // instance getter
+        | false, false, 1 -> 
+            if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs.[0]) then 
+                Some (mkRecdFieldGetViaExprAddr (argExprs.[0], rfref, tinst, m))
+            else 
+                Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
+
+        | _ -> None 
+
+    | Choice3Of5 (anonInfo, tinst, i) -> 
+        let tupInfo = anonInfo.TupInfo
+        if evalTupInfoIsStruct tupInfo && isByrefTy g (tyOfExpr g argExprs.[0]) then 
+            Some (mkAnonRecdFieldGetViaExprAddr (anonInfo, argExprs.[0], tinst, i, m))
+        else 
+            Some (mkAnonRecdFieldGet g (anonInfo, argExprs.[0], tinst, i, m))
+
+    | Choice4Of5 expr ->
+        Some (MakeApplicationAndBetaReduce g (expr, tyOfExpr g expr, [], argExprs, m))
+
+    | Choice5Of5 () ->
+        None
