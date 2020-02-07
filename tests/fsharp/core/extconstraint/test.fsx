@@ -340,16 +340,34 @@ module LinqExtensionMethodsProvideSolutions_Count =
     let v1 = countm seqv
     do check "fivjixjvd" 1 v1
 
-(*
-/// Not implemented
-module MapExample   = 
-    let inline map (f: ^T -> ^U) (a : ^A when ^A : (val map : (^T -> ^U) -> ^A -> ^A2)) =
-        (^A : (val map : (^T -> ^U) -> ^A -> ^A2) (f, a))
 
-    let v5 = map (fun x -> x + 1) [ 1 .. 100 ]
 
-*)
-module ExtenstionAttributeMembers = 
+/// Solving using F#-defined extensions
+module CSharpStyleExtensionMethodsProvideSolutions_Count2 = 
+
+    // Note this looks for a _method_ called `Count` taking a single argument
+    // It is _not_ considered the same as a property called `Count`
+    let inline countm (a : ^A  when ^A : (member Count : unit -> int)) =
+        (^A : (member Count : unit -> int) (a))
+
+    type TwoIntegers(a:int, b:int) =
+        member x.A = a
+        member x.B = b
+
+    [<System.Runtime.CompilerServices.Extension>]
+    type Extension() =
+       [<System.Runtime.CompilerServices.Extension>]
+        static member Count(c: TwoIntegers) = 2
+
+    let two = TwoIntegers(2,3)
+    let v0 = two.Count() // sanity check 
+    do check "fivjijvd33" 2 v0
+
+    let v1 = countm two
+    do check "fivjixjvd33" 2 v1
+
+/// Solving using F#-defined extensions
+module CSharpStyleExtensionMethodsProvideSolutions_Count3 = 
     open System.Runtime.CompilerServices
     [<Extension>]
     type Ext2() = 
@@ -360,6 +378,30 @@ module ExtenstionAttributeMembers =
 
     let v = bleh "a"
     do check "cojkicjkc" 1 v
+
+/// Solving using F#-defined extensions (generic)
+module CSharpStyleExtensionMethodsProvideSolutions_Count4 = 
+
+    // Note this looks for a _method_ called `Count` taking a single argument
+    // It is _not_ considered the same as a property called `Count`
+    let inline countm (a : ^A  when ^A : (member Count : unit -> int)) =
+        (^A : (member Count : unit -> int) (a))
+
+    type Two<'T1, 'T2>(a: 'T1, b: 'T2) =
+        member x.A = a
+        member x.B = b
+
+    [<System.Runtime.CompilerServices.Extension>]
+    type Extension() =
+       [<System.Runtime.CompilerServices.Extension>]
+        static member Count(c: Two<'T1, 'T2>) = 2
+
+    let two = Two(2,3)
+    let v0 = two.Count() // sanity check 
+    do check "fivjijvd33" 2 v0
+
+    let v1 = countm two
+    do check "fivjixjvd33" 2 v1
 
 module ExtendingGenericType1 = 
     open System
@@ -487,11 +529,11 @@ module SystematicTests =
         type R =
             { F : int }
         
-            static member op_Addition (x: R, y: R) = { F = x.F + y.F + 4 }
-            static member op_Addition (x: R, y: string) = { F = x.F + y.Length + 6 }
-            static member op_Addition (x: R, y: int) = { F = x.F + y + 6 }
-            static member op_Addition (x: string, y: R) = { F = x.Length + y.F + 9 }
-            static member op_Addition (x: int, y: R) = { F = x + y.F + 102 }
+            static member (+) (x: R, y: R) = { F = x.F + y.F + 4 }
+            static member (+) (x: R, y: string) = { F = x.F + y.Length + 6 }
+            static member (+) (x: R, y: int) = { F = x.F + y + 6 }
+            static member (+) (x: string, y: R) = { F = x.Length + y.F + 9 }
+            static member (+) (x: int, y: R) = { F = x + y.F + 102 }
         
         let r3 = { F = 3 }
         let r4 = { F = 4 }
@@ -511,11 +553,11 @@ module SystematicTests =
         [<AutoOpen>]
         module Extensions = 
             type R with
-                static member op_Addition (x: R, y: R) = { F = x.F + y.F + 4 }
-                static member op_Addition (x: R, y: string) = { F = x.F + y.Length + 6 }
-                static member op_Addition (x: R, y: int) = { F = x.F + y + 6 }
-                static member op_Addition (x: string, y: R) = { F = x.Length + y.F + 9 }
-                static member op_Addition (x: int, y: R) = { F = x + y.F + 102 }
+                static member (+) (x: R, y: R) = { F = x.F + y.F + 4 }
+                static member (+) (x: R, y: string) = { F = x.F + y.Length + 6 }
+                static member (+) (x: R, y: int) = { F = x.F + y + 6 }
+                static member (+) (x: string, y: R) = { F = x.Length + y.F + 9 }
+                static member (+) (x: int, y: R) = { F = x + y.F + 102 }
         
         let r3 = { F = 3 }
         let r4 = { F = 4 }

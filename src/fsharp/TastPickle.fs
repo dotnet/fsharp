@@ -1492,8 +1492,11 @@ let p_trait_sln sln st =
     match sln with
     | ILMethSln(a, b, c, d) ->
          p_byte 0 st; p_tup4 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys (a, b, c, d) st
-    | FSMethSln(a, b, c) ->
-         p_byte 1 st; p_tup3 p_ty (p_vref "trait") p_tys (a, b, c) st
+    | FSMethSln(a, b, c, isExt) ->
+         if isExt then 
+             p_byte 6 st; p_tup4 p_ty (p_vref "trait") p_tys p_bool (a, b, c, isExt) st
+         else
+             p_byte 1 st; p_tup3 p_ty (p_vref "trait") p_tys (a, b, c) st
     | BuiltInSln ->
          p_byte 2 st
     | ClosedExprSln expr ->
@@ -1524,7 +1527,7 @@ let u_trait_sln st =
         ILMethSln(a, b, c, d)
     | 1 ->
         let (a, b, c) = u_tup3 u_ty u_vref u_tys st
-        FSMethSln(a, b, c)
+        FSMethSln(a, b, c, false)
     | 2 ->
         BuiltInSln
     | 3 ->
@@ -1535,6 +1538,9 @@ let u_trait_sln st =
     | 5 ->
          let (a, b, c) = u_tup3 u_anonInfo u_tys u_int st
          FSAnonRecdFieldSln(a, b, c)
+    | 6 ->
+        let (a, b, c, d) = u_tup4 u_ty u_vref u_tys u_bool st
+        FSMethSln(a, b, c, d)
     | _ -> ufailwith st "u_trait_sln"
 
 let u_trait st =

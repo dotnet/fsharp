@@ -1197,7 +1197,7 @@ type internal TypeCheckInfo
                           Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                       | _ -> None
 
-                  | Item.ImplicitOp(_, {contents = Some(TraitConstraintSln.FSMethSln(_, _vref, _))}) ->
+                  | Item.ImplicitOp(_, {contents = Some(TraitConstraintSln.FSMethSln(_, _vref, _, _))}) ->
                       //Item.Value(vref)
                       None
 

@@ -277,8 +277,8 @@ and remapTraitAux tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell, traitCtxt)) =
                 match sln with 
                 | ILMethSln(ty, extOpt, ilMethRef, minst) ->
                      ILMethSln(remapTypeAux tyenv ty, extOpt, ilMethRef, remapTypesAux tyenv minst)  
-                | FSMethSln(ty, vref, minst) ->
-                     FSMethSln(remapTypeAux tyenv ty, remapValRef tyenv vref, remapTypesAux tyenv minst)  
+                | FSMethSln(ty, vref, minst, isExt) ->
+                     FSMethSln(remapTypeAux tyenv ty, remapValRef tyenv vref, remapTypesAux tyenv minst, isExt)  
                 | FSRecdFieldSln(tinst, rfref, isSet) ->
                      FSRecdFieldSln(remapTypesAux tyenv tinst, remapRecdFieldRef tyenv.tyconRefRemap rfref, isSet)  
                 | FSAnonRecdFieldSln(anonInfo, tinst, n) ->
@@ -2057,7 +2057,7 @@ and accFreeInTraitSln opts sln acc =
     | ILMethSln(ty, _, _, minst) ->
          accFreeInType opts ty 
             (accFreeInTypes opts minst acc)
-    | FSMethSln(ty, vref, minst) ->
+    | FSMethSln(ty, vref, minst, _isExt) ->
          accFreeInType opts ty 
             (accFreeValRefInTraitSln opts vref  
                (accFreeInTypes opts minst acc))

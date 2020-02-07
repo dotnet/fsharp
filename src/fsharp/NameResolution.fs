@@ -3386,7 +3386,7 @@ let NeedsWorkAfterResolution namedItem =
     | Item.MethodGroup(_, minfos, _)
     | Item.CtorGroup(_, minfos) -> minfos.Length > 1 || minfos |> List.exists (fun minfo -> not (isNil minfo.FormalMethodInst))
     | Item.Property(_, pinfos) -> pinfos.Length > 1
-    | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) })
+    | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _, _)) })
     | Item.Value vref | Item.CustomBuilder (_, vref) -> not (List.isEmpty vref.Typars)
     | Item.CustomOperation (_, _, Some minfo) -> not (isNil minfo.FormalMethodInst)
     | Item.ActivePatternCase apref -> not (List.isEmpty apref.ActivePatternVal.Typars)

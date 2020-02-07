@@ -1687,8 +1687,8 @@ and MemberConstraintSolutionOfMethInfo css m traitCtxt minfo minst =
        let iltref = ilMeth.ILExtensionMethodDeclaringTyconRef |> Option.map (fun tcref -> tcref.CompiledRepresentationForNamedType)
        ILMethSln(ilMeth.ApparentEnclosingType, iltref, mref, minst)
 
-    | FSMeth(_, ty, vref, _) ->  
-       FSMethSln(ty, vref, minst)
+    | FSMeth(_, ty, vref, extInfo) ->  
+       FSMethSln(ty, vref, minst, extInfo.IsSome)
 
     | MethInfo.DefaultStructCtor _ -> 
        error(InternalError("the default struct constructor was the unexpected solution to a trait constraint", m))
@@ -3152,16 +3152,27 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
                     | Some ilActualTypeRef -> Import.ImportILTypeRef amap m ilActualTypeRef 
 
                 let mdef = IL.resolveILMethodRef actualTyconRef.ILTyconRawMetadata mref
-
-                let ilMethInfo =
+                
+                let minfo =
                     match extOpt with 
                     | None -> MethInfo.CreateILMeth(amap, m, apparentTy, mdef)
-                    | Some _ -> MethInfo.CreateILExtensionMeth(amap, m, apparentTy, actualTyconRef, None, mdef)
+                    | Some _ -> 
 
-                Choice1Of5 (ilMethInfo, minst)
+                        let pri = 0UL // irrelevant for post-typecheck processing of solution
+                        MethInfo.CreateILExtensionMeth(amap, m, apparentTy, actualTyconRef, Some pri, mdef)
 
-            | FSMethSln(ty, vref, minst) ->
-                Choice1Of5  (FSMeth(g, ty, vref, None), minst)
+                Choice1Of5 (minfo, minst)
+
+            | FSMethSln(ty, vref, minst, isExt) ->
+                let minfo =
+                    if isExt then 
+                        let pri = 0UL // irrelevant for post-typecheck processing of solution
+                        FSMeth(g, ty, vref, Some pri)
+                    else
+                        FSMeth(g, ty, vref, None)
+
+                Choice1Of5 (minfo, minst)
+                   
 
             | FSRecdFieldSln(tinst, rfref, isSetProp) ->
                 Choice2Of5  (tinst, rfref, isSetProp)

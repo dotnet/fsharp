@@ -2451,10 +2451,11 @@ and
     /// FSMethSln(ty, vref, minst)
     ///
     /// Indicates a trait is solved by an F# method.
-    ///    ty -- the type and its instantiation
+    ///    ty -- the apparent type and its instantiation
     ///    vref -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation 
-    | FSMethSln of TType * ValRef * TypeInst 
+    ///    isExt -- is this a use of an extension method
+    | FSMethSln of apparentType: TType * valRef: ValRef * methodInst: TypeInst * isExt: bool
 
     /// FSRecdFieldSln(tinst, rfref, isSetProp)
     ///
