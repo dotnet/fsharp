@@ -3884,9 +3884,9 @@ and GenQuotation cenv cgbuf eenv (ast, conv, m, ety) sequel =
         | None ->
             try
                 let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.No)
-                let astSpec = QuotationTranslator.ConvExprPublic qscope QuotationTranslator.QuotationTranslationEnv.Empty ast
-                let referencedTypeDefs, spliceTypes, spliceArgExprs = qscope.Close()
-                referencedTypeDefs, List.map fst spliceTypes, List.map fst spliceArgExprs, astSpec
+                let astSpec = QuotationTranslator.ConvExprPublic qscope ast
+                let referencedTypeDefs, typeSplices, exprSplices = qscope.Close()
+                referencedTypeDefs, List.map fst typeSplices, List.map fst exprSplices, astSpec
             with
                 QuotationTranslator.InvalidQuotedTerm e -> error e
 
@@ -7881,14 +7881,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
             let defns =
               reflectedDefinitions |> List.choose (fun ((methName, v), e) ->
                     try
-                      let ety = tyOfExpr g e
-                      let tps, taue, _ =
-                        match e with
-                        | Expr.TyLambda (_, tps, b, _, _) -> tps, b, applyForallTy g ety (List.map mkTyparTy tps)
-                        | _ -> [], e, ety
-                      let env = QuotationTranslator.QuotationTranslationEnv.Empty.BindTypars tps
-                      let astExpr = QuotationTranslator.ConvExprPublic qscope env taue
-                      let mbaseR = QuotationTranslator.ConvMethodBase qscope env (methName, v)
+                      let mbaseR, astExpr = QuotationTranslator.ConvReflectedDefinition qscope methName v e
                   
                       Some(mbaseR, astExpr)
                     with
