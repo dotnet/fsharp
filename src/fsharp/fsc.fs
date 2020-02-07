@@ -1959,7 +1959,7 @@ let main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
 
     tcConfigB.target <- target
     primaryAssembly |> Option.iter (fun pA -> tcConfigB.primaryAssembly <- pA)
-    if not noframework then
+    if noframework then
         tcConfigB.framework <- false
         tcConfigB.implicitlyResolveAssemblies <- false
 
