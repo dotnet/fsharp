@@ -526,7 +526,7 @@ let main argv = 0"""
         #endif
 
         let compileErrors, statusCode = 
-            checker.Compile([parseResults.ParseTree.Value], "test", outputFilePath, dependencies, executable = isExe, primaryAssembly = primaryAssembly) 
+            checker.Compile([parseResults.ParseTree.Value], "test", outputFilePath, dependencies, executable = isExe, primaryAssembly = primaryAssembly, noframework = true) 
             |> Async.RunSynchronously
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
@@ -551,7 +551,7 @@ let main argv = 0"""
             #endif
 
         let compileErrors, statusCode, assembly = 
-            checker.CompileToDynamicAssembly([parseResults.ParseTree.Value], assemblyName, dependencies, None, primaryAssembly = primaryAssembly) 
+            checker.CompileToDynamicAssembly([parseResults.ParseTree.Value], assemblyName, dependencies, None, primaryAssembly = primaryAssembly, noframework = true) 
             |> Async.RunSynchronously
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)

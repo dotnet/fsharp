@@ -1957,7 +1957,10 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
             tryGetMetadataSnapshot=tryGetMetadataSnapshot)
 
-    tcConfigB.framework <- not noframework 
+    if not noframework then
+        tcConfigB.framework <- false
+        tcConfigB.implicitlyResolveAssemblies <- false
+
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
     SetDebugSwitch    tcConfigB None (
