@@ -83,7 +83,7 @@ arr3.[*, 1, *] <- arr1
 arr3.[*, 1, 1] <- arr1
             """
             [|
-                FSharpErrorSeverity.Error, 39, (7,1,7,15), "The type '[,,]<T>' does not define the field, constructor or member 'SetSlice"
+                FSharpErrorSeverity.Error, 39, (7,1,7,15), "The type '[,,]<T>' does not define the field, constructor or member 'SetSlice'."
                 FSharpErrorSeverity.Error, 39, (8,1,8,15), "The type '[,,]<T>' does not define the field, constructor or member 'SetSlice'."
                 FSharpErrorSeverity.Error, 39, (9,1,9,15), "The type '[,,]<T>' does not define the field, constructor or member 'SetSlice'."
                 FSharpErrorSeverity.Error, 39, (10,1,10,15), "The type '[,,]<T>' does not define the field, constructor or member 'SetSlice'."
