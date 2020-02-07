@@ -335,6 +335,12 @@ let mkLocalVal m name ty topValInfo =
 // TupleStructure = tuple structure
 //-------------------------------------------------------------------------
 
+let inline getTupleTys g ty =
+    if isRefTupleTy g ty then
+        destRefTupleTy g ty 
+    else
+        destStructTupleTy g ty
+
 type TupleStructure = 
     | UnknownTS
     | TupleTS   of TupleStructure list
@@ -366,13 +372,8 @@ let rec uncheckedExprTS expr =
         UnknownTS
 
 let rec uncheckedTypeTS g ty =
-    if isAnyTupleTy g ty then 
-        let tys =
-            if isRefTupleTy g ty then
-                destRefTupleTy g ty 
-            else
-                destStructTupleTy g ty
-                
+    if isAnyTupleTy g ty then
+        let tys = getTupleTys g ty                
         TupleTS (List.map (uncheckedTypeTS g) tys)
     else 
         UnknownTS
@@ -509,11 +510,7 @@ let rec zipTupleStructureAndType g ts ty =
     //  (b) type fringe for each arg position.
     match ts with
     | TupleTS tss ->
-        let tys = 
-            if isRefTupleTy g ty then
-                destRefTupleTy g ty 
-            else
-                destStructTupleTy g ty
+        let tys = getTupleTys g ty
         let tss, tyfringe = zipTupleStructuresAndTypes g tss tys
         TupleTS tss, tyfringe
     | _ -> 
@@ -715,11 +712,7 @@ let rec collapseArg env bindings ts (x: Expr) =
         let bindings, x = noEffectExpr env bindings x
         let env  = suffixE env "_p" 
         let xty = tyOfExpr env.eg x
-        let xtys =
-            if isRefTupleTy env.eg xty then
-                destRefTupleTy env.eg xty 
-            else
-                destStructTupleTy env.eg xty
+        let xtys = getTupleTys env.eg xty
         let bindings, xs = buildProjections env bindings x xtys
         collapseArg env bindings (TupleTS tss) (mkRefTupled env.eg m xs xtys)
 
