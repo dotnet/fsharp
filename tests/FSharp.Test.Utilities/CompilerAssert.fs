@@ -526,8 +526,9 @@ let main argv = 0"""
         #endif
 
         let compileErrors, statusCode = 
-            checker.Compile([parseResults.ParseTree.Value], "test", outputFilePath, dependencies, executable = isExe, primaryAssembly = primaryAssembly, noframework = true) 
-            |> Async.RunSynchronously
+            lock gate (fun () ->
+                checker.Compile([parseResults.ParseTree.Value], "test", outputFilePath, dependencies, executable = isExe, primaryAssembly = primaryAssembly, noframework = true) 
+                |> Async.RunSynchronously)
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
         Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
@@ -551,8 +552,9 @@ let main argv = 0"""
             #endif
 
         let compileErrors, statusCode, assembly = 
-            checker.CompileToDynamicAssembly([parseResults.ParseTree.Value], assemblyName, dependencies, None, primaryAssembly = primaryAssembly, noframework = true) 
-            |> Async.RunSynchronously
+            lock gate (fun () ->
+                checker.CompileToDynamicAssembly([parseResults.ParseTree.Value], assemblyName, dependencies, None, primaryAssembly = primaryAssembly, noframework = true) 
+                |> Async.RunSynchronously)
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
         Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
