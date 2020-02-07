@@ -2572,7 +2572,7 @@ let GetInternalsVisibleToAttributes ilg ilModule =
 [<Literal>]
 let tname_System_Runtime_InteropServices_TypeIdentifierAttribute = "System.Runtime.InteropServices.TypeIdentifierAttribute"
 
-let findPrimaryAssembly (data: TcConfigBuilder) =
+let tryFindPrimaryAssembly (data: TcConfigBuilder) =
     let assemblies =
         data.referencedDLLs
         |> List.map (fun r -> r.Text)
@@ -2617,8 +2617,8 @@ let findPrimaryAssembly (data: TcConfigBuilder) =
                 None)
 
     match candidates with
-    | [] -> error(InternalError("Primary assembly not found.", Range.range0))
-    | [candidate] -> candidate
+    | [] -> None
+    | [candidate] -> Some candidate
     | _ -> error(InternalError("Two or more possible primary assemblies were found. Consider fixing the assembly references.", Range.range0))
     
 //----------------------------------------------------------------------------
@@ -2650,7 +2650,18 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         | [r]
         | r :: _ -> nameOfDll r
 
-    let primaryAssemblyRef = findPrimaryAssembly data
+    let primaryAssemblyRef = 
+        match tryFindPrimaryAssembly data with
+        | Some asmRef -> asmRef
+        | _ ->
+            // Fallback: Get assembly that the compiler is currently running in.
+            let asm = typeof<obj>.Assembly
+            try
+                Path.GetFileNameWithoutExtension asm.Location
+                |> mkSimpleAssemblyRef
+            with
+            | _ ->
+                error(InternalError("Primary assembly not found.", Range.range0))
 
     // Look for an explicit reference to mscorlib/netstandard.dll or System.Runtime.dll and use that to compute clrRoot and targetFrameworkVersion
     let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(primaryAssemblyRef.Name)
