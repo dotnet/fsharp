@@ -492,6 +492,8 @@ val internal ExtensionPropInfosOfTypeInScope : ResultCollectionSettings -> InfoR
 /// Get the available methods of a type (both declared and inherited)
 val internal AllMethInfosOfTypeInScope : ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> AccessorDomain -> FindMemberFlag -> range -> TType -> MethInfo list
 
+val internal SelectExtensionMethInfosForTrait: traitInfo: TraitConstraintInfo * m: range * nenv: NameResolutionEnv * infoReader: InfoReader -> MethInfo list
+
 /// Used to report an error condition where name resolution failed due to an indeterminate type
 exception internal IndeterminateType of range
 

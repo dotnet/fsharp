@@ -361,10 +361,11 @@ module ExtenstionAttributeMembers =
     let v = bleh "a"
     do check "cojkicjkc" 1 v
 
-module ExtendingOnConstraint = 
+module ExtendingGenericType1 = 
     open System
-    type System.Int32 with 
-        static member inline (+)(a, b) = Array.map2 (+) a b
+    type ``[]``<'T> with 
+        // The generic type parameter must not be the same as the enclosing, which is unconstrained
+        static member inline (+)(a:'T1[], b: 'T2[]) = Array.map2 (+) a b
 
     let v1 = [|1;2;3|] + [|2;3;4|] //Okay
     do check "kldjfdo1" [|3;5;7|] v1
@@ -387,24 +388,6 @@ module ExtendingOnConstraint =
     //let v10 = [|1.f|] + [|2.f|] //error FS0001
     //let v11 = [|1.0|] + [|2.0|] //error FS0001
 
-module TupleOps = 
-    type System.Int32 with 
-        static member inline (+)(struct(a,b), struct(c,d)) = struct(a + c, b + d)
-        static member inline (+)((a,b), (c,d)) = (a + c, b + d)
-    let v1 = (1,2) + (3,4) 
-    do check "fmjkslo1" ((4,6)) v1
-    //let v2 = struct(1,2) + struct(3,4) 
-    //do check "fmjkslo2" (struct(4,6)) v2
-    //Runtime Errors: 
-    (* ---------------------
-        Unhandled Exception: System.TypeInitializationException: The type initializer for 'AdditionDynamicImplTable`3' threw an exception. ---> System.NotSupportedException: Dynamic invocation of op_Addition involving coercions is not supported.
-        at Microsoft.FSharp.Core.LanguagePrimitives.dyn@2578TTT.Invoke(Unit unitVar0)
-        at Microsoft.FSharp.Core.LanguagePrimitives.AdditionDynamicImplTable`3..cctor()
-        --- End of inner exception stack trace ---
-        at Microsoft.FSharp.Core.LanguagePrimitives.AdditionDynamicImplTable`3.get_Impl()
-        at Microsoft.FSharp.Core.LanguagePrimitives.AdditionDynamic[T1,T2,TResult](T1 x, T2 y)
-        at <StartupCode$test>.$Test$fsx.main@()
-    --------------------------*)
 (*---------------------------------------------------------------------------
 !* wrap up
  *--------------------------------------------------------------------------- *)

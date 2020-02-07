@@ -228,14 +228,8 @@ type TcEnv =
 
         member tenv.SelectExtensionMethods(traitInfo, m, infoReader) =
             let infoReader = unbox<InfoReader>(infoReader)
-            if tenv.g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
-                [ for traitSupportTy in traitInfo.SupportTypes do
-                    if not (isTyparTy tenv.g traitSupportTy) then 
-                        let extMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader tenv.eNameResEnv (Some traitInfo.MemberName) m traitSupportTy
-                        for extMethInfo in extMethInfos do
-                            yield (extMethInfo :> ITraitExtensionMember) ]
-            else
-                []
+            SelectExtensionMethInfosForTrait(traitInfo, m, tenv.eNameResEnv, infoReader)
+            |> List.map (fun minfo -> minfo :> ITraitExtensionMember)
 
         member tenv.AccessRights = (tenv.eAccessRights :> ITraitAccessorDomain)
 

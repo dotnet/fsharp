@@ -635,6 +635,16 @@ let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad fi
     else
         intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter m ty
 
+let SelectExtensionMethInfosForTrait(traitInfo: TraitConstraintInfo, m, nenv: NameResolutionEnv, infoReader: InfoReader) =
+    let g = infoReader.g
+    if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+        [ for traitSupportTy in traitInfo.SupportTypes do
+            if not (isTyparTy g traitSupportTy) then 
+                let extMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv (Some traitInfo.MemberName) m traitSupportTy
+                for extMethInfo in extMethInfos do
+                    yield extMethInfo ]
+    else
+        []
 //-------------------------------------------------------------------------
 // Helpers to do with building environments
 //-------------------------------------------------------------------------
