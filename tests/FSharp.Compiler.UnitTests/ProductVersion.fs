@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.UnitTests
+﻿namespace FSharp.Compiler.UnitTests
 
 open System
 open System.IO
@@ -60,6 +60,7 @@ module ProductVersionTest =
         let max = System.UInt16.MaxValue
         [ "1.2.3.4", ILVersionInfo(1us,2us,3us,4us)
           "1.0.3.4", ILVersionInfo(1us,0us,3us,4us)
+          "7.0.0.4-SomeExtraInformation", ILVersionInfo(7us,0us,0us,4us)
           "0.0.0.0", ILVersionInfo(0us,0us,0us,0us) 
           "3213.57843.32382.59493", ILVersionInfo(3213us,57843us,32382us,59493us)
           (sprintf "%d.%d.%d.%d" max max max max), ILVersionInfo(max,max,max,max) ]
