@@ -1970,6 +1970,9 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
     SetTailcallSwitch tcConfigB OptionSwitch.On
     tcConfigB.target <- target
     primaryAssembly |> Option.iter (fun pA -> tcConfigB.primaryAssembly <- pA)
+
+    if tcConfigB.primaryAssembly <> PrimaryAssembly.Mscorlib then
+        tcConfigB.includewin32manifest <- false
         
     let errorLogger = errorLoggerProvider.CreateErrorLoggerUpToMaxErrors (tcConfigB, exiter)
 
