@@ -11,11 +11,6 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
 
-[<Sealed>]
-type QuotationTranslationEnv =
-   static member Empty : QuotationTranslationEnv
-   member BindTypars : Typars -> QuotationTranslationEnv
-
 exception InvalidQuotedTerm of exn
 exception IgnoringPartOfQuotedTermWarning of string * Range.range
 
@@ -36,9 +31,8 @@ type QuotationGenerationScope  =
     member Close: unit -> ILTypeRef list * (TType * range) list * (Expr * range) list 
     static member ComputeQuotationFormat : TcGlobals -> QuotationSerializationFormat
 
-val ConvExprPublic : QuotationGenerationScope -> QuotationTranslationEnv -> Expr -> QuotationPickler.ExprData 
-val ConvMethodBase  : QuotationGenerationScope -> QuotationTranslationEnv ->  string * Val  -> QuotationPickler.MethodBaseData
-
+val ConvExprPublic : QuotationGenerationScope -> Expr -> QuotationPickler.ExprData 
+val ConvReflectedDefinition: QuotationGenerationScope -> string -> Val -> Expr -> QuotationPickler.MethodBaseData * QuotationPickler.ExprData
 
 val (|ModuleValueOrMemberUse|_|) : TcGlobals -> Expr -> (ValRef * ValUseFlag * Expr * TType * TypeInst * Expr list) option
 val (|SimpleArrayLoopUpperBound|_|) : Expr -> unit option
