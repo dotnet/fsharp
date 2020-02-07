@@ -21,6 +21,9 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+  - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
+    - name: RunningAsPullRequest
+      value: true
 
 # Variables defined in yml cannot be overridden at queue time; instead overridable variables must be defined in the web UI.
 # Commenting out until something like this is supported: https://github.com/Microsoft/azure-pipelines-yaml/pull/129
