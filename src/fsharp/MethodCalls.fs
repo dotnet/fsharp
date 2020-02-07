@@ -1825,7 +1825,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                     | None -> tcrefOfAppTy g metadataTy
                     | Some ilActualTypeRef -> Import.ImportILTypeRef amap m ilActualTypeRef 
 
-                let mdef = IL.resolveILMethodRef actualTyconRef.ILTyconRawMetadata mref
+                let mdef = resolveILMethodRef actualTyconRef.ILTyconRawMetadata mref
                 
                 let minfo =
                     match extOpt with 
