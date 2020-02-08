@@ -845,10 +845,9 @@ module MainModuleBuilder =
                 else
                     ((false, ""), v)
                     ||> Seq.fold(fun (finished, v) c ->
-                        if finished || Char.IsDigit(c) then
-                            false, v + c.ToString()
-                        else
-                            true, v)
+                        match finished with
+                        | false when Char.IsDigit(c) -> false, v + c.ToString()
+                        | _ -> true, v)
                     |> snd
             match System.UInt16.TryParse v with
             | (true, i) -> i
