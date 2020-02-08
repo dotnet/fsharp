@@ -62,7 +62,7 @@ module ReflectionHelper =
 type internal IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
-    abstract ResolveDependencies: scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
     abstract DependencyAdding: IEvent<string * string>
     abstract DependencyAdded: IEvent<string * string * string list * string list * string list>
     abstract DependencyFailed: IEvent<string * string>
@@ -73,7 +73,7 @@ type ReferenceType =
 | Library of string
 | UnknownType
 
-type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyInfo, keyProperty: PropertyInfo, resolveDeps: MethodInfo, outputDir: string option) =
+type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyInfo, keyProperty: PropertyInfo, resolveDeps: MethodInfo option, resolveDepsEx: MethodInfo option,outputDir: string option) =
     let instance = Activator.CreateInstance(theType, [|outputDir :> obj|])
     let nameProperty     = nameProperty.GetValue >> string
     let keyProperty      = keyProperty.GetValue >> string
@@ -84,31 +84,42 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
 
     static member InstanceMaker (theType: System.Type, outputDir: string option) =
         match ReflectionHelper.getAttributeNamed theType dependencyManagerAttributeName,
-                ReflectionHelper.getInstanceProperty<string> theType namePropertyName,
-                ReflectionHelper.getInstanceProperty<string> theType keyPropertyName,
-                ReflectionHelper.getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
-                with
-        | None, _, _, _ -> None
-        | _, None, _, _ -> None
-        | _, _, None, _ -> None
-        | _, _, _, None -> None
-        | Some _, Some nameProperty, Some keyProperty, Some resolveDependenciesMethod ->
-            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, resolveDependenciesMethod, outputDir) :> IDependencyManagerProvider)
+              ReflectionHelper.getInstanceProperty<string> theType namePropertyName,
+              ReflectionHelper.getInstanceProperty<string> theType keyPropertyName
+              with
+        | None, _, _
+        | _, None, _
+        | _, _, None -> None
+        | Some _, Some nameProperty, Some keyProperty ->
+            let resolveMethod = ReflectionHelper.getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
+            let resolveMethodEx = ReflectionHelper.getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
+            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
 
     interface IDependencyManagerProvider with
 
         member __.Name     = instance |> nameProperty
 
         member __.Key      = instance |> keyProperty
-        member this.ResolveDependencies(scriptDir, packageManagerTextLines, tfm) =
+
+        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm) =
 
             let key = (this :> IDependencyManagerProvider).Key
             let triggerEvent (evt: Event<string * string>) =
                 for prLine in packageManagerTextLines do
                     evt.Trigger(key, prLine)
             triggerEvent dependencyAddingEvent
-            let arguments = [| box scriptDir; box packageManagerTextLines; box tfm |]
-            let succeeded, references, generatedScripts, additionalIncludeFolders = resolveDeps.Invoke(instance, arguments) :?> _
+            let method, arguments =
+                if resolveDepsEx.IsSome then
+                    resolveDepsEx, [| box scriptExt; box packageManagerTextLines; box tfm |]
+                elif resolveDeps.IsSome then
+                    resolveDeps, [| box scriptDir; box mainScriptName; box scriptName; box packageManagerTextLines; box tfm |]
+                else
+                    None, [||]
+
+            let succeeded, references, generatedScripts, additionalIncludeFolders =
+                match method with
+                | Some m -> m.Invoke(instance, arguments) :?> _
+                | None -> false, List.empty<string>, List.empty<string>, List.empty<string>
 
             for prLine in packageManagerTextLines do
                 if succeeded then
@@ -203,9 +214,9 @@ let tryFindDependencyManagerByKey (compilerTools: string list) (outputDir:string
         errorR(Error(FSComp.SR.packageManagerError(e.Message), m))
         None
 
-let resolve (packageManager:IDependencyManagerProvider) scriptExt m packageManagerTextLines =
+let resolve (packageManager:IDependencyManagerProvider) implicitIncludeDir mainScriptName fileName scriptExt m packageManagerTextLines =
     try
-        Some(packageManager.ResolveDependencies(scriptExt, packageManagerTextLines, executionTfm))
+        Some(packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm))
     with e ->
         let e = ReflectionHelper.stripTieWrapper e
         errorR(Error(FSComp.SR.packageManagerError(e.Message), m))
