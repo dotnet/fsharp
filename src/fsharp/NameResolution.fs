@@ -2359,7 +2359,14 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 | _ -> ()
             | _ -> ()
 
-        raze (UndefinedName (depth, FSComp.SR.undefinedNameFieldConstructorOrMember, id, suggestMembers))
+        let errorTextF s =
+            if isAppTy g ty then
+                let tcref = tcrefOfAppTy g ty
+                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndTypars, s)
+            else
+                FSComp.SR.undefinedNameFieldConstructorOrMember(s)
+
+        raze (UndefinedName (depth, errorTextF, id, suggestMembers))
 
 and ResolveLongIdentInNestedTypes (ncenv: NameResolver) nenv lookupKind resInfo depth id m ad (id2: Ident) (rest: Ident list) findFlag typeNameResInfo tys =
     tys

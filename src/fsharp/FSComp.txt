@@ -4,6 +4,7 @@
 undefinedNameNamespace,"The namespace '%s' is not defined."
 undefinedNameNamespaceOrModule,"The namespace or module '%s' is not defined."
 undefinedNameFieldConstructorOrMember,"The field, constructor or member '%s' is not defined."
+undefinedNameFieldConstructorOrMemberWhenTypeIsKnown,"The type '%s' does not define the field, constructor or member '%s'."
 undefinedNameValueConstructorNamespaceOrType,"The value, constructor, namespace or type '%s' is not defined."
 undefinedNameValueOfConstructor,"The value or constructor '%s' is not defined."
 undefinedNameValueNamespaceTypeOrModule,"The value, namespace, type or module '%s' is not defined."
