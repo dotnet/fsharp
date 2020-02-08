@@ -330,6 +330,12 @@ type SynAccess =
     | Internal
     | Private
 
+    override this.ToString () =
+        match this with
+        | Public -> "Public"
+        | Internal -> "Internal"
+        | Private -> "Private"
+
 type SequencePointInfoForTarget =
     | SequencePointAtTarget
     | SuppressSequencePointAtTarget

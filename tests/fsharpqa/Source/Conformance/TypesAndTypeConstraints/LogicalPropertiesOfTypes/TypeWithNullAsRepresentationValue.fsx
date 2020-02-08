@@ -16,10 +16,13 @@ type DU = | NULL
 
 let du = NULL
 
+printfn "%A" u
+printfn "%A" o
+printfn "%A" du
 let test = [ 
-               (sprintf "%A" u) = "<null>";
-               (sprintf "%A" o) = "<null>";
-               (sprintf "%A" du) = "<null>";
+               (sprintf "%A" u) = "()";
+               (sprintf "%A" o) = "None";
+               (sprintf "%A" du) = "NULL";
            ]  |> List.forall (fun e -> e=true)
 
 (if test then 0 else 1) |> exit
