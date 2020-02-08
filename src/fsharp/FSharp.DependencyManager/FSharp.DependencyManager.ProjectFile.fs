@@ -21,7 +21,7 @@ type PackageReference = {
 
 
 // Resolved assembly information
-type Resolution = {
+type internal Resolution = {
     NugetPackageId : string
     NugetPackageVersion : string
     PackageRoot : string
@@ -31,22 +31,30 @@ type Resolution = {
     InitializeSourcePath : string }
 
 
-module ProjectFile =
+module internal ProjectFile =
 
     let findLoadsFromResolutions (resolutions:Resolution array) =
         resolutions
         |> Array.filter(fun r -> not(String.IsNullOrEmpty(r.NugetPackageId) ||
                                      String.IsNullOrEmpty(r.InitializeSourcePath)) &&
-                                     File.Exists(r.InitializeSourcePath))
+                                 File.Exists(r.InitializeSourcePath))
         |> Array.map(fun r -> r.InitializeSourcePath)
         |> Array.distinct
+
+    let findReferencesFromResolutions (resolutions:Resolution array) =
+        resolutions
+        |> Array.filter(fun r -> not(String.IsNullOrEmpty(r.NugetPackageId)) &&
+                                 File.Exists(r.FullPath))
+        |> Array.map(fun r -> r.FullPath)
+        |> Array.distinct
+
 
     let findIncludesFromResolutions (resolutions:Resolution array) =
         let managedRoots =
             resolutions
             |> Array.filter(fun r -> not(String.IsNullOrEmpty(r.NugetPackageId) ||
                                          String.IsNullOrEmpty(r.PackageRoot)) &&
-                                         Directory.Exists(r.PackageRoot))
+                                     Directory.Exists(r.PackageRoot))
             |> Array.map(fun r -> r.PackageRoot)
             |> Array.distinct
 
@@ -54,7 +62,7 @@ module ProjectFile =
             resolutions
             |> Array.filter(fun r -> not(String.IsNullOrEmpty(r.NugetPackageId) ||
                                          String.IsNullOrEmpty(r.NativePath)) &&
-                                       Directory.Exists(r.NativePath))
+                                     Directory.Exists(r.NativePath))
             |> Array.map(fun r -> r.NativePath)
             |> Array.distinct
 

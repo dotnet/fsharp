@@ -64,7 +64,7 @@ type internal IDependencyManagerProvider =
     abstract Key: string
     abstract ResolveDependencies: scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
     abstract DependencyAdding: IEvent<string * string>
-    abstract DependencyAdded: IEvent<string * string * string list * string list>
+    abstract DependencyAdded: IEvent<string * string * string list * string list * string list>
     abstract DependencyFailed: IEvent<string * string>
 
 [<RequireQualifiedAccess>]
@@ -108,11 +108,11 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                     evt.Trigger(key, prLine)
             triggerEvent dependencyAddingEvent
             let arguments = [| box scriptDir; box packageManagerTextLines; box tfm |]
-            let succeeded, generatedScripts, additionalIncludeFolders = resolveDeps.Invoke(instance, arguments) :?> _
+            let succeeded, references, generatedScripts, additionalIncludeFolders = resolveDeps.Invoke(instance, arguments) :?> _
 
             for prLine in packageManagerTextLines do
                 if succeeded then
-                    dependencyAddedEvent.Trigger(key, prLine, generatedScripts, additionalIncludeFolders)
+                    dependencyAddedEvent.Trigger(key, prLine, references, generatedScripts, additionalIncludeFolders)
                 else
                     dependencyFailedEvent.Trigger(key, prLine)
 

@@ -959,7 +959,7 @@ type internal FsiDynamicCompiler
 
     let valueBoundEvent = Control.Event<_>()
     let dependencyAddingEvent = Control.Event<string * string>()
-    let dependencyAddedEvent = Control.Event<string * string * string list * string list>()
+    let dependencyAddedEvent = Control.Event<string * string * string list * string list * string list>()
     let dependencyFailedEvent = Control.Event<string * string>()
 
     let mutable fragmentId = 0

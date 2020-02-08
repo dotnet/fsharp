@@ -16,7 +16,7 @@ open Internal.Utilities.FSharpEnvironment
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
 type DependencyManagerAttribute() = inherit System.Attribute()
 
-module Utilities =
+module internal Utilities =
 
     /// Return a string array delimited by commas
     /// Note that a quoted string is not going to be mangled into pieces.
