@@ -2835,7 +2835,7 @@ open System.Reflection
         fv.ProductVersion |> Assert.areEqual "45.2048.main1.2-hotfix (upgrade Second Chance security)"
 
         (fv.ProductMajorPart, fv.ProductMinorPart, fv.ProductBuildPart, fv.ProductPrivatePart) 
-        |> Assert.areEqual (45,2048,0,0)
+        |> Assert.areEqual (45, 2048, 0, 2)
 
 
     [<Test>]
