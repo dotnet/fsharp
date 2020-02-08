@@ -5,4 +5,6 @@ type MyT = MyC of int * string * bool
 
 let DU = MyC (1,"2",true)
 
-(if (sprintf "%A" DU) = "MyC (1,\"2\",true)" then 0 else 1) |> exit
+printfn "%A" DU
+
+(if (sprintf "%A" DU) = "MyC (1, \"2\", true)" then 0 else 1) |> exit
