@@ -637,8 +637,11 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 
 """
 
-//<@ let x = Some(3) in x.IsSome @>
 [<Test>]
+// FCS Has a problem with these tests because of FSharp Core versions.
+#if !COMPILER_SERVICE_AS_DLL
+[<Ignore("SKIPPED: FSharp.Core nuget package needs to be updated before this test can be re-enabled")>]
+#endif
 let ``Test Unoptimized Declarations Project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
 
@@ -780,10 +783,10 @@ let ``Test Unoptimized Declarations Project1`` () =
 
 
 [<Test>]
-//#if NETCOREAPP
-//[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-//#endif
+// FCS Has a problem with these tests because of FSharp Core versions
+#if !COMPILER_SERVICE_AS_DLL
 [<Ignore("SKIPPED: FSharp.Core nuget package needs to be updated before this test can be re-enabled")>]
+#endif
 let ``Test Optimized Declarations Project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
 
