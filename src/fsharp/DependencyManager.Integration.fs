@@ -8,6 +8,7 @@ open System.IO
 open System.Reflection
 open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
+open FSharp.Reflection
 open Internal.Utilities.FSharpEnvironment
 
 // Contract strings
@@ -108,6 +109,15 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                 for prLine in packageManagerTextLines do
                     evt.Trigger(key, prLine)
             triggerEvent dependencyAddingEvent
+
+
+            // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resoveDepsEx
+            // The resolve method can return values in two different tuples:
+            //     (bool * string list * string list * string list)
+            //     (bool * string list * string list)
+            //
+            // We use reflection to get the correct method and to determine what we got back.
+            //
             let method, arguments =
                 if resolveDepsEx.IsSome then
                     resolveDepsEx, [| box scriptExt; box packageManagerTextLines; box tfm |]
@@ -122,12 +132,15 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                     match method with
                     | Some m -> m.Invoke(instance, arguments) :?> _
                     | None -> false, empty, empty, empty
-                // return value from nuget resolver
-                if result.GetType() = typeof<bool * string list * string list * string list then
-                    result
-                else
-                    // return value from legacy resolver (bool * string list * string list)
-                    result |> fst3, empty, result |> snd3, result |> thd3
+
+                // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
+                //     4 - (bool * string list * string list * string list)
+                //     3 - (bool * string list * string list)
+                let tupleFields = result |> FSharpValue.GetTupleFields
+                match tupleFields |> Array.length with
+                | 4 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string list, tupleFields.[2] :?> string list, tupleFields.[3] :?> string list
+                | 3 -> tupleFields.[0] :?> bool, empty, tupleFields.[1] :?> string list, tupleFields.[2] :?> string list
+                | _ -> false, empty, empty, empty
 
             for prLine in packageManagerTextLines do
                 if succeeded then
