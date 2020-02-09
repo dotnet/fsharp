@@ -117,9 +117,17 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                     None, [||]
 
             let succeeded, references, generatedScripts, additionalIncludeFolders =
-                match method with
-                | Some m -> m.Invoke(instance, arguments) :?> _
-                | None -> false, List.empty<string>, List.empty<string>, List.empty<string>
+                let empty = List.empty<string>
+                let result =
+                    match method with
+                    | Some m -> m.Invoke(instance, arguments) :?> _
+                    | None -> false, empty, empty, empty
+                // return value from nuget resolver
+                if result.GetType() = typeof<bool * string list * string list * string list then
+                    result
+                else
+                    // return value from legacy resolver (bool * string list * string list)
+                    result |> fst3, empty, result |> snd3, result |> thd3
 
             for prLine in packageManagerTextLines do
                 if succeeded then
