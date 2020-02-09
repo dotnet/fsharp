@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-namespace FSharp.DependencyManager
+namespace FSharp.DependencyManager.Nuget
 
 open System
 open System.Collections
@@ -10,7 +10,7 @@ open System.Reflection
 open System.Runtime.CompilerServices
 open System.Runtime.Versioning
 
-open FSharp.DependencyManager.ProjectFile
+open FSharp.DependencyManager.Nuget.ProjectFile
 open Internal.Utilities.FSharpEnvironment
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]

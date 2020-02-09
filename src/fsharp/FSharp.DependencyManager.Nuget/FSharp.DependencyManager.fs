@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.DependencyManager
+namespace FSharp.DependencyManager.Nuget
 
 open System
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
-open FSharp.DependencyManager
-open FSharp.DependencyManager.Utilities
-open FSharp.DependencyManager.ProjectFile
+open FSharp.DependencyManager.Nuget
+open FSharp.DependencyManager.Nuget.Utilities
+open FSharp.DependencyManager.Nuget.ProjectFile
 
 
 module FSharpDependencyManager =
