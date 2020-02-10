@@ -5,10 +5,11 @@ namespace FSharp.Compiler.AbstractIL.Internal
 
 open System.IO
 open Internal.Utilities
-
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.Internal 
 
+module Utils =
+    val runningOnMono: bool
 
 module internal Bytes = 
     /// returned int will be 0 <= x <= 255
@@ -95,7 +96,7 @@ type ByteMemory with
 
     /// Creates a ByteMemory object that is backed by a raw pointer.
     /// Use with care.
-    static member FromUnsafePointer: addr: nativeint * length: int * hold: obj -> ByteMemory
+    static member FromUnsafePointer: addr: nativeint * length: int * holder: obj -> ByteMemory
 
     /// Creates a ByteMemory object that is backed by a byte array with the specified offset and length.
     static member FromArray: bytes: byte[] * offset: int * length: int -> ByteMemory

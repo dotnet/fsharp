@@ -13,6 +13,8 @@
   <ItemGroup>
     <Compile Include="ConsoleHelpers.fs" />
     <Compile Include="TestHelpers.fs" />
+    <Compile Include="DependencyManagerInteractiveTests.fs" />
+    <Compile Include="DependencyManagerLineParserTests.fs" />
     <Compile Include="FSharpScriptTests.fs" />
     <None Include="housing.csv"  CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="CompletionTests.fs" />

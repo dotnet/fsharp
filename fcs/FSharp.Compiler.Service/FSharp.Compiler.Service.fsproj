@@ -633,7 +633,7 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ExternalSymbol.fs">
       <Link>Service/ExternalSymbol.fs</Link>
     </Compile>
-	<Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fsi">
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fsi">
       <Link>Service/QuickParse.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fs">
@@ -680,6 +680,7 @@
     <PackageReference Include="FSharp.Core" Version="$(FcsFSharpCorePkgVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
     <PackageReference Include="System.Reflection.Metadata" Version="1.6.0" />
+    <PackageReference Include="System.Buffers" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Diagnostics.Process" Version="4.1.0" />

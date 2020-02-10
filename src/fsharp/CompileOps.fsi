@@ -389,8 +389,6 @@ type TcConfigBuilder =
       mutable pathMap : PathMap
 
       mutable langVersion : LanguageVersion
-
-      mutable includePathAdded : string -> unit
     }
 
     static member Initial: TcConfigBuilder
@@ -403,8 +401,7 @@ type TcConfigBuilder =
         isInteractive: bool * 
         isInvalidationSupported: bool *
         defaultCopyFSharpCore: CopyFSharpCoreFlag *
-        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
-        ?includePathAdded: (string -> unit)
+        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
           -> TcConfigBuilder
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
@@ -417,7 +414,7 @@ type TcConfigBuilder =
     member AddEmbeddedSourceFile: string -> unit
     member AddEmbeddedResource: string -> unit
     member AddPathMapping: oldPrefix: string * newPrefix: string -> unit
-    
+
     static member SplitCommandLineResourceInfo: string -> string * string * ILResourceAccess
 
 [<Sealed>]
@@ -684,7 +681,7 @@ val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string * assemblyReferenceAdded: (string -> unit) -> TcEnv * (ImportedBinary list * ImportedAssembly list)
+val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
 
 /// Processing # commands
 val ProcessMetaCommandsFromInput : 

@@ -28,6 +28,8 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
+    | AndBang
+    | NullableOptionalInterop
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -55,12 +57,14 @@ type LanguageVersion (specifiedVersionAsString) =
             // F# 5.0
             LanguageFeature.FixedIndexSlice3d4d, languageVersion50
             LanguageFeature.FromEndSlicing, languageVersion50
+            LanguageFeature.DotlessFloat32Literal, languageVersion50
 
             // F# preview
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
-            LanguageFeature.DotlessFloat32Literal, languageVersion50
             LanguageFeature.PackageManagement, previewVersion
+            LanguageFeature.AndBang, previewVersion
+            LanguageFeature.NullableOptionalInterop, previewVersion
         ]
 
     let specified =

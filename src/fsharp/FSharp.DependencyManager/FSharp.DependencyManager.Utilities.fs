@@ -10,12 +10,8 @@ open System.Reflection
 open System.Runtime.CompilerServices
 open System.Runtime.Versioning
 
+open FSharp.DependencyManager.ProjectFile
 open Internal.Utilities.FSharpEnvironment
-
-#if !(NETSTANDARD || NETCOREAPP)
-open Microsoft.Build.Evaluation
-open Microsoft.Build.Framework
-#endif
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
 type DependencyManagerAttribute() = inherit System.Attribute()
@@ -23,7 +19,7 @@ type DependencyManagerAttribute() = inherit System.Attribute()
 module Utilities =
 
     /// Return a string array delimited by commas
-    /// Note that a quoted string is not going to be mangled into pieces. 
+    /// Note that a quoted string is not going to be mangled into pieces.
     let trimChars = [| ' '; '\t'; '\''; '\"' |]
 
     let inline private isNotQuotedQuotation (text: string) n = n > 0 && text.[n-1] <> '\\'
@@ -86,7 +82,6 @@ module Utilities =
 
     let sdks = "Sdks"
 
-#if !(NETSTANDARD || NETCOREAPP)
     let msbuildExePath =
         // Find msbuild.exe when invoked from desktop compiler.
         // 1. Look relative to F# compiler location                 Normal retail build
@@ -120,7 +115,7 @@ module Utilities =
             | _ -> None
 
         roots |> Array.tryFind(fun root -> msbuildPathExists root) |> msbuildOption
-#else
+
     let dotnetHostPath =
         // How to find dotnet.exe --- woe is me; probing rules make me sad.
         // Algorithm:
@@ -156,7 +151,6 @@ module Utilities =
                         Some dotnet
         else
             None
-#endif
 
     let drainStreamToFile (stream: StreamReader) filename =
         use file = File.OpenWrite(filename)
@@ -172,7 +166,6 @@ module Utilities =
     let executeBuild pathToExe arguments workingDir =
         match pathToExe with
         | Some path ->
-
             let psi = ProcessStartInfo()
             psi.FileName <- path
             psi.WorkingDirectory <- workingDir
@@ -186,10 +179,21 @@ module Utilities =
             p.StartInfo <- psi
             p.Start() |> ignore
 
-            drainStreamToFile p.StandardOutput (Path.Combine(workingDir, "StandardOutput.txt"))
-            drainStreamToFile p.StandardError (Path.Combine(workingDir, "StandardError.txt"))
+            let standardOutput = Path.Combine(workingDir, "StandardOutput.txt")
+            let standardError = Path.Combine(workingDir, "StandardError.txt")
+            drainStreamToFile p.StandardOutput (Path.Combine(workingDir, standardOutput))
+            drainStreamToFile p.StandardError (Path.Combine(workingDir, standardError))
 
             p.WaitForExit()
+            if p.ExitCode <> 0 then
+                //Write StandardError.txt to err stream
+                let text = File.ReadAllText(standardOutput)
+                Console.Out.Write(text)
+
+                //Write StandardOutput.txt to out stream
+                let text = File.ReadAllText(standardError)
+                Console.Out.Write(text)
+
             p.ExitCode = 0
 
         | None -> false
@@ -205,113 +209,18 @@ module Utilities =
             | None -> ""
 
         let arguments prefix =
-            sprintf "%s -restore %s %c%s%c /t:FSI-PackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
+            sprintf "%s -restore %s %c%s%c /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
 
         let workingDir = Path.GetDirectoryName projectPath
 
         let succeeded =
-#if !(NETSTANDARD || NETCOREAPP)
-            // The Desktop build uses "msbuild" to build
-            executeBuild msbuildExePath (arguments "") workingDir
-#else
-            // The coreclr uses "dotnet msbuild" to build
-            executeBuild dotnetHostPath (arguments "msbuild") workingDir
-#endif
-        let outputFile = projectPath + ".fsx"
+            if not (isRunningOnCoreClr) then
+                // The Desktop build uses "msbuild" to build
+                executeBuild msbuildExePath (arguments "") workingDir
+            else
+                // The coreclr uses "dotnet msbuild" to build
+                executeBuild dotnetHostPath (arguments "msbuild") workingDir
+
+        let outputFile = projectPath + ".resolvedReferences.paths"
         let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None
         succeeded, resultOutFile
-
-    // Generate a project files for dependencymanager projects
-    let generateLibrarySource = @"// Generated dependencymanager library
-namespace lib"
-
-    let generateProjectBody = @"
-<Project Sdk='Microsoft.NET.Sdk'>
-  <PropertyGroup>
-    <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
-  <ItemGroup>
-    <Compile Include='Library.fs' />
-  </ItemGroup>
-$(PACKAGEREFERENCES)
-
-  <Target Name='CollectFSharpDesignTimeTools' BeforeTargets='BeforeCompile' DependsOnTargets='_GetFrameworkAssemblyReferences'>
-    <ItemGroup>
-      <PropertyNames Include = ""Pkg$([System.String]::Copy('%(PackageReference.FileName)').Replace('.','_'))"" Condition = "" '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' == '' ""/>
-      <PropertyNames Include = ""Pkg$([System.String]::Copy('%(PackageReference.FileName)%(PackageReference.Extension)').Replace('.','_'))"" Condition = "" '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' != '' ""/>
-      <FscCompilerTools Include = ""$(%(PropertyNames.Identity))"" />
-    </ItemGroup>
-  </Target>
-
-  <Target Name=""PackageFSharpDesignTimeTools"" DependsOnTargets=""_GetFrameworkAssemblyReferences"">
-    <PropertyGroup>
-      <FSharpDesignTimeProtocol Condition = "" '$(FSharpDesignTimeProtocol)' == '' "">fsharp41</FSharpDesignTimeProtocol>
-      <FSharpToolsDirectory Condition = "" '$(FSharpToolsDirectory)' == '' "">tools</FSharpToolsDirectory>
-    </PropertyGroup>
-
-    <Error Text=""'$(FSharpToolsDirectory)' is an invalid value for 'FSharpToolsDirectory' valid values are 'typeproviders' and 'tools'."" Condition=""'$(FSharpToolsDirectory)' != 'typeproviders' and '$(FSharpToolsDirectory)' != 'tools'"" />
-    <Error Text=""The 'FSharpDesignTimeProtocol'  property can be only 'fsharp41'"" Condition=""'$(FSharpDesignTimeProtocol)' != 'fsharp41'"" />
-
-    <ItemGroup>
-      <_ResolvedOutputFiles
-          Include=""%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/*""
-          Exclude=""%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/FSharp.Core.dll;%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/System.ValueTuple.dll""
-          Condition=""'%(_ResolvedProjectReferencePaths.IsFSharpDesignTimeProvider)' == 'true'"">
-        <NearestTargetFramework>%(_ResolvedProjectReferencePaths.NearestTargetFramework)</NearestTargetFramework>
-      </_ResolvedOutputFiles>
-
-      <_ResolvedOutputFiles
-          Include=""@(BuiltProjectOutputGroupKeyOutput)""
-          Condition=""'$(IsFSharpDesignTimeProvider)' == 'true' and '%(BuiltProjectOutputGroupKeyOutput->Filename)%(BuiltProjectOutputGroupKeyOutput->Extension)' != 'FSharp.Core.dll' and '%(BuiltProjectOutputGroupKeyOutput->Filename)%(BuiltProjectOutputGroupKeyOutput->Extension)' != 'System.ValueTuple.dll'"">
-        <NearestTargetFramework>$(TargetFramework)</NearestTargetFramework>
-      </_ResolvedOutputFiles>
-
-      <TfmSpecificPackageFile Include=""@(_ResolvedOutputFiles)"">
-         <PackagePath>$(FSharpToolsDirectory)/$(FSharpDesignTimeProtocol)/%(_ResolvedOutputFiles.NearestTargetFramework)/%(_ResolvedOutputFiles.FileName)%(_ResolvedOutputFiles.Extension)</PackagePath>
-      </TfmSpecificPackageFile>
-    </ItemGroup>
-  </Target>
-
-  <Target Name='ComputePackageRoots'
-          BeforeTargets='CoreCompile;FSI-PackageManagement'
-          DependsOnTargets='CollectPackageReferences'>
-      <ItemGroup>
-        <FsxResolvedFile Include='@(ResolvedCompileFileDefinitions)'>
-           <PackageRootProperty>Pkg$([System.String]::Copy('%(ResolvedCompileFileDefinitions.NugetPackageId)').Replace('.','_'))</PackageRootProperty>
-           <PackageRoot>$([MSBuild]::EnsureTrailingSlash('$(%(FsxResolvedFile.PackageRootProperty))'))</PackageRoot>
-           <InitializeSourcePath>$(%(FsxResolvedFile.PackageRootProperty))\content\%(ResolvedCompileFileDefinitions.FileName)%(ResolvedCompileFileDefinitions.Extension).fsx</InitializeSourcePath>
-        </FsxResolvedFile>
-        <NativeIncludeRoots
-            Include='@(RuntimeTargetsCopyLocalItems)'
-            Condition=""'%(RuntimeTargetsCopyLocalItems.AssetType)' == 'native'"">
-           <Path>$([MSBuild]::EnsureTrailingSlash('$([System.String]::Copy('%(FullPath)').Substring(0, $([System.String]::Copy('%(FullPath)').LastIndexOf('runtimes'))))'))</Path>
-        </NativeIncludeRoots>
-      </ItemGroup>
-  </Target>
-
-  <Target Name='FSI-PackageManagement' DependsOnTargets='ResolvePackageAssets'>
-    <ItemGroup>
-      <ReferenceLines Remove='@(ReferenceLines)' />
-      <ReferenceLines Include='// Generated from #r ""nuget:Package References""' />
-      <ReferenceLines Include='// ============================================' />
-      <ReferenceLines Include='//' />
-      <ReferenceLines Include='// DOTNET_HOST_PATH:($(DOTNET_HOST_PATH))' />
-      <ReferenceLines Include='// MSBuildSDKsPath:($(MSBuildSDKsPath))' />
-      <ReferenceLines Include='// MSBuildExtensionsPath:($(MSBuildExtensionsPath))' />
-      <ReferenceLines Include='//' />
-      <ReferenceLines Include='#r @""%(FsxResolvedFile.HintPath)""' Condition = ""'%(FsxResolvedFile.NugetPackageId)' != '' and '%(FsxResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(FsxResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(FsxResolvedFile.NugetPackageId)' != 'System.ValueTuple' and Exists('%(FsxResolvedFile.HintPath)')"" KeepDuplicates='false' />
-      <ReferenceLines Include='//' />
-      <ReferenceLines Include='#I @""%(FsxResolvedFile.PackageRoot)""' Condition= ""'%(FsxResolvedFile.PackageRoot)' != ''"" KeepDuplicates='false' />
-      <ReferenceLines Include='#I @""%(NativeIncludeRoots.Path)""' Condition= ""'%(NativeIncludeRoots.Path)' != ''"" KeepDuplicates='false' />
-      <ReferenceLines Include='//' />
-      <ReferenceLines Include='#load @""%(FsxResolvedFile.InitializeSourcePath)""'  Condition = ""'%(FsxResolvedFile.InitializeSourcePath)' != '' and '%(FsxResolvedFile.NugetPackageId)' != 'Microsoft.NETCore.App' and '%(FsxResolvedFile.NugetPackageId)' != 'FSharp.Core' and '%(FsxResolvedFile.NugetPackageId)' != 'System.ValueTuple' and Exists('%(FsxResolvedFile.InitializeSourcePath)')"" KeepDuplicates='false' />
-    </ItemGroup>
-
-    <WriteLinesToFile Lines='@(ReferenceLines)' File='$(MSBuildProjectFullPath).fsx' Overwrite='True' WriteOnlyWhenDifferent='True' />
-    <ItemGroup>
-      <FileWrites Include='$(MSBuildProjectFullPath).fsx' />
-    </ItemGroup>
-  </Target>
-
-</Project>"

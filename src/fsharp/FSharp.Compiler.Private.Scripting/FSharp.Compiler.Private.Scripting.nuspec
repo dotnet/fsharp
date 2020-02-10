@@ -5,17 +5,20 @@
         <language>en-US</language>
         <dependencies>
             <group targetFramework=".NETStandard2.0">
-                <dependency id="FSharp.Core" version="$FSharpCoreVersion$" exclude="Build,Analyzers" />
             </group>
         </dependencies>
     </metadata>
     <files>
         $CommonFileElements$
+        <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.Core.dll" target="lib\netstandard2.0" />
+        <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.Core.xml" target="lib\netstandard2.0" />
         <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.Compiler.Private.Scripting.dll" target="lib\netstandard2.0" />
         <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.Compiler.Private.Scripting.xml" target="lib\netstandard2.0" />
         <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.Compiler.Private.dll" target="lib\netstandard2.0" />
         <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.Compiler.Private.xml" target="lib\netstandard2.0" />
         <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.DependencyManager.dll" target="lib\netstandard2.0" />
         <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.DependencyManager.xml" target="lib\netstandard2.0" />
+        <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.Compiler.Interactive.Settings.dll" target="lib\netstandard2.0" />
+        <file src="FSharp.Compiler.Private.Scripting\$Configuration$\$TargetFramework$\FSharp.Compiler.Interactive.Settings.xml" target="lib\netstandard2.0" />
     </files>
 </package>

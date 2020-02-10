@@ -235,20 +235,12 @@ type FsiEvaluationSession =
     member ReportUnhandledException : exn: exn -> unit
 
     [<CLIEvent>]
-    /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
-    member AssemblyReferenceAdded: IEvent<string>
-
-    [<CLIEvent>]
-    /// Event fires every time a path is added to the include search list, e.g., via `#I`.
-    member IncludePathAdded: IEvent<string>
-
-    [<CLIEvent>]
     /// Event fires at the start of adding a dependency via the dependency manager.
     member DependencyAdding: IEvent<string * string>
 
     [<CLIEvent>]
     /// Event fires at the successful completion of adding a dependency via the dependency manager.
-    member DependencyAdded: IEvent<string * string>
+    member DependencyAdded: IEvent<string * string * string list * string list>
 
     [<CLIEvent>]
     /// Event fires at the failure to adding a dependency via the dependency manager.

@@ -622,7 +622,7 @@ type internal TypeCheckInfo
 
             let getType() =
                 match NameResolution.TryToResolveLongIdentAsType ncenv nenv m plid with
-                | Some x -> tryDestAppTy g x
+                | Some x -> tryTcrefOfAppTy g x
                 | None ->
                     match lastDotPos |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)) with
                     | Some p when lineStr.[p] = '.' ->
@@ -630,7 +630,7 @@ type internal TypeCheckInfo
                         | Some colAtEndOfNames ->                 
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
                             match TryGetTypeFromNameResolution(line, colAtEndOfNames, residueOpt, resolveOverloads) with
-                            | Some x -> tryDestAppTy g x
+                            | Some x -> tryTcrefOfAppTy g x
                             | _ -> ValueNone
                         | None -> ValueNone
                     | _ -> ValueNone
@@ -675,7 +675,7 @@ type internal TypeCheckInfo
                             // it appears we're getting some typings recorded for non-atomic expressions like "f x"
                             when isNil plid ->
                         // lookup based on expression typings successful
-                        Some (items |> List.map (CompletionItem (tryDestAppTy g ty) ValueNone), denv, m)
+                        Some (items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone), denv, m)
                     | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
                         // There was an error, e.g. we have "<expr>." and there is an error determining the type of <expr>  
                         // In this case, we don't want any of the fallback logic, rather, we want to produce zero results.
@@ -708,7 +708,7 @@ type internal TypeCheckInfo
                            
                            // Try again with the qualItems
                            | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty) ->
-                               ValueSome(items |> List.map (CompletionItem (tryDestAppTy g ty) ValueNone), denv, m)
+                               ValueSome(items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone), denv, m)
                            
                            | _ -> ValueNone
 

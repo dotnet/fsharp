@@ -62,9 +62,9 @@ module ReflectionHelper =
 type internal IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
+    abstract ResolveDependencies: scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
     abstract DependencyAdding: IEvent<string * string>
-    abstract DependencyAdded: IEvent<string * string>
+    abstract DependencyAdded: IEvent<string * string * string list * string list>
     abstract DependencyFailed: IEvent<string * string>
 
 [<RequireQualifiedAccess>]
@@ -86,7 +86,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         match ReflectionHelper.getAttributeNamed theType dependencyManagerAttributeName,
                 ReflectionHelper.getInstanceProperty<string> theType namePropertyName,
                 ReflectionHelper.getInstanceProperty<string> theType keyPropertyName,
-                ReflectionHelper.getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
+                ReflectionHelper.getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
                 with
         | None, _, _, _ -> None
         | _, None, _, _ -> None
@@ -96,22 +96,34 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
             Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, resolveDependenciesMethod, outputDir) :> IDependencyManagerProvider)
 
     interface IDependencyManagerProvider with
+
         member __.Name     = instance |> nameProperty
+
         member __.Key      = instance |> keyProperty
-        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, packageManagerTextLines, tfm) =
+        member this.ResolveDependencies(scriptDir, packageManagerTextLines, tfm) =
+
             let key = (this :> IDependencyManagerProvider).Key
             let triggerEvent (evt: Event<string * string>) =
                 for prLine in packageManagerTextLines do
                     evt.Trigger(key, prLine)
             triggerEvent dependencyAddingEvent
-            let arguments = [| box scriptDir; box mainScriptName; box scriptName; box packageManagerTextLines; box tfm |]
+            let arguments = [| box scriptDir; box packageManagerTextLines; box tfm |]
             let succeeded, generatedScripts, additionalIncludeFolders = resolveDeps.Invoke(instance, arguments) :?> _
-            if succeeded then triggerEvent dependencyAddedEvent
-            else triggerEvent dependencyFailedEvent
+
+            for prLine in packageManagerTextLines do
+                if succeeded then
+                    dependencyAddedEvent.Trigger(key, prLine, generatedScripts, additionalIncludeFolders)
+                else
+                    dependencyFailedEvent.Trigger(key, prLine)
+
             succeeded, generatedScripts, additionalIncludeFolders
+
         member __.DependencyAdding = dependencyAddingEvent.Publish
+
         member __.DependencyAdded = dependencyAddedEvent.Publish
+
         member __.DependencyFailed = dependencyFailedEvent.Publish
+
 
 // Resolution Path = Location of FSharp.Compiler.Private.dll
 let assemblySearchPaths = lazy (
@@ -191,9 +203,9 @@ let tryFindDependencyManagerByKey (compilerTools: string list) (outputDir:string
         errorR(Error(FSComp.SR.packageManagerError(e.Message), m))
         None
 
-let resolve (packageManager:IDependencyManagerProvider) implicitIncludeDir mainScriptName fileName m packageManagerTextLines =
+let resolve (packageManager:IDependencyManagerProvider) scriptExt m packageManagerTextLines =
     try
-        Some(packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, packageManagerTextLines, executionTfm))
+        Some(packageManager.ResolveDependencies(scriptExt, packageManagerTextLines, executionTfm))
     with e ->
         let e = ReflectionHelper.stripTieWrapper e
         errorR(Error(FSComp.SR.packageManagerError(e.Message), m))

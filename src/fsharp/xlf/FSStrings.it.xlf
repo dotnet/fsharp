@@ -1627,6 +1627,11 @@
         <target state="translated">simbolo '|}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="new">keyword 'and!'</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
