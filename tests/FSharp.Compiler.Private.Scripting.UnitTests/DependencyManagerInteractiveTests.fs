@@ -3,6 +3,7 @@
 namespace FSharp.DependencyManager.UnitTests
 
 open System
+open System.Collections.Generic
 open System.IO
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
@@ -64,10 +65,10 @@ type DependencyManagerInteractiveTests() =
             dependencyAddingEventCount <- dependencyAddingEventCount + 1
             foundDependencyAdding <- foundDependencyAdding || (key = "nuget" && dependency = referenceText))
             script.DependencyAdding
-        Event.add (fun (dep: string * string * string list * string list * string list) ->
+        Event.add (fun (dep: string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>) ->
             let key, dependency, _references, _generatedScripts, _packageRoots = dep
-            generatedScriptsCount <- _generatedScripts.Length
-            packageRootsCount <- _packageRoots.Length
+            generatedScriptsCount <- _generatedScripts |> Seq.length
+            packageRootsCount <- _packageRoots |> Seq.length
             dependencyAddedEventCount <- dependencyAddedEventCount + 1
             foundDependencyAdded <- foundDependencyAdded || (key = "nuget" && dependency = referenceText))
             script.DependencyAdded
