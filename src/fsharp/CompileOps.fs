@@ -2011,7 +2011,8 @@ type CcuLoadFailureAction =
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
-    { mutable noFeedback: bool
+    { mutable primaryAssembly: ILAssemblyRef
+      mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string (* normally "." *)
       mutable openDebugInformationForLaterStaticLinking: bool (* only for --standalone *)
@@ -2174,6 +2175,7 @@ type TcConfigBuilder =
 
     static member Initial =
         {
+          primaryAssembly = mkSimpleAssemblyRef "mscorlib"
           light = None
           noFeedback = false
           stackReserveSize = None
@@ -2654,14 +2656,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         match tryFindPrimaryAssembly data with
         | Some asmRef -> asmRef
         | _ ->
-            // Fallback: Get assembly that the compiler is currently running in.
-            let asm = typeof<obj>.Assembly
-            try
-                Path.GetFileNameWithoutExtension asm.Location
-                |> mkSimpleAssemblyRef
-            with
-            | _ ->
-                error(InternalError("Primary assembly not found.", Range.range0))
+            // We could not find the primary assembly out of the referenced dlls; therefore use the one set in TcConfigBuilder.
+            data.primaryAssembly
 
     // Look for an explicit reference to mscorlib/netstandard.dll or System.Runtime.dll and use that to compute clrRoot and targetFrameworkVersion
     let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(primaryAssemblyRef.Name)

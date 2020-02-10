@@ -250,7 +250,8 @@ type VersionFlag =
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
-    { mutable noFeedback: bool
+    { mutable primaryAssembly: ILAssemblyRef
+      mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string
       mutable openDebugInformationForLaterStaticLinking: bool
