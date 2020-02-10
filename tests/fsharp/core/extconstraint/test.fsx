@@ -646,6 +646,21 @@ module Test2 =
     let z = "Bar".Foo("foo")
     let z0 = (Bar "Bar").Foo("foo")
 
+module PositiveTestOfFSharpPlusDesignPattern1 =
+    let inline InvokeMap (mapping: ^F) (source: ^I) : ^R =  
+        (^I : (static member Map : ^I * ^F ->  ^R) source, mapping)
+
+    // A simulated collection with a'Map' witness
+    type Coll<'T>(x: 'T) =
+        member _.X = x
+        static member Map (source: Coll<'a>, mapping: 'a->'b) : Coll<'b> = new Coll<'b>(mapping source.X)
+
+    let inline AddTwice (x: Coll<'a>) (v: 'a) : Coll<'a> =
+        InvokeMap ((+) v) (InvokeMap ((+) v) x)
+
+    check "vrejklervjlr1" (AddTwice (Coll(3)) 2).X 7
+    check "vrejklervjlr2" (AddTwice (Coll(3y)) 2y).X 7y
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else

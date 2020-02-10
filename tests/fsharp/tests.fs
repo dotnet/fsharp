@@ -2992,6 +2992,19 @@ module TypecheckTests =
         singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg131"
 
     [<Test>] 
+    // This code must pass compilation with /langversion:4.7 on because RFC FS-1043 is not supported
+    let ``type check neg132 4_7`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s -o:neg132-4.7.exe --langversion:4.7 --warnaserror" cfg.fsc_flags ["neg132.fs"]
+        peverify cfg "neg132-4.7.exe"
+        exec cfg ("." ++ "neg132-4.7.exe") ""
+
+    [<Test>] 
+    // This code must not pass compilation with /langversion:preview on because RFC FS-1043 is supported
+    let ``type check neg132 preview`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg132"
+
+    [<Test>] 
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
 
     [<Test>] 
