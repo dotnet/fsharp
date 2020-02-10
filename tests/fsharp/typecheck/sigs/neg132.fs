@@ -1,7 +1,7 @@
 
 module Neg132 
 
-// This code starts failing to compile once TFC-1043 is enabled
+// This code starts failing to compile once RFC-1043 is enabled
 //
 // This is because the constraint relies on return types in the set of support types.
 // 
@@ -25,4 +25,3 @@ let inline AddTwice (x: Coll<'a>) (v: 'a) : Coll<'a> =
 
 let v1 = AddTwice (Coll(3)) 2
 let v2 = AddTwice (Coll(3uy)) 2uy
-
