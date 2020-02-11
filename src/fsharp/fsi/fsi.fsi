@@ -3,6 +3,7 @@
 
 module public FSharp.Compiler.Interactive.Shell
 
+open System.Collections.Generic
 open System.IO
 open System.Threading
 open FSharp.Compiler
@@ -240,7 +241,7 @@ type FsiEvaluationSession =
 
     [<CLIEvent>]
     /// Event fires at the successful completion of adding a dependency via the dependency manager.
-    member DependencyAdded: IEvent<string * string * string list * string list * string list>
+    member DependencyAdded: IEvent<string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>>
 
     [<CLIEvent>]
     /// Event fires at the failure to adding a dependency via the dependency manager.

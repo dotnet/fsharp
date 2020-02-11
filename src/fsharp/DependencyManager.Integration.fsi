@@ -3,6 +3,7 @@
 /// Helper members to integrate DependencyManagers into F# codebase
 module internal FSharp.Compiler.DependencyManagerIntegration
 
+open System.Collections.Generic
 open FSharp.Compiler.Range
 
 type IDependencyManagerProvider =
@@ -10,7 +11,7 @@ type IDependencyManagerProvider =
     abstract Key: string
     abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
     abstract DependencyAdding: IEvent<string * string>
-    abstract DependencyAdded: IEvent<string * string * string list * string list * string list>
+    abstract DependencyAdded: IEvent<string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>>
     abstract DependencyFailed: IEvent<string * string>
 
 [<RequireQualifiedAccess>]
