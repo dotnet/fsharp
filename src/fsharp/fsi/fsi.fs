@@ -959,7 +959,7 @@ type internal FsiDynamicCompiler
 
     let valueBoundEvent = Control.Event<_>()
     let dependencyAddingEvent = Control.Event<string * string>()
-    let dependencyAddedEvent = Control.Event<string * string * string list * string list>()
+    let dependencyAddedEvent = Control.Event<string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>>()
     let dependencyFailedEvent = Control.Event<string * string>()
 
     let mutable fragmentId = 0
@@ -1303,9 +1303,9 @@ type internal FsiDynamicCompiler
                             Event.add dependencyAddingEvent.Trigger packageManager.DependencyAdding
                             Event.add dependencyAddedEvent.Trigger packageManager.DependencyAdded
                             Event.add dependencyFailedEvent.Trigger packageManager.DependencyFailed
-                        match DependencyManagerIntegration.resolve packageManager ".fsx" m packageManagerTextLines with
+                        match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" "stdin.fsx"  ".fsx" m packageManagerTextLines with
                         | None -> istate // error already reported
-                        | Some (succeeded, generatedScripts, additionalIncludeFolders) ->    //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                        | Some (succeeded, generatedScripts, additionalIncludeFolders) ->
                             if succeeded then
                                 tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
                             else
