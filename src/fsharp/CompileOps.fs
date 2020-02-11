@@ -5153,7 +5153,7 @@ module ScriptPreprocessClosure =
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false), nowarns
     
-    let FindClosureFiles(_mainFile, _m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager: Lexhelp.LexResourceManager) =
+    let FindClosureFiles(mainFile, _m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager: Lexhelp.LexResourceManager) =
         let mutable tcConfig = origTcConfig
         
         let observedSources = Observed()
@@ -5177,9 +5177,9 @@ module ScriptPreprocessClosure =
                                 let inline snd3 (_, b, _) = b
                                 let packageManagerTextLines = packageManagerLines |> List.map snd3
 
-                                match DependencyManagerIntegration.resolve packageManager ".fsx" m packageManagerTextLines with
+                                match DependencyManagerIntegration.resolve packageManager tcConfig.implicitIncludeDir mainFile scriptName ".fsx" m packageManagerTextLines with
                                 | None -> () // error already reported
-                                | Some (succeeded, generatedScripts, additionalIncludeFolders) ->  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                | Some (succeeded, generatedScripts, additionalIncludeFolders) ->
                                     // This may incrementally update tcConfig too with new #r references
                                     // New package text is ignored on this second phase
                                     match succeeded with

@@ -19,7 +19,7 @@
       <Action Type="Ngen" Path="FSharp.Compiler.Interactive.Settings.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Server.Shared.dll" />
       <Action Type="Ngen" Path="FSharp.Core.dll" />
-      <Action Type="Ngen" Path="FSharp.DependencyManager.dll" />
+      <Action Type="Ngen" Path="FSharp.DependencyManager.Nuget.dll" />
       <Action Type="Ngen" Path="FSharp.Editor.dll" />
       <Action Type="Ngen" Path="FSharp.Editor.Helpers.dll" />
       <Action Type="Ngen" Path="FSharp.UIResources.dll" />
