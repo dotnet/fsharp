@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.DependencyManager
+namespace FSharp.DependencyManager.Nuget
 
 open System
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
-open FSharp.DependencyManager
-open FSharp.DependencyManager.Utilities
-open FSharp.DependencyManager.ProjectFile
+open FSharp.DependencyManager.Nuget
+open FSharp.DependencyManager.Nuget.Utilities
+open FSharp.DependencyManager.Nuget.ProjectFile
 
 
 module FSharpDependencyManager =
@@ -135,20 +135,23 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
     member __.Key = key
 
-    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string) : bool * string list * string list =
+    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string) : bool * string list * string list * string list =
 
         let scriptExt, poundRprefix  =
             match scriptExt with
             | ".csx" -> ".csx", "#r \"" 
             | _ -> ".fsx", "#r @\"" 
+
         let packageReferences, binLogPath =
             packageManagerTextLines
             |> List.ofSeq
             |> FSharpDependencyManager.parsePackageReference
+
         let packageReferenceLines =
             packageReferences
             |> List.map FSharpDependencyManager.formatPackageReference
             |> Seq.concat
+
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
         // Generate a project files
@@ -170,6 +173,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
             match resolutionsFile with
             | Some file ->
                 let resolutions = getResolutionsFromFile file
+                let references = (findReferencesFromResolutions resolutions) |> Array.toList
                 let scripts =
                     let scriptPath = projectPath + scriptExt
                     let scriptBody =  makeScriptFromResolutions resolutions poundRprefix
@@ -178,7 +182,8 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
                     List.concat [ [scriptPath]; loads]
                 let includes = (findIncludesFromResolutions resolutions) |> Array.toList
 
-                result, scripts, includes
-            | None -> result, [], []
+                result, references, scripts, includes
+
+            | None -> result, [], [], []
 
         generateAndBuildProjectArtifacts
