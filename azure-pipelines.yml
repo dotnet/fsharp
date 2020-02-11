@@ -86,6 +86,8 @@ stages:
                     /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                     /p:PublishToSymbolServer=true
                     /p:VisualStudioDropName=$(VisualStudioDropName)
+          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
+            displayName: End to end build tests
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -265,6 +267,17 @@ stages:
               publishLocation: Container
             continueOnError: true
             condition: failed()
+
+        # End to end build
+        - job: EndToEndBuildTests
+          pool:
+            vmImage: windows-2019
+          steps:
+          - checkout: self
+            clean: true
+          - script: .\Build.cmd -c Release
+          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests -c Release
+            displayName: End to end build tests
 
         # Source Build Linux
         - job: SourceBuild_Linux
