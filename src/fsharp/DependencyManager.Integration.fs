@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.DependencyManagerIntegration
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Reflection
 open FSharp.Compiler.DotNetFrameworkDependencies
@@ -64,8 +65,9 @@ type internal IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
     abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
+
     abstract DependencyAdding: IEvent<string * string>
-    abstract DependencyAdded: IEvent<string * string * string list * string list * string list>
+    abstract DependencyAdded: IEvent<string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>>
     abstract DependencyFailed: IEvent<string * string>
 
 [<RequireQualifiedAccess>]
@@ -79,9 +81,9 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
     let nameProperty     = nameProperty.GetValue >> string
     let keyProperty      = keyProperty.GetValue >> string
 
-    let dependencyAddingEvent = Event<_>()
-    let dependencyAddedEvent = Event<_>()
-    let dependencyFailedEvent = Event<_>()
+    let dependencyAddingEvent = Event<string * string>()
+    let dependencyAddedEvent = Event<string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>>()
+    let dependencyFailedEvent = Event<string * string>()
 
     static member InstanceMaker (theType: System.Type, outputDir: string option) =
         match ReflectionHelper.getAttributeNamed theType dependencyManagerAttributeName,
@@ -144,7 +146,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
 
             for prLine in packageManagerTextLines do
                 if succeeded then
-                    dependencyAddedEvent.Trigger(key, prLine, references, generatedScripts, additionalIncludeFolders)
+                    dependencyAddedEvent.Trigger(key, prLine, references |> List.toSeq, generatedScripts |> List.toSeq, additionalIncludeFolders |> List.toSeq)
                 else
                     dependencyFailedEvent.Trigger(key, prLine)
 
