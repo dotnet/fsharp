@@ -64,8 +64,8 @@ type DependencyManagerInteractiveTests() =
             dependencyAddingEventCount <- dependencyAddingEventCount + 1
             foundDependencyAdding <- foundDependencyAdding || (key = "nuget" && dependency = referenceText))
             script.DependencyAdding
-        Event.add (fun (dep: string * string * string list * string list) ->
-            let key, dependency, _generatedScripts, _packageRoots = dep
+        Event.add (fun (dep: string * string * string list * string list * string list) ->
+            let key, dependency, _references, _generatedScripts, _packageRoots = dep
             generatedScriptsCount <- _generatedScripts.Length
             packageRootsCount <- _packageRoots.Length
             dependencyAddedEventCount <- dependencyAddedEventCount + 1

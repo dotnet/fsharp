@@ -3,7 +3,7 @@
 namespace FSharp.DependencyManager.UnitTests
 
 open System.Linq
-open FSharp.DependencyManager
+open FSharp.DependencyManager.Nuget
 open NUnit.Framework
 
 [<TestFixture>]

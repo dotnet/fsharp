@@ -148,7 +148,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Private.Scr
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Private.Scripting.UnitTests", "tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj", "{09F56540-AFA5-4694-B7A6-0DBF6D4618C2}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.DependencyManager", "src\fsharp\FSharp.DependencyManager\FSharp.DependencyManager.fsproj", "{DFA30881-C0B1-4813-B087-C21B5AF9B77F}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.DependencyManager.Nuget", "src\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj", "{DFA30881-C0B1-4813-B087-C21B5AF9B77F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualFSharpTemplates", "vsintegration\Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj", "{AA259A37-418F-4E18-87B2-C7D5F8C26CC4}"
 EndProject
