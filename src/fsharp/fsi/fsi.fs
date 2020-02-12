@@ -1302,8 +1302,9 @@ type internal FsiDynamicCompiler
                                 removeErrorLinesFromScript ()
                             for folder in additionalIncludeFolders do
                                 tcConfigB.AddIncludePath(m, folder, "")
-                            if generatedScripts.Length > 0 then
-                                fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, generatedScripts, lexResourceManager, errorLogger)
+                            let scripts = generatedScripts |> Seq.toList
+                            if generatedScripts |> Seq.length > 0 then
+                                fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, errorLogger)
                             else istate
                     with _ ->
                         // An exception occured during processing, so remove the lines causing the error from the package manager list.
@@ -1321,7 +1322,7 @@ type internal FsiDynamicCompiler
                     (fun st (packageManagerPrefix,m,nm) -> fsiDynamicCompiler.EvalDependencyManagerTextFragment (packageManagerPrefix,m,nm); st),
                     (fun _ _ -> ()))  
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
-      
+
     member fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, errorLogger: ErrorLogger) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
         match sourceFiles with 

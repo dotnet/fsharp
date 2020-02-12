@@ -9,7 +9,7 @@ open FSharp.Compiler.Range
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string seq * string seq
 
 [<RequireQualifiedAccess>]
 type ReferenceType =
@@ -21,5 +21,5 @@ val tryFindDependencyManagerInPath: string list -> string option -> range -> str
 val tryFindDependencyManagerByKey: string list -> string option -> range -> string -> IDependencyManagerProvider option
 val removeDependencyManagerKey: string -> string -> string
 val createPackageManagerUnknownError: string list -> string option -> string -> range -> exn
-val resolve: IDependencyManagerProvider -> string -> string -> string -> string -> range -> string seq -> (bool * string list * string list) option
+val resolve: IDependencyManagerProvider -> string -> string -> string -> string -> range -> string seq -> (bool * string seq * string seq) option
 

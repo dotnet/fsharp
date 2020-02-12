@@ -64,7 +64,7 @@ module ReflectionHelper =
 type internal IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string seq * string seq
 
 [<RequireQualifiedAccess>]
 type ReferenceType =
@@ -121,7 +121,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                     None, [||]
 
             let succeeded, _references, generatedScripts, additionalIncludeFolders =
-                let empty = List.empty<string>
+                let empty = Seq.empty<string>
                 let result =
                     match method with
                     | Some m -> m.Invoke(instance, arguments) :?> _
@@ -132,8 +132,8 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                 //     3 - (bool * string list * string list)
                 let tupleFields = result |> FSharpValue.GetTupleFields
                 match tupleFields |> Array.length with
-                | 4 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string list, tupleFields.[2] :?> string list, tupleFields.[3] :?> string list
-                | 3 -> tupleFields.[0] :?> bool, empty, tupleFields.[1] :?> string list, tupleFields.[2] :?> string list
+                | 4 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string seq, tupleFields.[2] :?> string seq, tupleFields.[3] :?> string seq
+                | 3 -> tupleFields.[0] :?> bool, empty, tupleFields.[1] :?> string list  |> List.toSeq, tupleFields.[2] :?> string list |> List.toSeq
                 | _ -> false, empty, empty, empty
 
 //            for prLine in packageManagerTextLines do

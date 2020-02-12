@@ -5185,7 +5185,7 @@ module ScriptPreprocessClosure =
                                     match succeeded with
                                     | true ->
                                         // Resolution produced no errors
-                                        if not (isNil additionalIncludeFolders) then
+                                        if not (Seq.isEmpty additionalIncludeFolders) then
                                             let tcConfigB = tcConfig.CloneOfOriginalBuilder
                                             for folder in additionalIncludeFolders do 
                                                 tcConfigB.AddIncludePath(m, folder, "")
