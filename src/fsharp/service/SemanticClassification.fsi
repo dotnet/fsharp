@@ -2,6 +2,13 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
+open FSharp.Compiler
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.Range
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.TcGlobals
+
 [<RequireQualifiedAccess>]
 type SemanticClassificationType =
     | ReferenceType
@@ -23,12 +30,6 @@ type SemanticClassificationType =
 /// Extension methods for the TcResolutions type.
 [<AutoOpen>]
 module internal TcResolutionsExtensions =
-    open FSharp.Compiler
-    open FSharp.Compiler.AccessibilityLogic
-    open FSharp.Compiler.Tastops
-    open FSharp.Compiler.Range
-    open FSharp.Compiler.NameResolution
-    open FSharp.Compiler.TcGlobals
 
     val (|CNR|) : cnr: CapturedNameResolution -> (pos * Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range)
 

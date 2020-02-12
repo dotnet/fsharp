@@ -2,6 +2,25 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
+open System.Diagnostics
+open System.Collections.Generic
+open System.Collections.Immutable
+
+open FSharp.Core.Printf
+open FSharp.Compiler.AbstractIL.Internal.Library  
+
+open FSharp.Compiler
+open FSharp.Compiler.Range
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Infos
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Lib
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.TcGlobals 
+open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
+
 [<RequireQualifiedAccess>]
 type SemanticClassificationType =
     | ReferenceType
@@ -22,24 +41,6 @@ type SemanticClassificationType =
 
 [<AutoOpen>]
 module TcResolutionsExtensions =
-    open System.Diagnostics
-    open System.Collections.Generic
-    open System.Collections.Immutable
-
-    open FSharp.Core.Printf
-    open FSharp.Compiler.AbstractIL.Internal.Library  
-
-    open FSharp.Compiler
-    open FSharp.Compiler.Range
-    open FSharp.Compiler.Tast
-    open FSharp.Compiler.Infos
-    open FSharp.Compiler.NameResolution
-    open FSharp.Compiler.ErrorLogger
-    open FSharp.Compiler.Lib
-    open FSharp.Compiler.PrettyNaming
-    open FSharp.Compiler.Tastops
-    open FSharp.Compiler.TcGlobals 
-    open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 
     let (|CNR|) (cnr:CapturedNameResolution) =
         (cnr.Pos, cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
@@ -106,9 +107,7 @@ module TcResolutionsExtensions =
                     (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
                     || Tastops.isRefCellTy g rfinfo.RecdField.FormalType
 
-                let duplicates = HashSet<range>({ new IEqualityComparer<range> with 
-                                                      member _.Equals(x1, x2) = Range.equals x1 x2 
-                                                      member _.GetHashCode o = o.GetHashCode() })
+                let duplicates = HashSet<range>(Range.comparer)
 
                 let results = ImmutableArray.CreateBuilder()
                 let inline add m typ =
