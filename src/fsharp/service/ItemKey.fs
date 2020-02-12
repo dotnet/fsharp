@@ -106,12 +106,7 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
         if isDisposed then
             raise (ObjectDisposedException("ItemKeyStore"))
 
-    let viewAccessor = mmf.CreateViewAccessor()
-
-    // This has to be mutable because BlobReader is a struct and we have to mutate its contents.
-    let mutable reader = BlobReader(viewAccessor.SafeMemoryMappedViewHandle.DangerousGetHandle() |> NativePtr.ofNativeInt, int length)
-
-    member _.ReadRange() =
+    member _.ReadRange(reader: byref<BlobReader>) =
         let startLine = reader.ReadInt32()
         let startColumn = reader.ReadInt32()
         let endLine = reader.ReadInt32()
@@ -122,11 +117,18 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
         let posEnd = mkPos endLine endColumn
         mkFileIndexRange fileIndex posStart posEnd
 
-    member _.ReadKeyString() =
+    member _.ReadKeyString(reader: byref<BlobReader>) =
         let size = reader.ReadInt32()
         let keyString = ReadOnlySpan<byte>(reader.CurrentPointer |> NativePtr.toVoidPtr, size)
         reader.Offset <- reader.Offset + size
         keyString
+
+    member this.ReadFirstKeyString() =
+        use view = mmf.CreateViewAccessor(0L, length)
+        let mutable reader = BlobReader(view.SafeMemoryMappedViewHandle.DangerousGetHandle() |> NativePtr.ofNativeInt, int length)
+        this.ReadRange &reader |> ignore
+        let bytes = (this.ReadKeyString &reader).ToArray()
+        ReadOnlySpan.op_Implicit bytes
 
     member this.FindAll(item: Item) =
         checkDispose ()
@@ -136,19 +138,20 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
         match builder.TryBuildAndReset() with
         | None -> Seq.empty
         | Some(singleStore : ItemKeyStore) ->
-            singleStore.ReadRange() |> ignore
-            let keyString1 = singleStore.ReadKeyString()
+            let keyString1 = singleStore.ReadFirstKeyString()
+            (singleStore :> IDisposable).Dispose()
 
             let results = ResizeArray()
 
+            use view = mmf.CreateViewAccessor(0L, length)
+            let mutable reader = BlobReader(view.SafeMemoryMappedViewHandle.DangerousGetHandle() |> NativePtr.ofNativeInt, int length)
+
             reader.Offset <- 0
             while reader.Offset < reader.Length do
-                let m = this.ReadRange()
-                let keyString2 = this.ReadKeyString()
+                let m = this.ReadRange &reader
+                let keyString2 = this.ReadKeyString &reader
                 if keyString1.SequenceEqual keyString2 then
                     results.Add m
-
-            (singleStore :> IDisposable).Dispose()
 
             results :> range seq
 
@@ -156,7 +159,6 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
 
         member _.Dispose() =
             isDisposed <- true
-            viewAccessor.Dispose()
             mmf.Dispose()
 
 and [<Sealed>] ItemKeyStoreBuilder() =
@@ -315,6 +317,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.UnionCase(info, _) -> 
             writeString ItemKeyTags.typeUnionCase
             writeEntityRef info.TyconRef
+            writeString info.Name
             
         | Item.ActivePatternResult(info, _, _, _) ->
             writeString ItemKeyTags.itemActivePattern
