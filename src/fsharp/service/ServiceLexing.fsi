@@ -4,6 +4,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler 
 
+// Prevents warnings of experimental APIs within the signature file itself.
 #nowarn "57"
 
 type Position = int * int
