@@ -69,8 +69,7 @@ module TcResolutionsExtensions =
                        valRefEq g g.typeof_vref vref ||
                        valRefEq g g.typedefof_vref vref ||
                        valRefEq g g.sizeof_vref vref ||
-                       valRefEq g g.nameof_vref vref
-                    then Some()
+                       valRefEq g g.nameof_vref vref then Some()
                     else None
             
                 let (|EnumCaseFieldInfo|_|) (rfinfo : RecdFieldInfo) =

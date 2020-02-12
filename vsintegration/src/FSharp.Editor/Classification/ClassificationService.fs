@@ -24,12 +24,13 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
 #nowarn "57"
 
+open Microsoft.CodeAnalysis
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.Lexer
 
 type SemanticClassificationData = (struct(FSharp.Compiler.Range.range * SemanticClassificationType)[])
-type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<struct(FSharp.Compiler.Range.range * SemanticClassificationType)>>
+type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<struct(range * SemanticClassificationType)>>
 
 [<Sealed>]
 type DocumentCache<'Value when 'Value : not struct>() =
@@ -42,7 +43,7 @@ type DocumentCache<'Value when 'Value : not struct>() =
 
         match cache.Get(doc.Id.ToString()) with
         | null -> return ValueNone
-        | :? (Microsoft.CodeAnalysis.VersionStamp * 'Value) as value ->
+        | :? (VersionStamp * 'Value) as value ->
             if fst value = currentVersion then
                 return ValueSome(snd value)
             else

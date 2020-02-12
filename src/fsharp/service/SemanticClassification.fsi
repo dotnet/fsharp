@@ -9,6 +9,7 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TcGlobals
 
+/// A kind that determines what range in a source's text is semantically classified as after type-checking.
 [<RequireQualifiedAccess>]
 type SemanticClassificationType =
     | ReferenceType
