@@ -66,10 +66,6 @@ type internal IDependencyManagerProvider =
     abstract Key: string
     abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
 
-    abstract DependencyAdding: IEvent<string * string>
-    abstract DependencyAdded: IEvent<string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>>
-    abstract DependencyFailed: IEvent<string * string>
-
 [<RequireQualifiedAccess>]
 type ReferenceType =
 | RegisteredDependencyManager of IDependencyManagerProvider
@@ -80,10 +76,6 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
     let instance = Activator.CreateInstance(theType, [|outputDir :> obj|])
     let nameProperty     = nameProperty.GetValue >> string
     let keyProperty      = keyProperty.GetValue >> string
-
-    let dependencyAddingEvent = Event<string * string>()
-    let dependencyAddedEvent = Event<string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>>()
-    let dependencyFailedEvent = Event<string * string>()
 
     static member InstanceMaker (theType: System.Type, outputDir: string option) =
         match ReflectionHelper.getAttributeNamed theType dependencyManagerAttributeName,
@@ -106,11 +98,11 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
 
         member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm) =
 
-            let key = (this :> IDependencyManagerProvider).Key
-            let triggerEvent (evt: Event<string * string>) =
-                for prLine in packageManagerTextLines do
-                    evt.Trigger(key, prLine)
-            triggerEvent dependencyAddingEvent
+//            let key = (this :> IDependencyManagerProvider).Key
+//            let triggerEvent (evt: Event<string * string>) =
+//                for prLine in packageManagerTextLines do
+//                    evt.Trigger(key, prLine)
+//            triggerEvent dependencyAddingEvent
 
 
             // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resoveDepsEx
@@ -128,7 +120,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                 else
                     None, [||]
 
-            let succeeded, references, generatedScripts, additionalIncludeFolders =
+            let succeeded, _references, generatedScripts, additionalIncludeFolders =
                 let empty = List.empty<string>
                 let result =
                     match method with
@@ -144,19 +136,13 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                 | 3 -> tupleFields.[0] :?> bool, empty, tupleFields.[1] :?> string list, tupleFields.[2] :?> string list
                 | _ -> false, empty, empty, empty
 
-            for prLine in packageManagerTextLines do
-                if succeeded then
-                    dependencyAddedEvent.Trigger(key, prLine, references |> List.toSeq, generatedScripts |> List.toSeq, additionalIncludeFolders |> List.toSeq)
-                else
-                    dependencyFailedEvent.Trigger(key, prLine)
+//            for prLine in packageManagerTextLines do
+//                if succeeded then
+//                    dependencyAddedEvent.Trigger(key, prLine, references |> List.toSeq, generatedScripts |> List.toSeq, additionalIncludeFolders |> List.toSeq)
+//                else
+//                    dependencyFailedEvent.Trigger(key, prLine)
 
             succeeded, generatedScripts, additionalIncludeFolders
-
-        member __.DependencyAdding = dependencyAddingEvent.Publish
-
-        member __.DependencyAdded = dependencyAddedEvent.Publish
-
-        member __.DependencyFailed = dependencyFailedEvent.Publish
 
 
 // Resolution Path = Location of FSharp.Compiler.Private.dll

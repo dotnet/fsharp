@@ -958,16 +958,11 @@ type internal FsiDynamicCompiler
     let assemblyName = "FSI-ASSEMBLY"
 
     let valueBoundEvent = Control.Event<_>()
-    let dependencyAddingEvent = Control.Event<string * string>()
-    let dependencyAddedEvent = Control.Event<string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>>()
-    let dependencyFailedEvent = Control.Event<string * string>()
 
     let mutable fragmentId = 0
     let mutable prevIt : ValRef option = None
 
     let mutable needsPackageResolution = false
-
-    let mutable subscribedDependencyManagers = HashSet<string>()
 
     let generateDebugInfo = tcConfigB.debuginfo
 
@@ -1298,11 +1293,6 @@ type internal FsiDynamicCompiler
                     let removeErrorLinesFromScript () =
                         tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
                     try
-                        let newDependencyManager = subscribedDependencyManagers.Add(packageManagerKey)
-                        if newDependencyManager then
-                            Event.add dependencyAddingEvent.Trigger packageManager.DependencyAdding
-                            Event.add dependencyAddedEvent.Trigger packageManager.DependencyAdded
-                            Event.add dependencyFailedEvent.Trigger packageManager.DependencyFailed
                         match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" "stdin.fsx"  ".fsx" m packageManagerTextLines with
                         | None -> istate // error already reported
                         | Some (succeeded, generatedScripts, additionalIncludeFolders) ->
@@ -1403,12 +1393,6 @@ type internal FsiDynamicCompiler
         valuePrinter.FormatValue(obj, objTy)
 
     member __.ValueBound = valueBoundEvent.Publish
-
-    member __.DependencyAdding = dependencyAddingEvent.Publish
-
-    member __.DependencyAdded = dependencyAddedEvent.Publish
-
-    member __.DependencyFailed = dependencyFailedEvent.Publish
 
 //----------------------------------------------------------------------------
 // ctrl-c handling
@@ -2856,18 +2840,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
     member __.ValueBound = fsiDynamicCompiler.ValueBound
 
-    [<CLIEvent>]
-    /// Event fires at the start of adding a dependency via the dependency manager.
-    member __.DependencyAdding = fsiDynamicCompiler.DependencyAdding
-
-    [<CLIEvent>]
-    /// Event fires at the successful completion of adding a dependency via the dependency manager.
-    member __.DependencyAdded = fsiDynamicCompiler.DependencyAdded
-
-    [<CLIEvent>]
-    /// Event fires at the failure to adding a dependency via the dependency manager.
-    member __.DependencyFailed = fsiDynamicCompiler.DependencyFailed
- 
     /// Performs these steps:
     ///    - Load the dummy interaction, if any
     ///    - Set up exception handling, if any

@@ -10,9 +10,6 @@ type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
     abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string list * string list
-    abstract DependencyAdding: IEvent<string * string>
-    abstract DependencyAdded: IEvent<string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>>
-    abstract DependencyFailed: IEvent<string * string>
 
 [<RequireQualifiedAccess>]
 type ReferenceType =
