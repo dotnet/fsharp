@@ -1,0 +1,2 @@
+# Interactive.DependencyManager resource strings 
+notUsed,"Not used."
