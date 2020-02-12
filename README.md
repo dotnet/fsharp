@@ -115,3 +115,4 @@ If you're curious about F# itself, check out these links:
 * [Get started with F#](https://docs.microsoft.com/dotnet/fsharp/get-started/)
 * [F# Software Foundation](https://fsharp.org)
 * [F# Testimonials](https://fsharp.org/testimonials)
+

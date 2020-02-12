@@ -477,7 +477,7 @@ let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
         let visitType ty =         
             // We deliberately only check the fully stripped type for accessibility, 
             // because references to private type abbreviations are permitted
-            match tryDestAppTy cenv.g ty with 
+            match tryTcrefOfAppTy cenv.g ty with 
             | ValueNone -> ()
             | ValueSome tcref ->
                 let thisCompPath = compPathOfCcu cenv.viewCcu
@@ -493,7 +493,7 @@ let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
         let visitType ty =         
             // We deliberately only check the fully stripped type for accessibility, 
             // because references to private type abbreviations are permitted
-            match tryDestAppTy cenv.g ty with 
+            match tryTcrefOfAppTy cenv.g ty with 
             | ValueNone -> ()
             | ValueSome tcref ->
                 let thisCompPath = compPathOfCcu cenv.viewCcu
@@ -618,7 +618,7 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
         let visitAppTy (tcref, tinst) = 
             if isByrefLikeTyconRef cenv.g m tcref then
                 let visitType ty0 =
-                    match tryDestAppTy cenv.g ty0 with
+                    match tryTcrefOfAppTy cenv.g ty0 with
                     | ValueNone -> ()
                     | ValueSome tcref2 ->  
                         if isByrefTyconRef cenv.g tcref2 then 
@@ -973,7 +973,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
             // Translate to quotation data
             try 
                 let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.No) 
-                let qdata = QuotationTranslator.ConvExprPublic qscope QuotationTranslator.QuotationTranslationEnv.Empty ast  
+                let qdata = QuotationTranslator.ConvExprPublic qscope ast  
                 let typeDefs, spliceTypes, spliceExprs = qscope.Close()
                 match savedConv.Value with 
                 | None -> savedConv:= Some (typeDefs, List.map fst spliceTypes, List.map fst spliceExprs, qdata)
@@ -1024,7 +1024,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
           when not virt && baseVal.BaseOrThisInfo = BaseVal ->
         
         // Disallow calls to abstract base methods on IL types. 
-        match tryDestAppTy g baseVal.Type with
+        match tryTcrefOfAppTy g baseVal.Type with
         | ValueSome tcref when tcref.IsILTycon ->
             try
                 // This is awkward - we have to explicitly re-resolve back to the IL metadata to determine if the method is abstract.
@@ -1752,18 +1752,13 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
                 // no real need for that except that it helps us to bundle all reflected definitions up into 
                 // one blob for pickling to the binary format
                 try
-                    let ety = tyOfExpr g bindRhs
-                    let tps, taue, _ = 
-                      match bindRhs with 
-                      | Expr.TyLambda (_, tps, b, _, _) -> tps, b, applyForallTy g ety (List.map mkTyparTy tps)
-                      | _ -> [], bindRhs, ety
-                    let env = QuotationTranslator.QuotationTranslationEnv.Empty.BindTypars tps
                     let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.Yes) 
-                    QuotationTranslator.ConvExprPublic qscope env taue  |> ignore
-                    let _, _, argExprs = qscope.Close()
-                    if not (isNil argExprs) then 
+                    let methName = v.CompiledName g.CompilerGlobalState
+                    QuotationTranslator.ConvReflectedDefinition qscope methName v bindRhs |> ignore
+
+                    let _, _, exprSplices = qscope.Close()
+                    if not (isNil exprSplices) then 
                         errorR(Error(FSComp.SR.chkReflectedDefCantSplice(), v.Range))
-                    QuotationTranslator.ConvMethodBase qscope env (v.CompiledName g.CompilerGlobalState, v) |> ignore
                 with 
                   | QuotationTranslator.InvalidQuotedTerm e -> 
                           errorR e

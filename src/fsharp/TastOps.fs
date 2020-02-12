@@ -826,7 +826,7 @@ let tcrefOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> 
 let argsOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(_, tinst) -> tinst | _ -> [])
 let tryDestTyparTy g ty = ty |> stripTyEqns g |> (function TType_var v -> ValueSome v | _ -> ValueNone)
 let tryDestFunTy g ty = ty |> stripTyEqns g |> (function TType_fun (tyv, tau) -> ValueSome(tyv, tau) | _ -> ValueNone)
-let tryDestAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> ValueSome tcref | _ -> ValueNone)
+let tryTcrefOfAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> ValueSome tcref | _ -> ValueNone)
 let tryDestAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, tys) -> ValueSome (anonInfo, tys) | _ -> ValueNone)
 
 let tryAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var v -> ValueSome v | TType_measure unt when isUnitParMeasure g unt -> ValueSome(destUnitParMeasure g unt) | _ -> ValueNone)
@@ -1344,6 +1344,7 @@ let mkUnionCaseFieldGetUnprovenViaExprAddr (e1, cref, tinst, j, m) = mkUnionCase
 let mkUnionCaseFieldSet (e1, cref, tinst, j, e2, m) = Expr.Op (TOp.UnionCaseFieldSet (cref, j), tinst, [e1;e2], m)
 
 let mkExnCaseFieldGet (e1, ecref, j, m) = Expr.Op (TOp.ExnFieldGet (ecref, j), [], [e1], m)
+
 let mkExnCaseFieldSet (e1, ecref, j, e2, m) = Expr.Op (TOp.ExnFieldSet (ecref, j), [], [e1;e2], m)
 
 let mkDummyLambda (g: TcGlobals) (e: Expr, ety) = 
@@ -1707,17 +1708,17 @@ let isFSharpObjModelRefTy g ty =
     | TTyconStruct | TTyconEnum -> false
 
 let isFSharpClassTy g ty =
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.Deref.IsFSharpClassTycon
     | _ -> false
 
 let isFSharpStructTy g ty =
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.Deref.IsFSharpStructOrEnumTycon
     | _ -> false
 
 let isFSharpInterfaceTy g ty = 
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.Deref.IsFSharpInterfaceTycon
     | _ -> false
 
@@ -1728,7 +1729,7 @@ let isDelegateTy g ty =
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsDelegate
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
-        match tryDestAppTy g ty with
+        match tryTcrefOfAppTy g ty with
         | ValueSome tcref -> tcref.Deref.IsFSharpDelegateTycon
         | _ -> false
 
@@ -1749,12 +1750,12 @@ let isClassTy g ty =
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpClassTy g ty
 
 let isStructOrEnumTyconTy g ty = 
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.Deref.IsStructOrEnumTycon
     | _ -> false
 
 let isStructRecordOrUnionTyconTy g ty = 
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.Deref.IsStructRecordOrUnionTycon
     | _ -> false
 
@@ -1763,7 +1764,7 @@ let isStructTyconRef (tcref: TyconRef) =
     tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
 
 let isStructTy g ty =
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> 
         isStructTyconRef tcref
     | _ -> 
@@ -1794,7 +1795,7 @@ let isRefTy g ty =
 // [Note: Constructed types and type-parameters are never unmanaged-types. end note]
 let rec isUnmanagedTy g ty =
     let ty = stripTyEqnsAndMeasureEqns g ty
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref ->
         let isEq tcref2 = tyconRefEq g tcref tcref2 
         if isEq g.nativeptr_tcr || isEq g.nativeint_tcr ||
@@ -1826,7 +1827,7 @@ let isInterfaceTycon x =
 let isInterfaceTyconRef (tcref: TyconRef) = isInterfaceTycon tcref.Deref
 
 let isEnumTy g ty = 
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> tcref.IsEnumTycon
 
@@ -3084,7 +3085,7 @@ let destNativePtrTy g ty =
     | _ -> failwith "destNativePtrTy: not a native ptr type"
 
 let isRefCellTy g ty = 
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> tyconRefEq g g.refcell_tcr_canon tcref
 
@@ -3106,10 +3107,12 @@ let mkPrintfFormatTy (g: TcGlobals) aty bty cty dty ety = TType_app(g.format_tcr
 
 let mkOptionTy (g: TcGlobals) ty = TType_app (g.option_tcr_nice, [ty])
 
+let mkNullableTy (g: TcGlobals) ty = TType_app (g.system_Nullable_tcref, [ty])
+
 let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty])
 
 let isOptionTy (g: TcGlobals) ty = 
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> tyconRefEq g g.option_tcr_canon tcref
 
@@ -3124,7 +3127,7 @@ let destOptionTy g ty =
     | ValueNone -> failwith "destOptionTy: not an option type"
 
 let isNullableTy (g: TcGlobals) ty = 
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> tyconRefEq g g.system_Nullable_tcref tcref
 
@@ -3149,7 +3152,7 @@ let (|StripNullableTy|) g ty =
     | _ -> ty
 
 let isLinqExpressionTy g ty = 
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> tyconRefEq g g.system_LinqExpression_tcref tcref
 
@@ -3164,11 +3167,14 @@ let destLinqExpressionTy g ty =
     | None -> failwith "destLinqExpressionTy: not an expression type"
 
 let mkNoneCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "None"
+
 let mkSomeCase (g: TcGlobals) = mkUnionCaseRef g.option_tcr_canon "Some"
 
 let mkSome g ty arg m = mkUnionCaseExpr(mkSomeCase g, [ty], [arg], m)
 
 let mkNone g ty m = mkUnionCaseExpr(mkNoneCase g, [ty], [], m)
+
+let mkOptionGetValueUnprovenViaAddr g expr ty m = mkUnionCaseFieldGetUnprovenViaExprAddr (expr, mkSomeCase g, [ty], 0, m)
 
 type ValRef with 
     member vref.IsDispatchSlot = 
@@ -4877,7 +4883,7 @@ let decideStaticOptimizationConstraint g c =
        checkTypes a b
     | TTyconIsStruct a -> 
        let a = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g a)
-       match tryDestAppTy g a with 
+       match tryTcrefOfAppTy g a with 
        | ValueSome tcref1 -> if tcref1.IsStructOrEnumTycon then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
        | ValueNone -> StaticOptimizationAnswer.Unknown
             
@@ -5986,7 +5992,7 @@ let isRecdOrStructTyconRefReadOnly g m tcref =
     isRecdOrStructTyconRefReadOnlyAux g m false tcref
 
 let isRecdOrStructTyReadOnlyAux (g: TcGlobals) m isInref ty =
-    match tryDestAppTy g ty with 
+    match tryTcrefOfAppTy g ty with 
     | ValueNone -> false
     | ValueSome tcref -> isRecdOrStructTyconRefReadOnlyAux g m isInref tcref
 
@@ -6532,7 +6538,7 @@ let mkMinusOne g m = mkInt g m (-1)
 let destInt32 = function Expr.Const (Const.Int32 n, _, _) -> Some n | _ -> None
 
 let isIDelegateEventType g ty =
-    match tryDestAppTy g ty with
+    match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tyconRefEq g g.fslib_IDelegateEvent_tcr tcref
     | _ -> false
 
@@ -6727,7 +6733,6 @@ let mkInitializeArrayMethSpec (g: TcGlobals) =
 
 let mkInvalidCastExnNewobj (g: TcGlobals) = 
   mkNormalNewobj (mkILCtorMethSpecForTy (mkILNonGenericBoxedTy (g.FindSysILTypeRef "System.InvalidCastException"), []))
-
 
 let typedExprForIntrinsic _g m (IntrinsicValRef(_, _, _, ty, _) as i) =
     let vref = ValRefForIntrinsic i
@@ -6998,6 +7003,12 @@ let mkCallFailStaticInit g m =
 let mkCallQuoteToLinqLambdaExpression g m ty e1 = 
     mkApps g (typedExprForIntrinsic g m g.quote_to_linq_lambda_info, [[ty]], [e1], m)
 
+let mkOptionToNullable g m ty e1 = 
+    mkApps g (typedExprForIntrinsic g m g.option_toNullable_info, [[ty]], [e1], m)
+
+let mkOptionDefaultValue g m ty e1 e2 = 
+    mkApps g (typedExprForIntrinsic g m g.option_defaultValue_info, [[ty]], [e1; e2], m)
+
 let mkLazyDelayed g m ty f = mkApps g (typedExprForIntrinsic g m g.lazy_create_info, [[ty]], [ f ], m) 
 
 let mkLazyForce g m ty e = mkApps g (typedExprForIntrinsic g m g.lazy_force_info, [[ty]], [ e; mkUnit g m ], m) 
@@ -7008,7 +7019,6 @@ let mkGetStringChar = mkGetString
 
 let mkGetStringLength g m e =
     let mspec = mspec_String_Length g
-    /// ILCall(useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, noTailCall, mref, actualTypeInst, actualMethInst, retTy)
     Expr.Op (TOp.ILCall (false, false, false, false, ValUseFlag.NormalValUse, true, false, mspec.MethodRef, [], [], [g.int32_ty]), [], [e], m)
 
 let mkStaticCall_String_Concat2 g m arg1 arg2 =
@@ -7956,15 +7966,15 @@ let TypeNullNever g ty =
 let TypeNullIsExtraValue g m ty = 
     if isILReferenceTy g ty || isDelegateTy g ty then
         // Putting AllowNullLiteralAttribute(false) on an IL or provided type means 'null' can't be used with that type
-        not (match tryDestAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some false | _ -> false)
+        not (match tryTcrefOfAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some false | _ -> false)
     elif TypeNullNever g ty then 
         false
     else 
         // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
-        match tryDestAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true | _ -> false
+        match tryTcrefOfAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true | _ -> false
 
 let TypeNullIsTrueValue g ty =
-    (match tryDestAppTy g ty with
+    (match tryTcrefOfAppTy g ty with
      | ValueSome tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
      | _ -> false) || (isUnitTy g ty)
 

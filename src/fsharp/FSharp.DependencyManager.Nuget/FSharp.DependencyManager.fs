@@ -1,21 +1,20 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.DependencyManager
+namespace FSharp.DependencyManager.Nuget
 
 open System
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
-open FSharp.DependencyManager
-open FSharp.DependencyManager.Utilities
+open FSharp.DependencyManager.Nuget
+open FSharp.DependencyManager.Nuget.Utilities
+open FSharp.DependencyManager.Nuget.ProjectFile
 
-module Attributes =
-    [<assembly: DependencyManagerAttribute()>]
-    do ()
-
-type PackageReference = { Include:string; Version:string; RestoreSources:string; Script:string }
 
 module FSharpDependencyManager =
+
+    [<assembly: DependencyManagerAttribute()>]
+    do ()
 
     let private concat (s:string) (v:string) : string =
         match String.IsNullOrEmpty(s), String.IsNullOrEmpty(v) with
@@ -28,10 +27,10 @@ module FSharpDependencyManager =
         let { Include=inc; Version=ver; RestoreSources=src; Script=script } = p
         seq {
             match not (String.IsNullOrEmpty(inc)), not (String.IsNullOrEmpty(ver)), not (String.IsNullOrEmpty(script)) with
-            | true, true, false  -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc ver
-            | true, true, true   -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc ver script
-            | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc
-            | true, false, true  -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s'><GeneratePathProperty>true</GeneratePathProperty></PackageReference></ItemGroup>" inc script
+            | true, true, false  -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' /></ItemGroup>" inc ver
+            | true, true, true   -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Version='%s' Script='%s' /></ItemGroup>" inc ver script
+            | true, false, false -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' /></ItemGroup>" inc
+            | true, false, true  -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s' /></ItemGroup>" inc script
             | _ -> ()
             match not (String.IsNullOrEmpty(src)) with
             | true -> yield sprintf @"  <PropertyGroup><RestoreAdditionalProjectSources>%s</RestoreAdditionalProjectSources></PropertyGroup>" (concat "$(RestoreAdditionalProjectSources)" src)
@@ -107,7 +106,9 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
         match outputDir with
         | None -> path
         | Some v -> Path.Combine(path, v)
+
     let generatedScripts = new ConcurrentDictionary<string,string>()
+
     let deleteScripts () =
         try
             if Directory.Exists(scriptsPath) then
@@ -134,16 +135,23 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
     member __.Key = key
 
-    member __.ResolveDependencies(_scriptDir:string, _mainScriptName:string, _scriptName:string, packageManagerTextLines:string seq, tfm: string) : bool * string list * string list =
+    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string) : bool * string list * string list * string list =
+
+        let scriptExt, poundRprefix  =
+            match scriptExt with
+            | ".csx" -> ".csx", "#r \"" 
+            | _ -> ".fsx", "#r @\"" 
 
         let packageReferences, binLogPath =
             packageManagerTextLines
             |> List.ofSeq
             |> FSharpDependencyManager.parsePackageReference
+
         let packageReferenceLines =
             packageReferences
             |> List.map FSharpDependencyManager.formatPackageReference
             |> Seq.concat
+
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
         // Generate a project files
@@ -152,21 +160,30 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
                 if not (generatedScripts.ContainsKey(body.GetHashCode().ToString())) then
                     emitFile path  body
 
-            let fsProjectPath = Path.Combine(scriptsPath, "Project.fsproj")
+            let projectPath = Path.Combine(scriptsPath, "Project.fsproj")
 
             let generateProjBody =
                 generateProjectBody.Replace("$(TARGETFRAMEWORK)", tfm)
                                    .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
+                                   .Replace("$(SCRIPTEXTENSION)", scriptExt)
 
-            writeFile (Path.Combine(scriptsPath, "Library.fs")) generateLibrarySource
-            writeFile fsProjectPath generateProjBody
+            writeFile projectPath generateProjBody
 
-            let succeeded, resultingFsx = buildProject fsProjectPath binLogPath
-            let fsx =
-                match resultingFsx with
-                | Some fsx -> [fsx]
-                | None -> []
+            let result, resolutionsFile = buildProject projectPath binLogPath
+            match resolutionsFile with
+            | Some file ->
+                let resolutions = getResolutionsFromFile file
+                let references = (findReferencesFromResolutions resolutions) |> Array.toList
+                let scripts =
+                    let scriptPath = projectPath + scriptExt
+                    let scriptBody =  makeScriptFromResolutions resolutions poundRprefix
+                    emitFile scriptPath scriptBody
+                    let loads = (findLoadsFromResolutions resolutions) |> Array.toList
+                    List.concat [ [scriptPath]; loads]
+                let includes = (findIncludesFromResolutions resolutions) |> Array.toList
 
-            succeeded, fsx, List.empty<string>
+                result, references, scripts, includes
+
+            | None -> result, [], [], []
 
         generateAndBuildProjectArtifacts

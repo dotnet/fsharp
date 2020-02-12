@@ -4,9 +4,8 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
-    <AssemblyName>FSharp.DependencyManager</AssemblyName>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <AssemblyName>FSharp.DependencyManager.Nuget</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
@@ -19,40 +18,23 @@
     <PropertyGroup>
       <BuildOutputGroupLocation>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</BuildOutputGroupLocation>
     </PropertyGroup>
-
-    <ItemGroup>
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Framework.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Utilities.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Tasks.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Collections.Immutable.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Reflection.Metadata.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Threading.Tasks.Dataflow.dll" />
-    </ItemGroup>
   </Target>
 
   <ItemGroup>
     <EmbeddedText Include="FSDependencyManager.txt" />
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager\FSharp.DependencyManager.Utilities.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager\FSharp.DependencyManager.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.ProjectFile.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Utilities.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.fsi" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Compiler.Private.Scripting.UnitTests" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildVersion)" />
-    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
-    <PackageReference Include="System.IO.Compression" Version="$(SystemIoCompressionVersion)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="$(TargetFramework.Startswith('netstandard'))">
     <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
   </ItemGroup>
 

@@ -256,6 +256,10 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
         $args += " --no-build"
     }
 
+    if ($env:RunningAsPullRequest -ne "true") {
+        $args += " --filter TestCategory!=PullRequest"
+    }
+
     Exec-Console $dotnetExe $args
 }
 

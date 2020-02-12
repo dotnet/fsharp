@@ -4,9 +4,7 @@ namespace FSharp.Compiler
 
 open System
 
-// FIXME: We cannot make this internal yet until F# gets a compiler switch to make cases public when the type itself is internal.
-// https://github.com/Microsoft/visualfsharp/issues/4821
-type (* internal *) LogCompilerFunctionId =
+type internal LogCompilerFunctionId =
     | Service_ParseAndCheckFileInProject = 1
     | Service_CheckOneFile = 2
     | Service_IncrementalBuildersCache_BuildingNewCache = 3

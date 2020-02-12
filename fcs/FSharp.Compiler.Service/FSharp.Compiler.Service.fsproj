@@ -645,7 +645,7 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ExternalSymbol.fs">
       <Link>Service/ExternalSymbol.fs</Link>
     </Compile>
-	<Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fsi">
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fsi">
       <Link>Service/QuickParse.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fs">

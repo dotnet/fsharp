@@ -407,10 +407,10 @@ neg20.fs(373,22,373,41): typecheck error FS1124: Multiple types exist called 'Ov
 
 neg20.fs(382,19,382,40): typecheck error FS1124: Multiple types exist called 'OverloadedClassName', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. 'OverloadedClassName<_>'.
 
-neg20.fs(383,39,383,41): typecheck error FS0039: The field, constructor or member 'S2' is not defined.
+neg20.fs(383,39,383,41): typecheck error FS0039: The type 'OverloadedClassName<T>' does not define the field, constructor or member 'S2'.
 
 neg20.fs(428,19,428,38): typecheck error FS1133: No constructors are available for the type 'OverloadedClassName<'a,'b>'
 
 neg20.fs(430,22,430,41): typecheck error FS1133: No constructors are available for the type 'OverloadedClassName<'a,'b>'
 
-neg20.fs(444,39,444,41): typecheck error FS0039: The field, constructor or member 'S2' is not defined.
+neg20.fs(444,39,444,41): typecheck error FS0039: The type 'OverloadedClassName' does not define the field, constructor or member 'S2'.

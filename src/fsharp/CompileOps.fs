@@ -20,6 +20,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 
@@ -1004,6 +1005,8 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_OLET(_) -> getErrorString("Parser.TOKEN.OLET")
               | Parser.TOKEN_OBINDER 
               | Parser.TOKEN_BINDER -> getErrorString("Parser.TOKEN.BINDER")
+              | Parser.TOKEN_OAND_BANG 
+              | Parser.TOKEN_AND_BANG -> getErrorString("Parser.TOKEN.AND.BANG")
               | Parser.TOKEN_ODO -> getErrorString("Parser.TOKEN.ODO")
               | Parser.TOKEN_OWITH -> getErrorString("Parser.TOKEN.OWITH")
               | Parser.TOKEN_OFUNCTION -> getErrorString("Parser.TOKEN.OFUNCTION")
@@ -2168,8 +2171,6 @@ type TcConfigBuilder =
       mutable pathMap: PathMap
 
       mutable langVersion: LanguageVersion
-
-      mutable includePathAdded: string -> unit
       }
 
     static member Initial =
@@ -2310,18 +2311,16 @@ type TcConfigBuilder =
           noConditionalErasure = false
           pathMap = PathMap.empty
           langVersion = LanguageVersion("default")
-          includePathAdded = ignore
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
-                            isInteractive, isInvalidationSupported, defaultCopyFSharpCore, tryGetMetadataSnapshot, ?includePathAdded: string -> unit) =
+                            isInteractive, isInvalidationSupported, defaultCopyFSharpCore, tryGetMetadataSnapshot) =
 
         Debug.Assert(FileSystem.IsPathRootedShim implicitIncludeDir, sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
 
         if (String.IsNullOrEmpty defaultFSharpBinariesDir) then
             failwith "Expected a valid defaultFSharpBinariesDir"
 
-        let includePathAdded = defaultArg includePathAdded ignore
         { TcConfigBuilder.Initial with 
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
@@ -2332,7 +2331,6 @@ type TcConfigBuilder =
             copyFSharpCore = defaultCopyFSharpCore
             tryGetMetadataSnapshot = tryGetMetadataSnapshot
             useFsiAuxLib = isInteractive
-            includePathAdded = includePathAdded
         }
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) = 
@@ -2408,7 +2406,6 @@ type TcConfigBuilder =
             | None -> false
         if ok && not (List.contains absolutePath tcConfigB.includes) then 
            tcConfigB.includes <- tcConfigB.includes ++ absolutePath
-           tcConfigB.includePathAdded absolutePath
 
     member tcConfigB.AddLoadedSource(m, originalPath, pathLoadedFrom) =
         if FileSystem.IsInvalidPathShim originalPath then
@@ -4833,10 +4830,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file, assemblyReferenceAdded: string -> unit) =
+let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file) =
     let resolutions = CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, AssemblyReference(m, file, None), ResolveAssemblyReferenceMode.ReportErrors))
     let dllinfos, ccuinfos = tcImports.RegisterAndImportReferencedAssemblies(ctok, resolutions) |> Cancellable.runWithoutCancellation
-   
+
     let asms = 
         ccuinfos |> List.map (function
             | ResolvedImportedAssembly asm -> asm
@@ -4845,11 +4842,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file, as
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
     let buildTcEnv tcEnv asm =
-        let tcEnv = AddCcuToTcEnv(g, amap, m, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
-        match asm.FSharpViewOfMetadata.FileName with
-        | Some asmPath -> assemblyReferenceAdded asmPath
-        | None -> ()
-        tcEnv
+        AddCcuToTcEnv(g, amap, m, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
     let tcEnv = (tcEnv, asms) ||> List.fold buildTcEnv
     tcEnv, (dllinfos, asms)
 
@@ -5184,9 +5177,9 @@ module ScriptPreprocessClosure =
                                 let inline snd3 (_, b, _) = b
                                 let packageManagerTextLines = packageManagerLines |> List.map snd3
 
-                                match DependencyManagerIntegration.resolve packageManager tcConfig.implicitIncludeDir mainFile scriptName m packageManagerTextLines with
+                                match DependencyManagerIntegration.resolve packageManager tcConfig.implicitIncludeDir mainFile scriptName ".fsx" m packageManagerTextLines with
                                 | None -> () // error already reported
-                                | Some (succeeded, generatedScripts, additionalIncludeFolders) ->  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                                | Some (succeeded, generatedScripts, additionalIncludeFolders) ->
                                     // This may incrementally update tcConfig too with new #r references
                                     // New package text is ignored on this second phase
                                     match succeeded with
@@ -5238,20 +5231,12 @@ module ScriptPreprocessClosure =
                             let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
 
                             yield! resolveDependencyManagerSources filename
-#if DEBUG
-                            for (_,subFile) in sources do
-                               printfn "visiting %s - has subsource of %s " filename subFile
-#endif
                             for (m, subFile) in sources do
                                 if IsScript subFile then 
                                     for subSource in ClosureSourceOfFilename(subFile, m, tcConfigResult.inputCodePage, false) do
                                         yield! loop subSource
                                 else
                                     yield ClosureFile(subFile, m, None, [], [], []) 
-
-#if DEBUG
-                            printfn "yielding source %s" filename
-#endif
                             yield ClosureFile(filename, m, Some parsedScriptAst, parseDiagnostics, errorLogger.Diagnostics, noWarns)
 
                         | None -> 

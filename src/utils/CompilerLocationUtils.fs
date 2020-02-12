@@ -256,7 +256,7 @@ module internal FSharpEnvironment =
         if typeof<obj>.Assembly.GetName().Name = "mscorlib" then
             [| "net48"; "net472"; "net471";"net47";"net462";"net461"; "net452"; "net451"; "net45"; "netstandard2.0" |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
-            [| "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netstandard2.0" |]
+            [| "netcoreapp3.1"; "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netstandard2.0" |]
         else
             System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
             [| "netstandard2.0" |]
@@ -292,7 +292,6 @@ module internal FSharpEnvironment =
         // We look in the directories stepping up from the location of the runtime assembly.
         let loadFromLocation designTimeAssemblyPath =
             try
-                printfn "Using: %s" designTimeAssemblyPath
                 Some (Assembly.UnsafeLoadFrom designTimeAssemblyPath)
             with e ->
                 raiseError e
@@ -315,8 +314,6 @@ module internal FSharpEnvironment =
             let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
             let paths = searchParentDirChain (Some runTimeAssemblyPath) designTimeAssemblyName
             paths
-            |> Seq.iter(function res -> printfn ">>>> %s" res)
-            paths
             |> Seq.tryHead
             |> function
                | Some res -> loadFromLocation res
@@ -325,7 +322,6 @@ module internal FSharpEnvironment =
                     let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
                     loadFromLocation (Path.Combine (runTimeAssemblyPath, designTimeAssemblyName))
 
-        printfn "=============== S T A R T =========================================="
         if designTimeAssemblyName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
             loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName
         else

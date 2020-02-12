@@ -25,24 +25,6 @@ open Internal.Utilities
 
 let logging = false
 
-let runningOnMono =
-#if ENABLE_MONO_SUPPORT
-// Officially supported way to detect if we are running on Mono.
-// See http://www.mono-project.com/FAQ:_Technical
-// "How can I detect if am running in Mono?" section
-    try
-        System.Type.GetType ("Mono.Runtime") <> null
-    with e->
-        // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
-        // that is not reliable.
-        // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
-        // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
-        // their issue fixed but we need to be robust here anyway.
-        false
-#else
-    false
-#endif
-
 let _ = if logging then dprintn "* warning: Il.logging is on"
 
 let int_order = LanguagePrimitives.FastGenericComparer<int>
@@ -326,6 +308,10 @@ type ILVersionInfo =
 
     new (major, minor, build, revision) =
         { Major = major; Minor = minor; Build = build; Revision = revision }
+
+    /// For debugging
+    override x.ToString() = sprintf "ILVersionInfo: %u %u %u %u" (x.Major) (x.Minor) (x.Build) (x.Revision)
+
 
 type Locale = string
 
