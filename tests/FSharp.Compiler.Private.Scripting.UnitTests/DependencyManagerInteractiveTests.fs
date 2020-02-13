@@ -11,6 +11,8 @@ open FSharp.Compiler.SourceCodeServices
 
 open NUnit.Framework
 
+open Interactive.DependencyManager
+
 [<TestFixture>]
 type DependencyManagerInteractiveTests() =
 
