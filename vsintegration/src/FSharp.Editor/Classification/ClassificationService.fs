@@ -34,8 +34,13 @@ type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<struct(
 
 [<Sealed>]
 type DocumentCache<'Value when 'Value : not struct>() =
+    /// Anything under two seconds, the caching stops working, meaning it won't actually cache the item.
+    /// Two seconds is just enough to keep the data around long enough to handle a flood of a requests asking for the same data
+    ///     in a short period of time.
+    [<Literal>]
+    let slidingExpirationSeconds = 2.
     let cache = new MemoryCache("fsharp-cache")
-    let policy = CacheItemPolicy(SlidingExpiration = TimeSpan.FromSeconds 2.)
+    let policy = CacheItemPolicy(SlidingExpiration = TimeSpan.FromSeconds slidingExpirationSeconds)
 
     member _.TryGetValueAsync(doc: Document) = async {
         let! ct = Async.CancellationToken
