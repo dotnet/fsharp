@@ -83,14 +83,6 @@ type CompilerAssert private () =
 
     static let _ = config |> ignore
 
-    // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
-    static let primaryAssembly =
-#if NETCOREAPP
-        PrimaryAssembly.System_Runtime
-#else
-        PrimaryAssembly.Mscorlib
-#endif
-
 // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
     static let projectFile = """
 <Project Sdk="Microsoft.NET.Sdk">
@@ -526,7 +518,7 @@ let main argv = 0"""
         #endif
 
         let compileErrors, statusCode = 
-            checker.Compile([parseResults.ParseTree.Value], "test", outputFilePath, dependencies, executable = isExe, primaryAssembly = primaryAssembly, noframework = true) 
+            checker.Compile([parseResults.ParseTree.Value], "test", outputFilePath, dependencies, executable = isExe, noframework = true) 
             |> Async.RunSynchronously
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
@@ -551,7 +543,7 @@ let main argv = 0"""
             #endif
 
         let compileErrors, statusCode, assembly = 
-            checker.CompileToDynamicAssembly([parseResults.ParseTree.Value], assemblyName, dependencies, None, primaryAssembly = primaryAssembly, noframework = true) 
+            checker.CompileToDynamicAssembly([parseResults.ParseTree.Value], assemblyName, dependencies, None, noframework = true) 
             |> Async.RunSynchronously
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)

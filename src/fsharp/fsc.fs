@@ -1946,7 +1946,7 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 
 // This is for the compile-from-AST feature of FCS.
 // TODO: consider extracting TC in standalone phase to avoid duplication
-let main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outfile, pdbFile, dllReferences, primaryAssembly, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, disposables : DisposablesTracker, inputs : ParsedInput list) =
+let main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, disposables : DisposablesTracker, inputs : ParsedInput list) =
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
@@ -1957,8 +1957,16 @@ let main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
             tryGetMetadataSnapshot=tryGetMetadataSnapshot)
 
+    let primaryAssembly =
+        // temporary workaround until https://github.com/dotnet/fsharp/pull/8043 is merged:
+        // pick a primary assembly based on the current runtime.
+        // It's an ugly compromise used to avoid exposing primaryAssembly in the public api for this function.
+        let isNetCoreAppProcess = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Core"
+        if isNetCoreAppProcess then PrimaryAssembly.System_Runtime
+        else PrimaryAssembly.Mscorlib
+
     tcConfigB.target <- target
-    primaryAssembly |> Option.iter (fun pA -> tcConfigB.primaryAssembly <- pA)
+    tcConfigB.primaryAssembly <- primaryAssembly
     if noframework then
         tcConfigB.framework <- false
         tcConfigB.implicitlyResolveAssemblies <- false
@@ -2222,11 +2230,11 @@ let typecheckAndCompile
 
 let compileOfAst 
        (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, 
-        outFile, pdbFile, dllReferences, primaryAssembly, noframework, exiter, errorLoggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) = 
+        outFile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) = 
 
     use d = new DisposablesTracker()
     main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outFile, pdbFile, 
-                dllReferences, primaryAssembly, noframework, exiter, errorLoggerProvider, d, inputs)
+                dllReferences, noframework, exiter, errorLoggerProvider, d, inputs)
     |> main1
     |> main2a
     |> main2b (tcImportsCapture, dynamicAssemblyCreator)
