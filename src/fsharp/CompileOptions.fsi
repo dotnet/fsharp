@@ -73,6 +73,7 @@ val SetOptimizeSwitch : TcConfigBuilder -> OptionSwitch -> unit
 val SetTailcallSwitch : TcConfigBuilder -> OptionSwitch -> unit
 val SetDebugSwitch    : TcConfigBuilder -> string option -> OptionSwitch -> unit
 val PrintOptionInfo   : TcConfigBuilder -> unit
+val SetTargetProfile  : TcConfigBuilder -> string -> unit
 
 val GetGeneratedILModuleName : CompilerTarget -> string -> string
 
