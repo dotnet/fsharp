@@ -2574,16 +2574,12 @@ let GetInternalsVisibleToAttributes ilg ilModule =
 [<Literal>]
 let tname_System_Runtime_InteropServices_TypeIdentifierAttribute = "System.Runtime.InteropServices.TypeIdentifierAttribute"
 
-let tryFindPrimaryAssembly (data: TcConfigBuilder) =
-    let assemblies =
-        data.referencedDLLs
-        |> List.map (fun r -> r.Text)
-
+let tryFindPrimaryAssembly reduceMemoryUsage tryGetMetadataSnapshot (assemblies: string list) =
     let readerSettings: ILReaderOptions = 
         { pdbDirPath=None
-          reduceMemoryUsage = data.reduceMemoryUsage
+          reduceMemoryUsage = reduceMemoryUsage
           metadataOnly = MetadataOnlyFlag.Yes
-          tryGetMetadataSnapshot = data.tryGetMetadataSnapshot }
+          tryGetMetadataSnapshot = tryGetMetadataSnapshot }
 
     let nameSystem = ["System"]
     let nameObject = "Object"
@@ -2611,10 +2607,13 @@ let tryFindPrimaryAssembly (data: TcConfigBuilder) =
     let candidates =
         assemblies
         |> List.choose (fun path ->
-            let reader = OpenILModuleReader path readerSettings
-            if isCandidate reader && reader.ILModuleDef.HasManifest then
-                mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
-                |> Some
+            if FileSystem.SafeExists path then
+                let reader = OpenILModuleReader path readerSettings
+                if isCandidate reader && reader.ILModuleDef.HasManifest then
+                    mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
+                    |> Some
+                else
+                    None
             else
                 None)
 
@@ -2653,7 +2652,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         | r :: _ -> nameOfDll r
 
     let primaryAssemblyRef = 
-        match tryFindPrimaryAssembly data with
+        let assemblies =
+            data.referencedDLLs
+            |> List.map (fun r -> r.Text)
+        match tryFindPrimaryAssembly data.reduceMemoryUsage data.tryGetMetadataSnapshot assemblies with
         | Some asmRef -> asmRef
         | _ ->
             // We could not find the primary assembly out of the referenced dlls; therefore use the one set in TcConfigBuilder.
