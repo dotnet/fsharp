@@ -914,7 +914,7 @@ let SetTargetProfile tcConfigB v =
         // Indicates we assume "mscorlib.dll", i.e .NET Framework, Mono and Profile 47
         | "mscorlib" -> mkSimpleAssemblyRef "mscorlib"
         // Indicates we assume "System.Runtime.dll", i.e .NET Standard 1.x, .NET Core App 1.x and above, and Profile 7/78/259
-        | "netcore"  -> mkSimpleAssemblyRef "netcore"
+        | "netcore"  -> mkSimpleAssemblyRef "System.Runtime"
         // Indicates we assume "netstandard.dll", i.e .NET Standard 2.0 and above
         | "netstandard"  -> mkSimpleAssemblyRef "netstandard"
         | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile v, rangeCmdArgs))
