@@ -169,7 +169,7 @@ type DependencyProvider () =
             managers
         | None ->
             let managers =
-                let defaultProviders =[]
+                let defaultProviders = []
 
                 let loadedProviders =
                     enumerateDependencyManagerAssemblies compilerTools reportError
