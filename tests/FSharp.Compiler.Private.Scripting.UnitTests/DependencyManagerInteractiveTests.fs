@@ -27,6 +27,8 @@ type DependencyManagerInteractiveTests() =
 
     let scriptHost () = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
 
+    let dependencyManager() = new Interactive.DependencyManager.DependencyProvider()
+
     [<Test>]
     member __.``SmokeTest - #r nuget``() =
         let text = """
@@ -49,73 +51,130 @@ type DependencyManagerInteractiveTests() =
         Assert.AreEqual(typeof<int>, value.ReflectionType)
         Assert.AreEqual(0, value.ReflectionValue :?> int)
 
-//    [<Test>]
-//    member __.``Dependency add events successful``() =
-//        let referenceText = "Newtonsoft.Json, Version=9.0.1"
-//        let text = referenceText |> sprintf """
-//#r @"nuget:%s"
-//0"""
-//        use script = scriptHost()
-//        let mutable dependencyAddingEventCount = 0
-//        let mutable dependencyAddedEventCount = 0
-//        let mutable foundDependencyAdding = false
-//        let mutable foundDependencyAdded = false
-//        let mutable packageRootsCount = 0
-//        let mutable generatedScriptsCount = 0
-//        Event.add (fun (dep: string * string) ->
-//            let key, dependency = dep
-//            dependencyAddingEventCount <- dependencyAddingEventCount + 1
-//            foundDependencyAdding <- foundDependencyAdding || (key = "nuget" && dependency = referenceText))
-//            script.DependencyAdding
-//        Event.add (fun (dep: string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>) ->
-//            let key, dependency, _references, _generatedScripts, _packageRoots = dep
-//            generatedScriptsCount <- _generatedScripts |> Seq.length
-//            packageRootsCount <- _packageRoots |> Seq.length
-//            dependencyAddedEventCount <- dependencyAddedEventCount + 1
-//            foundDependencyAdded <- foundDependencyAdded || (key = "nuget" && dependency = referenceText))
-//            script.DependencyAdded
-//        script.Eval(text) |> ignoreValue
-//        Assert.AreEqual(1, dependencyAddingEventCount)
-//        Assert.AreEqual(1, dependencyAddedEventCount)
-//        Assert.AreEqual(1, dependencyAddingEventCount)
-//        Assert.AreEqual(1, dependencyAddedEventCount)
-//        Assert.AreEqual(1, generatedScriptsCount)
-//        Assert.AreEqual(1, dependencyAddedEventCount)
-//        Assert.AreEqual(true, foundDependencyAdding)
-//        Assert.AreEqual(true, foundDependencyAdded)
+    [<Test>]
+    member __.``Use Dependency Manager to resolve dependency FSharp.Data``() =
+        use dp = new DependencyProvider()
+        let reportError (errorType: ErrorReportType) (code: int, message: string) =
+            match errorType with
+            | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+            | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
 
-//    [<Test>]
-//    member __.``Dependency add events failed``() =
-//        let referenceText = "System.Collections.Immutable.DoesNotExist, version=1.5.0"
-//        let text = referenceText |> sprintf """
-//#r @"nuget:%s"
-//0"""
-//        use script = scriptHost()
-//        let mutable dependencyAddingEventCount = 0
-//        let mutable dependencyFailedEventCount = 0
-//        let mutable foundDependencyAdding = false
-//        let mutable foundDependencyFailed = false
-//        Event.add (fun (dep: string * string) ->
-//            let key, dependency = dep
-//            dependencyAddingEventCount <- dependencyAddingEventCount + 1
-//            foundDependencyAdding <- foundDependencyAdding || (key = "nuget" && dependency = referenceText))
-//            script.DependencyAdding
-//        Event.add (fun (dep: string * string) ->
-//            let key, dependency = dep
-//            dependencyFailedEventCount <- dependencyFailedEventCount + 1
-//            foundDependencyFailed <- foundDependencyFailed || (key = "nuget" && dependency = referenceText))
-//            script.DependencyFailed
-//        script.Eval(text) |> ignoreValue
-//        Assert.AreEqual(1, dependencyAddingEventCount)
-//        Assert.AreEqual(1, dependencyFailedEventCount)
-//        Assert.AreEqual(true, foundDependencyAdding)
-//        Assert.AreEqual(true, foundDependencyFailed)
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
 
-//    [<Test>]
-//    member __.``Dependency add events aren't repeated``() =
-//        use script = scriptHost()
-//        let mutable dependencyAddingEventCount = 0
-//        Event.add (fun _ -> dependencyAddingEventCount <- dependencyAddingEventCount + 1) script.DependencyAdding
-//        script.Eval("#r \"nuget:NUnit.ConsoleRunner, Version=3.10.0\"") |> ignoreValue
-//        script.Eval("#r \"nuget:Newtonsoft.Json, Version=9.0.1\"\n0") |> ignoreValue
-//        Assert.AreEqual(2, dependencyAddingEventCount)
+        let succeeded, references, sources, packageroots = dp.Resolve(idm, "", "", "", ".fsx", [|"FSharp.Data"|], reportError, "net472")
+        Assert.AreEqual(true, succeeded)
+        Assert.AreEqual(1, references |> Seq.length)
+        Assert.AreEqual(1, sources |> Seq.length)
+        Assert.AreEqual(1, packageroots |> Seq.length)
+
+        let succeeded, references, sources, packageroots = dp.Resolve(idm, "", "", "", ".fsx", [|"FSharp.Data"|], reportError, "netcoreapp3.1")
+        Assert.AreEqual(true, succeeded)
+        Assert.AreEqual(1, references |> Seq.length)
+        Assert.AreEqual(1, sources |> Seq.length)
+        Assert.AreEqual(1, packageroots |> Seq.length)
+        ()
+
+
+    [<Test>]
+    member __.``Dependency add with nonexistent package should fail``() =
+        use dp = new DependencyProvider()
+        let reportError (errorType: ErrorReportType) (code: int, message: string) =
+            match errorType with
+            | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+            | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+
+        let succeeded, references, sources, packageroots = dp.Resolve(idm, "", "", "", ".fsx", [|"System.Collections.Immutable.DoesNotExist"|], reportError, "net472")
+        Assert.AreEqual(false, succeeded)
+        Assert.AreEqual(0, references |> Seq.length)
+        Assert.AreEqual(0, sources |> Seq.length)
+        Assert.AreEqual(0, packageroots |> Seq.length)
+
+        let succeeded, references, sources, packageroots = dp.Resolve(idm, "", "", "", ".fsx", [|"System.Collections.Immutable.DoesNotExist"|], reportError, "netcoreapp3.1")
+        Assert.AreEqual(false, succeeded)
+        Assert.AreEqual(0, references |> Seq.length)
+        Assert.AreEqual(0, sources |> Seq.length)
+        Assert.AreEqual(0, packageroots |> Seq.length)
+        ()
+
+
+    [<Test>]
+    member __.``Multiple Instances of DependencyProvider should be isolated``() =
+
+        use dp1 = new DependencyProvider()
+        let reportError (errorType: ErrorReportType) (code: int, message: string) =
+            match errorType with
+            | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+            | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+
+        let idm1 = dp1.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+
+        let succeeded1, references1, sources1, packageroots1 = dp1.Resolve(idm1, "", "", "", ".fsx", [|"FSharp.Data"|], reportError, "net472")
+        Assert.AreEqual(true, succeeded1)
+        Assert.AreEqual(1, references1 |> Seq.length)
+        Assert.IsTrue((references1 |> Seq.head).Contains("\\net45\\"))
+        Assert.AreEqual(1, sources1 |> Seq.length)
+        Assert.AreEqual(1, packageroots1 |> Seq.length)
+        Assert.IsTrue((packageroots1 |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
+
+        let succeeded2, references2, sources2, packageroots2 = dp1.Resolve(idm1, "", "", "", ".fsx", [|"FSharp.Data, 3.3.3"|], reportError, "netcoreapp3.1")
+        Assert.AreEqual(true, succeeded2)
+        Assert.AreEqual(1, references2 |> Seq.length)
+        Assert.IsTrue((references2 |> Seq.head).Contains("\\netstandard2.0\\"))
+        Assert.AreEqual(1, sources2 |> Seq.length)
+        Assert.AreEqual(1, packageroots2 |> Seq.length)
+        Assert.IsTrue((packageroots2 |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
+
+        use dp2 = new DependencyProvider()
+        let idm2 = dp2.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+
+        let succeeded3, references3, sources3, packageroots3 = dp2.Resolve(idm2, "", "", "", ".fsx", [|"System.Json, Version=4.6.0"|], reportError, "net472")
+        Assert.AreEqual(true, succeeded3)
+        Assert.AreEqual(1, references3 |> Seq.length)
+        Assert.IsTrue((references3 |> Seq.head).Contains("\\netstandard2.0\\"))
+        Assert.AreEqual(1, sources3 |> Seq.length)
+        Assert.AreEqual(1, packageroots3 |> Seq.length)
+        Assert.IsTrue((packageroots3 |> Seq.head).EndsWith("/system.json/4.6.0/"))
+
+        let succeeded4, references4, sources4, packageroots4 = dp2.Resolve(idm2, "", "", "", ".fsx", [|"System.Json, Version=4.6.0"|], reportError, "netcoreapp3.1")
+        Assert.AreEqual(true, succeeded4)
+        Assert.AreEqual(1, references4 |> Seq.length)
+        Assert.IsTrue((references4 |> Seq.head).Contains("\\netstandard2.0\\"))
+        Assert.AreEqual(1, sources4 |> Seq.length)
+        Assert.AreEqual(1, packageroots4 |> Seq.length)
+        Assert.IsTrue((packageroots4 |> Seq.head).EndsWith("/system.json/4.6.0/"))
+
+        ()
+
+    [<Test>]
+    member __.``Nuget Reference package with dependencies do we should get package roots and dependent references``() =
+
+        use dp1 = new DependencyProvider()
+        let reportError (errorType: ErrorReportType) (code: int, message: string) =
+            match errorType with
+            | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+            | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+
+        let idm1 = dp1.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+
+        let succeeded1, references1, sources1, packageroots1 = dp1.Resolve(idm1, "", "", "", ".fsx", [|"Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "net472")
+        Assert.AreEqual(true, succeeded1)
+        Assert.AreEqual(6, references1 |> Seq.length)
+        Assert.IsTrue((references1 |> Seq.head).Contains("\\netstandard2.0\\"))
+        Assert.AreEqual(1, sources1 |> Seq.length)
+        Assert.AreEqual(6, packageroots1 |> Seq.length)
+        Assert.IsTrue((packageroots1 |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
+
+        // Netstandard gets fewer dependencies than desktop, because desktop framework doesn't contain assemblies like System.Memory
+        // Those assemblies must be delivered by nuget for desktop apps
+        let succeeded2, references2, sources2, packageroots2 = dp1.Resolve(idm1, "", "", "", ".fsx", [|"Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "netcoreapp3.1")
+        Assert.AreEqual(true, succeeded1)
+        Assert.AreEqual(2, references1 |> Seq.length)
+        Assert.IsTrue((references1 |> Seq.head).Contains("\\netstandard2.0\\"))
+        Assert.AreEqual(1, sources1 |> Seq.length)
+        Assert.AreEqual(2, packageroots1 |> Seq.length)
+        Assert.IsTrue((packageroots1 |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
+
+        ()
+

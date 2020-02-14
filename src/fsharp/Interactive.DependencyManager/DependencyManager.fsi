@@ -3,33 +3,43 @@
 /// Helper members to integrate DependencyManagers into F# codebase
 namespace Interactive.DependencyManager
 
+/// Todo describe this API
+[<AllowNullLiteralAttribute >]
 type IDependencyManagerProvider =
+    /// Todo describe this API
     abstract Name: string
+
+    /// Todo describe this API
     abstract Key: string
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string seq * string seq
 
-[<RequireQualifiedAccess>]
-type ReferenceType =
-| RegisteredDependencyManager of IDependencyManagerProvider
-| Library of string
-| UnknownType
+    /// Todo describe this API
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string seq * string seq * string seq
 
+/// Todo describe this API
 [<RequireQualifiedAccess>]
 type ErrorReportType =
 | Warning
 | Error
 
-type DependencyProvider =
 
+/// Todo describe this API
+type DependencyProvider =
+    interface IDisposable
+
+    /// Construct a new DependencyProvider
     new : unit -> DependencyProvider
 
-    member CreatePackageManagerUnknownError: compilerTools: string seq * outputDir: string option * packageManagerKey: string reportError: ErrorReportType -> int * string -> unit -> string
+    /// Returns a formatted error message for the host to present
+    member CreatePackageManagerUnknownError: compilerTools: string seq * outputDir: string * packageManagerKey: string * reportError: ErrorReportType -> int * string -> unit -> string
 
-    // Lose the Reference type Discrimiated Union, C# won't like it
-    member TryFindDependencyManagerInPath: compilerTools: string seq * outputDir: string option * reportError: ErrorReportType -> int * string -> unit * path: string -> ReferenceType
+    /// TryFindDependencyManagerInPath - given a #r "key:sometext" go and find a DependencyManager that satisfies the key
+    member TryFindDependencyManagerInPath: compilerTools: string seq * outputDir: string * reportError: ErrorReportType -> int * string -> unit * path: string -> string * IDependencyManagerProvider
 
+    /// Remove the dependency mager with the specified key
     member RemoveDependencyManagerKey: packageManagerKey: string * path: string -> string
 
-    member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string option * reportError: ErrorReportType -> int * string -> unit * key:string -> IDependencyManagerProvider option
+    /// Go fetch a dependencymanager that supports a specific key
+    member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string * reportError: ErrorReportType -> int * string -> unit * key:string -> IDependencyManagerProvider
 
-    member Resolve: packageManager:IDependencyManagerProvider * implicitIncludeDir:string  * mainScriptName:string * fileName:string * scriptExt:string * packageManagerTextLines: string seq * reportError: ErrorReportType -> int * string -> unit * executionTfm: string
+    /// Resolve reference for a list of package manager lines
+    member Resolve: packageManager:IDependencyManagerProvider * implicitIncludeDir:string * mainScriptName:string * fileName:string * scriptExt:string * packageManagerTextLines: string seq * reportError: ErrorReportType -> int * string -> unit * executionTfm: string -> bool * string seq * string seq * string seq

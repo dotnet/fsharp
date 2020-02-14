@@ -1292,19 +1292,20 @@ type internal FsiDynamicCompiler
                     match errorType with
                     | ErrorReportType.Warning -> warning(Error(error,m))
                     | ErrorReportType.Error -> errorR(Error(error, m))
+                let outputDir =  tcConfigB.outputDir |> Option.defaultValue ""
 
-                match tcConfigB.dependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, tcConfigB.outputDir, reportError, packageManagerKey) with
-                | None ->
-                    errorR(Error(tcConfigB.dependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, tcConfigB.outputDir, packageManagerKey, reportError), m))
+                match tcConfigB.dependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, outputDir, reportError, packageManagerKey) with
+                | null ->
+                    errorR(Error(tcConfigB.dependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
                     istate
-                | Some packageManager ->
+                | dependencyManager ->
                     let packageManagerTextLines = packageManagerLines |> List.map snd3
                     let removeErrorLinesFromScript () =
                         tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
                     try
-                        match tcConfigB.dependencyProvider.Resolve(packageManager, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx", ".fsx", packageManagerTextLines, reportError, executionTfm) with
-                        | None -> istate // error already reported
-                        | Some (succeeded, generatedScripts, additionalIncludeFolders) ->
+                        match tcConfigB.dependencyProvider.Resolve(dependencyManager, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx", ".fsx", packageManagerTextLines, reportError, executionTfm) with
+                        | false, _, _, _ -> istate // error already reported
+                        | succeeded, _references, generatedScripts, additionalIncludeFolders ->
                             if succeeded then
                                 tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
                             else
@@ -1998,21 +1999,21 @@ type internal FsiInteractionProcessor
                      | ErrorReportType.Warning -> warning(Error(error,m))
                      | ErrorReportType.Error -> errorR(Error(error, m))
 
-                let dm = tcConfigB.dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, tcConfigB.outputDir, reportError, path)
+                let dm = tcConfigB.dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, tcConfigB.outputDir |> Option.defaultValue "", reportError, path)
                 match dm with
-                | ReferenceType.RegisteredDependencyManager packageManager ->
+                | dllpath, null when String.IsNullOrEmpty(dllpath) ->
+                    // error already reported
+                    istate,Completed None
+
+                | _, dependencyManager when not(isNull dependencyManager) ->
                    if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                       fsiDynamicCompiler.EvalDependencyManagerTextFragment(packageManager, m, path)
+                       fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, m, path)
                        istate,Completed None
                    else
                        errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
                        istate, Completed None
 
-                | ReferenceType.UnknownType -> 
-                    // error already reported
-                    istate,Completed None
-
-                | ReferenceType.Library path ->
+                | path, _ ->
                     let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
                     resolutions |> List.iter (fun ar -> 
                         let format =
