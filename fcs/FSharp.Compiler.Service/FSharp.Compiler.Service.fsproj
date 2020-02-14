@@ -47,7 +47,7 @@
       <Link>FSComp.txt</Link>
     </EmbeddedText>
     <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\Interactive.DependencyManager\InteractiveDependencyManager.txt">
-      <Link>FSComp.txt</Link>
+      <Link>InteractiveDependencyManager.txt</Link>
     </EmbeddedText>
     <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
