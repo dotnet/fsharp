@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="new">From the end slicing with requires language version 5.0, use /langversion:preview.</target>
+        <target state="translated">言語バージョン 5.0 が必要な最後のスライスから、/langversion:preview を使用してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <target state="translated">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -64,17 +64,17 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
+        <target state="translated">この匿名レコードは正しくありません。フィールド {0} を含んでいる必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSubset">
         <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
+        <target state="translated">この匿名レコードには十分なフィールドがありません。不足しているフィールド {0} を追加してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
+        <target state="translated">この匿名レコードはフィールドが多すぎます。不要なフィールド {0} を削除してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -1359,7 +1359,7 @@
       </trans-unit>
       <trans-unit id="chkMemberUsedInInvalidWay">
         <source>The member '{0}' is used in an invalid way. A use of '{1}' has been inferred prior to its definition at or near '{2}'. This is an invalid forward reference.</source>
-        <target state="translated">メンバー '{0}' の使用方法に誤りがあります。'{2}' または '{2}' 付近の定義の前に '{1}' の使用が推論されました。これは無効な前方参照です。</target>
+        <target state="translated">メンバー '{0}' の使用方法に誤りがあります。'{2}' またはその付近の定義の前に '{1}' の使用が推論されました。これは無効な前方参照です。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAsTopValue">
@@ -2004,7 +2004,7 @@
       </trans-unit>
       <trans-unit id="parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate">
         <source>The '{0}' visibility attribute is not allowed on module abbreviation. Module abbreviations are always private.</source>
-        <target state="translated">モジュールの省略形には '{0}' 可視属性を使用できません。モジュールの省略形は常にプライベートです。</target>
+        <target state="translated">モジュールの省略形には '{0}' 表示範囲属性を使用できません。モジュールの省略形は常にプライベートです。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnClosedBlockInHashLight">
@@ -2109,12 +2109,12 @@
       </trans-unit>
       <trans-unit id="parsInterfacesHaveSameVisibilityAsEnclosingType">
         <source>Interfaces always have the same visibility as the enclosing type</source>
-        <target state="translated">インターフェイスは、それを囲む型と常に同じ可視性を持ちます</target>
+        <target state="translated">インターフェイスは、それを囲む型と常に同じ表示範囲を持ちます</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAccessibilityModsIllegalForAbstract">
         <source>Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.</source>
-        <target state="translated">アクセシビリティ修飾子はこのメンバーでは許可されていません。抽象スロットには、それを囲む型と常に同じ可視性があります。</target>
+        <target state="translated">アクセシビリティ修飾子はこのメンバーでは許可されていません。抽象スロットには、それを囲む型と常に同じ表示範囲があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAttributesIllegalOnInherit">
@@ -2439,12 +2439,12 @@
       </trans-unit>
       <trans-unit id="tcMultipleVisibilityAttributes">
         <source>Multiple visibility attributes have been specified for this identifier</source>
-        <target state="translated">この識別子に複数の可視属性が指定されました</target>
+        <target state="translated">この識別子に複数の表示範囲属性が指定されました</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleVisibilityAttributesWithLet">
         <source>Multiple visibility attributes have been specified for this identifier. 'let' bindings in classes are always private, as are any 'let' bindings inside expressions.</source>
-        <target state="translated">この識別子に複数の可視属性が指定されました。式内のすべての 'let' 束縛と同様に、クラス内の 'let' 束縛は常にプライベートです。</target>
+        <target state="translated">この識別子に複数の表示範囲属性が指定されました。式内のすべての 'let' 束縛と同様に、クラス内の 'let' 束縛は常にプライベートです。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMethodNameForRelationalOperator">
@@ -3629,7 +3629,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalFormForExplicitTypeDeclaration">
         <source>Explicit type declarations for constructors must be of the form 'ty1 * ... * tyN -&gt; resTy'. Parentheses may be required around 'resTy'</source>
-        <target state="translated">コンストラクタ―の明示的な型宣言の形式は 'ty1 * ... * tyN -&gt; resTy' でなければなりません。'resTy' をかっこで囲まなければならない場合があります</target>
+        <target state="translated">コンストラクターの明示的な型宣言の形式は 'ty1 * ... * tyN -&gt; resTy' でなければなりません。'resTy' をかっこで囲まなければならない場合があります</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnTypesForUnionMustBeSameAsType">
@@ -3664,7 +3664,7 @@
       </trans-unit>
       <trans-unit id="tcModuleRequiresQualifiedAccess">
         <source>This declaration opens the module '{0}', which is marked as 'RequireQualifiedAccess'. Adjust your code to use qualified references to the elements of the module instead, e.g. 'List.map' instead of 'map'. This change will ensure that your code is robust as new constructs are added to libraries.</source>
-        <target state="translated">この宣言はモジュール '{0}' を開きます。'{0}' は 'RequireQualifiedAccess' とマークされています。代わりにモジュールの要素に対する限定参照を使用するようにコードを変更してください (たとえば、'map' の代わりに 'List.map')。この変更によってコードが堅牢になり、新しいコンストラクターがライブラリに追加された場合にも対応できます。</target>
+        <target state="translated">この宣言は 'RequireQualifiedAccess' とマークされているモジュール '{0}' を開きます。代わりにモジュールの要素に対する限定参照を使用するようにコードを変更してください (たとえば、'map' の代わりに 'List.map')。この変更によってコードが堅牢になり、新しいコンストラクターがライブラリに追加された場合にも対応できます。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOpenUsedWithPartiallyQualifiedPath">
@@ -7174,7 +7174,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="needs-review-translation">2 種類の匿名レコードのフィールド名 '{0}' と '{1}' が一致しません</target>
+        <target state="translated">この匿名レコードは、予期された形状と完全には一致していません。不足しているフィールド {0} を追加し、不要なフィールド {1} を削除してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
@@ -7269,22 +7269,22 @@
       </trans-unit>
       <trans-unit id="optsCompilerTool">
         <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
-        <target state="new">Reference an assembly or directory containing a design time tool (Short form: -t)</target>
+        <target state="translated">デザイン時ツールを含むアセンブリまたはディレクトリを参照します (短い形式: -t)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <target state="translated">パッケージ マネージャー キー '{0}' は {1} に登録されていませんでした。現在登録済み: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
         <source>{0}</source>
-        <target state="new">{0}</target>
+        <target state="translated">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadDependencyManagerExtension">
         <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
-        <target state="new">The dependency manager extension {0} could not be loaded. Message: {1}</target>
+        <target state="translated">依存関係マネージャーの拡張機能 {0} を読み込むことができませんでした。メッセージ: {1}</target>
         <note />
       </trans-unit>
     </body>
