@@ -25,7 +25,7 @@ type LightSyntaxStatus =
 
 [<Sealed>]
 type LexResourceManager =
-    new : unit -> LexResourceManager
+    new : ?capacity: int -> LexResourceManager
 
 type lexargs =
     { defines: string list
