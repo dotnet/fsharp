@@ -1757,6 +1757,9 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
     member this.GetOpenDeclarations() =
         capturedOpenDeclarations |> Seq.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) |> Seq.toArray
 
+    member this.GetFormatSpecifierLocations() =
+        capturedFormatSpecifierLocations.ToArray()
+
     interface ITypecheckResultsSink with
         member sink.NotifyEnvWithScope(m, nenv, ad) =
             if allowedRange m then
