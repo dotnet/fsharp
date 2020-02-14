@@ -23,6 +23,7 @@
   <ItemGroup>
     <EmbeddedText Include="InteractiveDependencyManager.txt" />
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\Interactive.DependencyManager\DependencyManager.fsi" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\Interactive.DependencyManager\DependencyManager.fs" />
   </ItemGroup>
 

@@ -3,6 +3,8 @@
 /// Helper members to integrate DependencyManagers into F# codebase
 namespace Interactive.DependencyManager
 
+open System
+
 /// Todo describe this API
 [<AllowNullLiteralAttribute >]
 type IDependencyManagerProvider =
@@ -22,24 +24,24 @@ type ErrorReportType =
 | Error
 
 
-/// Todo describe this API
 type DependencyProvider =
-    interface IDisposable
+    interface System.IDisposable
 
     /// Construct a new DependencyProvider
     new : unit -> DependencyProvider
 
     /// Returns a formatted error message for the host to present
-    member CreatePackageManagerUnknownError: compilerTools: string seq * outputDir: string * packageManagerKey: string * reportError: ErrorReportType -> int * string -> unit -> string
-
-    /// TryFindDependencyManagerInPath - given a #r "key:sometext" go and find a DependencyManager that satisfies the key
-    member TryFindDependencyManagerInPath: compilerTools: string seq * outputDir: string * reportError: ErrorReportType -> int * string -> unit * path: string -> string * IDependencyManagerProvider
+    member CreatePackageManagerUnknownError : compilerTools:seq<string> * outputDir:string * packageManagerKey:string * reportError:(ErrorReportType ->int * string -> unit) -> int * string
 
     /// Remove the dependency mager with the specified key
-    member RemoveDependencyManagerKey: packageManagerKey: string * path: string -> string
-
-    /// Go fetch a dependencymanager that supports a specific key
-    member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string * reportError: ErrorReportType -> int * string -> unit * key:string -> IDependencyManagerProvider
+    member RemoveDependencyManagerKey : packageManagerKey:string * path:string -> string
 
     /// Resolve reference for a list of package manager lines
-    member Resolve: packageManager:IDependencyManagerProvider * implicitIncludeDir:string * mainScriptName:string * fileName:string * scriptExt:string * packageManagerTextLines: string seq * reportError: ErrorReportType -> int * string -> unit * executionTfm: string -> bool * string seq * string seq * string seq
+    member Resolve : packageManager:IDependencyManagerProvider * implicitIncludeDir:string * mainScriptName:string * fileName:string * scriptExt:string * packageManagerTextLines:seq<string> * reportError:(ErrorReportType -> int * string -> unit) * executionTfm:string -> bool * seq<string> * seq<string> * seq<string>
+
+    /// Go fetch a dependencymanager that supports a specific key
+    member TryFindDependencyManagerByKey : compilerTools:seq<string> * outputDir:string * reportError:(ErrorReportType -> int * string -> unit) * key:string -> IDependencyManagerProvider
+
+    /// TryFindDependencyManagerInPath - given a #r "key:sometext" go and find a DependencyManager that satisfies the key
+    member TryFindDependencyManagerInPath : compilerTools:seq<string> * outputDir:string * reportError:(ErrorReportType -> int * string -> unit) * path:string -> string * IDependencyManagerProvider
+
