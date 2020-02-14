@@ -206,10 +206,6 @@ type internal FSharpAsyncQuickInfoSource
         // This method can be called from the background thread.
         // Do not call IServiceProvider.GetService here.
         override __.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem> =
-            // The following lines should be disabled for branch `release/dev16.2`, enabled otherwise
-            //// if using LSP, just bail early
-            //if settings.Advanced.UsePreviewTextHover then Task.FromResult<QuickInfoItem>(null)
-            //else
             let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
             match triggerPoint.HasValue with
             | false -> Task.FromResult<QuickInfoItem>(null)

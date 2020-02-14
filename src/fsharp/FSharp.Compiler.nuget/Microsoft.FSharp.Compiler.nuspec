@@ -22,6 +22,7 @@
                 <dependency id="System.Threading.Thread" version="4.3.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.3.0" />
                 <dependency id="System.ValueTuple" version="4.4.0" />
+                <dependency id="System.Buffers" version="4.5.0" />
             </group>
         </dependencies>
         <contentFiles>
@@ -49,7 +50,8 @@
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"                            target="lib\netcoreapp3.0" />
         <file src="FSharp.Compiler.Private\$Configuration$\netstandard2.0\FSharp.Compiler.Private.dll"    target="lib\netcoreapp3.0" />
         <file src="FSharp.Build\$Configuration$\netcoreapp3.0\FSharp.Build.dll"                           target="lib\netcoreapp3.0" />
-        <file src="FSharp.DependencyManager\$configuration$\netstandard2.0\FSharp.DependencyManager.dll"  target="lib\netcoreapp3.0" />
+        <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.dll"
+                                                                                                          target="lib\netcoreapp3.0" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll"
                                                                                                           target="lib\netcoreapp3.0" />
         <!-- additional files -->
@@ -67,7 +69,7 @@
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\**\FSharp.Compiler.Interactive.Settings.resources.dll"
                                                                                                           target="lib\netcoreapp3.0" />
         <file src="FSharp.Build\$Configuration$\netcoreapp3.0\**\FSharp.Build.resources.dll"              target="lib\netcoreapp3.0" />
-        <file src="FSharp.DependencyManager\$configuration$\netstandard2.0\**\FSharp.DependencyManager.resources.dll"
+        <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\**\FSharp.DependencyManager.Nuget.resources.dll"
                                                                                                           target="lib\netcoreapp3.0" />
     </files>
 </package>

@@ -29,6 +29,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open FSharp.Compiler.Lib
 open FSharp.Compiler.AccessibilityLogic
@@ -502,8 +503,8 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
             let isError = true
             DoWithErrorColor isError (fun () ->
                 errorWriter.WriteLine();
-                writeViaBufferWithEnvironmentNewLines errorWriter (OutputDiagnosticContext "  " syphon.GetLine) err; 
-                writeViaBufferWithEnvironmentNewLines errorWriter (OutputDiagnostic (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.errorStyle,isError))  err;
+                writeViaBuffer errorWriter (OutputDiagnosticContext "  " syphon.GetLine) err; 
+                writeViaBuffer errorWriter (OutputDiagnostic (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.errorStyle,isError))  err;
                 errorWriter.WriteLine()
                 errorWriter.WriteLine()
                 errorWriter.Flush()))
@@ -548,8 +549,8 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
           DoWithErrorColor isError (fun () -> 
             if ReportWarning tcConfigB.errorSeverityOptions err then 
                 fsiConsoleOutput.Error.WriteLine()
-                writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
-                writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,isError)) err
+                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
+                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,isError)) err
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
@@ -956,10 +957,9 @@ type internal FsiDynamicCompiler
     let outfile = "TMPFSCI.exe"
     let assemblyName = "FSI-ASSEMBLY"
 
-    let assemblyReferenceAddedEvent = Control.Event<string>()
     let valueBoundEvent = Control.Event<_>()
     let dependencyAddingEvent = Control.Event<string * string>()
-    let dependencyAddedEvent = Control.Event<string * string>()
+    let dependencyAddedEvent = Control.Event<string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>>()
     let dependencyFailedEvent = Control.Event<string * string>()
 
     let mutable fragmentId = 0
@@ -1037,7 +1037,7 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError(fsiConsoleOutput);
             
         ReportTime tcConfig "Assembly refs Normalised"; 
-        let mainmod3 = Morphs.morphILScopeRefsInILModuleMemoized ilGlobals (NormalizeAssemblyRefs (ctok, tcImports)) ilxMainModule
+        let mainmod3 = Morphs.morphILScopeRefsInILModuleMemoized ilGlobals (NormalizeAssemblyRefs (ctok, ilGlobals, tcImports)) ilxMainModule
         errorLogger.AbortOnError(fsiConsoleOutput);
 
 #if DEBUG
@@ -1260,7 +1260,7 @@ type internal FsiDynamicCompiler
         let tcState = istate.tcState 
         let tcEnv,(_dllinfos,ccuinfos) = 
             try
-                RequireDLL (ctok, tcImports, tcState.TcEnvFromImpls, assemblyName, m, path, assemblyReferenceAddedEvent.Trigger)
+                RequireDLL (ctok, tcImports, tcState.TcEnvFromImpls, assemblyName, m, path)
             with e ->
                 tcConfigB.RemoveReferencedAssemblyByPath(m,path)
                 reraise()
@@ -1303,9 +1303,9 @@ type internal FsiDynamicCompiler
                             Event.add dependencyAddingEvent.Trigger packageManager.DependencyAdding
                             Event.add dependencyAddedEvent.Trigger packageManager.DependencyAdded
                             Event.add dependencyFailedEvent.Trigger packageManager.DependencyFailed
-                        match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" "stdin.fsx" m packageManagerTextLines with
+                        match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" "stdin.fsx"  ".fsx" m packageManagerTextLines with
                         | None -> istate // error already reported
-                        | Some (succeeded, generatedScripts, additionalIncludeFolders) ->    //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                        | Some (succeeded, generatedScripts, additionalIncludeFolders) ->
                             if succeeded then
                                 tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
                             else
@@ -1401,8 +1401,6 @@ type internal FsiDynamicCompiler
 
     member __.FormatValue(obj:obj, objTy) = 
         valuePrinter.FormatValue(obj, objTy)
-
-    member __.AssemblyReferenceAdded = assemblyReferenceAddedEvent.Publish
 
     member __.ValueBound = valueBoundEvent.Publish
 
@@ -1908,8 +1906,6 @@ type internal FsiInteractionProcessor
                              initialInteractiveState) = 
 
     let referencedAssemblies = Dictionary<string, DateTime>()
-
-    let assemblyReferencedEvent = Control.Event<string>()
 
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
@@ -2451,8 +2447,6 @@ type internal FsiInteractionProcessor
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, SourceText.ofString text)
 
-    member __.AssemblyReferenceAdded = assemblyReferencedEvent.Publish
-
 
 //----------------------------------------------------------------------------
 // Server mode:
@@ -2547,8 +2541,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | None -> SimulatedMSBuildReferenceResolver.getResolver()
         | Some rr -> rr
 
-    let includePathAddedEvent = Control.Event<_>()
-
     let tcConfigB =
         TcConfigBuilder.CreateNew(legacyReferenceResolver, 
             defaultFSharpBinariesDir=defaultFSharpBinariesDir, 
@@ -2557,8 +2549,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             isInteractive=true, 
             isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-            includePathAdded=includePathAddedEvent.Trigger)
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
 
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
     do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
@@ -2862,16 +2853,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         |> commitResultNonThrowing errorOptions scriptPath errorLogger
         |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
 
-    [<CLIEvent>]
-    /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
-    member __.AssemblyReferenceAdded = fsiDynamicCompiler.AssemblyReferenceAdded
-
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
     member __.ValueBound = fsiDynamicCompiler.ValueBound
-
-    [<CLIEvent>]
-    /// Event fires every time a path is added to the include search list, e.g., via `#I`.
-    member __.IncludePathAdded = includePathAddedEvent.Publish
 
     [<CLIEvent>]
     /// Event fires at the start of adding a dependency via the dependency manager.

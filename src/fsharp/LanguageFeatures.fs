@@ -28,6 +28,8 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
+    | AndBang
+    | NullableOptionalInterop
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -37,12 +39,12 @@ type LanguageVersion (specifiedVersionAsString) =
     static let languageVersion47 = 4.7m
     static let languageVersion50 = 5.0m
     static let previewVersion = 9999m                   // Language version when preview specified
-    static let defaultVersion = languageVersion47       // Language version when default specified
+    static let defaultVersion = languageVersion50       // Language version when default specified
     static let latestVersion = defaultVersion           // Language version when latest specified
     static let latestMajorVersion = languageVersion47   // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
-    static let languageVersions = set [| languageVersion46; languageVersion47 (*; languageVersion50 *) |]
+    static let languageVersions = set [| languageVersion46; languageVersion47; languageVersion50 |]
 
     static let features =
         dict [
@@ -55,12 +57,14 @@ type LanguageVersion (specifiedVersionAsString) =
             // F# 5.0
             LanguageFeature.FixedIndexSlice3d4d, languageVersion50
             LanguageFeature.FromEndSlicing, languageVersion50
+            LanguageFeature.DotlessFloat32Literal, languageVersion50
 
             // F# preview
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
-            LanguageFeature.DotlessFloat32Literal, languageVersion50
             LanguageFeature.PackageManagement, previewVersion
+            LanguageFeature.AndBang, previewVersion
+            LanguageFeature.NullableOptionalInterop, previewVersion
         ]
 
     let specified =

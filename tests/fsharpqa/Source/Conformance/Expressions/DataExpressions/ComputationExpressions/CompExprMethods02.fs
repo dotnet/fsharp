@@ -46,11 +46,11 @@ let result =
                 for Char(c) in [| Char('a'); Char('b') |] do
                     ()
         }
-            
 
-if result <> () then exit 1
+if result <> () then printfn "failed"; exit 1
 
-if workflow.CombineCalledWith <> [|"<null>"; "<null>"|] then exit 1
+if workflow.CombineCalledWith <> [| "()"; "()" |] then printfn "failed"; exit 1
+
 if workflow.LoopedElements <> 
     [|
         "1"; 
@@ -64,6 +64,7 @@ if workflow.LoopedElements <>
                 "Int 1"; 
                     "Char 'a'"; "Char 'b'"; 
                 "Int 2"; 
-                    "Char 'a'"; "Char 'b'" |] then exit 1
-  
+                    "Char 'a'"; "Char 'b'" |] then printfn "failed"; exit 1
+
+printfn "Succeded"
 exit 0

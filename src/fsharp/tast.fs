@@ -515,6 +515,7 @@ let getNameOfScopeRef sref =
     | ILScopeRef.Local -> "<local>"
     | ILScopeRef.Module mref -> mref.Name
     | ILScopeRef.Assembly aref -> aref.Name
+    | ILScopeRef.PrimaryAssembly -> "<primary>"
 
 #if !NO_EXTENSIONTYPING
 let ComputeDefinitionLocationOfProvidedItem (p: Tainted<#IProvidedCustomAttributeProvider>) =
@@ -701,13 +702,16 @@ and /// Represents a type definition, exception definition, module definition or
         | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_compiled_name = name }
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters
-    member x.DisplayName = x.GetDisplayName(false, false)
+    member x.DisplayName = x.GetDisplayName()
+
+    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, plus static parameters if any
+    member x.DisplayNameWithStaticParametersAndTypars = x.GetDisplayName(withStaticParameters=true, withTypars=true, withUnderscoreTypars=false)
 
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, plus static parameters if any
-    member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.GetDisplayName(true, true)
+    member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=true)
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters if any
-    member x.DisplayNameWithStaticParameters = x.GetDisplayName(true, false)
+    member x.DisplayNameWithStaticParameters = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=false)
 
 #if !NO_EXTENSIONTYPING
     member x.IsStaticInstantiationTycon = 
@@ -716,15 +720,20 @@ and /// Represents a type definition, exception definition, module definition or
             args.Length > 0 
 #endif
 
-    member x.GetDisplayName(withStaticParameters, withUnderscoreTypars) = 
+    member x.GetDisplayName(?withStaticParameters, ?withTypars, ?withUnderscoreTypars) =
+        let withStaticParameters = defaultArg withStaticParameters false
+        let withTypars = defaultArg withTypars false
+        let withUnderscoreTypars = defaultArg withUnderscoreTypars false
         let nm = x.LogicalName
+
         let getName () =
             match x.TyparsNoRange with 
             | [] -> nm
             | tps -> 
                 let nm = DemangleGenericTypeName nm
-                if withUnderscoreTypars && not (List.isEmpty tps) then 
-                    nm + "<" + String.concat "," (Array.create tps.Length "_") + ">"
+                if (withUnderscoreTypars || withTypars) && not (List.isEmpty tps) then
+                    let typearNames = tps |> List.map (fun typar -> if withUnderscoreTypars then "_" else typar.Name)
+                    nm + "<" + String.concat "," typearNames + ">"
                 else
                     nm
 
@@ -853,7 +862,7 @@ and /// Represents a type definition, exception definition, module definition or
     member x.Typars m = x.entity_typars.Force m
 
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member x.TyparsNoRange = x.Typars x.Range
+    member x.TyparsNoRange: Typars = x.Typars x.Range
 
     /// Get the type abbreviated by this type definition, if it is an F# type abbreviation definition
     member x.TypeAbbrev = 
@@ -2356,7 +2365,7 @@ and
     | SupportsNull of range 
     
     /// Indicates a constraint that a type has a member with the given signature 
-    | MayResolveMember of TraitConstraintInfo * range 
+    | MayResolveMember of TraitConstraintInfo * range
     
     /// Indicates a constraint that a type is a non-Nullable value type 
     /// These are part of .NET's model of generic constraints, and in order to 
@@ -2406,6 +2415,9 @@ and
 
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
+
+    /// Get the argument types required of a member in order to solve the constraint
+    member x.ArgumentTypes = (let (TTrait(_, _, _, argtys, _, _)) = x in argtys)
 
     /// Get the return type recorded in the member constraint.
     member x.ReturnType = (let (TTrait(_, _, _, _, ty, _)) = x in ty)
@@ -3357,6 +3369,9 @@ and
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, not including static parameters
     member x.DisplayName = x.Deref.DisplayName
+
+    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, including static parameters
+    member x.DisplayNameWithStaticParametersAndTypars = x.Deref.DisplayNameWithStaticParametersAndTypars
 
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, including static parameters
     member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.Deref.DisplayNameWithStaticParametersAndUnderscoreTypars
@@ -4879,7 +4894,7 @@ and
     | Label of ILCodeLabel
 
     /// Pseudo method calls. This is used for overloaded operations like op_Addition. 
-    | TraitCall of TraitConstraintInfo  
+    | TraitCall of TraitConstraintInfo 
 
     /// Operation nodes representing C-style operations on byrefs and mutable vals (l-values) 
     | LValueOp of LValueOperation * ValRef 

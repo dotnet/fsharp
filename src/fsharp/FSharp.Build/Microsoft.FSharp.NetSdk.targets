@@ -66,17 +66,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     </ItemGroup>
   </Target>
 
-  <Target Name='ComputePackageRoots'
-          BeforeTargets='CoreCompile;FSI-PackageManagement'
-          DependsOnTargets='CollectPackageReferences'>
-      <ItemGroup>
-        <EnhancedResolvedFile Include='@(ResolvedCompileFileDefinitions)'>
-           <PackageRootProperty>Pkg$([System.String]::Copy('%(ResolvedCompileFileDefinitions.NugetPackageId)').Replace('.','_'))</PackageRootProperty>
-           <FsxInitializeSourcePath>$(%(EnhancedResolvedFile.PackageRootProperty))\content\%(ResolvedCompileFileDefinitions.FileName)%(ResolvedCompileFileDefinitions.Extension).fsx</FsxInitializeSourcePath>
-        </EnhancedResolvedFile>
-      </ItemGroup>
-  </Target>
-
   <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">
     <PropertyGroup>
       <FSharpDesignTimeProtocol Condition = " '$(FSharpDesignTimeProtocol)' == '' ">fsharp41</FSharpDesignTimeProtocol>
@@ -115,15 +104,4 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     </ItemGroup>
   </Target>
 
-  <Target Name='ComputePackageRoots'
-          BeforeTargets='CoreCompile;FSI-PackageManagement'
-          DependsOnTargets='CollectPackageReferences'>
-      <ItemGroup>
-        <FsxResolvedFile Include='@(ResolvedCompileFileDefinitions)'>
-           <PackageRootProperty>Pkg$([System.String]::Copy('%(ResolvedCompileFileDefinitions.NugetPackageId)').Replace('.','_'))</PackageRootProperty>
-           <PackageRoot>$(%(FsxResolvedFile.PackageRootProperty))</PackageRoot>
-           <InitializeSourcePath>$(%(FsxResolvedFile.PackageRootProperty))\content\%(ResolvedCompileFileDefinitions.FileName)%(ResolvedCompileFileDefinitions.Extension).fsx</InitializeSourcePath>
-        </FsxResolvedFile>
-      </ItemGroup>
-  </Target>
 </Project>

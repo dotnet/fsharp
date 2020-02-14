@@ -21,6 +21,9 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+  - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
+    - name: RunningAsPullRequest
+      value: true
 
 # Variables defined in yml cannot be overridden at queue time; instead overridable variables must be defined in the web UI.
 # Commenting out until something like this is supported: https://github.com/Microsoft/azure-pipelines-yaml/pull/129
@@ -83,6 +86,8 @@ stages:
                     /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                     /p:PublishToSymbolServer=true
                     /p:VisualStudioDropName=$(VisualStudioDropName)
+          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
+            displayName: End to end build tests
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -187,6 +192,17 @@ stages:
               publishLocation: Container
             continueOnError: true
             condition: eq(variables['_testKind'], 'testFSharpQA')
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Windows $(_testKind)'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
 
         # Linux
         - job: Linux
@@ -208,11 +224,22 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Linux'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
 
         # MacOS
         - job: MacOS
           pool:
-            vmImage: macOS-10.13
+            vmImage: macOS-latest
           variables:
           - name: _SignType
             value: Test
@@ -229,6 +256,28 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Mac'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
+
+        # End to end build
+        - job: EndToEndBuildTests
+          pool:
+            vmImage: windows-2019
+          steps:
+          - checkout: self
+            clean: true
+          - script: .\Build.cmd -c Release
+          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests -c Release
+            displayName: End to end build tests
 
         # Source Build Linux
         - job: SourceBuild_Linux
@@ -239,6 +288,17 @@ stages:
             clean: true
           - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
             displayName: Build
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents SourceBuild_Linux'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
 
         # Source Build Windows
         - job: SourceBuild_Windows
@@ -249,6 +309,17 @@ stages:
             clean: true
           - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
             displayName: Build
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents SourceBuild_Windows'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
 
         # Up-to-date
         - job: UpToDate_Windows
@@ -287,6 +358,11 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - task: UseDotNet@2
+            displayName: 'Use .NET Core sdk'
+            inputs:
+              useGlobalJson: true
+              workingDirectory: fcs
           - script: fcs\build.cmd TestAndNuget
             displayName: Build / Test
           - task: PublishTestResults@2
@@ -295,6 +371,7 @@ stages:
               testResultsFormat: 'NUnit'
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+              publishRunAttachments: true
             continueOnError: true
             condition: always()
 
@@ -307,20 +384,48 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - task: UseDotNet@2
+            displayName: 'Use .NET Core sdk'
+            inputs:
+              useGlobalJson: true
+              workingDirectory: fcs
           - script: ./fcs/build.sh
-            displayName: Build
+            displayName: Build / Test
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'NUnit'
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+              publishRunAttachments: true
+            continueOnError: true
+            condition: always()
 
-        # - job: MacOS_FCS
-        #   pool:
-        #     vmImage: macOS-10.13
-        #   variables:
-        #   - name: _SignType
-        #     value: Test
-        #   steps:
-        #   - checkout: self
-        #     clean: true
-        #   - script: ./fcs/build.sh
-        #     displayName: Build
+        - job: MacOS_FCS
+          pool:
+            vmImage: macOS-latest
+          variables:
+          - name: _SignType
+            value: Test
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: 'Use .NET Core sdk'
+            inputs:
+              useGlobalJson: true
+              workingDirectory: fcs
+          - script: ./fcs/build.sh
+            displayName: Build / Test
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'NUnit'
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
+              publishRunAttachments: true
+            continueOnError: true
+            condition: always()
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    Post Build                                                       #

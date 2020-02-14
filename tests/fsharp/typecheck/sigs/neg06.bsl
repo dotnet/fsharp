@@ -1,6 +1,5 @@
 
-neg06.fs(3,40,3,45): typecheck error FS0039: The field, constructor or member 'Ascii' is not defined. Maybe you want one of the following:
-
+neg06.fs(3,40,3,45): typecheck error FS0039: The type 'Encoding' does not define the field, constructor or member 'Ascii'. Maybe you want one of the following:
    ASCII
 
 neg06.fs(12,6,12,31): typecheck error FS0942: Struct types are always sealed

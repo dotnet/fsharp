@@ -8,7 +8,7 @@ open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.AbstractIL.IL // runningOnMono 
+open FSharp.Compiler.AbstractIL.Internal.Utils // runningOnMono
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 
