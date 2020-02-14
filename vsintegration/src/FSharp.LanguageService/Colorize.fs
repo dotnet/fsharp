@@ -87,7 +87,7 @@ module internal ColorStateLookup_DEPRECATED =
 type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineTokenizer) =
     let mutable lineTokenizer = makeLineTokenizer ""
 
-    let mutable extraColorizations : IDictionary<Line0, (range * SemanticClassificationType)[] > option = None
+    let mutable extraColorizations : IDictionary<Line0, struct (range * SemanticClassificationType)[] > option = None
 
     /// Decode compiler FSharpTokenColorKind into VS TokenColor.
     let lookupTokenColor colorKind =
@@ -148,11 +148,11 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
         lineTokenizer <- makeLineTokenizer lineText
 
     /// Adjust the set of extra colorizations and return a sorted list of affected lines.
-    member __.SetExtraColorizations (tokens: (Range.range * SemanticClassificationType)[]) =
+    member __.SetExtraColorizations (tokens: struct (Range.range * SemanticClassificationType)[]) =
         if tokens.Length = 0 && extraColorizations.IsNone then
             [| |]
         else
-            let newExtraColorizationsKeyed = dict (tokens |> Array.groupBy (fun (r, _) -> Range.Line.toZ r.StartLine))
+            let newExtraColorizationsKeyed = dict (tokens |> Array.groupBy (fun struct (r, _) -> Range.Line.toZ r.StartLine))
             let oldExtraColorizationsKeyedOpt = extraColorizations
             extraColorizations <- Some newExtraColorizationsKeyed
             let changedLines =
