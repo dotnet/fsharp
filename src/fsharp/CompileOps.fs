@@ -2654,7 +2654,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     let primaryAssemblyRef = 
         let assemblies =
             data.referencedDLLs
-            |> List.map (fun r -> r.Text)
+            |> List.map (fun r -> ComputeMakePathAbsolute data.implicitIncludeDir r.Text)
         match tryFindPrimaryAssembly data.reduceMemoryUsage data.tryGetMetadataSnapshot assemblies with
         | Some asmRef -> asmRef
         | _ ->
