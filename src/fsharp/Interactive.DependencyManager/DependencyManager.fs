@@ -241,6 +241,6 @@ type DependencyProvider () =
             reportError ErrorReportType.Error (InteractiveDependencyManager.SR.packageManagerError(e.Message))
             false, Seq.empty, Seq.empty, Seq.empty
     interface IDisposable with
-        member __.Dispose() =
+        member _.Dispose() =
             // Unregister everything
             registeredDependencyManagers <- None
