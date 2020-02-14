@@ -96,6 +96,7 @@
     <SystemThreadingThreadPoolVersion>4.3.0</SystemThreadingThreadPoolVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <SystemBuffersVersion>4.5.0</SystemBuffersVersion>
+    <SystemMemoryVersion>4.5.3</SystemMemoryVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
