@@ -838,7 +838,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                 [knownReturnType; genericParametersMessage; argsMessage]
                 |> List.choose id
                 |> String.concat (nl + nl)
-                |> function | "" -> String.Empty
+                |> function | "" -> nl
                             | result -> nl + nl + result + nl + nl
               
               match failure with
