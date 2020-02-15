@@ -2640,7 +2640,7 @@ and ResolveOverloading
                     // Prefer methods with more precise param array arg type
                     let c = 
                         if candidate.UsesParamArrayConversion && other.UsesParamArrayConversion then
-                            compareTypes candidate.ParamArrayElementType other.ParamArrayElementType
+                            compareTypes (candidate.GetParamArrayElementType()) (other.GetParamArrayElementType())
                         else
                             0
                     if c <> 0 then c else

@@ -538,7 +538,8 @@ type CalledMeth<'T>
 
     member x.ParamArrayCallerArgs = x.ArgSets |> List.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
 
-    member x.ParamArrayElementType = 
+    member x.GetParamArrayElementType() =
+        // turned as a method to avoid assert in variable inspector 
         assert (x.UsesParamArrayConversion)
         x.ParamArrayCalledArgOpt.Value.CalledArgumentType |> destArrayTy x.amap.g 
 
