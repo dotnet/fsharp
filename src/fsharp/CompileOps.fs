@@ -4897,9 +4897,10 @@ let ProcessMetaCommandsFromInput
                 match args with
                 | [path] ->
                     matchedm <- m
-                    let dm = tcConfig.dependencyProvider.TryFindDependencyManagerInPath(tcConfig.compilerToolPaths, tcConfig.outputDir |> Option.defaultValue "" , reportError, path)
+                    let output = tcConfig.outputDir |> Option.defaultValue ""
+                    let dm = tcConfig.dependencyProvider.TryFindDependencyManagerInPath(tcConfig.compilerToolPaths, output , reportError, path)
                     match dm with
-                    | dllpath, null when String.IsNullOrEmpty(dllpath) ->
+                    | dllpath, null when String.IsNullOrWhiteSpace(dllpath) ->
                         state           // error already reported
 
                     | _, dependencyManager when not(isNull dependencyManager) ->

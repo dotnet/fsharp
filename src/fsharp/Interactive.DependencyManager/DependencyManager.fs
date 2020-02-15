@@ -67,13 +67,13 @@ type IDependencyManagerProvider =
 
 [<RequireQualifiedAccess>]
 type ErrorReportType =
-| Warning
-| Error
+    | Warning
+    | Error
 
 type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyInfo, keyProperty: PropertyInfo, resolveDeps: MethodInfo option, resolveDepsEx: MethodInfo option,outputDir: string option) =
     let instance = Activator.CreateInstance(theType, [|outputDir :> obj|])
-    let nameProperty     = nameProperty.GetValue >> string
-    let keyProperty      = keyProperty.GetValue >> string
+    let nameProperty = nameProperty.GetValue >> string
+    let keyProperty = keyProperty.GetValue >> string
 
     static member InstanceMaker (theType: System.Type, outputDir: string option) =
         match getAttributeNamed theType dependencyManagerAttributeName,
@@ -91,10 +91,10 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
     interface IDependencyManagerProvider with
 
         /// Name of dependency Manager
-        member __.Name     = instance |> nameProperty
+        member __.Name = instance |> nameProperty
 
         /// Key of dependency Manager: used for #r "key: ... "   E.g nuget
-        member __.Key      = instance |> keyProperty
+        member __.Key = instance |> keyProperty
 
         /// Resolve the dependencies for the given arguments
         ///
@@ -133,6 +133,8 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
             succeeded, references, generatedScripts, additionalIncludeFolders
 
 
+/// Provides DependencyManagement functions.
+/// Class is IDisposable
 type DependencyProvider () =
 
     // Resolution Path = Location of FSharp.Compiler.Private.dll
@@ -189,15 +191,17 @@ type DependencyProvider () =
                     None
             managers
 
+    /// Returns a formatted error message for the host to present
     member _.CreatePackageManagerUnknownError(compilerTools: string seq, outputDir: string, packageManagerKey: string, reportError: ErrorReportType -> int * string -> unit) =
 
         let registeredKeys = String.Join(", ", RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError |> Seq.map (fun kv -> kv.Value.Key))
         let searchPaths = assemblySearchPaths.Force()
         InteractiveDependencyManager.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
 
+    /// Fetch a dependencymanager that supports a specific key
     member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ErrorReportType -> int * string -> unit, path: string): string * IDependencyManagerProvider =
         try
-            if path.Contains ":" && not (System.IO.Path.IsPathRooted path) then
+            if path.Contains ":" && not (Path.IsPathRooted path) then
                 let managers = RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
 
                 match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":" )) with
@@ -214,10 +218,12 @@ type DependencyProvider () =
             reportError ErrorReportType.Error (InteractiveDependencyManager.SR.packageManagerError(e.Message))
             null, Unchecked.defaultof<IDependencyManagerProvider>
 
+    /// Remove the dependency mager with the specified key
     member _.RemoveDependencyManagerKey(packageManagerKey:string, path:string): string =
 
         path.Substring(packageManagerKey.Length + 1).Trim()
 
+    /// Fetch a dependencymanager that supports a specific key
     member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ErrorReportType -> int * string -> unit, key: string): IDependencyManagerProvider =
 
         try
@@ -231,6 +237,7 @@ type DependencyProvider () =
             reportError ErrorReportType.Error (InteractiveDependencyManager.SR.packageManagerError(e.Message))
             Unchecked.defaultof<IDependencyManagerProvider>
 
+    /// Resolve reference for a list of package manager lines
     member _.Resolve (packageManager:IDependencyManagerProvider, implicitIncludeDir: string, mainScriptName: string, fileName: string, scriptExt: string, packageManagerTextLines: string seq, reportError: ErrorReportType -> int * string -> unit, executionTfm: string): bool * string seq * string seq * string seq =
 
         try
@@ -240,6 +247,7 @@ type DependencyProvider () =
             let e = stripTieWrapper e
             reportError ErrorReportType.Error (InteractiveDependencyManager.SR.packageManagerError(e.Message))
             false, Seq.empty, Seq.empty, Seq.empty
+
     interface IDisposable with
         member _.Dispose() =
             // Unregister everything

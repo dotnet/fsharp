@@ -1,3 +1,4 @@
+
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Helper members to integrate DependencyManagers into F# codebase
@@ -5,25 +6,30 @@ namespace Interactive.DependencyManager
 
 open System
 
-/// Todo describe this API
+/// Wraps access to a DependencyManager implementation
 [<AllowNullLiteralAttribute >]
 type IDependencyManagerProvider =
-    /// Todo describe this API
+    /// Name of the dependency manager
     abstract Name: string
 
-    /// Todo describe this API
+    /// Key that identifies the types of dependencies that this DependencyManager operates on
+    /// E.g
+    ///     nuget: indicates that this DM is for nuget packages
+    ///     paket: indicates that this DM is for paket scripts, which manage nuget packages, github source dependencies etc ...
     abstract Key: string
 
-    /// Todo describe this API
+    /// Resolve the dependencies, for the given set of arguments, go find the .dll references, scripts and additional include values.
     abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string seq * string seq * string seq
 
-/// Todo describe this API
+/// Indicates to the Error reporting callbacks, severity of the error
 [<RequireQualifiedAccess>]
 type ErrorReportType =
-| Warning
-| Error
+    | Warning
+    | Error
 
 
+/// Provides DependencyManagement functions.
+/// Class is IDisposable
 type DependencyProvider =
     interface System.IDisposable
 
@@ -39,7 +45,7 @@ type DependencyProvider =
     /// Resolve reference for a list of package manager lines
     member Resolve : packageManager:IDependencyManagerProvider * implicitIncludeDir:string * mainScriptName:string * fileName:string * scriptExt:string * packageManagerTextLines:seq<string> * reportError:(ErrorReportType -> int * string -> unit) * executionTfm:string -> bool * seq<string> * seq<string> * seq<string>
 
-    /// Go fetch a dependencymanager that supports a specific key
+    /// Fetch a dependencymanager that supports a specific key
     member TryFindDependencyManagerByKey : compilerTools:seq<string> * outputDir:string * reportError:(ErrorReportType -> int * string -> unit) * key:string -> IDependencyManagerProvider
 
     /// TryFindDependencyManagerInPath - given a #r "key:sometext" go and find a DependencyManager that satisfies the key
