@@ -31,7 +31,7 @@ Candidates:
  - member Foo.GetSlice : x1:float option * x2:int option * y:int -> unit
  - member Foo.GetSlice : x1:int option * x2:int option * y:int -> unit
 
-E_Slices01.fsx(19,9,19,17): typecheck error FS0039: The field, constructor or member 'Item' is not defined.
+E_Slices01.fsx(19,9,19,17): typecheck error FS0039: The type 'Foo<a>' does not define the field, constructor or member 'Item'.
 
 E_Slices01.fsx(20,9,20,26): typecheck error FS0503: A member or object constructor 'GetSlice' taking 4 arguments is not accessible from this code location. All accessible versions of method 'GetSlice' take 3 arguments.
 
