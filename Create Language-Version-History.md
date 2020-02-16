@@ -97,8 +97,9 @@ Features Added in F# Language Versions
 
 # [F# 4.7](https://docs.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-47)
 
-- Implicit yields
-- No more required double underscore
+- compiler support for `LangVersion`
+- Implicit `yield`s
+- No more required double underscore (wildcard identifier)
 - Indentation relaxations for parameters passed to constructors and static methods
-- 'nameof' function
-- Open static classes
+- `nameof` function (preview)
+- Open static classes (preview)
