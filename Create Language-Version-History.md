@@ -1,21 +1,24 @@
 Features Added in F# Language Versions
 ====================
 
-# F# 1.0
+# [F# 1.0](https://docs.microsoft.com/en-us/archive/blogs/dsyme/welcome-to-dons-f-blog)
 
 - Discriminated unions
 - Records
 - Tuples
 - Pattern matching
 - Type abbreviations
-- Object programming
 - Structs
 - Signature files
-- Scripting files
 - Imperative programming
 - Modules (no functors)
 - Nested modules
 - .NET Interoperability
+
+# [F# 1.1](https://docs.microsoft.com/en-us/archive/blogs/dsyme/a-taste-of-whats-new-in-f-1-1)
+- Interactive environment
+- Object programming
+- Encapsulation Extensions
 
 # [F# 2.0](https://fsharp.org/specs/language-spec/2.0/FSharpSpec-2.0-April-2012.pdf)
 
