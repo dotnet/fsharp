@@ -49,13 +49,13 @@ Features Added in F# Language Versions
 
 # [F# 4.0](https://fsharp.org/specs/language-spec/4.0/FSharpSpec-4.0-final.pdf)
 
-- Printf on unitized values
+- `printf` on unitized values
 - Extension property initializers
 - Non-null provided types
 - Primary constructors as functions
 - Static parameters for provided methods
-- Printf interpolation
-- Extended #if grammar
+- `printf` interpolation
+- Extended `#if` grammar
 - Tailcall attribute
 - Multiple interface instantiations
 - Optional type args
@@ -70,30 +70,30 @@ Features Added in F# Language Versions
 - Caller info argument attributes
 - Result type and some basic Result functions
 - Mutually referential types and modules within the same file
-- Implicit "Module" syntax on modules with shared name as type
-- Byref returns, supporting consuming C# ref-returning methods
+- Implicit `Module` syntax on modules with shared name as type
+- Byref returns, supporting consuming C# `ref`-returning methods
 - Error message improvements
-- Support for 'fixed'
+- Support for `fixed`
 
 # [F# 4.5](https://docs.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-45)
 
 - Versioning alignment of binary, package, and language
-- Support for 'Span<T>' and related types
-- Ability to produce 'byref' returns
-- The 'voidptr' type
-- The 'inref<'T>' and 'outref<'T>' types to represent readonly and write-only 'byref's
-- 'IsByRefLike' structs
-- 'IsReadOnly' structs
-- Extension method support for 'byref<'T>'/'inref<'T>'/'outref<'T>'
-- 'match!' keyword in computation expressions
-- Relaxed upcast with 'yield' in F# seq/list/array expressions
+- Support for `Span<'T>` and related types
+- Ability to produce `byref` returns
+- The `voidptr` type
+- The `inref<'T>` and `outref<'T>` types to represent readonly and write-only `byref`s
+- `IsByRefLike` structs
+- `IsReadOnly` structs
+- Extension method support for `byref<'T>`/`inref<'T>`/`outref<'T>`
+- `match!` keyword in computation expressions
+- Relaxed upcast with `yield` in F# sequence/list/array expressions
 - Relaxed indentation with list and array expressions
 - Enumeration cases emitted as public
 
 # [F# 4.6](https://docs.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-46)
 
 - Anonymous records
-- ValueOption functions
+- `ValueOption` module functions
 
 # [F# 4.7](https://docs.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-47)
 
