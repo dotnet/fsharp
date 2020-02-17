@@ -16,6 +16,7 @@ Features Added in F# Language Versions
 - .NET Interoperability
 
 # [F# 1.1](https://docs.microsoft.com/en-us/archive/blogs/dsyme/a-taste-of-whats-new-in-f-1-1)
+
 - Interactive environment
 - Object programming
 - Encapsulation Extensions
@@ -24,6 +25,7 @@ Features Added in F# Language Versions
 
 - Active patterns
 - Units of measure
+- Object expressions
 - Sequence expressions
 - Asynchronous programming
 - Agent programming
