@@ -415,6 +415,37 @@ let main argv = 0"""
 
             Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
 
+    static member TypeCheckWithErrorsAndOptionsAgainstBaseLine options (sourceFile: string) =
+        lock gate <| fun () ->
+            let absoluteSourceFile = System.IO.Path.Combine(__SOURCE_DIRECTORY__, "..", sourceFile)
+            let parseResults, fileAnswer =
+                checker.ParseAndCheckFileInProject(
+                    sourceFile,
+                    0,
+                    SourceText.ofString (File.ReadAllText absoluteSourceFile),
+                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions; SourceFiles = [|sourceFile|] })
+                |> Async.RunSynchronously
+
+            Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
+
+            match fileAnswer with
+            | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+            | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
+
+            let errorsExpectedBaseLine =
+                let bslFile = Path.ChangeExtension(absoluteSourceFile, "bsl")
+                if not (File.Exists bslFile) then
+                    // new test likely initialized, create empty baseline file
+                    File.WriteAllText(bslFile, "")
+                File.ReadAllText(Path.ChangeExtension(absoluteSourceFile, "bsl"))
+            let errorsActual =
+                typeCheckResults.Errors
+                |> Array.map (sprintf "%A")
+                |> String.concat "\n" 
+            File.WriteAllText(Path.ChangeExtension(absoluteSourceFile,"err"), errorsActual)
+
+            Assert.AreEqual(errorsExpectedBaseLine.Replace("\r\n","\n"), errorsActual.Replace("\r\n","\n"))
+
     static member TypeCheckWithErrorsAndOptionsAndAdjust options libAdjust (source: string) expectedTypeErrors =
         lock gate <| fun () ->
             let errors =
