@@ -216,7 +216,7 @@ function UpdatePath() {
     TestAndAddToPath $subdir
 
     # add windows SDK dir for ildasm.exe
-    foreach ($child in Get-ChildItem "${env:ProgramFiles(x86)}\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.?.? Tools") {
+    foreach ($child in Get-ChildItem "${env:ProgramFiles(x86)}\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.* Tools") {
         $subdir = $child
     }
     TestAndAddToPath $subdir
