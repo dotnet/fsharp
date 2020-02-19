@@ -122,4 +122,7 @@ test.fsx(232,15): warning FS0025: Incomplete pattern matches on this expression.
 
 test.fsx(249,15): warning FS0025: Incomplete pattern matches on this expression. For example, the value 'U2 (_, U1 (_, "a"))' may indicate a case not covered by the pattern(s).
 
-test.fsx(383,29): error FS0041: A unique overload for method 'SimpleOverload' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: SomeClass.SimpleOverload(?x: Nullable<int>) : int, SomeClass.SimpleOverload(?x: int) : int
+test.fsx(383,29): error FS0041: A unique overload for method 'SimpleOverload' could not be determined based on type information prior to this program point. A type annotation may be needed.
+Candidates:
+ - SomeClass.SimpleOverload(?x: Nullable<int>) : int
+ - SomeClass.SimpleOverload(?x: int) : int

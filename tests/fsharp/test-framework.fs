@@ -485,7 +485,9 @@ let diff normalize path1 path2 =
     let append s = result.AppendLine s |> ignore
     let cwd = Directory.GetCurrentDirectory()
 
-    if not <| File.Exists(path1) then failwithf "Invalid path %s" path1
+    if not <| File.Exists(path1) then
+        // creating empty baseline file as this is likely someone initializing a new test
+        File.WriteAllText(path1, String.Empty) 
     if not <| File.Exists(path2) then failwithf "Invalid path %s" path2
 
     let lines1 = File.ReadAllLines(path1)

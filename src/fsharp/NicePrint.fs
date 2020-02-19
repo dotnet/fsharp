@@ -988,43 +988,64 @@ module private PrintTypes =
     and layoutType denv ty = 
         layoutTypeWithInfo denv SimplifyTypes.typeSimplificationInfo0 ty
 
+
+    let layoutArgInfos denv env argInfos =
+
+        // Format each argument, including its name and type 
+        let argL (ty, argInfo: ArgReprInfo) = 
+       
+            // Detect an optional argument 
+            let isOptionalArg = HasFSharpAttribute denv.g denv.g.attrib_OptionalArgumentAttribute argInfo.Attribs
+            let isParamArray = HasFSharpAttribute denv.g denv.g.attrib_ParamArrayAttribute argInfo.Attribs
+            match argInfo.Name, isOptionalArg, isParamArray, tryDestOptionTy denv.g ty with 
+            // Layout an optional argument 
+            | Some(id), true, _, ValueSome ty -> 
+                leftL (tagPunctuation "?") ^^ sepL (tagParameter id.idText) ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty 
+            // Layout an unnamed argument 
+            | None, _, _, _ -> 
+                layoutTypeWithInfoAndPrec denv env 2 ty
+            // Layout a named argument 
+            | Some id, _, isParamArray, _ -> 
+                let prefix =
+                    if isParamArray then
+                        layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL (tagParameter id.idText)
+                    else
+                        leftL (tagParameter id.idText)
+                prefix ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty
+
+        let allArgsL = 
+            argInfos 
+            |> List.mapSquared argL 
+            |> List.map (sepListL (wordL (tagPunctuation "*")))
+        allArgsL
+
+    let layoutReturnType denv env rty = layoutTypeWithInfoAndPrec denv env 4 rty
+
+    let layoutGenericParameterTypes denv env = 
+      function
+      | [] -> emptyL
+      | genParamTys ->
+        (wordL (tagPunctuation "<"))
+        ^^
+        (
+          genParamTys
+          |> List.map (layoutTypeWithInfoAndPrec denv env 4)
+          |> sepListL (wordL (tagPunctuation ","))
+        ) 
+        ^^
+        (wordL (tagPunctuation ">"))
+
     /// Layout a single type used as the type of a member or value 
     let layoutTopType denv env argInfos rty cxs =
         // Parenthesize the return type to match the topValInfo 
-        let rtyL = layoutTypeWithInfoAndPrec denv env 4 rty
+        let rtyL = layoutReturnType denv env rty
         let cxsL = layoutConstraintsWithInfo denv env cxs
         match argInfos with
         | [] -> rtyL --- cxsL
         | _ -> 
-
-            // Format each argument, including its name and type 
-            let argL (ty, argInfo: ArgReprInfo) = 
-                   
-                // Detect an optional argument 
-                let isOptionalArg = HasFSharpAttribute denv.g denv.g.attrib_OptionalArgumentAttribute argInfo.Attribs
-                let isParamArray = HasFSharpAttribute denv.g denv.g.attrib_ParamArrayAttribute argInfo.Attribs
-                match argInfo.Name, isOptionalArg, isParamArray, tryDestOptionTy denv.g ty with 
-                // Layout an optional argument 
-                | Some(id), true, _, ValueSome ty -> 
-                    leftL (tagPunctuation "?") ^^ sepL (tagParameter id.idText) ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty 
-                // Layout an unnamed argument 
-                | None, _, _, _ -> 
-                    layoutTypeWithInfoAndPrec denv env 2 ty
-                // Layout a named argument 
-                | Some id, _, isParamArray, _ -> 
-                    let prefix =
-                        if isParamArray then
-                            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL (tagParameter id.idText)
-                        else
-                            leftL (tagParameter id.idText)
-                    prefix ^^ SepL.colon ^^ layoutTypeWithInfoAndPrec denv env 2 ty
-                        
             let delimitReturnValue = tagPunctuation (if denv.useColonForReturnType then ":" else "->")
-
             let allArgsL = 
-                argInfos 
-                |> List.mapSquared argL 
-                |> List.map (sepListL (wordL (tagPunctuation "*")))
+                layoutArgInfos denv env argInfos
                 |> List.map (fun x -> (x ^^ wordL delimitReturnValue)) 
             (List.foldBack (---) allArgsL rtyL) --- cxsL
 
@@ -1073,6 +1094,12 @@ module private PrintTypes =
         let cxs = cxs |> List.filter (fun (tp, _) -> not (parentTyparTys |> List.exists (fun ty -> match tryDestTyparTy denv.g ty with ValueSome destTypar -> typarEq tp destTypar | _ -> false))) 
         prettyTyparInst, prettyLayoutOfTopTypeInfoAux denv argInfos retTy cxs
 
+
+    let private prettyArgInfos denv allTyparInst =
+        function 
+        | [] -> [(denv.g.unit_ty, ValReprInfo.unnamedTopArg1)] 
+        | infos -> infos |> List.map (map1Of2 (instType allTyparInst)) 
+
     // Layout: type spec - class, datatype, record, abbrev 
 
     let private prettyLayoutOfMemberSigCore denv memberToParentInst (typarInst, methTypars: Typars, argInfos, retTy) = 
@@ -1081,7 +1108,7 @@ module private PrintTypes =
             PrettyTypes.NewPrettyTypars memberToParentInst methTypars methTyparNames
 
         let retTy = instType allTyparInst retTy
-        let argInfos = argInfos |> List.map (fun infos -> if isNil infos then [(denv.g.unit_ty, ValReprInfo.unnamedTopArg1)] else infos |> List.map (map1Of2 (instType allTyparInst))) 
+        let argInfos = argInfos |> List.map (prettyArgInfos denv allTyparInst) 
 
         // Also format dummy types corresponding to any type variables on the container to make sure they 
         // aren't chosen as names for displayed variables. 
@@ -1106,6 +1133,50 @@ module private PrintTypes =
             let nameL = if denv.showTyparBinding then layoutTyparDecls denv nameL true niceMethodTypars else nameL
             nameL
         nameL ^^ wordL (tagPunctuation ":") ^^ tauL
+
+    /// layouts the elements of an unresolved overloaded method call:
+    /// argInfos: unammed and named arguments
+    /// retTy: return type
+    /// genParamTy: generic parameter types
+    let prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genParamTys =
+        let _niceMethodTypars, typarInst =
+            let memberToParentInst = List.empty
+            let typars = argInfos |> List.choose (function (TType.TType_var typar,_) -> Some typar | _ -> None)
+            let methTyparNames = typars |> List.mapi (fun i tp -> if (PrettyTypes.NeedsPrettyTyparName tp) then sprintf "a%d" (List.length memberToParentInst + i) else tp.Name)
+            PrettyTypes.NewPrettyTypars memberToParentInst typars methTyparNames
+        let retTy = instType typarInst retTy
+        let argInfos = prettyArgInfos denv typarInst argInfos
+        let argInfos,retTy,genParamTys, cxs =
+            // using 0, 1, 2 as discriminant for return, arguments and generic parameters
+            // respectively, in order to easily retrieve each of the types with their
+            // expected quality below.
+            let typesWithDiscrimants =
+                [
+                    yield 0, retTy 
+                    for ty,_ in argInfos do
+                        yield 1, ty
+                    for ty in genParamTys do
+                        yield 2, ty
+                ]
+            let typesWithDiscrimants,typarsAndCxs = PrettyTypes.PrettifyDiscriminantAndTypePairs denv.g typesWithDiscrimants
+            let retTy = typesWithDiscrimants |> List.find (function (0, _) -> true | _ -> false) |> snd
+            let argInfos = 
+                typesWithDiscrimants 
+                |> List.choose (function (1,ty) -> Some ty | _ -> None)
+                |> List.zip argInfos 
+                |> List.map (fun ((_,argInfo),tTy) -> tTy, argInfo)
+            let genParamTys = 
+                typesWithDiscrimants
+                |> List.choose (function (2,ty) -> Some ty | _ -> None)
+              
+            argInfos, retTy, genParamTys, typarsAndCxs
+
+        let env = SimplifyTypes.CollectInfo true (List.collect (List.map fst) [argInfos]) cxs
+        let cxsL = layoutConstraintsWithInfo denv env env.postfixConstraints
+
+        (List.foldBack (---) (layoutArgInfos denv env [argInfos]) cxsL,
+            layoutReturnType denv env retTy,
+            layoutGenericParameterTypes denv env genParamTys)
 
     let prettyLayoutOfType denv ty = 
         let ty, cxs = PrettyTypes.PrettifyType denv.g ty
@@ -1246,6 +1317,7 @@ let layoutConst g ty c = PrintTypes.layoutConst g ty c
 
 let prettyLayoutOfMemberSig denv x = x |> PrintTypes.prettyLayoutOfMemberSig denv 
 let prettyLayoutOfUncurriedSig denv argInfos tau = PrintTypes.prettyLayoutOfUncurriedSig denv argInfos tau
+let prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genericParameters = PrintTypes.prettyLayoutsOfUnresolvedOverloading denv argInfos retTy genericParameters
 
 //-------------------------------------------------------------------------
 
