@@ -46,6 +46,9 @@
     <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\Interactive.DependencyManager\InteractiveDependencyManager.txt">
+      <Link>InteractiveDependencyManager.txt</Link>
+    </EmbeddedText>
     <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
     </EmbeddedText>
@@ -519,11 +522,11 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/DotNetFrameworkDependencies.fs">
       <Link>Driver\DotNetFrameworkDependencies.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/DependencyManager.Integration.fsi">
-      <Link>Driver/DependencyManager.Integration.fsi</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Interactive.DependencyManager/DependencyManager.fsi">
+      <Link>Driver/DependencyManager.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/DependencyManager.Integration.fs">
-      <Link>Driver/DependencyManager.Integration.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Interactive.DependencyManager/DependencyManager.fs">
+      <Link>Driver/DependencyManager.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CompileOps.fsi">
       <Link>Driver/CompileOps.fsi</Link>
