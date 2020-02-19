@@ -522,12 +522,6 @@
     <Compile Include="..\DotNetFrameworkDependencies.fs">
       <Link>Driver\DotNetFrameworkDependencies.fs</Link>
     </Compile>
-    <Compile Include="..\DependencyManager.Integration.fsi">
-      <Link>Driver\DependencyManager.Integration.fsi</Link>
-    </Compile>
-    <Compile Include="..\DependencyManager.Integration.fs">
-      <Link>Driver\DependencyManager.Integration.fs</Link>
-    </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
@@ -720,9 +714,9 @@
     </Compile>
   </ItemGroup>
 
-
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Interactive.DependencyManager\Interactive.DependencyManager.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
