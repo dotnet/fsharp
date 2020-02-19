@@ -2407,11 +2407,9 @@ and
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TraitConstraintInfo = 
 
-    /// TTrait(tys, nm, memFlags, argtys, rty, solution)
-    ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of TTypes * string * MemberFlags * TTypes * TType option * TraitConstraintSln option ref 
+    | TTrait of tys: TTypes * memberName: string * _memFlags: MemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
 
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)

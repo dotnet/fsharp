@@ -52,6 +52,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.Import
 open FSharp.Compiler.Lib
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.PrettyNaming
@@ -181,13 +182,30 @@ type ContextInfo =
     /// The type equation comes from a sequence expression.
     | SequenceExpression of TType
 
-exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * TType list * TType list * range  * range
+/// Captures relevant information for a particular failed overload resolution.
+type OverloadInformation = 
+    {
+        methodSlot: CalledMeth<Expr>
+        amap : ImportMap
+        error: exn
+    }
+
+/// Cases for overload resolution failure that exists in the implementation of the compiler.
+type OverloadResolutionFailure =
+  | NoOverloadsFound   of methodName: string
+                        * candidates: OverloadInformation list 
+                        * cx: TraitConstraintInfo option
+  | PossibleCandidates of methodName: string 
+                        * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
+                        * cx: TraitConstraintInfo option
+
+exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * TType list * TType list * range * range
 
 exception ConstraintSolverInfiniteTypes of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
 
 exception ConstraintSolverTypesNotInEqualityRelation of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
 
-exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * TType * TType * range  * range 
+exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argTy: TType * paramTy: TType * callRange: range * parameterRange: range
 
 exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Tast.Typar * Tast.TyparConstraint * range  * range 
 
@@ -197,21 +215,15 @@ exception ConstraintSolverRelatedInformation of string option * range * exn
 
 exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Tast.Typar * TType * exn * range
 
-exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * range
+exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * range
 
-exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * TType * TType * exn * ContextInfo * range
+exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * ContextInfo * parameterRange: range
 
 exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * exn * range
 
-exception PossibleOverload of displayEnv: DisplayEnv * string * exn * range
-
-exception UnresolvedOverloading of displayEnv: DisplayEnv * exn list * string * range
+exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range
 
 exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
-
-let GetPossibleOverloads  amap m denv (calledMethGroup: (CalledMeth<_> * exn) list) = 
-    calledMethGroup |> List.map (fun (cmeth, e) ->
-        PossibleOverload(denv, NicePrint.stringOfMethInfo amap m denv cmeth.Method, e, m))
 
 type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
 
@@ -508,6 +520,9 @@ exception AbortForFailedOverloadResolution
 /// AbortForFailedOverloadResolution is caught and processing continues.
 let inline TryD_IgnoreAbortForFailedOverloadResolution f1 f2 =
     TryD f1 (function AbortForFailedOverloadResolution -> CompleteD | exn -> f2 exn)
+
+/// used to provide detail about non matched argument in overload resolution error message
+exception ArgDoesNotMatchError of error: ErrorsFromAddingSubsumptionConstraint * calledMeth: CalledMeth<Expr> * calledArg: CalledArg * callerArg: CallerArg<Expr>
 
 /// Represents a very local condition where we prefer to report errors before stripping type abbreviations.
 exception LocallyAbortOperationThatLosesAbbrevs 
@@ -1520,15 +1535,17 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                     // curried members may not be used to satisfy constraints
                     |> List.choose (fun minfo ->
                           if minfo.IsCurried then None else
-                          let callerArgs = argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))
+                          let callerArgs = 
+                            { Unnamed = [ (argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))) ]
+                              Named = [ [ ] ] }
                           let minst = FreshenMethInfo m minfo
                           let objtys = minfo.GetObjArgTypes(amap, m, minst)
-                          Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo, m, AccessibleFromEverywhere, minfo, minst, minst, None, objtys, [(callerArgs, [])], false, false, None)))
+                          Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo, m, AccessibleFromEverywhere, minfo, minst, minst, None, objtys, callerArgs, false, false, None)))
               
               let methOverloadResult, errors = 
                   trace.CollectThenUndoOrCommit
                       (fun (a, _) -> Option.isSome a)
-                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) (0, 0) AccessibleFromEverywhere calledMethGroup false (Some rty))
+                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some rty))
 
               match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
               | Some (anonInfo, tinst, i), None, None -> 
@@ -2264,7 +2281,7 @@ and CanMemberSigsMatchUpToCheck
 //
 // "ty2 casts to ty1"
 // "a value of type ty2 can be used where a value of type ty1 is expected"
-and private SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 =
+and private SolveTypeSubsumesTypeWithWrappedContextualReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 wrapper =
     TryD_IgnoreAbortForFailedOverloadResolution
         (fun () -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
         (fun res ->
@@ -2272,10 +2289,13 @@ and private SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m
             | ContextInfo.RuntimeTypeTest isOperator ->
                 // test if we can cast other way around
                 match CollectThenUndo (fun newTrace -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m (OptionalTrace.WithTrace newTrace) cxsln ty2 ty1) with 
-                | OkResult _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.DowncastUsedInsteadOfUpcast isOperator, m))
-                | _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.NoContext, m))
-            | _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, csenv.eContextInfo, m)))
+                | OkResult _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.DowncastUsedInsteadOfUpcast isOperator, m)))
+                | _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.NoContext, m)))
+            | _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, csenv.eContextInfo, m))))
 
+and private SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 =
+        SolveTypeSubsumesTypeWithWrappedContextualReport (csenv) ndeep m trace cxsln ty1 ty2 id
+        
 // ty1: actual
 // ty2: expected
 and private SolveTypeEqualsTypeWithReport (csenv: ConstraintSolverEnv) ndeep  m trace cxsln actual expected = 
@@ -2308,9 +2328,9 @@ and MustUnify csenv ndeep trace cxsln ty1 ty2 =
 and MustUnifyInsideUndo csenv ndeep trace cxsln ty1 ty2 = 
     SolveTypeEqualsTypeWithReport csenv ndeep csenv.m (WithTrace trace) cxsln ty1 ty2
 
-and ArgsMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln isConstraint calledArg (CallerArg(callerArgTy, m, _, _) as callerArg) = 
+and ArgsMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln isConstraint calledMeth calledArg (CallerArg(callerArgTy, m, _, _) as callerArg) = 
     let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint true calledArg callerArg
-    SolveTypeSubsumesTypeWithReport csenv ndeep  m (WithTrace trace) cxsln calledArgTy callerArgTy 
+    SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep  m (WithTrace trace) cxsln calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
 
 and TypesMustSubsumeOrConvertInsideUndo (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgTy callerArgTy = 
     SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy 
@@ -2448,7 +2468,7 @@ and ResolveOverloading
          methodName      // The name of the method being called, for error reporting
          ndeep           // Depth of inference
          cx              // We're doing overload resolution as part of constraint solving, where special rules apply for op_Explicit and op_Implicit constraints.
-         callerArgCounts // How many named/unnamed args id the caller provide? 
+         (callerArgs: CallerArgs<Expr>)
          ad              // The access domain of the caller, e.g. a module, type etc. 
          calledMethGroup // The set of methods being called 
          permitOptArgs   // Can we supply optional arguments?
@@ -2471,7 +2491,7 @@ and ResolveOverloading
             None, ErrorD (Error (FSComp.SR.csMethodNotFound(methodName), m)), NoTrace
 
         | _, [] when not isOpConversion -> 
-            None, ReportNoCandidatesErrorExpr csenv callerArgCounts methodName ad calledMethGroup, NoTrace
+            None, ReportNoCandidatesErrorExpr csenv callerArgs.CallerArgCounts methodName ad calledMethGroup, NoTrace
             
         | _, _ -> 
 
@@ -2509,11 +2529,11 @@ and ResolveOverloading
                                    alwaysCheckReturn
                                    (MustUnifyInsideUndo csenv ndeep newTrace cxsln) 
                                    (TypesMustSubsumeOrConvertInsideUndo csenv ndeep (WithTrace newTrace) cxsln m)
-                                   (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace cxsln cx.IsSome) 
+                                   (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace cxsln cx.IsSome candidate) 
                                    reqdRetTyOpt 
                                    candidate)
 
-            let failOverloading (msg: string) errors = 
+            let failOverloading overloadResolutionFailure = 
                 // Try to extract information to give better error for ambiguous op_Explicit and op_Implicit 
                 let convOpData = 
                     if isOpConversion then 
@@ -2528,11 +2548,8 @@ and ResolveOverloading
                 | Some (fromTy, toTy) -> 
                     UnresolvedConversionOperator (denv, fromTy, toTy, m)
                 | None -> 
-                    // Otherwise collect a list of possible overloads
-                    let overloads = GetPossibleOverloads amap m denv errors
-                    // if list of overloads is not empty - append line with "The available overloads are shown below..."
-                    let msg = if isNil overloads then msg else sprintf "%s %s" msg (FSComp.SR.csSeeAvailableOverloads ())
-                    UnresolvedOverloading (denv, overloads, msg, m)
+                    // Otherwise pass the overload resolution failure for error printing in CompileOps
+                    UnresolvedOverloading (denv, callerArgs, overloadResolutionFailure, m)
 
             match applicable with 
             | [] ->
@@ -2548,13 +2565,14 @@ and ResolveOverloading
                                              alwaysCheckReturn
                                              (MustUnifyInsideUndo csenv ndeep newTrace cxsln) 
                                              (TypesMustSubsumeOrConvertInsideUndo csenv ndeep (WithTrace newTrace) cxsln m)
-                                             (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace cxsln cx.IsSome) 
+                                             (ArgsMustSubsumeOrConvertInsideUndo csenv ndeep newTrace cxsln cx.IsSome calledMeth) 
                                              reqdRetTyOpt 
                                              calledMeth) with 
                             | OkResult _ -> None
-                            | ErrorResult(_, exn) -> Some (calledMeth, exn))
+                            | ErrorResult(_warnings, exn) ->
+                                Some {methodSlot = calledMeth; amap = amap; error = exn })
 
-                None, ErrorD (failOverloading (FSComp.SR.csNoOverloadsFound methodName) errors), NoTrace
+                None, ErrorD (failOverloading (NoOverloadsFound (methodName, errors, cx))), NoTrace
 
             | [(calledMeth, warns, t)] ->
                 Some calledMeth, OkResult (warns, ()), WithTrace t
@@ -2726,27 +2744,26 @@ and ResolveOverloading
                 match bestMethods with 
                 | [(calledMeth, warns, t)] -> Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
-                    let methodNames =
-                        let methods = 
-                            // use the most precise set
-                            // - if after filtering bestMethods still contains something - use it
-                            // - otherwise use applicableMeths or initial set of candidate methods
-                            match bestMethods with
-                            | [] -> 
-                                match applicableMeths with
-                                | [] -> candidates
-                                | m -> m |> List.map (fun (x, _, _) -> x)
-                            | m -> m |> List.map (fun (x, _, _) -> x)
+                    let methods = 
+                        let getMethodSlotsAndErrors methodSlot errors =
+                            [ match errors with
+                              | [] -> yield { methodSlot = methodSlot; error = Unchecked.defaultof<exn>; amap = amap }
+                              | errors -> for error in errors do yield { methodSlot = methodSlot; error = error; amap = amap } ]
 
-                        methods
-                        |> List.map (fun cmeth -> NicePrint.stringOfMethInfo amap m denv cmeth.Method)
-                        |> List.sort
-                    let msg = FSComp.SR.csMethodIsOverloaded methodName
-                    let msg = 
-                        match methodNames with
-                        | [] -> msg
-                        | names -> sprintf "%s %s" msg (FSComp.SR.csCandidates (String.concat ", " names))
-                    None, ErrorD (failOverloading msg []), NoTrace
+
+                        // use the most precise set
+                        // - if after filtering bestMethods still contains something - use it
+                        // - otherwise use applicableMeths or initial set of candidate methods
+                        [ match bestMethods with
+                          | [] -> 
+                              match applicableMeths with
+                              | [] -> for methodSlot in candidates do yield getMethodSlotsAndErrors methodSlot []
+                              | m -> for (methodSlot, errors, _) in m do yield getMethodSlotsAndErrors methodSlot errors
+                          | m -> for (methodSlot, errors, _) in m do yield getMethodSlotsAndErrors methodSlot errors ]
+
+                    let methods = List.concat methods
+
+                    None, ErrorD (failOverloading (PossibleCandidates(methodName, methods,cx))), NoTrace
 
     // If we've got a candidate solution: make the final checks - no undo here! 
     // Allow subsumption on arguments. Include the return type.
@@ -2790,9 +2807,9 @@ and ResolveOverloading
     | None -> 
         None, errors        
 
-let ResolveOverloadingForCall denv css m  methodName ndeep cx callerArgCounts ad calledMethGroup permitOptArgs reqdRetTyOpt =
+let ResolveOverloadingForCall denv css m  methodName ndeep cx callerArgs ad calledMethGroup permitOptArgs reqdRetTyOpt =
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    ResolveOverloading csenv NoTrace methodName ndeep cx callerArgCounts ad calledMethGroup permitOptArgs reqdRetTyOpt
+    ResolveOverloading csenv NoTrace methodName ndeep cx callerArgs ad calledMethGroup permitOptArgs reqdRetTyOpt
 
 /// This is used before analyzing the types of arguments in a single overload resolution
 let UnifyUniqueOverloading 
