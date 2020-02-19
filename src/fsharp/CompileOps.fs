@@ -51,6 +51,8 @@ open FSharp.Compiler.Text
 
 open FSharp.Compiler.DotNetFrameworkDependencies
 
+open Interactive.DependencyManager
+
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
@@ -2235,8 +2237,8 @@ type TcConfigBuilder =
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
 
-     /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
-     /// and from which we can read the metadata. Only used when metadataOnly=true.
+      /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
+      /// and from which we can read the metadata. Only used when metadataOnly=true.
       mutable tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
 
       mutable internalTestSpanStackReferring: bool
@@ -2246,6 +2248,8 @@ type TcConfigBuilder =
       mutable pathMap: PathMap
 
       mutable langVersion: LanguageVersion
+
+      mutable dependencyProvider: DependencyProvider
       }
 
     static member Initial =
@@ -2386,6 +2390,7 @@ type TcConfigBuilder =
           noConditionalErasure = false
           pathMap = PathMap.empty
           langVersion = LanguageVersion("default")
+          dependencyProvider = new DependencyProvider()
         }
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
@@ -2495,7 +2500,6 @@ type TcConfigBuilder =
             if not (List.contains path (List.map (fun (_, _, path) -> path) tcConfigB.loadedSources)) then
                 tcConfigB.loadedSources <- tcConfigB.loadedSources ++ (m, originalPath, path)
 
-
     member tcConfigB.AddEmbeddedSourceFile (file) = 
         tcConfigB.embedSourceList <- tcConfigB.embedSourceList ++ file
 
@@ -2515,8 +2519,8 @@ type TcConfigBuilder =
              let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m, path, projectReference)
              
-    member tcConfigB.AddDependencyManagerText (packageManager:DependencyManagerIntegration.IDependencyManagerProvider, m, path:string) = 
-        let path = DependencyManagerIntegration.removeDependencyManagerKey packageManager.Key path
+    member tcConfigB.AddDependencyManagerText (packageManager:IDependencyManagerProvider, m, path:string) = 
+        let path = tcConfigB.dependencyProvider.RemoveDependencyManagerKey(packageManager.Key, path)
 
         match tcConfigB.packageManagerLines |> Map.tryFind packageManager.Key with
         | Some lines -> tcConfigB.packageManagerLines <- Map.add packageManager.Key (lines ++ (false, path, m)) tcConfigB.packageManagerLines
@@ -2842,6 +2846,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         TcConfig(builder, validate)
 
     member x.legacyReferenceResolver = data.legacyReferenceResolver
+
+    member x.dependencyProvider = data.dependencyProvider
+
     member tcConfig.CloneOfOriginalBuilder = 
         { data with conditionalCompilationDefines=data.conditionalCompilationDefines }
 
@@ -4924,7 +4931,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file) =
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
       dllRequireF: 'state -> range * string -> 'state,
-      packageRequireF: 'state -> DependencyManagerIntegration.IDependencyManagerProvider * range * string -> 'state,
+      packageRequireF: 'state -> IDependencyManagerProvider * range * string -> 'state,
       loadSourceF: 'state -> range * string -> unit)
      (tcConfig:TcConfigBuilder, inp, pathOfMetaCommandSource, state0) =
 
@@ -4944,7 +4951,7 @@ let ProcessMetaCommandsFromInput
                    errorR(HashIncludeNotAllowedInNonScript m)
                match args with 
                | [path] -> 
-                   matchedm<-m
+                   matchedm <- m
                    tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
                    state
                | _ -> 
@@ -4954,27 +4961,35 @@ let ProcessMetaCommandsFromInput
                List.fold (fun state d -> nowarnF state (m,d)) state numbers
 
             | ParsedHashDirective(("reference" | "r"),args,m) -> 
-               if not canHaveScriptMetaCommands then
-                   errorR(HashReferenceNotAllowedInNonScript m)
+                if not canHaveScriptMetaCommands then
+                    errorR(HashReferenceNotAllowedInNonScript m)
 
-               match args with
-               | [path] ->
-                   matchedm <- m
-                   match DependencyManagerIntegration.tryFindDependencyManagerInPath tcConfig.compilerToolPaths tcConfig.outputDir m (path:string) with
-                   | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager ->
-                       if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                           packageRequireF state (packageManager,m,path)
-                       else
-                           errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
-                           state
+                let reportError errorType error =
+                    match errorType with
+                    | ErrorReportType.Warning -> warning(Error(error,m))
+                    | ErrorReportType.Error -> errorR(Error(error, m))
 
-                   // #r "Assembly"
-                   | DependencyManagerIntegration.ReferenceType.Library path ->
-                       dllRequireF state (m,path)
+                match args with
+                | [path] ->
+                    matchedm <- m
+                    let output = tcConfig.outputDir |> Option.defaultValue ""
+                    let dm = tcConfig.dependencyProvider.TryFindDependencyManagerInPath(tcConfig.compilerToolPaths, output , reportError, path)
+                    match dm with
+                    | dllpath, null when String.IsNullOrWhiteSpace(dllpath) ->
+                        state           // error already reported
 
-                   | DependencyManagerIntegration.ReferenceType.UnknownType ->
-                       state // error already reported
-               | _ ->
+                    | _, dependencyManager when not(isNull dependencyManager) ->
+                        if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
+                            packageRequireF state (dependencyManager, m, path)
+                        else
+                            errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
+                            state
+
+                    // #r "Assembly"
+                    | path, _ ->
+                        dllRequireF state (m, path)
+
+                | _ ->
                    errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
                    state
 
@@ -5227,10 +5242,10 @@ module ScriptPreprocessClosure =
             // Recover by using a default TcConfig.
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false), nowarns
-    
+
     let FindClosureFiles(mainFile, _m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager: Lexhelp.LexResourceManager) =
         let mutable tcConfig = origTcConfig
-        
+
         let observedSources = Observed()
         let loadScripts = HashSet<_>()
 
@@ -5242,41 +5257,43 @@ module ScriptPreprocessClosure =
                     match packageManagerLines with
                     | [] -> ()
                     | (_, _, m)::_ ->
+                        let reportError errorType error =
+                             match errorType with
+                             | ErrorReportType.Warning -> warning(Error(error,m))
+                             | ErrorReportType.Error -> errorR(Error(error, m))
+
                         match origTcConfig.packageManagerLines |> Map.tryFind packageManagerKey with
                         | Some oldDependencyManagerLines when oldDependencyManagerLines = packageManagerLines -> ()
                         | _ ->
-                            match DependencyManagerIntegration.tryFindDependencyManagerByKey tcConfig.compilerToolPaths tcConfig.outputDir m packageManagerKey with
-                            | None ->
-                                errorR(DependencyManagerIntegration.createPackageManagerUnknownError tcConfig.compilerToolPaths tcConfig.outputDir packageManagerKey m)
-                            | Some packageManager ->
+                            let outputDir =  tcConfig.outputDir |> Option.defaultValue ""
+                            match tcConfig.dependencyProvider.TryFindDependencyManagerByKey(tcConfig.compilerToolPaths, outputDir, reportError, packageManagerKey) with
+                            | null ->
+                                errorR(Error(tcConfig.dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
+
+                            | dependencyManager ->
                                 let inline snd3 (_, b, _) = b
                                 let packageManagerTextLines = packageManagerLines |> List.map snd3
-
-                                match DependencyManagerIntegration.resolve packageManager tcConfig.implicitIncludeDir mainFile scriptName ".fsx" m packageManagerTextLines with
-                                | None -> () // error already reported
-                                | Some (succeeded, generatedScripts, additionalIncludeFolders) ->
-                                    // This may incrementally update tcConfig too with new #r references
-                                    // New package text is ignored on this second phase
-                                    match succeeded with
-                                    | true ->
-                                        // Resolution produced no errors
-                                        if not (isNil additionalIncludeFolders) then
-                                            let tcConfigB = tcConfig.CloneOfOriginalBuilder
-                                            for folder in additionalIncludeFolders do 
-                                                tcConfigB.AddIncludePath(m, folder, "")
-                                            tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
-                                            tcConfig <- TcConfig.Create(tcConfigB, validate=false)
-                                        for script in generatedScripts do
-                                            let scriptText = File.ReadAllText script
-                                            loadScripts.Add script |> ignore
-                                            let iSourceText = SourceText.ofString scriptText
-                                            yield! loop (ClosureSource(script, m, iSourceText, true))
-                                    | false ->
-                                        // Resolution produced errors update packagerManagerLines entries to note these failure
-                                        // failed resolutions will no longer be considered
+                                match tcConfig.dependencyProvider.Resolve(dependencyManager, tcConfig.implicitIncludeDir, mainFile, scriptName, ".fsx", packageManagerTextLines, reportError, executionTfm) with
+                                | true, _references, generatedScripts, additionalIncludeFolders ->
+                                    // Resolution produced no errors
+                                    if not (Seq.isEmpty additionalIncludeFolders) then
                                         let tcConfigB = tcConfig.CloneOfOriginalBuilder
-                                        tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
-                                        tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
+                                        for folder in additionalIncludeFolders do 
+                                            tcConfigB.AddIncludePath(m, folder, "")
+                                        tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
+                                        tcConfig <- TcConfig.Create(tcConfigB, validate=false)
+                                    for script in generatedScripts do
+                                        let scriptText = File.ReadAllText script
+                                        loadScripts.Add script |> ignore
+                                        let iSourceText = SourceText.ofString scriptText
+                                        yield! loop (ClosureSource(script, m, iSourceText, true))
+
+                                | false, _, _, _ ->
+                                    // Resolution produced errors update packagerManagerLines entries to note these failure
+                                    // failed resolutions will no longer be considered
+                                    let tcConfigB = tcConfig.CloneOfOriginalBuilder
+                                    tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
+                                    tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
             else []
 
         and loop (ClosureSource(filename, m, sourceText, parseRequired)) = 

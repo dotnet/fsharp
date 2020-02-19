@@ -235,18 +235,6 @@ type FsiEvaluationSession =
     /// A host calls this to report an unhandled exception in a standard way, e.g. an exception on the GUI thread gets printed to stderr
     member ReportUnhandledException : exn: exn -> unit
 
-    [<CLIEvent>]
-    /// Event fires at the start of adding a dependency via the dependency manager.
-    member DependencyAdding: IEvent<string * string>
-
-    [<CLIEvent>]
-    /// Event fires at the successful completion of adding a dependency via the dependency manager.
-    member DependencyAdded: IEvent<string * string * IEnumerable<string> * IEnumerable<string> * IEnumerable<string>>
-
-    [<CLIEvent>]
-    /// Event fires at the failure to adding a dependency via the dependency manager.
-    member DependencyFailed: IEvent<string * string>
-
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
     member ValueBound : IEvent<obj * System.Type * string>
 
