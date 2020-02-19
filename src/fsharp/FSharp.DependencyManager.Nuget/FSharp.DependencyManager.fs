@@ -4,6 +4,7 @@ namespace FSharp.DependencyManager.Nuget
 
 open System
 open System.Collections.Concurrent
+open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open FSharp.DependencyManager.Nuget
@@ -135,7 +136,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
     member __.Key = key
 
-    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string) : bool * string list * string list * string list =
+    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string) : bool * string seq * string seq * string seq =
 
         let scriptExt, poundRprefix  =
             match scriptExt with
@@ -173,17 +174,19 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
             match resolutionsFile with
             | Some file ->
                 let resolutions = getResolutionsFromFile file
-                let references = (findReferencesFromResolutions resolutions) |> Array.toList
+                let references = (findReferencesFromResolutions resolutions) |> Array.toSeq
                 let scripts =
                     let scriptPath = projectPath + scriptExt
                     let scriptBody =  makeScriptFromResolutions resolutions poundRprefix
                     emitFile scriptPath scriptBody
                     let loads = (findLoadsFromResolutions resolutions) |> Array.toList
-                    List.concat [ [scriptPath]; loads]
-                let includes = (findIncludesFromResolutions resolutions) |> Array.toList
+                    List.concat [ [scriptPath]; loads] |> List.toSeq
+                let includes = (findIncludesFromResolutions resolutions) |> Array.toSeq
 
                 result, references, scripts, includes
 
-            | None -> result, [], [], []
+            | None ->
+                let empty = Seq.empty<string>
+                result, empty, empty, empty
 
         generateAndBuildProjectArtifacts
