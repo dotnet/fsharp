@@ -188,7 +188,6 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | NameClash(_, _, _, m, _, _, _) 
       | UnresolvedOverloading(_, _, _, m) 
       | UnresolvedConversionOperator (_, _, _, m)
-      | PossibleOverload(_, _, _, m) 
       | VirtualAugmentationOnNullValuedType m
       | NonVirtualAugmentationOnNullValuedType m
       | NonRigidTypar(_, _, _, _, _, m)
@@ -403,12 +402,9 @@ let warningOn err level specificWarnOn =
     | 3180 -> false // abImplicitHeapAllocation - off by default
     | _ -> level >= GetWarningLevel err 
 
-let SplitRelatedDiagnostics(err: PhasedDiagnostic) = 
+let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list = 
     let ToPhased e = {Exception=e; Phase = err.Phase}
     let rec SplitRelatedException = function
-      | UnresolvedOverloading(a, overloads, b, c) -> 
-           let related = overloads |> List.map ToPhased
-           UnresolvedOverloading(a, [], b, c)|>ToPhased, related
       | ConstraintSolverRelatedInformation(fopt, m2, e) -> 
           let e, related = SplitRelatedException e
           ConstraintSolverRelatedInformation(fopt, m2, e.Exception)|>ToPhased, related
@@ -452,7 +448,6 @@ let ErrorFromApplyingDefault2E() = DeclareResourceString("ErrorFromApplyingDefau
 let ErrorsFromAddingSubsumptionConstraintE() = DeclareResourceString("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
 let UpperCaseIdentifierInPatternE() = DeclareResourceString("UpperCaseIdentifierInPattern", "")
 let NotUpperCaseConstructorE() = DeclareResourceString("NotUpperCaseConstructor", "")
-let PossibleOverloadE() = DeclareResourceString("PossibleOverload", "%s%s")
 let FunctionExpectedE() = DeclareResourceString("FunctionExpected", "")
 let BakedInMemberConstraintNameE() = DeclareResourceString("BakedInMemberConstraintName", "%s")
 let BadEventTransformationE() = DeclareResourceString("BadEventTransformation", "")
@@ -770,19 +765,99 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(e.ContextualErrorMessage) |> ignore
 #endif
 
-      | UnresolvedOverloading(_, _, mtext, _) -> 
-          os.Append mtext |> ignore
+      | UnresolvedOverloading(denv, callerArgs, failure, m) ->
+          
+          // extract eventual information (return type and type parameters)
+          // from ConstraintTraitInfo
+          let knownReturnType, genericParameterTypes =
+              match failure with
+              | NoOverloadsFound (cx=Some cx)
+              | PossibleCandidates (cx=Some cx) -> cx.ReturnType, cx.ArgumentTypes
+              | _ -> None, []
+         
+          // prepare message parts (known arguments, known return type, known generic parameters)
+          let argsMessage, returnType, genericParametersMessage =
+              
+              let retTy =
+                  knownReturnType
+                  |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked()))
+              
+              let argRepr = 
+                  callerArgs.ArgumentNamesAndTypes
+                  |> List.map (fun (name,tTy) -> tTy, {ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero)); ArgReprInfo.Attribs = []})
+                  
+              let argsL,retTyL,genParamTysL = NicePrint.prettyLayoutsOfUnresolvedOverloading denv argRepr retTy genericParameterTypes
+              
+              match callerArgs.ArgumentNamesAndTypes with
+              | [] -> None, Layout.showL retTyL, Layout.showL genParamTysL
+              | items ->
+                  let args = Layout.showL argsL  
+                  let prefixMessage =
+                      match items with
+                      | [_] -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular
+                      | _ -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural
+                  Some (prefixMessage args)
+                  , Layout.showL retTyL
+                  , Layout.showL genParamTysL
+
+          let knownReturnType =
+              match knownReturnType with
+              | None -> None
+              | Some _ -> Some (FSComp.SR.csNoOverloadsFoundReturnType returnType)
+
+          let genericParametersMessage =
+              match genericParameterTypes with
+              | [] -> None
+              | [_] -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixSingular genericParametersMessage)
+              | _ -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixPlural genericParametersMessage)
+
+          let overloadMethodInfo displayEnv m (x: OverloadInformation) =
+              let paramInfo =
+                  match x.error with
+                  | :? ArgDoesNotMatchError as x ->
+                      let nameOrOneBasedIndexMessage =
+                          x.calledArg.NameOpt
+                          |> Option.map (fun n -> FSComp.SR.csOverloadCandidateNamedArgumentTypeMismatch n.idText)
+                          |> Option.defaultValue (FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((snd x.calledArg.Position) + 1))
+                      sprintf " // %s" nameOrOneBasedIndexMessage
+                  | _ -> ""
+                  
+              (NicePrint.stringOfMethInfo x.amap m displayEnv x.methodSlot.Method) + paramInfo
+              
+          let nl = System.Environment.NewLine
+          let formatOverloads (overloads: OverloadInformation list) =
+              overloads
+              |> List.map (overloadMethodInfo denv m)
+              |> List.sort
+              |> List.map FSComp.SR.formatDashItem
+              |> String.concat nl
+         
+          // assemble final message composing the parts
+          let msg =
+              let optionalParts =
+                [knownReturnType; genericParametersMessage; argsMessage]
+                |> List.choose id
+                |> String.concat (nl + nl)
+                |> function | "" -> nl
+                            | result -> nl + nl + result + nl + nl
+              
+              match failure with
+              | NoOverloadsFound (methodName, overloads, _) ->
+                  FSComp.SR.csNoOverloadsFound methodName
+                      + optionalParts                      
+                      + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
+              | PossibleCandidates (methodName, [], _) ->
+                  FSComp.SR.csMethodIsOverloaded methodName
+              | PossibleCandidates (methodName, overloads, _) ->
+                  FSComp.SR.csMethodIsOverloaded methodName
+                      + optionalParts
+                      + FSComp.SR.csCandidates (formatOverloads overloads)
+          
+          os.Append msg |> ignore
 
       | UnresolvedConversionOperator(denv, fromTy, toTy, _) -> 
           let t1, t2, _tpcs = NicePrint.minimalStringsOfTwoTypes denv fromTy toTy
           os.Append(FSComp.SR.csTypeDoesNotSupportConversion(t1, t2)) |> ignore
-
-      | PossibleOverload(_, minfo, originalError, _) -> 
-          // print original error that describes reason why this overload was rejected
-          let buf = new StringBuilder()
-          OutputExceptionR buf originalError
-
-          os.Append(PossibleOverloadE().Format minfo (buf.ToString())) |> ignore
 
       | FunctionExpected _ ->
           os.Append(FunctionExpectedE().Format) |> ignore
