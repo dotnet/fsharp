@@ -77,11 +77,6 @@
         <target state="translated">Ayırt edici birleşim durumları ve özel durum etiketleri büyük harfli tanımlayıcılar olmalıdır</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Olası aşırı yükleme: '{0}'. {1}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">Bu işlev çok fazla bağımsız değişken alıyor veya bir işlev beklenmeyen bağlamda kullanılıyor</target>

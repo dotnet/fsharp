@@ -77,11 +77,6 @@
         <target state="translated">可区分的联合用例和异常标签必须是大写的标识符</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">可能的重载:“{0}”。{1}。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">此函数采用的参数过多，或者用于不需要函数的上下文中</target>
