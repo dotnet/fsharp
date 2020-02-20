@@ -77,11 +77,6 @@
         <target state="translated">구분된 공용 구조체 케이스 및 예외 레이블은 대문자로 된 식별자여야 합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">가능한 오버로드: '{0}'. {1}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">이 함수는 너무 많은 인수를 사용하거나 함수가 필요하지 않은 컨텍스트에서 사용되었습니다.</target>
