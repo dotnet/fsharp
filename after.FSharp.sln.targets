@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <NugetPackageFolderFiles>Rainer: start here</NugetPackageFolderFiles>
+    <NugetPackageFolderFiles Condition="Exists('.packages\microsoft.sourcelink.common\1.0.0-beta2-19367-01')">$(NugetPackageFolderFiles) Folder exists</NugetPackageFolderFiles>
+    <NugetPackageFolderFiles Condition="Exists('.packages\microsoft.sourcelink.common\1.0.0-beta2-19367-01')">$(NugetPackageFolderFiles) $([System.IO.Directory]::GetFiles('.packages\microsoft.sourcelink.common\1.0.0-beta2-19367-01\buildCrossTargeting'))</NugetPackageFolderFiles>
+  </PropertyGroup>
+
+  <Target Name="DidItReallyRestore" AfterTargets="Restore">
+    <Message Text="Files: $([System.IO.Directory]::GetFiles('.packages\microsoft.sourcelink.common\1.0.0-beta2-19367-01\buildCrossTargeting'))"
+             Condition="Exists('.packages\microsoft.sourcelink.common\1.0.0-beta2-19367-01')" />
+  </Target>
+</Project>
