@@ -77,11 +77,6 @@
         <target state="translated">Diskriminierte Union-Fälle und Ausnahmebezeichnungen müssen Bezeichner in Großbuchstaben sein.</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Mögliche Überladung: "{0}". {1}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">Diese Funktion akzeptiert zu viele Argumente oder wird in einem Kontext verwendet, in dem keine Funktion erwartet wird.</target>
