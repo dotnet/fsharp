@@ -61,7 +61,6 @@ Features Added in F# Language Versions
 - Static parameters for provided methods
 - `printf` interpolation
 - Extended `#if` grammar
-- Tailcall attribute
 - Multiple interface instantiations
 - Optional type args
 - Params dictionaries
