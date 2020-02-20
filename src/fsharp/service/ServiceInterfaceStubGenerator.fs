@@ -52,8 +52,8 @@ module internal CodeGenerationUtils =
                 indentWriter.Dispose()
 
     let (|IndexerArg|) = function
-        | SynIndexerArg.Two(e1, e2) -> [e1; e2]
-        | SynIndexerArg.One e -> [e]
+        | SynIndexerArg.Two(e1, _, e2, _, _, _) -> [e1; e2]
+        | SynIndexerArg.One (e, _, _) -> [e]
 
     let (|IndexerArgList|) xs =
         List.collect (|IndexerArg|) xs
@@ -896,8 +896,14 @@ module InterfaceStubGenerator =
                 | SynExpr.DoBang (synExpr, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.LetOrUseBang (_sequencePointInfoForBinding, _, _, _synPat, synExpr1, synExpr2, _range) -> 
-                    List.tryPick walkExpr [synExpr1; synExpr2]
+                | SynExpr.LetOrUseBang (_sequencePointInfoForBinding, _, _, _synPat, synExpr1, synExprAndBangs, synExpr2, _range) -> 
+                    [
+                        yield synExpr1
+                        for (_,_,_,_,eAndBang,_) in synExprAndBangs do
+                            yield eAndBang
+                        yield synExpr2
+                    ]
+                    |> List.tryPick walkExpr
 
                 | SynExpr.LibraryOnlyILAssembly _
                 | SynExpr.LibraryOnlyStaticOptimization _ 

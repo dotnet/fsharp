@@ -2,7 +2,7 @@
 #light
 
 // Verify error if GetSlice is not defined
-//<Expects id="FS0039" status="error">The field, constructor or member 'GetSlice' is not defined</Expects>
+//<Expects id="FS0039" status="error">The type 'DU' does not define the field, constructor or member 'GetSlice'</Expects>
 
 type DU = A | B of int | C
 

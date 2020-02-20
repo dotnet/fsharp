@@ -200,20 +200,6 @@ type AsyncType() =
         Assert.IsTrue (tcs.Task.IsCompleted, "Task is not completed")
 
     [<Test>]
-    member this.StartTask () =
-        let s = "Hello tasks!"
-        let a = async { return s }
-#if !NET46
-        let t = 
-#else
-        use t =
-#endif
-            Async.StartAsTask a
-        this.WaitASec t
-        Assert.IsTrue (t.IsCompleted)
-        Assert.AreEqual(s, t.Result)    
-
-    [<Test>]
     member this.RunSynchronouslyCancellationWithDelayedResult () =
         let cts = new CancellationTokenSource()
         let tcs = TaskCompletionSource<int>()

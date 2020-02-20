@@ -138,17 +138,17 @@ let private SimulatedMSBuildResolver =
 
 #if !FX_RESHAPED_MSBUILD
                 try
-                    // Seach the GAC on Windows
+                    // Search the GAC on Windows
                     if not found && not isFileName && Environment.OSVersion.Platform = PlatformID.Win32NT then
                         let n = AssemblyName r
-                        let netfx = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-                        let gac = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(netfx.TrimEnd('\\'))), "assembly")
+                        let netFx = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+                        let gac = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(netFx.TrimEnd('\\'))), "assembly")
                         match n.Version, n.GetPublicKeyToken()  with
                         | null, _ | _, null ->
                             let options =
                                 [ if Directory.Exists gac then
-                                    for gacdir in Directory.EnumerateDirectories gac do
-                                        let assemblyDir = Path.Combine(gacdir, n.Name)
+                                    for gacDir in Directory.EnumerateDirectories gac do
+                                        let assemblyDir = Path.Combine(gacDir, n.Name)
                                         if Directory.Exists assemblyDir then
                                             for tdir in Directory.EnumerateDirectories assemblyDir do
                                                 let trialPath = Path.Combine(tdir, qual)
@@ -162,18 +162,18 @@ let private SimulatedMSBuildResolver =
 
                         | v, tok ->
                             if Directory.Exists gac then
-                                for gacdir in Directory.EnumerateDirectories gac do
-                                    //printfn "searching GAC directory: %s" gacdir
-                                    let assemblyDir = Path.Combine(gacdir, n.Name)
+                                for gacDir in Directory.EnumerateDirectories gac do
+                                    //printfn "searching GAC directory: %s" gacDir
+                                    let assemblyDir = Path.Combine(gacDir, n.Name)
                                     if Directory.Exists assemblyDir then
                                         //printfn "searching GAC directory: %s" assemblyDir
 
                                         let tokText = String.concat "" [| for b in tok -> sprintf "%02x" b |]
-                                        let verdir = Path.Combine(assemblyDir, "v4.0_"+v.ToString()+"__"+tokText)
-                                        //printfn "searching GAC directory: %s" verdir
+                                        let verDir = Path.Combine(assemblyDir, "v4.0_"+v.ToString()+"__"+tokText)
+                                        //printfn "searching GAC directory: %s" verDir
 
-                                        if Directory.Exists verdir then
-                                            let trialPath = Path.Combine(verdir, qual)
+                                        if Directory.Exists verDir then
+                                            let trialPath = Path.Combine(verDir, qual)
                                             //printfn "searching GAC: %s" trialPath
                                             if FileSystem.SafeExists trialPath then
                                                 success trialPath

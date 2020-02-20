@@ -43,7 +43,7 @@ near the bottom of the build under the title 'Insert into VS'.  Examine the log 
 bottom you'll see a line that looks like `Created request #xxxxxx at https://...`.
 
 To see all insertions created this way (possibly including for other internal teams), check
-[here](https://dev.azure.com/devdiv/DevDiv/_git/VS/pullrequests?creatorId=122d5278-3e55-4868-9d40-1e28c2515fc4&_a=active).
+[here](https://dev.azure.com/devdiv/DevDiv/_git/VS/pullrequests?createdBy=122d5278-3e55-4868-9d40-1e28c2515fc4&_a=active).
 
 ## Less interesting links
 

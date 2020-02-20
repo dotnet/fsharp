@@ -14,7 +14,6 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.Lib
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodCalls
 
@@ -89,7 +88,7 @@ type LoweredSeqFirstPhaseResult =
      ///               that holds the "goto" destination for a tailcalling sequence expression
      ///     'pcMap' is the mapping from code labels to values for 'pc'
      ///
-     /// The phase2 function returns the core of the generate, dipsose and checkDispose implementations. 
+     /// The phase2 function returns the core of the generate, dispose and checkDispose implementations. 
      phase2 : ((* pc: *) ValRef * (* current: *) ValRef * (* nextVar: *) ValRef * Map<ILCodeLabel, int> -> Expr * Expr * Expr)
 
      /// The labels allocated for one portion of the sequence expression
@@ -434,7 +433,7 @@ let LowerSeqExpr g amap overallExpr =
 
         | Expr.Let (bind, bodyExpr, m, _)
               // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
-              when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericContraints g bind.Var) ->
+              when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericConstraints g bind.Var) ->
 
             let resBody = Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr
             match resBody with
@@ -671,7 +670,7 @@ let LowerSeqExpr g amap overallExpr =
             //       ``disposalExpr``
             //    with e -> exn <- e
             // if exn <> null then raise exn
-            let handleExeceptionsInDispose disposalExpr =
+            let handleExceptionsInDispose disposalExpr =
                 let exnV, exnE = mkMutableCompGenLocal m "exn" g.exn_ty
                 let exnVref = mkLocalValRef exnV
                 let startLabel = IL.generateCodeLabel()
@@ -738,11 +737,11 @@ let LowerSeqExpr g amap overallExpr =
                     NoSequencePointAtLetBinding m exnV  (Expr.Const (Const.Zero, m, g.exn_ty))
                         (mkCompGenSequential m whileLoop doRaise)
 
-            // Add the jumptable to the GenerateNext method
+            // Add the jump table to the GenerateNext method
             let generateExprWithJumpTable =
                 addJumpTable false generateExprWithCleanup
 
-            // Add the jumptable to the Dispose method
+            // Add the jump table to the Dispose method
             let disposalExprWithJumpTable =
                 if res.significantClose then
                     let disposalExpr =
@@ -757,11 +756,11 @@ let LowerSeqExpr g amap overallExpr =
                                     (mkValSet m currVarRef (mkDefault (m, currVarRef.Type)))))
                     disposalExpr
                     |> addJumpTable true
-                    |> handleExeceptionsInDispose
+                    |> handleExceptionsInDispose
                 else
                     mkValSet m pcVarRef (mkInt32 g m pcDone)
 
-            // Add the jumptable to the CheckDispose method
+            // Add the jump table to the CheckDispose method
             let checkDisposeExprWithJumpTable =
                 addJumpTable true checkDisposeExprWithCleanup
 

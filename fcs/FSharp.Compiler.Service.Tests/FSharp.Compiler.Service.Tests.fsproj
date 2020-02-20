@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
+  <Import Project="..\..\eng\Versions.props"/>   <!-- keep our test deps in line with the overall compiler -->
   <PropertyGroup>
-    <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp3.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefaultFSharpPackageVersion>4.1.19</DefaultFSharpPackageVersion>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
@@ -10,9 +11,6 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- Tests won't run without this, at least on OSX, see https://github.com/NuGet/Home/issues/4837#issuecomment-354536302 -->
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
-    <DefineConstants>$(DefineConstants);NO_PROJECTCRACKER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FsUnit.fs">
@@ -51,9 +49,6 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\CSharpProjectAnalysis.fs">
       <Link>CSharpProjectAnalysis.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ProjectOptionsTests.fs">
-      <Link>ProjectOptionsTests.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\StructureTests.fs">
       <Link>StructureTests.fs</Link>
     </Compile>
@@ -66,7 +61,10 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\TreeVisitorTests.fs">
       <Link>TreeVisitorTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ScriptOptionsTests.fs">
+      <Link>ScriptOptionsTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
       <Link>Program.fs</Link>
     </Compile>
     <NoneSubstituteText Include="App.config">
@@ -77,10 +75,10 @@
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="$(FcsFSharpCorePkgVersion)" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
-    <PackageReference Include="NUnit" Version="3.9.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
-    <PackageReference Include="NunitXml.TestLogger" Version="2.1.36" />
     <PackageReference Include="Dotnet.ProjInfo" Version="0.20.0" />
+    <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
+    <PackageReference Include="NUnit3TestAdapter" Version="$(NUnit3TestAdapterVersion)" />
+    <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
     <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == '$(FcsTargetNetFxFramework)'">
@@ -100,6 +98,5 @@
     <Reference Include="WindowsBase" />
     <Reference Include="UIAutomationTypes" />
     <ProjectReference Include="CSharp_Analysis\CSharp_Analysis.csproj" />
-    <ProjectReference Include="..\FSharp.Compiler.Service.ProjectCracker\FSharp.Compiler.Service.ProjectCracker.fsproj" />
   </ItemGroup>
 </Project>
