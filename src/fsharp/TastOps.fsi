@@ -2242,6 +2242,8 @@ type ExprRewritingEnv =
       PreInterceptBinding: ((Expr -> Expr) -> Binding -> Binding option) option
       IsUnderQuotations: bool }    
 
+val RewriteDecisionTree : ExprRewritingEnv -> DecisionTree -> DecisionTree
+
 val RewriteExpr : ExprRewritingEnv -> Expr -> Expr
 
 val RewriteImplFile : ExprRewritingEnv -> TypedImplFile -> TypedImplFile
@@ -2334,5 +2336,14 @@ val BindUnitVars : TcGlobals -> (Val list * ArgReprInfo list * Expr) -> Val list
 val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
+
+/// Match expressions that are an application of a particular F# function value
+val (|ValApp|_|) : TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) option
+
+/// Match expressions that represent the creation of an instance of an F# delegate value
+val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Val list list * Expr * range) option
+
+/// Match 'if __useResumableCode then ... else ...' expressions
+val (|IfGenerateCompiledStateMachinesExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option
 
 val isStaticClass: g: TcGlobals -> tcref: TyconRef -> bool

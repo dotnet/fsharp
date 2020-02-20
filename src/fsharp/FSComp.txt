@@ -1486,6 +1486,7 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3343,tcRequireMergeSourcesOrBindN,"The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '%s' method or appropriate 'MergeSource' and 'Bind' methods"
 3344,tcAndBangNotSupported,"This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature."
 3345,tcInvalidUseBangBindingNoAndBangs,"use! may not be combined with and!"
+3401,ilxgenInvalidConstructInStateMachineDuringCodegen,"The resumable code construct '%s' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code."
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
 fSharpBannerVersion,"%s for F# %s"
 optsLangVersion,"Display the allowed values for language version, specify language version such as 'latest' or 'preview'"
