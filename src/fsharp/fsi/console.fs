@@ -364,13 +364,13 @@ type internal ReadLineConsole() =
                     history.AddLast(line)
                 line
         let clear() = 
-            current := input.Length
+            current <- input.Length
             let setPrompt prompt = 
                 if prompt then // We only allow clearing if prompt is ">"
                     Console.Clear()
                     Console.Write (x.Prompt)
                     Console.Write(input.ToString())
-                    anchor := Anchor.Top(x.Inset)   
+                    anchor <- Anchor.Top(x.Inset)   
             let previous = history.Previous()
             history.Next() |> ignore
             if previous = "" then
@@ -380,8 +380,8 @@ type internal ReadLineConsole() =
 
             
         let home() =
-            current := 0
-            (!anchor).PlaceAt(x.Inset,0)
+            current <- 0
+            anchor.PlaceAt(x.Inset,0)
         let rec read() = 
             let key = Console.ReadKey true
 
@@ -425,8 +425,8 @@ type internal ReadLineConsole() =
                 home()
                 change ()
             | (ConsoleModifiers.Control, ConsoleKey.E) ->
-                current := input.Length
-                (!anchor).PlaceAt(x.Inset,!rendered)
+                current <- input.Length
+                anchor.PlaceAt(x.Inset,!rendered)
                 change ()
             | (ConsoleModifiers.Control, ConsoleKey.B) ->
                 moveLeft()
