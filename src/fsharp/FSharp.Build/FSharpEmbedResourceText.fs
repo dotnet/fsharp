@@ -155,20 +155,24 @@ type FSharpEmbedResourceText() =
         let mutable holes = ResizeArray()  //  order
         let sb = new System.Text.StringBuilder()
         let AddHole holeType =
-            sb.Append(sprintf "{%d}" holeNumber) |> ignore
+            match holeType with
+            | "System.UInt32" -> sb.Append(sprintf "{%d:x}" holeNumber) |> ignore
+            | _ -> sb.Append(sprintf "{%d}" holeNumber) |> ignore
             holeNumber <- holeNumber + 1
             holes.Add(holeType)
         while i < txt.Length do
             if txt.[i] = '%' then
                 if i+1 = txt.Length then
-                    Err(filename, lineNum, "(at end of string) % must be followed by d, f, s, or %")
+                    Err(filename, lineNum, "(at end of string) % must be followed by d, x, f, s, or %")
                 else
                     match txt.[i+1] with
                     | 'd' -> AddHole "System.Int32"
+                    | 'x' -> AddHole "System.UInt32"
+                    | 'X' -> AddHole "System.UInt32"
                     | 'f' -> AddHole "System.Double"
                     | 's' -> AddHole "System.String"
                     | '%' -> sb.Append('%') |> ignore
-                    | c -> Err(filename, lineNum, sprintf "'%%%c' is not a valid sequence, only %%d %%f %%s or %%%%" c)
+                    | c -> Err(filename, lineNum, sprintf "'%%%c' is not a valid sequence, only %%d %%x %%X %%f %%s or %%%%" c)
                 i <- i + 2
             else
                 match txt.[i] with
@@ -390,26 +394,27 @@ open Printf
             stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, netFormatString) ->
                 let formalArgs = new System.Text.StringBuilder()
                 let actualArgs = new System.Text.StringBuilder()
-                let firstTime = ref true
-                let n = ref 0
+                let mutable firstTime = true
+                let mutable n = 0
                 formalArgs.Append "(" |> ignore
                 for hole in holes do
-                    if !firstTime then
-                        firstTime := false
+                    if firstTime then
+                        firstTime <- false
                     else
                         formalArgs.Append ", " |> ignore
                         actualArgs.Append " " |> ignore
-                    formalArgs.Append(sprintf "a%d : %s" !n hole) |> ignore
-                    actualArgs.Append(sprintf "a%d" !n) |> ignore
-                    n := !n + 1
+                    formalArgs.Append(sprintf "a%d : %s" n hole) |> ignore
+                    actualArgs.Append(sprintf "a%d" n) |> ignore
+                    n <- n + 1
                 formalArgs.Append ")" |> ignore
                 fprintfn out "    /// %s" str
                 fprintfn out "    /// (Originally from %s:%d)" filename (lineNum+1)
                 let justPercentsFromFormatString = 
-                    (holes |> Array.fold (fun acc holeType -> 
-                        acc + match holeType with 
-                                | "System.Int32" -> ",,,%d" 
-                                | "System.Double" -> ",,,%f" 
+                    (holes |> Array.fold (fun acc holeType ->
+                        acc + match holeType with
+                                | "System.Int32" -> ",,,%d"
+                                | "System.UInt32" -> ",,,%x"
+                                | "System.Double" -> ",,,%f"
                                 | "System.String" -> ",,,%s"
                                 | _ -> failwith "unreachable") "") + ",,,"
                 let errPrefix = match optErrNum with

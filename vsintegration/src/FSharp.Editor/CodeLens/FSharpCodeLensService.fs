@@ -14,6 +14,7 @@ open System.Windows.Media.Animation
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Extensions
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
@@ -91,7 +92,7 @@ type internal FSharpCodeLensService
                 logInfof "Tagged text %A" taggedText
 #endif
                 let textBlock = new TextBlock(Background = Brushes.AliceBlue, Opacity = 0.0, TextTrimming = TextTrimming.None)
-                DependencyObjectExtensions.SetDefaultTextProperties(textBlock, formatMap.Value)
+                FSharpDependencyObjectExtensions.SetDefaultTextProperties(textBlock, formatMap.Value)
 
                 let prefix = Documents.Run settings.CodeLens.Prefix
                 prefix.Foreground <- SolidColorBrush(Color.FromRgb(153uy, 153uy, 153uy))
@@ -116,7 +117,7 @@ type internal FSharpCodeLensService
                             coloredProperties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy))
 
                     let run = Documents.Run text.Text
-                    DependencyObjectExtensions.SetTextProperties (run, actualProperties)
+                    FSharpDependencyObjectExtensions.SetTextProperties (run, actualProperties)
 
                     let inl =
                         match text with
@@ -126,7 +127,7 @@ type internal FSharpCodeLensService
                                 navigation.NavigateTo nav.Range)
                             h :> Documents.Inline
                         | _ -> run :> _
-                    DependencyObjectExtensions.SetTextProperties (inl, actualProperties)
+                    FSharpDependencyObjectExtensions.SetTextProperties (inl, actualProperties)
                     textBlock.Inlines.Add inl
             
 

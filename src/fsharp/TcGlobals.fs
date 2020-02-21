@@ -22,10 +22,11 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Features
 
 open Internal.Utilities
 
-let internal DummyFileNameForRangesWithoutASpecificLocation = "startup"
+let internal DummyFileNameForRangesWithoutASpecificLocation = startupFileName
 let private envRange = rangeN DummyFileNameForRangesWithoutASpecificLocation 0
 
 /// Represents an intrinsic value from FSharp.Core known to the compiler
@@ -180,8 +181,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
                       emitDebugInfoInQuotations: bool, noDebugData: bool,
-                      pathMap: PathMap) =
-      
+                      pathMap: PathMap, langVersion: LanguageVersion) =
+
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
   let varc = NewRigidTypar "c" envRange
@@ -239,7 +240,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   // Search for a type. If it is not found, leave a dangling CCU reference with some useful diagnostic information should
   // the type actually be dereferenced
   let findSysTypeCcu path typeName =
-      match tryFindSysTypeCcu path typeName with 
+      match tryFindSysTypeCcu path typeName with
       | None -> CcuThunk.CreateDelayed(dummyAssemblyNameCarryingUsefulErrorInformation path typeName)
       | Some ccu -> ccu
 
@@ -386,6 +387,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mkListTy ty         = TType_app(v_list_tcr_nice, [ty])
   let mkSeqTy ty1         = TType_app(v_seq_tcr, [ty1])
   let mkRefCellTy ty      = TType_app(v_refcell_tcr_canon, [ty])
+  let mkOptionTy ty      = TType_app(v_option_tcr_nice, [ty])
   let mkQuerySourceTy ty1 ty2         = TType_app(v_querySource_tcr, [ty1; ty2])
   let v_tcref_System_Collections_IEnumerable         = findSysTyconRef sysCollections "IEnumerable";
   let mkArrayType rank (ty : TType) : TType =
@@ -664,6 +666,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               , None                 , Some "TypeOf" , [vara],     ([], v_system_Type_ty))  
   let v_methodhandleof_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "methodhandleof"                       , None                 , Some "MethodHandleOf", [vara;varb], ([[varaTy --> varbTy]], v_system_RuntimeMethodHandle_ty))
   let v_sizeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "sizeof"                               , None                 , Some "SizeOf" , [vara],     ([], v_int_ty))  
+  let v_nameof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nameof"                               , None                 , Some "NameOf" , [vara],     ([[varaTy]], v_string_ty))
+
   let v_unchecked_defaultof_info   = makeIntrinsicValRef(fslib_MFOperatorsUnchecked_nleref,                    "defaultof"                            , None                 , Some "DefaultOf", [vara],     ([], varaTy))  
   let v_typedefof_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typedefof"                            , None                 , Some "TypeDefOf", [vara],     ([], v_system_Type_ty))  
   let v_range_op_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Range"                             , None                 , None          , [vara],     ([[varaTy];[varaTy]], mkSeqTy varaTy))
@@ -679,6 +683,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_array2D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray2D"                           , None                 , None          , [vara],     ([[mkArrayType 2 varaTy];[v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array3D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray3D"                           , None                 , None          , [vara],     ([[mkArrayType 3 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array4D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray4D"                           , None                 , None          , [vara],     ([[mkArrayType 4 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
+
+  let v_option_toNullable_info     = makeIntrinsicValRef(fslib_MFOptionModule_nleref,                          "toNullable"                           , None                 , Some "ToNullable" , [vara],     ([[mkOptionTy varaTy]], mkNullableTy varaTy))
+  let v_option_defaultValue_info   = makeIntrinsicValRef(fslib_MFOptionModule_nleref,                          "defaultValue"                         , None                 , Some "DefaultValue" , [vara],     ([[varaTy]; [mkOptionTy varaTy]], varaTy))
 
   let v_nativeptr_tobyref_info     = makeIntrinsicValRef(fslib_MFNativePtrModule_nleref,                       "toByRef"                              , None                 , Some "ToByRefInlined", [vara], ([[mkNativePtrTy varaTy]], mkByrefTy varaTy))  
 
@@ -902,6 +909,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.emitDebugInfoInQuotations      = emitDebugInfoInQuotations
   member __.directoryToResolveRelativePaths= directoryToResolveRelativePaths
   member __.pathMap = pathMap
+  member __.langVersion = langVersion
   member __.unionCaseRefEq x y = primUnionCaseRefEq compilingFslib fslibCcu x y
   member __.valRefEq x y = primValRefEq compilingFslib fslibCcu x y
   member __.fslibCcu                 = fslibCcu
@@ -1331,6 +1339,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val methodhandleof_vref        = ValRefForIntrinsic v_methodhandleof_info
   member val typeof_vref                = ValRefForIntrinsic v_typeof_info
   member val sizeof_vref                = ValRefForIntrinsic v_sizeof_info
+  member val nameof_vref                = ValRefForIntrinsic v_nameof_info
   member val typedefof_vref             = ValRefForIntrinsic v_typedefof_info
   member val enum_vref                  = ValRefForIntrinsic v_enum_operator_info
   member val enumOfValue_vref           = ValRefForIntrinsic v_enumOfValue_info
@@ -1358,15 +1367,15 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val unbox_fast_vref            = ValRefForIntrinsic v_unbox_fast_info
   member val istype_vref                = ValRefForIntrinsic v_istype_info
   member val istype_fast_vref           = ValRefForIntrinsic v_istype_fast_info
-  member val query_source_vref            = ValRefForIntrinsic v_query_source_info
-  member val query_value_vref            = ValRefForIntrinsic v_query_value_info
-  member val query_run_value_vref            = ValRefForIntrinsic v_query_run_value_info
-  member val query_run_enumerable_vref            = ValRefForIntrinsic v_query_run_enumerable_info
-  member val query_for_vref            = ValRefForIntrinsic v_query_for_value_info
-  member val query_yield_vref            = ValRefForIntrinsic v_query_yield_value_info
-  member val query_yield_from_vref        = ValRefForIntrinsic v_query_yield_from_value_info
-  member val query_select_vref            = ValRefForIntrinsic v_query_select_value_info
-  member val query_where_vref            = ValRefForIntrinsic v_query_where_value_info
+  member val query_source_vref          = ValRefForIntrinsic v_query_source_info
+  member val query_value_vref           = ValRefForIntrinsic v_query_value_info
+  member val query_run_value_vref       = ValRefForIntrinsic v_query_run_value_info
+  member val query_run_enumerable_vref  = ValRefForIntrinsic v_query_run_enumerable_info
+  member val query_for_vref             = ValRefForIntrinsic v_query_for_value_info
+  member val query_yield_vref           = ValRefForIntrinsic v_query_yield_value_info
+  member val query_yield_from_vref      = ValRefForIntrinsic v_query_yield_from_value_info
+  member val query_select_vref          = ValRefForIntrinsic v_query_select_value_info
+  member val query_where_vref           = ValRefForIntrinsic v_query_where_value_info
   member val query_zero_vref            = ValRefForIntrinsic v_query_zero_value_info
 
   member __.seq_collect_info           = v_seq_collect_info
@@ -1405,6 +1414,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.array2D_set_info           = v_array2D_set_info
   member __.array3D_set_info           = v_array3D_set_info
   member __.array4D_set_info           = v_array4D_set_info
+
+  member val option_toNullable_info     = v_option_toNullable_info
+  member val option_defaultValue_info     = v_option_defaultValue_info
 
   member __.deserialize_quoted_FSharp_20_plus_info       = v_deserialize_quoted_FSharp_20_plus_info
   member __.deserialize_quoted_FSharp_40_plus_info    = v_deserialize_quoted_FSharp_40_plus_info
@@ -1486,5 +1498,5 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
 #if DEBUG
 // This global is only used during debug output 
-let global_g = ref (None : TcGlobals option)
+let mutable global_g = None : TcGlobals option
 #endif

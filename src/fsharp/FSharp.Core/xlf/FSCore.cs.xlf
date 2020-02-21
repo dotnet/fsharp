@@ -707,6 +707,11 @@
         <target state="translated">Toto není platný výraz dotazu. V dotazu byla použita konstrukce {0}, která není rozpoznána překladačem dotazu z jazyka F# do jazyka LINQ. Prostudujte si specifikace povolených dotazů a zvažte přesunutí některých operací mimo výraz dotazu.</target>
         <note />
       </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">Hodnota maxDegreeOfParallelism musí být kladná, ale vyskytla se hodnota {0}.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

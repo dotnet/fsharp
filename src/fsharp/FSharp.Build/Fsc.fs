@@ -24,8 +24,10 @@ type public Fsc () as this =
     let mutable baseAddress : string = null
     let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
+    let mutable checksumAlgorithm: string = null
     let mutable codePage : string = null
     let mutable commandLineArgs : ITaskItem list = []
+    let mutable compilerTools: ITaskItem [] = [||]
     let mutable debugSymbols = false
     let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
@@ -39,6 +41,7 @@ type public Fsc () as this =
     let mutable generateInterfaceFile : string = null
     let mutable highEntropyVA : bool = false
     let mutable keyFile : string = null
+    let mutable langVersion : string = null
     let mutable noFramework = false
     let mutable optimize  : bool = true
     let mutable otherFlags : string = null
@@ -102,15 +105,15 @@ type public Fsc () as this =
                 | "EMBEDDED" -> "embedded"
                 | "FULL"     -> "full"
                 | _          -> null)
-        if embedAllSources then
-            builder.AppendSwitch("--embed+")
+        if embedAllSources then builder.AppendSwitch("--embed+")
         if embeddedFiles <> null then 
             for item in embeddedFiles do
                 builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
+        builder.AppendSwitchIfNotNull("--langversion:", langVersion)
         // NoFramework
-        if noFramework then 
-            builder.AppendSwitch("--noframework") 
+        if noFramework then
+            builder.AppendSwitch("--noframework")
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
         // DefineConstants
@@ -119,7 +122,6 @@ type public Fsc () as this =
                 builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
-
         // GenerateInterfaceFile
         builder.AppendSwitchIfNotNull("--sig:", generateInterfaceFile)
         // KeyFile
@@ -135,7 +137,7 @@ type public Fsc () as this =
             builder.AppendSwitch("--tailcalls-")
         // PdbFile
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
-        // Platform
+// Platform
         builder.AppendSwitchIfNotNull("--platform:",
             let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
             match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
@@ -144,6 +146,13 @@ type public Fsc () as this =
                 | "ANYCPU",  _, _  -> "anycpu"
                 | "X86",  _, _  -> "x86"
                 | "X64",  _, _  -> "x64"
+                | _ -> null)
+        // checksumAlgorithm
+        builder.AppendSwitchIfNotNull("--checksumalgorithm:",
+            let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
+            match ToUpperInvariant(checksumAlgorithm) with
+                | "SHA1" -> "Sha1"
+                | "SHA256" -> "Sha256"
                 | _ -> null)
         // Resources
         if resources <> null then 
@@ -154,6 +163,12 @@ type public Fsc () as this =
 
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
+
+        // CompilerTools
+        if compilerTools <> null then 
+            for item in compilerTools do
+                builder.AppendSwitchIfNotNull("--compilertool:", item.ItemSpec)
+
         // References
         if references <> null then 
             for item in references do
@@ -258,10 +273,20 @@ type public Fsc () as this =
         with get() = baseAddress 
         and set(s) = baseAddress <- s
 
+    // --checksumalgorithm
+    member fsc.ChecksumAlgorithm
+        with get() = checksumAlgorithm 
+        and set(s) = checksumAlgorithm <- s
+
     // --codepage <int>: Specify the codepage to use when opening source files
     member fsc.CodePage
         with get() = codePage
         and set(s) = codePage <- s
+
+    // -r <string>: Reference an F# or .NET assembly.
+    member fsc.CompilerTools
+        with get() = compilerTools
+        and set(a) = compilerTools <- a
 
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
     member fsc.DebugSymbols
@@ -330,6 +355,10 @@ type public Fsc () as this =
         with get() = keyFile
         and set(s) = keyFile <- s
 
+    member fsc.LangVersion
+        with get() = langVersion
+        and set(s) = langVersion <- s
+
     member fsc.LCID
         with get() = vslcid
         and set(p) = vslcid <- p
@@ -363,7 +392,7 @@ type public Fsc () as this =
     member fsc.PathMap
         with get() = pathMap
         and set(s) = pathMap <- s
-    
+
     // --pdb <string>: 
     //     Name the debug output file
     member fsc.PdbFile

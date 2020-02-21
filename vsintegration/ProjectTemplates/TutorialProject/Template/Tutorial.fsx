@@ -6,17 +6,17 @@
 // *******************************************************************************************************
 //
 // @@@MoreAbout|For more about F#, see:@@@
-//     http://fsharp.org
+//     https://fsharp.org
 //     https://docs.microsoft.com/en-us/dotnet/articles/fsharp/
 //
 // @@@SeeDocumentaton|To see this tutorial in documentation form, see:@@@
 //     https://docs.microsoft.com/en-us/dotnet/articles/fsharp/tour
 //
 // @@@LearnMoreAbout|To learn more about applied F# programming, use@@@
-//     http://fsharp.org/guides/enterprise/
-//     http://fsharp.org/guides/cloud/
-//     http://fsharp.org/guides/web/
-//     http://fsharp.org/guides/data-science/
+//     https://fsharp.org/guides/enterprise/
+//     https://fsharp.org/guides/cloud/
+//     https://fsharp.org/guides/web/
+//     https://fsharp.org/guides/data-science/
 //
 // @@@ToInstall-Line1|To install the Visual F# Power Tools, use@@@
 //     @@@ToInstall-Line2|'Tools' --> 'Extensions and Updates' --> `Online` and search@@@
@@ -46,7 +46,7 @@ open System
 /// @@@Module-Line2|Grouping code in modules helps keep related code together and helps avoid name conflicts in your program.@@@
 ///
 /// @@@Module-Line3|To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/modules@@@
-module IntegersAndNumbers = 
+module IntegersAndNumbers =
 
     /// @@@SampleInt|This is a sample integer.@@@
     let sampleInteger = 176
@@ -102,7 +102,7 @@ module Immutability =
 /// @@@FunctionsModule-Line2|useful results.@@@
 ///
 /// @@@FunctionsModule-Line3|To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/@@@
-module BasicFunctions = 
+module BasicFunctions =
 
     /// @@@LetFunction-Line1|You use 'let' to define a function. This one accepts an integer argument and returns an integer.@@@
     /// @@@LetFunction-Line2|Parentheses are optional for function arguments, except for when you use an explicit type annotation.@@@
@@ -125,10 +125,10 @@ module BasicFunctions =
     /// @@@Conditionals-Line1|Conditionals use if/then/elid/elif/else.@@@
     ///
     /// @@@Conditionals-Line2|Note that F# uses whitespace indentation-aware syntax, similar to languages like Python.@@@
-    let sampleFunction3 x = 
-        if x < 100.0 then 
+    let sampleFunction3 x =
+        if x < 100.0 then
             2.0*x*x - x/5.0 + 3.0
-        else 
+        else
             2.0*x*x + x/5.0 - 37.0
 
     let result3 = sampleFunction3 (6.5 + 4.5)
@@ -159,7 +159,7 @@ module Booleans =
 /// @@@Strings-Line1|Strings are fundamental data types in F#.  Here are some examples of Strings and basic String manipulation.@@@
 ///
 /// @@@Strings-Line2|To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/strings@@@
-module StringManipulation = 
+module StringManipulation =
 
     /// @@@StringQuotes|Strings use double quotes.@@@
     let string1 = "Hello"
@@ -173,7 +173,7 @@ module StringManipulation =
     let string4 = """The computer said "hello world" when I told it to!"""
 
     /// @@@StringConcatenation|String concatenation is normally done with the '+' operator.@@@
-    let helloWorld = string1 + " " + string2 
+    let helloWorld = string1 + " " + string2
 
     // @@@StringPrinting|This line uses '%s' to print a string value.  This is type-safe.@@@
     printfn "%s" helloWorld
@@ -205,7 +205,7 @@ module Tuples =
     let tuple2 = (1, "fred", 3.1415)
 
     printfn "tuple1: %A\ttuple2: %A" tuple1 tuple2
-    
+
     /// @@@TupleTypeAnnotation-Line1|A simple tuple of integers with a type annotation.@@@
     /// @@@TupleTypeAnnotation-Line2|Type annotations for tuples use the * symbol to separate elements@@@
     let tuple3: int * int = (5, 9)
@@ -249,20 +249,20 @@ module PipelinesAndComposition =
 
     /// @@@FilterWithoutPipes-Line1|Given a list of integers, it filters out the even numbers,@@@
     /// @@@FilterWithoutPipes-Line2|squares the resulting odds, and adds 1 to the squared odds.@@@
-    let squareOddValuesAndAddOne values = 
+    let squareOddValuesAndAddOne values =
         let odds = List.filter isOdd values
         let squares = List.map square odds
         let result = List.map addOne squares
         result
 
     printfn "processing %A through 'squareOddValuesAndAddOne' produces: %A" numbers (squareOddValuesAndAddOne numbers)
-    
+
     /// @@@FilterShorter-Line1|A shorter way to write 'squareOddValuesAndAddOne' is to nest each@@@
     /// @@@FilterShorter-Line2|sub-result into the function calls themselves.@@@
     ///
     /// @@@FilterShorter-Line3|This makes the function much shorter, but it's difficult to see the@@@
     /// @@@FilterShorter-Line4|order in which the data is processed.@@@
-    let squareOddValuesAndAddOneNested values = 
+    let squareOddValuesAndAddOneNested values =
         List.map addOne (List.map square (List.filter isOdd values))
 
     printfn "processing %A through 'squareOddValuesAndAddOneNested' produces: %A" numbers (squareOddValuesAndAddOneNested numbers)
@@ -331,13 +331,13 @@ module Lists =
     ]
 
     /// @@@NumberList2|This is a list of integers from 1 to 1000@@@
-    let numberList = [ 1 .. 1000 ]  
+    let numberList = [ 1 .. 1000 ]
 
     /// @@@ListComputation-Line1|Lists can also be generated by computations. This is a list containing@@@
     /// @@@ListComputation-Line2|all the days of the year.@@@
-    let daysList = 
+    let daysList =
         [ for month in 1 .. 12 do
-              for day in 1 .. System.DateTime.DaysInMonth(2017, month) do 
+              for day in 1 .. System.DateTime.DaysInMonth(2017, month) do
                   yield System.DateTime(2017, month, day) ]
 
     // @@@PrintList2|Print the first 5 elements of 'daysList' using 'List.take'.@@@
@@ -345,22 +345,22 @@ module Lists =
 
     /// @@@ListComputationConditional-Line1|Computations can include conditionals.  This is a list containing the tuples@@@
     /// @@@ListComputationConditional-Line2|which are the coordinates of the black squares on a chess board.@@@
-    let blackSquares = 
+    let blackSquares =
         [ for i in 0 .. 7 do
-              for j in 0 .. 7 do 
-                  if (i+j) % 2 = 1 then 
+              for j in 0 .. 7 do
+                  if (i+j) % 2 = 1 then
                       yield (i, j) ]
 
     /// @@@ListMap-Line1|Lists can be transformed using 'List.map' and other functional programming combinators.@@@
     /// @@@ListMap-Line2|This definition produces a new list by squaring the numbers in numberList, using the pipeline@@@
     /// @@@ListMap-Line3|operator to pass an argument to List.map.@@@
-    let squares = 
-        numberList 
-        |> List.map (fun x -> x*x) 
+    let squares =
+        numberList
+        |> List.map (fun x -> x*x)
 
     /// @@@ListFilter-Line1|There are many other list combinations. The following computes the sum of the squares of the@@@
     /// @@@ListFilter-Line2|numbers divisible by 3.@@@
-    let sumOfSquares = 
+    let sumOfSquares =
         numberList
         |> List.filter (fun x -> x % 3 = 0)
         |> List.sumBy (fun x -> x * x)
@@ -386,19 +386,19 @@ module Arrays =
     let array3 = [| 1 .. 1000 |]
 
     /// @@@ArrayComputationConstruction|This is an array containing only the words "hello" and "world".@@@
-    let array4 = 
+    let array4 =
         [| for word in array2 do
-               if word.Contains("l") then 
+               if word.Contains("l") then
                    yield word |]
 
     /// @@@ArrayInit|This is an array initialized by index and containing the even numbers from 0 to 2000.@@@
-    let evenNumbers = Array.init 1001 (fun n -> n * 2) 
+    let evenNumbers = Array.init 1001 (fun n -> n * 2)
 
     /// @@@ArraySlicing|Sub-arrays are extracted using slicing notation.@@@
     let evenNumbersSlice = evenNumbers.[0..500]
 
     /// @@@ArrayLooping|You can loop over arrays and lists using 'for' loops.@@@
-    for word in array4 do 
+    for word in array4 do
         printfn "word: %s" word
 
     // @@@ArrayAssignment-Line1|You can modify the contents of an an array element by using the left arrow assignment operator.@@@
@@ -408,7 +408,7 @@ module Arrays =
 
     /// @@@ArrayMap-Line1|You can transform arrays using 'Array.map' and other functional programming operations.@@@
     /// @@@ArrayMap-Line2|The following calculates the sum of the lengths of the words that start with 'h'.@@@
-    let sumOfLengthsOfWords = 
+    let sumOfLengthsOfWords =
         array2
         |> Array.filter (fun x -> x.StartsWith "h")
         |> Array.sumBy (fun x -> x.Length)
@@ -424,7 +424,7 @@ module Arrays =
 /// @@@Sequences-Line4|Sequence processing functions can be applied to Lists and Arrays as well.@@@
 ///
 /// @@@Sequences-Line5|To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/sequences@@@
-module Sequences = 
+module Sequences =
 
     /// @@@EmptySequence|This is the empty sequence.@@@
     let seq1 = Seq.empty
@@ -436,13 +436,13 @@ module Sequences =
     let numbersSeq = seq { 1 .. 1000 }
 
     /// @@@SequenceComposition|This is a sequence producing the words "hello" and "world"@@@
-    let seq3 = 
+    let seq3 =
         seq { for word in seq2 do
-                  if word.Contains("l") then 
+                  if word.Contains("l") then
                       yield word }
 
     /// @@@SequenceInit|This sequence producing the even numbers up to 2000.@@@
-    let evenNumbers = Seq.init 1001 (fun n -> n * 2) 
+    let evenNumbers = Seq.init 1001 (fun n -> n * 2)
 
     let rnd = System.Random()
 
@@ -453,8 +453,8 @@ module Sequences =
               yield! randomWalk (x + rnd.NextDouble() - 0.5) }
 
     /// @@@Sequence100Elements|This example shows the first 100 elements of the random walk.@@@
-    let first100ValuesOfRandomWalk = 
-        randomWalk 5.0 
+    let first100ValuesOfRandomWalk =
+        randomWalk 5.0
         |> Seq.truncate 100
         |> Seq.toList
 
@@ -467,11 +467,11 @@ module Sequences =
 /// @@@RecursiveFunctions-Line3|Recursion is the preferred way to process sequences or collections in F#.@@@
 ///
 /// @@@RecursiveFunctions-Line4|To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/index#recursive-functions@@@
-module RecursiveFunctions = 
-              
+module RecursiveFunctions =
+
     /// @@@RecFunDef-Line1|This example shows a recursive function that computes the factorial of an@@@
     /// @@@RecRunDef-Line2|integer. It uses 'let rec' to define a recursive function.@@@
-    let rec factorial n = 
+    let rec factorial n =
         if n = 0 then 1 else n * factorial (n-1)
 
     printfn "Factorial of 6 is: %d" (factorial 6)
@@ -499,7 +499,7 @@ module RecursiveFunctions =
         match xs with
         | []    -> accumulator
         | y::ys -> sumListTailRecHelper (accumulator+y) ys
-    
+
     /// @@@RecSumListTailInvoke-Line1|This invokes the tail recursive helper function, providing '0' as a seed accumulator.@@@
     /// @@@RecSumListTailInvoke-Line2|An approach like this is common in F#.@@@
     let sumListTailRecursive xs = sumListTailRecHelper 0 xs
@@ -513,18 +513,18 @@ module RecursiveFunctions =
 /// @@@Records-Line2|They are immutable and have structural equality semantics.@@@
 ///
 /// @@@Records-Line3|To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/records@@@
-module RecordTypes = 
+module RecordTypes =
 
     /// @@@RecordDefinition|This example shows how to define a new record type.@@@
-    type ContactCard = 
+    type ContactCard =
         { Name     : string
           Phone    : string
           Verified : bool }
-              
+
     /// @@@RecordInstantiation1|This example shows how to instantiate a record type.@@@
-    let contact1 = 
-        { Name = "Alf" 
-          Phone = "(206) 555-0157" 
+    let contact1 =
+        { Name = "Alf"
+          Phone = "(206) 555-0157"
           Verified = false }
 
     /// @@@RecordInstantiation2|You can also do this on the same line with ';' separators.@@@
@@ -535,14 +535,14 @@ module RecordTypes =
     /// @@@UpdateRecord-Line3|the 'Phone' and 'Verified' fields.@@@
     ///
     /// @@@UpdateRecord-Line4|To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/copy-and-update-record-expressions@@@
-    let contact2 = 
-        { contact1 with 
+    let contact2 =
+        { contact1 with
             Phone = "(206) 555-0112"
             Verified = true }
 
     /// @@@ProcessRecord-Line1|This example shows how to write a function that processes a record value.@@@
     /// @@@ProcessRecord-Line2|It converts a 'ContactCard' object to a string.@@@
-    let showContactCard (c: ContactCard) = 
+    let showContactCard (c: ContactCard) =
         c.Name + " Phone: " + c.Phone + (if not c.Verified then " (unverified)" else "")
 
     printfn "Alf's Contact Card: %s" (showContactCard contact1)
@@ -558,12 +558,12 @@ module RecordTypes =
         member this.PrintedContactCard =
             this.Name + " Phone: " + this.Phone + (if not this.Verified then " (unverified)" else "") + this.Address
 
-    let contactAlternate = 
-        { Name = "Alf" 
-          Phone = "(206) 555-0157" 
-          Verified = false 
+    let contactAlternate =
+        { Name = "Alf"
+          Phone = "(206) 555-0157"
+          Verified = false
           Address = "111 Alf Street" }
-   
+
     // @@@RecordAccess|Members are accessed via the '.' operator on an instantiated type.@@@
     printfn "Alf's alternate contact card is %s" contactAlternate.PrintedContactCard
 
@@ -571,7 +571,7 @@ module RecordTypes =
     /// @@@RecordStruct-Line2|This is helpful in situations where the performance of structs outweighs@@@
     /// @@@RecordStruct-Line3|the flexibility of reference types.@@@
     [<Struct>]
-    type ContactCardStruct = 
+    type ContactCardStruct =
         { Name     : string
           Phone    : string
           Verified : bool }
@@ -581,17 +581,17 @@ module RecordTypes =
 /// @@@DiscriminatedUnions-Line2|Data stored in DUs can be one of several distinct values.@@@
 ///
 /// @@@DiscriminatedUnions-Line3|To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/discriminated-unions@@@
-module DiscriminatedUnions = 
+module DiscriminatedUnions =
 
     /// @@@CardSuit|The following represents the suit of a playing card.@@@
-    type Suit = 
-        | Hearts 
-        | Clubs 
-        | Diamonds 
+    type Suit =
+        | Hearts
+        | Clubs
+        | Diamonds
         | Spades
 
     /// @@@CardRank|A Disciminated Union can also be used to represent the rank of a playing card.@@@
-    type Rank = 
+    type Rank =
         /// @@@CardRankValue|Represents the rank of cards 2 .. 10@@@
         | Value of int
         | Ace
@@ -600,34 +600,34 @@ module DiscriminatedUnions =
         | Jack
 
         /// @@@CardMember|Discriminated Unions can also implement object-oriented members.@@@
-        static member GetAllRanks() = 
+        static member GetAllRanks() =
             [ yield Ace
               for i in 2 .. 10 do yield Value i
               yield Jack
               yield Queen
               yield King ]
-                                   
+
     /// @@@CardType-Line1|This is a record type that combines a Suit and a Rank.@@@
     /// @@@CardType-Line2|It's common to use both Records and Disciminated Unions when representing data.@@@
     type Card = { Suit: Suit; Rank: Rank }
-              
+
     /// @@@ComputeFullDeck|This computes a list representing all the cards in the deck.@@@
-    let fullDeck = 
+    let fullDeck =
         [ for suit in [ Hearts; Diamonds; Clubs; Spades] do
-              for rank in Rank.GetAllRanks() do 
+              for rank in Rank.GetAllRanks() do
                   yield { Suit=suit; Rank=rank } ]
 
     /// @@@CardToString|This example converts a 'Card' object to a string.@@@
-    let showPlayingCard (c: Card) = 
-        let rankString = 
-            match c.Rank with 
+    let showPlayingCard (c: Card) =
+        let rankString =
+            match c.Rank with
             | Ace -> "Ace"
             | King -> "King"
             | Queen -> "Queen"
             | Jack -> "Jack"
             | Value n -> string n
-        let suitString = 
-            match c.Suit with 
+        let suitString =
+            match c.Suit with
             | Clubs -> "clubs"
             | Diamonds -> "diamonds"
             | Spades -> "spades"
@@ -635,8 +635,8 @@ module DiscriminatedUnions =
         rankString  + " of " + suitString
 
     /// @@@PrintAllCards|This example prints all the cards in a playing deck.@@@
-    let printAllCards() = 
-        for card in fullDeck do 
+    let printAllCards() =
+        for card in fullDeck do
             printfn "%s" (showPlayingCard card)
 
     // @@@SingleCaseDu-Line1|Single-case DUs are often used for domain modeling.  This can buy you extra type safety@@@
@@ -795,7 +795,7 @@ module PatternMatching =
 /// @@@Option-Line3|languages would use null references.@@@
 ///
 /// @@@Option-Line4|To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/options@@@
-module OptionValues = 
+module OptionValues =
 
     /// @@@ZipCode|First, define a zipcode defined via Single-case Discriminated Union.@@@
     type ZipCode = ZipCode of string
@@ -813,8 +813,8 @@ module OptionValues =
     /// @@@CalcShippingZone-Line2|This uses combinators in the Option module to allow a functional pipeline for@@@
     /// @@@CalcShippingZone-Line3|transforming data with Optionals.@@@
     let CustomerShippingZone (calculator: ShippingCalculator, customer: Customer) =
-        customer.ZipCode 
-        |> Option.bind calculator.GetState 
+        customer.ZipCode
+        |> Option.bind calculator.GetState
         |> Option.map calculator.GetShippingZone
 
 
@@ -822,7 +822,7 @@ module OptionValues =
 /// @@@UnitsOfMeasure-Line2|You can then perform type-safe arithmetic on these values.@@@
 ///
 /// @@@UnitsOfMeasure-Line3|To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/units-of-measure@@@
-module UnitsOfMeasure = 
+module UnitsOfMeasure =
 
     /// @@@CommonUnits|First, open a collection of common unit names@@@
     open Microsoft.FSharp.Data.UnitSystems.SI.UnitNames
@@ -852,7 +852,7 @@ module UnitsOfMeasure =
 /// @@@Classes-Line3|To learn more about Classes, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/classes@@@
 ///
 /// @@@Classes-Line4|To learn more about Members, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/members@@@
-module DefiningClasses = 
+module DefiningClasses =
 
     /// @@@Vector-Line1|A simple two-dimensional Vector class.@@@
     ///
@@ -874,7 +874,7 @@ module DefiningClasses =
 
         /// @@@MemberMethod|This member is a method.  The previous members were properties.@@@
         member this.Scale(k) = Vector2D(k * this.DX, k * this.DY)
-    
+
     /// @@@InstantiateClass|This is how you instantiate the Vector2D class.@@@
     let vector1 = Vector2D(3.0, 4.0)
 
@@ -888,15 +888,15 @@ module DefiningClasses =
 /// @@@GenericClasses-Line2|In the following, 'T is the type parameter for the class.@@@
 ///
 /// @@@GenericClasses-Line3|To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/generics/@@@
-module DefiningGenericClasses = 
+module DefiningGenericClasses =
 
-    type StateTracker<'T>(initialElement: 'T) = 
+    type StateTracker<'T>(initialElement: 'T) =
 
         /// @@@InternalField|This internal field store the states in a list.@@@
         let mutable states = [ initialElement ]
 
         /// @@@AddElement|Add a new element to the list of states.@@@
-        member this.UpdateState newState = 
+        member this.UpdateState newState =
             states <- newState :: states  // @@@MutableAssignment|use the '<-' operator to mutate the value.@@@
 
         /// @@@History|Get the entire list of historical states.@@@
@@ -943,18 +943,18 @@ module ImplementingInterfaces =
 ///
 /// @@@Parallel-Line3|To learn more, see: https://msdn.microsoft.com/en-us/visualfsharpdocs/conceptual/array.parallel-module-%5Bfsharp%5D@@@
 module ParallelArrayProgramming =
-              
+
     /// @@@InputArray|First, an array of inputs.@@@
     let oneBigArray = [| 0 .. 100000 |]
-    
+
     // @@@ExpensiveFunction|Next, define a functions that does some CPU intensive computation.@@@
-    let rec computeSomeFunction x = 
-        if x <= 2 then 1 
+    let rec computeSomeFunction x =
+        if x <= 2 then 1
         else computeSomeFunction (x - 1) + computeSomeFunction (x - 2)
-       
+
     // @@@ParallelMap|Next, do a parallel map over a large input array.@@@
-    let computeResults() = 
-        oneBigArray 
+    let computeResults() =
+        oneBigArray
         |> Array.Parallel.map (fun x -> computeSomeFunction (x % 20))
 
     // @@@PrintParallel|Next, print the results.@@@
@@ -968,7 +968,7 @@ module ParallelArrayProgramming =
 module Events =
 
     /// @@@SimpleEvent|First, create instance of Event object that consists of subscription point (event.Publish) and event trigger (event.Trigger).@@@
-    let simpleEvent = new Event<int>() 
+    let simpleEvent = new Event<int>()
 
     // @@@AddEventHandler1|Next, add handler to the event.@@@
     simpleEvent.Publish.Add(
@@ -990,7 +990,7 @@ module Events =
 
 
 #if COMPILED
-module BoilerPlateForForm = 
+module BoilerPlateForForm =
     [<System.STAThread>]
     do ()
     do System.Windows.Forms.Application.Run()

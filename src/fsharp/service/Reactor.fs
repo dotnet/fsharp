@@ -34,8 +34,8 @@ type Reactor() =
     let mutable pauseBeforeBackgroundWork = pauseBeforeBackgroundWorkDefault
 
     // We need to store the culture for the VS thread that is executing now, 
-    // so that when the reactor picks up a thread from the threadpool we can set the culture
-    let culture = new CultureInfo(CultureInfo.CurrentUICulture.Name)
+    // so that when the reactor picks up a thread from the thread pool we can set the culture
+    let mutable culture = CultureInfo(CultureInfo.CurrentUICulture.Name)
 
     let mutable bgOpCts = new CancellationTokenSource()
     /// Mailbox dispatch function.
@@ -64,11 +64,7 @@ type Reactor() =
                                             Trace.TraceInformation("Reactor: {0:n3} pausing {1} milliseconds", DateTime.Now.TimeOfDay.TotalSeconds, pauseBeforeBackgroundWork)
                                             pauseBeforeBackgroundWork
                                     return! inbox.TryReceive(timeout) }
-#if FX_RESHAPED_GLOBALIZATION
-                    CultureInfo.CurrentUICulture <- culture
-#else
                     Thread.CurrentThread.CurrentUICulture <- culture
-#endif
                     match msg with
                     | Some (SetBackgroundOp bgOpOpt) -> 
                         //Trace.TraceInformation("Reactor: --> set background op, remaining {0}", inbox.CurrentQueueLength)
@@ -134,6 +130,17 @@ type Reactor() =
                 with e -> 
                     Debug.Assert(false, String.Format("unexpected failure in reactor loop {0}, restarting", e))
         }
+
+    member __.SetPreferredUILang(preferredUiLang: string option) = 
+        match preferredUiLang with
+        | Some s -> 
+            culture <- CultureInfo s
+#if FX_RESHAPED_GLOBALIZATION
+            CultureInfo.CurrentUICulture <- culture
+#else
+            Thread.CurrentThread.CurrentUICulture <- culture
+#endif
+        | None -> ()
 
     // [Foreground Mailbox Accessors] -----------------------------------------------------------                
     member r.SetBackgroundOp(bgOpOpt) = 

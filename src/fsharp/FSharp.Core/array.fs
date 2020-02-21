@@ -10,9 +10,6 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-#if FX_RESHAPED_REFLECTION
-    open System.Reflection
-#endif
 
     /// Basic operations on arrays
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -191,11 +188,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("CountBy")>]
         let countBy (projection: 'T->'Key) (array: 'T[]) =
             checkNonNull "array" array
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then countByValueType projection array
                 else countByRefType   projection array
 
@@ -445,11 +438,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("GroupBy")>]
         let groupBy (projection: 'T->'Key) (array: 'T[]) =
             checkNonNull "array" array
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then groupByValueType projection array
                 else groupByRefType   projection array
 

@@ -54,6 +54,7 @@ module internal ExtensionTyping =
           * isInteractive: bool
           * systemRuntimeContainsType : (string -> bool)
           * systemRuntimeAssemblyVersion : System.Version
+          * compilerToolsPath : string list
           * range -> Tainted<ITypeProvider> list
 
     /// Given an extension type resolver, supply a human-readable name suitable for error messages.
@@ -120,6 +121,7 @@ module internal ExtensionTyping =
         member IsInterface : bool
         member IsClass : bool
         member IsSealed : bool
+        member IsAbstract : bool
         member IsPublic : bool
         member IsNestedPublic : bool
         member GenericParameterPosition : int

@@ -159,12 +159,6 @@
   <data name="NotUpperCaseConstructor" xml:space="preserve">
     <value>Discriminated union cases and exception labels must be uppercase identifiers</value>
   </data>
-  <data name="PossibleOverload" xml:space="preserve">
-    <value>Possible overload: '{0}'. {1}.</value>
-  </data>
-  <data name="PossibleBestOverload" xml:space="preserve">
-    <value>\n\nPossible best overload: '{0}'.</value>
-  </data>
   <data name="FunctionExpected" xml:space="preserve">
     <value>This function takes too many arguments, or is used in a context where a function is not expected</value>
   </data>
@@ -326,6 +320,9 @@
   </data>
   <data name="Parser.TOKEN.DOT.DOT" xml:space="preserve">
     <value>symbol '..'</value>
+  </data>
+  <data name="Parser.TOKEN.DOT.DOT.HAT" xml:space="preserve">
+    <value>symbol '..^'</value>
   </data>
   <data name="Parser.TOKEN.QUOTE" xml:space="preserve">
     <value>quote symbol</value>
@@ -563,6 +560,9 @@
   </data>
   <data name="Parser.TOKEN.AND" xml:space="preserve">
     <value>keyword 'and'</value>
+  </data>
+  !<data name="Parser.TOKEN.AND.BANG" xml:space="preserve">
+    <value>keyword 'and!'</value>
   </data>
   <data name="Parser.TOKEN.AS" xml:space="preserve">
     <value>keyword 'as'</value>

@@ -3,10 +3,10 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
+open System.Windows
+open System.Windows.Controls
 open Microsoft.VisualStudio.Shell
-
 open Microsoft.VisualStudio.FSharp.UIResources
-open Microsoft.VisualStudio.Shell
 
 module DefaultTuning = 
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)

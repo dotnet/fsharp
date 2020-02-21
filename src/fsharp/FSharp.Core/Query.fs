@@ -302,11 +302,6 @@ open Microsoft.FSharp.Quotations.DerivedPatterns
 
 open Microsoft.FSharp.Linq.QueryRunExtensions
 
-#if FX_RESHAPED_REFLECTION
-open PrimReflectionAdapters
-open ReflectionAdapters
-#endif
-
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Query =
 
@@ -1804,7 +1799,6 @@ module Query =
         let linqQuery = TransInnerWithFinalConsume canElim queryProducingSequence
         let linqQueryAfterEliminatingNestedQueries = EliminateNestedQueries linqQuery
 
-#if !FX_NO_SYSTEM_CONSOLE
 #if DEBUG
         let debug() =
               Printf.printfn "----------------------queryProducingSequence-------------------------"
@@ -1814,20 +1808,17 @@ module Query =
               Printf.printfn "--------------------------linqQuery (after nested)-------------------"
               Printf.printfn "%A" linqQueryAfterEliminatingNestedQueries
 #endif
-#endif
 
 
         let result =
            try
               LeafExpressionConverter.EvaluateQuotation linqQueryAfterEliminatingNestedQueries
            with e ->
-#if !FX_NO_SYSTEM_CONSOLE
 #if DEBUG
               debug()
               Printf.printfn "--------------------------error--------------------------------------"
               Printf.printfn "%A" (e.ToString())
               Printf.printfn "---------------------------------------------------------------------"
-#endif
 #endif
               reraise ()
 

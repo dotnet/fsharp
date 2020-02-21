@@ -17,8 +17,6 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler 
 open FSharp.Compiler.Range
 open FSharp.Compiler.Ast
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 
@@ -299,6 +297,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                       yield! walkTrySeqPt spTry
                       yield! walkFinallySeqPt spFinally
 
+                  | SynExpr.SequentialOrImplicitYield (spSeq, e1, e2, _, _)
                   | SynExpr.Sequential (spSeq, _, e1, e2, _) -> 
                       yield! walkExpr (match spSeq with SuppressSequencePointOnStmtOfSequential -> false | _ -> true) e1
                       yield! walkExpr (match spSeq with SuppressSequencePointOnExprOfSequential -> false | _ -> true) e2
@@ -323,9 +322,12 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                       yield! walkExpr false e2 
                       yield! walkExpr false e3 
 
-                  | SynExpr.LetOrUseBang  (spBind, _, _, _, e1, e2, _) -> 
+                  | SynExpr.LetOrUseBang (spBind, _, _, _, e1, es, e2, _) -> 
                       yield! walkBindSeqPt spBind
                       yield! walkExpr true e1
+                      for (andBangSpBind,_,_,_,eAndBang,_) in es do
+                          yield! walkBindSeqPt andBangSpBind
+                          yield! walkExpr true eAndBang
                       yield! walkExpr true e2
 
                   | SynExpr.MatchBang (spBind, e, cl, _) ->
@@ -595,10 +597,10 @@ module UntypedParseImpl =
             AstTraversal.Traverse(pos, parseTree, walker)
 
     // Given a cursor position here:
-    //    f(x)   .   iden
+    //    f(x)   .   ident
     //                   ^
     // walk the AST to find the position here:
-    //    f(x)   .   iden
+    //    f(x)   .   ident
     //       ^
     // On success, return Some (thatPos, boolTrueIfCursorIsAfterTheDotButBeforeTheIdentifier)
     // If there's no dot, return None, so for example
@@ -789,8 +791,8 @@ module UntypedParseImpl =
             List.tryPick walkBinding bindings
 
         and walkIndexerArg = function
-            | SynIndexerArg.One e -> walkExpr e
-            | SynIndexerArg.Two(e1, e2) -> List.tryPick walkExpr [e1; e2]
+            | SynIndexerArg.One (e, _, _) -> walkExpr e
+            | SynIndexerArg.Two(e1, _, e2, _, _, _) -> List.tryPick walkExpr [e1; e2]
 
         and walkType = function
             | SynType.LongIdent ident -> 
@@ -881,7 +883,14 @@ module UntypedParseImpl =
             | SynExpr.Match (_, e, synMatchClauseList, _)
             | SynExpr.MatchBang (_, e, synMatchClauseList, _) -> 
                 walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
-            | SynExpr.LetOrUseBang (_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
+            | SynExpr.LetOrUseBang(_, _, _, _, e1, es, e2, _) ->
+                [
+                    yield e1
+                    for (_,_,_,_,eAndBang,_) in es do
+                        yield eAndBang
+                    yield e2
+                ]
+                |> List.tryPick (walkExprWithKind parentKind) 
             | SynExpr.DoBang (e, _) -> walkExprWithKind parentKind e
             | SynExpr.TraitCall (ts, sign, e, _) ->
                 List.tryPick walkTypar ts 

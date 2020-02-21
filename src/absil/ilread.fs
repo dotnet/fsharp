@@ -14,23 +14,26 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
+open System.IO.MemoryMappedFiles
 open System.Runtime.InteropServices
 open System.Text
 open Internal.Utilities
 open Internal.Utilities.Collections
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
-#if !FX_NO_PDB_READER
-open FSharp.Compiler.AbstractIL.Internal.Support 
-#endif
+open FSharp.NativeInterop
 open FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
-open FSharp.Compiler.AbstractIL.IL  
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Support
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
-open Microsoft.FSharp.NativeInterop
 open System.Reflection
+
+#nowarn "9"
+
+let primaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [])
 
 let checking = false  
 let logging = false
@@ -107,243 +110,31 @@ let stats =
 
 let GetStatistics() = stats
 
-[<AbstractClass>]
-/// An abstraction over how we access the contents of .NET binaries. May be backed by managed or unmanaged memory,
-/// memory mapped file or by on-disk resources. These objects should never need explicit disposal - they must either
-/// not hold resources of clean up after themselves when collected.
-type BinaryView() = 
+type private BinaryView = ReadOnlyByteMemory
 
-    /// Read a byte from the file
-    abstract ReadByte: addr: int -> byte
-
-    /// Read a chunk of bytes from the file
-    abstract ReadBytes: addr: int -> int -> byte[]
-
-    /// Read an Int32 from the file
-    abstract ReadInt32: addr: int -> int
-
-    /// Read a UInt16 from the file
-    abstract ReadUInt16: addr: int -> uint16
-
-    /// Read a length of a UTF8 string from the file
-    abstract CountUtf8String: addr: int -> int
-
-    /// Read a UTF8 string from the file
-    abstract ReadUTF8String: addr: int -> string
-
-/// An abstraction over how we access the contents of .NET binaries. May be backed by managed or unmanaged memory,
-/// memory mapped file or by on-disk resources.
+/// An abstraction over how we access the contents of .NET binaries.
 type BinaryFile = 
-    /// Return a BinaryView for temporary use which eagerly holds any necessary memory resources for the duration of its lifetime,
-    /// and is faster to access byte-by-byte. The returned BinaryView should _not_ be captured in a closure that outlives the 
-    /// desired lifetime.
     abstract GetView: unit -> BinaryView
-
-/// A view over a raw pointer to memory
-type RawMemoryView(obj: obj, start: nativeint, len: int) =
-    inherit BinaryView()
-
-    override m.ReadByte i = 
-        if nativeint i + 1n > nativeint len then failwithf "RawMemoryView overrun, i = %d, obj = %A" i obj
-        Marshal.ReadByte(start + nativeint i)
-
-    override m.ReadBytes i n = 
-        if nativeint i + nativeint n > nativeint len then failwithf "RawMemoryView overrun, i = %d, n = %d, obj = %A" i n obj
-        let res = Bytes.zeroCreate n
-        Marshal.Copy(start + nativeint i, res, 0, n)
-        res
-      
-    override m.ReadInt32 i = 
-        if nativeint i + 4n > nativeint len then failwithf "RawMemoryView overrun, i = %d, obj = %A" i obj
-        Marshal.ReadInt32(start + nativeint i)
-
-    override m.ReadUInt16 i = 
-        if nativeint i + 2n > nativeint len then failwithf "RawMemoryView overrun, i = %d, obj = %A" i obj
-        uint16(Marshal.ReadInt16(start + nativeint i))
-
-    override m.CountUtf8String i = 
-        if nativeint i > nativeint len then failwithf "RawMemoryView overrun, i = %d, obj = %A" i obj
-        let pStart = start + nativeint i
-        let mutable p = start 
-        while Marshal.ReadByte p <> 0uy do
-            p <- p + 1n
-        int (p - pStart) 
-
-    override m.ReadUTF8String i = 
-        let n = m.CountUtf8String i
-        if nativeint i + nativeint n > nativeint len then failwithf "RawMemoryView overrun, i = %d, n = %d, obj = %A" i n obj
-        System.Runtime.InteropServices.Marshal.PtrToStringAnsi(start + nativeint i, n)
-
-    member __.HoldObj() = obj
-
 
 /// Gives views over a raw chunk of memory, for example those returned to us by the memory manager in Roslyn's
 /// Visual Studio integration. 'obj' must keep the memory alive. The object will capture it and thus also keep the memory alive for
 /// the lifetime of this object. 
 type RawMemoryFile(fileName: string, obj: obj, addr: nativeint, length: int) =
     do stats.rawMemoryFileCount <- stats.rawMemoryFileCount + 1
-    let view = RawMemoryView(obj, addr, length)
+    let view = ByteMemory.FromUnsafePointer(addr, length, obj).AsReadOnly()
     member __.HoldObj() = obj // make sure we capture 'obj'
     member __.FileName = fileName
     interface BinaryFile with
-        override __.GetView() = view :>_
-
-/// Read from memory mapped files.
-module MemoryMapping = 
-
-    type HANDLE = nativeint
-    type ADDR = nativeint
-    type SIZE_T = nativeint
-
-    [<DllImport("kernel32", SetLastError=true)>]
-    extern bool CloseHandle (HANDLE _handler)
-
-    [<DllImport("kernel32", SetLastError=true, CharSet=CharSet.Unicode)>]
-    extern HANDLE CreateFile (string _lpFileName, 
-                              int _dwDesiredAccess, 
-                              int _dwShareMode, 
-                              HANDLE _lpSecurityAttributes, 
-                              int _dwCreationDisposition, 
-                              int _dwFlagsAndAttributes, 
-                              HANDLE _hTemplateFile)
-             
-    [<DllImport("kernel32", SetLastError=true, CharSet=CharSet.Unicode)>]
-    extern HANDLE CreateFileMapping (HANDLE _hFile, 
-                                     HANDLE _lpAttributes, 
-                                     int _flProtect, 
-                                     int _dwMaximumSizeLow, 
-                                     int _dwMaximumSizeHigh, 
-                                     string _lpName) 
-
-    [<DllImport("kernel32", SetLastError=true)>]
-    extern ADDR MapViewOfFile (HANDLE _hFileMappingObject, 
-                               int _dwDesiredAccess, 
-                               int _dwFileOffsetHigh, 
-                               int _dwFileOffsetLow, 
-                               SIZE_T _dwNumBytesToMap)
-
-    [<DllImport("kernel32", SetLastError=true)>]
-    extern bool UnmapViewOfFile (ADDR _lpBaseAddress)
-
-    let INVALID_HANDLE = new IntPtr(-1)
-    let MAP_READ = 0x0004
-    let GENERIC_READ = 0x80000000
-    let NULL_HANDLE = IntPtr.Zero
-    let FILE_SHARE_NONE = 0x0000
-    let FILE_SHARE_READ = 0x0001
-    let FILE_SHARE_WRITE = 0x0002
-    let FILE_SHARE_READ_WRITE = 0x0003
-    let CREATE_ALWAYS = 0x0002
-    let OPEN_EXISTING = 0x0003
-    let OPEN_ALWAYS = 0x0004
-
-/// A view over a raw pointer to memory given by a memory mapped file.
-/// NOTE: we should do more checking of validity here.
-type MemoryMapView(start: nativeint) =
-    inherit BinaryView()
-
-    override m.ReadByte i = 
-        Marshal.ReadByte(start + nativeint i)
-
-    override m.ReadBytes i n = 
-        let res = Bytes.zeroCreate n
-        Marshal.Copy(start + nativeint i, res, 0, n)
-        res
-      
-    override m.ReadInt32 i = 
-        Marshal.ReadInt32(start + nativeint i)
-
-    override m.ReadUInt16 i = 
-        uint16(Marshal.ReadInt16(start + nativeint i))
-
-    override m.CountUtf8String i = 
-        let pStart = start + nativeint i
-        let mutable p = start 
-        while Marshal.ReadByte p <> 0uy do
-            p <- p + 1n
-        int (p - pStart) 
-
-    override m.ReadUTF8String i = 
-        let n = m.CountUtf8String i
-        System.Runtime.InteropServices.Marshal.PtrToStringAnsi(start + nativeint i, n)
-
-/// Memory maps a file and creates a single view over the entirety of its contents. The 
-/// lock on the file is only released when the object is disposed.
-/// For memory mapping we currently take one view and never release it.
-[<DebuggerDisplay("{FileName}")>]
-type MemoryMapFile(fileName: string, view: MemoryMapView, hMap: MemoryMapping.HANDLE, hView: nativeint) =
-
-    do stats.memoryMapFileOpenedCount <- stats.memoryMapFileOpenedCount + 1
-    let mutable closed = false
-    static member Create fileName =
-        let hFile = MemoryMapping.CreateFile (fileName, MemoryMapping.GENERIC_READ, MemoryMapping.FILE_SHARE_READ_WRITE, IntPtr.Zero, MemoryMapping.OPEN_EXISTING, 0, IntPtr.Zero )
-        if hFile.Equals MemoryMapping.INVALID_HANDLE then
-            failwithf "CreateFile(0x%08x)" (Marshal.GetHRForLastWin32Error())
-        let protection = 0x00000002
-        let hMap = MemoryMapping.CreateFileMapping (hFile, IntPtr.Zero, protection, 0, 0, null )
-        ignore(MemoryMapping.CloseHandle hFile)
-        if hMap.Equals MemoryMapping.NULL_HANDLE then
-            failwithf "CreateFileMapping(0x%08x)" (Marshal.GetHRForLastWin32Error())
-
-        let hView = MemoryMapping.MapViewOfFile (hMap, MemoryMapping.MAP_READ, 0, 0, 0n)
-
-        if hView.Equals IntPtr.Zero then
-           failwithf "MapViewOfFile(0x%08x)" (Marshal.GetHRForLastWin32Error())
-
-        let view = MemoryMapView hView 
-
-        MemoryMapFile(fileName, view, hMap, hView)
-
-    member __.FileName = fileName
-
-    member __.Close() = 
-        stats.memoryMapFileClosedCount <- stats.memoryMapFileClosedCount + 1
-        if not closed then 
-            closed <- true
-            MemoryMapping.UnmapViewOfFile hView |> ignore
-            MemoryMapping.CloseHandle hMap |> ignore
-
-    interface BinaryFile with
-        override __.GetView() = (view :> BinaryView)
-
-/// Read file from memory blocks 
-type ByteView(bytes: byte[]) = 
-    inherit BinaryView()
-
-    override __.ReadByte addr = bytes.[addr]
-
-    override __.ReadBytes addr len = Array.sub bytes addr len
-
-    override __.CountUtf8String addr = 
-        let mutable p = addr
-        while bytes.[p] <> 0uy do
-            p <- p + 1
-        p - addr
-
-    override bfv.ReadUTF8String addr = 
-        let n = bfv.CountUtf8String addr 
-        System.Text.Encoding.UTF8.GetString (bytes, addr, n)
-
-    override bfv.ReadInt32 addr = 
-        let b0 = bfv.ReadByte addr
-        let b1 = bfv.ReadByte (addr+1)
-        let b2 = bfv.ReadByte (addr+2)
-        let b3 = bfv.ReadByte (addr+3)
-        int b0 ||| (int b1 <<< 8) ||| (int b2 <<< 16) ||| (int b3 <<< 24)
-
-    override bfv.ReadUInt16 addr = 
-        let b0 = bfv.ReadByte addr
-        let b1 = bfv.ReadByte (addr+1)
-        uint16 b0 ||| (uint16 b1 <<< 8) 
+        override __.GetView() = view
 
 /// A BinaryFile backed by an array of bytes held strongly as managed memory
 [<DebuggerDisplay("{FileName}")>]
 type ByteFile(fileName: string, bytes: byte[]) = 
-    let view = ByteView bytes
+    let view = ByteMemory.FromArray(bytes).AsReadOnly()
     do stats.byteFileCount <- stats.byteFileCount + 1
     member __.FileName = fileName
     interface BinaryFile with
-        override bf.GetView() = view :> BinaryView
+        override bf.GetView() = view
  
 /// Same as ByteFile but holds the bytes weakly. The bytes will be re-read from the backing file when a view is requested.
 /// This is the default implementation used by F# Compiler Services when accessing "stable" binaries. It is not used
@@ -382,11 +173,11 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
 
                 tg
 
-            (ByteView strongBytes :> BinaryView)
+            ByteMemory.FromArray(strongBytes).AsReadOnly()
 
     
-let seekReadByte (mdv: BinaryView) addr = mdv.ReadByte addr
-let seekReadBytes (mdv: BinaryView) addr len = mdv.ReadBytes addr len
+let seekReadByte (mdv: BinaryView) addr = mdv.[addr]
+let seekReadBytes (mdv: BinaryView) addr len = mdv.ReadBytes(addr, len)
 let seekReadInt32 (mdv: BinaryView) addr = mdv.ReadInt32 addr
 let seekReadUInt16 (mdv: BinaryView) addr = mdv.ReadUInt16 addr
     
@@ -971,37 +762,33 @@ let seekReadIndexedRows (numRows, rowReader, keyFunc, keyComparer, binaryChop, r
             // now read off rows, forward and backwards 
             let mid = (low + high) / 2
             // read forward 
-            begin 
-                let mutable fin = false
-                let mutable curr = mid
-                while not fin do 
-                  if curr > numRows then 
-                      fin <- true
-                  else 
-                      let currrow = rowReader curr
-                      if keyComparer (keyFunc currrow) = 0 then 
-                          res <- rowConverter currrow :: res
-                      else 
-                          fin <- true
-                      curr <- curr + 1
-                done
-            end
+            let mutable fin = false
+            let mutable curr = mid
+            while not fin do 
+                if curr > numRows then 
+                    fin <- true
+                else 
+                    let currrow = rowReader curr
+                    if keyComparer (keyFunc currrow) = 0 then 
+                        res <- rowConverter currrow :: res
+                    else 
+                        fin <- true
+                    curr <- curr + 1
+
             res <- List.rev res
             // read backwards 
-            begin 
-                let mutable fin = false
-                let mutable curr = mid - 1
-                while not fin do 
-                  if curr = 0 then 
+            let mutable fin = false
+            let mutable curr = mid - 1
+            while not fin do 
+                if curr = 0 then 
                     fin <- true
-                  else  
+                else  
                     let currrow = rowReader curr
                     if keyComparer (keyFunc currrow) = 0 then 
                         res <- rowConverter currrow :: res
                     else 
                         fin <- true
                     curr <- curr - 1
-            end
         // sanity check 
 #if CHECKING
         if checking then 
@@ -1071,8 +858,7 @@ type PEReader =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ILMetadataReader = 
-  { ilg: ILGlobals
-    sorted: int64
+  { sorted: int64
     mdfile: BinaryFile
     pectxtCaptured: PEReader option // only set when reading full PE including code etc. for static linking
     entryPointToken: TableName * int
@@ -1551,14 +1337,10 @@ let readNativeResources (pectxt: PEReader) =
     [ if pectxt.nativeResourcesSize <> 0x0 && pectxt.nativeResourcesAddr <> 0x0 then 
         let start = pectxt.anyV2P (pectxt.fileName + ": native resources", pectxt.nativeResourcesAddr)
         if pectxt.noFileOnDisk then
-#if !FX_NO_LINKEDRESOURCES
             let unlinkedResource =
                 let linkedResource = seekReadBytes (pectxt.pefile.GetView()) start pectxt.nativeResourcesSize
                 unlinkResource pectxt.nativeResourcesAddr linkedResource
             yield ILNativeResource.Out unlinkedResource
-#else
-            ()
-#endif
         else
             yield ILNativeResource.In (pectxt.fileName, pectxt.nativeResourcesAddr, start, pectxt.nativeResourcesSize ) ]
 
@@ -1627,7 +1409,7 @@ let rvaToData (ctxt: ILMetadataReader) (pectxt: PEReader) nm rva =
 let isSorted (ctxt: ILMetadataReader) (tab: TableName) = ((ctxt.sorted &&& (int64 1 <<< tab.Index)) <> int64 0x0) 
 
 // Note, pectxtEager and pevEager must not be captured by the results of this function
-let rec seekReadModule (ctxt: ILMetadataReader) (pectxtEager: PEReader) pevEager peinfo ilMetadataVersion idx =
+let rec seekReadModule (ctxt: ILMetadataReader) canReduceMemory (pectxtEager: PEReader) pevEager peinfo ilMetadataVersion idx =
     let (subsys, subsysversion, useHighEntropyVA, ilOnly, only32, is32bitpreferred, only64, platform, isDll, alignVirt, alignPhys, imageBaseReal) = peinfo
     let mdv = ctxt.mdfile.GetView()
     let (_generation, nameIdx, _mvidIdx, _encidIdx, _encbaseidIdx) = seekReadModuleRow ctxt mdv idx
@@ -1656,7 +1438,7 @@ let rec seekReadModule (ctxt: ILMetadataReader) (pectxtEager: PEReader) pevEager
       PhysicalAlignment = alignPhys
       ImageBase = imageBaseReal
       MetadataVersion = ilMetadataVersion
-      Resources = seekReadManifestResources ctxt mdv pectxtEager pevEager }  
+      Resources = seekReadManifestResources ctxt canReduceMemory mdv pectxtEager pevEager }  
 
 and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
     let mdview = ctxt.mdfile.GetView()
@@ -1929,7 +1711,7 @@ and seekReadTypeDefOrRefAsTypeRef (ctxt: ILMetadataReader) (TaggedIndex(tag, idx
     | tag when tag = tdor_TypeRef -> seekReadTypeRef ctxt idx
     | tag when tag = tdor_TypeSpec -> 
         dprintn ("type spec used where a type ref or def is required")
-        ctxt.ilg.typ_Object.TypeRef
+        primaryAssemblyILGlobals.typ_Object.TypeRef
     | _ -> failwith "seekReadTypeDefOrRefAsTypeRef_readTypeDefOrRefOrSpec"
 
 and seekReadMethodRefParent (ctxt: ILMetadataReader) mdv numtypars (TaggedIndex(tag, idx)) =
@@ -2047,22 +1829,22 @@ and sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr =
 
 and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr = 
     let b0, sigptr = sigptrGetByte bytes sigptr
-    if b0 = et_OBJECT then ctxt.ilg.typ_Object, sigptr
-    elif b0 = et_STRING then ctxt.ilg.typ_String, sigptr
-    elif b0 = et_I1 then ctxt.ilg.typ_SByte, sigptr
-    elif b0 = et_I2 then ctxt.ilg.typ_Int16, sigptr
-    elif b0 = et_I4 then ctxt.ilg.typ_Int32, sigptr
-    elif b0 = et_I8 then ctxt.ilg.typ_Int64, sigptr
-    elif b0 = et_I then ctxt.ilg.typ_IntPtr, sigptr
-    elif b0 = et_U1 then ctxt.ilg.typ_Byte, sigptr
-    elif b0 = et_U2 then ctxt.ilg.typ_UInt16, sigptr
-    elif b0 = et_U4 then ctxt.ilg.typ_UInt32, sigptr
-    elif b0 = et_U8 then ctxt.ilg.typ_UInt64, sigptr
-    elif b0 = et_U then ctxt.ilg.typ_UIntPtr, sigptr
-    elif b0 = et_R4 then ctxt.ilg.typ_Single, sigptr
-    elif b0 = et_R8 then ctxt.ilg.typ_Double, sigptr
-    elif b0 = et_CHAR then ctxt.ilg.typ_Char, sigptr
-    elif b0 = et_BOOLEAN then ctxt.ilg.typ_Bool, sigptr
+    if b0 = et_OBJECT then primaryAssemblyILGlobals.typ_Object, sigptr
+    elif b0 = et_STRING then primaryAssemblyILGlobals.typ_String, sigptr
+    elif b0 = et_I1 then primaryAssemblyILGlobals.typ_SByte, sigptr
+    elif b0 = et_I2 then primaryAssemblyILGlobals.typ_Int16, sigptr
+    elif b0 = et_I4 then primaryAssemblyILGlobals.typ_Int32, sigptr
+    elif b0 = et_I8 then primaryAssemblyILGlobals.typ_Int64, sigptr
+    elif b0 = et_I then primaryAssemblyILGlobals.typ_IntPtr, sigptr
+    elif b0 = et_U1 then primaryAssemblyILGlobals.typ_Byte, sigptr
+    elif b0 = et_U2 then primaryAssemblyILGlobals.typ_UInt16, sigptr
+    elif b0 = et_U4 then primaryAssemblyILGlobals.typ_UInt32, sigptr
+    elif b0 = et_U8 then primaryAssemblyILGlobals.typ_UInt64, sigptr
+    elif b0 = et_U then primaryAssemblyILGlobals.typ_UIntPtr, sigptr
+    elif b0 = et_R4 then primaryAssemblyILGlobals.typ_Single, sigptr
+    elif b0 = et_R8 then primaryAssemblyILGlobals.typ_Double, sigptr
+    elif b0 = et_CHAR then primaryAssemblyILGlobals.typ_Char, sigptr
+    elif b0 = et_BOOLEAN then primaryAssemblyILGlobals.typ_Bool, sigptr
     elif b0 = et_WITH then 
         let b0, sigptr = sigptrGetByte bytes sigptr
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
@@ -2108,8 +1890,7 @@ and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr =
         
     elif b0 = et_VOID then ILType.Void, sigptr
     elif b0 = et_TYPEDBYREF then 
-        let t = mkILNonGenericValueTy(mkILTyRef(ctxt.ilg.primaryAssemblyScopeRef, "System.TypedReference"))
-        t, sigptr
+        primaryAssemblyILGlobals.typ_TypedReference, sigptr
     elif b0 = et_CMOD_REQD || b0 = et_CMOD_OPT then 
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
         let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
@@ -2679,15 +2460,11 @@ and seekReadImplMap (ctxt: ILMetadataReader) nm midx =
 and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start seqpoints = 
    let labelsOfRawOffsets = new Dictionary<_, _>(sz/2)
    let ilOffsetsOfLabels = new Dictionary<_, _>(sz/2)
-   let tryRawToLabel rawOffset =
-       match labelsOfRawOffsets.TryGetValue rawOffset with
-       | true, v -> Some v
-       | _ -> None
-
+   
    let rawToLabel rawOffset = 
-       match tryRawToLabel rawOffset with 
-       | Some l -> l
-       | None -> 
+       match labelsOfRawOffsets.TryGetValue rawOffset with 
+       | true, l -> l
+       | _ -> 
            let lab = generateCodeLabel()
            labelsOfRawOffsets.[rawOffset] <- lab
            lab
@@ -2916,9 +2693,9 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numtypars (sz: int) start s
    // the start of the next instruction referred to by the raw offset. 
    let raw2nextLab rawOffset = 
        let isInstrStart x = 
-           match tryRawToLabel x with 
-           | None -> false
-           | Some lab -> ilOffsetsOfLabels.ContainsKey lab
+           match labelsOfRawOffsets.TryGetValue x with 
+           | true, lab -> ilOffsetsOfLabels.ContainsKey lab
+           | _ -> false
        if isInstrStart rawOffset then rawToLabel rawOffset 
        elif isInstrStart (rawOffset+1) then rawToLabel (rawOffset+1)
        else failwith ("the bytecode raw offset "+string rawOffset+" did not refer either to the start or end of an instruction")
@@ -3226,10 +3003,10 @@ and sigptrGetILNativeType ctxt bytes sigptr =
                else sigptrGetZInt32 bytes sigptr
              ILNativeType.Array (Some nt, Some(pnum, Some additive)), sigptr
     else (ILNativeType.Empty, sigptr)
-      
+
 // Note, pectxtEager and pevEager must not be captured by the results of this function
 // As a result, reading the resource offsets in the physical file is done eagerly to avoid holding on to any resources
-and seekReadManifestResources (ctxt: ILMetadataReader) (mdv: BinaryView) (pectxtEager: PEReader) (pevEager: BinaryView) = 
+and seekReadManifestResources (ctxt: ILMetadataReader) canReduceMemory (mdv: BinaryView) (pectxtEager: PEReader) (pevEager: BinaryView) = 
     mkILResources
         [ for i = 1 to ctxt.getNumRows TableNames.ManifestResource do
              let (offset, flags, nameIdx, implIdx) = seekReadManifestResourceRow ctxt mdv i
@@ -3242,13 +3019,18 @@ and seekReadManifestResources (ctxt: ILMetadataReader) (mdv: BinaryView) (pectxt
                     let start = pectxtEager.anyV2P ("resource", offset + pectxtEager.resourcesAddr)
                     let resourceLength = seekReadInt32 pevEager start
                     let offsetOfBytesFromStartOfPhysicalPEFile = start + 4
-                    if pectxtEager.noFileOnDisk then
-                        ILResourceLocation.LocalOut (seekReadBytes pevEager offsetOfBytesFromStartOfPhysicalPEFile resourceLength)                     
-                    else
-                        ILResourceLocation.LocalIn (ctxt.fileName, offsetOfBytesFromStartOfPhysicalPEFile, resourceLength)
+                    let bytes = 
+                        let bytes = pevEager.Slice(offsetOfBytesFromStartOfPhysicalPEFile, resourceLength)
+                        // If we are trying to reduce memory, create a memory mapped file based on the contents.
+                        if canReduceMemory then
+                            ByteMemory.CreateMemoryMappedFile bytes
+                        else
+                            ByteMemory.FromArray(bytes.ToArray())
+                    ILResourceLocation.Local(bytes.AsReadOnly())
 
                 | ILScopeRef.Module mref -> ILResourceLocation.File (mref, offset)
                 | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
+                | _ -> failwith "seekReadManifestResources: Invalid ILScopeRef"
 
              let r = 
                { Name= readStringHeap ctxt nameIdx
@@ -3332,7 +3114,7 @@ let getPdbReader pdbDirPath fileName =
 #endif
       
 // Note, pectxtEager and pevEager must not be captured by the results of this function
-let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, pectxtEager: PEReader, pevEager: BinaryView, pectxtCaptured, reduceMemoryUsage, ilGlobals) = 
+let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, pectxtEager: PEReader, pevEager, pectxtCaptured, reduceMemoryUsage) = 
     let mdv = mdfile.GetView()
     let magic = seekReadUInt16AsInt32 mdv metadataPhysLoc
     if magic <> 0x5342 then failwith (fileName + ": bad metadata magic number: " + string magic)
@@ -3638,8 +3420,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
     // Use an initialization hole 
     let ctxtH = ref None
     let ctxt: ILMetadataReader = 
-        { ilg=ilGlobals 
-          sorted=sorted
+        { sorted=sorted
           getNumRows=getNumRows 
           mdfile=mdfile
           dataEndPoints = match pectxtCaptured with None -> notlazy [] | Some pectxt -> getDataEndPointsDelayed pectxt ctxtH
@@ -3709,7 +3490,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
           tableBigness=tableBigness } 
     ctxtH := Some ctxt
      
-    let ilModule = seekReadModule ctxt pectxtEager pevEager peinfo (System.Text.Encoding.UTF8.GetString (ilMetadataVersion, 0, ilMetadataVersion.Length)) 1
+    let ilModule = seekReadModule ctxt reduceMemoryUsage pectxtEager pevEager peinfo (System.Text.Encoding.UTF8.GetString (ilMetadataVersion, 0, ilMetadataVersion.Length)) 1
     let ilAssemblyRefs = lazy [ for i in 1 .. getNumRows TableNames.AssemblyRef do yield seekReadAssemblyRef ctxt i ]
 
     ilModule, ilAssemblyRefs
@@ -3917,13 +3698,13 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) =
     let peinfo = (subsys, (subsysMajor, subsysMinor), useHighEnthropyVA, ilOnly, only32, is32bitpreferred, only64, platform, isDll, alignVirt, alignPhys, imageBaseReal)
     (metadataPhysLoc, metadataSize, peinfo, pectxt, pev, pdb)
 
-let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, ilGlobals, noFileOnDisk) = 
+let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, noFileOnDisk) = 
     let (metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb) = openPEFileReader (fileName, pefile, pdbDirPath, noFileOnDisk) 
-    let ilModule, ilAssemblyRefs = openMetadataReader (fileName, pefile, metadataPhysLoc, peinfo, pectxt, pev, Some pectxt, reduceMemoryUsage, ilGlobals)
+    let ilModule, ilAssemblyRefs = openMetadataReader (fileName, pefile, metadataPhysLoc, peinfo, pectxt, pev, Some pectxt, reduceMemoryUsage)
     ilModule, ilAssemblyRefs, pdb
 
-let openPEMetadataOnly (fileName, peinfo, pectxtEager, pev, mdfile: BinaryFile, reduceMemoryUsage, ilGlobals) = 
-    openMetadataReader (fileName, mdfile, 0, peinfo, pectxtEager, pev, None, reduceMemoryUsage, ilGlobals)
+let openPEMetadataOnly (fileName, peinfo, pectxtEager, pevEager, mdfile: BinaryFile, reduceMemoryUsage) = 
+    openMetadataReader (fileName, mdfile, 0, peinfo, pectxtEager, pevEager, None, reduceMemoryUsage)
   
 let ClosePdbReader pdb =  
 #if FX_NO_PDB_READER
@@ -3946,7 +3727,6 @@ type ReduceMemoryFlag = Yes | No
 
 type ILReaderOptions =
     { pdbDirPath: string option
-      ilGlobals: ILGlobals
       reduceMemoryUsage: ReduceMemoryFlag
       metadataOnly: MetadataOnlyFlag
       tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
@@ -3968,7 +3748,7 @@ type ILModuleReaderImpl(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRe
         member x.Dispose() = dispose()
     
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
-type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag
+type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * bool * ReduceMemoryFlag * MetadataOnlyFlag
 
 // Cache to extend the lifetime of a limited number of readers that are otherwise eligible for GC
 type ILModuleReaderCache1LockToken() = interface LockToken
@@ -3997,23 +3777,28 @@ let createByteFileChunk opts fileName chunk =
             | Some (start, length) -> File.ReadBinaryChunk(fileName, start, length)
         ByteFile(fileName, bytes) :> BinaryFile
 
-let tryMemoryMapWholeFile opts fileName = 
-    let file = 
-        try 
-            MemoryMapFile.Create fileName :> BinaryFile
-        with _ ->
-            createByteFileChunk opts fileName None
-    let disposer = 
-        { new IDisposable with 
-           member __.Dispose() = 
-            match file with 
-            | :? MemoryMapFile as m -> m.Close() // Note that the PE file reader is not required after this point for metadata-only reading
-            | _ -> () }
-    disposer, file
+let createMemoryMapFile fileName = 
+    let mmf, accessor, length = 
+        let fileStream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)
+        let length = fileStream.Length
+        let mmf = MemoryMappedFile.CreateFromFile(fileStream, null, length, MemoryMappedFileAccess.Read, HandleInheritability.None, leaveOpen=false)
+        mmf, mmf.CreateViewAccessor(0L, fileStream.Length, MemoryMappedFileAccess.Read), length
+    let safeHolder =
+        { new obj() with
+            override x.Finalize() =
+                (x :?> IDisposable).Dispose()
+          interface IDisposable with
+            member x.Dispose() =
+                GC.SuppressFinalize x
+                accessor.Dispose()
+                mmf.Dispose()
+                stats.memoryMapFileClosedCount <- stats.memoryMapFileClosedCount + 1 }
+    stats.memoryMapFileOpenedCount <- stats.memoryMapFileOpenedCount + 1
+    safeHolder, RawMemoryFile(fileName, safeHolder, accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length) :> BinaryFile
 
 let OpenILModuleReaderFromBytes fileName bytes opts = 
     let pefile = ByteFile(fileName, bytes) :> BinaryFile
-    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals, true)
+    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), true)
     new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
 
 let ClearAllILModuleReaderCache() =
@@ -4022,15 +3807,15 @@ let ClearAllILModuleReaderCache() =
 
 let OpenILModuleReader fileName opts = 
     // Pseudo-normalize the paths.
-    let (ILModuleReaderCacheKey (fullPath,writeStamp,_,_,_,_) as key), keyOk = 
+    let (ILModuleReaderCacheKey (fullPath,writeStamp,_,_,_) as key), keyOk = 
         try 
            let fullPath = FileSystem.GetFullPathShim fileName
            let writeTime = FileSystem.GetLastWriteTimeShim fileName
-           let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
+           let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
            key, true
         with exn -> 
             System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached. Error = %s" fileName (exn.ToString())) 
-            let fakeKey = ILModuleReaderCacheKey(fileName, System.DateTime.UtcNow, ILScopeRef.Local, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
+            let fakeKey = ILModuleReaderCacheKey(fileName, System.DateTime.UtcNow, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
             fakeKey, false
 
     let cacheResult1 = 
@@ -4075,7 +3860,7 @@ let OpenILModuleReader fileName opts =
 
                 // For metadata-only, always use a temporary, short-lived PE file reader, preferably over a memory mapped file.
                 // Then use the metadata blob as the long-lived memory resource.
-                let disposer, pefileEager = tryMemoryMapWholeFile opts fullPath
+                let disposer, pefileEager = createMemoryMapFile fullPath
                 use _disposer = disposer
                 let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fullPath, pefileEager, None, false) 
                 let mdfile = 
@@ -4085,13 +3870,13 @@ let OpenILModuleReader fileName opts =
                         // If tryGetMetadata doesn't give anything, then just read the metadata chunk out of the binary
                         createByteFileChunk opts fullPath (Some (metadataPhysLoc, metadataSize))
 
-                let ilModule, ilAssemblyRefs = openPEMetadataOnly (fullPath, peinfo, pectxtEager, pevEager, mdfile, reduceMemoryUsage, opts.ilGlobals) 
+                let ilModule, ilAssemblyRefs = openPEMetadataOnly (fullPath, peinfo, pectxtEager, pevEager, mdfile, reduceMemoryUsage) 
                 new ILModuleReaderImpl(ilModule, ilAssemblyRefs, ignore)
             else
                 // If we are not doing metadata-only, then just go ahead and read all the bytes and hold them either strongly or weakly
                 // depending on the heuristic
                 let pefile = createByteFileChunk opts fullPath None
-                let ilModule, ilAssemblyRefs, _pdb = openPE (fullPath, pefile, None, reduceMemoryUsage, opts.ilGlobals, false) 
+                let ilModule, ilAssemblyRefs, _pdb = openPE (fullPath, pefile, None, reduceMemoryUsage, false) 
                 new ILModuleReaderImpl(ilModule, ilAssemblyRefs, ignore)
 
         let ilModuleReader = ilModuleReader :> ILModuleReader 
@@ -4112,15 +3897,14 @@ let OpenILModuleReader fileName opts =
         // We do however care about avoiding locks on files that prevent their deletion during a 
         // multi-proc build. So use memory mapping, but only for stable files. Other files
         // still use an in-memory ByteFile
-        let _disposer, pefile = 
+        let pefile = 
             if alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath then 
-                tryMemoryMapWholeFile opts fullPath
+                let _, pefile = createMemoryMapFile fullPath
+                pefile
             else
-                let pefile = createByteFileChunk opts fullPath None
-                let disposer = { new IDisposable with member __.Dispose() = () }
-                disposer, pefile
+                createByteFileChunk opts fullPath None
 
-        let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbDirPath, reduceMemoryUsage, opts.ilGlobals, false)
+        let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbDirPath, reduceMemoryUsage, false)
         let ilModuleReader = new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
 
         let ilModuleReader = ilModuleReader :> ILModuleReader 
@@ -4134,7 +3918,6 @@ let OpenILModuleReader fileName opts =
 
 [<AutoOpen>]
 module Shim =
-    open FSharp.Compiler.Lib
 
     type IAssemblyReader =
         abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader

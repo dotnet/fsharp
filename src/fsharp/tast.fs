@@ -116,133 +116,137 @@ type ValFlags(flags: int64) =
     new (recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal) =
         let flags = 
                      (match baseOrThis with
-                                        | BaseVal ->                         0b0000000000000000000L
-                                        | CtorThisVal ->                     0b0000000000000000010L
-                                        | NormalVal ->                       0b0000000000000000100L
-                                        | MemberThisVal ->                   0b0000000000000000110L) |||
-                     (if isCompGen then                                      0b0000000000000001000L 
-                      else                                                   0b00000000000000000000L) |||
+                                        | BaseVal ->                         0b00000000000000000000L
+                                        | CtorThisVal ->                     0b00000000000000000010L
+                                        | NormalVal ->                       0b00000000000000000100L
+                                        | MemberThisVal ->                   0b00000000000000000110L) |||
+                     (if isCompGen then                                      0b00000000000000001000L 
+                      else                                                   0b000000000000000000000L) |||
                      (match inlineInfo with
-                                        | ValInline.PseudoVal ->             0b0000000000000000000L
-                                        | ValInline.Always ->                0b0000000000000010000L
-                                        | ValInline.Optional ->              0b0000000000000100000L
-                                        | ValInline.Never ->                 0b0000000000000110000L) |||
+                                        | ValInline.PseudoVal ->             0b00000000000000000000L
+                                        | ValInline.Always ->                0b00000000000000010000L
+                                        | ValInline.Optional ->              0b00000000000000100000L
+                                        | ValInline.Never ->                 0b00000000000000110000L) |||
                      (match isMutable with
-                                        | Immutable ->                       0b0000000000000000000L
-                                        | Mutable   ->                       0b0000000000001000000L) |||
+                                        | Immutable ->                       0b00000000000000000000L
+                                        | Mutable   ->                       0b00000000000001000000L) |||
 
                      (match isModuleOrMemberBinding with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0000000000010000000L) |||
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00000000000010000000L) |||
                      (match isExtensionMember with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0000000000100000000L) |||
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00000000000100000000L) |||
                      (match isIncrClassSpecialMember with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0000000001000000000L) |||
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00000000001000000000L) |||
                      (match isTyFunc with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0000000010000000000L) |||
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00000000010000000000L) |||
 
                      (match recValInfo with
-                                     | ValNotInRecScope     ->               0b0000000000000000000L
-                                     | ValInRecScope true   ->               0b0000000100000000000L
-                                     | ValInRecScope false  ->               0b0000001000000000000L) |||
+                                     | ValNotInRecScope     ->               0b00000000000000000000L
+                                     | ValInRecScope true   ->               0b00000000100000000000L
+                                     | ValInRecScope false  ->               0b00000001000000000000L) |||
 
                      (match allowTypeInst with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0000100000000000000L) |||
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00000100000000000000L) |||
 
                      (match isGeneratedEventVal with
-                                        | false     ->                       0b0000000000000000000L
-                                        | true      ->                       0b0100000000000000000L)                                        
+                                        | false     ->                       0b00000000000000000000L
+                                        | true      ->                       0b00100000000000000000L)                                        
 
         ValFlags flags
 
     member x.BaseOrThisInfo = 
-                                  match (flags       &&&                     0b0000000000000000110L) with 
-                                                             |               0b0000000000000000000L -> BaseVal
-                                                             |               0b0000000000000000010L -> CtorThisVal
-                                                             |               0b0000000000000000100L -> NormalVal
-                                                             |               0b0000000000000000110L -> MemberThisVal
+                                  match (flags       &&&                     0b00000000000000000110L) with 
+                                                             |               0b00000000000000000000L -> BaseVal
+                                                             |               0b00000000000000000010L -> CtorThisVal
+                                                             |               0b00000000000000000100L -> NormalVal
+                                                             |               0b00000000000000000110L -> MemberThisVal
                                                              | _          -> failwith "unreachable"
 
 
 
-    member x.IsCompilerGenerated =      (flags       &&&                     0b0000000000000001000L) <> 0x0L
+    member x.IsCompilerGenerated =      (flags       &&&                     0b00000000000000001000L) <> 0x0L
 
     member x.SetIsCompilerGenerated isCompGen = 
-            let flags =                 (flags       &&&                  ~~~0b0000000000000001000L) |||
+            let flags =                 (flags       &&&                  ~~~0b00000000000000001000L) |||
                                         (match isCompGen with
-                                          | false           ->               0b0000000000000000000L
-                                          | true            ->               0b0000000000000001000L)
+                                          | false           ->               0b00000000000000000000L
+                                          | true            ->               0b00000000000000001000L)
             ValFlags flags
 
     member x.InlineInfo = 
-                                  match (flags       &&&                     0b0000000000000110000L) with 
-                                                             |               0b0000000000000000000L -> ValInline.PseudoVal
-                                                             |               0b0000000000000010000L -> ValInline.Always
-                                                             |               0b0000000000000100000L -> ValInline.Optional
-                                                             |               0b0000000000000110000L -> ValInline.Never
+                                  match (flags       &&&                     0b00000000000000110000L) with 
+                                                             |               0b00000000000000000000L -> ValInline.PseudoVal
+                                                             |               0b00000000000000010000L -> ValInline.Always
+                                                             |               0b00000000000000100000L -> ValInline.Optional
+                                                             |               0b00000000000000110000L -> ValInline.Never
                                                              | _          -> failwith "unreachable"
 
     member x.MutabilityInfo = 
-                                  match (flags       &&&                     0b0000000000001000000L) with 
-                                                             |               0b0000000000000000000L -> Immutable
-                                                             |               0b0000000000001000000L -> Mutable
+                                  match (flags       &&&                     0b00000000000001000000L) with 
+                                                             |               0b00000000000000000000L -> Immutable
+                                                             |               0b00000000000001000000L -> Mutable
                                                              | _          -> failwith "unreachable"
 
 
     member x.IsMemberOrModuleBinding = 
-                                  match (flags       &&&                     0b0000000000010000000L) with 
-                                                             |               0b0000000000000000000L -> false
-                                                             |               0b0000000000010000000L -> true
+                                  match (flags       &&&                     0b00000000000010000000L) with 
+                                                             |               0b00000000000000000000L -> false
+                                                             |               0b00000000000010000000L -> true
                                                              | _          -> failwith "unreachable"
 
 
-    member x.WithIsMemberOrModuleBinding = ValFlags(flags |||                0b0000000000010000000L)
+    member x.WithIsMemberOrModuleBinding = ValFlags(flags |||                0b00000000000010000000L)
 
 
-    member x.IsExtensionMember        = (flags       &&&                     0b0000000000100000000L) <> 0L
+    member x.IsExtensionMember        = (flags       &&&                     0b00000000000100000000L) <> 0L
 
-    member x.IsIncrClassSpecialMember = (flags       &&&                     0b0000000001000000000L) <> 0L
+    member x.IsIncrClassSpecialMember = (flags       &&&                     0b00000000001000000000L) <> 0L
 
-    member x.IsTypeFunction           = (flags       &&&                     0b0000000010000000000L) <> 0L
+    member x.IsTypeFunction           = (flags       &&&                     0b00000000010000000000L) <> 0L
 
-    member x.RecursiveValInfo =   match (flags       &&&                     0b0000001100000000000L) with 
-                                                             |               0b0000000000000000000L -> ValNotInRecScope
-                                                             |               0b0000000100000000000L -> ValInRecScope true
-                                                             |               0b0000001000000000000L -> ValInRecScope false
+    member x.RecursiveValInfo =   match (flags       &&&                     0b00000001100000000000L) with 
+                                                             |               0b00000000000000000000L -> ValNotInRecScope
+                                                             |               0b00000000100000000000L -> ValInRecScope true
+                                                             |               0b00000001000000000000L -> ValInRecScope false
                                                              | _                   -> failwith "unreachable"
 
     member x.WithRecursiveValInfo recValInfo = 
             let flags = 
-                     (flags       &&&                                     ~~~0b0000001100000000000L) |||
+                     (flags       &&&                                    ~~~0b00000001100000000000L) |||
                      (match recValInfo with
-                                     | ValNotInRecScope     ->               0b0000000000000000000L
-                                     | ValInRecScope true  ->               0b0000000100000000000L
-                                     | ValInRecScope false ->               0b0000001000000000000L) 
+                                     | ValNotInRecScope     ->              0b00000000000000000000L
+                                     | ValInRecScope true  ->               0b00000000100000000000L
+                                     | ValInRecScope false ->               0b00000001000000000000L) 
             ValFlags flags
 
-    member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b0000010000000000000L) <> 0L
+    member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b00000010000000000000L) <> 0L
 
-    member x.WithMakesNoCriticalTailcalls =               ValFlags(flags ||| 0b0000010000000000000L)
+    member x.WithMakesNoCriticalTailcalls =               ValFlags(flags ||| 0b00000010000000000000L)
 
-    member x.PermitsExplicitTypeInstantiation =                   (flags &&& 0b0000100000000000000L) <> 0L
+    member x.PermitsExplicitTypeInstantiation =                   (flags &&& 0b00000100000000000000L) <> 0L
 
-    member x.HasBeenReferenced                =                   (flags &&& 0b0001000000000000000L) <> 0L
+    member x.HasBeenReferenced                =                   (flags &&& 0b00001000000000000000L) <> 0L
 
-    member x.WithHasBeenReferenced                     =  ValFlags(flags ||| 0b0001000000000000000L)
+    member x.WithHasBeenReferenced                     =  ValFlags(flags ||| 0b00001000000000000000L)
 
-    member x.IsCompiledAsStaticPropertyWithoutField =             (flags &&& 0b0010000000000000000L) <> 0L
+    member x.IsCompiledAsStaticPropertyWithoutField =             (flags &&& 0b00010000000000000000L) <> 0L
 
-    member x.WithIsCompiledAsStaticPropertyWithoutField = ValFlags(flags ||| 0b0010000000000000000L)
+    member x.WithIsCompiledAsStaticPropertyWithoutField = ValFlags(flags ||| 0b00010000000000000000L)
 
-    member x.IsGeneratedEventVal =                                (flags &&& 0b0100000000000000000L) <> 0L
+    member x.IsGeneratedEventVal =                                (flags &&& 0b00100000000000000000L) <> 0L
 
-    member x.IsFixed                                =             (flags &&& 0b1000000000000000000L) <> 0L
+    member x.IsFixed                                =             (flags &&& 0b01000000000000000000L) <> 0L
 
-    member x.WithIsFixed                               =  ValFlags(flags ||| 0b1000000000000000000L)
+    member x.WithIsFixed                               =  ValFlags(flags ||| 0b01000000000000000000L)
+
+    member x.IgnoresByrefScope                         =          (flags &&& 0b10000000000000000000L) <> 0L
+
+    member x.WithIgnoresByrefScope                     =  ValFlags(flags ||| 0b10000000000000000000L)
 
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits = 
@@ -250,7 +254,7 @@ type ValFlags(flags: int64) =
         // Clear the IsCompiledAsStaticPropertyWithoutField, only used to determine whether to use a true field for a value, and to eliminate the optimization info for observable bindings
         // Clear the HasBeenReferenced, only used to report "unreferenced variable" warnings and to help collect 'it' values in FSI.EXE
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
-                                                      (flags       &&&    ~~~0b0011001100000000000L) 
+                                                      (flags       &&&    ~~~0b10011001100000000000L) 
 
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -423,9 +427,9 @@ type EntityFlags(flags: int64) =
     /// These two bits represents the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.TryIsByRefLike                      = (flags       &&&     0b000000011000000L) 
                                                                 |> function 
-                                                                      | 0b000000011000000L -> Some true
-                                                                      | 0b000000010000000L -> Some false
-                                                                      | _                  -> None
+                                                                      | 0b000000011000000L -> ValueSome true
+                                                                      | 0b000000010000000L -> ValueSome false
+                                                                      | _                  -> ValueNone
 
     /// Adjust the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.WithIsByRefLike flag = 
@@ -436,14 +440,14 @@ type EntityFlags(flags: int64) =
                       | false ->                                        0b000000010000000L) 
             EntityFlags flags
 
-    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.TryIsReadOnly                       = (flags       &&&     0b000001100000000L) 
                                                                 |> function 
-                                                                      | 0b000001100000000L -> Some true
-                                                                      | 0b000001000000000L -> Some false
-                                                                      | _                  -> None
+                                                                      | 0b000001100000000L -> ValueSome true
+                                                                      | 0b000001000000000L -> ValueSome false
+                                                                      | _                  -> ValueNone
 
-    /// Adjust the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// Adjust the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.WithIsReadOnly flag = 
             let flags = 
                      (flags       &&&                                ~~~0b000001100000000L) |||
@@ -452,8 +456,24 @@ type EntityFlags(flags: int64) =
                       | false ->                                        0b000001000000000L) 
             EntityFlags flags
 
+    /// These two bits represents the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.TryIsAssumedReadOnly                = (flags       &&&     0b000110000000000L) 
+                                                                |> function 
+                                                                      | 0b000110000000000L -> ValueSome true
+                                                                      | 0b000100000000000L -> ValueSome false
+                                                                      | _                  -> ValueNone
+
+    /// Adjust the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.WithIsAssumedReadOnly flag = 
+            let flags = 
+                     (flags       &&&                                ~~~0b000110000000000L) |||
+                     (match flag with
+                      | true  ->                                        0b000110000000000L
+                      | false ->                                        0b000100000000000L) 
+            EntityFlags flags
+
     /// Get the flags as included in the F# binary metadata
-    member x.PickledBits =                         (flags       &&&  ~~~0b000001111000100L)
+    member x.PickledBits =                         (flags       &&&  ~~~0b000111111000100L)
 
 
 #if DEBUG
@@ -495,6 +515,7 @@ let getNameOfScopeRef sref =
     | ILScopeRef.Local -> "<local>"
     | ILScopeRef.Module mref -> mref.Name
     | ILScopeRef.Assembly aref -> aref.Name
+    | ILScopeRef.PrimaryAssembly -> "<primary>"
 
 #if !NO_EXTENSIONTYPING
 let ComputeDefinitionLocationOfProvidedItem (p: Tainted<#IProvidedCustomAttributeProvider>) =
@@ -580,7 +601,7 @@ type EntityOptionalData =
 
       /// Indicates how visible is the entity is.
       // MUTABILITY: only for unpickle linkage
-      mutable entity_accessiblity: Accessibility   
+      mutable entity_accessibility: Accessibility   
 
       /// Field used when the 'tycon' is really an exception definition
       // 
@@ -658,7 +679,7 @@ and /// Represents a type definition, exception definition, module definition or
           entity_xmldocsig = ""
           entity_tycon_abbrev = None
           entity_tycon_repr_accessibility = TAccess []
-          entity_accessiblity = TAccess []
+          entity_accessibility = TAccess []
           entity_exn_info = TExnNone }
 
     /// The name of the namespace, module or type, possibly with mangling, e.g. List`1, List or FailureException 
@@ -681,13 +702,16 @@ and /// Represents a type definition, exception definition, module definition or
         | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_compiled_name = name }
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters
-    member x.DisplayName = x.GetDisplayName(false, false)
+    member x.DisplayName = x.GetDisplayName()
+
+    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, plus static parameters if any
+    member x.DisplayNameWithStaticParametersAndTypars = x.GetDisplayName(withStaticParameters=true, withTypars=true, withUnderscoreTypars=false)
 
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, plus static parameters if any
-    member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.GetDisplayName(true, true)
+    member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=true)
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters if any
-    member x.DisplayNameWithStaticParameters = x.GetDisplayName(true, false)
+    member x.DisplayNameWithStaticParameters = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=false)
 
 #if !NO_EXTENSIONTYPING
     member x.IsStaticInstantiationTycon = 
@@ -696,15 +720,20 @@ and /// Represents a type definition, exception definition, module definition or
             args.Length > 0 
 #endif
 
-    member x.GetDisplayName(withStaticParameters, withUnderscoreTypars) = 
+    member x.GetDisplayName(?withStaticParameters, ?withTypars, ?withUnderscoreTypars) =
+        let withStaticParameters = defaultArg withStaticParameters false
+        let withTypars = defaultArg withTypars false
+        let withUnderscoreTypars = defaultArg withUnderscoreTypars false
         let nm = x.LogicalName
+
         let getName () =
             match x.TyparsNoRange with 
             | [] -> nm
             | tps -> 
                 let nm = DemangleGenericTypeName nm
-                if withUnderscoreTypars && not (List.isEmpty tps) then 
-                    nm + "<" + String.concat "," (Array.create tps.Length "_") + ">"
+                if (withUnderscoreTypars || withTypars) && not (List.isEmpty tps) then
+                    let typearNames = tps |> List.map (fun typar -> if withUnderscoreTypars then "_" else typar.Name)
+                    nm + "<" + String.concat "," typearNames + ">"
                 else
                     nm
 
@@ -833,7 +862,7 @@ and /// Represents a type definition, exception definition, module definition or
     member x.Typars m = x.entity_typars.Force m
 
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member x.TyparsNoRange = x.Typars x.Range
+    member x.TyparsNoRange: Typars = x.Typars x.Range
 
     /// Get the type abbreviated by this type definition, if it is an F# type abbreviation definition
     member x.TypeAbbrev = 
@@ -864,7 +893,7 @@ and /// Represents a type definition, exception definition, module definition or
     /// Get the value representing the accessibility of an F# type definition or module.
     member x.Accessibility =
         match x.entity_opt_data with
-        | Some optData -> optData.entity_accessiblity
+        | Some optData -> optData.entity_accessibility
         | _ -> TAccess []
 
     /// Indicates the type prefers the "tycon<a, b>" syntax for display etc. 
@@ -1029,7 +1058,7 @@ and /// Represents a type definition, exception definition, module definition or
                        entity_xmldocsig = tg.entity_xmldocsig
                        entity_tycon_abbrev = tg.entity_tycon_abbrev
                        entity_tycon_repr_accessibility = tg.entity_tycon_repr_accessibility
-                       entity_accessiblity = tg.entity_accessiblity
+                       entity_accessibility = tg.entity_accessibility
                        entity_exn_info = tg.entity_exn_info }
         | None -> ()
 
@@ -1065,11 +1094,17 @@ and /// Represents a type definition, exception definition, module definition or
     /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.SetIsByRefLike b = x.entity_flags <- x.entity_flags.WithIsByRefLike b 
 
-    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.TryIsReadOnly = x.entity_flags.TryIsReadOnly
 
-    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.SetIsReadOnly b = x.entity_flags <- x.entity_flags.WithIsReadOnly b 
+
+    /// These two bits represents the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.TryIsAssumedReadOnly = x.entity_flags.TryIsAssumedReadOnly
+
+    /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.SetIsAssumedReadOnly b = x.entity_flags <- x.entity_flags.WithIsAssumedReadOnly b 
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
     member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpObjectRepr _ -> true | _ -> false
@@ -1209,8 +1244,8 @@ and /// Represents a type definition, exception definition, module definition or
                 let rec top racc p = 
                     match p with 
                     | [] -> ILTypeRef.Create(sref, [], textOfPath (List.rev (item :: racc)))
-                    | (h, istype) :: t -> 
-                        match istype with 
+                    | (h, isType) :: t -> 
+                        match isType with 
                         | FSharpModuleWithSuffix | ModuleOrType -> 
                             let outerTypeName = (textOfPath (List.rev (h :: racc)))
                             ILTypeRef.Create(sref, (outerTypeName :: List.map (fun (nm, _) -> nm) t), item)
@@ -1446,7 +1481,10 @@ and
       IsSealed: bool 
 
       /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-      IsInterface: bool 
+      IsAbstract:  bool 
+
+      /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+      IsInterface:  bool 
 
       /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
       IsStructOrEnum: bool 
@@ -1801,21 +1839,21 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
     // We do not need to lock this mutable state this it is only ever accessed from the compiler thread.
     let activePatternElemRefCache: NameMap<ActivePatternElemRef> option ref = ref None
 
-    let modulesByDemangledNameCache: NameMap<ModuleOrNamespace> option ref = ref None
+    let mutable modulesByDemangledNameCache: NameMap<ModuleOrNamespace> option = None
 
-    let exconsByDemangledNameCache: NameMap<Tycon> option ref = ref None
+    let mutable exconsByDemangledNameCache: NameMap<Tycon> option = None
 
-    let tyconsByDemangledNameAndArityCache: LayeredMap<NameArityPair, Tycon> option ref = ref None
+    let mutable tyconsByDemangledNameAndArityCache: LayeredMap<NameArityPair, Tycon> option = None
 
-    let tyconsByAccessNamesCache: LayeredMultiMap<string, Tycon> option ref = ref None
+    let mutable tyconsByAccessNamesCache: LayeredMultiMap<string, Tycon> option = None
 
-    let tyconsByMangledNameCache: NameMap<Tycon> option ref = ref None
+    let mutable tyconsByMangledNameCache: NameMap<Tycon> option = None
 
-    let allEntitiesByMangledNameCache: NameMap<Entity> option ref = ref None
+    let mutable allEntitiesByMangledNameCache: NameMap<Entity> option = None
 
-    let allValsAndMembersByPartialLinkageKeyCache: MultiMap<ValLinkagePartialKey, Val> option ref = ref None
+    let mutable allValsAndMembersByPartialLinkageKeyCache: MultiMap<ValLinkagePartialKey, Val> option = None
 
-    let allValsByLogicalNameCache: NameMap<Val> option ref = ref None
+    let mutable allValsByLogicalNameCache: NameMap<Val> option = None
   
     /// Namespace or module-compiled-as-type? 
     member mtyp.ModuleOrNamespaceKind = kind 
@@ -1832,17 +1870,17 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
     /// Mutation used during compilation of FSharp.Core.dll
     member mtyp.AddModuleOrNamespaceByMutation(modul: ModuleOrNamespace) =
         entities <- QueueList.appendOne entities modul
-        modulesByDemangledNameCache := None          
-        allEntitiesByMangledNameCache := None       
+        modulesByDemangledNameCache <- None          
+        allEntitiesByMangledNameCache <- None       
 
 #if !NO_EXTENSIONTYPING
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member mtyp.AddProvidedTypeEntity(entity: Entity) = 
         entities <- QueueList.appendOne entities entity
-        tyconsByMangledNameCache := None          
-        tyconsByDemangledNameAndArityCache := None
-        tyconsByAccessNamesCache := None
-        allEntitiesByMangledNameCache := None             
+        tyconsByMangledNameCache <- None          
+        tyconsByDemangledNameAndArityCache <- None
+        tyconsByAccessNamesCache <- None
+        allEntitiesByMangledNameCache <- None             
 #endif 
           
     /// Return a new module or namespace type with an entity added.
@@ -1872,19 +1910,19 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
     /// table is indexed by both name and generic arity. This means that for generic 
     /// types "List`1", the entry (List, 1) will be present.
     member mtyp.TypesByDemangledNameAndArity m = 
-        cacheOptRef tyconsByDemangledNameAndArityCache (fun () -> 
+        cacheOptByref &tyconsByDemangledNameAndArityCache (fun () -> 
            LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> KeyTyconByDemangledNameAndArity tc.LogicalName (tc.Typars m) tc) |> List.toArray))
 
     /// Get a table of types defined within this module, namespace or type. The 
     /// table is indexed by both name and, for generic types, also by mangled name.
     member mtyp.TypesByAccessNames = 
-        cacheOptRef tyconsByAccessNamesCache (fun () -> 
+        cacheOptByref &tyconsByAccessNamesCache (fun () -> 
              LayeredMultiMap.Empty.AddAndMarkAsCollapsible (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc: Tycon) -> KeyTyconByAccessNames tc.LogicalName tc)))
 
-    // REVIEW: we can remove this lookup and use AllEntitiedByMangledName instead?
+    // REVIEW: we can remove this lookup and use AllEntitiesByMangledName instead?
     member mtyp.TypesByMangledName = 
         let addTyconByMangledName (x: Tycon) tab = NameMap.add x.LogicalName x tab 
-        cacheOptRef tyconsByMangledNameCache (fun () -> 
+        cacheOptByref &tyconsByMangledNameCache (fun () -> 
              List.foldBack addTyconByMangledName mtyp.TypeAndExceptionDefinitions Map.empty)
 
     /// Get a table of entities indexed by both logical and compiled names
@@ -1896,7 +1934,7 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
             if name1 = name2 then tab
             else NameMap.add name2 x tab 
           
-        cacheOptRef allEntitiesByMangledNameCache (fun () -> 
+        cacheOptByref &allEntitiesByMangledNameCache (fun () -> 
              QueueList.foldBack addEntityByMangledName entities Map.empty)
 
     /// Get a table of entities indexed by both logical name
@@ -1913,7 +1951,7 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
                MultiMap.add key x tab 
            else
                tab
-        cacheOptRef allValsAndMembersByPartialLinkageKeyCache (fun () -> 
+        cacheOptByref &allValsAndMembersByPartialLinkageKeyCache (fun () -> 
              QueueList.foldBack addValByMangledName vals MultiMap.empty)
 
     /// Try to find the member with the given linkage key in the given module.
@@ -1934,7 +1972,7 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
                NameMap.add x.LogicalName x tab 
            else
                tab
-        cacheOptRef allValsByLogicalNameCache (fun () -> 
+        cacheOptByref &allValsByLogicalNameCache (fun () -> 
            QueueList.foldBack addValByName vals Map.empty)
 
     /// Compute a table of values and members indexed by logical name.
@@ -1949,7 +1987,7 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
     /// Get a table of F# exception definitions indexed by demangled name, so 'FailureException' is indexed by 'Failure'
     member mtyp.ExceptionDefinitionsByDemangledName = 
         let add (tycon: Tycon) acc = NameMap.add tycon.LogicalName tycon acc
-        cacheOptRef exconsByDemangledNameCache (fun () -> 
+        cacheOptByref &exconsByDemangledNameCache (fun () -> 
             List.foldBack add mtyp.ExceptionDefinitions Map.empty)
 
     /// Get a table of nested module and namespace fragments indexed by demangled name (so 'ListModule' becomes 'List')
@@ -1958,7 +1996,7 @@ and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
             if entity.IsModuleOrNamespace then 
                 NameMap.add entity.DemangledModuleOrNamespaceName entity acc
             else acc
-        cacheOptRef modulesByDemangledNameCache (fun () -> 
+        cacheOptByref &modulesByDemangledNameCache (fun () -> 
             QueueList.foldBack add entities Map.empty)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2009,6 +2047,7 @@ and Construct =
               IsStructOrEnum = st.PUntaint((fun st -> st.IsValueType || st.IsEnum), m)
               IsInterface = st.PUntaint((fun st -> st.IsInterface), m)
               IsSealed = st.PUntaint((fun st -> st.IsSealed), m)
+              IsAbstract = st.PUntaint((fun st -> st.IsAbstract), m)
               IsClass = st.PUntaint((fun st -> st.IsClass), m)
               IsErased = isErased
               IsSuppressRelocate = isSuppressRelocate }
@@ -2060,7 +2099,7 @@ and Construct =
             entity_opt_data =
                 match kind, access with
                 | TyparKind.Type, TAccess [] -> None
-                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_accessiblity = access } } 
+                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_accessibility = access } } 
 #endif
 
     static member NewModuleOrNamespace cpath access (id: Ident) xml attribs mtype = 
@@ -2082,7 +2121,7 @@ and Construct =
             entity_opt_data =
                 match xml, access with
                 | XmlDoc [||], TAccess [] -> None
-                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml; entity_tycon_repr_accessibility = access; entity_accessiblity = access } } 
+                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml; entity_tycon_repr_accessibility = access; entity_accessibility = access } } 
 
 and 
     [<StructuralEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -2326,7 +2365,7 @@ and
     | SupportsNull of range 
     
     /// Indicates a constraint that a type has a member with the given signature 
-    | MayResolveMember of TraitConstraintInfo * range 
+    | MayResolveMember of TraitConstraintInfo * range
     
     /// Indicates a constraint that a type is a non-Nullable value type 
     /// These are part of .NET's model of generic constraints, and in order to 
@@ -2368,14 +2407,15 @@ and
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TraitConstraintInfo = 
 
-    /// TTrait(tys, nm, memFlags, argtys, rty, colution)
-    ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of TTypes * string * MemberFlags * TTypes * TType option * TraitConstraintSln option ref 
+    | TTrait of tys: TTypes * memberName: string * _memFlags: MemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
 
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
+
+    /// Get the argument types required of a member in order to solve the constraint
+    member x.ArgumentTypes = (let (TTrait(_, _, _, argtys, _, _)) = x in argtys)
 
     /// Get the return type recorded in the member constraint.
     member x.ReturnType = (let (TTrait(_, _, _, _, ty, _)) = x in ty)
@@ -2721,6 +2761,9 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     /// Indicates if the value is pinned/fixed
     member x.IsFixed = x.val_flags.IsFixed
 
+    /// Indicates if the value will ignore byref scoping rules
+    member x.IgnoresByrefScope = x.val_flags.IgnoresByrefScope
+
     /// Indicates if this value allows the use of an explicit type instantiation (i.e. does it itself have explicit type arguments,
     /// or does it have a signature?)
     member x.PermitsExplicitTypeInstantiation = x.val_flags.PermitsExplicitTypeInstantiation
@@ -2943,6 +2986,8 @@ and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     member x.SetIsCompiledAsStaticPropertyWithoutField() = x.val_flags <- x.val_flags.WithIsCompiledAsStaticPropertyWithoutField
 
     member x.SetIsFixed() = x.val_flags <- x.val_flags.WithIsFixed
+
+    member x.SetIgnoresByrefScope() = x.val_flags <- x.val_flags.WithIgnoresByrefScope
 
     member x.SetValReprInfo info = 
         match x.val_opt_data with
@@ -3323,6 +3368,9 @@ and
     /// The display name of the namespace, module or type, e.g. List instead of List`1, not including static parameters
     member x.DisplayName = x.Deref.DisplayName
 
+    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, including static parameters
+    member x.DisplayNameWithStaticParametersAndTypars = x.Deref.DisplayNameWithStaticParametersAndTypars
+
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, including static parameters
     member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.Deref.DisplayNameWithStaticParametersAndUnderscoreTypars
 
@@ -3547,11 +3595,17 @@ and
     /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.SetIsByRefLike b = x.Deref.SetIsByRefLike b
 
-    /// The on-demand analysis about whether the entity has the IsByRefLike attribute
+    /// The on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.TryIsReadOnly = x.Deref.TryIsReadOnly
 
-    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute
     member x.SetIsReadOnly b = x.Deref.SetIsReadOnly b
+
+    /// The on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.TryIsAssumedReadOnly = x.Deref.TryIsAssumedReadOnly
+
+    /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
+    member x.SetIsAssumedReadOnly b = x.Deref.SetIsAssumedReadOnly b
 
     /// Indicates if this is an F# type definition whose r.h.s. definition is unknown (i.e. a traditional ML 'abstract' type in a signature,
     /// which in F# is called a 'unknown representation' type).
@@ -4838,7 +4892,7 @@ and
     | Label of ILCodeLabel
 
     /// Pseudo method calls. This is used for overloaded operations like op_Addition. 
-    | TraitCall of TraitConstraintInfo  
+    | TraitCall of TraitConstraintInfo 
 
     /// Operation nodes representing C-style operations on byrefs and mutable vals (l-values) 
     | LValueOp of LValueOperation * ValRef 
@@ -5692,7 +5746,7 @@ let NewExn cpath (id: Ident) access repr attribs doc =
         entity_opt_data =
             match doc, access, repr with
             | XmlDoc [||], TAccess [], TExnNone -> None
-            | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = doc; entity_accessiblity = access; entity_tycon_repr_accessibility = access; entity_exn_info = repr } } 
+            | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = doc; entity_accessibility = access; entity_tycon_repr_accessibility = access; entity_exn_info = repr } } 
 
 /// Create a new TAST RecdField node for an F# class, struct or record field
 let NewRecdField stat konst id nameGenerated ty isMutable isVolatile pattribs fattribs docOption access secret =
@@ -5730,14 +5784,11 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_opt_data =
             match kind, docOption, reprAccess, access with
             | TyparKind.Type, XmlDoc [||], TAccess [], TAccess [] -> None
-            | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessiblity=access } } 
+            | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessibility=access } } 
 
 
 let NewILTycon nlpath (nm, m) tps (scoref: ILScopeRef, enc, tdef: ILTypeDef) mtyp =
-
-    // NOTE: hasSelfReferentialCtor=false is an assumption about mscorlib
-    let hasSelfReferentialCtor = tdef.IsClass && (not scoref.IsAssemblyRef && scoref.AssemblyRef.Name = "mscorlib")
-    let tycon = NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, hasSelfReferentialCtor, mtyp)
+    let tycon = NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, false, mtyp)
 
     tycon.entity_tycon_repr <- TILObjectRepr (TILObjectReprData (scoref, enc, tdef))
     tycon.TypeContents.tcaug_closed <- true
@@ -5830,7 +5881,7 @@ let CombineCcuContentFragments m l =
             let entities = 
                 [ for e1 in mty1.AllEntities do 
                       match tab2.TryGetValue e1.LogicalName with
-                      | true, e2 -> yield CombineEntites path e1 e2
+                      | true, e2 -> yield CombineEntities path e1 e2
                       | _ -> yield e1
                   for e2 in mty2.AllEntities do 
                       match tab1.TryGetValue e2.LogicalName with
@@ -5847,7 +5898,7 @@ let CombineCcuContentFragments m l =
         | _-> 
             error(Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly(textOfPath path), m))
 
-    and CombineEntites path (entity1: Entity) (entity2: Entity) = 
+    and CombineEntities path (entity1: Entity) (entity2: Entity) = 
 
         match entity1.IsModuleOrNamespace, entity2.IsModuleOrNamespace with
         | true, true -> 

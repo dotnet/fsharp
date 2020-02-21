@@ -618,7 +618,7 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>This attribute is used to tag values that are part of an experimental library
     /// feature.</summary>
-    [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]
     [<Sealed>]
     type ExperimentalAttribute =
         inherit Attribute
@@ -1342,20 +1342,6 @@ namespace Microsoft.FSharp.Core
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
             val inline FastCompareTuple5 : comparer:System.Collections.IComparer -> tuple1:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> tuple2:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> int
 
-#if FX_RESHAPED_REFLECTION
-    module internal PrimReflectionAdapters =
-
-        open System.Reflection
-
-        type System.Type with
-            member inline IsGenericType : bool
-            member inline IsValueType : bool
-            member inline GetMethod : string * parameterTypes : Type[] -> MethodInfo
-            member inline GetProperty : string -> PropertyInfo
-            member inline IsAssignableFrom : otherType : Type -> bool
-            member inline GetCustomAttributes : attributeType : Type * inherits: bool -> obj[]
-#endif
-
     //-------------------------------------------------------------------------
     // F# Choice Types
 
@@ -1503,8 +1489,6 @@ namespace Microsoft.FSharp.Core
         /// <returns>'U</returns>
         abstract member Invoke : func:'T -> 'U
 
-#if !FX_NO_CONVERTER
-
         /// <summary>Convert an F# first class function value to a value of type <c>System.Converter</c></summary>
         /// <param name="func">The input function.</param>
         /// <returns>A System.Converter of the function type.</returns>
@@ -1524,7 +1508,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="converter">The input System.Converter.</param>
         /// <returns>An F# function of the same type.</returns>
         static member FromConverter : converter:System.Converter<'T,'U> -> ('T -> 'U)
-#endif
 
         /// <summary>Invoke an F# first class function value with five curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
@@ -1575,12 +1558,10 @@ namespace Microsoft.FSharp.Core
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : action:Action<'T>            -> ('T -> unit)
 
-#if !FX_NO_CONVERTER
         /// <summary>Convert the given Converter delegate object to an F# function value</summary>
         /// <param name="converter">The input Converter delegate.</param>
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : converter:Converter<'T,'U>          -> ('T -> 'U)
-#endif
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         /// <param name="func">The input Action delegate.</param>
@@ -1879,6 +1860,11 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Return 'true' if the value option is a 'ValueNone' value.</summary>
         member IsNone : bool
+        
+        /// <summary>Implicitly converts a value into an optional that is a 'ValueSome' value.</summary>
+        /// <param name="value">The input value</param>
+        /// <returns>A voption representing the value.</returns>
+        static member op_Implicit: value: 'T -> 'T voption
 
     /// <summary>The type of optional values, represented as structs.</summary>
     ///
@@ -1944,7 +1930,14 @@ namespace Microsoft.FSharp.Collections
         /// <param name="endIndex">The end index.</param>
         /// <returns>The sub list specified by the input indices.</returns>
         member GetSlice : startIndex:int option * endIndex:int option -> 'T list  
-        
+
+        /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+        /// <param name="rank">The rank of the index.</param>
+        /// <param name="offset">The offset from the end.</param>
+        /// <returns>The corresponding index from the start.</returns>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        member GetReverseIndex: rank: int * offset: int -> int
+
         /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
         /// <param name="head">A new head value for the list.</param>
         /// <param name="tail">The existing list.</param>
@@ -2360,10 +2353,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NaNSingle")>]
         val nanf: float32
 
-#if !FX_NO_SYSTEM_CONSOLE
         /// <summary>Reads the value of the property <c>System.Console.In</c>. </summary>
         [<CompiledName("ConsoleIn")>]
-        val stdin<'T> : System.IO.TextReader      
+        val stdin<'T> : System.IO.TextReader
 
         /// <summary>Reads the value of the property <c>System.Console.Error</c>. </summary>
         [<CompiledName("ConsoleError")>]
@@ -2372,7 +2364,6 @@ namespace Microsoft.FSharp.Core
         /// <summary>Reads the value of the property <c>System.Console.Out</c>.</summary>
         [<CompiledName("ConsoleOut")>]
         val stdout<'T> : System.IO.TextWriter
-#endif        
 
         /// <summary>The standard overloaded range operator, e.g. <c>[n..m]</c> for lists, <c>seq {n..m}</c> for sequences</summary>
         /// <param name="start">The start value of the range.</param>
@@ -2419,6 +2410,10 @@ namespace Microsoft.FSharp.Core
         [<RequiresExplicitTypeArguments>] 
         [<CompiledName("TypeOf")>]
         val inline typeof<'T> : System.Type
+
+        /// <summary>Returns the name of the given symbol.</summary>        
+        [<CompiledName("NameOf")>]
+        val inline nameof : 'T -> string
 
         /// <summary>An internal, library-only compiler intrinsic for compile-time 
         /// generation of a RuntimeMethodHandle.</summary>
@@ -2644,6 +2639,15 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToInt")>]
         val inline int        : value:^T -> int        when ^T : (static member op_Explicit : ^T -> int)        and default ^T : int
         
+        /// <summary>Converts the argument to an unsigned 32-bit integer. This is a direct conversion for all 
+        /// primitive numeric types. For strings, the input is converted using <c>UInt32.Parse()</c>  
+        /// with InvariantCulture settings. Otherwise the operation requires an appropriate
+        /// static conversion method on the input type.</summary>
+        /// <param name="value">The input value.</param>
+        /// <returns>The converted int</returns>
+        [<CompiledName("ToUInt")>]
+        val inline uint: value:^T -> uint when ^T: (static member op_Explicit: ^T -> uint) and default ^T: uint
+
         /// <summary>Converts the argument to a particular enum type.</summary>
         /// <param name="value">The input value.</param>
         /// <returns>The converted enum type.</returns>
@@ -2752,6 +2756,50 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("KeyValuePattern")>]
         val ( |KeyValue| ): keyValuePair:KeyValuePair<'Key,'Value> -> 'Key * 'Value
 
+        [<AutoOpen>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        module ArrayExtensions = 
+            type ``[,,,]``<'T> with
+                /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+                /// <param name="rank">The rank of the index. This refers to the dimension in the 4d array.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+                member GetReverseIndex: rank: int * offset: int -> int
+
+            type ``[,,]``<'T> with
+                /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+                /// <param name="rank">The rank of the index. This refers to the dimension in the 3d array.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+                member GetReverseIndex: rank: int * offset: int -> int
+
+            type ``[,]``<'T> with
+                /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+                /// <param name="rank">The rank of the index. This refers to the dimension in the 2d array.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+                member GetReverseIndex: rank: int * offset: int -> int
+
+            type ``[]``<'T> with
+                /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+                /// <param name="rank">The rank of the index.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+                member GetReverseIndex: rank: int * offset: int -> int
+
+            type System.String with
+                /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
+                /// <param name="rank">The rank of the index.</param>
+                /// <param name="offset">The offset from the end.</param>
+                /// <returns>The corresponding index from the start.</returns>
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+                member GetReverseIndex: rank: int * offset: int -> int
+
+
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges
         /// and dynamic invocations of other F# operators</summary>
         module OperatorIntrinsics =
@@ -2777,7 +2825,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start2">The start index of the second dimension.</param>
             /// <param name="finish2">The end index of the second dimension.</param>
             /// <returns>The two dimensional sub array from the input indices.</returns>
-            val GetArraySlice2D : source:'T[,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> 'T[,]
+            val inline GetArraySlice2D : source:'T[,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> 'T[,]
 
             /// <summary>Gets a vector slice of a 2D array. The index of the first dimension is fixed.</summary>
             /// <param name="source">The source array.</param>
@@ -2802,7 +2850,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start2">The start index of the second dimension.</param>
             /// <param name="finish2">The end index of the second dimension.</param>
             /// <param name="source">The source array.</param>
-            val SetArraySlice2D : target:'T[,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> source:'T[,] -> unit
+            val inline SetArraySlice2D : target:'T[,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> source:'T[,] -> unit
 
             /// <summary>Sets a vector slice of a 2D array. The index of the first dimension is fixed.</summary>
             /// <param name="target">The target array.</param>
@@ -2829,7 +2877,70 @@ namespace Microsoft.FSharp.Core
             /// <param name="start3">The start index of the third dimension.</param>
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <returns>The three dimensional sub array from the given indices.</returns>
-            val GetArraySlice3D : source:'T[,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> 'T[,,]
+            val inline GetArraySlice3D : source:'T[,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> 'T[,,]
+
+            /// <summary>Gets a 2D slice of a 3D array.</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline GetArraySlice3DFixedSingle1 : source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> 'T[,]
+
+            /// <summary>Gets a 2D slice of a 3D array.</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline GetArraySlice3DFixedSingle2 : source:'T[,,] ->  start1:int option -> finish1:int option -> index2: int -> start3:int option -> finish3:int option -> 'T[,]
+
+            /// <summary>Gets a 2D slice of a 3D array.</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline GetArraySlice3DFixedSingle3 : source:'T[,,] ->  start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3: int -> 'T[,]
+
+            /// <summary>Gets a 1D slice of a 3D array.</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <returns>The one dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline GetArraySlice3DFixedDouble1 : source:'T[,,] ->  index1:int -> index2:int -> start3:int option -> finish3:int option -> 'T[]
+
+            /// <summary>Gets a 1D slice of a 3D array.</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <returns>The one dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline GetArraySlice3DFixedDouble2 : source:'T[,,] ->  index1:int -> start2:int option -> finish2:int option -> index3:int -> 'T[]
+
+            /// <summary>Gets a 1D slice of a 3D array.</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <returns>The one dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline GetArraySlice3DFixedDouble3 : source:'T[,,] ->  start1:int option -> finish1:int option -> index2:int -> index3:int -> 'T[]
 
             /// <summary>Sets a slice of an array</summary>
             /// <param name="target">The target array.</param>
@@ -2840,7 +2951,76 @@ namespace Microsoft.FSharp.Core
             /// <param name="start3">The start index of the third dimension.</param>
             /// <param name="finish3">The end index of the third dimension.</param>
             /// <param name="source">The source array.</param>
-            val SetArraySlice3D : target:'T[,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> source:'T[,,] -> unit
+            val inline SetArraySlice3D : target:'T[,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> source:'T[,,] -> unit
+
+            /// <summary>Sets a 2D slice of a 3D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="source">The source array.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline SetArraySlice3DFixedSingle1 : target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
+
+            /// <summary>Sets a 2D slice of a 3D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="source">The source array.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline SetArraySlice3DFixedSingle2 : target: 'T[,,] -> start1: int option -> finish1: int option -> index2: int -> start3: int option -> finish3: int option -> source: 'T[,] -> unit
+
+            /// <summary>Sets a 2D slice of a 3D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="source">The source array.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline SetArraySlice3DFixedSingle3 : target: 'T[,,] -> start1: int option -> finish1: int option ->  start2: int option -> finish2: int option -> index3: int -> source: 'T[,] -> unit
+
+            /// <summary>Sets a 1D slice of a 3D array.</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="source">The source array.</param>
+            /// <returns>The one dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline SetArraySlice3DFixedDouble1 : target: 'T[,,] -> index1: int -> index2: int -> start3: int option -> finish3: int option -> source: 'T[] -> unit
+
+            /// <summary>Sets a 1D slice of a 3D array.</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="source">The source array.</param>
+            /// <returns>The one dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline SetArraySlice3DFixedDouble2 : target: 'T[,,] -> index1: int -> start2: int option -> finish2: int option -> index3: int -> source: 'T[] -> unit
+
+            /// <summary>Sets a 1D slice of a 3D array.</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="source">The source array.</param>
+            /// <returns>The one dimensional sub array from the given indices.</returns>
+            [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+            val inline SetArraySlice3DFixedDouble3 : target: 'T[,,] -> start1: int option -> finish1: int option ->  index2: int -> index3: int -> source: 'T[] -> unit
 
             /// <summary>Gets a slice of an array</summary>
             /// <param name="source">The source array.</param>
@@ -2853,7 +3033,315 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <returns>The four dimensional sub array from the given indices.</returns>
-            val GetArraySlice4D : source:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,,,]
+            val inline GetArraySlice4D : source:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,,,]
+
+            /// <summary>Gets a 3D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <returns>The three dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedSingle1 : source:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,,]
+
+            /// <summary>Gets a 3D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <returns>The three dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedSingle2 : source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,,]
+
+            /// <summary>Gets a 3D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <returns>The three dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedSingle3 : source:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3:int  -> start4:int option -> finish4:int option -> 'T[,,]
+
+            /// <summary>Gets a 3D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <returns>The three dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedSingle4 : source:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> 'T[,,]
+
+            /// <summary>Gets a 2D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedDouble1 : source:'T[,,,] -> index1: int -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> 'T[,]
+
+            /// <summary>Gets a 2D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedDouble2 : source:'T[,,,] -> index1: int -> start2: int option -> finish2:int option -> index3:int -> start4:int option -> finish4:int option -> 'T[,]
+
+            /// <summary>Gets a 2D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedDouble3 : source:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> 'T[,]
+
+            /// <summary>Gets a 2D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedDouble4 : source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> start4:int option -> finish4:int option -> 'T[,]
+
+            /// <summary>Gets a 2D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedDouble5 : source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> index4:int -> 'T[,]
+
+            /// <summary>Gets a 2D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <returns>The two dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedDouble6 : source:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> index3:int -> index4:int -> 'T[,]
+
+            /// <summary>Gets a 1D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <returns>The one dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedTriple4 : source:'T[,,,] -> index1:int -> index2:int -> index3:int -> start4:int option -> finish4:int option -> 'T[]
+
+            /// <summary>Gets a 1D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <returns>The one dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedTriple3 : source:'T[,,,] -> index1:int -> index2:int -> start3:int option -> finish3:int option -> index4:int -> 'T[]
+            
+            /// <summary>Gets a 1D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <returns>The one dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedTriple2 : source:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> index3:int -> index4:int -> 'T[]
+
+            /// <summary>Gets a 1D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <returns>The one dimensional sub array from the given indices.</returns>
+            val inline GetArraySlice4DFixedTriple1 : source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> index4:int -> 'T[]
+            
+            /// <summary>Gets a 3D slice of a 4D array</summary>
+            /// <param name="source">The source array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedSingle1 : target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source: 'T[,,] -> unit
+
+            /// <summary>Sets a 3D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedSingle2 : target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source: 'T[,,] -> unit
+
+            /// <summary>Sets a 3D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedSingle3 : target:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> index3:int  -> start4:int option -> finish4:int option -> source: 'T[,,] -> unit
+
+            /// <summary>Sets a 3D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedSingle4 : target:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> source: 'T[,,] -> unit
+
+            /// <summary>Sets a 2D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedDouble1 : target:'T[,,,] -> index1: int -> index2:int -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source: 'T[,] -> unit
+
+            /// <summary>Sets a 2D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedDouble2 : target:'T[,,,] -> index1: int -> start2: int option -> finish2:int option -> index3:int -> start4:int option -> finish4:int option -> source: 'T[,] -> unit
+
+            /// <summary>Sets a 2D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedDouble3 : target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> start3:int option -> finish3:int option -> index4:int -> source: 'T[,] -> unit
+
+            /// <summary>Sets a 2D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedDouble4 : target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> start4:int option -> finish4:int option -> source: 'T[,] -> unit
+
+            /// <summary>Sets a 2D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedDouble5 : target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> start3:int option -> finish3:int option -> index4:int -> source: 'T[,] -> unit
+
+            /// <summary>Sets a 2D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedDouble6 : target:'T[,,,] -> start1:int option -> finish1:int option -> start2: int option -> finish2:int option -> index3:int -> index4:int -> source: 'T[,] -> unit
+
+            /// <summary>Sets a 1D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="start4">The start index of the fourth dimension.</param>
+            /// <param name="finish4">The end index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedTriple4 : target:'T[,,,] -> index1:int -> index2:int -> index3:int -> start4:int option -> finish4:int option -> source: 'T[] -> unit
+
+            /// <summary>Sets a 1D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedTriple3 : target:'T[,,,] -> index1:int -> index2:int -> start3:int option -> finish3:int option -> index4:int -> source: 'T[] -> unit
+            
+            /// <summary>Sets a 1D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
+            /// <param name="start2">The start index of the second dimension.</param>
+            /// <param name="finish2">The end index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedTriple2 : target:'T[,,,] -> index1:int -> start2: int option -> finish2:int option -> index3:int -> index4:int -> source: 'T[] -> unit
+
+            /// <summary>Sets a 1D slice of a 4D array</summary>
+            /// <param name="target">The target array.</param>
+            /// <param name="start1">The start index of the first dimension.</param>
+            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="index2">The fixed index of the second dimension.</param>
+            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="index4">The fixed index of the fourth dimension.</param>
+            /// <param name="source">The source array.</param>
+            val inline SetArraySlice4DFixedTriple1 : target:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> index4:int -> source: 'T[] -> unit
 
             /// <summary>Sets a slice of an array</summary>
             /// <param name="target">The target array.</param>
@@ -2866,7 +3354,7 @@ namespace Microsoft.FSharp.Core
             /// <param name="start4">The start index of the fourth dimension.</param>
             /// <param name="finish4">The end index of the fourth dimension.</param>
             /// <param name="source">The source array.</param>
-            val SetArraySlice4D : target:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source:'T[,,,] -> unit
+            val inline SetArraySlice4D : target:'T[,,,] -> start1:int option -> finish1:int option -> start2:int option -> finish2:int option -> start3:int option -> finish3:int option -> start4:int option -> finish4:int option -> source:'T[,,,] -> unit
 
             /// <summary>Gets a slice from a string</summary>
             /// <param name="source">The source string.</param>

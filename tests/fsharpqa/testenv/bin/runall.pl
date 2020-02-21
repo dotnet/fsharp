@@ -147,7 +147,7 @@ my $STATE_ERROR_EXITVAL = 4;
 my $FILE_ERROR_EXITVAL = 5;
 my $OTHER_ERROR_EXITVAL = 9;
 
-my $perl = $Config{perlpath};
+my $perl = $^X;
 
 BEGIN {
     @required_mods = ("Win32\\Process.pm");

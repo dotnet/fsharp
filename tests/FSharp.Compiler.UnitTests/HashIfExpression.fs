@@ -12,7 +12,7 @@ open FSharp.Compiler
 open FSharp.Compiler.Lexer
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Ast
 open Internal.Utilities
 
@@ -59,17 +59,17 @@ type HashIfExpression()     =
                     member x.ErrorCount         = errors.Count
             }
 
-        let stack           : LexerIfdefStack = ref []
         let lightSyntax     = LightSyntaxStatus(true, false)
         let resourceManager = LexResourceManager ()
         let defines         = []
         let startPos        = Position.Empty
-        let args            = mkLexargs ("dummy", defines, lightSyntax, resourceManager, stack, errorLogger, PathMap.empty)
+        let args            = mkLexargs ("dummy", defines, lightSyntax, resourceManager, [], errorLogger, PathMap.empty)
 
         CompileThreadStatic.ErrorLogger <- errorLogger
 
         let parser (s : string) =
-            let lexbuf          = LexBuffer<char>.FromChars (s.ToCharArray ())
+            let isFeatureSupported (_featureId:LanguageFeature) = true
+            let lexbuf          = LexBuffer<char>.FromChars (isFeatureSupported, s.ToCharArray ())
             lexbuf.StartPos     <- startPos
             lexbuf.EndPos       <- startPos
             let tokenStream     = PPLexer.tokenstream args

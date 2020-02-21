@@ -230,20 +230,21 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
 # Important to not set $script:bootstrapDir here yet as we're actually in the process of
 # building the bootstrap.
 function Make-BootstrapBuild() {
-    Write-Host "Building bootstrap compiler"
+    Write-Host "Building bootstrap '$bootstrapTfm' compiler"
 
     $dir = Join-Path $ArtifactsDir "Bootstrap"
     Remove-Item -re $dir -ErrorAction SilentlyContinue
     Create-Directory $dir
 
-    # prepare FsLex and Fsyacc
-    Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" "/restore /t:Publish" -logFileName "BuildTools" -configuration $bootstrapConfiguration
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp2.1\publish" -Destination "$dir\fslex" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp2.1\publish" -Destination "$dir\fsyacc" -Force  -Recurse
+    # prepare FsLex and Fsyacc and AssemblyCheck
+    Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" "/restore /t:Publish /p:PublishWindowsPdb=false" -logFileName "BuildTools" -configuration $bootstrapConfiguration
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp3.0\publish" -Destination "$dir\fslex" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp3.0\publish" -Destination "$dir\fsyacc" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\netcoreapp3.0\publish" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
     $projectPath = "$RepoRoot\proto.proj"
-    Run-MSBuild $projectPath "/restore /t:Publish" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
+    Run-MSBuild $projectPath "/restore /t:Publish /p:TargetFramework=$bootstrapTfm;ProtoTargetFramework=$bootstrapTfm /p:PublishWindowsPdb=false" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
     Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsc" -Force -Recurse
     Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsi" -Force -Recurse
 

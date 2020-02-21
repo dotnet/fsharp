@@ -20,7 +20,7 @@ This repo should be _identical_ to 'fsharp' except:
     - No bootstrap or proto compiler is used - an installed F# compiler is assumed
 
   - Build script using FAKE that builds everything, produces NuGet package and 
-    generates documentation, files for publising NuGet packages etc.
+    generates documentation, files for publishing NuGet packages etc.
     (following [F# project scaffold](https://github.com/fsprojects/FSharp.ProjectScaffold))
 
   - Changes to compiler source code to expose new functionality; Changes to the
@@ -30,7 +30,7 @@ This repo should be _identical_ to 'fsharp' except:
 
   - Additions to compiler source code which add new functionality to the compiler service API
 
-If language or compiler addiitons are committed to `fsharp/fsharp`, they should be merged into 
+If language or compiler additions are committed to `fsharp/fsharp`, they should be merged into
 this repo and a new NuGet package released.
 
 ## Building and NuGet
@@ -54,4 +54,4 @@ Release checklist to publish a new version on nuget.org
 1. Update `RELEASE_NOTES.md`
 2. Check the version numbers are correct across the source (some files duplicate them)
 3. Commit and add the necessary tag to the repo
-4. Publish the nupkgs for `FSharp.Compiler.Service` and `FSharp.Compiler.Service.ProjectCracker` once they appear in AppVeyor artifacts
+4. Publish the nupkgs for `FSharp.Compiler.Service` once it appears in AppVeyor artifacts

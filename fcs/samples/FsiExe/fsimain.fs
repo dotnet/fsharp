@@ -17,13 +17,11 @@ module internal Sample.FSharp.Compiler.Interactive.Main
 
 open System
 open System.Globalization
-open System.IO
 open System.Reflection
 open System.Threading
 open System.Windows.Forms
 
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.Interactive
 open FSharp.Compiler
 
 #nowarn "55"

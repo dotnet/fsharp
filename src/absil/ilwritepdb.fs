@@ -10,12 +10,12 @@ open System.IO.Compression
 open System.Reflection
 open System.Reflection.Metadata
 open System.Reflection.Metadata.Ecma335
-open System.Reflection.PortableExecutable
+open System.Text
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Diagnostics 
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Support 
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
 
@@ -125,6 +125,27 @@ type idd =
       iddData: byte[]
       iddChunk: BinaryChunk }
 
+/// The specified Hash algorithm to use on portable pdb files.
+type HashAlgorithm =
+    | Sha1
+    | Sha256
+
+// Document checksum algorithms
+let guidSha1 = Guid("ff1816ec-aa5e-4d10-87f7-6f4963833460")
+let guidSha2 = Guid("8829d00f-11b8-4213-878b-770e8597ac16")
+
+let checkSum (url: string) (checksumAlgorithm: HashAlgorithm) =
+    try
+        use file = FileSystem.FileStreamReadShim url
+        let guid, alg =
+            match checksumAlgorithm with
+            | HashAlgorithm.Sha1 -> guidSha1, System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
+            | HashAlgorithm.Sha256 -> guidSha2, System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
+
+        let checkSum = alg.ComputeHash file
+        Some (guid, checkSum)
+    with _ -> None
+
 //---------------------------------------------------------------------
 // Portable PDB Writer
 //---------------------------------------------------------------------
@@ -153,7 +174,7 @@ let pdbGetCvDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvCh
     }
 
 let pdbMagicNumber= 0x4244504dL
-let pdbGetPdbDebugInfo (embeddedPDBChunk: BinaryChunk) (uncompressedLength: int64) (stream: MemoryStream) =
+let pdbGetEmbeddedPdbDebugInfo (embeddedPdbChunk: BinaryChunk) (uncompressedLength: int64) (stream: MemoryStream) =
     let iddPdbBuffer =
         let buffer = Array.zeroCreate (sizeof<int32> + sizeof<int32> + int(stream.Length))
         let (offset, size) = (0, sizeof<int32>)                    // Magic Number dword: 0x4244504dL
@@ -164,33 +185,57 @@ let pdbGetPdbDebugInfo (embeddedPDBChunk: BinaryChunk) (uncompressedLength: int6
         Buffer.BlockCopy(stream.ToArray(), 0, buffer, offset, size)
         buffer
     { iddCharacteristics = 0                                                    // Reserved
-      iddMajorVersion = 0                                                       // VersionMajor should be 0
+      iddMajorVersion = 0x0100                                                  // VersionMajor should be 0x0100
       iddMinorVersion = 0x0100                                                  // VersionMinor should be 0x0100
       iddType = 17                                                              // IMAGE_DEBUG_TYPE_EMBEDDEDPDB
       iddTimestamp = 0
       iddData = iddPdbBuffer                                                    // Path name to the pdb file when built
-      iddChunk = embeddedPDBChunk
+      iddChunk = embeddedPdbChunk
     }
 
-let pdbGetDebugInfo (mvid: byte[]) (timestamp: int32) (filepath: string) (cvChunk: BinaryChunk) (embeddedPDBChunk: BinaryChunk option) (uncompressedLength: int64) (stream: MemoryStream option) = 
-    match stream, embeddedPDBChunk with
-    | None, _  | _, None -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk |]
-    | Some s, Some chunk -> [| pdbGetCvDebugInfo mvid timestamp filepath cvChunk; pdbGetPdbDebugInfo chunk uncompressedLength s |]
+let pdbChecksumDebugInfo timestamp (checksumPdbChunk: BinaryChunk) (algorithmName:string) (checksum: byte[]) =
+    let iddBuffer =
+        let alg = Encoding.UTF8.GetBytes(algorithmName)
+        let buffer = Array.zeroCreate (alg.Length + 1 + checksum.Length)
+        Buffer.BlockCopy(alg, 0, buffer, 0, alg.Length)
+        Buffer.BlockCopy(checksum, 0, buffer, alg.Length + 1, checksum.Length)
+        buffer
+    { iddCharacteristics = 0                                                    // Reserved
+      iddMajorVersion = 1                                                       // VersionMajor should be 1
+      iddMinorVersion = 0                                                       // VersionMinor should be 0
+      iddType = 19                                                              // IMAGE_DEBUG_TYPE_CHECKSUMPDB
+      iddTimestamp = timestamp
+      iddData = iddBuffer                                                       // Path name to the pdb file when built
+      iddChunk = checksumPdbChunk
+    }
 
-// Document checksum algorithms
-let guidSourceHashMD5 = System.Guid(0x406ea660u, 0x64cfus, 0x4c82us, 0xb6uy, 0xf0uy, 0x42uy, 0xd4uy, 0x81uy, 0x72uy, 0xa7uy, 0x99uy) //406ea660-64cf-4c82-b6f0-42d48172a799
-let hashSizeOfMD5 = 16
+let pdbGetPdbDebugDeterministicInfo (deterministicPdbChunk: BinaryChunk) =
+    { iddCharacteristics = 0                                                    // Reserved
+      iddMajorVersion = 0                                                       // VersionMajor should be 0
+      iddMinorVersion = 0                                                       // VersionMinor should be 00
+      iddType = 16                                                              // IMAGE_DEBUG_TYPE_DETERMINISTIC
+      iddTimestamp = 0
+      iddData = Array.empty                                                     // No DATA
+      iddChunk = deterministicPdbChunk
+    }
 
-// If the FIPS algorithm policy is enabled on the computer (e.g., for US government employees and contractors)
-// then obtaining the MD5 implementation in BCL will throw. 
-// In this case, catch the failure, and not set a checksum. 
-let checkSum (url: string) =
-    try
-        use file = FileSystem.FileStreamReadShim url
-        use md5 = System.Security.Cryptography.MD5.Create()
-        let checkSum = md5.ComputeHash file
-        Some (guidSourceHashMD5, checkSum)
-    with _ -> None
+let pdbGetDebugInfo (contentId: byte[]) (timestamp: int32) (filepath: string)
+                    (cvChunk: BinaryChunk)
+                    (embeddedPdbChunk: BinaryChunk option)
+                    (deterministicPdbChunk: BinaryChunk)
+                    (checksumPdbChunk: BinaryChunk) (algorithmName:string) (checksum: byte [])
+                    (uncompressedLength: int64) (stream: MemoryStream option)
+                    (embeddedPdb: bool) (deterministic: bool) =
+    [|  yield pdbGetCvDebugInfo contentId timestamp filepath cvChunk
+        yield pdbChecksumDebugInfo timestamp checksumPdbChunk algorithmName checksum
+        if embeddedPdb then
+            match stream, embeddedPdbChunk with
+            | None, _ | _, None -> ()
+            | Some s, Some chunk ->
+                yield pdbGetEmbeddedPdbDebugInfo chunk uncompressedLength s
+        if deterministic then
+            yield pdbGetPdbDebugDeterministicInfo deterministicPdbChunk
+    |]
 
 //------------------------------------------------------------------------------
 // PDB Writer.  The function [WritePdbInfo] abstracts the 
@@ -200,7 +245,7 @@ let checkSum (url: string) =
 // This function takes output file name and returns debug file name.
 let getDebugFileName outfile (portablePDB: bool) =
 #if ENABLE_MONO_SUPPORT
-  if IL.runningOnMono && not portablePDB then
+  if runningOnMono && not portablePDB then
       outfile + ".mdb"
   else 
 #else
@@ -219,7 +264,7 @@ let getRowCounts tableRowCounts =
     tableRowCounts |> Seq.iter(fun x -> builder.Add x)
     builder.MoveToImmutable()
 
-let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (sourceLink: string) showTimes (info: PdbData) isDeterministic (pathMap: PathMap) =
+let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (sourceLink: string) checksumAlgorithm showTimes (info: PdbData) (pathMap: PathMap) =
     sortMethods showTimes info
     let externalRowCounts = getRowCounts info.TableRowCounts
     let docs = 
@@ -286,7 +331,7 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
         metadata.SetCapacity(TableIndex.Document, docLength)
         for doc in docs do
             let handle =
-                match checkSum doc.File with
+                match checkSum doc.File checksumAlgorithm with
                 | Some (hashAlg, checkSum) ->
                     let dbgInfo = 
                         (serializeDocumentName doc.File,
@@ -403,12 +448,17 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
                         if i < 1 || offsetDelta > 0 then
                             builder.WriteCompressedInteger offsetDelta
 
-                                                                                                        // Hidden-sequence-point-record
-                            if startLine = 0xfeefee || endLine = 0xfeefee || (startColumn = 0 && endColumn = 0)
+                            // Check for hidden-sequence-point-record
+                            if startLine = 0xfeefee || 
+                               endLine = 0xfeefee || 
+                               (startColumn = 0 && endColumn = 0) || 
+                               ((endLine - startLine) = 0 && (endColumn - startColumn)  = 0)
                             then
+                                // Hidden-sequence-point-record
                                 builder.WriteCompressedInteger 0
                                 builder.WriteCompressedInteger 0
-                            else                                                                        // Non-hidden-sequence-point-record
+                            else
+                                // Non-hidden-sequence-point-record
                                 let deltaLines = endLine - startLine                                    // lines
                                 builder.WriteCompressedInteger deltaLines
 
@@ -476,25 +526,28 @@ let generatePortablePdb (embedAllSource: bool) (embedSourceList: string list) (s
         | None -> MetadataTokens.MethodDefinitionHandle 0
         | Some x -> MetadataTokens.MethodDefinitionHandle x
 
-    let deterministicIdProvider isDeterministic  : System.Func<IEnumerable<Blob>, BlobContentId> = 
-        match isDeterministic with
-        | false -> null
-        | true ->
-            let convert (content: IEnumerable<Blob>) = 
-                use sha = System.Security.Cryptography.SHA1.Create()    // IncrementalHash is core only
-                let hash = content 
-                           |> Seq.collect (fun c -> c.GetBytes().Array |> sha.ComputeHash)
-                           |> Array.ofSeq |> sha.ComputeHash
-                BlobContentId.FromHash hash
-            System.Func<IEnumerable<Blob>, BlobContentId>( convert )
+    // Compute the contentId for the pdb. Always do it deterministically, since we have to compute the anyway.
+    // The contentId is the hash of the ID using whichever algorithm has been specified to the compiler
+    let mutable contentHash = Array.empty<byte>
 
-    let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, deterministicIdProvider isDeterministic)
+    let algorithmName, hashAlgorithm =
+        match checksumAlgorithm with
+        | HashAlgorithm.Sha1 -> "SHA1", System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
+        | HashAlgorithm.Sha256 -> "SHA256", System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
+    let idProvider: System.Func<IEnumerable<Blob>, BlobContentId> =
+        let convert (content: IEnumerable<Blob>) =
+            let contentBytes = content |> Seq.collect (fun c -> c.GetBytes()) |> Array.ofSeq
+            contentHash <- contentBytes |> hashAlgorithm.ComputeHash
+            BlobContentId.FromHash contentHash
+        System.Func<IEnumerable<Blob>, BlobContentId>(convert)
+
+    let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, idProvider)
     let blobBuilder = new BlobBuilder()
     let contentId= serializer.Serialize blobBuilder
     let portablePdbStream = new MemoryStream()
     blobBuilder.WriteContentTo portablePdbStream
     reportTime showTimes "PDB: Created"
-    (portablePdbStream.Length, contentId, portablePdbStream)
+    (portablePdbStream.Length, contentId, portablePdbStream, algorithmName, contentHash)
 
 let compressPortablePdbStream (uncompressedLength: int64) (contentId: BlobContentId) (stream: MemoryStream) =
     let compressedStream = new MemoryStream()
@@ -502,17 +555,17 @@ let compressPortablePdbStream (uncompressedLength: int64) (contentId: BlobConten
     stream.WriteTo compressionStream
     (uncompressedLength, contentId, compressedStream)
 
-let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb pathMap cvChunk =
+let writePortablePdbInfo (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb pathMap cvChunk deterministicPdbChunk checksumPdbChunk algName checksum embeddedPdb deterministicPdb =
     try FileSystem.FileDelete fpdb with _ -> ()
     use pdbFile = new FileStream(fpdb, FileMode.Create, FileAccess.ReadWrite)
     stream.WriteTo pdbFile
     reportTime showTimes "PDB: Closed"
-    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) (PathMap.apply pathMap fpdb) cvChunk None 0L None
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) (PathMap.apply pathMap fpdb) cvChunk None deterministicPdbChunk checksumPdbChunk algName checksum 0L None embeddedPdb deterministicPdb
 
-let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk pdbChunk =
+let embedPortablePdbInfo (uncompressedLength: int64)  (contentId: BlobContentId) (stream: MemoryStream) showTimes fpdb cvChunk pdbChunk deterministicPdbChunk checksumPdbChunk algName checksum embeddedPdb deterministicPdb =
     reportTime showTimes "PDB: Closed"
     let fn = Path.GetFileName fpdb
-    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fn cvChunk (Some pdbChunk) uncompressedLength (Some stream)
+    pdbGetDebugInfo (contentId.Guid.ToByteArray()) (int32 (contentId.Stamp)) fn cvChunk (Some pdbChunk) deterministicPdbChunk checksumPdbChunk algName checksum uncompressedLength (Some stream) embeddedPdb deterministicPdb
 
 #if !FX_NO_PDB_WRITER
 //---------------------------------------------------------------------

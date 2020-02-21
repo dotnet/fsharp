@@ -42,6 +42,11 @@
         <target state="translated">Elenchi di completamento</target>
         <note />
       </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="translated">Diagnostica</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">Prestazioni</target>
@@ -100,6 +105,11 @@
       <trans-unit id="Solid_underline">
         <source>_Solid underline</source>
         <target state="translated">Sottolineatura _continua</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="translated">Passaggio del puntatore sul testo</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">

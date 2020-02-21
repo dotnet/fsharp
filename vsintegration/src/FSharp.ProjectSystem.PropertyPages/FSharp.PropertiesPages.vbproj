@@ -66,44 +66,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.vb" />
-    <Compile Include="Common\ArgumentValidation.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Common\ArgumentValidation.vb" />
     <Compile Include="Common\DTEUtils.vb" />
-    <Compile Include="Common\ShellUtil.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Common\Utils.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Common\Switches.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Common\wmuserconstants.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Common\myapplicationproperties.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DesignFramework\BaseRootDesigner.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DesignFramework\DesignerMenuCommand.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DesignFramework\DesignerMessageBox.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DesignFramework\DesignUtil.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Common\ShellUtil.vb" />
+    <Compile Include="Common\Utils.vb" />
+    <Compile Include="Common\Switches.vb" />
+    <Compile Include="Common\wmuserconstants.vb" />
+    <Compile Include="Common\myapplicationproperties.vb" />
+    <Compile Include="DesignFramework\BaseRootDesigner.vb" />
+    <Compile Include="DesignFramework\DesignerMenuCommand.vb" />
+    <Compile Include="DesignFramework\DesignerMessageBox.vb" />
+    <Compile Include="DesignFramework\DesignUtil.vb" />
     <Compile Include="HelpKeywords.vb" />
-    <Compile Include="interop\IVbpackage.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Interop\IVsAppId.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="interop\IVbpackage.vb" />
+    <Compile Include="Interop\IVsAppId.vb" />
     <Compile Include="Interop\IVsBuildEventCommandLineDialogService.vb" />
     <Compile Include="Interop\IVsBuildEventMacroProvider.vb" />
     <Compile Include="Interop\NativeMethods.vb" />
@@ -114,12 +90,8 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Package\Constants.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Package\InternalException.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Package\Constants.vb" />
+    <Compile Include="Package\InternalException.vb" />
     <Compile Include="PropertyPages\ApplicationPropPage.vb">
       <SubType>UserControl</SubType>
     </Compile>
@@ -129,9 +101,7 @@
     <Compile Include="PropertyPages\BuildEventCommandLineDialog.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="PropertyPages\BuildEventCommandLineDialogService.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="PropertyPages\BuildEventCommandLineDialogService.vb" />
     <Compile Include="PropertyPages\BuildEventsPropPage.vb">
       <SubType>UserControl</SubType>
     </Compile>
@@ -149,18 +119,12 @@
     <Compile Include="PropertyPages\ReferencePathsPropPage.vb">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="PropertyPages\PropPage.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="PropertyPages\PropPage.vb" />
     <Compile Include="DesignFramework\BaseDialog.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="PropertyPages\ValidationException.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\PropertyControlData.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="PropertyPages\ValidationException.vb" />
+    <Compile Include="PropertyPages\PropertyControlData.vb" />
     <Compile Include="PropertyPages\ControlDataFlags.vb" />
     <Compile Include="PropertyPages\PropPageHostDialog.vb">
       <SubType>Form</SubType>
@@ -170,12 +134,8 @@
     </Compile>
     <Compile Include="PropertyPages\VSProductSKU.vb" />
     <Compile Include="PropertyPages\ValidationResult.vb" />
-    <Compile Include="PropertyPages\ChildPageSite.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\ProjectReloadedException.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="PropertyPages\ChildPageSite.vb" />
+    <Compile Include="PropertyPages\ProjectReloadedException.vb" />
     <Compile Include="PropertyPages\SingleConfigPropertyControlData.vb" />
     <Compile Include="PropertyPages\TargetFrameworkAssemblies.vb" />
     <Compile Include="PropertyPages\TargetFrameworkMoniker.vb" />

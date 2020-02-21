@@ -8,8 +8,14 @@ You're invited to contribute to future releases of the F# compiler, core library
 
 Build from the command line:
 
-```bash
+```
 build.cmd
+```
+
+The build depends on an installation of Visual Studio. To build the compiler without this dependency use:
+
+```
+build.cmd -noVisualStudio
 ```
 
 After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your editor of choice. The latter solution is larger but includes the F# tools for Visual Studio and its associated infrastructure.
@@ -18,8 +24,8 @@ After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your edit
 
 Build from the command line:
 
-```bash
-sh ./build.sh
+```
+./build.sh
 ```
 
 After it's finished, open `FSharp.sln` in your editor of choice.
@@ -65,7 +71,7 @@ These are the branches in use:
 
 * `dev15.9`
   - Long-term servicing branch for VS 2017 update 15.9.x. We do not expect to service that release, but if we do, that's where the changes will go.
-  
+
 * `dev16.x`
   - Latest release branch for the particular point release of Visual Studio.
   - Incorporates features and fixes from master up to a particular branch point, then selective cherry-picks.
@@ -84,8 +90,8 @@ Evolution of the F# language and core library follows a process spanning two add
 
 The following links can help you get an overview of some technical aspects of the F# language and compiler:
 
-* [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) 
-* [The F# Language Specification](http://fsharp.org/specs/language-spec/)
+* [The F# Compiler Technical Guide](https://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html)
+* [The F# Language Specification](https://fsharp.org/specs/language-spec/)
 
 ## License
 
@@ -93,19 +99,20 @@ This project is subject to the MIT License. A copy of this license is in [Licens
 
 ## Code of Conduct
 
-This project has adopted the [Contributor Covenant](http://contributor-covenant.org/) code of conduct to clarify expected behavior in our community. You can read it at [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md).
+This project has adopted the [Contributor Covenant](https://contributor-covenant.org/) code of conduct to clarify expected behavior in our community. You can read it at [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md).
 
 ## Get In Touch
 
-Members of the [F# Software Foundation](http://fsharp.org) are invited to the [FSSF Slack](http://fsharp.org/guides/slack/). You can find support from other contributors in the `#compiler` and `#editor-support` channels.
+Members of the [F# Software Foundation](https://fsharp.org) are invited to the [FSSF Slack](https://fsharp.org/guides/slack/). You can find support from other contributors in the `#compiler` and `#editor-support` channels.
 
 Additionally, you can use the `#fsharp` tag on Twitter if you have general F# questions, including about this repository. Chances are you'll get multiple responses.
 
-## About F#
+## About F\#
 
 If you're curious about F# itself, check out these links:
 
 * [What is F#](https://docs.microsoft.com/dotnet/fsharp/what-is-fsharp)
 * [Get started with F#](https://docs.microsoft.com/dotnet/fsharp/get-started/)
-* [F# Software Foundation](http://fsharp.org)
-* [F# Testimonials](http://fsharp.org/testimonials)
+* [F# Software Foundation](https://fsharp.org)
+* [F# Testimonials](https://fsharp.org/testimonials)
+

@@ -1,11 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Internal.Utilities
+
 open System
+open System.Diagnostics
 open System.IO
 open System.Reflection
-open Microsoft.Win32
 open System.Runtime.InteropServices
+open Microsoft.Win32
+open Microsoft.FSharp.Core
 
 #nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated. 
 
@@ -23,22 +26,9 @@ module internal FSharpEnvironment =
 #endif
 
     let versionOf<'t> =
-#if FX_RESHAPED_REFLECTION
-        let aq = (typeof<'t>).AssemblyQualifiedName
-        let version = 
-            if aq <> null then 
-                let x = aq.Split(',', ' ') |> Seq.filter(fun x -> x.StartsWith("Version=", StringComparison.OrdinalIgnoreCase)) |> Seq.tryHead
-                match x with 
-                | Some(x) -> x.Substring(8)
-                | _ -> null
-            else
-                null
-        version
-#else
         typeof<'t>.Assembly.GetName().Version.ToString()
-#endif
 
-    let FSharpCoreLibRunningVersion = 
+    let FSharpCoreLibRunningVersion =
         try match versionOf<Unit> with
             | null -> None
             | "" -> None
@@ -85,9 +75,10 @@ module internal FSharpEnvironment =
             (try
                 downcast Microsoft.Win32.Registry.GetValue("HKEY_LOCAL_MACHINE\\"+subKey,null,null)
              with e->
-                System.Diagnostics.Debug.Assert(false, sprintf "Failed in GetDefaultRegistryStringValueViaDotNet: %s" (e.ToString()))
+#if DEBUG
+                Debug.Assert(false, sprintf "Failed in GetDefaultRegistryStringValueViaDotNet: %s" (e.ToString()))
+#endif
                 null)
-
 
     let Get32BitRegistryStringValueViaPInvoke(subKey:string) = 
         Option.ofString
@@ -128,16 +119,18 @@ module internal FSharpEnvironment =
                     if pathResult <> IntPtr.Zero then
                         Marshal.FreeCoTaskMem(pathResult)
              with e->
-                System.Diagnostics.Debug.Assert(false, sprintf "Failed in Get32BitRegistryStringValueViaPInvoke: %s" (e.ToString()))
+#if DEBUG
+                Debug.Assert(false, sprintf "Failed in Get32BitRegistryStringValueViaPInvoke: %s" (e.ToString()))
+#endif
                 null)
 
     let is32Bit = IntPtr.Size = 4
-    
+
     let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e-> false
 
     let tryRegKey(subKey:string) = 
 
-        //if we are runing on mono simply return None
+        //if we are running on mono simply return None
         // GetDefaultRegistryStringValueViaDotNet will result in an access denied by default, 
         // and Get32BitRegistryStringValueViaPInvoke will fail due to Advapi32.dll not existing
         if runningOnMono then None else
@@ -147,7 +140,7 @@ module internal FSharpEnvironment =
             // by comparing against the result from GetDefaultRegistryStringValueViaDotNet(...)
 #if DEBUG
             let viaPinvoke = Get32BitRegistryStringValueViaPInvoke(subKey)
-            System.Diagnostics.Debug.Assert((s = viaPinvoke), sprintf "32bit path: pi=%A def=%A" viaPinvoke s)
+            Debug.Assert((s = viaPinvoke), sprintf "32bit path: pi=%A def=%A" viaPinvoke s)
 #endif
             s
         else
@@ -155,13 +148,9 @@ module internal FSharpEnvironment =
 #endif
 
     let internal tryCurrentDomain() =
-        let pathFromCurrentDomain = 
-#if FX_NO_APP_DOMAINS
-            System.AppContext.BaseDirectory
-#else
-            System.AppDomain.CurrentDomain.BaseDirectory
-#endif
-        if not(String.IsNullOrEmpty(pathFromCurrentDomain)) then 
+        let pathFromCurrentDomain =
+            AppDomain.CurrentDomain.BaseDirectory
+        if not(String.IsNullOrEmpty(pathFromCurrentDomain)) then
             Some pathFromCurrentDomain
         else
             None
@@ -171,14 +160,17 @@ module internal FSharpEnvironment =
 #else
     let internal tryAppConfig (_appConfigKey:string) = 
         let locationFromAppConfig = System.Configuration.ConfigurationSettings.AppSettings.[_appConfigKey]
-        System.Diagnostics.Debug.Print(sprintf "Considering _appConfigKey %s which has value '%s'" _appConfigKey locationFromAppConfig) 
-
+#if DEBUG
+        Debug.Print(sprintf "Considering _appConfigKey %s which has value '%s'" _appConfigKey locationFromAppConfig) 
+#endif
         if String.IsNullOrEmpty(locationFromAppConfig) then 
             None
         else
-            let exeAssemblyFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+            let exeAssemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
             let locationFromAppConfig = locationFromAppConfig.Replace("{exepath}", exeAssemblyFolder)
-            System.Diagnostics.Debug.Print(sprintf "Using path %s" locationFromAppConfig) 
+#if DEBUG
+            Debug.Print(sprintf "Using path %s" locationFromAppConfig)
+#endif
             Some locationFromAppConfig
 #endif
 
@@ -189,44 +181,36 @@ module internal FSharpEnvironment =
     //     - default F# binaries directory in service.fs (REVIEW: check this)
     //     - default location of fsi.exe in FSharp.VS.FSI.dll (REVIEW: check this)
     //     - default F# binaries directory in (project system) Project.fs
-    let BinFolderOfDefaultFSharpCompiler(probePoint:string option) = 
-#if FX_NO_WIN_REGISTRY
-        ignore probePoint
-#if FX_NO_APP_DOMAINS
-        Some System.AppContext.BaseDirectory
-#else
-        Some System.AppDomain.CurrentDomain.BaseDirectory
-#endif
-#else
+    let BinFolderOfDefaultFSharpCompiler(probePoint:string option) =
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
-        try 
-            // FSharp.Compiler support setting an appkey for compiler location. I've never seen this used.
+        try
+            // FSharp.Compiler support setting an appKey for compiler location. I've never seen this used.
             let result = tryAppConfig "fsharp-compiler-location"
-            match result with 
-            | Some _ ->  result 
+            match result with
+            | Some _ ->  result
             | None ->
 
             let safeExists f = (try File.Exists(f) with _ -> false)
+
             // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
             match probePoint with 
             | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p 
-            | _ -> 
-            // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
-            let result = System.Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
-            if not (String.IsNullOrEmpty(result)) then
-                Some result
-            else
-                // For the prototype compiler, we can just use the current domain
-                tryCurrentDomain()
-        with e -> 
-            None
+            | _ ->
+                // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
+                let result = Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
+                if not (String.IsNullOrEmpty(result)) then
+                    Some result
+                else
+                    // For the prototype compiler, we can just use the current domain
+                    tryCurrentDomain()
+        with e -> None
 
-
-    // Apply the given function to the registry entry corresponding to the subkey.
+#if !FX_NO_WIN_REGISTRY
+    // Apply the given function to the registry entry corresponding to the subKey.
     // The reg key is disposed at the end of the scope.
-    let useKey subkey f =
-        let key = Registry.LocalMachine.OpenSubKey subkey
+    let useKey subKey f =
+        let key = Registry.LocalMachine.OpenSubKey subKey
         try f key 
         finally 
             match key with 
@@ -234,12 +218,12 @@ module internal FSharpEnvironment =
             | _ -> key.Dispose()
 
     // Check if the framework version 4.5 or above is installed at the given key entry 
-    let IsNetFx45OrAboveInstalledAt subkey =
+    let IsNetFx45OrAboveInstalledAt subKey =
       try
-        useKey subkey (fun regkey ->
-            match regkey with
+        useKey subKey (fun regKey ->
+            match regKey with
             | null -> false
-            | _ -> regkey.GetValue("Release", 0) :?> int |> (fun s -> s >= 0x50000)) // 0x50000 implies 4.5.0
+            | _ -> regKey.GetValue("Release", 0) :?> int |> (fun s -> s >= 0x50000)) // 0x50000 implies 4.5.0
       with _ -> false
  
     // Check if the framework version 4.5 or above is installed
@@ -247,7 +231,7 @@ module internal FSharpEnvironment =
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Client" ||
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" ||
         runningOnMono
-
+    
     // Check if the running framework version is 4.5 or above.
     // Use the presence of v4.5.x in the registry to distinguish between 4.0 and 4.5
     let IsRunningOnNetFx45OrAbove =
@@ -256,3 +240,108 @@ module internal FSharpEnvironment =
             major > 4 || (major = 4 && IsNetFx45OrAboveInstalled)
 
 #endif
+
+    // Specify the tooling-compatible fragments of a path such as:
+    //     typeproviders/fsharp41/net461/MyProvider.DesignTime.dll
+    //     tools/fsharp41/net461/MyProvider.DesignTime.dll
+    // See https://github.com/Microsoft/visualfsharp/issues/3736
+
+    // Represents the F#-compiler <-> type provider protocol.
+    // When the API or protocol updates, add a new version moniker to the front of the list here.
+    let toolingCompatibleTypeProviderProtocolMonikers() =
+        [ "fsharp41" ]
+
+    // Detect the host tooling context
+    let toolingCompatibleVersions =
+        if typeof<obj>.Assembly.GetName().Name = "mscorlib" then
+            [| "net48"; "net472"; "net471";"net47";"net462";"net461"; "net452"; "net451"; "net45"; "netstandard2.0" |]
+        elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
+            [| "netcoreapp3.1"; "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netstandard2.0" |]
+        else
+            System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
+            [| "netstandard2.0" |]
+
+    let toolPaths = [| "tools"; "typeproviders" |]
+
+    let toolingCompatiblePaths() = [
+        for toolPath in toolPaths do
+            for protocol in toolingCompatibleTypeProviderProtocolMonikers() do
+                for netRuntime in toolingCompatibleVersions do
+                    yield Path.Combine(toolPath, protocol, netRuntime)
+        ]
+
+    let rec searchToolPaths path compilerToolPaths =
+        seq {
+            let searchToolPath path =
+                seq {
+                    yield path
+                    for toolPath in toolingCompatiblePaths() do
+                        yield Path.Combine (path, toolPath)
+                }
+
+            for toolPath in compilerToolPaths do
+                yield! searchToolPath toolPath
+
+            match path with
+            | None -> ()
+            | Some path -> yield! searchToolPath path
+        }
+
+    let getTypeProviderAssembly (runTimeAssemblyFileName: string, designTimeAssemblyName: string, compilerToolPaths: string list, raiseError) =
+        // Find and load the designer assembly for the type provider component.
+        // We look in the directories stepping up from the location of the runtime assembly.
+        let loadFromLocation designTimeAssemblyPath =
+            try
+                Some (Assembly.UnsafeLoadFrom designTimeAssemblyPath)
+            with e ->
+                raiseError e
+
+        let rec searchParentDirChain path assemblyName =
+            seq {
+                match path with
+                | None -> ()
+                | Some (p:string) ->
+                    match Path.GetDirectoryName(p) with
+                    | s when s = "" || s = null || Path.GetFileName(p) = "packages" || s = p -> ()
+                    | parentDir -> yield! searchParentDirChain (Some parentDir) assemblyName
+
+                for p in searchToolPaths path compilerToolPaths do
+                    let fileName = Path.Combine (p, assemblyName)
+                    if File.Exists fileName then yield fileName
+            }
+
+        let loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName =
+            let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
+            let paths = searchParentDirChain (Some runTimeAssemblyPath) designTimeAssemblyName
+            paths
+            |> Seq.tryHead
+            |> function
+               | Some res -> loadFromLocation res
+               | None ->
+                    // The search failed, just load from the first location and report an error
+                    let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
+                    loadFromLocation (Path.Combine (runTimeAssemblyPath, designTimeAssemblyName))
+
+        if designTimeAssemblyName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
+            loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName
+        else
+            // Cover the case where the ".dll" extension has been left off and no version etc. has been used in the assembly
+            // string specification.  The Name=FullName comparison is particularly strange, and was there to support
+            // design-time DLLs specified using "x.DesignTIme, Version= ..." long assembly names and GAC loads.
+            // These kind of design-time assembly specifications are no longer used to our knowledge so that comparison is basically legacy
+            // and will always succeed.  
+            let name = AssemblyName (Path.GetFileNameWithoutExtension designTimeAssemblyName)
+            if name.Name.Equals(name.FullName, StringComparison.OrdinalIgnoreCase) then
+                let designTimeFileName = designTimeAssemblyName + ".dll"
+                loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeFileName
+            else
+                // Load from the GAC using Assembly.Load.  This is legacy since type provider design-time components are
+                // never in the GAC these days and  "x.DesignTIme, Version= ..." specifications are never used.
+                try
+                    let name = AssemblyName designTimeAssemblyName
+                    Some (Assembly.Load (name))
+                with e ->
+                    raiseError e
+
+    let getCompilerToolsDesignTimeAssemblyPaths compilerToolPaths = 
+        searchToolPaths None compilerToolPaths

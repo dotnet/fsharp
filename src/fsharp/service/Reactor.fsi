@@ -23,6 +23,9 @@ type internal IReactorOperations =
 [<Sealed>]
 type internal Reactor =
 
+    /// Allows to specify the language for error messages
+    member SetPreferredUILang : string option -> unit
+
     /// Set the background building function, which is called repeatedly
     /// until it returns 'false'.  If None then no background operation is used.
     member SetBackgroundOp : ( (* userOpName:*) string * (* opName: *) string * (* opArg: *) string *  (CompilationThreadToken -> CancellationToken -> bool)) option -> unit

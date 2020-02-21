@@ -99,7 +99,7 @@ module Impl =
             invalidOp (sprintf "The entity '%s' does not exist or is in an unresolved assembly." poorQualifiedName)
 
     /// Checking accessibility that arise from different compilations needs more care - this is a duplicate of the F# compiler code for this case
-    let checkForCrossProjectAccessibility (thisCcu2:CcuThunk, ad2) (thisCcu1, taccess1) = 
+    let checkForCrossProjectAccessibility (ilg: ILGlobals) (thisCcu2:CcuThunk, ad2) (thisCcu1, taccess1) = 
         match ad2 with 
         | AccessibleFrom(cpaths2, _) ->
             let nameOfScoRef (thisCcu:CcuThunk) scoref = 
@@ -107,6 +107,7 @@ module Impl =
                 | ILScopeRef.Local -> thisCcu.AssemblyName 
                 | ILScopeRef.Assembly aref -> aref.Name 
                 | ILScopeRef.Module mref -> mref.Name
+                | ILScopeRef.PrimaryAssembly -> ilg.primaryAssemblyName
             let canAccessCompPathFromCrossProject (CompPath(scoref1, cpath1)) (CompPath(scoref2, cpath2)) =
                 let rec loop p1 p2  = 
                     match p1, p2 with 
@@ -188,7 +189,11 @@ module Impl =
 
 type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) = 
     member x.Contents g = denv g
+
     static member Empty = FSharpDisplayContext(fun g -> DisplayEnv.Empty g)
+
+    member x.WithShortTypeNames shortNames =
+         FSharpDisplayContext(fun g -> { denv g with shortTypeNames = shortNames })
 
 
 // delay the realization of 'item' in case it is unresolved
@@ -324,7 +329,7 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                               if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity] 
                               else Item.UnqualifiedType [entity]), 
                          (fun _this thisCcu2 ad -> 
-                             checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
+                             checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
                              // && AccessibilityLogic.IsEntityAccessible cenv.amap range0 ad entity)
                              )
 
@@ -753,7 +758,7 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
                                checkEntityIsResolved v.TyconRef
                                Item.UnionCase(UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v), false)), 
                           (fun _this thisCcu2 ad -> 
-                               checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, v.UnionCase.Accessibility)) 
+                               checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, v.UnionCase.Accessibility)) 
                                //&& AccessibilityLogic.IsUnionCaseAccessible cenv.amap range0 ad v)
                                )
 
@@ -777,9 +782,13 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
         checkIsResolved()
         v.Range
 
+    member __.HasFields =
+        if isUnresolved() then false else
+        v.UnionCase.RecdFieldsArray.Length <> 0
+
     member __.UnionCaseFields = 
         if isUnresolved() then makeReadOnlyCollection [] else
-        v.UnionCase.RecdFields |> List.mapi (fun i _ ->  FSharpField(cenv, FSharpFieldData.Union (v, i))) |> makeReadOnlyCollection
+        v.UnionCase.RecdFieldsArray |> Array.mapi (fun i _ ->  FSharpField(cenv, FSharpFieldData.Union (v, i))) |> makeReadOnlyCollection
 
     member __.ReturnType = 
         checkIsResolved()
@@ -866,7 +875,7 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
                                 | ILField f -> 
                                     Item.ILField f), 
                           (fun this thisCcu2 ad -> 
-                                checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, (this :?> FSharpField).Accessibility.Contents)) 
+                                checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, (this :?> FSharpField).Accessibility.Contents)) 
                                 //&&
                                 //match d with 
                                 //| Recd v -> AccessibilityLogic.IsRecdFieldAccessible cenv.amap range0 ad v
@@ -1358,7 +1367,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                          (fun () -> item), 
                          (fun this thisCcu2 ad -> 
                               let this = this :?> FSharpMemberOrFunctionOrValue 
-                              checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, this.Accessibility.Contents)) 
+                              checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, this.Accessibility.Contents)) 
                               //&& 
                               //match d with 
                               //| E e -> 
@@ -1950,7 +1959,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         // Note, returning "public" is wrong for IL members that are private
         match d with 
         | E e ->  
-            // For IL events, we get an approximate accessiblity that at least reports "internal" as "internal" and "private" as "private"
+            // For IL events, we get an approximate accessibility that at least reports "internal" as "internal" and "private" as "private"
             let access = 
                 match e with 
                 | ILEvent ileinfo -> 
@@ -1961,7 +1970,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             FSharpAccessibility access
 
         | P p ->  
-            // For IL  properties, we get an approximate accessiblity that at least reports "internal" as "internal" and "private" as "private"
+            // For IL  properties, we get an approximate accessibility that at least reports "internal" as "internal" and "private" as "private"
             let access = 
                 match p with 
                 | ILProp ilpinfo -> 
@@ -1973,13 +1982,13 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
         | M m | C m ->  
 
-            // For IL  methods, we get an approximate accessiblity that at least reports "internal" as "internal" and "private" as "private"
+            // For IL  methods, we get an approximate accessibility that at least reports "internal" as "internal" and "private" as "private"
             let access = 
                 match m with 
                 | ILMeth (_, x, _) -> getApproxFSharpAccessibilityOfMember x.DeclaringTyconRef x.RawMetadata.Access 
                 | _ -> taccessPublic
 
-            FSharpAccessibility(access, isProtected=m.IsProtectedAccessiblity)
+            FSharpAccessibility(access, isProtected=m.IsProtectedAccessibility)
 
         | V v -> FSharpAccessibility(v.Accessibility)
 
@@ -2006,7 +2015,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match other with
         |   :? FSharpMemberOrFunctionOrValue as other ->
             match d, other.Data with 
-            | E evt1, E evt2 -> EventInfo.EventInfosUseIdenticalDefintions evt1 evt2 
+            | E evt1, E evt2 -> EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2 
             | P p1, P p2 ->  PropInfo.PropInfosUseIdenticalDefinitions p1 p2
             | M m1, M m2
             | C m1, C m2 ->  MethInfo.MethInfosUseIdenticalDefinitions m1 m2
@@ -2454,7 +2463,12 @@ and FSharpAssembly internal (cenv, ccu: CcuThunk) =
 
     member __.Contents : FSharpAssemblySignature = FSharpAssemblySignature(cenv, ccu)
                  
-    override x.ToString() = ccu.ILScopeRef.QualifiedName
+    override x.ToString() = 
+        match ccu.ILScopeRef with
+        | ILScopeRef.PrimaryAssembly ->
+            cenv.g.ilg.primaryAssemblyRef.QualifiedName
+        | scoref ->
+            scoref.QualifiedName
 
 /// Represents open declaration in F# code.
 [<Sealed>]
@@ -2504,5 +2518,30 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
     member __.Range = Range.toZ range
 
     member __.RangeAlternate = range
+     
+    member this.IsPrivateToFile = 
+        let isPrivate =
+            match this.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || m.Accessibility.IsPrivate
+            | :? FSharpEntity as m -> m.Accessibility.IsPrivate
+            | :? FSharpGenericParameter -> true
+            | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
+            | :? FSharpField as m -> m.Accessibility.IsPrivate
+            | _ -> false
+            
+        let declarationLocation =
+            match this.Symbol.SignatureLocation with
+            | Some x -> Some x
+            | _ ->
+                match this.Symbol.DeclarationLocation with
+                | Some x -> Some x
+                | _ -> this.Symbol.ImplementationLocation
+            
+        let declaredInTheFile = 
+            match declarationLocation with
+            | Some declRange -> declRange.FileName = this.RangeAlternate.FileName
+            | _ -> false
+            
+        isPrivate && declaredInTheFile   
 
     override __.ToString() = sprintf "%O, %O, %O" symbol itemOcc range 
