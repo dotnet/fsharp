@@ -8,6 +8,7 @@ Features Added in F# Language Versions
 - Tuples
 - Pattern matching
 - Type abbreviations
+- Object expressions
 - Structs
 - Signature files
 - Imperative programming
@@ -25,7 +26,6 @@ Features Added in F# Language Versions
 
 - Active patterns
 - Units of measure
-- Object expressions
 - Sequence expressions
 - Asynchronous programming
 - Agent programming
