@@ -426,7 +426,7 @@ type internal ReadLineConsole() =
                 change ()
             | (ConsoleModifiers.Control, ConsoleKey.E) ->
                 current <- input.Length
-                anchor.PlaceAt(x.Inset,!rendered)
+                anchor.PlaceAt(x.Inset, rendered)
                 change ()
             | (ConsoleModifiers.Control, ConsoleKey.B) ->
                 moveLeft()
