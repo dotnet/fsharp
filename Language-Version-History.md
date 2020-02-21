@@ -105,5 +105,3 @@ Features Added in F# Language Versions
 - Implicit `yield`s
 - No more required double underscore (wildcard identifier)
 - Indentation relaxations for parameters passed to constructors and static methods
-- `nameof` function (preview)
-- Open static classes (preview)
