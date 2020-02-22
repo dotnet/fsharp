@@ -2769,7 +2769,13 @@ and ResolveOverloading
     // Allow subsumption on arguments. Include the return type.
     // Unify return types.
     match calledMethOpt with 
-    | Some calledMeth -> 
+    | Some calledMeth ->
+    
+        // Static IL interfaces methods are not supported in F# 4.6.
+        if calledMeth.Method.IsILMethod && not calledMeth.Method.IsInstance && isInterfaceTy g calledMeth.Method.ApparentEnclosingType then
+            csenv.InfoReader.DefaultInterfaceMethodConsumptionSupport.TryRaiseRuntimeErrorRecover m |> ignore
+            csenv.InfoReader.DefaultInterfaceMethodConsumptionSupport.TryRaiseLanguageErrorRecover m |> ignore
+
         calledMethOpt, 
         trackErrors {
                         do! errors

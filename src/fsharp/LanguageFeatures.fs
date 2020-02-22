@@ -30,6 +30,7 @@ type LanguageFeature =
     | FixedIndexSlice3d4d
     | AndBang
     | NullableOptionalInterop
+    | DefaultInterfaceMethodConsumption
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -58,6 +59,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.FixedIndexSlice3d4d, languageVersion50
             LanguageFeature.FromEndSlicing, languageVersion50
             LanguageFeature.DotlessFloat32Literal, languageVersion50
+            LanguageFeature.DefaultInterfaceMethodConsumption, languageVersion50
 
             // F# preview
             LanguageFeature.NameOf, previewVersion
@@ -107,3 +109,27 @@ type LanguageVersion (specifiedVersionAsString) =
 
     /// Get the specified LanguageVersion
     member __.SpecifiedVersion = specified
+
+    /// Get a string name for the given feature.
+    member __.GetFeatureString feature =
+        match feature with
+        | LanguageFeature.SingleUnderscorePattern -> "single underscore pattern"
+        | LanguageFeature.WildCardInForLoop -> "wild card in for loop"
+        | LanguageFeature.RelaxWhitespace -> "whitespace relexation"
+        | LanguageFeature.NameOf -> "nameof"
+        | LanguageFeature.ImplicitYield -> "implicit yield"
+        | LanguageFeature.OpenStaticClasses -> "open static classes"
+        | LanguageFeature.DotlessFloat32Literal -> "dotless float32 literal"
+        | LanguageFeature.PackageManagement -> "package management"
+        | LanguageFeature.FromEndSlicing -> "from-end slicing"
+        | LanguageFeature.FixedIndexSlice3d4d -> "fixed-index slice 3d/4d"
+        | LanguageFeature.AndBang -> "and bang"
+        | LanguageFeature.NullableOptionalInterop -> "nullable optional interop"
+        | LanguageFeature.DefaultInterfaceMethodConsumption -> "default interface method consumption"
+
+    /// Get a version string associated with the given feature.
+    member __.GetFeatureVersionString feature =
+        match features.TryGetValue feature with
+        | true, v when v = previewVersion -> "'preview'"
+        | true, v -> string v
+        | _ -> failwith "Internal error: Unable to find feature."

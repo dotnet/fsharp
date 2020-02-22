@@ -6,6 +6,7 @@ module internal FSharp.Compiler.InfoReader
 
 open System.Collections.Generic
 
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler 
 open FSharp.Compiler.AccessibilityLogic
@@ -17,6 +18,9 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Features
+open FSharp.Compiler.FeatureSupport
+open FSharp.Compiler.TypeRelations
 
 /// Use the given function to select some of the member values from the members of an F# type
 let SelectImmediateMemberVals g optFilter f (tcref: TyconRef) = 
@@ -89,6 +93,22 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy 
 /// parameter is an optional name to restrict the set of properties returned.
 let GetImmediateIntrinsicMethInfosOfType (optFilter, ad) g amap m ty = 
     GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m ty ty
+
+/// Get the items that are considered the topmost of hierarchy out of the given items by type.
+/// REVIEW: Note complexity O(N^2)
+let GetTopHierarchyItemsByType g amap f xs =
+    [ for x in xs do
+        match f x with
+        | None -> ()
+        | Some (xTy, m) ->
+            if xs 
+               |> List.forall (fun y ->
+                    match f y with
+                    | None -> true
+                    | Some (yTy, _) ->
+                        if typeEquiv g xTy yTy then true
+                        else not (TypeFeasiblySubsumesType 0 g amap m xTy CanCoerce yTy)) then
+                yield x ]
 
 /// A helper type to help collect properties.
 ///
@@ -205,7 +225,7 @@ type HierarchyItem =
 
 /// An InfoReader is an object to help us read and cache infos. 
 /// We create one of these for each file we typecheck. 
-type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
+type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     /// Get the declared IL fields of a type, not including inherited fields
     let GetImmediateIntrinsicILFieldsOfType (optFilter, ad) m ty =
@@ -331,6 +351,54 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
           ty
           None
 
+    let GetIntrinsicTopInterfaceOverrideMethodSetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
+
+        let checkMethod (minfo: MethInfo) (ilMethRef: ILMethodRef) =
+            minfo.IsFinal &&
+            minfo.IsVirtual &&
+            minfo.IsInterfaceMethod &&
+            ilMethRef.ArgCount = (match minfo.NumArgs with [] -> 0 | count :: _ -> count) && 
+            ilMethRef.GenericArity = minfo.GenericArity
+
+        FoldPrimaryHierarchyOfType (fun ty (acc: MethInfo list list) ->
+            // Currently, F# supports DIMs from IL types, not F# defined types.
+            match tryAppTy g ty with
+            | ValueSome (tcref, _) when tcref.IsILTycon ->
+                // MethodImpls contains a list of methods that override.
+                // OverrideBy is the method that does the overriding.
+                // Overrides is the method being overriden.
+                // Find the Overrides method first with optFilter, then search for the OverrideBy method.
+                //     If the OverrideBy method is found, add it to the method set for that type in the hierarchy.
+                (acc, tcref.ILTyconRawMetadata.MethodImpls.AsList)
+                ||> List.fold (fun acc ilMethImpl ->
+                    let optFilter2 =                     
+                        match optFilter with
+                        | Some name when name = ilMethImpl.Overrides.MethodRef.Name ->
+                            Some ilMethImpl.OverrideBy.Name
+                        | _ ->
+                            None
+
+                    if (optFilter.IsSome && optFilter2.IsSome) || optFilter.IsNone then
+                        let minfos =
+                            ([], GetImmediateIntrinsicMethInfosOfType (optFilter2, ad) g amap m ty)
+                            ||> List.fold (fun acc minfo ->
+                                if checkMethod minfo ilMethImpl.OverrideBy.MethodRef then
+                                    minfo :: acc
+                                else
+                                    acc
+                            )
+
+                        if List.isEmpty minfos then acc
+                        else minfos :: acc
+                    else
+                        acc
+                )
+            | _ -> acc
+        ) g amap m allowMultiIntfInst ty []
+        |> List.concat
+        |> List.groupBy (fun minfo -> (minfo.LogicalName, minfo.NumArgs, minfo.GenericArity))
+        |> List.map (fun (_, minfos) -> GetTopHierarchyItemsByType g amap (fun (minfo: MethInfo) -> Some (minfo.ApparentEnclosingType, m)) minfos)
+
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
     /// caches computations for monomorphic types.
 
@@ -360,6 +428,34 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                                      | TType_app(tcref, []) -> hash tcref.LogicalName
                                      | _ -> 0) })
 
+    static let RuntimeSupportsFeature (infoReader: InfoReader) (g: TcGlobals) featureId =       
+        let runtimeFeature =
+            match featureId with
+            | LanguageFeature.DefaultInterfaceMethodConsumption -> "DefaultImplementationsOfInterfaces"
+            | _ -> String.Empty
+
+        if String.IsNullOrWhiteSpace runtimeFeature then
+            true
+        else
+            match g.System_Runtime_CompilerServices_RuntimeFeature_ty with
+            | Some runtimeFeatureTy ->
+                infoReader.GetILFieldInfosOfType (Some runtimeFeature, AccessorDomain.AccessibleFromEverywhere, range0, runtimeFeatureTy)
+                |> List.exists (fun (ilFieldInfo: ILFieldInfo) -> ilFieldInfo.FieldName = runtimeFeature)
+            | _ ->
+                false
+
+    static let CreateFeatureSupport infoReader g featureId =
+        let runtimeError =
+            if not (RuntimeSupportsFeature infoReader g featureId) then
+                let featureStr = g.langVersion.GetFeatureString featureId
+                Some(fun m -> Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
+            else
+                None
+
+        FeatureSupport.Create (LanguageFeatureSupport.Create (g.langVersion, featureId), runtimeError)
+
+    let defaultInterfaceMethodConsumptionSupport =
+        lazy CreateFeatureSupport this g LanguageFeature.DefaultInterfaceMethodConsumption
     
     let hashFlags0 = 
         { new System.Collections.Generic.IEqualityComparer<_> with 
@@ -383,12 +479,15 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
     let ilFieldInfoCache = MakeInfoCache GetIntrinsicILFieldInfosUncached hashFlags1
     let eventInfoCache = MakeInfoCache GetIntrinsicEventInfosUncached hashFlags1
     let namedItemsCache = MakeInfoCache GetIntrinsicNamedItemsUncached hashFlags2
+    let topInterfaceOverrideMethodInfoCache = MakeInfoCache GetIntrinsicTopInterfaceOverrideMethodSetsUncached hashFlags0
 
     let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierarchyUncached HashIdentity.Structural
     let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierarchyUncached HashIdentity.Structural
                                             
     member x.g = g
     member x.amap = amap
+
+    member x.DefaultInterfaceMethodConsumptionSupport = defaultInterfaceMethodConsumptionSupport.Value
     
     /// Read the raw method sets of a type, including inherited ones. Cache the result for monomorphic types
     member x.GetRawIntrinsicMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
@@ -431,6 +530,10 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
     /// Try and find an item with the given name in a type.
     member x.TryFindNamedItemOfType (nm, ad, m, ty) =
         namedItemsCache.Apply(((nm, ad), m, ty))
+
+    /// Read the raw interface method sets of a type that is a topmost overrides. Cache the result for monomorphic types
+    member x.GetIntrinsicTopInterfaceOverrideMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
+        topInterfaceOverrideMethodInfoCache.Apply(((optFilter, ad, allowMultiIntfInst), m, ty))
 
     /// Get the super-types of a type, including interface types.
     member x.GetEntireTypeHierarchy (allowMultiIntfInst, m, ty) =
@@ -700,6 +803,11 @@ let TryFindIntrinsicMethInfo infoReader m ad nm ty =
 /// are distinct, a somewhat adhoc check in tc.fs.
 let TryFindPropInfo infoReader m ad nm ty = 
     GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty 
+
+/// Get a collection of topmost interface override methods.
+/// When providing a method name, it is the name of method that is being overriden.
+let GetIntrinisicTopInterfaceOverrideMethInfoSetsOfType (infoReader: InfoReader) (nm, ad) m ty =
+    infoReader.GetIntrinsicTopInterfaceOverrideMethodSetsOfType (nm, ad, AllowMultiIntfInstantiations.Yes, m, ty)
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events - these use method searching hence are in this file
