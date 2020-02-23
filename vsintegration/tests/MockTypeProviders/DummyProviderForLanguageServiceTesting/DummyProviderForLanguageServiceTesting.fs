@@ -70,7 +70,7 @@ module internal TPModule =
     let methIM1 = ProvidedMethod("IM1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>,isStatic=false,invokeCode=InvokeAPI.instanceX)
 
     // A method involving units-of-measure
-    let measures = ProvidedMeasureBuilder.Default
+    let measures = ProvidedMeasureBuilder()
     let kgAnnotation = measures.SI "kilogram"    // a measure
     let hzAnnotation = measures.SI "hertz"       // a measure-abbreviation
     let kg_per_hz_squared = measures.Ratio(kgAnnotation, measures.Square hzAnnotation)
