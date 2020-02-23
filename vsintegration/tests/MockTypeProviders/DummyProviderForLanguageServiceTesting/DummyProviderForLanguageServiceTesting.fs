@@ -352,7 +352,7 @@ module TypeProvidersVisibilityChecks =
         addMethod "ProtectedM" 5210 (System.Reflection.MethodAttributes.Family) ty
         addMethod "PrivateM" 5310 (System.Reflection.MethodAttributes.Private) ty
         
-        let assem = ProvidedAssembly(System.IO.Path.GetTempFileName() + ".dll")
+        let assem = ProvidedAssembly()
         assem.AddTypes [ty]
         ty
 
@@ -417,10 +417,7 @@ module RegexTypeProvider =
 
                 // Provided type for matches
                 // Again, erase to obj even though the representation will always be a Match
-                let matchTy = ProvidedTypeDefinition(
-                                "MatchType", 
-                                baseType = Some baseTy, 
-                                HideObjectMethods = true)
+                let matchTy = ProvidedTypeDefinition("MatchType", baseType=Some baseTy, hideObjectMethods=true)
 
                 // Nest the match type within parameterized Regex type
                 ty.AddMember matchTy
@@ -468,7 +465,7 @@ module RegexTypeProviderUsingMethod =
         let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
         let types =
             let regexTyStatic = ProvidedTypeDefinition(thisAssembly, rootNamespace, "RegexTypedStatic", Some typeof<obj>)
-            [regexTy]  
+            [regexTyStatic]  
 
     [<TypeProvider>]
     type public CheckedRegexProvider(config: TypeProviderConfig) as this =
