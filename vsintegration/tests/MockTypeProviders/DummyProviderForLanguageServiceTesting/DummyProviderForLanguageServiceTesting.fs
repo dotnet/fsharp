@@ -135,7 +135,7 @@ module GlobalCounters =
 
 [<TypeProvider>]
 type HelloWorldProvider(config: TypeProviderConfig) = 
-    inherit TypeProviderForNamespaces(TPModule.namespaceName,TPModule.types)
+    inherit TypeProviderForNamespaces(config, TPModule.namespaceName,TPModule.types)
     do GlobalCounters.IncrementCreations()
     let mutable disposed = false
     do GlobalCounters.AddConfig config
@@ -181,26 +181,28 @@ module internal SlowIntelliSenseTPModule =
     let types = [ typeT ]
 
 [<TypeProvider>]
-type SlowIntellisenseProvider() = 
-    inherit TypeProviderForNamespaces(SlowIntelliSenseTPModule.namespaceName,SlowIntelliSenseTPModule.types)
+type SlowIntellisenseProvider(config: TypeProviderConfig) = 
+    inherit TypeProviderForNamespaces(config, SlowIntelliSenseTPModule.namespaceName,SlowIntelliSenseTPModule.types)
     do
         ignore() // for breakpoint
 
-[<TypeProvider>]
-type ShowOffCreationTimeProvider() as this= 
-    inherit TypeProviderForNamespaces()
-    let namespaceName = "ShowOffCreationTime"    
-    let thisAssembly  = System.Reflection.Assembly.GetExecutingAssembly()
+module ShowOffCreationTimeProvider =
+    let namespaceName = "ShowOffCreationTime"
+    let types =            
+        let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
+        let typeT = ProvidedTypeDefinition(thisAssembly,namespaceName,"T",Some typeof<System.Object>)
+        [typeT]
 
-    let typeT = ProvidedTypeDefinition(thisAssembly,namespaceName,"T",Some typeof<System.Object>)
+[<TypeProvider>]
+type ShowOffCreationTimeProvider(config: TypeProviderConfig) as this= 
+    inherit TypeProviderForNamespaces(config, ShowOffCreationTimeProvider.namespaceName, ShowOffCreationTimeProvider.types)
+
+    let typeT = ShowOffCreationTimeProvider.types.[0]
     let timeString = "CreatedAt" + System.DateTime.Now.ToLongTimeString()
     let methM1 = ProvidedMethod(timeString,[ProvidedParameter("arg1", typeof<int>)],typeof<int>, isStatic=true, invokeCode=InvokeAPI.addIntX)
-    let types = [ typeT ]
 
     do
         typeT.AddMember methM1
-        this.AddNamespace(namespaceName,types)
-
 
 module TypeProviderThatThrowsErrorsModule = 
     type private Marker = interface end
@@ -221,8 +223,8 @@ module TypeProviderThatThrowsErrorsModule =
         [t]
 
 [<TypeProvider>]
-type TypeProviderThatThrowsErrors() = 
-    inherit TypeProviderForNamespaces(TypeProviderThatThrowsErrorsModule.rootNamespace, TypeProviderThatThrowsErrorsModule.types)
+type TypeProviderThatThrowsErrors(config: TypeProviderConfig) = 
+    inherit TypeProviderForNamespaces(config, TypeProviderThatThrowsErrorsModule.rootNamespace, TypeProviderThatThrowsErrorsModule.types)
 
 open System.ComponentModel
 type TPBaseTy() =
@@ -235,17 +237,16 @@ type TPBaseTy() =
 
     member this.ShowThisProp = ()
 
+module HiddenMembersInBaseClassProvider =
+    let namespaceName = "HiddenMembersInBaseClass"
+    let types =
+        let thisAssembly  = System.Reflection.Assembly.GetExecutingAssembly()
+        let typeT = ProvidedTypeDefinition(thisAssembly, namespaceName, "HiddenBaseMembersTP", Some typeof<TPBaseTy>)
+        [typeT]
+
 [<TypeProvider>]
-type HiddenMembersInBaseClassProvider() as this = 
-    inherit TypeProviderForNamespaces()
-    let namespaceName = "HiddenMembersInBaseClass"    
-    let thisAssembly  = System.Reflection.Assembly.GetExecutingAssembly()
-
-    let typeT = ProvidedTypeDefinition(thisAssembly, namespaceName, "HiddenBaseMembersTP", Some typeof<TPBaseTy>)
-    let types = [ typeT ]
-
-    do
-        this.AddNamespace(namespaceName,types)
+type HiddenMembersInBaseClassProvider(config: TypeProviderConfig) as this = 
+    inherit TypeProviderForNamespaces(config, HiddenMembersInBaseClassProvider.namespaceName, HiddenMembersInBaseClassProvider.types)
 
 module TypeProviderForTestingTuplesErasureModule = 
     type private Marker = interface end
@@ -269,8 +270,8 @@ module TypeProviderForTestingTuplesErasureModule =
     erasedCompoundTup.AddMember(ProvidedProperty("Second", erasedTup, getterCode = handle (fun tup -> Quotations.Expr.TupleGet(tup, 1))))
 
 [<TypeProvider>]
-type TypeProviderForTestingTuplesErasure() = 
-    inherit TypeProviderForNamespaces(TypeProviderForTestingTuplesErasureModule.rootNamespace, [TypeProviderForTestingTuplesErasureModule.erasedTup; TypeProviderForTestingTuplesErasureModule.erasedCompoundTup])
+type TypeProviderForTestingTuplesErasure(config: TypeProviderConfig) = 
+    inherit TypeProviderForNamespaces(config, TypeProviderForTestingTuplesErasureModule.rootNamespace, [TypeProviderForTestingTuplesErasureModule.erasedTup; TypeProviderForTestingTuplesErasureModule.erasedCompoundTup])
 
 module TypeProviderThatEmitsBadMethodsModule = 
     let assembly = System.Reflection.Assembly.GetExecutingAssembly()
@@ -305,8 +306,8 @@ module TypeProviderThatEmitsBadMethodsModule =
         )
 
 [<TypeProvider>]
-type TypeProviderThatEmitsBadMethods() = 
-    inherit TypeProviderForNamespaces(TypeProviderThatEmitsBadMethodsModule.rootNamespace, [TypeProviderThatEmitsBadMethodsModule.arrayUser])
+type TypeProviderThatEmitsBadMethods(config: TypeProviderConfig) = 
+    inherit TypeProviderForNamespaces(config, TypeProviderThatEmitsBadMethodsModule.rootNamespace, [TypeProviderThatEmitsBadMethodsModule.arrayUser])
 
 module TypeProvidersVisibilityChecks = 
     let assembly = System.Reflection.Assembly.GetExecutingAssembly()
@@ -356,24 +357,28 @@ module TypeProvidersVisibilityChecks =
         ty
 
     [<TypeProvider>]
-    type TypeProvider() = 
-        inherit TypeProviderForNamespaces(Namespace, [providedTy])
+    type TypeProvider(config: TypeProviderConfig) = 
+        inherit TypeProviderForNamespaces(config, Namespace, [providedTy])
 
 module RegexTypeProvider =
 
     open System.Text.RegularExpressions
 
+    module CheckedRegexProvider =
+        let rootNamespace = "Samples.FSharp.RegexTypeProvider"
+        let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
+        let types =
+            let regexTy = ProvidedTypeDefinition(thisAssembly, rootNamespace, "RegexTyped", Some (typeof<obj>))
+            [regexTy]              
+
     [<TypeProvider>]
-    type public CheckedRegexProvider() as this =
-        inherit TypeProviderForNamespaces()
+    type public CheckedRegexProvider(config: TypeProviderConfig) as this =
+        inherit TypeProviderForNamespaces(config, CheckedRegexProvider.rootNamespace, CheckedRegexProvider.types)
 
         // Get the assembly and namespace used to house the provided types
-        let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
-        let rootNamespace = "Samples.FSharp.RegexTypeProvider"
         let baseTy = typeof<obj>
         let staticParams = [ProvidedStaticParameter("pattern", typeof<string>)]
-
-        let regexTy = ProvidedTypeDefinition(thisAssembly, rootNamespace, "RegexTyped", Some baseTy)
+        let regexTy = CheckedRegexProvider.types.[0]
 
         do regexTy.DefineStaticParameters(
             parameters=staticParams, 
@@ -391,9 +396,9 @@ module RegexTypeProvider =
                 // The type erasure of this typs ia 'obj', even though the representation will always be a Regex
                 // This, combined with hiding the object methods, makes the IntelliSense experience simpler.
                 let ty = ProvidedTypeDefinition(
-                            thisAssembly, 
-                            rootNamespace, 
-                            typeName, 
+                            CheckedRegexProvider.thisAssembly, 
+                            CheckedRegexProvider.rootNamespace, 
+                            typeName,
                             baseType = Some baseTy)
 
                 ty.AddXmlDoc "A strongly typed interface to the regular expression '%s'"
@@ -452,27 +457,27 @@ module RegexTypeProvider =
                 ty.AddMember ctor
             
                 ty
-              | _ -> failwith "unexpected parameter values")) 
-
-        do this.AddNamespace(rootNamespace, [regexTy])
+              | _ -> failwith "unexpected parameter values"))
 
 module RegexTypeProviderUsingMethod =
 
     open System.Text.RegularExpressions
 
-    [<TypeProvider>]
-    type public CheckedRegexProvider() as this =
-        inherit TypeProviderForNamespaces()
-
-        // Get the assembly and namespace used to house the provided types
-        let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
+    module CheckedRegexProvider =
         let rootNamespace = "Samples.FSharp.RegexTypeProvider"
-        let baseTy = typeof<obj>
+        let thisAssembly = System.Reflection.Assembly.GetExecutingAssembly()
+        let types =
+            let regexTyStatic = ProvidedTypeDefinition(thisAssembly, rootNamespace, "RegexTypedStatic", Some typeof<obj>)
+            [regexTy]  
+
+    [<TypeProvider>]
+    type public CheckedRegexProvider(config: TypeProviderConfig) as this =
+        inherit TypeProviderForNamespaces(config, CheckedRegexProvider.rootNamespace, CheckedRegexProvider.types)
+
         let staticParams = [ProvidedStaticParameter("pattern1", typeof<string>)]
-
-        let regexTyStatic = ProvidedTypeDefinition(thisAssembly, rootNamespace, "RegexTypedStatic", Some baseTy)
-
+        let regexTyStatic = CheckedRegexProvider.types.[0]
         let meth = ProvidedMethod("IsMatch",[],typeof<int32>,isStatic=true)
+
         do meth.DefineStaticParameters(
             parameters=staticParams, 
             instantiationFunction=(fun methName parameterValues ->
@@ -492,7 +497,6 @@ module RegexTypeProviderUsingMethod =
               | _ -> failwith "unexpected parameter values")) 
 
         do regexTyStatic.AddMember meth
-        do this.AddNamespace(rootNamespace, [regexTyStatic])
 
 [<assembly:TypeProviderAssembly>]
 do()
