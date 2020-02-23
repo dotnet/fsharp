@@ -34,81 +34,83 @@ module InvokeAPI =
 
 module internal TPModule = 
         
-    let namespaceName = "N1"    
-    let thisAssembly  = System.Reflection.Assembly.GetExecutingAssembly()
+    let namespaceName = "N1"
+    let getTypes() =
+        let thisAssembly  = System.Reflection.Assembly.GetExecutingAssembly()
 
-    // A parametric type N1.T
-    let typeT = ProvidedTypeDefinition(thisAssembly,namespaceName,"T",Some typeof<System.Object>)
+        // A parametric type N1.T
+        let typeT = ProvidedTypeDefinition(thisAssembly,namespaceName,"T",Some typeof<System.Object>)
 
-    // Make an instantiation of the parametric type
-    // THe instantiated type has a static property that evaluates to the param passed
-    let instantiateParametricType (typeName:string) (args:System.Object[]) =
-        match args with
-        [| :? string as value; :? int as ignoredvalue; |] -> 
-            let typeParam = ProvidedTypeDefinition(thisAssembly,namespaceName, typeName, Some typeof<System.Object>)     
-            let propParam = ProvidedProperty("Param1", typeof<string>, 
-                                             isStatic = true,
-                                             // A complicated was to basically return the constant value... Maybe there's a better/simpler way?
-                                             getterCode = fun _ -> <@@ RuntimeAPI.Identity(value) @@>)
-            typeParam.AddMember(propParam :>System.Reflection.MemberInfo)
-            typeParam 
-        | _ -> failwithf "instantiateParametricType: unexpected params %A" args
-    
-    // N1.T<string, int>
-    typeT.DefineStaticParameters( [ ProvidedStaticParameter("Param1", typeof<string>); ProvidedStaticParameter("ParamIgnored", typeof<int>) ], instantiateParametricType )
-    typeT.AddXmlDoc("""<summary>N1.T type</summary><param name="Param1">Param1 of string</param><param name="ParamIgnored">Ignored</param>""")
-
-    // A non-parametric type N1.T1
-    let typeT1 = ProvidedTypeDefinition(thisAssembly,namespaceName,"T1",Some typeof<System.Object>)
-    
+        // Make an instantiation of the parametric type
+        // THe instantiated type has a static property that evaluates to the param passed
+        let instantiateParametricType (typeName:string) (args:System.Object[]) =
+            match args with
+            [| :? string as value; :? int as ignoredvalue; |] -> 
+                let typeParam = ProvidedTypeDefinition(thisAssembly,namespaceName, typeName, Some typeof<System.Object>)     
+                let propParam = ProvidedProperty("Param1", typeof<string>, 
+                                                 isStatic = true,
+                                                 // A complicated was to basically return the constant value... Maybe there's a better/simpler way?
+                                                 getterCode = fun _ -> <@@ RuntimeAPI.Identity(value) @@>)
+                typeParam.AddMember(propParam :>System.Reflection.MemberInfo)
+                typeParam 
+            | _ -> failwithf "instantiateParametricType: unexpected params %A" args
         
-    // Two static methods: N1.T1.M1(int) and N1.T1.M2(int,int)
-    let methM1 = ProvidedMethod("M1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>, isStatic=true, invokeCode=InvokeAPI.addIntX)
-    let methM2 = ProvidedMethod("M2",[ProvidedParameter("arg1",typeof<int>);ProvidedParameter("arg2", typeof<int>)],typeof<int>, isStatic=true, invokeCode=InvokeAPI.addIntX)
+        // N1.T<string, int>
+        typeT.DefineStaticParameters( [ ProvidedStaticParameter("Param1", typeof<string>); ProvidedStaticParameter("ParamIgnored", typeof<int>) ], instantiateParametricType )
+        typeT.AddXmlDoc("""<summary>N1.T type</summary><param name="Param1">Param1 of string</param><param name="ParamIgnored">Ignored</param>""")
 
-    //one Instance method:N1.T1().IM1(int)
-    let methIM1 = ProvidedMethod("IM1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>,isStatic=false,invokeCode=InvokeAPI.instanceX)
+        // A non-parametric type N1.T1
+        let typeT1 = ProvidedTypeDefinition(thisAssembly,namespaceName,"T1",Some typeof<System.Object>)
+        
+            
+        // Two static methods: N1.T1.M1(int) and N1.T1.M2(int,int)
+        let methM1 = ProvidedMethod("M1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>, isStatic=true, invokeCode=InvokeAPI.addIntX)
+        let methM2 = ProvidedMethod("M2",[ProvidedParameter("arg1",typeof<int>);ProvidedParameter("arg2", typeof<int>)],typeof<int>, isStatic=true, invokeCode=InvokeAPI.addIntX)
 
-    // A method involving units-of-measure
-    let kgAnnotation = ProvidedMeasureBuilder.SI "kilogram"    // a measure
-    let hzAnnotation = ProvidedMeasureBuilder.SI "hertz"       // a measure-abbreviation
-    let kg_per_hz_squared = ProvidedMeasureBuilder.Ratio(kgAnnotation, ProvidedMeasureBuilder.Square hzAnnotation)
-    let float_kg = ProvidedMeasureBuilder.AnnotateType(typeof<double>,[kgAnnotation])
-    let decimal_kg_per_hz_squared = ProvidedMeasureBuilder.AnnotateType(typeof<decimal>,[kg_per_hz_squared])
-    let nullable_decimal_kg_per_hz_squared = typedefof<System.Nullable<_>>.MakeGenericType [| decimal_kg_per_hz_squared |]
+        //one Instance method:N1.T1().IM1(int)
+        let methIM1 = ProvidedMethod("IM1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>,isStatic=false,invokeCode=InvokeAPI.instanceX)
 
-    let methM3 = ProvidedMethod("MethodWithTypesInvolvingUnitsOfMeasure",[ProvidedParameter("arg1", float_kg)],nullable_decimal_kg_per_hz_squared, isStatic=true, invokeCode=(fun args -> <@@ RuntimeAPI.Convert(%%(args.[0])) @@> ))
+        // A method involving units-of-measure
+        let kgAnnotation = ProvidedMeasureBuilder.SI "kilogram"    // a measure
+        let hzAnnotation = ProvidedMeasureBuilder.SI "hertz"       // a measure-abbreviation
+        let kg_per_hz_squared = ProvidedMeasureBuilder.Ratio(kgAnnotation, ProvidedMeasureBuilder.Square hzAnnotation)
+        let float_kg = ProvidedMeasureBuilder.AnnotateType(typeof<double>,[kgAnnotation])
+        let decimal_kg_per_hz_squared = ProvidedMeasureBuilder.AnnotateType(typeof<decimal>,[kg_per_hz_squared])
+        let nullable_decimal_kg_per_hz_squared = typedefof<System.Nullable<_>>.MakeGenericType [| decimal_kg_per_hz_squared |]
 
-    // an instance method using a conditional expression
-    let methM4 = ProvidedMethod("MethodWithErasedCodeUsingConditional",[],typeof<int>,isStatic=false,invokeCode=(fun _ -> <@@ if true then 1 else 2 @@>))
+        let methM3 = ProvidedMethod("MethodWithTypesInvolvingUnitsOfMeasure",[ProvidedParameter("arg1", float_kg)],nullable_decimal_kg_per_hz_squared, isStatic=true, invokeCode=(fun args -> <@@ RuntimeAPI.Convert(%%(args.[0])) @@> ))
 
-    // an instance method using a call and a type-as expression
-    let methM5 = ProvidedMethod("MethodWithErasedCodeUsingTypeAs",[],typeof<int>,isStatic=false,invokeCode=(fun _ -> <@@ box 1 :?> int @@>))
+        // an instance method using a conditional expression
+        let methM4 = ProvidedMethod("MethodWithErasedCodeUsingConditional",[],typeof<int>,isStatic=false,invokeCode=(fun _ -> <@@ if true then 1 else 2 @@>))
 
-    // Three ctors
-    let ctorA = ProvidedConstructor([],invokeCode=InvokeAPI.ctor)
-    let ctorB = ProvidedConstructor([ProvidedParameter("arg1",typeof<double>)], invokeCode=InvokeAPI.ctor)
-    let ctorC = ProvidedConstructor([ProvidedParameter("arg1",typeof<int>); ProvidedParameter("arg2",typeof<char>)], invokeCode=InvokeAPI.ctor)
+        // an instance method using a call and a type-as expression
+        let methM5 = ProvidedMethod("MethodWithErasedCodeUsingTypeAs",[],typeof<int>,isStatic=false,invokeCode=(fun _ -> <@@ box 1 :?> int @@>))
 
-    typeT1.AddMember methM1
-    typeT1.AddMember methM2
-    typeT1.AddMember methIM1
-    typeT1.AddMember methM3
-    typeT1.AddMember methM4
-    typeT1.AddMember methM5
-    typeT1.AddMember ctorA
-    typeT1.AddMember ctorB
-    typeT1.AddMember ctorC
+        // Three ctors
+        let ctorA = ProvidedConstructor([],invokeCode=InvokeAPI.ctor)
+        let ctorB = ProvidedConstructor([ProvidedParameter("arg1",typeof<double>)], invokeCode=InvokeAPI.ctor)
+        let ctorC = ProvidedConstructor([ProvidedParameter("arg1",typeof<int>); ProvidedParameter("arg2",typeof<char>)], invokeCode=InvokeAPI.ctor)
 
-    // a nested type
-    typeT1.AddMember <| ProvidedTypeDefinition("SomeNestedType", Some typeof<obj>)
+        typeT1.AddMember methM1
+        typeT1.AddMember methM2
+        typeT1.AddMember methIM1
+        typeT1.AddMember methM3
+        typeT1.AddMember methM4
+        typeT1.AddMember methM5
+        typeT1.AddMember ctorA
+        typeT1.AddMember ctorB
+        typeT1.AddMember ctorC
 
-    let typeWithNestedTypes = ProvidedTypeDefinition(thisAssembly,namespaceName,"TypeWithNestedTypes", Some typeof<System.Object>)
-    typeWithNestedTypes.AddMember <| ProvidedTypeDefinition("X", Some typeof<obj>)
-    typeWithNestedTypes.AddMember <| ProvidedTypeDefinition("Z", Some typeof<obj>)
-    typeWithNestedTypes.AddMember <| ProvidedTypeDefinition("A", Some typeof<obj>)
+        // a nested type
+        typeT1.AddMember <| ProvidedTypeDefinition("SomeNestedType", Some typeof<obj>)
 
-    let types = [ typeT1 ; typeT; typeWithNestedTypes ]
+        let typeWithNestedTypes = ProvidedTypeDefinition(thisAssembly,namespaceName,"TypeWithNestedTypes", Some typeof<System.Object>)
+        typeWithNestedTypes.AddMember <| ProvidedTypeDefinition("X", Some typeof<obj>)
+        typeWithNestedTypes.AddMember <| ProvidedTypeDefinition("Z", Some typeof<obj>)
+        typeWithNestedTypes.AddMember <| ProvidedTypeDefinition("A", Some typeof<obj>)
+
+        let types = [ typeT1 ; typeT; typeWithNestedTypes ]
+        types
 
 // Used by unit testing to check that Dispose is being called on the type provider
 module GlobalCounters = 
@@ -135,7 +137,7 @@ module GlobalCounters =
 
 [<TypeProvider>]
 type HelloWorldProvider(config: TypeProviderConfig) = 
-    inherit TypeProviderForNamespaces(config, TPModule.namespaceName,TPModule.types)
+    inherit TypeProviderForNamespaces(config, TPModule.namespaceName,TPModule.getTypes())
     do GlobalCounters.IncrementCreations()
     let mutable disposed = false
     do GlobalCounters.AddConfig config
