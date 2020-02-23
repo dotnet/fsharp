@@ -156,7 +156,10 @@ type FSLibPaths =
 let requireFile nm = 
     if Commands.fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s. Running 'build test' once might solve this issue" nm)
 
-let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
+let packagesDir = 
+    match Environment.GetEnvironmentVariable("NUGET_PACKAGES") with
+    | null -> Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
+    | path -> path
 
 let config configurationName envVars =
 
