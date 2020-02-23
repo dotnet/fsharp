@@ -87,8 +87,8 @@ module internal TPModule =
 
     // Three ctors
     let ctorA = ProvidedConstructor([],invokeCode=InvokeAPI.ctor)
-    let ctorB = ProvidedConstructor([ProvidedParameter("arg1",typeof<double>)])
-    let ctorC = ProvidedConstructor([ProvidedParameter("arg1",typeof<int>); ProvidedParameter("arg2",typeof<char>)])
+    let ctorB = ProvidedConstructor([ProvidedParameter("arg1",typeof<double>)], nvokeCode=InvokeAPI.ctor)
+    let ctorC = ProvidedConstructor([ProvidedParameter("arg1",typeof<int>); ProvidedParameter("arg2",typeof<char>)], nvokeCode=InvokeAPI.ctor)
 
     typeT1.AddMember methM1
     typeT1.AddMember methM2
@@ -300,7 +300,7 @@ module TypeProviderThatEmitsBadMethodsModule =
             methodName = "AddressOfFirstElement", 
             parameters = [ProvidedParameter("array", typeof<int[]>)], 
             returnType = typeof<int>.MakeByRefType(), 
-            isSt = true, 
+            isStatic = true, 
             invokeCode = function [arr] -> Quotations.Expr.Call(arr, addr, [Quotations.Expr.Value 0]) | _ -> failwith "One argument expected")
         )
 
@@ -325,11 +325,11 @@ module TypeProvidersVisibilityChecks =
         setMethodVisibility m visibility
 
     let addLiteralField name value (ty : ProvidedTypeDefinition) = 
-        let f = ProvidedLiteralField(name, value.GetType(), value)
+        let f = ProvidedField(name, value.GetType())
         ty.AddMember f
 
     let providedTy = 
-        let ty = ProvidedTypeDefinition(assembly, Namespace, "SampleType", Some typeof<obj>, IsErased=false)
+        let ty = ProvidedTypeDefinition(assembly, Namespace, "SampleType", Some typeof<obj>)
 
         /// unseal type
         ty.SetAttributes(ty.Attributes &&& ~~~System.Reflection.TypeAttributes.Sealed)
@@ -338,8 +338,7 @@ module TypeProvidersVisibilityChecks =
         addLiteralField "PublicField" 100  ty
         
         // implicitly adds field
-        let ctor = ProvidedConstructor([ProvidedParameter("f", typeof<int>)])
-        ctor.InvokeCode <- fun _ -> <@@ () @@>
+        let ctor = ProvidedConstructor([ProvidedParameter("f", typeof<int>)], fun _ -> <@@ () @@>)
         ty.AddMember ctor
 
         // add properties
