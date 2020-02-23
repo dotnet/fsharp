@@ -194,7 +194,7 @@ module ShowOffCreationTimeProvider =
         [typeT]
 
 [<TypeProvider>]
-type ShowOffCreationTimeProvider(config: TypeProviderConfig) as this= 
+type ShowOffCreationTimeProvider(config: TypeProviderConfig) = 
     inherit TypeProviderForNamespaces(config, ShowOffCreationTimeProvider.namespaceName, ShowOffCreationTimeProvider.types)
 
     let typeT = ShowOffCreationTimeProvider.types.[0]
@@ -245,7 +245,7 @@ module HiddenMembersInBaseClassProvider =
         [typeT]
 
 [<TypeProvider>]
-type HiddenMembersInBaseClassProvider(config: TypeProviderConfig) as this = 
+type HiddenMembersInBaseClassProvider(config: TypeProviderConfig) = 
     inherit TypeProviderForNamespaces(config, HiddenMembersInBaseClassProvider.namespaceName, HiddenMembersInBaseClassProvider.types)
 
 module TypeProviderForTestingTuplesErasureModule = 
@@ -372,7 +372,7 @@ module RegexTypeProvider =
             [regexTy]              
 
     [<TypeProvider>]
-    type public CheckedRegexProvider(config: TypeProviderConfig) as this =
+    type public CheckedRegexProvider(config: TypeProviderConfig) =
         inherit TypeProviderForNamespaces(config, CheckedRegexProvider.rootNamespace, CheckedRegexProvider.types)
 
         // Get the assembly and namespace used to house the provided types
@@ -468,7 +468,7 @@ module RegexTypeProviderUsingMethod =
             [regexTyStatic]  
 
     [<TypeProvider>]
-    type public CheckedRegexProvider(config: TypeProviderConfig) as this =
+    type public CheckedRegexProvider(config: TypeProviderConfig) =
         inherit TypeProviderForNamespaces(config, CheckedRegexProvider.rootNamespace, CheckedRegexProvider.types)
 
         let staticParams = [ProvidedStaticParameter("pattern1", typeof<string>)]
