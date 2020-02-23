@@ -70,12 +70,11 @@ module internal TPModule =
     let methIM1 = ProvidedMethod("IM1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>,isStatic=false,invokeCode=InvokeAPI.instanceX)
 
     // A method involving units-of-measure
-    let measures = ProvidedMeasureBuilder()
-    let kgAnnotation = measures.SI "kilogram"    // a measure
-    let hzAnnotation = measures.SI "hertz"       // a measure-abbreviation
-    let kg_per_hz_squared = measures.Ratio(kgAnnotation, measures.Square hzAnnotation)
-    let float_kg = measures.AnnotateType(typeof<double>,[kgAnnotation])
-    let decimal_kg_per_hz_squared = measures.AnnotateType(typeof<decimal>,[kg_per_hz_squared])
+    let kgAnnotation = ProvidedMeasureBuilder.SI "kilogram"    // a measure
+    let hzAnnotation = ProvidedMeasureBuilder.SI "hertz"       // a measure-abbreviation
+    let kg_per_hz_squared = ProvidedMeasureBuilder.Ratio(kgAnnotation, ProvidedMeasureBuilder.Square hzAnnotation)
+    let float_kg = ProvidedMeasureBuilder.AnnotateType(typeof<double>,[kgAnnotation])
+    let decimal_kg_per_hz_squared = ProvidedMeasureBuilder.AnnotateType(typeof<decimal>,[kg_per_hz_squared])
     let nullable_decimal_kg_per_hz_squared = typedefof<System.Nullable<_>>.MakeGenericType [| decimal_kg_per_hz_squared |]
 
     let methM3 = ProvidedMethod("MethodWithTypesInvolvingUnitsOfMeasure",[ProvidedParameter("arg1", float_kg)],nullable_decimal_kg_per_hz_squared, isStatic=true, invokeCode=(fun args -> <@@ RuntimeAPI.Convert(%%(args.[0])) @@> ))
