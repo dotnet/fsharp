@@ -49,7 +49,7 @@ module internal TPModule =
             let propParam = ProvidedProperty("Param1", typeof<string>, 
                                              isStatic = true,
                                              // A complicated was to basically return the constant value... Maybe there's a better/simpler way?
-                                             getter = fun _ -> <@@ RuntimeAPI.Identity(value) @@>)
+                                             getterCode = fun _ -> <@@ RuntimeAPI.Identity(value) @@>)
             typeParam.AddMember(propParam :>System.Reflection.MemberInfo)
             typeParam 
         | _ -> failwithf "instantiateParametricType: unexpected params %A" args
@@ -261,13 +261,13 @@ module TypeProviderForTestingTuplesErasureModule =
 
     let erasedTup = ProvidedTypeDefinition(assembly, rootNamespace, "TupleType", Some(typeof<int*string>))
     erasedTup.AddMember(ProvidedConstructor([ProvidedParameter("tup", typeof<int * string>)], invokeCode = handle (fun tup -> tup)))
-    erasedTup.AddMember(ProvidedProperty("SecondComponent", typeof<string>, GetterCode = handle (fun tup -> Quotations.Expr.TupleGet(tup, 1))))
+    erasedTup.AddMember(ProvidedProperty("SecondComponent", typeof<string>, getterCode = handle (fun tup -> Quotations.Expr.TupleGet(tup, 1))))
     
     let objT = typedefof<int * string>.MakeGenericType(typeof<int>, erasedTup)
     let erasedCompoundTup = ProvidedTypeDefinition(assembly, rootNamespace, "CompoundTupleType", Some(objT))
     erasedCompoundTup.AddMember(ProvidedConstructor([ProvidedParameter("tup", objT)], invokeCode = handle (fun tup -> tup)))
-    erasedCompoundTup.AddMember(ProvidedProperty("First", typeof<int>, GetterCode = handle (fun tup -> Quotations.Expr.TupleGet(tup, 0))))
-    erasedCompoundTup.AddMember(ProvidedProperty("Second", erasedTup, GetterCode = handle (fun tup -> Quotations.Expr.TupleGet(tup, 1))))
+    erasedCompoundTup.AddMember(ProvidedProperty("First", typeof<int>, getterCode = handle (fun tup -> Quotations.Expr.TupleGet(tup, 0))))
+    erasedCompoundTup.AddMember(ProvidedProperty("Second", erasedTup, getterCode = handle (fun tup -> Quotations.Expr.TupleGet(tup, 1))))
 
 [<TypeProvider>]
 type TypeProviderForTestingTuplesErasure() = 
@@ -315,16 +315,12 @@ module TypeProvidersVisibilityChecks =
     let Namespace = "GeneratedType"
     let setMethodVisibility (m : ProvidedMethod) visibility = m.SetMethodAttrs((m.Attributes &&& ~~~System.Reflection.MethodAttributes.MemberAccessMask) ||| visibility)
     let addMethod name value visibility (ty : ProvidedTypeDefinition) = 
-        let m = ProvidedMethod(name, [], value.GetType())
-        m.IsStaticMethod <- false
-        m.InvokeCode <- fun _ -> Quotations.Expr.Value(value, value.GetType())
+        let m = ProvidedMethod(name, [], value.GetType(), isStatic=false, invokeCode=fun _ -> Quotations.Expr.Value(value, value.GetType()))
         setMethodVisibility m visibility
         ty.AddMember m
 
     let addGetProperty name value visibility (ty : ProvidedTypeDefinition) = 
-        let prop = ProvidedProperty(name, value.GetType())
-        prop.IsStatic <- false
-        prop.GetterCode <- fun _ -> Quotations.Expr.Value(value, value.GetType())
+        let prop = ProvidedProperty(name, value.GetType(), isStatic=false, getterCode=fun _ -> Quotations.Expr.Value(value, value.GetType()))
         ty.AddMember prop
         let m = prop.GetGetMethod() :?> ProvidedMethod
         setMethodVisibility m visibility
@@ -433,7 +429,7 @@ module RegexTypeProvider =
                         let prop = ProvidedProperty(
                                     propertyName = group, 
                                     propertyType = typeof<Group>, 
-                                    GetterCode = fun args -> <@@ ((%%args.[0]:obj) :?> Match).Groups.[group] @@>)
+                                    getterCode = fun args -> <@@ ((%%args.[0]:obj) :?> Match).Groups.[group] @@>)
                         prop.AddXmlDoc(sprintf @"Gets the ""%s"" group from this match" group)
                         matchTy.AddMember(prop)
 
@@ -478,7 +474,7 @@ module RegexTypeProviderUsingMethod =
 
         let regexTyStatic = ProvidedTypeDefinition(thisAssembly, rootNamespace, "RegexTypedStatic", Some baseTy)
 
-        let meth = ProvidedMethod("IsMatch",[],typeof<int32>,IsStaticMethod=true)
+        let meth = ProvidedMethod("IsMatch",[],typeof<int32>,isStatic=true)
         do meth.DefineStaticParameters(
             parameters=staticParams, 
             instantiationFunction=(fun methName parameterValues ->
