@@ -47,9 +47,9 @@ module internal TPModule =
         [| :? string as value; :? int as ignoredvalue; |] -> 
             let typeParam = ProvidedTypeDefinition(thisAssembly,namespaceName, typeName, Some typeof<System.Object>)     
             let propParam = ProvidedProperty("Param1", typeof<string>, 
-                                             IsStatic = true,
+                                             isStatic = true,
                                              // A complicated was to basically return the constant value... Maybe there's a better/simpler way?
-                                             GetterCode = fun _ -> <@@ RuntimeAPI.Identity(value) @@>)
+                                             getter = fun _ -> <@@ RuntimeAPI.Identity(value) @@>)
             typeParam.AddMember(propParam :>System.Reflection.MemberInfo)
             typeParam 
         | _ -> failwithf "instantiateParametricType: unexpected params %A" args
@@ -63,11 +63,11 @@ module internal TPModule =
     
         
     // Two static methods: N1.T1.M1(int) and N1.T1.M2(int,int)
-    let methM1 = ProvidedMethod("M1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>, IsStaticMethod=true, InvokeCode=InvokeAPI.addIntX)
-    let methM2 = ProvidedMethod("M2",[ProvidedParameter("arg1",typeof<int>);ProvidedParameter("arg2", typeof<int>)],typeof<int>, IsStaticMethod=true, InvokeCode=InvokeAPI.addIntX)
+    let methM1 = ProvidedMethod("M1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>, isStatic=true, invokeCode=InvokeAPI.addIntX)
+    let methM2 = ProvidedMethod("M2",[ProvidedParameter("arg1",typeof<int>);ProvidedParameter("arg2", typeof<int>)],typeof<int>, isStatic=true, invokeCode=InvokeAPI.addIntX)
 
     //one Instance method:N1.T1().IM1(int)
-    let methIM1 = ProvidedMethod("IM1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>,IsStaticMethod=false,InvokeCode=InvokeAPI.instanceX)
+    let methIM1 = ProvidedMethod("IM1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>,isStatic=false,invokeCode=InvokeAPI.instanceX)
 
     // A method involving units-of-measure
     let measures = ProvidedMeasureBuilder.Default
@@ -78,16 +78,16 @@ module internal TPModule =
     let decimal_kg_per_hz_squared = measures.AnnotateType(typeof<decimal>,[kg_per_hz_squared])
     let nullable_decimal_kg_per_hz_squared = typedefof<System.Nullable<_>>.MakeGenericType [| decimal_kg_per_hz_squared |]
 
-    let methM3 = ProvidedMethod("MethodWithTypesInvolvingUnitsOfMeasure",[ProvidedParameter("arg1", float_kg)],nullable_decimal_kg_per_hz_squared, IsStaticMethod=true, InvokeCode=(fun args -> <@@ RuntimeAPI.Convert(%%(args.[0])) @@> ))
+    let methM3 = ProvidedMethod("MethodWithTypesInvolvingUnitsOfMeasure",[ProvidedParameter("arg1", float_kg)],nullable_decimal_kg_per_hz_squared, isStatic=true, invokeCode=(fun args -> <@@ RuntimeAPI.Convert(%%(args.[0])) @@> ))
 
     // an instance method using a conditional expression
-    let methM4 = ProvidedMethod("MethodWithErasedCodeUsingConditional",[],typeof<int>,IsStaticMethod=false,InvokeCode=(fun _ -> <@@ if true then 1 else 2 @@>))
+    let methM4 = ProvidedMethod("MethodWithErasedCodeUsingConditional",[],typeof<int>,isStatic=false,invokeCode=(fun _ -> <@@ if true then 1 else 2 @@>))
 
     // an instance method using a call and a type-as expression
-    let methM5 = ProvidedMethod("MethodWithErasedCodeUsingTypeAs",[],typeof<int>,IsStaticMethod=false,InvokeCode=(fun _ -> <@@ box 1 :?> int @@>))
+    let methM5 = ProvidedMethod("MethodWithErasedCodeUsingTypeAs",[],typeof<int>,isStatic=false,invokeCode=(fun _ -> <@@ box 1 :?> int @@>))
 
     // Three ctors
-    let ctorA = ProvidedConstructor([],InvokeCode=InvokeAPI.ctor)
+    let ctorA = ProvidedConstructor([],invokeCode=InvokeAPI.ctor)
     let ctorB = ProvidedConstructor([ProvidedParameter("arg1",typeof<double>)])
     let ctorC = ProvidedConstructor([ProvidedParameter("arg1",typeof<int>); ProvidedParameter("arg2",typeof<char>)])
 
@@ -156,7 +156,7 @@ module internal SlowIntelliSenseTPModule =
     let thisAssembly  = System.Reflection.Assembly.GetExecutingAssembly()
 
     let typeT = ProvidedTypeDefinition(thisAssembly,namespaceName,"T",Some typeof<System.Object>)
-    let methM1 = ProvidedMethod("M1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>, IsStaticMethod=true, InvokeCode=InvokeAPI.addIntX)
+    let methM1 = ProvidedMethod("M1",[ProvidedParameter("arg1", typeof<int>)],typeof<int>, isStatic=true, invokeCode=InvokeAPI.addIntX)
     typeT.AddMember methM1
 
     let rec populate(t:ProvidedTypeDefinition, millisDelay:int) =
@@ -195,7 +195,7 @@ type ShowOffCreationTimeProvider() as this=
 
     let typeT = ProvidedTypeDefinition(thisAssembly,namespaceName,"T",Some typeof<System.Object>)
     let timeString = "CreatedAt" + System.DateTime.Now.ToLongTimeString()
-    let methM1 = ProvidedMethod(timeString,[ProvidedParameter("arg1", typeof<int>)],typeof<int>, IsStaticMethod=true, InvokeCode=InvokeAPI.addIntX)
+    let methM1 = ProvidedMethod(timeString,[ProvidedParameter("arg1", typeof<int>)],typeof<int>, isStatic=true, invokeCode=InvokeAPI.addIntX)
     let types = [ typeT ]
 
     do
@@ -260,12 +260,12 @@ module TypeProviderForTestingTuplesErasureModule =
         | _ -> failwith "One argument expected"
 
     let erasedTup = ProvidedTypeDefinition(assembly, rootNamespace, "TupleType", Some(typeof<int*string>))
-    erasedTup.AddMember(ProvidedConstructor([ProvidedParameter("tup", typeof<int * string>)], InvokeCode = handle (fun tup -> tup)))
+    erasedTup.AddMember(ProvidedConstructor([ProvidedParameter("tup", typeof<int * string>)], invokeCode = handle (fun tup -> tup)))
     erasedTup.AddMember(ProvidedProperty("SecondComponent", typeof<string>, GetterCode = handle (fun tup -> Quotations.Expr.TupleGet(tup, 1))))
     
     let objT = typedefof<int * string>.MakeGenericType(typeof<int>, erasedTup)
     let erasedCompoundTup = ProvidedTypeDefinition(assembly, rootNamespace, "CompoundTupleType", Some(objT))
-    erasedCompoundTup.AddMember(ProvidedConstructor([ProvidedParameter("tup", objT)], InvokeCode = handle (fun tup -> tup)))
+    erasedCompoundTup.AddMember(ProvidedConstructor([ProvidedParameter("tup", objT)], invokeCode = handle (fun tup -> tup)))
     erasedCompoundTup.AddMember(ProvidedProperty("First", typeof<int>, GetterCode = handle (fun tup -> Quotations.Expr.TupleGet(tup, 0))))
     erasedCompoundTup.AddMember(ProvidedProperty("Second", erasedTup, GetterCode = handle (fun tup -> Quotations.Expr.TupleGet(tup, 1))))
 
@@ -285,24 +285,24 @@ module TypeProviderThatEmitsBadMethodsModule =
             methodName = "GetFirstElement", 
             parameters = [ProvidedParameter("array", typeof<int[]>)], 
             returnType = typeof<int>, 
-            IsStaticMethod = true, 
-            InvokeCode = function [arr] -> Quotations.Expr.Call(arr, get, [Quotations.Expr.Value 0]) | _ -> failwith "One argument expected")
+            isStatic = true, 
+            invokeCode = function [arr] -> Quotations.Expr.Call(arr, get, [Quotations.Expr.Value 0]) | _ -> failwith "One argument expected")
         )
     arrayUser.AddMember(
         ProvidedMethod(
             methodName = "SetFirstElement", 
             parameters = [ProvidedParameter("array", typeof<int[]>); ProvidedParameter("val", typeof<int>)], 
             returnType = typeof<unit>, 
-            IsStaticMethod = true, 
-            InvokeCode = function [arr; v] -> Quotations.Expr.Call(arr, set, [Quotations.Expr.Value 0; v]) | _ -> failwith "Two argument expected")
+            isStatic = true, 
+            invokeCode = function [arr; v] -> Quotations.Expr.Call(arr, set, [Quotations.Expr.Value 0; v]) | _ -> failwith "Two argument expected")
         )
     arrayUser.AddMember(
         ProvidedMethod(
             methodName = "AddressOfFirstElement", 
             parameters = [ProvidedParameter("array", typeof<int[]>)], 
             returnType = typeof<int>.MakeByRefType(), 
-            IsStaticMethod = true, 
-            InvokeCode = function [arr] -> Quotations.Expr.Call(arr, addr, [Quotations.Expr.Value 0]) | _ -> failwith "One argument expected")
+            isSt = true, 
+            invokeCode = function [arr] -> Quotations.Expr.Call(arr, addr, [Quotations.Expr.Value 0]) | _ -> failwith "One argument expected")
         )
 
 [<TypeProvider>]
@@ -409,8 +409,8 @@ module RegexTypeProvider =
                                 methodName = "IsMatch", 
                                 parameters = [ProvidedParameter("input", typeof<string>)], 
                                 returnType = typeof<bool>, 
-                                IsStaticMethod = true,
-                                InvokeCode = fun args -> <@@ Regex.IsMatch(%%args.[0], pattern) @@>) 
+                                isStatic = true,
+                                invokeCode = fun args -> <@@ Regex.IsMatch(%%args.[0], pattern) @@>) 
 
                 isMatch.AddXmlDoc "Indicates whether the regular expression finds a match in the specified input string"
 
@@ -442,7 +442,7 @@ module RegexTypeProvider =
                                     methodName = "Match", 
                                     parameters = [ProvidedParameter("input", typeof<string>)], 
                                     returnType = matchTy, 
-                                    InvokeCode = fun args -> <@@ ((%%args.[0]:obj) :?> Regex).Match(%%args.[1]) :> obj @@>)
+                                    invokeCode = fun args -> <@@ ((%%args.[0]:obj) :?> Regex).Match(%%args.[1]) :> obj @@>)
                 matchMeth.AddXmlDoc "Searches the specified input string for the first occurence of this regular expression"
             
                 ty.AddMember matchMeth
@@ -450,7 +450,7 @@ module RegexTypeProvider =
                 // Declare a constructor
                 let ctor = ProvidedConstructor(
                             parameters = [], 
-                            InvokeCode = fun args -> <@@ Regex(pattern) :> obj @@>)
+                            invokeCode = fun args -> <@@ Regex(pattern) :> obj @@>)
 
                 // Add documentation to the constructor
                 ctor.AddXmlDoc "Initializes a regular expression instance"
@@ -489,8 +489,8 @@ module RegexTypeProviderUsingMethod =
                                 methodName = methName, 
                                 parameters = [ProvidedParameter("input", typeof<string>)], 
                                 returnType = typeof<bool>, 
-                                IsStaticMethod = true,
-                                InvokeCode = fun args -> <@@ true @@>) 
+                                isStatic = true,
+                                invokeCode = fun args -> <@@ true @@>) 
 
                 isMatch.AddXmlDoc "Indicates whether the regular expression finds a match in the specified input string"
                 regexTyStatic.AddMember isMatch
