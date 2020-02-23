@@ -87,8 +87,8 @@ module internal TPModule =
 
     // Three ctors
     let ctorA = ProvidedConstructor([],invokeCode=InvokeAPI.ctor)
-    let ctorB = ProvidedConstructor([ProvidedParameter("arg1",typeof<double>)], nvokeCode=InvokeAPI.ctor)
-    let ctorC = ProvidedConstructor([ProvidedParameter("arg1",typeof<int>); ProvidedParameter("arg2",typeof<char>)], nvokeCode=InvokeAPI.ctor)
+    let ctorB = ProvidedConstructor([ProvidedParameter("arg1",typeof<double>)], invokeCode=InvokeAPI.ctor)
+    let ctorC = ProvidedConstructor([ProvidedParameter("arg1",typeof<int>); ProvidedParameter("arg2",typeof<char>)], invokeCode=InvokeAPI.ctor)
 
     typeT1.AddMember methM1
     typeT1.AddMember methM2
