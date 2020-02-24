@@ -19,6 +19,7 @@ type LanguageFeature =
     | AndBang
     | NullableOptionalInterop
     | DefaultInterfaceMethodConsumption
+    | ProtectedInterfaceMethods
 
 /// LanguageVersion management
 type LanguageVersion =

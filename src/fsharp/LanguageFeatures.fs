@@ -31,6 +31,7 @@ type LanguageFeature =
     | AndBang
     | NullableOptionalInterop
     | DefaultInterfaceMethodConsumption
+    | ProtectedInterfaceMethods
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -60,6 +61,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.FromEndSlicing, languageVersion50
             LanguageFeature.DotlessFloat32Literal, languageVersion50
             LanguageFeature.DefaultInterfaceMethodConsumption, languageVersion50
+            LanguageFeature.ProtectedInterfaceMethods, languageVersion50
 
             // F# preview
             LanguageFeature.NameOf, previewVersion
@@ -135,6 +137,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.AndBang -> "and bang"
         | LanguageFeature.NullableOptionalInterop -> "nullable optional interop"
         | LanguageFeature.DefaultInterfaceMethodConsumption -> "default interface method consumption"
+        | LanguageFeature.ProtectedInterfaceMethods -> "protected interface methods"
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

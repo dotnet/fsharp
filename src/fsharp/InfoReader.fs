@@ -20,7 +20,6 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Features
-open FSharp.Compiler.FeatureSupport
 open FSharp.Compiler.TypeRelations
 
 /// Use the given function to select some of the member values from the members of an F# type
@@ -426,35 +425,6 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                                     (match stripTyEqns g ty with 
                                      | TType_app(tcref, []) -> hash tcref.LogicalName
                                      | _ -> 0) })
-
-    static let RuntimeSupportsFeature (infoReader: InfoReader) (g: TcGlobals) featureId =       
-        let runtimeFeature =
-            match featureId with
-            | LanguageFeature.DefaultInterfaceMethodConsumption -> "DefaultImplementationsOfInterfaces"
-            | _ -> String.Empty
-
-        if String.IsNullOrWhiteSpace runtimeFeature then
-            true
-        else
-            match g.System_Runtime_CompilerServices_RuntimeFeature_ty with
-            | Some runtimeFeatureTy ->
-                infoReader.GetILFieldInfosOfType (Some runtimeFeature, AccessorDomain.AccessibleFromEverywhere, range0, runtimeFeatureTy)
-                |> List.exists (fun (ilFieldInfo: ILFieldInfo) -> ilFieldInfo.FieldName = runtimeFeature)
-            | _ ->
-                false
-
-    static let CreateFeatureSupport infoReader g featureId =
-        let runtimeError =
-            if not (RuntimeSupportsFeature infoReader g featureId) then
-                let featureStr = g.langVersion.GetFeatureString featureId
-                Some(fun m -> Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
-            else
-                None
-
-        FeatureSupport.Create (LanguageFeatureSupport.Create (g.langVersion, featureId), runtimeError)
-
-    let defaultInterfaceMethodConsumptionSupport =
-        lazy CreateFeatureSupport this g LanguageFeature.DefaultInterfaceMethodConsumption
     
     let hashFlags0 = 
         { new System.Collections.Generic.IEqualityComparer<_> with 
@@ -482,11 +452,22 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierarchyUncached HashIdentity.Structural
     let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierarchyUncached HashIdentity.Structural
+
+    // Runtime feature support
+
+    let isRuntimeFeatureSupported runtimeFeature =
+        match g.System_Runtime_CompilerServices_RuntimeFeature_ty with
+        | Some runtimeFeatureTy ->
+            this.GetILFieldInfosOfType (None, AccessorDomain.AccessibleFromEverywhere, range0, runtimeFeatureTy)
+            |> List.exists (fun (ilFieldInfo: ILFieldInfo) -> ilFieldInfo.FieldName = runtimeFeature)
+        | _ ->
+            false
+
+    let isRuntimeFeatureDefaultImplementationsOfInterfacesSupported =
+        lazy isRuntimeFeatureSupported "DefaultImplementationsOfInterfaces"
                                             
     member x.g = g
     member x.amap = amap
-
-    member x.DefaultInterfaceMethodConsumptionSupport = defaultInterfaceMethodConsumptionSupport.Value
     
     /// Read the raw method sets of a type, including inherited ones. Cache the result for monomorphic types
     member x.GetRawIntrinsicMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
@@ -542,6 +523,22 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member x.GetPrimaryTypeHierarchy (allowMultiIntfInst, m, ty) =
         primaryTypeHierarchyCache.Apply((allowMultiIntfInst, m, ty))
 
+    /// Check is the given language feature is supported by the runtime.
+    member x.IsLanguageFeatureRuntimeSupported langFeature =
+        match langFeature with
+        | LanguageFeature.DefaultInterfaceMethodConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
+        | _ -> true
+            
+let private tryLanguageFeatureRuntimeErrorAux (infoReader: InfoReader) langFeature m error =
+    if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
+        let featureStr = infoReader.g.langVersion.GetFeatureString langFeature
+        error (Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
+
+let tryLanguageFeatureRuntimeError infoReader langFeature m =
+    tryLanguageFeatureRuntimeErrorAux infoReader langFeature m error
+
+let tryLanguageFeatureRuntimeErrorRecover infoReader langFeature m =
+    tryLanguageFeatureRuntimeErrorAux infoReader langFeature m errorR
 
 /// Get the declared constructors of any F# type
 let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader: InfoReader) m origTy metadataTy = 
