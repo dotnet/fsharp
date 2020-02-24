@@ -81,37 +81,46 @@ type LanguageVersion (specifiedVersionAsString) =
 (*      | "5.0" -> languageVersion50    *)
         | _ -> 0m
 
+    let versionToString v =
+        if v = previewVersion then "preview"
+        else string v
+
+    let specifiedString = versionToString specified
+
     /// Check if this feature is supported by the selected langversion
-    member __.SupportsFeature featureId =
+    member _.SupportsFeature featureId =
         match features.TryGetValue featureId with
         | true, v -> v <= specified
         | false, _ -> false
 
     /// Has preview been explicitly specified
-    member __.IsPreviewEnabled =
+    member _.IsPreviewEnabled =
         specified = previewVersion
 
     /// Does the languageVersion support this version string
-    member __.ContainsVersion version =
+    member _.ContainsVersion version =
         match version with
         | "?" | "preview" | "default" | "latest" | "latestmajor" -> true
         | _ -> languageVersions.Contains specified
 
     /// Get a list of valid strings for help text
-    member __.ValidOptions = validOptions
+    member _.ValidOptions = validOptions
 
     /// Get a list of valid versions for help text
-    member __.ValidVersions =
+    member _.ValidVersions =
         [|
             for v in languageVersions |> Seq.sort ->
                 sprintf "%M%s" v (if v = defaultVersion then " (Default)" else "")
         |]
 
     /// Get the specified LanguageVersion
-    member __.SpecifiedVersion = specified
+    member _.SpecifiedVersion = specified
+
+    /// Get the specified LanguageVersion as a string
+    member _.SpecifiedVersionString = specifiedString
 
     /// Get a string name for the given feature.
-    member __.GetFeatureString feature =
+    member _.GetFeatureString feature =
         match feature with
         | LanguageFeature.SingleUnderscorePattern -> "single underscore pattern"
         | LanguageFeature.WildCardInForLoop -> "wild card in for loop"
@@ -128,8 +137,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.DefaultInterfaceMethodConsumption -> "default interface method consumption"
 
     /// Get a version string associated with the given feature.
-    member __.GetFeatureVersionString feature =
+    member _.GetFeatureVersionString feature =
         match features.TryGetValue feature with
-        | true, v when v = previewVersion -> "'preview'"
-        | true, v -> string v
+        | true, v -> versionToString v
         | _ -> failwith "Internal error: Unable to find feature."

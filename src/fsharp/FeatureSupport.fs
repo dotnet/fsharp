@@ -23,7 +23,7 @@ type LanguageFeatureSupport private (langError: (range -> exn) option) =
     static member Create (langVersion: LanguageVersion, featureId) =
         if not (langVersion.SupportsFeature featureId) then
             let featureStr = langVersion.GetFeatureString featureId
-            let currentVersionStr = langVersion.CurrentVersionString
+            let currentVersionStr = langVersion.SpecifiedVersionString
             let suggestedVersionStr = langVersion.GetFeatureVersionString featureId
             Some(fun m -> Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
         else
