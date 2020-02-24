@@ -31,7 +31,7 @@ type LanguageFeature =
     | AndBang
     | NullableOptionalInterop
     | DefaultInterfaceMethodConsumption
-    | ProtectedInterfaceMethods
+    | StaticInterfaceMethodConsumption
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -61,7 +61,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.FromEndSlicing, languageVersion50
             LanguageFeature.DotlessFloat32Literal, languageVersion50
             LanguageFeature.DefaultInterfaceMethodConsumption, languageVersion50
-            LanguageFeature.ProtectedInterfaceMethods, languageVersion50
+            LanguageFeature.StaticInterfaceMethodConsumption, languageVersion50
 
             // F# preview
             LanguageFeature.NameOf, previewVersion
@@ -84,7 +84,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | _ -> 0m
 
     let versionToString v =
-        if v = previewVersion then "preview"
+        if v = previewVersion then "'preview'"
         else string v
 
     let specifiedString = versionToString specified
@@ -124,20 +124,20 @@ type LanguageVersion (specifiedVersionAsString) =
     /// Get a string name for the given feature.
     member _.GetFeatureString feature =
         match feature with
-        | LanguageFeature.SingleUnderscorePattern -> "single underscore pattern"
-        | LanguageFeature.WildCardInForLoop -> "wild card in for loop"
-        | LanguageFeature.RelaxWhitespace -> "whitespace relexation"
-        | LanguageFeature.NameOf -> "nameof"
-        | LanguageFeature.ImplicitYield -> "implicit yield"
-        | LanguageFeature.OpenStaticClasses -> "open static classes"
-        | LanguageFeature.DotlessFloat32Literal -> "dotless float32 literal"
-        | LanguageFeature.PackageManagement -> "package management"
-        | LanguageFeature.FromEndSlicing -> "from-end slicing"
-        | LanguageFeature.FixedIndexSlice3d4d -> "fixed-index slice 3d/4d"
-        | LanguageFeature.AndBang -> "and bang"
-        | LanguageFeature.NullableOptionalInterop -> "nullable optional interop"
-        | LanguageFeature.DefaultInterfaceMethodConsumption -> "default interface method consumption"
-        | LanguageFeature.ProtectedInterfaceMethods -> "protected interface methods"
+        | LanguageFeature.SingleUnderscorePattern -> FSComp.SR.featureSingleUnderscorePattern()
+        | LanguageFeature.WildCardInForLoop -> FSComp.SR.featureWildCardInForLoop()
+        | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace()
+        | LanguageFeature.NameOf -> FSComp.SR.featureNameOf()
+        | LanguageFeature.ImplicitYield -> FSComp.SR.featureImplicitYield()
+        | LanguageFeature.OpenStaticClasses -> FSComp.SR.featureOpenStaticClasses()
+        | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal()
+        | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement()
+        | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing()
+        | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d()
+        | LanguageFeature.AndBang -> FSComp.SR.featureAndBang()
+        | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
+        | LanguageFeature.DefaultInterfaceMethodConsumption -> FSComp.SR.featureDefaultInterfaceMethodConsumption()
+        | LanguageFeature.StaticInterfaceMethodConsumption -> FSComp.SR.featureStaticInterfaceMethodConsumption()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

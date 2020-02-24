@@ -523,10 +523,12 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member x.GetPrimaryTypeHierarchy (allowMultiIntfInst, m, ty) =
         primaryTypeHierarchyCache.Apply((allowMultiIntfInst, m, ty))
 
-    /// Check is the given language feature is supported by the runtime.
+    /// Check if the given language feature is supported by the runtime.
     member x.IsLanguageFeatureRuntimeSupported langFeature =
         match langFeature with
-        | LanguageFeature.DefaultInterfaceMethodConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
+        // Both default and static interface method consumption features are tied to the runtime support of DIMs.
+        | LanguageFeature.DefaultInterfaceMethodConsumption
+        | LanguageFeature.StaticInterfaceMethodConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
         | _ -> true
             
 let private tryLanguageFeatureRuntimeErrorAux (infoReader: InfoReader) langFeature m error =

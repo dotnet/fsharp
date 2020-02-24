@@ -243,20 +243,33 @@ let main argv = 0"""
             o.Dispose()
             reraise()
 
+    static let assertErrors libAdjust ignoreWarnings (errors: FSharpErrorInfo []) expectedErrors =
+        let errors =
+            errors
+            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpErrorSeverity.Warning else true)
+            |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+            |> Array.map (fun info ->
+                (info.Severity, info.ErrorNumber, (info.StartLineAlternate - libAdjust, info.StartColumn + 1, info.EndLineAlternate - libAdjust, info.EndColumn + 1), info.Message))
+
+        let checkEqual k a b = 
+            if a <> b then 
+                Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
+
+        checkEqual "Errors"  (Array.length expectedErrors) errors.Length 
+
+        Array.zip errors expectedErrors
+        |> Array.iter (fun (actualError, expectedError) ->
+            let (expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg) = expectedError
+            let (actualSeverity, actualErrorNumber, actualErrorRange, actualErrorMsg) = actualError
+            checkEqual "Severity" expectedSeverity actualSeverity
+            checkEqual "ErrorNumber" expectedErrorNumber actualErrorNumber
+            checkEqual "ErrorRange" expectedErrorRange actualErrorRange
+            checkEqual "Message" expectedErrorMsg actualErrorMsg)
+
     static let gate = obj ()
 
     static let compile isExe options source f =
         lock gate (fun _ -> compileAux isExe options source f)
-
-    static let assertErrors ignoreWarnings (errors: FSharpErrorInfo[]) =
-        let errors = 
-            if ignoreWarnings then
-                errors 
-                |> Array.filter (fun error -> error.Severity <> FSharpErrorSeverity.Warning)
-            else
-                errors
-        if errors.Length > 0 then
-            Assert.Fail(sprintf "%A" errors)
 
     static let rec compileCompilationAux (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpErrorInfo[] * string) * string list =
         let compilationRefs, deps =
@@ -279,7 +292,7 @@ let main argv = 0"""
                 let compilationRefs =
                     compiledRefs
                     |> List.map (fun (((errors, outputFilePath), _), staticLink) ->
-                        assertErrors ignoreWarnings errors
+                        assertErrors 0 ignoreWarnings errors [||]
                         let rOption = "-r:" + outputFilePath
                         if staticLink then
                             [rOption;"--staticlink:" + Path.GetFileNameWithoutExtension outputFilePath]
@@ -335,13 +348,16 @@ let main argv = 0"""
             f (compileCompilationAux disposals ignoreWarnings cmpl)
         finally
             disposals
-            |> Seq.iter (fun x -> x.Dispose())          
+            |> Seq.iter (fun x -> x.Dispose())
 
-    static member Compile(cmpl: Compilation, ?ignoreWarnings) =
+    static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
         lock gate (fun () -> 
             compileCompilation ignoreWarnings cmpl (fun ((errors, _), _) ->
-                assertErrors ignoreWarnings errors))
+                assertErrors 0 ignoreWarnings errors expectedErrors))
+
+    static member Compile(cmpl: Compilation, ?ignoreWarnings) =
+        CompilerAssert.CompileWithErrors(cmpl, [||], defaultArg ignoreWarnings false)
 
     static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess) =
         let ignoreWarnings = defaultArg ignoreWarnings false
@@ -349,7 +365,7 @@ let main argv = 0"""
         let newProcess = defaultArg newProcess false
         lock gate (fun () -> 
             compileCompilation ignoreWarnings cmpl (fun ((errors, outputFilePath), deps) ->
-                assertErrors ignoreWarnings errors
+                assertErrors 0 ignoreWarnings errors [||]
                 beforeExecute outputFilePath deps
                 if newProcess then
                     let mutable pinfo = ProcessStartInfo()
@@ -465,27 +481,7 @@ let main argv = 0"""
                     | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
                     | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Errors
 
-            let errors =
-                errors
-                |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
-                |> Array.map (fun info ->
-                    (info.Severity, info.ErrorNumber, (info.StartLineAlternate - libAdjust, info.StartColumn + 1, info.EndLineAlternate - libAdjust, info.EndColumn + 1), info.Message))
-
-            let checkEqual k a b = 
-                if a <> b then 
-                    Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
-
-            checkEqual "Type Check Errors"  (Array.length expectedTypeErrors) errors.Length 
-
-            Array.zip errors expectedTypeErrors
-            |> Array.iter (fun (actualError, expectedError) ->
-                let (expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg) = expectedError
-                let (actualSeverity, actualErrorNumber, actualErrorRange, actualErrorMsg) = actualError
-                checkEqual "Severity" expectedSeverity actualSeverity
-                checkEqual "ErrorNumber" expectedErrorNumber actualErrorNumber
-                checkEqual "ErrorRange" expectedErrorRange actualErrorRange
-                checkEqual "Message" expectedErrorMsg actualErrorMsg
-            )
+            assertErrors libAdjust false errors expectedTypeErrors
 
     static member TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
         CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust options 0 (source: string) expectedTypeErrors

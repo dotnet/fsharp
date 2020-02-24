@@ -63,6 +63,7 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
+open FSharp.Compiler.Features
 
 //-------------------------------------------------------------------------
 // Generate type variables and record them in within the scope of the
@@ -2771,10 +2772,10 @@ and ResolveOverloading
     match calledMethOpt with 
     | Some calledMeth ->
     
-        // Static IL interfaces methods are not supported in F# 4.6.
+        // Static IL interfaces methods are not supported in lower F# versions.
         if calledMeth.Method.IsILMethod && not calledMeth.Method.IsInstance && isInterfaceTy g calledMeth.Method.ApparentEnclosingType then
-            csenv.InfoReader.DefaultInterfaceMethodConsumptionSupport.TryRaiseRuntimeErrorRecover m |> ignore
-            csenv.InfoReader.DefaultInterfaceMethodConsumptionSupport.TryRaiseLanguageErrorRecover m |> ignore
+            tryLanguageFeatureRuntimeErrorRecover csenv.InfoReader LanguageFeature.StaticInterfaceMethodConsumption m
+            tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.StaticInterfaceMethodConsumption m
 
         calledMethOpt, 
         trackErrors {

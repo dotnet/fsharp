@@ -77,11 +77,6 @@
         <target state="translated">Rozróżniane przypadki unii i etykiety wyjątków muszą mieć postać identyfikatorów pisanych wielkimi literami</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Możliwe przeciążenie: „{0}”. {1}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">Ta funkcja akceptuje za dużo argumentów lub jest używana w kontekście, w którym funkcja nie jest oczekiwana</target>

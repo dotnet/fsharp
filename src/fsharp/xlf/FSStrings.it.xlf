@@ -77,11 +77,6 @@
         <target state="translated">I case di unione discriminati e le etichette di eccezioni devono essere identificatori in lettere maiuscole</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Possibile overload: '{0}'. {1}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">Questa funzione utilizza troppi argomenti oppure è utilizzata in un contesto in cui non è prevista una funzione</target>
