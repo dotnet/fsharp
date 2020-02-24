@@ -4,6 +4,7 @@
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal FSharp.Compiler.InfoReader
 
+open System
 open System.Collections.Generic
 
 open FSharp.Compiler.AbstractIL.IL
@@ -385,14 +386,12 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                                 if checkMethod minfo ilMethImpl.OverrideBy.MethodRef then
                                     minfo :: acc
                                 else
-                                    acc
-                            )
+                                    acc)
 
                         if List.isEmpty minfos then acc
                         else minfos :: acc
                     else
-                        acc
-                )
+                        acc)
             | _ -> acc
         ) g amap m allowMultiIntfInst ty []
         |> List.concat
