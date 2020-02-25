@@ -71,12 +71,12 @@ type CSharpCompilationFlags =
 
 [<RequireQualifiedAccess>]
 type TestCompilation =
-    | CSharp of CSharpCompilation * CSharpCompilationFlags
+    | CSharp of CSharpCompilation
     | IL of ilSource: string * result: Lazy<string * byte []>
 
     member this.AssertNoErrorsOrWarnings () =
         match this with
-        | TestCompilation.CSharp (c, _) ->
+        | TestCompilation.CSharp c ->
             let diagnostics = c.GetDiagnostics ()
 
             if not diagnostics.IsEmpty then                  
@@ -89,7 +89,7 @@ type TestCompilation =
 
     member this.EmitAsFile (outputPath: string) =
         match this with
-        | TestCompilation.CSharp (c, _) ->
+        | TestCompilation.CSharp c ->
             let c = c.WithAssemblyName(Path.GetFileNameWithoutExtension outputPath)
             let emitResult = c.Emit outputPath
             if not emitResult.Success then
@@ -105,7 +105,7 @@ type CSharpLanguageVersion =
 [<AbstractClass; Sealed>]
 type CompilationUtil private () =
     
-    static member CreateCSharpCompilation (source: string, lv: CSharpLanguageVersion, ?tf, ?additionalReferences, ?flags) =
+    static member CreateCSharpCompilation (source: string, lv: CSharpLanguageVersion, ?tf, ?additionalReferences) =
         let lv =
             match lv with
             | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
@@ -113,7 +113,6 @@ type CompilationUtil private () =
 
         let tf = defaultArg tf TargetFramework.NetStandard20
         let additionalReferences = defaultArg additionalReferences ImmutableArray.Empty
-        let flags = defaultArg flags CSharpCompilationFlags.None
         let references = TargetFrameworkUtil.getReferences tf
         let c =
             CSharpCompilation.Create(
@@ -121,7 +120,7 @@ type CompilationUtil private () =
                 [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
                 references.As<MetadataReference>().AddRange additionalReferences,
                 CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
-        TestCompilation.CSharp (c, flags)
+        TestCompilation.CSharp c
 
     static member CreateILCompilation (source: string) =
         let compute =

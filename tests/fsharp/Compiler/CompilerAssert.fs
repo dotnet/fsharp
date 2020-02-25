@@ -58,7 +58,7 @@ type CompileOutput =
 
 type CompilationReference = 
     private 
-    | CompilationReference of Compilation * staticLink: bool 
+    | CompilationReference of Compilation * staticLink: bool
     | TestCompilationReference of TestCompilation
 
     static member CreateFSharp(cmpl: Compilation, ?staticLink) =
