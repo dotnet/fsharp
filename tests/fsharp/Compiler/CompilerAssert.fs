@@ -282,7 +282,9 @@ let main argv = 0"""
                             | CompilationReference (cmpl, staticLink) ->
                                 compileCompilationAux disposals ignoreWarnings cmpl, staticLink
                             | TestCompilationReference (cmpl) -> 
-                                let tmp = Path.GetTempFileName()
+                                let preTmp = Path.GetTempFileName()
+                                let tmp = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
+                                try File.Delete preTmp with | _ -> ()
                                 disposals.Add({ new IDisposable with 
                                                     member _.Dispose() = 
                                                         try File.Delete tmp with | _ -> () })
@@ -359,10 +361,11 @@ let main argv = 0"""
     static member Compile(cmpl: Compilation, ?ignoreWarnings) =
         CompilerAssert.CompileWithErrors(cmpl, [||], defaultArg ignoreWarnings false)
 
-    static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess) =
+    static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess, ?onOutput) =
         let ignoreWarnings = defaultArg ignoreWarnings false
         let beforeExecute = defaultArg beforeExecute (fun _ _ -> ())
         let newProcess = defaultArg newProcess false
+        let onOutput = defaultArg onOutput (fun _ -> ())
         lock gate (fun () -> 
             compileCompilation ignoreWarnings cmpl (fun ((errors, outputFilePath), deps) ->
                 assertErrors 0 ignoreWarnings errors [||]
@@ -399,11 +402,16 @@ let main argv = 0"""
                     pinfo.UseShellExecute <- false
                     let p = Process.Start pinfo
                     let errors = p.StandardError.ReadToEnd()
+                    let output = p.StandardOutput.ReadToEnd()
                     Assert.True(p.WaitForExit(120000))
                     if p.ExitCode <> 0 then
                         Assert.Fail errors
+                    onOutput output
                 else
                     executeBuiltApp outputFilePath deps))
+
+    static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
+        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output)))
 
     static member Pass (source: string) =
         lock gate <| fun () ->

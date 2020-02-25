@@ -7,6 +7,7 @@ open System.IO
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
+open System.Diagnostics
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 
@@ -44,7 +45,6 @@ module private TestReferences =
         let systemDynamicRuntimeRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.System_Dynamic_Runtime).GetReference(display = "System.Dynamic.Runtime.dll (netcoreapp 3.0 ref)")
 
         let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.System_Console).GetReference(display = "System.Console.dll (netcoreapp 3.0 ref)")
-        
 
 [<RequireQualifiedAccess>]
 module private TargetFrameworkUtil =
@@ -90,6 +90,7 @@ type TestCompilation =
     member this.EmitAsFile (outputPath: string) =
         match this with
         | TestCompilation.CSharp (c, _) ->
+            let c = c.WithAssemblyName(Path.GetFileNameWithoutExtension outputPath)
             let emitResult = c.Emit outputPath
             if not emitResult.Success then
                 failwithf "Unable to emit C# compilation.\n%A" emitResult.Diagnostics
