@@ -44,7 +44,7 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
             (FSharpErrorSeverity.Error, 366, (8, 14, 8, 19), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
@@ -166,7 +166,7 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
             (FSharpErrorSeverity.Error, 366, (8, 14, 8, 19), "No implementation was given for those members: 
     'ITest.DefaultMethod() : unit'
     'ITest.NonDefaultMethod() : unit'
@@ -214,7 +214,7 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
             (FSharpErrorSeverity.Error, 366, (8, 14, 8, 19), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
@@ -256,8 +256,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
+            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
             (FSharpErrorSeverity.Error, 366, (8, 14, 8, 19), "No implementation was given for those members: 
 	'ITest.Method1() : unit'
 	'ITest.Method2() : unit'
@@ -306,7 +306,7 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (9, 14, 9, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (9, 14, 9, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
             (FSharpErrorSeverity.Error, 366, (9, 14, 9, 19), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
@@ -404,8 +404,8 @@ let f () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (14, 6, 14, 7), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
-            (FSharpErrorSeverity.Error, 3350, (14, 8, 14, 9), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (14, 6, 14, 7), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
+            (FSharpErrorSeverity.Error, 3350, (14, 8, 14, 9), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
         |])
 
     [<Test>]
@@ -455,7 +455,7 @@ let f () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (14, 4, 14, 26), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (14, 4, 14, 26), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
         |])
 
     [<Test>]
@@ -506,9 +506,9 @@ type Test () =
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 363, (8, 14, 8, 16), "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
-            (FSharpErrorSeverity.Error, 3350, (9, 14, 9, 16), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (9, 14, 9, 16), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
             (FSharpErrorSeverity.Error, 366, (9, 14, 9, 16), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 16), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 16), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
             (FSharpErrorSeverity.Error, 366, (8, 14, 8, 16), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
@@ -560,7 +560,7 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (10, 14, 10, 16), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (10, 14, 10, 16), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
             (FSharpErrorSeverity.Error, 366, (10, 14, 10, 16), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
@@ -816,7 +816,7 @@ type Test2 () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (10, 14, 10, 21), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (10, 14, 10, 21), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
             (FSharpErrorSeverity.Error, 358, (10, 14, 10, 21), "The override for 'M<'U> : 'U * int -> unit' was ambiguous")
         |])
 
@@ -855,11 +855,11 @@ type Test () =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fsx, Library, options = [|"--langversion:4.6"|], cmplRefs = [ilCmpl])
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 3351, (8, 14, 8, 19), "Feature 'default interface method consumption' is not supported by target runtime.")
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 5.0 or greater.")
+            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
             (FSharpErrorSeverity.Error, 366, (8, 14, 8, 19), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
@@ -895,7 +895,7 @@ type Test () =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fsx, Library, options = [|"--langversion:4.6"|], cmplRefs = [ilCmpl])
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 3351, (8, 14, 8, 19), "Feature 'default interface method consumption' is not supported by target runtime.")
@@ -945,7 +945,7 @@ let f () =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fsx, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 3351, (14, 4, 14, 26), "Feature 'default interface method consumption' is not supported by target runtime.")
@@ -990,18 +990,16 @@ type Test () =
     interface ITest
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 19
-                Message = "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# simple with static operator method - Runs`` () =
@@ -1042,8 +1040,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "I1.+1")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "I1.+1"
 
     [<Test>]
     let ``C# simple - Runs`` () =
@@ -1086,8 +1090,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod-NonDefaultMethod")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "DefaultMethod-NonDefaultMethod"
 
     [<Test>]
     let ``C# simple with protected DIM - Runs`` () =
@@ -1154,8 +1164,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "ProtectedProtected-ProtectedOverrideProtectedOverride")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "ProtectedProtected-ProtectedOverrideProtectedOverride"
 
     [<Test>]
     let ``C# simple with protected DIM using object expression - Runs`` () =
@@ -1211,8 +1227,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "ObjExprProtectedObjExprProtected-ObjExprProtected2ObjExprProtected2")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "ObjExprProtectedObjExprProtected-ObjExprProtected2ObjExprProtected2"
 
     [<Test>]
     let ``C# simple with protected DIM - Errors due to protected level`` () =
@@ -1280,27 +1302,17 @@ let f () =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 491;
-                StartLine = 26;
-                StartColumn = 4;
-                EndLine = 26;
-                EndColumn = 14;
-                Message = "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 491;
-                StartLine = 31;
-                StartColumn = 4;
-                EndLine = 31;
-                EndColumn = 15;
-                Message = "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions."
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 491, (26, 4, 26, 14), "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+            (FSharpErrorSeverity.Error, 491, (31, 4, 31, 15), "The member or object constructor 'M1' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")
+        |])
 
     [<Test>]
     let ``C# simple with protected DIM - Errors due to protected level - 2`` () =
@@ -1370,45 +1382,19 @@ type Test2 () =
             Console.Write("ProtectedOverride")
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 629
-                StartLine = 10
-                StartColumn = 8
-                EndLine = 10
-                EndColumn = 26
-                Message = "Method 'M1' is not accessible from this code location"
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 629
-                StartLine = 15
-                StartColumn = 12
-                EndLine = 15
-                EndColumn = 30
-                Message = "Method 'M1' is not accessible from this code location"
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 629
-                StartLine = 25
-                StartColumn = 8
-                EndLine = 25
-                EndColumn = 27
-                Message = "Method 'M1' is not accessible from this code location"
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 629
-                StartLine = 30
-                StartColumn = 12
-                EndLine = 30
-                EndColumn = 30
-                Message = "Method 'M1' is not accessible from this code location"
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 629, (10, 8, 10, 26), "Method 'M1' is not accessible from this code location")
+            (FSharpErrorSeverity.Error, 629, (15, 12, 15, 30), "Method 'M1' is not accessible from this code location")
+            (FSharpErrorSeverity.Error, 629, (25, 8, 25, 27), "Method 'M1' is not accessible from this code location")
+            (FSharpErrorSeverity.Error, 629, (30, 12, 30, 30), "Method 'M1' is not accessible from this code location")
+        |])
 
     [<Test>]
     let ``C# simple with internal DIM - Runs`` () =
@@ -1449,8 +1435,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "NonDefaultMethod")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "NonDefaultMethod"
 
     [<Test>]
     let ``C# simple with internal DIM - Errors with missing method`` () =
@@ -1492,19 +1484,17 @@ let f () =
     test.NonDefaultMethod ()
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 39
-                StartLine = 16
-                StartColumn = 9
-                EndLine = 16
-                EndColumn = 22
-                Message = "The field, constructor or member 'DefaultMethod' is not defined. Maybe you want one of the following:
-   NonDefaultMethod"
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 39, (16, 9, 16, 22), "The field, constructor or member 'DefaultMethod' is not defined. Maybe you want one of the following:
+   NonDefaultMethod")
+        |])
 
     [<Test>]
     let ``C# simple with internal DIM - Errors with not accessible`` () =
@@ -1544,18 +1534,16 @@ type Test () =
             Console.Write("NonDefaultMethod")
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 855;
-                StartLine = 11;
-                StartColumn = 18;
-                EndLine = 11;
-                EndColumn = 31;
-                Message = "No abstract or interface member was found that corresponds to this override"
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 855, (11, 18, 11, 31), "No abstract or interface member was found that corresponds to this override")
+        |])
 
     [<Test>]
     let ``C# simple with internal DIM but with IVT - Runs`` () =
@@ -1600,8 +1588,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30, flags = CSharpCompilationFlags.InternalsVisibleTo)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "IVT-NonDefaultMethod")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "IVT-NonDefaultMethod"
 
     [<Test>]
     let ``C# simple with one DIM for F# object expression - Runs`` () =
@@ -1633,8 +1627,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "DefaultMethod"
 
     [<Test>]
     let ``C# simple with one DIM and one non-DIM for F# object expression - Runs`` () =
@@ -1670,8 +1670,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "DefaultMethod-ObjExpr")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "DefaultMethod-ObjExpr"
 
     [<Test>]
     let ``C# simple with one DIM and one non-DIM for F# object expression - Errors with lack of implementation`` () =
@@ -1703,18 +1709,16 @@ open CSharpTest
 let test = { new ITest }
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 7
-                StartColumn = 11
-                EndLine = 7
-                EndColumn = 24
-                Message = "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 366, (7, 11, 7, 24), "No implementation was given for 'ITest.NonDefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# simple with override - Runs`` () =
@@ -1760,8 +1764,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "OverrideDefaultMethod-NonDefaultMethod")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "OverrideDefaultMethod-NonDefaultMethod"
 
     [<Test>]
     let ``C# simple with override for object expression - Runs`` () =
@@ -1802,8 +1812,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "ObjExprOverrideDefaultMethod-ObjExprNonDefaultMethod")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "ObjExprOverrideDefaultMethod-ObjExprNonDefaultMethod"
 
     [<Test>]
     let ``C# from hierarchical interfaces - Runs`` () =
@@ -1856,8 +1872,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "FromITest2-Method1-FromITest2-Method2")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "FromITest2-Method1-FromITest2-Method2"
 
     [<Test>]
     let ``C# diamond hierarchical interfaces - Errors with lack of explicit shared interface type`` () =
@@ -1918,78 +1940,28 @@ type Test () =
     interface ITest3
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 363
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 20
-                Message = "The interface 'ITest1' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 10
-                StartColumn = 14
-                EndLine = 10
-                EndColumn = 20
-                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 10
-                StartColumn = 14
-                EndLine = 10
-                EndColumn = 20
-                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 10
-                StartColumn = 14
-                EndLine = 10
-                EndColumn = 20
-                Message = "No implementation was given for those members: 
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 363, (9, 14, 9, 20), "The interface 'ITest1' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
+            (FSharpErrorSeverity.Error, 3352, (10, 14, 10, 20), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (10, 14, 10, 20), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (10, 14, 10, 20), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
-Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 20
-                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 20
-                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 20
-                Message = "No implementation was given for those members: 
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3352, (9, 14, 9, 20), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (9, 14, 9, 20), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (9, 14, 9, 20), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
-Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# diamond hierarchical interfaces - Errors with no most specific implementation`` () =
@@ -2051,39 +2023,21 @@ type Test () =
     interface ITest3
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 20
-                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 20
-                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 20
-                Message = "No implementation was given for those members: 
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 3352, (9, 14, 9, 20), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (9, 14, 9, 20), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (9, 14, 9, 20), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
-Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# diamond hierarchical interfaces but combined in one C# interface - Errors with no most specific implementation`` () =
@@ -2147,39 +2101,21 @@ type Test () =
     interface ICombinedTest
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 27
-                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 27
-                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 27
-                Message = "No implementation was given for those members: 
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 3352, (9, 14, 9, 27), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (9, 14, 9, 27), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (9, 14, 9, 27), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
-Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# diamond hierarchical interfaces but combined in one F# interface - Errors with no most specific implementation`` () =
@@ -2243,40 +2179,21 @@ type Test () =
     interface ICombinedTest
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 13
-                StartColumn = 14
-                EndLine = 13
-                EndColumn = 27
-                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 13
-                StartColumn = 14
-                EndLine = 13
-                EndColumn = 27
-                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 13
-                StartColumn = 14
-                EndLine = 13
-                EndColumn = 27
-                Message = "No implementation was given for those members: 
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 3352, (13, 14, 13, 27), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (13, 14, 13, 27), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (13, 14, 13, 27), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
-Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
-
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# diamond hierarchical interfaces but re-abstracted in one and then combined in one F# interface - Errors with no most specific implementation`` () =
@@ -2334,39 +2251,21 @@ type Test () =
     interface ICombinedTest
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 13
-                StartColumn = 14
-                EndLine = 13
-                EndColumn = 27
-                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 13
-                StartColumn = 14
-                EndLine = 13
-                EndColumn = 27
-                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 13
-                StartColumn = 14
-                EndLine = 13
-                EndColumn = 27
-                Message = "No implementation was given for those members: 
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 3352, (13, 14, 13, 27), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (13, 14, 13, 27), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (13, 14, 13, 27), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
-Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface - Errors with need to implement members`` () =
@@ -2418,39 +2317,21 @@ type Test () =
     interface ICombinedTest
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 13
-                StartColumn = 14
-                EndLine = 13
-                EndColumn = 27
-                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 13
-                StartColumn = 14
-                EndLine = 13
-                EndColumn = 27
-                Message = "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 13
-                StartColumn = 14
-                EndLine = 13
-                EndColumn = 27
-                Message = "No implementation was given for those members: 
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 3352, (13, 14, 13, 27), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 3352, (13, 14, 13, 27), "Interface member 'ITest1.Method2() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (13, 14, 13, 27), "No implementation was given for those members: 
 	'ITest1.Method1() : unit'
 	'ITest1.Method2() : unit'
-Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# diamond hierarchical interfaces then combined in one F# interface and then implemented - Runs`` () =
@@ -2525,8 +2406,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2"
 
     [<Test>]
     let ``C# diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface and then implemented - Runs`` () =
@@ -2589,8 +2476,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "FSharpICombinedTest-Method1-FSharpICombinedTest-Method2"
 
     [<Test>]
     let ``C# diamond hierarchical interfaces then using explicit interfaces and then implemented - Runs`` () =
@@ -2662,8 +2555,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "FSharpExplicitTest-Method1-FSharpExplicitTest-Method2")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "FSharpExplicitTest-Method1-FSharpExplicitTest-Method2"
 
     [<Test>]
     let ``C# diamond hierarchical interfaces but all re-abstracted and then combined in one F# interface and then implemented one method - Errors with no most specific implementation`` () =
@@ -2718,27 +2617,17 @@ type Test () =
         member __.Method2 () = Console.Write("FSharpICombinedTest-Method2")
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304;
-                StartLine = 14;
-                StartColumn = 14;
-                EndLine = 14;
-                EndColumn = 27;
-                Message = "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366;
-                StartLine = 14;
-                StartColumn = 14;
-                EndLine = 14;
-                EndColumn = 27;
-                Message = "No implementation was given for 'ITest1.Method1() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 3352, (14, 14, 14, 27), "Interface member 'ITest1.Method1() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (14, 14, 14, 27), "No implementation was given for 'ITest1.Method1() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# diamond hierarchical interfaces then combined in one C# interface and then implemented - Runs`` () =
@@ -2817,8 +2706,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpICombinedTest-Method1-CSharpICombinedTest-Method2")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "CSharpICombinedTest-Method1-CSharpICombinedTest-Method2"
 
     [<Test>]
     let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Runs`` () =
@@ -2936,8 +2831,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpIFinalCombinedTest-Method1-CSharpIFinalCombinedTest-Method2")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "CSharpIFinalCombinedTest-Method1-CSharpIFinalCombinedTest-Method2"
 
     [<Test>]
     let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Runs - 2`` () =
@@ -3041,8 +2942,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpIFinalCombinedTest-Method1-")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "CSharpIFinalCombinedTest-Method1-"
 
     [<Test>]
     let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Runs - 3`` () =
@@ -3147,8 +3054,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "CSharpIFinalCombinedTest-Method1-CSharpIFinalCombinedTest-Method2")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "CSharpIFinalCombinedTest-Method1-CSharpIFinalCombinedTest-Method2"
 
     [<Test>]
     let ``C# multi-diamond complex hierarchical interfaces with hiding methods then explicitly implemented - Runs`` () =
@@ -3257,8 +3170,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "IBase-IB1-IA1-IC1-")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "IBase-IB1-IA1-IC1-"
 
     [<Test>]
     let ``C# multi-diamond complex hierarchical interfaces then explicitly implemented - Runs`` () =
@@ -3357,8 +3276,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "123XYZ")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "123XYZ"
 
     [<Test>]
     let ``C# diamond complex hierarchical interfaces then explicitly implemented - Runs`` () =
@@ -3454,8 +3379,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "-")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "-"
 
     [<Test>]
     let ``C# diamond complex hierarchical interfaces then combined in one C# interface and then implemented - Errors with no impl`` () =
@@ -3547,18 +3478,16 @@ type Test2 () =
     inherit Test ()
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366;
-                StartLine = 10;
-                StartColumn = 14;
-                EndLine = 10;
-                EndColumn = 30;
-                Message = "No implementation was given for 'ITest1.Method2() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 366, (10, 14, 10, 30), "No implementation was given for 'ITest1.Method2() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# simple with property - Runs`` () =
@@ -3596,8 +3525,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "A-NonDefaultMethod")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "A-NonDefaultMethod"
 
     [<Test>]
     let ``C# simple with property and override - Runs`` () =
@@ -3637,8 +3572,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "OverrideA-NonDefaultMethod")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "OverrideA-NonDefaultMethod"
 
     [<Test>]
     let ``C# with mutliple separate interfaces - Runs`` () =
@@ -3698,8 +3639,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "IA.MA-IB1.IB.MB-IB1.IB.MB")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "IA.MA-IB1.IB.MB-IB1.IB.MB"
 
     [<Test>]
     let ``C# simple diamond inheritance - Errors with no specific implementation`` () =
@@ -3740,54 +3687,20 @@ type Test () =
     interface IC
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 363
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 16
-                Message = "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 16
-                Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 9
-                StartColumn = 14
-                EndLine = 9
-                EndColumn = 16
-                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 16
-                Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 8
-                StartColumn = 14
-                EndLine = 8
-                EndColumn = 16
-                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 363, (8, 15, 8, 17), "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
+            (FSharpErrorSeverity.Error, 3352, (9, 15, 9, 17), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (9, 15, 9, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3352, (8, 15, 8, 17), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 17), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# simple diamond inheritance - Errors with no specific implementation - 2`` () =
@@ -3829,27 +3742,17 @@ type Test () =
     interface IA
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 10
-                StartColumn = 14
-                EndLine = 10
-                EndColumn = 16
-                Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 10
-                StartColumn = 14
-                EndLine = 10
-                EndColumn = 16
-                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 3352, (10, 14, 10, 16), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (10, 14, 10, 16), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# simple diamond inheritance - Runs`` () =
@@ -3904,8 +3807,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "MMM")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "MMM"
 
     [<Test>]
     let ``C# simple diamond inheritance with overloading - Runs`` () =
@@ -3988,8 +3897,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "M123456floatfs_single")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "M123456floatfs_single"
 
     [<Test>]
     let ``C# simple diamond inheritance with overloading - Errors with missing overload method`` () =
@@ -4060,18 +3975,16 @@ type Test () =
         member __.M () = Console.Write("M")
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 12
-                StartColumn = 14
-                EndLine = 12
-                EndColumn = 16
-                Message = "No implementation was given for 'IA.M(x: float32) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 366, (12, 14, 12, 16), "No implementation was given for 'IA.M(x: float32) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# with overloading and generics - Runs`` () =
@@ -4159,8 +4072,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "InTestInTest123456789111STRING-STRINGABC222FSharpABC333CSharpM<U>(U, T)M<U>(U, T)")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "InTestInTest123456789111STRING-STRINGABC222FSharpABC333CSharpM<U>(U, T)M<U>(U, T)"
 
     [<Test>]
     let ``C# diamond inheritance with overloading and generics and properties - Runs`` () =
@@ -4248,8 +4167,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "Test.String-Test.Prop2")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "Test.String-Test.Prop2"
 
     [<Test>]
     let ``C# diamond inheritance with overloading and generics and properties - Errors with no specific implementation`` () =
@@ -4329,27 +4254,17 @@ type Test () =
         member __.M(_x: string) = Console.Write("Test.String")
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 12
-                StartColumn = 14
-                EndLine = 12
-                EndColumn = 24
-                Message = "Interface member 'IA.set_Prop2(value: string) : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 12
-                StartColumn = 14
-                EndLine = 12
-                EndColumn = 24
-                Message = "No implementation was given for 'IA.set_Prop2(value: string) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 3352, (12, 14, 12, 24), "Interface member 'IA.set_Prop2(value: string) : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (12, 14, 12, 24), "No implementation was given for 'IA.set_Prop2(value: string) : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# simple diamond inheritance using object expression - Errors with no specific implementation`` () =
@@ -4389,54 +4304,20 @@ let test =
       interface IC }
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.HasTypeCheckErrors (fsharpSource, c, [
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 363
-                StartLine = 8
-                StartColumn = 6
-                EndLine = 8
-                EndColumn = 20
-                Message = "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 7
-                StartColumn = 4
-                EndLine = 8
-                EndColumn = 20
-                Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 7
-                StartColumn = 4
-                EndLine = 8
-                EndColumn = 20
-                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 3304
-                StartLine = 8
-                StartColumn = 6
-                EndLine = 8
-                EndColumn = 20
-                Message = "Interface member 'IA.M() : unit' does not have a most specific implementation."
-            }
-            {
-                Severity = FSharpErrorSeverity.Error
-                Number = 366
-                StartLine = 8
-                StartColumn = 6
-                EndLine = 8
-                EndColumn = 20
-                Message = "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-            }
-        ])
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 363, (8, 6, 8, 20), "The interface 'IA' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.")
+            (FSharpErrorSeverity.Error, 3352, (7, 4, 8, 20), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (7, 4, 8, 20), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3352, (8, 6, 8, 20), "Interface member 'IA.M() : unit' does not have a most specific implementation.")
+            (FSharpErrorSeverity.Error, 366, (8, 6, 8, 20), "No implementation was given for 'IA.M() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+        |])
 
     [<Test>]
     let ``C# diamond inheritance with no most specific problem - Runs`` () =
@@ -4486,8 +4367,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "IB.IA.M")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "IB.IA.M"
 
     [<Test>]
     let ``C# diamond inheritance with no most specific problem - Runs - 2`` () =
@@ -4536,8 +4423,14 @@ let main _ =
     0
             """
 
-        let c = CompilationUtil.CreateCSharpCompilation (csharpSource, RoslynLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-        CompilerAssert.CompileExeAndRun (fsharpSource, c, "IB.IA.M")
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Execute fsCmpl // Expected output: "IB.IA.M"
 
 #else
 
@@ -4574,7 +4467,7 @@ type Test () =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fsx, Library, cmplRefs = [ilCmpl])
+            Compilation.Create(fsharpSource, Fs, Library, cmplRefs = [ilCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 3351, (8, 14, 8, 19), "Feature 'static interface method consumption' is not supported by target runtime.")
@@ -4624,7 +4517,7 @@ let f () =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fsx, Library, cmplRefs = [csCmpl])
+            Compilation.Create(fsharpSource, Fs, Library, cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 3351, (8, 14, 8, 19), "Feature 'static interface method consumption' is not supported by target runtime.")

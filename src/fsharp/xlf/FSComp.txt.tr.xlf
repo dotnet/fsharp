@@ -3,8 +3,8 @@
   <file datatype="xml" source-language="en" target-language="tr" original="../FSComp.resx">
     <body>
       <trans-unit id="chkFeatureNotLanguageSupported">
-        <source>Feature '{0}' is not available in F# '{1}'. Please use language version '{2}' or greater.</source>
-        <target state="new">Feature '{0}' is not available in F# '{1}'. Please use language version '{2}' or greater.</target>
+        <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
+        <target state="new">Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotRuntimeSupported">

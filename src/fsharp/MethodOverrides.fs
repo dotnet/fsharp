@@ -184,7 +184,6 @@ module DispatchSlotChecking =
         
     /// Check if an override is a partial match for the requirements for a dispatch slot except for the name.
     let IsSigPartialMatch g (dispatchSlot: MethInfo) compiledSig (Override(_, _, _, (mtps, _), argTys, _retTy, _, _) as overrideBy) =
-        IsNameMatch dispatchSlot overrideBy &&
         let (CompiledSig (vargtys, _, fvmtps, _)) = compiledSig
         mtps.Length = fvmtps.Length &&
         IsTyparKindMatch compiledSig overrideBy && 

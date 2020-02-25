@@ -60,8 +60,6 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.FixedIndexSlice3d4d, languageVersion50
             LanguageFeature.FromEndSlicing, languageVersion50
             LanguageFeature.DotlessFloat32Literal, languageVersion50
-            LanguageFeature.DefaultInterfaceMethodConsumption, languageVersion50
-            LanguageFeature.StaticInterfaceMethodConsumption, languageVersion50
 
             // F# preview
             LanguageFeature.NameOf, previewVersion
@@ -69,6 +67,8 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.AndBang, previewVersion
             LanguageFeature.NullableOptionalInterop, previewVersion
+            LanguageFeature.DefaultInterfaceMethodConsumption, previewVersion
+            LanguageFeature.StaticInterfaceMethodConsumption, previewVersion
         ]
 
     let specified =
