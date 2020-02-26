@@ -62,9 +62,9 @@
         <target state="new">and bang</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDefaultInterfaceMethodConsumption">
-        <source>default interface method consumption</source>
-        <target state="new">default interface method consumption</target>
+      <trans-unit id="featureDefaultInterfaceMemberConsumption">
+        <source>default interface member consumption</source>
+        <target state="new">default interface member consumption</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
@@ -115,11 +115,6 @@
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
         <target state="new">single underscore pattern</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStaticInterfaceMethodConsumption">
-        <source>static interface method consumption</source>
-        <target state="new">static interface method consumption</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">

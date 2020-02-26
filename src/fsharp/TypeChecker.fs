@@ -14591,7 +14591,9 @@ let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem mutRecNSInfo (envMutRec: 
           (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls tyconData -> 
               let (MutRecDefnsPhase2DataForTycon(tyconOpt, _, declKind, tcref, _, _, declaredTyconTypars, _, _, _, fixupFinalAttrs)) = tyconData
               let envForDecls = 
-                // This allows to implement protected interface methods.
+                // This allows to implement protected interface methods if it's a DIM.
+                // Does not need to be hidden behind a lang version as it needs to be possible to
+                //     implement protected interface methods in lower F# versions regardless if it's a DIM or not.
                 match tyconOpt with
                 | Some _ when declKind = DeclKind.ModuleOrMemberBinding ->
                     MakeInnerEnvForTyconRef envForDecls tcref false

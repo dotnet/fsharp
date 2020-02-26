@@ -18,8 +18,7 @@ type LanguageFeature =
     | FixedIndexSlice3d4d
     | AndBang
     | NullableOptionalInterop
-    | DefaultInterfaceMethodConsumption
-    | StaticInterfaceMethodConsumption
+    | DefaultInterfaceMemberConsumption
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -30,8 +30,7 @@ type LanguageFeature =
     | FixedIndexSlice3d4d
     | AndBang
     | NullableOptionalInterop
-    | DefaultInterfaceMethodConsumption
-    | StaticInterfaceMethodConsumption
+    | DefaultInterfaceMemberConsumption
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -67,8 +66,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.AndBang, previewVersion
             LanguageFeature.NullableOptionalInterop, previewVersion
-            LanguageFeature.DefaultInterfaceMethodConsumption, previewVersion
-            LanguageFeature.StaticInterfaceMethodConsumption, previewVersion
+            LanguageFeature.DefaultInterfaceMemberConsumption, previewVersion
         ]
 
     let specified =
@@ -136,8 +134,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
-        | LanguageFeature.DefaultInterfaceMethodConsumption -> FSComp.SR.featureDefaultInterfaceMethodConsumption()
-        | LanguageFeature.StaticInterfaceMethodConsumption -> FSComp.SR.featureStaticInterfaceMethodConsumption()
+        | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

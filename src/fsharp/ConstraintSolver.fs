@@ -2774,8 +2774,8 @@ and ResolveOverloading
     
         // Static IL interfaces methods are not supported in lower F# versions.
         if calledMeth.Method.IsILMethod && not calledMeth.Method.IsInstance && isInterfaceTy g calledMeth.Method.ApparentEnclosingType then
-            tryLanguageFeatureRuntimeErrorRecover csenv.InfoReader LanguageFeature.StaticInterfaceMethodConsumption m
-            tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.StaticInterfaceMethodConsumption m
+            tryLanguageFeatureRuntimeErrorRecover csenv.InfoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+            tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
         calledMethOpt, 
         trackErrors {

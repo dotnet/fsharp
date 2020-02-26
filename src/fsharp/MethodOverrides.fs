@@ -301,7 +301,7 @@ module DispatchSlotChecking =
 
             // Always try to raise a target runtime error if we have a DIM.
             if hasDefaultInterfaceImplementation then
-                tryLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMethodConsumption m
+                tryLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
 
             let maybeResolvedSlot =
                 NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
@@ -319,7 +319,7 @@ module DispatchSlotChecking =
                 then 
                     // Always try to raise a language version error if we have a DIM that is not explicitly implemented.
                     if hasDefaultInterfaceImplementation then
-                        tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMethodConsumption m
+                        tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
                     if HasRequiredSlotFlag RequiredSlotFlags.PossiblyNoMostSpecificImplementation dispatchFlags then
                         errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
@@ -439,14 +439,14 @@ module DispatchSlotChecking =
                 let dispatchFlags2 =
                     // A DIM is considered *not* 'optional' if it is not language supported.
                     if HasRequiredSlotFlag RequiredSlotFlags.HasDefaultInterfaceImplementation dispatchFlags && 
-                       not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodConsumption) then
+                       not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMemberConsumption) then
                         dispatchFlags &&& ~~~RequiredSlotFlags.IsOptional
                     else
                         dispatchFlags
 
                 // If DIMs are not language supported, then do not consider a slot to have a specific implementation.
                 if HasRequiredSlotFlag RequiredSlotFlags.PossiblyNoMostSpecificImplementation dispatchFlags && 
-                   not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMethodConsumption) then
+                   not (g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMemberConsumption) then
                     (dispatchFlags2 &&& ~~~RequiredSlotFlags.PossiblyNoMostSpecificImplementation) ||| RequiredSlotFlags.HasDefaultInterfaceImplementation
                 else
                     dispatchFlags2

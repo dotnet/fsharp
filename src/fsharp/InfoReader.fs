@@ -527,8 +527,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member x.IsLanguageFeatureRuntimeSupported langFeature =
         match langFeature with
         // Both default and static interface method consumption features are tied to the runtime support of DIMs.
-        | LanguageFeature.DefaultInterfaceMethodConsumption
-        | LanguageFeature.StaticInterfaceMethodConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
+        | LanguageFeature.DefaultInterfaceMemberConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
         | _ -> true
             
 let private tryLanguageFeatureRuntimeErrorAux (infoReader: InfoReader) langFeature m error =
