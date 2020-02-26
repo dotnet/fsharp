@@ -44,8 +44,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
-            (FSharpErrorSeverity.Error, 366, (8, 14, 8, 19), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -166,8 +166,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
-            (FSharpErrorSeverity.Error, 366, (8, 14, 8, 19), "No implementation was given for those members: 
+            (FSharpErrorSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for those members: 
     'ITest.DefaultMethod() : unit'
     'ITest.NonDefaultMethod() : unit'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
@@ -214,8 +214,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
-            (FSharpErrorSeverity.Error, 366, (8, 14, 8, 19), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
+            (FSharpErrorSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for 'ITest.DefaultMethod() : unit'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
         |])
 
     [<Test>]
@@ -256,9 +256,8 @@ type Test () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
-            (FSharpErrorSeverity.Error, 3350, (8, 14, 8, 19), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
-            (FSharpErrorSeverity.Error, 366, (8, 14, 8, 19), "No implementation was given for those members: 
+            (FSharpErrorSeverity.Error, 3350, (8, 15, 8, 20), "Feature 'default interface method consumption' is not available in F# 4.6. Please use language version 'preview' or greater.")
+            (FSharpErrorSeverity.Error, 366, (8, 15, 8, 20), "No implementation was given for those members: 
 	'ITest.Method1() : unit'
 	'ITest.Method2() : unit'
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.")
@@ -1390,9 +1389,9 @@ type Test2 () =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 629, (10, 9, 10, 26), "Method 'M1' is not accessible from this code location")
+            (FSharpErrorSeverity.Error, 629, (10, 9, 10, 27), "Method 'M1' is not accessible from this code location")
             (FSharpErrorSeverity.Error, 629, (15, 13, 15, 31), "Method 'M1' is not accessible from this code location")
-            (FSharpErrorSeverity.Error, 629, (25, 9, 25, 27), "Method 'M1' is not accessible from this code location")
+            (FSharpErrorSeverity.Error, 629, (25, 9, 25, 28), "Method 'M1' is not accessible from this code location")
             (FSharpErrorSeverity.Error, 629, (30, 13, 30, 31), "Method 'M1' is not accessible from this code location")
         |])
 

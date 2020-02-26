@@ -14590,6 +14590,13 @@ let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem mutRecNSInfo (envMutRec: 
       let binds: MutRecDefnsPhase2Info = 
           (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls tyconData -> 
               let (MutRecDefnsPhase2DataForTycon(tyconOpt, _, declKind, tcref, _, _, declaredTyconTypars, _, _, _, fixupFinalAttrs)) = tyconData
+              let envForDecls = 
+                // This allows to implement protected interface methods.
+                match tyconOpt with
+                | Some _ when declKind = DeclKind.ModuleOrMemberBinding ->
+                    MakeInnerEnvForTyconRef envForDecls tcref false
+                | _ -> 
+                    envForDecls
               let obinds = tyconBindingsOfTypeDefn tyconData
               let ibinds = 
                       let intfTypes = interfacesFromTypeDefn envForDecls tyconData

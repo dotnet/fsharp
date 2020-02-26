@@ -688,4 +688,4 @@ let internal tryLanguageFeatureError langVersion langFeature m =
     tryLanguageFeatureErrorAux langVersion langFeature m error
 
 let internal tryLanguageFeatureErrorRecover langVersion langFeature m =
-    tryLanguageFeatureErrorAux langVersion langFeature m error
+    tryLanguageFeatureErrorAux langVersion langFeature m errorR
