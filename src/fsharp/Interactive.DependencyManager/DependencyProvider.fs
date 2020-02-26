@@ -66,22 +66,22 @@ open ReflectionHelper
 type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
 
     /// Succeded?
-    member public _.Success = success
+    member public __.Success = success
 
     /// The resolution output log
-    member public _.StdOut = stdOut
+    member public __.StdOut = stdOut
 
     /// The resolution error log (* process stderror *)
-    member public _.StdError = stdError
+    member public __.StdError = stdError
     
     /// The resolution paths
-    member public _.Resolutions = resolutions
+    member public __.Resolutions = resolutions
 
     /// The source code file paths
-    member public _.SourceFiles = sourceFiles
+    member public __.SourceFiles = sourceFiles
 
     /// The roots to package directories
-    member public _.Roots = roots
+    member public __.Roots = roots
 
 
 /// Indicate the type of error to report
@@ -228,7 +228,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         new DependencyProvider(Unchecked.defaultof<AssemblyResolutionProbe>, nativeProbingRoots)
 
     /// Returns a formatted error message for the host to present
-    member _.CreatePackageManagerUnknownError (compilerTools: string seq, outputDir: string, packageManagerKey: string, reportError: ResolvingErrorReport) =
+    member __.CreatePackageManagerUnknownError (compilerTools: string seq, outputDir: string, packageManagerKey: string, reportError: ResolvingErrorReport) =
         let registeredKeys = String.Join(", ", RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError |> Seq.map (fun kv -> kv.Value.Key))
         let searchPaths = assemblySearchPaths.Force()
         InteractiveDependencyManager.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
@@ -256,12 +256,12 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             null, Unchecked.defaultof<IDependencyManagerProvider>
 
     /// Remove the dependency mager with the specified key
-    member _.RemoveDependencyManagerKey(packageManagerKey:string, path:string): string =
+    member __.RemoveDependencyManagerKey(packageManagerKey:string, path:string): string =
 
         path.Substring(packageManagerKey.Length + 1).Trim()
 
     /// Fetch a dependencymanager that supports a specific key
-    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
+    member __.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
 
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
@@ -276,7 +276,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             Unchecked.defaultof<IDependencyManagerProvider>
 
     /// Resolve reference for a list of package manager lines
-    member _.Resolve (packageManager:IDependencyManagerProvider, implicitIncludeDir: string, mainScriptName: string, fileName: string, scriptExt: string, packageManagerTextLines: string seq, reportError: ResolvingErrorReport, executionTfm: string): ResolveDependenciesResult =
+    member __.Resolve (packageManager:IDependencyManagerProvider, implicitIncludeDir: string, mainScriptName: string, fileName: string, scriptExt: string, packageManagerTextLines: string seq, reportError: ResolvingErrorReport, executionTfm: string): ResolveDependenciesResult =
 
         try
             new ResolveDependenciesResult(packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm))
@@ -290,7 +290,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
     interface IDisposable with
 
-        member _.Dispose() =
+        member __.Dispose() =
 
             // Unregister everything
             registeredDependencyManagers <- None
