@@ -658,7 +658,10 @@ module DispatchSlotChecking =
                 if i > j then
                     for (ty, dispatchSlots) in dispatchSlotSet do
                         if impliedTys2 |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty) then
-                            if dispatchSlots |> List.exists (fun (RequiredSlot(minfo, _)) -> minfo.IsNewSlot) then
+                            if  dispatchSlots 
+                                |> List.exists (fun (RequiredSlot(minfo, dispatchSlotFlags)) -> 
+                                    // If the slot is optional, then we do not need a explicit implementation.
+                                    minfo.IsNewSlot && not (HasRequiredSlotFlag RequiredSlotFlags.IsOptional dispatchSlotFlags)) then
                                 errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv ty), reqdTyRange))
                      
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
