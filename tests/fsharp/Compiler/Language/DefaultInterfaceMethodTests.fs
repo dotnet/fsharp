@@ -1550,6 +1550,9 @@ type Test () =
         let csharpSource =
             """
 using System;
+using System.Runtime.CompilerServices;
+
+[assembly:InternalsVisibleTo("Test")]
 
 namespace CSharpTest
 {
@@ -1593,7 +1596,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl], name = "Test")
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "IVT-NonDefaultMethod")
 

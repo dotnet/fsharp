@@ -68,12 +68,12 @@ type CompilationReference =
     static member Create(cmpl: TestCompilation) =
         TestCompilationReference cmpl
 
-and Compilation = private Compilation of string * SourceKind * CompileOutput * options: string[] * CompilationReference list with
+and Compilation = private Compilation of source: string * SourceKind * CompileOutput * options: string[] * CompilationReference list * name: string option with
 
-    static member Create(source, sourceKind, output, ?options, ?cmplRefs) =
+    static member Create(source, sourceKind, output, ?options, ?cmplRefs, ?name) =
         let options = defaultArg options [||]
         let cmplRefs = defaultArg cmplRefs []
-        Compilation(source, sourceKind, output, options, cmplRefs)
+        Compilation(source, sourceKind, output, options, cmplRefs, name)
 
 [<Sealed;AbstractClass>]
 type CompilerAssert private () =
@@ -225,12 +225,16 @@ let main argv = 0"""
             try File.Delete inputFilePath with | _ -> ()
             try File.Delete outputFilePath with | _ -> ()
 
-    static let compileDisposable isScript isExe options source =
+    static let compileDisposable outputPath isScript isExe options nameOpt source =
         let ext =
             if isScript then ".fsx"
             else ".fs"
-        let inputFilePath = Path.ChangeExtension(Path.GetTempFileName(), ext)
-        let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then ".exe" else ".dll")
+        let inputFilePath = Path.ChangeExtension(Path.Combine(outputPath, Path.GetRandomFileName()), ext)
+        let name =
+            match nameOpt with
+            | Some name -> name
+            | _ -> Path.GetRandomFileName()
+        let outputFilePath = Path.ChangeExtension (Path.Combine(outputPath, name), if isExe then ".exe" else ".dll")
         let o =
             { new IDisposable with
                 member _.Dispose() =
@@ -271,20 +275,18 @@ let main argv = 0"""
     static let compile isExe options source f =
         lock gate (fun _ -> compileAux isExe options source f)
 
-    static let rec compileCompilationAux (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpErrorInfo[] * string) * string list =
+    static let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpErrorInfo[] * string) * string list =
         let compilationRefs, deps =
             match cmpl with
-            | Compilation(_, _, _, _, cmpls) ->
+            | Compilation(_, _, _, _, cmpls, _) ->
                 let compiledRefs =               
                     cmpls
                     |> List.map (fun cmpl ->
                             match cmpl with
                             | CompilationReference (cmpl, staticLink) ->
-                                compileCompilationAux disposals ignoreWarnings cmpl, staticLink
+                                compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
                             | TestCompilationReference (cmpl) -> 
-                                let preTmp = Path.GetTempFileName()
-                                let tmp = Path.ChangeExtension(Path.GetTempFileName(), ".dll")
-                                try File.Delete preTmp with | _ -> ()
+                                let tmp = Path.Combine(outputPath, Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
                                 disposals.Add({ new IDisposable with 
                                                     member _.Dispose() = 
                                                         try File.Delete tmp with | _ -> () })
@@ -313,27 +315,31 @@ let main argv = 0"""
 
         let isScript =
             match cmpl with
-            | Compilation(_, kind, _, _, _) ->
+            | Compilation(_, kind, _, _, _, _) ->
                 match kind with
                 | Fs -> false
                 | Fsx -> true
 
         let isExe =
             match cmpl with
-            | Compilation(_, _, output, _, _) ->
+            | Compilation(_, _, output, _, _, _) ->
                 match output with
                 | Library -> false
                 | Exe -> true
 
         let source =
             match cmpl with
-            | Compilation(source, _, _, _, _) -> source
+            | Compilation(source, _, _, _, _, _) -> source
 
         let options = 
             match cmpl with
-            | Compilation(_, _, _, options, _) -> options
+            | Compilation(_, _, _, options, _, _) -> options
+
+        let nameOpt =
+            match cmpl with
+            | Compilation(_, _, _, _, _, nameOpt) -> nameOpt
                     
-        let disposal, res = compileDisposable isScript isExe (Array.append options compilationRefs) source
+        let disposal, res = compileDisposable outputPath isScript isExe (Array.append options compilationRefs) nameOpt source
         disposals.Add disposal
 
         let deps2 =
@@ -345,10 +351,13 @@ let main argv = 0"""
         res, (deps @ deps2)
 
     static let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
+        let compileDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
         let disposals = ResizeArray()
         try
-            f (compileCompilationAux disposals ignoreWarnings cmpl)
+            Directory.CreateDirectory(compileDirectory) |> ignore
+            f (compileCompilationAux compileDirectory disposals ignoreWarnings cmpl)
         finally
+            try Directory.Delete compileDirectory with | _ -> ()
             disposals
             |> Seq.iter (fun x -> x.Dispose())
 
