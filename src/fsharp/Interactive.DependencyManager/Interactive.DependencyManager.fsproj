@@ -5,6 +5,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
     <AssemblyName>Interactive.DependencyManager</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -23,8 +24,13 @@
   <ItemGroup>
     <EmbeddedText Include="InteractiveDependencyManager.txt" />
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\Interactive.DependencyManager\DependencyManager.fsi" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\Interactive.DependencyManager\DependencyManager.fs" />
+    <Compile Include="AssemblyResolveHandler.fsi" />
+    <Compile Include="AssemblyResolveHandler.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs" />
+    <Compile Include="NativeDllResolveHandler.fsi" />
+    <Compile Include="NativeDllResolveHandler.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\Interactive.DependencyManager\DependencyProvider.fsi" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\Interactive.DependencyManager\DependencyProvider.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,6 +55,7 @@
     <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
     <PackageReference Include="System.Runtime" Version="$(SystemRuntimeVersion)" />
     <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
     <PackageReference Include="System.Security.Claims" Version="$(SystemSecurityClaimsVersion)" />
     <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsVersion)" />
     <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />

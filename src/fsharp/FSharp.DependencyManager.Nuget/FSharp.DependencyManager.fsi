@@ -12,4 +12,4 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager =
     new: outputDir:string option -> FSharpDependencyManager
     member Name: string
     member Key:string
-    member ResolveDependencies: scriptExt:string * packageManagerTextLines:string seq * tfm: string -> bool * string seq * string seq * string seq
+    member ResolveDependencies: scriptExt:string * packageManagerTextLines:string seq * tfm: string -> bool * string array * string array * string seq * string seq * string seq

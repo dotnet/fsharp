@@ -152,16 +152,16 @@ module internal Utilities =
         else
             None
 
-    let drainStreamToFile (stream: StreamReader) filename =
-        use file = File.OpenWrite(filename)
-        use writer = new StreamWriter(file)
+    let drainStreamToMemory (stream: StreamReader) =
+        let mutable list = List.empty
         let rec copyLines () =
             match stream.ReadLine() with
             | null -> ()
             | line ->
-                writer.WriteLine(line)
+                list <- line :: list
                 copyLines ()
         copyLines ()
+        list |> List.toArray
 
     let executeBuild pathToExe arguments workingDir =
         match pathToExe with
@@ -179,24 +179,24 @@ module internal Utilities =
             p.StartInfo <- psi
             p.Start() |> ignore
 
-            let standardOutput = Path.Combine(workingDir, "StandardOutput.txt")
-            let standardError = Path.Combine(workingDir, "StandardError.txt")
-            drainStreamToFile p.StandardOutput (Path.Combine(workingDir, standardOutput))
-            drainStreamToFile p.StandardError (Path.Combine(workingDir, standardError))
+            let stdOut = drainStreamToMemory p.StandardOutput
+            let stdErr = drainStreamToMemory p.StandardError
+
+#if Debug
+            File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), stdOut)
+            File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), stdErr)
+#endif
 
             p.WaitForExit()
+
             if p.ExitCode <> 0 then
                 //Write StandardError.txt to err stream
-                let text = File.ReadAllText(standardOutput)
-                Console.Out.Write(text)
+                for line in stdOut do Console.Out.WriteLine(line)
+                for line in stdErr do Console.Error.WriteLine(line)
 
-                //Write StandardOutput.txt to out stream
-                let text = File.ReadAllText(standardError)
-                Console.Out.Write(text)
+            p.ExitCode = 0, stdOut, stdErr
 
-            p.ExitCode = 0
-
-        | None -> false
+        | None -> false, Array.empty, Array.empty
 
     let buildProject projectPath binLogPath =
         let binLoggingArguments =
@@ -213,7 +213,7 @@ module internal Utilities =
 
         let workingDir = Path.GetDirectoryName projectPath
 
-        let succeeded =
+        let succeeded, stdOut, stdErr =
             if not (isRunningOnCoreClr) then
                 // The Desktop build uses "msbuild" to build
                 executeBuild msbuildExePath (arguments "") workingDir
@@ -223,4 +223,4 @@ module internal Utilities =
 
         let outputFile = projectPath + ".resolvedReferences.paths"
         let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None
-        succeeded, resultOutFile
+        succeeded, stdOut, stdErr, resultOutFile

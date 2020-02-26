@@ -14,7 +14,9 @@ module ReflectionHelper =
     let resolveDependenciesMethodName = "ResolveDependencies"
     let namePropertyName = "Name"
     let keyPropertyName = "Key"
+    let arrEmpty = Array.empty<string>
     let seqEmpty = Seq.empty<string>
+
 
     let assemblyHasAttribute (theAssembly: Assembly) attributeName =
         try
@@ -58,17 +60,44 @@ module ReflectionHelper =
 
 open ReflectionHelper
 
+
+
+/// The results of ResolveDependencies
+type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
+
+    /// Succeded?
+    member public _.Success = success
+
+    /// The resolution output log
+    member public _.StdOut = stdOut
+
+    /// The resolution error log (* process stderror *)
+    member public _.StdError = stdError
+    
+    /// The resolution paths
+    member public _.Resolutions = resolutions
+
+    /// The source code file paths
+    member public _.SourceFiles = sourceFiles
+
+    /// The roots to package directories
+    member public _.Roots = roots
+
+
+/// Indicate the type of error to report
+[<RequireQualifiedAccess>]
+type ErrorReportType =
+    | Warning
+    | Error
+
+type ResolvingErrorReport = delegate of ErrorReportType * int * string -> unit
+
 (* Shape of Dependency Manager contract, resolved using reflection *)
 [<AllowNullLiteralAttribute>]
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string seq * string seq * string seq
-
-[<RequireQualifiedAccess>]
-type ErrorReportType =
-    | Warning
-    | Error
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string array * string array * string seq * string seq * string seq
 
 type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyInfo, keyProperty: PropertyInfo, resolveDeps: MethodInfo option, resolveDepsEx: MethodInfo option,outputDir: string option) =
     let instance = Activator.CreateInstance(theType, [|outputDir :> obj|])
@@ -98,7 +127,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
 
         /// Resolve the dependencies for the given arguments
         ///
-        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm): bool * string seq * string seq * string seq =
+        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm): bool * string array * string array * string seq * string seq * string seq =
 
             // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resoveDepsEx
             // The resolve method can return values in two different tuples:
@@ -115,27 +144,29 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                 else
                     None, [||]
 
-            let succeeded, references, generatedScripts, additionalIncludeFolders =
+            let succeeded, stdOut, stdErr, references, generatedScripts, additionalIncludeFolders =
                 let result =
                     match method with
                     | Some m -> m.Invoke(instance, arguments) :?> _
-                    | None -> false, seqEmpty, seqEmpty, seqEmpty
+                    | None -> false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty
 
                 // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
                 //     4 - (bool * string list * string list * string list)
                 //     3 - (bool * string list * string list)
                 let tupleFields = result |> FSharpValue.GetTupleFields
                 match tupleFields |> Array.length with
-                | 4 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string seq, tupleFields.[2] :?> string seq, tupleFields.[3] :?> string seq
-                | 3 -> tupleFields.[0] :?> bool, seqEmpty, tupleFields.[1] :?> string list  |> List.toSeq, tupleFields.[2] :?> string list |> List.toSeq
-                | _ -> false, seqEmpty, seqEmpty, seqEmpty
+                | 6 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string array, tupleFields.[2] :?> string array, tupleFields.[3] :?> string seq, tupleFields.[4] :?> string seq, tupleFields.[5] :?> string seq
+                | 3 -> tupleFields.[0] :?> bool, arrEmpty, arrEmpty, seqEmpty, tupleFields.[1] :?> string list  |> List.toSeq, tupleFields.[2] :?> string list |> List.toSeq
+                | _ -> false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty
 
-            succeeded, references, generatedScripts, additionalIncludeFolders
-
+            succeeded, stdOut, stdErr, references, generatedScripts, additionalIncludeFolders
 
 /// Provides DependencyManagement functions.
 /// Class is IDisposable
-type DependencyProvider () =
+type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) =
+
+    let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots) :> IDisposable
+    let assemblyResolveHandler = new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
 
     // Resolution Path = Location of FSharp.Compiler.Private.dll
     let assemblySearchPaths = lazy (
@@ -145,7 +176,7 @@ type DependencyProvider () =
             yield AppDomain.CurrentDomain.BaseDirectory
         ])
 
-    let enumerateDependencyManagerAssemblies compilerTools reportError =
+    let enumerateDependencyManagerAssemblies compilerTools (reportError: ResolvingErrorReport) =
         getCompilerToolsDesignTimeAssemblyPaths compilerTools
         |> Seq.append (assemblySearchPaths.Force())
         |> Seq.collect (fun path ->
@@ -159,13 +190,14 @@ type DependencyProvider () =
             with
             | e ->
                 let e = stripTieWrapper e
-                reportError ErrorReportType.Warning (InteractiveDependencyManager.SR.couldNotLoadDependencyManagerExtension(path,e.Message))
+                let n, m = InteractiveDependencyManager.SR.couldNotLoadDependencyManagerExtension(path,e.Message)
+                reportError.Invoke(ErrorReportType.Warning, n, m)
                 None)
         |> Seq.filter (fun a -> assemblyHasAttribute a dependencyManagerAttributeName)
 
     let mutable registeredDependencyManagers: Map<string, IDependencyManagerProvider> option= None
 
-    let RegisteredDependencyManagers (compilerTools: string seq) (outputDir: string option) (reportError: ErrorReportType -> int * string -> unit) =
+    let RegisteredDependencyManagers (compilerTools: string seq) (outputDir: string option) (reportError: ResolvingErrorReport) =
         match registeredDependencyManagers with
         | Some managers ->
             managers
@@ -191,22 +223,26 @@ type DependencyProvider () =
                     None
             managers
 
-    /// Returns a formatted error message for the host to present
-    member _.CreatePackageManagerUnknownError(compilerTools: string seq, outputDir: string, packageManagerKey: string, reportError: ErrorReportType -> int * string -> unit) =
+    /// Returns a formatted error message for the host to presentconstruct with just nativeProbing handler
+    new (nativeProbingRoots: NativeResolutionProbe) =
+        new DependencyProvider(Unchecked.defaultof<AssemblyResolutionProbe>, nativeProbingRoots)
 
+    /// Returns a formatted error message for the host to present
+    member _.CreatePackageManagerUnknownError (compilerTools: string seq, outputDir: string, packageManagerKey: string, reportError: ResolvingErrorReport) =
         let registeredKeys = String.Join(", ", RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError |> Seq.map (fun kv -> kv.Value.Key))
         let searchPaths = assemblySearchPaths.Force()
         InteractiveDependencyManager.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
 
     /// Fetch a dependencymanager that supports a specific key
-    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ErrorReportType -> int * string -> unit, path: string): string * IDependencyManagerProvider =
+    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string * IDependencyManagerProvider =
         try
             if path.Contains ":" && not (Path.IsPathRooted path) then
                 let managers = RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
 
                 match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":" )) with
                 | None ->
-                    reportError ErrorReportType.Error (this.CreatePackageManagerUnknownError(compilerTools, outputDir, (path.Split(':').[0]), reportError))
+                    let err, msg = this.CreatePackageManagerUnknownError(compilerTools, outputDir, (path.Split(':').[0]), reportError)
+                    reportError.Invoke(ErrorReportType.Error, err, msg)
                     null, Unchecked.defaultof<IDependencyManagerProvider>
 
                 | Some kv -> path, kv.Value
@@ -215,7 +251,8 @@ type DependencyProvider () =
         with 
         | e ->
             let e = stripTieWrapper e
-            reportError ErrorReportType.Error (InteractiveDependencyManager.SR.packageManagerError(e.Message))
+            let err, msg = InteractiveDependencyManager.SR.packageManagerError(e.Message)
+            reportError.Invoke(ErrorReportType.Error, err, msg)
             null, Unchecked.defaultof<IDependencyManagerProvider>
 
     /// Remove the dependency mager with the specified key
@@ -224,7 +261,7 @@ type DependencyProvider () =
         path.Substring(packageManagerKey.Length + 1).Trim()
 
     /// Fetch a dependencymanager that supports a specific key
-    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ErrorReportType -> int * string -> unit, key: string): IDependencyManagerProvider =
+    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
 
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
@@ -234,21 +271,28 @@ type DependencyProvider () =
         with
         | e ->
             let e = stripTieWrapper e
-            reportError ErrorReportType.Error (InteractiveDependencyManager.SR.packageManagerError(e.Message))
+            let err, msg = InteractiveDependencyManager.SR.packageManagerError(e.Message)
+            reportError.Invoke(ErrorReportType.Error, err, msg)
             Unchecked.defaultof<IDependencyManagerProvider>
 
     /// Resolve reference for a list of package manager lines
-    member _.Resolve (packageManager:IDependencyManagerProvider, implicitIncludeDir: string, mainScriptName: string, fileName: string, scriptExt: string, packageManagerTextLines: string seq, reportError: ErrorReportType -> int * string -> unit, executionTfm: string): bool * string seq * string seq * string seq =
+    member _.Resolve (packageManager:IDependencyManagerProvider, implicitIncludeDir: string, mainScriptName: string, fileName: string, scriptExt: string, packageManagerTextLines: string seq, reportError: ResolvingErrorReport, executionTfm: string): ResolveDependenciesResult =
 
         try
-            packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm)
+            new ResolveDependenciesResult(packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm))
 
         with e ->
             let e = stripTieWrapper e
-            reportError ErrorReportType.Error (InteractiveDependencyManager.SR.packageManagerError(e.Message))
-            false, Seq.empty, Seq.empty, Seq.empty
+            let err, msg = (InteractiveDependencyManager.SR.packageManagerError(e.Message))
+            reportError.Invoke(ErrorReportType.Error, err, msg)
+
+            new ResolveDependenciesResult(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
 
     interface IDisposable with
+
         member _.Dispose() =
+
             // Unregister everything
             registeredDependencyManagers <- None
+            dllResolveHandler.Dispose()
+            assemblyResolveHandler.Dispose()
