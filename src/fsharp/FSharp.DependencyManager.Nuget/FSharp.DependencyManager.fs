@@ -10,7 +10,7 @@ open System.IO
 open FSharp.DependencyManager.Nuget
 open FSharp.DependencyManager.Nuget.Utilities
 open FSharp.DependencyManager.Nuget.ProjectFile
-
+open FSDependencyManager
 
 module FSharpDependencyManager =
 
@@ -43,7 +43,7 @@ module FSharpDependencyManager =
         let parsePackageReferenceOption (line: string) =
             let validatePackageName package packageName =
                 if String.Compare(packageName, package, StringComparison.OrdinalIgnoreCase) = 0 then
-                    raise (ArgumentException(sprintf "PackageManager can not reference the System Package '%s'" packageName))  // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                    raise (ArgumentException(SR.cantReferenceSystemPackage(packageName)))
             let rec parsePackageReferenceOption' (options: (string option * string option) list) (implicitArgumentCount: int) (packageReference: PackageReference option) =
                 let current =
                     match packageReference with
@@ -61,11 +61,11 @@ module FSharpDependencyManager =
                     let setVersion v = Some { current with Version = v }
                     match opt with
                     | Some "include", Some v -> addInclude v |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "include", None -> raise (ArgumentException(sprintf "%s requires a value" "Include"))                    // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                    | Some "include", None -> raise (ArgumentException(SR.requiresAValue("Include")))
                     | Some "version", Some v -> setVersion v |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "version", None -> setVersion "*" |> parsePackageReferenceOption' rest implicitArgumentCount             // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                    | Some "version", None -> setVersion "*" |> parsePackageReferenceOption' rest implicitArgumentCount
                     | Some "restoresources", Some v -> Some { current with RestoreSources = concat current.RestoreSources v } |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "restoresources", None -> raise (ArgumentException(sprintf "%s requires a value" "RestoreSources"))      // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                    | Some "restoresources", None -> raise (ArgumentException(SR.requiresAValue("RestoreSources")))
                     | Some "script", Some v -> Some { current with Script = v } |> parsePackageReferenceOption' rest implicitArgumentCount
                     | Some "bl", value ->
                         match value with
@@ -88,7 +88,7 @@ module FSharpDependencyManager =
                             match implicitArgumentCount with
                             | 0 -> addInclude v
                             | 1 -> setVersion v
-                            | _ -> raise (ArgumentException(sprintf "Unable to apply implicit argument number %d" (implicitArgumentCount + 1))) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                            | _ -> raise (ArgumentException(SR.unableToApplyImplicitArgument(implicitArgumentCount + 1)))
                             |> parsePackageReferenceOption' rest (implicitArgumentCount + 1)
                     | _ -> parsePackageReferenceOption' rest implicitArgumentCount packageReference
             let options = getOptions line

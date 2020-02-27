@@ -24,8 +24,13 @@ type NativeAssemblyLoadContext () =
     static member NativeLoadContext = new NativeAssemblyLoadContext()
 #endif
 
+
+/// Signature for Native library resolution probe callback
+/// host implements this, it's job is to return a list of package roots to probe.
 type NativeResolutionProbe = delegate of Unit -> IEnumerable<string>
 
+
+/// Type that encapsulates Native library probing for managed packages
 type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe) =
 #if NETSTANDARD
     let probingFileNames (name: string) =
@@ -110,7 +115,7 @@ type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe) =
     // netstandard 2.1 has this property, unfortunately we don't build with that yet
     //public event Func<Assembly, string, IntPtr> ResolvingUnmanagedDll
     let eventInfo = typeof<AssemblyLoadContext>.GetEvent("ResolvingUnmanagedDll")
-    let handler = Func<System.Reflection.Assembly, string, IntPtr> (_resolveUnmanagedDll)
+    let handler = Func<Assembly, string, IntPtr> (_resolveUnmanagedDll)
 
     do if not (isNull eventInfo) then eventInfo.AddEventHandler(AssemblyLoadContext.Default, handler)
 #endif

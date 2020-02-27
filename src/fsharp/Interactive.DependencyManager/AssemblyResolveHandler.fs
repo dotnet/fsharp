@@ -11,9 +11,13 @@ open System.Reflection
 open System.Runtime.Loader
 #endif
 
+/// Signature for ResolutionProbe callback
+/// host implements this, it's job is to return a list of assembly paths to probe.
 type AssemblyResolutionProbe = delegate of Unit -> IEnumerable<string>
 
-type AssemblyResolveHandler  (assemblyProbingPaths: AssemblyResolutionProbe) =
+
+/// Type that encapsulates AssemblyResolveHandler for managed packages
+type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe) =
 
 #if NETSTANDARD
     let resolveAssemblyNetStandard (ctxt: AssemblyLoadContext) (assemblyName: AssemblyName): Assembly =

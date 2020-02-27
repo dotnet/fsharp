@@ -17,7 +17,6 @@ module ReflectionHelper =
     let arrEmpty = Array.empty<string>
     let seqEmpty = Seq.empty<string>
 
-
     let assemblyHasAttribute (theAssembly: Assembly) attributeName =
         try
             CustomAttributeExtensions.GetCustomAttributes(theAssembly)
@@ -60,8 +59,6 @@ module ReflectionHelper =
 
 open ReflectionHelper
 
-
-
 /// The results of ResolveDependencies
 type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
 
@@ -90,7 +87,9 @@ type ErrorReportType =
     | Warning
     | Error
 
+
 type ResolvingErrorReport = delegate of ErrorReportType * int * string -> unit
+
 
 (* Shape of Dependency Manager contract, resolved using reflection *)
 [<AllowNullLiteralAttribute>]
@@ -98,6 +97,7 @@ type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
     abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string array * string array * string seq * string seq * string seq
+
 
 type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyInfo, keyProperty: PropertyInfo, resolveDeps: MethodInfo option, resolveDepsEx: MethodInfo option,outputDir: string option) =
     let instance = Activator.CreateInstance(theType, [|outputDir :> obj|])
@@ -160,6 +160,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                 | _ -> false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty
 
             succeeded, stdOut, stdErr, references, generatedScripts, additionalIncludeFolders
+
 
 /// Provides DependencyManagement functions.
 /// Class is IDisposable

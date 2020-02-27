@@ -153,15 +153,15 @@ module internal Utilities =
             None
 
     let drainStreamToMemory (stream: StreamReader) =
-        let mutable list = List.empty
+        let mutable list = ResizeArray()
         let rec copyLines () =
             match stream.ReadLine() with
             | null -> ()
             | line ->
-                list <- line :: list
+                list.Add line
                 copyLines ()
         copyLines ()
-        list |> List.toArray
+        list.ToArray()
 
     let executeBuild pathToExe arguments workingDir =
         match pathToExe with
