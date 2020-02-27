@@ -660,7 +660,7 @@ module DispatchSlotChecking =
                         if impliedTys2 |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty) then
                             if  dispatchSlots 
                                 |> List.exists (fun (RequiredSlot(minfo, dispatchSlotFlags)) -> 
-                                    // If the slot is optional, then we do not need a explicit implementation.
+                                    // If the slot is optional, then we do not need an explicit implementation.
                                     minfo.IsNewSlot && not (HasRequiredSlotFlag RequiredSlotFlags.IsOptional dispatchSlotFlags)) then
                                 errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv ty), reqdTyRange))
                      
