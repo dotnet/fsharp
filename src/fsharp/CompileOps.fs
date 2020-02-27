@@ -2406,7 +2406,7 @@ type TcConfigBuilder =
             yield! tcConfigB.compilerToolPaths
             yield! (tcConfigB.referencedDLLs |> Seq.map(fun ref -> Path.GetDirectoryName(ref.Text)))
             yield tcConfigB.implicitIncludeDir
-        } |>Seq.distinct
+        } |> Seq.distinct
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
                             isInteractive, isInvalidationSupported, defaultCopyFSharpCore, tryGetMetadataSnapshot) =
