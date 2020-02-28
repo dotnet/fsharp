@@ -98,6 +98,28 @@ module FSharpDependencyManager =
         |> List.distinct
         |> (fun l -> l, binLogPath)
 
+
+/// The results of ResolveDependencies
+type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
+
+    /// Succeded?
+    member __.Success = success
+
+    /// The resolution output log
+    member __.StdOut = stdOut
+
+    /// The resolution error log (* process stderror *)
+    member __.StdError = stdError
+
+    /// The resolution paths
+    member __.Resolutions = resolutions
+
+    /// The source code file paths
+    member __.SourceFiles = sourceFiles
+
+    /// The roots to package directories
+    member __.Roots = roots
+
 type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string option) =
 
     let key = "nuget"
@@ -140,7 +162,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
     member __.Key = key
 
-    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string) : bool * string array * string array * string seq * string seq * string seq =
+    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string) : obj =
 
         let scriptExt, poundRprefix  =
             match scriptExt with
@@ -187,10 +209,10 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
                     List.concat [ [scriptPath]; loads] |> List.toSeq
                 let includes = (findIncludesFromResolutions resolutions) |> Array.toSeq
 
-                result, stdOut, stdErr, references, scripts, includes
+                ResolveDependenciesResult(result, stdOut, stdErr, references, scripts, includes)
 
             | None ->
                 let empty = Seq.empty<string>
-                result, stdOut, stdErr, empty, empty, empty
+                ResolveDependenciesResult(result, stdOut, stdErr, empty, empty, empty)
 
-        generateAndBuildProjectArtifacts
+        generateAndBuildProjectArtifacts :> obj

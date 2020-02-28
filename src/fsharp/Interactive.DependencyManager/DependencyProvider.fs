@@ -5,7 +5,6 @@ namespace Interactive.DependencyManager
 open System
 open System.IO
 open System.Reflection
-open FSharp.Reflection
 open Internal.Utilities.FSharpEnvironment
 
 module ReflectionHelper =
@@ -31,7 +30,7 @@ module ReflectionHelper =
 
     let getInstanceProperty<'treturn> (theType: Type) propertyName =
         try
-            let property = theType.GetProperty(propertyName, typeof<'treturn>)
+            let property = theType.GetProperty(propertyName, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, Unchecked.defaultof<Binder>, typeof<'treturn>, Array.empty, Array.empty)
             if isNull property then
                 None
             elif not (property.GetGetMethod().IsStatic)
@@ -58,27 +57,7 @@ module ReflectionHelper =
         | _ -> e
 
 open ReflectionHelper
-
-/// The results of ResolveDependencies
-type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
-
-    /// Succeded?
-    member public __.Success = success
-
-    /// The resolution output log
-    member public __.StdOut = stdOut
-
-    /// The resolution error log (* process stderror *)
-    member public __.StdError = stdError
-    
-    /// The resolution paths
-    member public __.Resolutions = resolutions
-
-    /// The source code file paths
-    member public __.SourceFiles = sourceFiles
-
-    /// The roots to package directories
-    member public __.Roots = roots
+open Microsoft.FSharp.Reflection
 
 
 /// Indicate the type of error to report
@@ -92,12 +71,33 @@ type ResolvingErrorReport = delegate of ErrorReportType * int * string -> unit
 
 
 (* Shape of Dependency Manager contract, resolved using reflection *)
+/// The results of ResolveDependencies
+type IResolveDependenciesResult =
+
+    /// Succeded?
+    abstract Success: bool
+
+    /// The resolution output log
+    abstract StdOut: string array
+
+    /// The resolution error log (* process stderror *)
+    abstract StdError: string array
+
+    /// The resolution paths
+    abstract Resolutions: string seq
+
+    /// The source code file paths
+    abstract SourceFiles: string seq
+
+    /// The roots to package directories
+    abstract Roots: string seq
+
+
 [<AllowNullLiteralAttribute>]
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> bool * string array * string array * string seq * string seq * string seq
-
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> IResolveDependenciesResult
 
 type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyInfo, keyProperty: PropertyInfo, resolveDeps: MethodInfo option, resolveDepsEx: MethodInfo option,outputDir: string option) =
     let instance = Activator.CreateInstance(theType, [|outputDir :> obj|])
@@ -117,6 +117,67 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
             let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
             Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
 
+    static member MakeResultFromObject(result: obj) = {
+        new IResolveDependenciesResult with
+            /// Succeded?
+            member __.Success =
+                match getInstanceProperty<bool> (result.GetType()) "Success" with
+                | None -> false
+                | Some p -> p.GetValue(result) :?> bool
+
+            /// The resolution output log
+            member __.StdOut =
+                match getInstanceProperty<string array> (result.GetType()) "StdOut" with
+                | None -> Array.empty<string>
+                | Some p -> p.GetValue(result) :?> string array
+
+            /// The resolution error log (* process stderror *)
+            member __.StdError =
+                match getInstanceProperty<string array> (result.GetType()) "StdError" with
+                | None -> Array.empty<string>
+                | Some p -> p.GetValue(result) :?> string array
+
+            /// The resolution paths
+            member __.Resolutions =
+                match getInstanceProperty<string seq> (result.GetType()) "Resolutions" with
+                | None -> Seq.empty<string>
+                | Some p -> p.GetValue(result) :?> string seq
+
+            /// The source code file paths
+            member __.SourceFiles =
+                match getInstanceProperty<string seq> (result.GetType()) "SourceFiles" with
+                | None -> Seq.empty<string>
+                | Some p -> p.GetValue(result) :?> string seq
+
+            /// The roots to package directories
+            member __.Roots =
+                match getInstanceProperty<string seq> (result.GetType()) "Roots" with
+                | None -> Seq.empty<string>
+                | Some p -> p.GetValue(result) :?> string seq
+        }
+
+    static member MakeResultFromFields(success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) = {
+        new IResolveDependenciesResult with
+            /// Succeded?
+            member __.Success = success
+
+            /// The resolution output log
+            member __.StdOut = stdOut
+
+            /// The resolution error log (* process stderror *)
+            member __.StdError = stdError
+
+            /// The resolution paths
+            member __.Resolutions = resolutions
+
+            /// The source code file paths
+            member __.SourceFiles = sourceFiles
+
+            /// The roots to package directories
+            member __.Roots = roots
+        }
+
+
     interface IDependencyManagerProvider with
 
         /// Name of dependency Manager
@@ -126,8 +187,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         member __.Key = instance |> keyProperty
 
         /// Resolve the dependencies for the given arguments
-        ///
-        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm): bool * string array * string array * string seq * string seq * string seq =
+        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm): IResolveDependenciesResult =
 
             // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resoveDepsEx
             // The resolve method can return values in two different tuples:
@@ -144,22 +204,29 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                 else
                     None, [||]
 
-            let succeeded, stdOut, stdErr, references, generatedScripts, additionalIncludeFolders =
-                let result =
-                    match method with
-                    | Some m -> m.Invoke(instance, arguments) :?> _
-                    | None -> false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty
+            match method with
+            | Some m ->
+                let result = m.Invoke(instance, arguments)
 
                 // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
-                //     4 - (bool * string list * string list * string list)
+                //     1 - object with properties
                 //     3 - (bool * string list * string list)
-                let tupleFields = result |> FSharpValue.GetTupleFields
-                match tupleFields |> Array.length with
-                | 6 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string array, tupleFields.[2] :?> string array, tupleFields.[3] :?> string seq, tupleFields.[4] :?> string seq, tupleFields.[5] :?> string seq
-                | 3 -> tupleFields.[0] :?> bool, arrEmpty, arrEmpty, seqEmpty, tupleFields.[1] :?> string list  |> List.toSeq, tupleFields.[2] :?> string list |> List.toSeq
-                | _ -> false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty
 
-            succeeded, stdOut, stdErr, references, generatedScripts, additionalIncludeFolders
+                // Support legacy api return shape (bool, string seq, string seq) --- original paket packagemanager
+                if Microsoft.FSharp.Reflection.FSharpType.IsTuple (result.GetType()) then
+                    // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
+                    //     3 - (bool * string list * string list)
+                    let success, sourceFiles, packageRoots =
+                        let tupleFields = result |> FSharpValue.GetTupleFields
+                        match tupleFields |> Array.length with
+                        | 3 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string list  |> List.toSeq, tupleFields.[2] :?> string list |> List.toSeq
+                        | _ -> false, seqEmpty, seqEmpty
+                    ReflectionDependencyManagerProvider.MakeResultFromFields(success, Array.empty, Array.empty, Seq.empty, sourceFiles, packageRoots)
+                else
+                    ReflectionDependencyManagerProvider.MakeResultFromObject(result)
+
+            | None ->
+                ReflectionDependencyManagerProvider.MakeResultFromFields(false, Array.empty, Array.empty, Seq.empty, Seq.empty, Seq.empty)
 
 
 /// Provides DependencyManagement functions.
@@ -277,17 +344,16 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             Unchecked.defaultof<IDependencyManagerProvider>
 
     /// Resolve reference for a list of package manager lines
-    member __.Resolve (packageManager:IDependencyManagerProvider, implicitIncludeDir: string, mainScriptName: string, fileName: string, scriptExt: string, packageManagerTextLines: string seq, reportError: ResolvingErrorReport, executionTfm: string): ResolveDependenciesResult =
+    member __.Resolve (packageManager:IDependencyManagerProvider, implicitIncludeDir: string, mainScriptName: string, fileName: string, scriptExt: string, packageManagerTextLines: string seq, reportError: ResolvingErrorReport, executionTfm: string): IResolveDependenciesResult =
 
         try
-            new ResolveDependenciesResult(packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm))
+            packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm)
 
         with e ->
             let e = stripTieWrapper e
             let err, msg = (InteractiveDependencyManager.SR.packageManagerError(e.Message))
             reportError.Invoke(ErrorReportType.Error, err, msg)
-
-            new ResolveDependenciesResult(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
+            ReflectionDependencyManagerProvider.MakeResultFromFields(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
 
     interface IDisposable with
 

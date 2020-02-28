@@ -7,28 +7,25 @@ open System
 
 
 /// The results of ResolveDependencies
-type ResolveDependenciesResult =
-
-    // Make new ResolveDependenciesResult
-    new: success: bool * stdOut: string array * stdError: string array * resolutions: string seq * sourceFiles: string seq * roots: string seq -> ResolveDependenciesResult
+type IResolveDependenciesResult =
 
     /// Succeded?
-    member public Success: bool
+    abstract Success: bool
 
     /// The resolution output log
-    member public StdOut: string array
+    abstract StdOut: string array
 
     /// The resolution error log (* process stderror *)
-    member public StdError: string array
-    
+    abstract StdError: string array
+
     /// The resolution paths
-    member public Resolutions: string seq
+    abstract Resolutions: string seq
 
     /// The source code file paths
-    member public SourceFiles: string seq
+    abstract SourceFiles: string seq
 
     /// The roots to package directories
-    member public Roots: string seq
+    abstract Roots: string seq
 
 
 /// Wraps access to a DependencyManager implementation
@@ -45,14 +42,15 @@ type IDependencyManagerProvider =
     abstract Key: string
 
     /// Resolve the dependencies, for the given set of arguments, go find the .dll references, scripts and additional include values.
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string ->  bool * string array * string array  *string seq * string seq * string seq
-    
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> IResolveDependenciesResult
+
 
 /// Todo describe this API
 [<RequireQualifiedAccess>]
 type ErrorReportType =
     | Warning
     | Error
+
 
 type ResolvingErrorReport = delegate of ErrorReportType * int * string -> unit
 
@@ -73,7 +71,7 @@ type DependencyProvider =
     member RemoveDependencyManagerKey: packageManagerKey: string * path: string -> string
 
     /// Resolve reference for a list of package manager lines
-    member Resolve : packageManager: IDependencyManagerProvider * implicitIncludeDir: string * mainScriptName: string * fileName: string * scriptExt: string * packageManagerTextLines: string seq * reportError: ResolvingErrorReport * executionTfm: string -> ResolveDependenciesResult
+    member Resolve : packageManager: IDependencyManagerProvider * implicitIncludeDir: string * mainScriptName: string * fileName: string * scriptExt: string * packageManagerTextLines: string seq * reportError: ResolvingErrorReport * executionTfm: string -> IResolveDependenciesResult
 
     /// Fetch a dependencymanager that supports a specific key
     member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string -> IDependencyManagerProvider
