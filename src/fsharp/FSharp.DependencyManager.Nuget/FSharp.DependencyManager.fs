@@ -134,7 +134,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
     let deleteScripts () =
         try
-#if Debug
+#if !Debug
             if Directory.Exists(scriptsPath) then
                 Directory.Delete(scriptsPath, true)
 #else

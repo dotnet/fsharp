@@ -187,7 +187,7 @@ $(PACKAGEREFERENCES)
     <ItemGroup>
       <ResolvedReferenceLines Remove='*' />
       <ResolvedReferenceLines
-          Condition="'$(SCRIPTEXTENSION)'=='.fsx' or '%(InteractiveResolvedFile.NugetPackageId)'!='FSharp.Core'"
+          Condition="'$(SCRIPTEXTENSION)'=='.csx' or '%(InteractiveResolvedFile.NugetPackageId)'!='FSharp.Core'"
           Include='%(InteractiveResolvedFile.NugetPackageId),%(InteractiveResolvedFile.NugetPackageVersion),%(InteractiveResolvedFile.PackageRoot),%(InteractiveResolvedFile.FullPath),%(InteractiveResolvedFile.IsNotImplementationReference),%(InteractiveResolvedFile.InitializeSourcePath),%(NativeIncludeRoots.Path)'
           KeepDuplicates="false" />
     </ItemGroup>
