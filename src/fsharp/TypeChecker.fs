@@ -6800,7 +6800,7 @@ and ComputeObjectExprOverrides cenv (env: TcEnv) tpenv impls =
                |> List.unzip
                     
             // 2. collect all name/arity of all overrides 
-            let dispatchSlots = reqdSlots |> List.map (fun (RequiredSlot(dispatchSlot, _)) -> dispatchSlot)
+            let dispatchSlots = reqdSlots |> List.map (fun reqdSlot -> reqdSlot.MethodInfo)
             let virtNameAndArityPairs = dispatchSlots |> List.map (fun virt -> 
                 let vkey = (virt.LogicalName, virt.NumArgs) 
                 //dprintfn "vkey = %A" vkey
@@ -6952,7 +6952,8 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
                             let searchForOverride = 
                                 dispatchSlotsKeyed 
                                 |> NameMultiMap.find id.idText 
-                                |> List.tryPick (fun (RequiredSlot(virt, _)) -> 
+                                |> List.tryPick (fun reqdSlot -> 
+                                     let virt = reqdSlot.MethodInfo
                                      if DispatchSlotChecking.IsExactMatch cenv.g cenv.amap m virt ovinfo then 
                                          Some virt 
                                      else 
