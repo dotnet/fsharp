@@ -577,8 +577,7 @@ type ParamNameAndType =
 [<NoComparison; NoEquality>]
 /// Full information about a parameter returned for use by the type checker and language service.
 type ParamData =
-    /// ParamData(isParamArray, isOut, optArgInfo, callerInfo, nameOpt, reflArgInfo, ttype)
-    ParamData of bool * bool * bool * OptionalArgInfo * CallerInfo * Ident option * ReflectedArgInfo * TType
+    ParamData of isParamArray: bool * isInArg: bool * isOut: bool * optArgInfo: OptionalArgInfo * callerInfo: CallerInfo * nameOpt: Ident option * reflArgInfo: ReflectedArgInfo * ttype: TType
 
 
 //-------------------------------------------------------------------------
@@ -871,9 +870,7 @@ type ILMethInfo =
 // MethInfo
 
 
-#if DEBUG
 [<System.Diagnostics.DebuggerDisplayAttribute("{DebuggerDisplayName}")>]
-#endif
 /// Describes an F# use of a method
 [<NoComparison; NoEquality>]
 type MethInfo =
@@ -956,7 +953,6 @@ type MethInfo =
      /// over extension members.
     member x.ExtensionMemberPriority = defaultArg x.ExtensionMemberPriorityOption System.UInt64.MaxValue
 
-#if DEBUG
      /// Get the method name in DebuggerDisplayForm
     member x.DebuggerDisplayName =
         match x with
@@ -966,7 +962,6 @@ type MethInfo =
         | ProvidedMeth(_, mi, _, m) -> "ProvidedMeth: " + mi.PUntaint((fun mi -> mi.Name), m)
 #endif
         | DefaultStructCtor _ -> ".ctor"
-#endif
 
      /// Get the method name in LogicalName form, i.e. the name as it would be stored in .NET metadata
     member x.LogicalName =
@@ -1077,7 +1072,7 @@ type MethInfo =
     /// For an extension method this includes all type parameters, even if it is extending a generic type.
     member x.GenericArity =  x.FormalMethodTypars.Length
 
-    member x.IsProtectedAccessiblity =
+    member x.IsProtectedAccessibility =
         match x with
         | ILMeth(_, ilmeth, _) -> ilmeth.IsProtectedAccessibility
         | FSMeth _ -> false
@@ -1541,7 +1536,7 @@ type MethInfo =
                     let formalRetTy = ImportReturnTypeFromMetadata amap m ilminfo.RawMetadata.Return.Type ilminfo.RawMetadata.Return.CustomAttrs ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
                     let formalParams =
                         [ [ for p in ilminfo.RawMetadata.Parameters do
-                                let paramType = ImportILTypeFromMetadata amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type
+                                let paramType = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type p.CustomAttrs
                                 yield TSlotParam(p.Name, paramType, p.IsIn, p.IsOut, p.IsOptional, []) ] ]
                     formalRetTy, formalParams
 #if !NO_EXTENSIONTYPING
@@ -2248,6 +2243,8 @@ type PropInfo =
         | ProvidedProp(_, pi, _) -> ProvidedPropertyInfo.TaintedGetHashCode pi
 #endif
 
+    override x.ToString() = "property " + x.PropertyName
+
 //-------------------------------------------------------------------------
 // ILEventInfo
 
@@ -2476,7 +2473,7 @@ type EventInfo =
 
     /// Test whether two event infos have the same underlying definition.
     /// Must be compatible with ItemsAreEffectivelyEqual relation.
-    static member EventInfosUseIdenticalDefintions x1 x2 =
+    static member EventInfosUseIdenticalDefinitions x1 x2 =
         match x1, x2 with
         | FSEvent(g, pi1, vrefa1, vrefb1), FSEvent(_, pi2, vrefa2, vrefb2) ->
             PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2 && valRefEq g vrefa1 vrefa2 && valRefEq g vrefb1 vrefb2
@@ -2495,6 +2492,7 @@ type EventInfo =
 #if !NO_EXTENSIONTYPING
         | ProvidedEvent (_, ei, _) -> ProvidedEventInfo.TaintedGetHashCode ei
 #endif
+    override x.ToString() = "event " + x.EventName
 
 //-------------------------------------------------------------------------
 // Helpers associated with getting and comparing method signatures

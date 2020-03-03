@@ -6,7 +6,6 @@ open System.Collections.Generic
 open System.Text
 open Internal.Utilities
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -285,9 +284,12 @@ let u_int32 st =
         assert(b0 = 0xFF)
         prim_u_int32 st
 
-let u_bytes st =
+let u_byte_memory st =
     let n =  (u_int32 st)
     st.is.ReadBytes n
+
+let u_bytes st =
+    (u_byte_memory st).ToArray()
 
 let u_prim_string st =
     let len =  (u_int32 st)
@@ -552,12 +554,12 @@ let p_maybe_lazy p (x: MaybeLazy<_>) st =
     p_lazy_impl p x.Value st
 
 let p_hole () =
-    let h = ref (None : ('T -> WriterState -> unit) option)
-    (fun f -> h := Some f), (fun x st -> match !h with Some f -> f x st | None -> pfailwith st "p_hole: unfilled hole")
+    let mutable h = None
+    (fun f -> h <- Some f), (fun x st -> match h with Some f -> f x st | None -> pfailwith st "p_hole: unfilled hole")
 
 let p_hole2 () =
-    let h = ref (None : ('Arg -> 'T -> WriterState -> unit) option)
-    (fun f -> h := Some f), (fun arg x st -> match !h with Some f -> f arg x st | None -> pfailwith st "p_hole2: unfilled hole")
+    let mutable h = None
+    (fun f -> h <- Some f), (fun arg x st -> match h with Some f -> f arg x st | None -> pfailwith st "p_hole2: unfilled hole")
 
 let u_array_core f n st =
     let res = Array.zeroCreate n
@@ -582,8 +584,7 @@ let u_array_ext extraf f st =
     extraItem, arr
 
 let u_list_core f n st =
-    [ for _ in 1..n do
-         yield f st ]
+    List.init n (fun _ -> f st)
 
 let u_list f st =
     let n = u_int st
@@ -674,8 +675,8 @@ let u_lazy u st =
 
 
 let u_hole () =
-    let h = ref (None : 'T unpickler option)
-    (fun f -> h := Some f), (fun st -> match !h with Some f -> f st | None -> ufailwith st "u_hole: unfilled hole")
+    let mutable h = None
+    (fun f -> h <- Some f), (fun st -> match h with Some f -> f st | None -> ufailwith st "u_hole: unfilled hole")
 
 //---------------------------------------------------------------------------
 // Pickle/unpickle F# interface data
@@ -834,7 +835,7 @@ let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =
         // an identical copy of the source for the DLL containing the data being unpickled.  A message will
         // then be printed indicating the name of the item.
 
-let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (phase2bytes: byte[]) =
+let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (phase2bytes: ReadOnlyByteMemory) =
     let st2 =
        { is = ByteStream.FromBytes (phase2bytes, 0, phase2bytes.Length)
          iilscope= ilscope
@@ -860,7 +861,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
             (u_array u_encoded_pubpath)
             (u_array u_encoded_nleref)
             (u_array u_encoded_simpletyp)
-            u_bytes
+            u_byte_memory
             st2
     let ccuTab       = new_itbl "iccus"       (Array.map (CcuThunk.CreateDelayed) ccuNameTab)
     let stringTab    = new_itbl "istrings"    (Array.map decode_string stringTab)
@@ -918,9 +919,11 @@ let p_ILAssemblyRef (x: ILAssemblyRef) st =
 
 let p_ILScopeRef x st =
     match x with
-    | ILScopeRef.Local         -> p_byte 0 st
-    | ILScopeRef.Module mref   -> p_byte 1 st; p_ILModuleRef mref st
-    | ILScopeRef.Assembly aref -> p_byte 2 st; p_ILAssemblyRef aref st
+    | ILScopeRef.Local           -> p_byte 0 st
+    | ILScopeRef.Module mref     -> p_byte 1 st; p_ILModuleRef mref st
+    | ILScopeRef.Assembly aref   -> p_byte 2 st; p_ILAssemblyRef aref st
+    // Encode primary assembly as a normal assembly ref
+    | ILScopeRef.PrimaryAssembly -> p_byte 2 st; p_ILAssemblyRef st.oglobals.ilg.primaryAssemblyRef st
 
 let u_ILPublicKey st =
     let tag = u_byte st
@@ -1306,11 +1309,23 @@ let u_ILInstr st =
 // Pickle/unpickle for F# types and module signatures
 //---------------------------------------------------------------------------
 
-let p_Map pk pv = p_wrap Map.toList (p_list (p_tup2 pk pv))
+let p_Map_core pk pv xs st =
+    xs |> Map.iter (fun k v -> pk k st; pv v st)
+
+let p_Map pk pv x st =
+    p_int (Map.count x) st
+    p_Map_core pk pv x st
+
 let p_qlist pv = p_wrap QueueList.toList (p_list pv)
 let p_namemap p = p_Map p_string p
 
-let u_Map uk uv = u_wrap Map.ofList (u_list (u_tup2 uk uv))
+let u_Map_core uk uv n st =
+    Map.ofSeq (seq { for _ in 1..n -> (uk st, uv st) })
+
+let u_Map uk uv st = 
+    let n = u_int st
+    u_Map_core uk uv n st
+
 let u_qlist uv = u_wrap QueueList.ofList (u_list uv)
 let u_namemap u = u_Map u_string u
 
@@ -1368,7 +1383,7 @@ let p_tys = (p_list p_ty)
 let fill_p_attribs, p_attribs = p_hole()
 
 // In F# 4.5, the type of the "this" pointer for structs is considered to be inref for the purposes of checking the implementation
-// of the struct.  However for backwards compat reaons we can't serialize this as the type.
+// of the struct.  However for backwards compat reasons we can't serialize this as the type.
 let checkForInRefStructThisArg st ty =
     let g = st.oglobals
     let _, tauTy = tryDestForallTy g ty
@@ -2163,7 +2178,7 @@ and u_entity_spec_data st : Entity =
                        entity_xmldoc= defaultArg x15 XmlDoc.Empty
                        entity_xmldocsig = System.String.Empty
                        entity_tycon_abbrev = x8
-                       entity_accessiblity = x4a
+                       entity_accessibility = x4a
                        entity_tycon_repr_accessibility = x4b
                        entity_exn_info = x14 }
     }

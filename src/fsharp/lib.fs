@@ -4,8 +4,8 @@ module internal FSharp.Compiler.Lib
 
 open System.IO
 open System.Collections.Generic
+open System.Runtime.InteropServices
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
 
@@ -13,8 +13,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 /// is this the developer-debug build? 
 let debug = false 
 let verbose = false
-let progress = ref false 
-let tracking = ref false // intended to be a general hook to control diagnostic output when tracking down bugs
+let mutable progress = false 
+let mutable tracking = false // intended to be a general hook to control diagnostic output when tracking down bugs
 
 let condition s = 
     try (System.Environment.GetEnvironmentVariable(s) <> null) with _ -> false
@@ -98,31 +98,31 @@ module Check =
     
     /// Throw <c>System.InvalidOperationException()</c> if argument is <c>None</c>.
     /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
-    let NotNone argname (arg:'T option) : 'T = 
+    let NotNone argName (arg:'T option) : 'T = 
         match arg with 
-        | None -> raise (new System.InvalidOperationException(argname))
+        | None -> raise (new System.InvalidOperationException(argName))
         | Some x -> x
 
     /// Throw <c>System.ArgumentNullException()</c> if argument is <c>null</c>.
-    let ArgumentNotNull arg argname = 
+    let ArgumentNotNull arg argName = 
         match box(arg) with 
-        | null -> raise (new System.ArgumentNullException(argname))
+        | null -> raise (new System.ArgumentNullException(argName))
         | _ -> ()
        
         
     /// Throw <c>System.ArgumentNullException()</c> if array argument is <c>null</c>.
     /// Throw <c>System.ArgumentOutOfRangeException()</c> is array argument is empty.
-    let ArrayArgumentNotNullOrEmpty (arr:'T[]) argname = 
-        ArgumentNotNull arr argname
+    let ArrayArgumentNotNullOrEmpty (arr:'T[]) argName = 
+        ArgumentNotNull arr argName
         if (0 = arr.Length) then
-            raise (new System.ArgumentOutOfRangeException(argname))
+            raise (new System.ArgumentOutOfRangeException(argName))
 
     /// Throw <c>System.ArgumentNullException()</c> if string argument is <c>null</c>.
     /// Throw <c>System.ArgumentOutOfRangeException()</c> is string argument is empty.
-    let StringArgumentNotNullOrEmpty (s:string) argname = 
-        ArgumentNotNull s argname
+    let StringArgumentNotNullOrEmpty (s:string) argName = 
+        ArgumentNotNull s argName
         if s.Length = 0 then
-            raise (new System.ArgumentNullException(argname))
+            raise (new System.ArgumentNullException(argName))
 
 //-------------------------------------------------------------------------
 // Library 
@@ -313,19 +313,12 @@ let bufs f =
     f buf 
     buf.ToString()
 
-let buff (os: TextWriter) f x = 
+// writing to output stream via a string buffer.
+let writeViaBuffer (os: TextWriter) f x = 
     let buf = System.Text.StringBuilder 100 
     f buf x 
     os.Write(buf.ToString())
 
-// Converts "\n" into System.Environment.NewLine before writing to os. See lib.fs:buff
-let writeViaBufferWithEnvironmentNewLines (os: TextWriter) f x = 
-    let buf = System.Text.StringBuilder 100 
-    f buf x
-    let text = buf.ToString()
-    let text = text.Replace("\n", System.Environment.NewLine)
-    os.Write text
-        
 //---------------------------------------------------------------------------
 // Imperative Graphs 
 //---------------------------------------------------------------------------
@@ -378,23 +371,38 @@ let nullableSlotFull x = x
 type cache<'T> = { mutable cacheVal: 'T NonNullSlot }
 let newCache() = { cacheVal = nullableSlotEmpty() }
 
-let inline cached cache resf = 
+let inline cached cache resF = 
     match box cache.cacheVal with 
     | null -> 
-        let res = resf() 
+        let res = resF() 
         cache.cacheVal <- nullableSlotFull res 
         res
     | _ -> 
         cache.cacheVal
 
+let inline cacheOptByref (cache: byref<'T option>) f = 
+    match cache with 
+    | Some v -> v
+    | None -> 
+       let res = f()
+       cache <- Some res
+       res
+
+// REVIEW: this is only used because we want to mutate a record field,
+// and because you cannot take a byref<_> of such a thing directly,
+// we cannot use 'cacheOptByref'. If that is changed, this can be removed.
 let inline cacheOptRef cache f = 
-    match !cache with 
+    match !cache with
     | Some v -> v
     | None -> 
        let res = f()
        cache := Some res
        res 
 
+let inline tryGetCacheValue cache =
+    match box cache.cacheVal with
+    | null -> ValueNone
+    | _ -> ValueSome cache.cacheVal
 
 #if DUMPER
 type Dumper(x:obj) =
@@ -419,11 +427,11 @@ module internal AsyncUtil =
         | AsyncCanceled of OperationCanceledException
 
         static member Commit(res:AsyncResult<'T>) =
-            Async.FromContinuations (fun (cont, econt, ccont) ->
+            Async.FromContinuations (fun (cont, eCont, cCont) ->
                     match res with
                     | AsyncOk v -> cont v
-                    | AsyncException exn -> econt exn
-                    | AsyncCanceled exn -> ccont exn)
+                    | AsyncException exn -> eCont exn
+                    | AsyncCanceled exn -> cCont exn)
 
     /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
     [<Sealed>]
@@ -446,7 +454,7 @@ module internal AsyncUtil =
                     else
                         result <- Some res
                         // Invoke continuations in FIFO order
-                        // Continuations that Async.FromContinuations provide do QUWI/SynchContext.Post,
+                        // Continuations that Async.FromContinuations provide do QUWI/SyncContext.Post,
                         // so the order is not overly relevant but still. 
                         List.rev savedConts)
             let postOrQueue (sc:SynchronizationContext, cont) =
@@ -515,7 +523,7 @@ module UnmanagedProcessExecutionOptions =
     // Translation of C# from http://swikb/v1/DisplayOnlineDoc.aspx?entryID=826 and copy in bug://5018
     [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert, UnmanagedCode = true)>] 
     let EnableHeapTerminationOnCorruption() =
-        if (System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&  System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
             System.Environment.Version.Major < 3) then // and CLR not 3.0 or higher 
             // "The flag HeapSetInformation sets is available in Windows XP SP3 and later.
             //  The data structure used for heap information is available on earlier versions of Windows.

@@ -59,6 +59,8 @@ module ProductVersionTest =
     let validValues () =
         let max = System.UInt16.MaxValue
         [ "1.2.3.4", ILVersionInfo(1us,2us,3us,4us)
+          "1.0.3.4", ILVersionInfo(1us,0us,3us,4us)
+          "7.0.0.4-SomeExtraInformation", ILVersionInfo(7us,0us,0us,4us)
           "0.0.0.0", ILVersionInfo(0us,0us,0us,0us) 
           "3213.57843.32382.59493", ILVersionInfo(3213us,57843us,32382us,59493us)
           (sprintf "%d.%d.%d.%d" max max max max), ILVersionInfo(max,max,max,max) ]
@@ -70,10 +72,10 @@ module ProductVersionTest =
 
     let invalidValues () =
         [ "1.2.3.4", ILVersionInfo(1us,2us,3us,4us)
-          "1.2.3.4a", ILVersionInfo(1us,2us,3us,0us)
-          "1.2.c3.4", ILVersionInfo(1us,2us,0us,0us)
-          "1.2-d.3.4", ILVersionInfo(1us,0us,0us,0us)
-          "1dd.2.3.4", ILVersionInfo(0us,0us,0us,0us)
+          "1.2.3.4a", ILVersionInfo(1us,2us,3us,4us)
+          "1.2.c3.4", ILVersionInfo(1us,2us,0us,4us)
+          "1.2-d.3.4", ILVersionInfo(1us,0us,3us,4us)
+          "1dd.2.3.4", ILVersionInfo(0us,2us,3us,4us)
           "1dd.2da.d3hj.dd4ds", ILVersionInfo(0us,0us,0us,0us)
           "1.5.6.7.dasd", ILVersionInfo(1us,5us,6us,7us)
           "9.3", ILVersionInfo(9us,3us,0us,0us)
@@ -83,33 +85,5 @@ module ProductVersionTest =
 
     [<Test>]
     let ``should zero starting from first invalid version part`` () = 
-        for (v, expected) in  invalidValues() do
+        for (v, expected) in invalidValues() do
             v |> productVersionToILVersionInfo |> Assert.areEqual expected
-
-module TypeProviderDesignTimeComponentLoading =
-
-
-    [<Test>]
-    let ``check tooling paths for type provider design time component loading`` () =
-        let expected =
-          [
-#if NET472 // only available on net472
-            Path.Combine("typeproviders", "fsharp41", "net461")
-            Path.Combine("tools", "fsharp41", "net461")
-            Path.Combine("typeproviders", "fsharp41", "net452")
-            Path.Combine("tools", "fsharp41", "net452")
-            Path.Combine("typeproviders", "fsharp41", "net451")
-            Path.Combine("tools", "fsharp41", "net451")
-            Path.Combine("typeproviders", "fsharp41", "net45")
-            Path.Combine("tools", "fsharp41", "net45")
-#else // only available on netcoreapp2.0
-            Path.Combine("typeproviders", "fsharp41", "netcoreapp2.0")
-            Path.Combine("tools", "fsharp41", "netcoreapp2.0")
-#endif // available in both
-            Path.Combine("typeproviders", "fsharp41", "netstandard2.0")
-            Path.Combine("tools", "fsharp41", "netstandard2.0")
-          ]
-        let actual = FSharp.Compiler.ExtensionTyping.toolingCompatiblePaths()
-        printfn "actual = %A" actual
-        printfn "expected = %A" expected
-        Assert.True((expected=actual))

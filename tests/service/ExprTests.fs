@@ -1,7 +1,6 @@
 ﻿
 #if INTERACTIVE
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.ProjectCracker.dll"
 #r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -15,9 +14,7 @@ open FsUnit
 open System
 open System.IO
 open System.Collections.Generic
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Service
 open FSharp.Compiler.Service.Tests.Common
 
 let internal exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
@@ -282,7 +279,6 @@ module internal Utils =
 // This project is a smoke test for a whole range of standard and obscure expressions
 
 module internal Project1 = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let base2 = Path.GetTempFileName()
@@ -641,8 +637,11 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 
 """
 
-//<@ let x = Some(3) in x.IsSome @>
 [<Test>]
+// FCS Has a problem with these tests because of FSharp Core versions.
+#if !COMPILER_SERVICE_AS_DLL
+[<Ignore("SKIPPED: FSharp.Core nuget package needs to be updated before this test can be re-enabled")>]
+#endif
 let ``Test Unoptimized Declarations Project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
 
@@ -715,7 +714,7 @@ let ``Test Unoptimized Declarations Project1`` () =
         "member CurriedMethod(x) (a1,b1) (a2,b2) = 1 @ (107,63--107,64)";
         "let testFunctionThatCallsMultiArgMethods(unitVar0) = let m: M.MultiArgMethods = new MultiArgMethods(3,4) in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (m.Method(7,8),fun tupledArg -> let arg00: Microsoft.FSharp.Core.int = tupledArg.Item0 in let arg01: Microsoft.FSharp.Core.int = tupledArg.Item1 in fun tupledArg -> let arg10: Microsoft.FSharp.Core.int = tupledArg.Item0 in let arg11: Microsoft.FSharp.Core.int = tupledArg.Item1 in m.CurriedMethod(arg00,arg01,arg10,arg11) (9,10) (11,12)) @ (110,8--110,9)";
         "let testFunctionThatUsesUnitsOfMeasure(x) (y) = Operators.op_Addition<Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>> (x,y) @ (122,70--122,75)";
-        "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.[] = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress,false,ILArrayShapeFIX,!0)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
+        "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.[] = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress, false, ILArrayShapeFIX, !0)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
         "let testFunctionThatUsesStructs1(dt) = dt.AddDays(3) @ (139,57--139,72)";
         "let testFunctionThatUsesStructs2(unitVar0) = let dt1: System.DateTime = DateTime.get_Now () in let mutable dt2: System.DateTime = DateTime.get_Now () in let dt3: System.TimeSpan = Operators.op_Subtraction<System.DateTime,System.DateTime,System.TimeSpan> (dt1,dt2) in let dt4: System.DateTime = dt1.AddDays(3) in let dt5: Microsoft.FSharp.Core.int = dt1.get_Millisecond() in let dt6: Microsoft.FSharp.Core.byref<System.DateTime> = &dt2 in let dt7: System.TimeSpan = Operators.op_Subtraction<System.DateTime,System.DateTime,System.TimeSpan> (dt6,dt4) in dt7 @ (142,7--142,10)";
         "let testFunctionThatUsesWhileLoop(unitVar0) = let mutable x: Microsoft.FSharp.Core.int = 1 in (while Operators.op_LessThan<Microsoft.FSharp.Core.int> (x,100) do x <- Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,1) done; x) @ (152,15--152,16)";
@@ -749,9 +748,9 @@ let ``Test Unoptimized Declarations Project1`` () =
         "type LetLambda";
         "let f = ((); fun a -> fun b -> Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (a,b)) @ (246,8--247,24)";
         "let letLambdaRes = Operators.op_PipeRight<(Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int) Microsoft.FSharp.Collections.list,Microsoft.FSharp.Core.int Microsoft.FSharp.Collections.list> (Cons((1,2),Empty()),let mapping: Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.int = fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b in fun list -> ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (mapping,list)) @ (249,19--249,71)";
-        "let anonRecd = {X = 1; Y = 2} @ (251,15--251,33)"
+        "let anonRecd = {X = 1; Y = 2} @ (251,15--251,33)";
         "let anonRecdGet = (M.anonRecd ().X,M.anonRecd ().Y) @ (252,19--252,41)"
-      ]
+        ]
 
     let expected2 = [
         "type N"; "type IntAbbrev"; "let bool2 = False @ (6,12--6,17)";
@@ -784,9 +783,10 @@ let ``Test Unoptimized Declarations Project1`` () =
 
 
 [<Test>]
-//#if NETCOREAPP2_0
-//[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-//#endif
+// FCS Has a problem with these tests because of FSharp Core versions
+#if !COMPILER_SERVICE_AS_DLL
+[<Ignore("SKIPPED: FSharp.Core nuget package needs to be updated before this test can be re-enabled")>]
+#endif
 let ``Test Optimized Declarations Project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
 
@@ -906,7 +906,7 @@ let ``Test Optimized Declarations Project1`` () =
         "let testHashUInt64(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (x),Operators.ToInt32<Microsoft.FSharp.Core.int> (Operators.op_RightShift<Microsoft.FSharp.Core.uint64> (x,32))) @ (12,32--12,38)";
         "let testHashIntPtr(x) = Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.nativeint> (x)) @ (13,35--13,41)";
         "let testHashUIntPtr(x) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.unativeint> (x)),2147483647) @ (14,37--14,43)";
-        "let testHashString(x) = (if Operators.op_Equality<Microsoft.FSharp.Core.string> (x,dflt) then 0 else Operators.Hash<Microsoft.FSharp.Core.string> (x)) @ (16,32--16,38)";
+        "let testHashString(x) = (if Operators.op_Equality<Microsoft.FSharp.Core.string> (x,dflt) then 0 else x.GetHashCode()) @ (16,32--16,38)";
         "let testTypeOf(x) = Operators.TypeOf<'T> () @ (17,24--17,30)";
         "let mutableVar(x) = (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (20,4--22,16)";
         "let mutableConst(unitVar0) = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (25,16--25,19)";
@@ -1062,8 +1062,12 @@ let ``Test Operator Declarations for Byte`` () =
         "let testByteToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.byte> (e1)) @ (53,43--53,51)";
         "let testByteToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,43--54,53)";
         "let testByteToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.byte> (e1) @ (55,43--55,50)";
+#if DEBUG
+        @"let testByteToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.byte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)";
+#else
         "let testByteToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.byte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)";
-      ]
+#endif
+    ]
 
     testOperators "Byte" "byte" excludedTests expectedUnoptimized expectedOptimized
 
@@ -1172,8 +1176,12 @@ let ``Test Operator Declarations for SByte`` () =
         "let testSByteToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.sbyte> (e1) @ (53,45--53,53)";
         "let testSByteToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testSByteToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.sbyte> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testSByteToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.sbyte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#else
         "let testSByteToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.sbyte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
-      ]
+#endif
+    ]
 
     testOperators "SByte" "sbyte" excludedTests expectedUnoptimized expectedOptimized
 
@@ -1282,7 +1290,11 @@ let ``Test Operator Declarations for Int16`` () =
         "let testInt16ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int16> (e1) @ (53,45--53,53)";
         "let testInt16ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testInt16ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int16> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testInt16ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#else
         "let testInt16ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#endif
       ]
 
     testOperators "Int16" "int16" excludedTests expectedUnoptimized expectedOptimized
@@ -1391,7 +1403,11 @@ let ``Test Operator Declarations for UInt16`` () =
         "let testUInt16ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.uint16> (e1)) @ (53,47--53,55)";
         "let testUInt16ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,47--54,57)";
         "let testUInt16ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.uint16> (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testUInt16ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testUInt16ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "UInt16" "uint16" excludedTests expectedUnoptimized expectedOptimized
@@ -1501,7 +1517,11 @@ let ``Test Operator Declarations for Int`` () =
         "let testIntToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int> (e1) @ (53,41--53,49)";
         "let testIntToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,41--54,51)";
         "let testIntToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int> (e1) @ (55,41--55,48)";
+#if DEBUG
+        @"let testIntToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,41--56,50)"
+#else
         "let testIntToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,41--56,50)";
+#endif
       ]
 
     testOperators "Int" "int" excludedTests expectedUnoptimized expectedOptimized
@@ -1611,7 +1631,11 @@ let ``Test Operator Declarations for Int32`` () =
         "let testInt32ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int32> (e1) @ (53,45--53,53)";
         "let testInt32ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testInt32ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int32> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testInt32ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)"
+#else
         "let testInt32ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#endif
       ]
 
     testOperators "Int32" "int32" excludedTests expectedUnoptimized expectedOptimized
@@ -1720,7 +1744,11 @@ let ``Test Operator Declarations for UInt32`` () =
         "let testUInt32ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.uint32> (e1)) @ (53,47--53,55)";
         "let testUInt32ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,47--54,57)";
         "let testUInt32ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.uint32> (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testUInt32ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testUInt32ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "UInt32" "uint32" excludedTests expectedUnoptimized expectedOptimized
@@ -1830,7 +1858,11 @@ let ``Test Operator Declarations for Int64`` () =
         "let testInt64ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int64> (e1) @ (53,45--53,53)";
         "let testInt64ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testInt64ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int64> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testInt64ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)"
+#else
         "let testInt64ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#endif
       ]
 
     testOperators "Int64" "int64" excludedTests expectedUnoptimized expectedOptimized
@@ -1939,7 +1971,11 @@ let ``Test Operator Declarations for UInt64`` () =
         "let testUInt64ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.uint64> (e1)) @ (53,47--53,55)";
         "let testUInt64ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,47--54,57)";
         "let testUInt64ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.uint64> (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testUInt64ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testUInt64ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "UInt64" "uint64" excludedTests expectedUnoptimized expectedOptimized
@@ -2049,7 +2085,11 @@ let ``Test Operator Declarations for IntPtr`` () =
         "let testIntPtrToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.nativeint> (e1) @ (53,50--53,58)";
         "let testIntPtrToDecimalOperator(e1) = Convert.ToDecimal (Operators.ToInt64<Microsoft.FSharp.Core.nativeint> (e1)) @ (54,50--54,60)";
         "let testIntPtrToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.nativeint> (e1) @ (55,50--55,57)";
+#if DEBUG
+        @"let testIntPtrToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.nativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,50--56,59)"
+#else
         "let testIntPtrToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.nativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,50--56,59)";
+#endif
       ]
 
     testOperators "IntPtr" "nativeint" excludedTests expectedUnoptimized expectedOptimized
@@ -2158,7 +2198,11 @@ let ``Test Operator Declarations for UIntPtr`` () =
         "let testUIntPtrToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.unativeint> (e1)) @ (53,52--53,60)";
         "let testUIntPtrToDecimalOperator(e1) = Convert.ToDecimal (Operators.ToUInt64<Microsoft.FSharp.Core.unativeint> (e1)) @ (54,52--54,62)";
         "let testUIntPtrToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.unativeint> (e1) @ (55,52--55,59)";
+#if DEBUG
+        @"let testUIntPtrToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.unativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,52--56,61)"
+#else
         "let testUIntPtrToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.unativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,52--56,61)";
+#endif
       ]
 
     testOperators "UIntPtr" "unativeint" excludedTests expectedUnoptimized expectedOptimized
@@ -2264,7 +2308,11 @@ let ``Test Operator Declarations for Single`` () =
         "let testSingleToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float32> (e1) @ (53,48--53,56)";
         "let testSingleToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,48--54,58)";
         "let testSingleToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.float32> (e1) @ (55,48--55,55)";
+#if DEBUG
+        @"let testSingleToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,48--56,57)"
+#else
         "let testSingleToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,48--56,57)";
+#endif
       ]
 
     testOperators "Single" "float32" excludedTests expectedUnoptimized expectedOptimized
@@ -2370,7 +2418,11 @@ let ``Test Operator Declarations for Double`` () =
         "let testDoubleToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (e1) @ (53,46--53,54)";
         "let testDoubleToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,46--54,56)";
         "let testDoubleToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.float> (e1) @ (55,46--55,53)";
+#if DEBUG
+        @"let testDoubleToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,46--56,55)"
+#else
         "let testDoubleToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,46--56,55)";
+#endif
       ]
 
     testOperators "Double" "float" excludedTests expectedUnoptimized expectedOptimized
@@ -2468,7 +2520,11 @@ let ``Test Operator Declarations for Decimal`` () =
         "let testDecimalToDoubleOperator(e1) = Convert.ToDouble (e1) @ (53,49--53,57)";
         "let testDecimalToDecimalOperator(e1) = e1 @ (54,57--54,59)";
         "let testDecimalToCharOperator(e1) = Decimal.op_Explicit (e1) @ (55,49--55,56)";
+#if DEBUG
+        @"let testDecimalToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.decimal> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,49--56,58)"
+#else
         "let testDecimalToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.decimal> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,49--56,58)";
+#endif
       ]
 
     testOperators "Decimal" "decimal" excludedTests expectedUnoptimized expectedOptimized
@@ -2565,7 +2621,11 @@ let ``Test Operator Declarations for Char`` () =
         "let testCharToSingleOperator(e1) = Operators.ToSingle<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.char> (e1)) @ (52,43--52,53)";
         "let testCharToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.char> (e1)) @ (53,43--53,51)";
         "let testCharToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.char> (e1) @ (55,43--55,50)";
+#if DEBUG
+        @"let testCharToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.char> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)"
+#else
         "let testCharToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.char> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)";
+#endif
       ]
 
     testOperators "Char" "char" excludedTests expectedUnoptimized expectedOptimized
@@ -2659,7 +2719,11 @@ let ``Test Operator Declarations for String`` () =
         "let testStringToDoubleOperator(e1) = Double.Parse ((if Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,dflt) then dflt else e1.Replace(\"_\",\"\")),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (53,47--53,55)";
         "let testStringToDecimalOperator(e1) = Decimal.Parse (e1,167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (54,47--54,57)";
         "let testStringToCharOperator(e1) = Char.Parse (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testStringToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.string> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testStringToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.string> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "String" "string" excludedTests expectedUnoptimized expectedOptimized
@@ -2669,7 +2733,6 @@ let ``Test Operator Declarations for String`` () =
 // This big list expression was causing us trouble
 
 module internal ProjectStressBigExpressions = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let base2 = Path.GetTempFileName()
@@ -2895,315 +2958,4 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
 
-#if NOT_YET_ENABLED
-
-#if !NO_PROJECTCRACKER && !NETCOREAPP2_0
-
-[<Test>]
-let ``Check use of type provider that provides calls to F# code`` () = 
-    let config = 
-#if DEBUG
-        ["Configuration", "Debug"]
-#else
-        ["Configuration", "Release"]
-#endif
-    let options =
-        ProjectCracker.GetProjectOptionsFromProjectFile (Path.Combine(Path.Combine(Path.Combine(__SOURCE_DIRECTORY__, "data"),"TestProject"),"TestProject.fsproj"), config)
-
-    let res =
-        options
-        |> exprChecker.ParseAndCheckProject 
-        |> Async.RunSynchronously
-
-    Assert.AreEqual ([||], res.Errors, sprintf "Should not be errors, but: %A" res.Errors)
-                                                                                       
-    let results = 
-        [ for f in res.AssemblyContents.ImplementationFiles do
-               for d in f.Declarations do 
-                    for line in d |> printDeclaration None do 
-                        yield line ]    
-    
-    results |> List.iter (printfn "%s")
-
-    results |> shouldEqual
-      ["type TestProject"; "type AssemblyInfo"; "type TestProject"; "type T";
-       """type Class1""";
-       """member .ctor(unitVar0) = (new Object(); ()) @ (5,5--5,11)""";
-       """member get_X1(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothing () @ (6,21--6,36)"""
-       """member get_X2(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingGeneric<Microsoft.FSharp.Core.int> (3) @ (7,21--7,43)"""
-       """member get_X3(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingOneArg (3) @ (8,21--8,42)"""
-       """member get_X4(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in C.DoNothing () @ (9,21--9,41)"""
-       """member get_X5(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in C.DoNothingGeneric<Microsoft.FSharp.Core.int> (3) @ (10,21--10,48)"""
-       """member get_X6(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in C.DoNothingOneArg (3) @ (11,21--11,47)"""
-       """member get_X7(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in C.DoNothingTwoArg (new C(),3) @ (12,21--12,47)"""
-       """member get_X8(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().InstanceDoNothing() @ (13,21--13,49)"""
-       """member get_X9(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().InstanceDoNothingGeneric<Microsoft.FSharp.Core.int>(3) @ (14,21--14,56)"""
-       """member get_X10(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().InstanceDoNothingOneArg(3) @ (15,22--15,56)"""
-       """member get_X11(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().InstanceDoNothingTwoArg(new C(),3) @ (16,22--16,56)"""
-       """member get_X12(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in G`1<Microsoft.FSharp.Core.int>.DoNothing () @ (17,22--17,49)"""
-       """member get_X13(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in G`1<Microsoft.FSharp.Core.int>.DoNothingOneArg (3) @ (18,22--18,55)"""
-       """member get_X14(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in G`1<Microsoft.FSharp.Core.int>.DoNothingTwoArg (new C(),3) @ (19,22--19,55)"""
-       """member get_X15(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let matchValue: Microsoft.FSharp.Core.Option<Microsoft.FSharp.Core.int> = FSharpOption`1<Microsoft.FSharp.Core.int>.Some (1) in (if Operators.op_Equality<Microsoft.FSharp.Core.int> (matchValue.Tag,1) then let x: Microsoft.FSharp.Core.int = matchValue.get_Value() in x else 0) @ (20,22--20,54)"""
-       """member get_X16(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let matchValue: Microsoft.FSharp.Core.Choice<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.obj> = Choice1Of2(1) in (if Operators.op_Equality<Microsoft.FSharp.Core.int> (matchValue.Tag,0) then 1 else 0) @ (21,22--21,54)"""
-       """member get_X17(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let r: TestTP.Helper.R = {A = 1; B = 0} in (r.B <- 1; r.A) @ (22,22--22,60)"""
-       """member get_X18(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingTwoArg (3,4) @ (23,22--23,43)"""
-       """member get_X19(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingTwoArgCurried (3,4) @ (24,22--24,50)"""
-       """member get_X21(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (fun arg00 -> fun arg10 -> C.DoNothingTwoArgCurried (arg00,arg10)<TestTP.Helper.C> new C())<Microsoft.FSharp.Core.int> 3 @ (25,22--25,55)"""
-       """member get_X23(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (let objectArg: TestTP.Helper.C = new C() in fun arg00 -> fun arg10 -> objectArg.InstanceDoNothingTwoArgCurried(arg00,arg10)<TestTP.Helper.C> new C())<Microsoft.FSharp.Core.int> 3 @ (26,22--26,63)"""
-       """member get_X24(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingGenericWithConstraint<Microsoft.FSharp.Core.int> (3) @ (27,22--27,58)"""
-       """member get_X25(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingGenericWithTypeConstraint<Microsoft.FSharp.Collections.List<Microsoft.FSharp.Core.int>,Microsoft.FSharp.Core.int> (FSharpList`1<Microsoft.FSharp.Core.int>.Cons (3,FSharpList`1<Microsoft.FSharp.Core.int>.get_Empty ())) @ (28,22--28,62)"""
-       """member get_X26(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingGenericWithTypeConstraint<Microsoft.FSharp.Collections.List<Microsoft.FSharp.Core.int>,Microsoft.FSharp.Core.int> (FSharpList`1<Microsoft.FSharp.Core.int>.Cons (3,FSharpList`1<Microsoft.FSharp.Core.int>.get_Empty ())) @ (29,22--29,62)"""
-       """member get_X27(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.DoNothingReally () @ (30,22--30,53)"""
-       """member get_X28(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new CSharpClass(0).Method("x") :> Microsoft.FSharp.Core.Unit @ (31,22--31,40)"""
-       """member get_X29(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (new CSharpClass(0).Method2("x"),new CSharpClass(0).Method2("empty")) :> Microsoft.FSharp.Core.Unit @ (32,22--32,53)"""
-       """member get_X30(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new CSharpClass(0).Method3([|"x"; "y"|]) :> Microsoft.FSharp.Core.Unit @ (33,22--33,50)"""
-       """member get_X31(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new CSharpClass(0).GenericMethod<Microsoft.FSharp.Core.int>(2) @ (34,22--34,47)"""
-       """member get_X32(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new CSharpClass(0).GenericMethod2<Microsoft.FSharp.Core.obj>(new Object()) @ (35,22--35,61)"""
-       """member get_X33(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new CSharpClass(0).GenericMethod3<Microsoft.FSharp.Core.int>(3) @ (36,22--36,65)"""
-       """member get_X34(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in C.DoNothingReally () @ (37,22--37,58)"""
-       """member get_X35(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().DoNothingReallyInst() @ (38,22--38,66)"""
-       """member get_X36(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (new CSharpClass(0) :> FSharp.Compiler.Service.Tests.ICSharpExplicitInterface).ExplicitMethod("x") :> Microsoft.FSharp.Core.Unit @ (39,22--39,62)"""
-       """member get_X37(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (new C() :> TestTP.Helper.I).DoNothing() @ (40,22--40,46)"""
-       """member get_X38(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().VirtualDoNothing() @ (41,22--41,45)"""
-       """member get_X39(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let t: Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int = (1,2,3) in let i: Microsoft.FSharp.Core.int = t.Item1 in i @ (42,22--42,51)"""
-       """member get_X40(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (moduleValue <- 1; moduleValue) @ (43,22--43,39)"""
-       """member get_X41(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let x: TestTP.Helper.C = new C() in (x.set_Property(1); x.get_Property()) @ (44,22--44,41)"""
-       """member get_X42(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let x: TestTP.Helper.C = new C() in (x.set_AutoProperty(1); x.get_AutoProperty()) @ (45,22--45,45)"""
-       """member get_X43(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (C.set_StaticAutoProperty (1); C.get_StaticAutoProperty ()) @ (46,22--46,51)"""
-      ]
-
-    let members = 
-        [ for f in res.AssemblyContents.ImplementationFiles do yield! printMembersOfDeclatations f.Declarations ]
-
-    members |> List.iter (printfn "%s")
-
-    members |> shouldEqual 
-      [
-       ".ctor: Microsoft.FSharp.Core.unit -> TestProject.Class1"
-       ".ctor: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X1: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X2: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingGeneric<'T>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X3: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingOneArg: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X4: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X5: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingGeneric<'T>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X6: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingOneArg: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X7: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingTwoArg: TestTP.Helper.C * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "get_X8: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "InstanceDoNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X9: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "InstanceDoNothingGeneric<'T>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X10: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "InstanceDoNothingOneArg: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X11: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "InstanceDoNothingTwoArg: TestTP.Helper.C * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "get_X12: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X13: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingOneArg: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X14: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingTwoArg: TestTP.Helper.C * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "get_X15: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "Some: 'T -> 'T Microsoft.FSharp.Core.option"
-       "op_Equality<'T when 'T : equality>: 'T -> 'T -> Microsoft.FSharp.Core.bool"
-       "matchValue: Microsoft.FSharp.Core.Option<Microsoft.FSharp.Core.int>"
-       "matchValue: Microsoft.FSharp.Core.Option<Microsoft.FSharp.Core.int>"
-       "get_Value: Microsoft.FSharp.Core.unit -> 'T"
-       "x: Microsoft.FSharp.Core.int"
-       "get_X16: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "op_Equality<'T when 'T : equality>: 'T -> 'T -> Microsoft.FSharp.Core.bool"
-       "matchValue: Microsoft.FSharp.Core.Choice<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.obj>"
-       "get_X17: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "r: TestTP.Helper.R"
-       "r: TestTP.Helper.R"
-       "get_X18: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingTwoArg: Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X19: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingTwoArgCurried: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X21: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingTwoArgCurried: TestTP.Helper.C -> Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "arg00: TestTP.Helper.C"
-       "arg10: Microsoft.FSharp.Core.int"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "get_X23: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "objectArg: TestTP.Helper.C"
-       "InstanceDoNothingTwoArgCurried: TestTP.Helper.C -> Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "arg00: TestTP.Helper.C"
-       "arg10: Microsoft.FSharp.Core.int"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "get_X24: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingGenericWithConstraint<'T when 'T : equality>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X25: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingGenericWithTypeConstraint<'T, _ when 'T :> Microsoft.FSharp.Collections.seq<'a>>: 'T -> Microsoft.FSharp.Core.unit"
-       "Cons: 'T * 'T Microsoft.FSharp.Collections.list -> 'T Microsoft.FSharp.Collections.list"
-       "get_Empty: Microsoft.FSharp.Core.unit -> 'T Microsoft.FSharp.Collections.list"
-       "get_X26: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingGenericWithTypeConstraint<'T, _ when 'T :> Microsoft.FSharp.Collections.seq<'a>>: 'T -> Microsoft.FSharp.Core.unit"
-       "Cons: 'T * 'T Microsoft.FSharp.Collections.list -> 'T Microsoft.FSharp.Collections.list"
-       "get_Empty: Microsoft.FSharp.Core.unit -> 'T Microsoft.FSharp.Collections.list"
-       "get_X27: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingReally: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X28: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "Method: Microsoft.FSharp.Core.string -> Microsoft.FSharp.Core.int"
-       "get_X29: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "op_Addition<^T1, ^T2, ^T3>:  ^T1 ->  ^T2 ->  ^T3"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "Method2: Microsoft.FSharp.Core.string -> Microsoft.FSharp.Core.int"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "Method2: Microsoft.FSharp.Core.string -> Microsoft.FSharp.Core.int"
-       "get_X30: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "Method3: Microsoft.FSharp.Core.string Microsoft.FSharp.Core.[] -> Microsoft.FSharp.Core.int"
-       "get_X31: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "GenericMethod<'T>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X32: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "GenericMethod2<'T when 'T : class>: 'T -> Microsoft.FSharp.Core.unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X33: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "GenericMethod3<'T when 'T :> System.IComparable<'T>>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X34: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingReally: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X35: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "DoNothingReallyInst: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X36: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "ExplicitMethod: Microsoft.FSharp.Core.string -> Microsoft.FSharp.Core.int"
-       "get_X37: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "DoNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X38: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "VirtualDoNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X39: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "t: Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int"
-       "i: Microsoft.FSharp.Core.int"
-       "get_X40: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "moduleValue: Microsoft.FSharp.Core.int"
-       "moduleValue: Microsoft.FSharp.Core.int"
-       "get_X41: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "x: TestTP.Helper.C"
-       "set_Property: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "x: TestTP.Helper.C"
-       "get_Property: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "get_X42: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "x: TestTP.Helper.C"
-       "set_AutoProperty: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "x: TestTP.Helper.C"
-       "get_AutoProperty: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "get_X43: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "set_StaticAutoProperty: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_StaticAutoProperty: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-      ]
-
-#endif
-#endif
-
-
-#if SELF_HOST_STRESS
-   
-
-[<Test>]
-let ``Test Declarations selfhost`` () =
-    let projectFile = __SOURCE_DIRECTORY__ + @"/FSharp.Compiler.Service.Tests.fsproj"
-    // Check with Configuration = Release
-    let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
-    
-    wholeProjectResults.Errors.Length |> shouldEqual 0 
-
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 13
-
-    let textOfAll = [ for file in wholeProjectResults.AssemblyContents.ImplementationFiles -> Array.ofSeq (printDeclarations None (List.ofSeq file.Declarations))   ]
-
-    ()
-
-
-[<Test>]
-let ``Test Declarations selfhost whole compiler`` () =
-    
-    Directory.SetCurrentDirectory(__SOURCE_DIRECTORY__ +  @"/../../src/fsharp/FSharp.Compiler.Service")
-    let projectFile = __SOURCE_DIRECTORY__ + @"/../../src/fsharp/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj"
-
-    //let v = FSharpProjectFileInfo.Parse(projectFile, [("Configuration", "Debug"); ("NoFsSrGenTask", "true")],enableLogging=true)
-    let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug"); ("NoFsSrGenTask", "true")])
-
-    // For subsets of the compiler:
-    //let options = { options with OtherOptions = options.OtherOptions.[0..51] }
-
-    //for x in options.OtherOptions do printfn "%s" x
-
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
-    
-    (wholeProjectResults.Errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)).Length |> shouldEqual 0 
-
-    for file in (wholeProjectResults.AssemblyContents.ImplementationFiles |> List.toArray) do
-        for d in file.Declarations do 
-           for s in printDeclaration None d do 
-              () //printfn "%s" s
-
-    // Very Quick (1 sec - expressions are computed on demand)
-    for file in (wholeProjectResults.AssemblyContents.ImplementationFiles |> List.toArray) do
-        for d in file.Declarations do 
-           for s in exprsOfDecl d do 
-              () 
-
-    // Quickish (~4.5 seconds for all of FSharp.Compiler.Service.dll)
-    #time "on"
-    for file in (wholeProjectResults.AssemblyContents.ImplementationFiles |> List.toArray) do
-        for d in file.Declarations do 
-           for (e,m) in exprsOfDecl d do 
-              // This forces the computation of the expression
-              match e with
-              | BasicPatterns.Const _ -> () //printfn "%s" s
-              | _ -> () //printfn "%s" s
-
-[<Test>]
-let ``Test Declarations selfhost FSharp.Core`` () =
-    
-    Directory.SetCurrentDirectory(__SOURCE_DIRECTORY__ +  @"/../../../fsharp/src/fsharp/FSharp.Core")
-    let projectFile = __SOURCE_DIRECTORY__ + @"/../../../fsharp/src/fsharp/FSharp.Core/FSharp.Core.fsproj"
-
-    let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
-
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
-    
-    //(wholeProjectResults.Errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)).Length |> shouldEqual 0 
-
-    for file in (wholeProjectResults.AssemblyContents.ImplementationFiles |> List.toArray) do
-        for d in file.Declarations do 
-           for s in printDeclaration (Some (HashSet [])) d do 
-              printfn "%s" s
-
-    #time "on"
-
-    for file in (wholeProjectResults.AssemblyContents.ImplementationFiles |> List.toArray) do
-        for d in file.Declarations do 
-           for (e,m) in exprsOfDecl d do 
-              // This forces the computation of the expression
-              match e with
-              | BasicPatterns.Const _ -> () 
-              | _ -> () 
-
-#endif
 

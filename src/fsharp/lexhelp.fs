@@ -6,19 +6,15 @@ open System
 open System.Text
 
 open Internal.Utilities
-open Internal.Utilities.Collections
-open Internal.Utilities.Text
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Ast
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.Range
 open FSharp.Compiler.Parser
 
@@ -40,8 +36,8 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 
 /// Manage lexer resources (string interning)
 [<Sealed>]
-type LexResourceManager() =
-    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(1024)
+type LexResourceManager(?capacity: int) =
+    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(defaultArg capacity 1024)
     member x.InternIdentifierToken(s) = 
         match strings.TryGetValue s with
         | true, res -> res
@@ -53,7 +49,7 @@ type LexResourceManager() =
 /// Lexer parameters 
 type lexargs =  
     { defines: string list
-      ifdefStack: LexerIfdefStack
+      mutable ifdefStack: LexerIfdefStack
       resourceManager: LexResourceManager
       lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger

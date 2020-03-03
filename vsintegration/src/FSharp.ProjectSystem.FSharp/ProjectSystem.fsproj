@@ -24,13 +24,22 @@
       <ResourceName>Menus.ctmenu</ResourceName>
       <SubType>Designer</SubType>
     </VSCTCompile>
+
+    <!-- Copy resx file and transform product/language version -->
+    <CopyVsixResources Include="Resources/**" />
     <EmbeddedResource Include="VSPackage.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpSR</GeneratedModuleName>
       <MergeWithCTO>true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>
       <SubType>Designer</SubType>
+      <IntermediateTargetPath>$(IntermediateOutputPath)resources\</IntermediateTargetPath>
+      <Pattern1>{{FSProductVersion}}</Pattern1>
+      <Replacement1>$(FSProductVersion)</Replacement1>
+      <Pattern2>{{FSLanguageVersion}}</Pattern2>
+      <Replacement2>$(FSLanguageVersion)</Replacement2>
     </EmbeddedResource>
+
     <Compile Include="ProjectPrelude.fs" />
     <Compile Include="WaitDialog.fs" />
     <Compile Include="MSBuildUtilities.fs" />

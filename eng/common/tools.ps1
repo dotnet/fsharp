@@ -154,6 +154,15 @@ function InitializeDotNetCli([bool]$install) {
   # Make Sure that our bootstrapped dotnet cli is available in future steps of the Azure Pipelines build
   Write-PipelinePrependPath -Path $dotnetRoot
 
+  # Work around issues with Azure Artifacts credential provider
+  # https://github.com/dotnet/arcade/issues/3932
+  if ($ci) {
+    $env:NUGET_PLUGIN_HANDSHAKE_TIMEOUT_IN_SECONDS = 20
+    $env:NUGET_PLUGIN_REQUEST_TIMEOUT_IN_SECONDS = 20
+    Write-PipelineSetVariable -Name 'NUGET_PLUGIN_HANDSHAKE_TIMEOUT_IN_SECONDS' -Value '20'
+    Write-PipelineSetVariable -Name 'NUGET_PLUGIN_REQUEST_TIMEOUT_IN_SECONDS' -Value '20'
+  }
+
   Write-PipelineSetVariable -Name 'DOTNET_MULTILEVEL_LOOKUP' -Value '0'
   Write-PipelineSetVariable -Name 'DOTNET_SKIP_FIRST_TIME_EXPERIENCE' -Value '1'
 
@@ -175,7 +184,14 @@ function InstallDotNetSdk([string] $dotnetRoot, [string] $version, [string] $arc
   InstallDotNet $dotnetRoot $version $architecture
 }
 
-function InstallDotNet([string] $dotnetRoot, [string] $version, [string] $architecture = "", [string] $runtime = "", [bool] $skipNonVersionedFiles = $false) {
+function InstallDotNet([string] $dotnetRoot, 
+  [string] $version, 
+  [string] $architecture = "", 
+  [string] $runtime = "", 
+  [bool] $skipNonVersionedFiles = $false, 
+  [string] $runtimeSourceFeed = "", 
+  [string] $runtimeSourceFeedKey = "") {
+
   $installScript = GetDotNetInstallScript $dotnetRoot
   $installParameters = @{
     Version = $version
@@ -186,10 +202,32 @@ function InstallDotNet([string] $dotnetRoot, [string] $version, [string] $archit
   if ($runtime) { $installParameters.Runtime = $runtime }
   if ($skipNonVersionedFiles) { $installParameters.SkipNonVersionedFiles = $skipNonVersionedFiles }
 
-  & $installScript @installParameters
-  if ($lastExitCode -ne 0) {
-    Write-PipelineTelemetryError -Category "InitializeToolset" -Message "Failed to install dotnet cli (exit code '$lastExitCode')."
-    ExitWithExitCode $lastExitCode
+  try {
+    & $installScript @installParameters
+  }
+  catch {
+    Write-PipelineTelemetryError -Category "InitializeToolset" -Message "Failed to install dotnet runtime '$runtime' from public location."
+
+    # Only the runtime can be installed from a custom [private] location.
+    if ($runtime -and ($runtimeSourceFeed -or $runtimeSourceFeedKey)) {
+      if ($runtimeSourceFeed) { $installParameters.AzureFeed = $runtimeSourceFeed }
+
+      if ($runtimeSourceFeedKey) {
+        $decodedBytes = [System.Convert]::FromBase64String($runtimeSourceFeedKey)
+        $decodedString = [System.Text.Encoding]::UTF8.GetString($decodedBytes)
+        $installParameters.FeedCredential = $decodedString
+      }
+
+      try {
+        & $installScript @installParameters
+      }
+      catch {
+        Write-PipelineTelemetryError -Category "InitializeToolset" -Message "Failed to install dotnet runtime '$runtime' from custom location '$runtimeSourceFeed'."
+        ExitWithExitCode 1
+      }
+    } else {
+      ExitWithExitCode 1
+    }
   }
 }
 
@@ -495,11 +533,6 @@ function MSBuild() {
     # https://github.com/dotnet/arcade/issues/3932
     if ($ci -and $buildTool.Tool -eq "dotnet") {
       dotnet nuget locals http-cache -c
-
-      $env:NUGET_PLUGIN_HANDSHAKE_TIMEOUT_IN_SECONDS = 20
-      $env:NUGET_PLUGIN_REQUEST_TIMEOUT_IN_SECONDS = 20
-      Write-PipelineSetVariable -Name 'NUGET_PLUGIN_HANDSHAKE_TIMEOUT_IN_SECONDS' -Value '20'
-      Write-PipelineSetVariable -Name 'NUGET_PLUGIN_REQUEST_TIMEOUT_IN_SECONDS' -Value '20'
     }
 
     $toolsetBuildProject = InitializeToolset

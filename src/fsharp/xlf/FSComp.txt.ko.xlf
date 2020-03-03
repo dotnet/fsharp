@@ -2,19 +2,69 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../FSComp.resx">
     <body>
+      <trans-unit id="csAvailableOverloads">
+        <source>Available overloads:\n{0}</source>
+        <target state="new">Available overloads:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
+        <source>Known types of arguments: {0}</source>
+        <target state="new">Known types of arguments: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixSingular">
+        <source>Known type of argument: {0}</source>
+        <target state="new">Known type of argument: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundReturnType">
+        <source>Known return type: {0}</source>
+        <target state="new">Known return type: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixPlural">
+        <source>Known type parameters: {0}</source>
+        <target state="new">Known type parameters: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixSingular">
+        <source>Known type parameter: {0}</source>
+        <target state="new">Known type parameter: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
+        <source>Argument at index {0} doesn't match</source>
+        <target state="new">Argument at index {0} doesn't match</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
+        <source>Argument '{0}' doesn't match</source>
+        <target state="new">Argument '{0}' doesn't match</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
         <target state="translated">F# {1}용 {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="formatDashItem">
+        <source> - {0}</source>
+        <target state="new"> - {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fromEndSlicingRequiresVFive">
+        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
+        <target state="new">From the end slicing with requires language version 5.0, use /langversion:preview.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
-        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
+        <target state="translated">스트림은 null 리소스로 시작되지 않으며 '.RES' 형식이 아닙니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
-        <target state="new">Resource header beginning at offset {0} is malformed.</target>
+        <target state="translated">오프셋 {0}에서 시작하는 리소스 헤더의 형식이 잘못되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -32,6 +82,11 @@
         <target state="translated">전체 목록에 대한 --langversion use --langversion:?의 인식할 수 없는 값 '{0}'입니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">멤버 정의의 예기치 않은 기호 '.'입니다. 'with', '=' 또는 기타 토큰이 필요합니다.</target>
@@ -47,9 +102,44 @@
         <target state="translated">{0}' 알고리즘은 지원되지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAndBangNotSupported">
+        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
+        <target state="new">This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameDifferent">
+        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
+        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSubset">
+        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
+        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSuperset">
+        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
+        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
-        <target state="new">Attributes cannot be applied to type extensions.</target>
+        <target state="translated">형식 확장에 특성을 적용할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
+        <source>use! may not be combined with and!</source>
+        <target state="new">use! may not be combined with and!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRequireMergeSourcesOrBindN">
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
+        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
+        <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
+        <target state="new">The type '{0}' does not define the field, constructor or member '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -1828,13 +1918,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csCandidates">
-        <source>Candidates: {0}</source>
-        <target state="translated">후보: {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csSeeAvailableOverloads">
-        <source>The available overloads are shown below.</source>
-        <target state="translated">사용 가능한 오버로드가 아래에 표시됩니다.</target>
+        <source>Candidates:\n{0}</source>
+        <target state="needs-review-translation">후보: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="parsDoCannotHaveVisibilityDeclarations">
@@ -7128,8 +7213,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
-        <target state="translated">두 무명 레코드 형식의 필드 이름 '{0}' 및 '{1}' 집합이 일치하지 않습니다.</target>
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="needs-review-translation">두 무명 레코드 형식의 필드 이름 '{0}' 및 '{1}' 집합이 일치하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
@@ -7220,6 +7305,26 @@
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
         <target state="translated">잘못된 경로 맵입니다. 매핑은 쉼표로 구분되어야 하며 'path=sourcePath' 형식이어야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsCompilerTool">
+        <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
+        <target state="new">Reference an assembly or directory containing a design time tool (Short form: -t)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerUnknown">
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
+        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerError">
+        <source>{0}</source>
+        <target state="new">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotLoadDependencyManagerExtension">
+        <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
+        <target state="new">The dependency manager extension {0} could not be loaded. Message: {1}</target>
         <note />
       </trans-unit>
     </body>

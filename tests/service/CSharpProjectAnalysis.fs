@@ -12,14 +12,8 @@ module FSharp.Compiler.Service.Tests.CSharpProjectAnalysis
 
 open NUnit.Framework
 open FsUnit
-open System
 open System.IO
-open System.Collections.Generic
-
-open FSharp.Compiler
-open FSharp.Compiler.Service.Tests
 open FSharp.Compiler.SourceCodeServices
-
 open FSharp.Compiler.Service.Tests.Common
 
 let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) = 
@@ -61,7 +55,7 @@ let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) =
     results, assemblies
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test that csharp references are recognized as such`` () = 
@@ -99,7 +93,7 @@ let ``Test that csharp references are recognized as such`` () =
     members.["InterfaceEvent"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceEvent"
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test that symbols of csharp inner classes/enums are reported`` () = 
@@ -122,7 +116,7 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
             "member StaticMember"; "NestedEnumClass"|]
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Ctor test`` () =
@@ -158,7 +152,7 @@ let getEntitiesUses source =
     |> List.ofSeq
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Different types with the same short name equality check`` () =
@@ -178,7 +172,7 @@ let (s2: FSharp.Compiler.Service.Tests.String) = null
     | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Different namespaces with the same short name equality check`` () =
