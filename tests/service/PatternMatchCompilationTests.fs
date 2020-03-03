@@ -245,15 +245,15 @@ match 1 with
 [<Test>]
 let ``Literal 02 - Args - IL`` () =
     let _, checkResults = getParseAndCheckResults """
-open System
+open System.Diagnostics
 
-match AttributeTargets.All with
-| AttributeTargets.Module x -> let y = x + 1 in ()
+match TraceLevel.Off with
+| TraceLevel.Off x -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
     dumpErrors checkResults |> shouldEqual [
-        "(5,2--5,27): This literal pattern does not take arguments"
-        "(4,6--4,26): Incomplete pattern matches on this expression. For example, the value 'AttributeTargets.Assembly' may indicate a case not covered by the pattern(s)."
+        "(5,2--5,18): This literal pattern does not take arguments"
+        "(4,6--4,20): Incomplete pattern matches on this expression. For example, the value 'TraceLevel.Error' may indicate a case not covered by the pattern(s)."
     ]
 
 
