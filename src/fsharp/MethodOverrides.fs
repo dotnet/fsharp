@@ -636,12 +636,10 @@ module DispatchSlotChecking =
                     []
                 else 
                     let reqdTy = 
-                        if isObjExpr then reqdTy
-                        else 
-                            match GetSuperTypeOfType g amap reqdTyRange reqdTy with
-                            | None -> reqdTy
-                            | Some baseTy -> baseTy
-
+                        let baseTyOpt = if isObjExpr then Some reqdTy else GetSuperTypeOfType g amap reqdTyRange reqdTy 
+                        match baseTyOpt with 
+                        | None -> reqdTy
+                        | Some baseTy -> baseTy 
                     [ // Get any class hierarchy methods or default interface methods on this type on this type 
                       //
                       // NOTE: What we have below is an over-approximation that will get too many methods 
