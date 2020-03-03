@@ -140,4 +140,4 @@ type LanguageVersion (specifiedVersionAsString) =
     member _.GetFeatureVersionString feature =
         match features.TryGetValue feature with
         | true, v -> versionToString v
-        | _ -> failwith "Internal error: Unable to find feature."
+        | _ -> invalidArg "feature" "Internal error: Unable to find feature."
