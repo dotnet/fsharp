@@ -5,6 +5,7 @@ namespace Interactive.DependencyManager
 open System
 open System.IO
 open System.Reflection
+open System.Runtime.InteropServices
 open Internal.Utilities.FSharpEnvironment
 
 module ReflectionHelper =
@@ -344,7 +345,14 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             Unchecked.defaultof<IDependencyManagerProvider>
 
     /// Resolve reference for a list of package manager lines
-    member __.Resolve (packageManager:IDependencyManagerProvider, implicitIncludeDir: string, mainScriptName: string, fileName: string, scriptExt: string, packageManagerTextLines: string seq, reportError: ResolvingErrorReport, executionTfm: string): IResolveDependenciesResult =
+    member __.Resolve (packageManager:IDependencyManagerProvider,
+                       scriptExt: string,
+                       packageManagerTextLines: string seq,
+                       reportError: ResolvingErrorReport,
+                       executionTfm: string,
+                       [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string,
+                       [<Optional;DefaultParameterValue("")>]mainScriptName: string,
+                       [<Optional;DefaultParameterValue("")>]fileName: string): IResolveDependenciesResult =
 
         try
             packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm)

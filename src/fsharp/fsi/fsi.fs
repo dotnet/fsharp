@@ -1304,7 +1304,7 @@ type internal FsiDynamicCompiler
                     let removeErrorLinesFromScript () =
                         tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
                     try
-                        let result = tcConfigB.dependencyProvider.Resolve(dependencyManager, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx", ".fsx", packageManagerTextLines, reportError, executionTfm)
+                        let result = tcConfigB.dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
                         match result.Success with
                         | false ->
                             removeErrorLinesFromScript ()

@@ -4,6 +4,7 @@
 namespace Interactive.DependencyManager
 
 open System
+open System.Runtime.InteropServices
 
 
 /// The results of ResolveDependencies
@@ -71,7 +72,7 @@ type DependencyProvider =
     member RemoveDependencyManagerKey: packageManagerKey: string * path: string -> string
 
     /// Resolve reference for a list of package manager lines
-    member Resolve : packageManager: IDependencyManagerProvider * implicitIncludeDir: string * mainScriptName: string * fileName: string * scriptExt: string * packageManagerTextLines: string seq * reportError: ResolvingErrorReport * executionTfm: string -> IResolveDependenciesResult
+    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: string seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string -> IResolveDependenciesResult
 
     /// Fetch a dependencymanager that supports a specific key
     member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string -> IDependencyManagerProvider
