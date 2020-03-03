@@ -312,8 +312,8 @@ let getSymbolUses (source: string) =
     typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
 
 let getSymbols (source: string) =
-    getSymbolUses source
-    |> Array.map (fun symbolUse -> symbolUse.Symbol)
+    let symbolUses = getSymbolUses source
+    symbolUses |> Array.map (fun symbolUse -> symbolUse.Symbol)
 
 
 let getSymbolName (symbol: FSharpSymbol) =
@@ -329,8 +329,10 @@ let getSymbolName (symbol: FSharpSymbol) =
 
 
 let assertContainsSymbolWithName name source =
-    getSymbols source
-    |> Array.choose getSymbolName
+    let symbols = getSymbols source
+    let names = symbols |> Array.choose getSymbolName
+
+    names
     |> Array.contains name
     |> shouldEqual true
 
