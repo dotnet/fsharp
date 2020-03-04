@@ -1433,8 +1433,10 @@ module ProvidedMethodCalls =
                         if genericArgs.Length = 0 then
                             headType
                         else
-                            let erasedArgTys = genericArgs |> Array.map (fun x -> x.PUntaintNoFailure(fun st -> st.FullName))
-                            headType.PApply((fun st -> st.MakeGenericType erasedArgTys), m)
+                            let erasedArgTys = genericArgs |> Array.map loop
+                            headType.PApply((fun st -> 
+                                let erasedArgTys = erasedArgTys |> Array.map (fun a -> a.PUntaintNoFailure(id))
+                                st.MakeGenericType erasedArgTys), m)
                     else   
                         st
         loop inputType

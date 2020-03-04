@@ -135,7 +135,7 @@ module internal ExtensionTyping =
         member MakeByRefType: unit -> ProvidedType
         member MakeArrayType: unit -> ProvidedType
         member MakeArrayType: rank: int -> ProvidedType
-        member MakeGenericType: genericArgNames: string[] -> ProvidedType
+        member MakeGenericType: args: ProvidedType[] -> ProvidedType
         static member Void : ProvidedType
         static member CreateNoContext : Type -> ProvidedType
         member TryGetILTypeRef : unit -> ILTypeRef option

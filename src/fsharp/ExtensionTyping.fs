@@ -351,9 +351,9 @@ module internal ExtensionTyping =
         member __.MakeByRefType() = ProvidedType.CreateNoContext(x.MakeByRefType())
         member __.MakeArrayType() = ProvidedType.CreateNoContext(x.MakeArrayType())
         member __.MakeArrayType rank = ProvidedType.CreateNoContext(x.MakeArrayType(rank))
-        member __.MakeGenericType genericArgNames =
-            let argsToMake = x.GetGenericArguments() |> Array.filter (fun arg -> genericArgNames |> Array.contains arg.FullName)
-            ProvidedType.CreateNoContext(x.MakeGenericType(argsToMake))
+        member __.MakeGenericType (args: ProvidedType[]) =
+            let argTypes = args |> Array.map (fun arg -> arg.RawSystemType)
+            ProvidedType.CreateNoContext(x.MakeGenericType(argTypes))
         static member Create ctxt x = match x with null -> null | t -> ProvidedType (t, ctxt)
         static member CreateWithNullCheck ctxt name x = match x with null -> nullArg name | t -> ProvidedType (t, ctxt)
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedType.Create ctxt)
