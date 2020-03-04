@@ -282,7 +282,7 @@ module internal ExtensionTyping =
     [<AllowNullLiteral; Sealed>]
     type ProvidedType (x: System.Type, ctxt: ProvidedTypeContext) =
         inherit ProvidedMemberInfo(x, ctxt)
-        let measureAttibuteFullname = typeof<Microsoft.FSharp.Core.MeasureAttribute>.FullName;
+        let measureAttibuteFullname = typeof<Microsoft.FSharp.Core.MeasureAttribute>.FullName
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
         interface IProvidedCustomAttributeProvider with 
             member __.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
@@ -346,8 +346,7 @@ module internal ExtensionTyping =
         /// Type.GetEnumUnderlyingType either returns type or raises exception, null is not permitted
         member __.GetEnumUnderlyingType() = 
             x.GetEnumUnderlyingType() 
-            |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"
-            
+            |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"    
         member __.MakePointerType() = ProvidedType.CreateNoContext(x.MakePointerType())
         member __.MakeByRefType() = ProvidedType.CreateNoContext(x.MakeByRefType())
         member __.MakeArrayType() = ProvidedType.CreateNoContext(x.MakeArrayType())
