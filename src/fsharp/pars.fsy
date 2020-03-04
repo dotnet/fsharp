@@ -676,7 +676,7 @@ fileModuleSpec:
   | opt_attributes opt_declVisibility  moduleIntro moduleSpfnsPossiblyEmptyBlock 
     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
       let m2 = rhs parseState 3
-      let m = (rhs2 parseState 3 4)
+      let m = (rhs2 parseState 1 4)
       let isRec,path2,xml,vis = $3 
       (fun (isRec2,path,_) -> 
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(),m2))
@@ -745,7 +745,7 @@ moduleSpfn:
         if not (isNil $1) then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
         match vis with
         | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
-        | _ -> SynModuleSigDecl.ModuleAbbrev(List.head path,$5,rhs2 parseState 3 5) } 
+        | _ -> SynModuleSigDecl.ModuleAbbrev(List.head path,$5,rhs2 parseState 1 5) } 
 
   | opt_attributes opt_declVisibility  moduleIntro colonOrEquals moduleSpecBlock
       { let isRec, path, xml, vis = $3 
@@ -753,7 +753,7 @@ moduleSpfn:
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
         let info = ComponentInfo($1,[],[],path,xml,false,vis,rhs parseState 3)
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-        SynModuleSigDecl.NestedModule(info, isRec, $5, rhs2 parseState 3 5) }
+        SynModuleSigDecl.NestedModule(info, isRec, $5, rhs2 parseState 1 5) }
 
   | opt_attributes opt_declVisibility  tyconSpfns 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
@@ -778,7 +778,7 @@ valSpfn:
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
         let attr1,attr2,isInline,isMutable,vis2,id,doc,explicitValTyparDecls,(ty,arity),konst = ($1),($4),($5),($6),($7),($8),grabXmlDoc(parseState,3),($9),($11),($12) 
         if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(),rhs parseState 4))
-        let m = rhs2 parseState 3 11 
+        let m = rhs2 parseState 1 11 
         let valSpfn = ValSpfn((attr1@attr2),id,explicitValTyparDecls,ty,arity,isInline,isMutable,doc, vis2,konst,m) 
         SynModuleSigDecl.Val(valSpfn,m)
       }
@@ -965,21 +965,23 @@ classMemberSpfn:
        SynMemberSig.Inherit ($4,unionRanges (rhs parseState 3) ($4).Range) }
 
   | opt_attributes opt_declVisibility VAL fieldDecl 
-     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-       let fld = $4 $1 false 
-       SynMemberSig.ValField(fld,rhs2 parseState 3 4) }
+     { let wholeRange = rhs2 parseState 1 4
+       if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+       let fld = $4 $1 false wholeRange 
+       SynMemberSig.ValField (fld, wholeRange) }
 
   | opt_attributes opt_declVisibility STATIC VAL fieldDecl 
-     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-       SynMemberSig.ValField($5 $1 true,rhs2 parseState 3 5) }
+     { let wholeRange = rhs2 parseState 1 5
+       if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
+       SynMemberSig.ValField($5 $1 true wholeRange, wholeRange) }
 
   | opt_attributes  opt_declVisibility STATIC typeKeyword tyconSpfn 
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-       SynMemberSig.NestedType($5,rhs2 parseState 3 5) }
+       SynMemberSig.NestedType($5,rhs2 parseState 1 5) }
 
   | opt_attributes opt_declVisibility NEW COLON topTypeWithTypeConstraints  
      { let vis,doc,(ty,valSynInfo) = $2,grabXmlDoc(parseState,3),$5 
-       let m = unionRanges (rhs parseState 3) ty.Range 
+       let m = unionRanges (rhs parseState 1) ty.Range 
        let isInline = false 
        let valSpfn = ValSpfn ($1, mkSynId (rhs parseState 3) "new", noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, m)
        SynMemberSig.Member(valSpfn, CtorMemberFlags,m) }
@@ -1254,7 +1256,7 @@ moduleDefn:
         | Choice2Of2 def -> 
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
             let info = ComponentInfo(attribs,[],[],path,xml,false,vis,rhs parseState 3)
-            [ SynModuleDecl.NestedModule(info, isRec, def, false,(rhs2 parseState 3 4, def) ||> unionRangeWithListBy (fun d -> d.Range) ) ] }
+            [ SynModuleDecl.NestedModule(info, isRec, def, false,(rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) ) ] }
 
   /* unattached custom attributes */
   | attributes recover
@@ -1850,8 +1852,8 @@ classDefnMember:
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsInterfacesHaveSameVisibilityAsEnclosingType(),rhs parseState 3))
         let mWhole = 
             match $5 with
-            | None -> rhs2 parseState 3 4
-            | Some(mems) -> (rhs2 parseState 3 4, mems) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
+            | None -> rhs2 parseState 1 4
+            | Some(mems) -> (rhs2 parseState 1 4, mems) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
         [ SynMemberDefn.Interface ($4, $5, mWhole) ] }
         
   | opt_attributes opt_declVisibility abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
@@ -1860,7 +1862,7 @@ classDefnMember:
        let getSetRangeOpt, getSet = $9
        let getSetAdjuster arity = match arity,getSet with SynValInfo([],_),MemberKind.Member -> MemberKind.PropertyGet | _ -> getSet
        let wholeRange = 
-           let m = rhs parseState 3
+           let m = rhs parseState 1
            match getSetRangeOpt with 
            | None -> unionRanges m ty.Range
            | Some m2 -> unionRanges m m2
@@ -1875,11 +1877,13 @@ classDefnMember:
         
   | opt_attributes opt_declVisibility valDefnDecl opt_ODECLEND
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-        $3 None $1 false }
+        let rangeStart = rhs parseState 1
+        $3 rangeStart $1 false }
         
   | opt_attributes opt_declVisibility STATIC valDefnDecl opt_ODECLEND
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-        $4 (Some (rhs parseState 3)) $1 true  }
+        let rangeStart = rhs parseState 1
+        $4 rangeStart $1 true  }
 
   | opt_attributes opt_declVisibility memberFlags autoPropsDefnDecl opt_ODECLEND
      { let rangeStart = rhs parseState 1 
@@ -1889,7 +1893,7 @@ classDefnMember:
        $4 $1 isStatic flags rangeStart }
 
   | opt_attributes opt_declVisibility NEW  atomicPattern optAsSpec EQUALS typedSeqExprBlock opt_ODECLEND
-     {  let m = unionRanges (rhs2 parseState 3 6) $7.Range 
+     {  let m = unionRanges (rhs2 parseState 1 6) $7.Range 
         let expr = $7
         let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4],SynInfo.unnamedRetVal), $5) 
         let vis = $2 
@@ -1900,7 +1904,7 @@ classDefnMember:
         
   | opt_attributes opt_declVisibility STATIC typeKeyword tyconDefn 
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-        [ SynMemberDefn.NestedType($5,None,rhs2 parseState 3 5) ] }
+        [ SynMemberDefn.NestedType($5,None,rhs2 parseState 1 5) ] }
 
 
 /* A 'val' definition in an object type definition */
@@ -1909,8 +1913,8 @@ valDefnDecl:
      {  let mRhs = rhs2 parseState 4 6
         let doc = grabXmlDoc(parseState,4)
         let mValDecl = rhs2 parseState 1 6
-        (fun mLeft attribs isStatic -> 
-            let mValDecl = match mLeft with None -> mValDecl | Some m -> unionRanges m mValDecl
+        (fun rangeStart attribs isStatic -> 
+            let mValDecl = unionRanges rangeStart mValDecl
             let fld = Field(attribs,isStatic,Some $4,$6,$2,doc,$3,mRhs)
             [ SynMemberDefn.ValField(fld, mValDecl) ]) }
 
@@ -1942,8 +1946,8 @@ atomicPatternLongIdent:
   | pathOp { (None,$1) }
   | access UNDERSCORE DOT pathOp {
     if not (parseState.LexBuffer.SupportsFeature LanguageFeature.SingleUnderscorePattern) then
-        raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedSymbolDot())
-    let (LongIdentWithDots(lid,dotms)) = $4 in (Some($1),LongIdentWithDots(ident("_",rhs parseState 1)::lid, rhs parseState 2::dotms))
+        raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedSymbolDot())
+    let (LongIdentWithDots(lid,dotms)) = $4 in (Some($1),LongIdentWithDots(ident("_",rhs parseState 2)::lid, rhs parseState 3::dotms))
     }  
   | access pathOp { (Some($1), $2) }
 
@@ -2294,20 +2298,20 @@ attrUnionCaseDecl:
 
   | opt_attributes opt_access unionCaseName OF unionCaseRepr  opt_OBLOCKSEP
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(),rhs parseState 2))
-        let mDecl = rhs2 parseState 3 5
+        let mDecl = rhs2 parseState 1 5
         (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3,UnionCaseFields $5,xmlDoc,None,mDecl))) 
       } 
 
   | opt_attributes opt_access unionCaseName COLON topType opt_OBLOCKSEP
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(),rhs parseState 2))
         libraryOnlyWarning(lhs parseState)
-        let mDecl = rhs2 parseState 3 5
+        let mDecl = rhs2 parseState 1 5
         (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3,UnionCaseFullType $5,xmlDoc,None,mDecl))) 
       }
 
   | opt_attributes opt_access unionCaseName EQUALS constant opt_OBLOCKSEP
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsEnumFieldsCannotHaveVisibilityDeclarations(),rhs parseState 2))
-        let mDecl = rhs2 parseState 3 5
+        let mDecl = rhs2 parseState 1 5
         (fun xmlDoc -> Choice1Of2 (EnumCase ( $1, $3,$5,xmlDoc,mDecl))) 
       } 
 
@@ -2365,18 +2369,18 @@ recdFieldDeclList:
 
 /* A field declaration in a record type */
 recdFieldDecl: 
-  | opt_attributes  fieldDecl
-     { let fld = $2 $1 false 
-       let (Field(a,b,c,d,e,f,vis,g)) = fld 
-       if Option.isSome vis then errorR(Error(FSComp.SR.parsRecordFieldsCannotHaveVisibilityDeclarations(),rhs parseState 2))
-       Field(a,b,c,d,e,f,None,g)  }
+  | opt_attributes fieldDecl
+     { let wholeRange = rhs2 parseState 1 2
+       let fld = $2 $1 false wholeRange
+       let (Field (a, b, c, d, e, f, vis, wholeRange)) = fld
+       if Option.isSome vis then errorR (Error (FSComp.SR.parsRecordFieldsCannotHaveVisibilityDeclarations (), rhs parseState 2))
+       Field (a, b, c, d, e, f, None, wholeRange) }
 
 /* Part of a field or val declaration in a record type or object type */
 fieldDecl: 
   | opt_mutable opt_access ident COLON  typ 
-     { let mRhs = rhs2 parseState 3 5 
-       let xmlDoc = grabXmlDoc(parseState,3)
-       (fun attrs stat -> Field(attrs, stat,Some $3,$5,$1,xmlDoc,$2,mRhs)) }
+     { let xmlDoc = grabXmlDoc (parseState, 3)
+       fun attrs stat wholeRange -> Field(attrs, stat, Some $3, $5, $1, xmlDoc, $2, wholeRange) }
 
 
 /* An exception definition */

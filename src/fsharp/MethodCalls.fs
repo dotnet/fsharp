@@ -189,7 +189,7 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
         // CSharpMethod(x = arg), optional C#-style argument, may have type Nullable<ty>. 
         // The arg should have type ty. However for backwards compat, we also allow arg to have type Nullable<ty>
         | CallerSide _ ->
-            if isNullableTy g calledArgTy  && g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop  then 
+            if isNullableTy g calledArgTy && g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop then 
                 // If inference has worked out it's a nullable then use this
                 if isNullableTy g callerArg.CallerArgumentType then
                     calledArgTy
@@ -1186,11 +1186,6 @@ let AdjustCallerArgForOptional tcFieldInit eCallerMemberName (infoReader: InfoRe
                             let minfo = GetIntrinsicConstructorInfosOfType infoReader m calledArgTy |> List.head
                             let callerArgExprCoerced = mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr
                             MakeMethInfoCall amap m minfo [] [callerArgExprCoerced]
-                    elif isOptionTy g calledArgTy then 
-                        // CSharpMethod(x=b) when 'b' has nullable type and 'x' has optional type --> CSharpMethod(Some b.Value)
-                        let calledNonOptTy = destOptionTy g calledArgTy 
-                        let callerArgExprCoerced = mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr
-                        mkSome g (destNullableTy g callerArgTy) callerArgExprCoerced m
                     else 
                         // CSharpMethod(x=b) --> CSharpMethod(?x=b)
                         callerArgExpr

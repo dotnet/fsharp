@@ -138,6 +138,7 @@ type MailboxProcessorType() =
         Assert.AreEqual(Some("Received 1 Disposed"),!result)
 
     [<Test>]
+    [<Category("PullRequest")>]
     member this.``Scan handles cancellation token``() =
         let result = ref None
 
