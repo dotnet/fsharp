@@ -1401,13 +1401,13 @@ module ProvidedMethodCalls =
             elif st.PUntaint((fun st -> st.IsArray), m) then 
                 let et = st.PApply((fun st -> st.GetElementType()), m)
                 let rank = st.PUntaint((fun st -> st.GetArrayRank()), m)
-                (loop et).PApply((fun st -> ProvidedType.CreateNoContext(if rank = 1 then st.RawSystemType.MakeArrayType() else st.RawSystemType.MakeArrayType(rank))), m)
+                (loop et).PApply((fun st -> if rank = 1 then st.MakeArrayType() else st.MakeArrayType(rank)), m)
             elif st.PUntaint((fun st -> st.IsByRef), m) then 
                 let et = st.PApply((fun st -> st.GetElementType()), m)
-                (loop et).PApply((fun st -> ProvidedType.CreateNoContext(st.RawSystemType.MakeByRefType())), m)
+                (loop et).PApply((fun st -> st.MakeByRefType()), m)
             elif st.PUntaint((fun st -> st.IsPointer), m) then 
                 let et = st.PApply((fun st -> st.GetElementType()), m)
-                (loop et).PApply((fun st -> ProvidedType.CreateNoContext(st.RawSystemType.MakePointerType())), m)
+                (loop et).PApply((fun st -> st.MakePointerType()), m)
             else
                 let isGeneric = st.PUntaint((fun st -> st.IsGenericType), m)
                 let headType = if isGeneric then st.PApply((fun st -> st.GetGenericTypeDefinition()), m) else st
@@ -1430,13 +1430,11 @@ module ProvidedMethodCalls =
                                    if tp.Kind = TyparKind.Type then 
                                        yield genericArg |]
 
-                        if genericArgs.Length = 0 then 
+                        if genericArgs.Length = 0 then
                             headType
                         else
-                            let erasedArgTys = genericArgs |> Array.map loop
-                            headType.PApply((fun st -> 
-                                let erasedArgTys = erasedArgTys |> Array.map (fun a -> a.PUntaintNoFailure (fun x -> x.RawSystemType))
-                                ProvidedType.CreateNoContext(st.RawSystemType.MakeGenericType erasedArgTys)), m)
+                            let erasedArgTys = genericArgs |> Array.map (fun x -> x.PUntaintNoFailure(fun st -> st.FullName))
+                            headType.PApply((fun st -> st.MakeGenericType erasedArgTys), m)
                     else   
                         st
         loop inputType

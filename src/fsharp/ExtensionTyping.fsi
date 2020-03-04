@@ -120,6 +120,7 @@ module internal ExtensionTyping =
         member IsEnum : bool
         member IsInterface : bool
         member IsClass : bool
+        member IsMeasure: bool
         member IsSealed : bool
         member IsAbstract : bool
         member IsPublic : bool
@@ -130,6 +131,11 @@ module internal ExtensionTyping =
         member GetArrayRank : unit -> int
         member RawSystemType : System.Type
         member GetEnumUnderlyingType : unit -> ProvidedType
+        member MakePointerType: unit -> ProvidedType
+        member MakeByRefType: unit -> ProvidedType
+        member MakeArrayType: unit -> ProvidedType
+        member MakeArrayType: rank: int -> ProvidedType
+        member MakeGenericType: genericArgNames: string[] -> ProvidedType
         static member Void : ProvidedType
         static member CreateNoContext : Type -> ProvidedType
         member TryGetILTypeRef : unit -> ILTypeRef option

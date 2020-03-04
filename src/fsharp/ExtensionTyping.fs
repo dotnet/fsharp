@@ -282,6 +282,7 @@ module internal ExtensionTyping =
     [<AllowNullLiteral; Sealed>]
     type ProvidedType (x: System.Type, ctxt: ProvidedTypeContext) =
         inherit ProvidedMemberInfo(x, ctxt)
+        let measureAttibuteFullname = typeof<Microsoft.FSharp.Core.MeasureAttribute>.FullName;
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
         interface IProvidedCustomAttributeProvider with 
             member __.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
@@ -334,6 +335,8 @@ module internal ExtensionTyping =
         member __.IsNestedPublic = x.IsNestedPublic
         member __.IsEnum = x.IsEnum
         member __.IsClass = x.IsClass
+        member __.IsMeasure =
+            x.CustomAttributes |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = measureAttibuteFullname)
         member __.IsSealed = x.IsSealed
         member __.IsAbstract = x.IsAbstract
         member __.IsInterface = x.IsInterface
@@ -344,6 +347,14 @@ module internal ExtensionTyping =
         member __.GetEnumUnderlyingType() = 
             x.GetEnumUnderlyingType() 
             |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"
+            
+        member __.MakePointerType() = ProvidedType.CreateNoContext(x.MakePointerType())
+        member __.MakeByRefType() = ProvidedType.CreateNoContext(x.MakeByRefType())
+        member __.MakeArrayType() = ProvidedType.CreateNoContext(x.MakeArrayType())
+        member __.MakeArrayType rank = ProvidedType.CreateNoContext(x.MakeArrayType(rank))
+        member __.MakeGenericType genericArgNames =
+            let argsToMake = x.GetGenericArguments() |> Array.filter (fun arg -> genericArgNames |> Array.contains arg.FullName)
+            ProvidedType.CreateNoContext(x.MakeGenericType(argsToMake))
         static member Create ctxt x = match x with null -> null | t -> ProvidedType (t, ctxt)
         static member CreateWithNullCheck ctxt name x = match x with null -> nullArg name | t -> ProvidedType (t, ctxt)
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedType.Create ctxt)
@@ -1087,9 +1098,8 @@ module internal ExtensionTyping =
                           /// Find the name of the representation type for the static parameter
                           let spReprTypeName = 
                               sp.PUntaint((fun sp -> 
-                                  let pt = sp.ParameterType 
-                                  let ut = pt.RawSystemType
-                                  let uet = if pt.IsEnum then ut.GetEnumUnderlyingType() else ut
+                                  let pt = sp.ParameterType
+                                  let uet = if pt.IsEnum then pt.GetEnumUnderlyingType() else pt
                                   uet.FullName), m)
 
                           match spReprTypeName with 
