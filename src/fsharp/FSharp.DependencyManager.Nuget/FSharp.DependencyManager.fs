@@ -10,7 +10,7 @@ open System.IO
 open FSharp.DependencyManager.Nuget
 open FSharp.DependencyManager.Nuget.Utilities
 open FSharp.DependencyManager.Nuget.ProjectFile
-
+open FSDependencyManager
 
 module FSharpDependencyManager =
 
@@ -43,7 +43,7 @@ module FSharpDependencyManager =
         let parsePackageReferenceOption (line: string) =
             let validatePackageName package packageName =
                 if String.Compare(packageName, package, StringComparison.OrdinalIgnoreCase) = 0 then
-                    raise (ArgumentException(sprintf "PackageManager can not reference the System Package '%s'" packageName))  // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                    raise (ArgumentException(SR.cantReferenceSystemPackage(packageName)))
             let rec parsePackageReferenceOption' (options: (string option * string option) list) (implicitArgumentCount: int) (packageReference: PackageReference option) =
                 let current =
                     match packageReference with
@@ -61,11 +61,11 @@ module FSharpDependencyManager =
                     let setVersion v = Some { current with Version = v }
                     match opt with
                     | Some "include", Some v -> addInclude v |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "include", None -> raise (ArgumentException(sprintf "%s requires a value" "Include"))               // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                    | Some "include", None -> raise (ArgumentException(SR.requiresAValue("Include")))
                     | Some "version", Some v -> setVersion v |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "version", None -> raise (ArgumentException(sprintf "%s requires a value" "Version"))               // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                    | Some "version", None -> setVersion "*" |> parsePackageReferenceOption' rest implicitArgumentCount
                     | Some "restoresources", Some v -> Some { current with RestoreSources = concat current.RestoreSources v } |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "restoresources", None -> raise (ArgumentException(sprintf "%s requires a value" "RestoreSources")) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                    | Some "restoresources", None -> raise (ArgumentException(SR.requiresAValue("RestoreSources")))
                     | Some "script", Some v -> Some { current with Script = v } |> parsePackageReferenceOption' rest implicitArgumentCount
                     | Some "bl", value ->
                         match value with
@@ -88,7 +88,7 @@ module FSharpDependencyManager =
                             match implicitArgumentCount with
                             | 0 -> addInclude v
                             | 1 -> setVersion v
-                            | _ -> raise (ArgumentException(sprintf "Unable to apply implicit argument number %d" (implicitArgumentCount + 1))) // @@@@@@@@@@@@@@@@@@@@@@@ Globalize me please
+                            | _ -> raise (ArgumentException(SR.unableToApplyImplicitArgument(implicitArgumentCount + 1)))
                             |> parsePackageReferenceOption' rest (implicitArgumentCount + 1)
                     | _ -> parsePackageReferenceOption' rest implicitArgumentCount packageReference
             let options = getOptions line
@@ -98,12 +98,34 @@ module FSharpDependencyManager =
         |> List.distinct
         |> (fun l -> l, binLogPath)
 
+
+/// The results of ResolveDependencies
+type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
+
+    /// Succeded?
+    member __.Success = success
+
+    /// The resolution output log
+    member __.StdOut = stdOut
+
+    /// The resolution error log (* process stderror *)
+    member __.StdError = stdError
+
+    /// The resolution paths
+    member __.Resolutions = resolutions
+
+    /// The source code file paths
+    member __.SourceFiles = sourceFiles
+
+    /// The roots to package directories
+    member __.Roots = roots
+
 type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string option) =
 
     let key = "nuget"
     let name = "MsBuild Nuget DependencyManager"
     let scriptsPath =
-        let path = Path.Combine(Path.GetTempPath(), key, Process.GetCurrentProcess().Id.ToString())
+        let path = Path.Combine(Path.GetTempPath(), key, Process.GetCurrentProcess().Id.ToString() + "--"+ Guid.NewGuid().ToString())
         match outputDir with
         | None -> path
         | Some v -> Path.Combine(path, v)
@@ -112,8 +134,12 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
     let deleteScripts () =
         try
+#if !Debug
             if Directory.Exists(scriptsPath) then
-                () //Directory.Delete(scriptsPath, true)
+                Directory.Delete(scriptsPath, true)
+#else
+            ()
+#endif
         with | _ -> ()
 
     let deleteAtExit =
@@ -136,7 +162,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
     member __.Key = key
 
-    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string) : bool * string seq * string seq * string seq =
+    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string) : obj =
 
         let scriptExt, poundRprefix  =
             match scriptExt with
@@ -170,7 +196,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
             writeFile projectPath generateProjBody
 
-            let result, resolutionsFile = buildProject projectPath binLogPath
+            let result, stdOut, stdErr,  resolutionsFile = buildProject projectPath binLogPath
             match resolutionsFile with
             | Some file ->
                 let resolutions = getResolutionsFromFile file
@@ -183,10 +209,10 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
                     List.concat [ [scriptPath]; loads] |> List.toSeq
                 let includes = (findIncludesFromResolutions resolutions) |> Array.toSeq
 
-                result, references, scripts, includes
+                ResolveDependenciesResult(result, stdOut, stdErr, references, scripts, includes)
 
             | None ->
                 let empty = Seq.empty<string>
-                result, empty, empty, empty
+                ResolveDependenciesResult(result, stdOut, stdErr, empty, empty, empty)
 
-        generateAndBuildProjectArtifacts
+        generateAndBuildProjectArtifacts :> obj
