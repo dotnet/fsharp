@@ -19,9 +19,6 @@ open System.Threading
 open System.Reflection
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
-#if NETSTANDARD
-open System.Runtime.Loader
-#endif
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
@@ -1288,10 +1285,14 @@ type internal FsiDynamicCompiler
             match packageManagerLines with
             | [] -> istate
             | (_, _, m)::_ ->
-                let reportError errorType error =
-                    match errorType with
-                    | ErrorReportType.Warning -> warning(Error(error,m))
-                    | ErrorReportType.Error -> errorR(Error(error, m))
+                let reportError =
+                    let report errorType err msg =
+                        let error = err, msg
+                        match errorType with
+                        | ErrorReportType.Warning -> warning(Error(error, m))
+                        | ErrorReportType.Error -> errorR(Error(error, m))
+                    ResolvingErrorReport (report)
+
                 let outputDir =  tcConfigB.outputDir |> Option.defaultValue ""
 
                 match tcConfigB.dependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, outputDir, reportError, packageManagerKey) with
@@ -1303,17 +1304,17 @@ type internal FsiDynamicCompiler
                     let removeErrorLinesFromScript () =
                         tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
                     try
-                        match tcConfigB.dependencyProvider.Resolve(dependencyManager, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx", ".fsx", packageManagerTextLines, reportError, executionTfm) with
-                        | false, _, _, _ -> istate // error already reported
-                        | succeeded, _references, generatedScripts, additionalIncludeFolders ->
-                            if succeeded then
-                                tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
-                            else
-                                removeErrorLinesFromScript ()
-                            for folder in additionalIncludeFolders do
+                        let result = tcConfigB.dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
+                        match result.Success with
+                        | false ->
+                            removeErrorLinesFromScript ()
+                            istate // error already reported
+                        | true ->
+                            tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
+                            for folder in result.Roots do
                                 tcConfigB.AddIncludePath(m, folder, "")
-                            let scripts = generatedScripts |> Seq.toList
-                            if generatedScripts |> Seq.length > 0 then
+                            let scripts = result.SourceFiles |> Seq.toList
+                            if scripts |> Seq.length > 0 then
                                 fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, errorLogger)
                             else istate
                     with _ ->
@@ -1557,20 +1558,6 @@ type internal FsiInterruptController(fsiOptions: FsiCommandLineOptions, fsiConso
 
 module internal MagicAssemblyResolution =
 
-#if NETSTANDARD
-    // Cut down AssemblyLoadContext, for loading native libraries
-    type FsiNativeAssemblyLoadContext () =
-        inherit AssemblyLoadContext()
-
-        member this.LoadNativeLibrary(path: string): IntPtr =
-            base.LoadUnmanagedDllFromPath(path)
-
-        override _.Load(_path: AssemblyName): Assembly =
-            raise (NotImplementedException())
-
-        static member NativeLoadContext = new FsiNativeAssemblyLoadContext()
-#endif
-
     // See bug 5501 for details on decision to use UnsafeLoadFrom here.
     // Summary:
     //  It is an explicit user trust decision to load an assembly with #r. Scripts are not run automatically (for example, by double-clicking in explorer).
@@ -1579,7 +1566,7 @@ module internal MagicAssemblyResolution =
     [<CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2001:AvoidCallingProblematicMethods", MessageId="System.Reflection.Assembly.UnsafeLoadFrom")>]
     let private assemblyLoadFrom (path:string) = Assembly.UnsafeLoadFrom(path)
 
-    let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) = 
+    let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
 
         let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
 
@@ -1672,100 +1659,6 @@ module internal MagicAssemblyResolution =
                stopProcessingRecovery e range0
                null
 
-#if NETSTANDARD
-        let probingFileNames (name: string) =
-            // coreclr native library probing algorithm: https://github.com/dotnet/coreclr/blob/9773db1e7b1acb3ec75c9cc0e36bd62dcbacd6d5/src/System.Private.CoreLib/shared/System/Runtime/Loader/LibraryNameVariation.Unix.cs
-            let isRooted = Path.IsPathRooted name
-            let useSuffix s = not (name.Contains(s + ".") || name.EndsWith(s))          // linux devs often append version # to libraries I.e mydll.so.5.3.2
-            let usePrefix = name.IndexOf(Path.DirectorySeparatorChar) = -1              // If name has directory information no add no prefix
-                            && name.IndexOf(Path.AltDirectorySeparatorChar) = -1
-                            && name.IndexOf(Path.PathSeparator) = -1
-                            && name.IndexOf(Path.VolumeSeparatorChar) = -1
-            let prefix = [| "lib" |]
-            let suffix = [|
-                    if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-                        ".dll"
-                        ".exe"
-                    elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then
-                        ".dylib"
-                    else
-                        ".so"
-                |]
-
-            [|
-                yield name                                                                              // Bare name
-                if not (isRooted) then
-                    for s in suffix do
-                        if useSuffix s then                                                             // Suffix without prefix
-                            yield (sprintf "%s%s" name s)
-                            if usePrefix then
-                                for p in prefix do                                                      // Suffix with prefix
-                                    yield (sprintf "%s%s%s" p name s)
-                        elif usePrefix then
-                            for p in prefix do                                                          // Prefix
-                                yield (sprintf "%s%s" p name)
-            |]
-
-        // Directories to start probing in
-        // Algorithm:
-        //  Search for native libraries using:
-        //  1. Include directories
-        //  2. compilerToolPath directories
-        //  3. reference dll's
-        //  4. The implicit include directory
-        let probingRoots =
-            seq {
-                yield! tcConfigB.includes
-                yield! tcConfigB.compilerToolPaths
-                yield! (tcConfigB.referencedDLLs |> Seq.map(fun ref -> Path.GetDirectoryName(ref.Text)))
-                yield tcConfigB.implicitIncludeDir
-            } |>Seq.distinct
-
-        // Computer valid dotnet-rids for this environment:
-        //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
-        //
-        // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
-        let probingRids =
-            let processArchitecture = RuntimeInformation.ProcessArchitecture
-            let baseRid =
-                if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then "win"
-                elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then "osx"
-                else "linux"
-            let platformRid =
-                match processArchitecture with
-                | Architecture.X64 ->  baseRid + "-x64"
-                | Architecture.X86 -> baseRid + "-x86"
-                | Architecture.Arm64 -> baseRid + "-arm64"
-                | _ -> baseRid + "arm"
-            [| "any"; baseRid; platformRid |]
-
-        let resolveUnmanagedDll (assembly : Assembly) (name : string) : IntPtr =
-            ignore assembly
-
-            // Enumerate probing roots looking for a dll that matches the probing name in the probed locations
-            let probeForNativeLibrary root rid name =
-                // Look for name in root
-                probingFileNames name |> Array.tryPick(fun name ->
-                    let path = Path.Combine(root, "runtimes", rid, "native", name)
-                    if File.Exists(path) then
-                        Some path
-                    else
-                        None)
-
-            let probe =
-                probingRoots |> Seq.tryPick(fun root ->
-                    probingFileNames name |> Seq.tryPick(fun name ->
-                        let path = Path.Combine(root, name)
-                        if File.Exists(path) then
-                            Some path
-                        else
-                            probingRids |> Seq.tryPick(fun rid -> probeForNativeLibrary root rid name)))
-
-            match probe with
-            | Some path -> FsiNativeAssemblyLoadContext.NativeLoadContext.LoadNativeLibrary(path)
-            | None -> IntPtr.Zero
-#endif
-
         let rangeStdin = rangeN Lexhelp.stdinMockFilename 0
 
         let resolveAssembly = new ResolveEventHandler(fun _ args ->
@@ -1776,22 +1669,9 @@ module internal MagicAssemblyResolution =
 
         AppDomain.CurrentDomain.add_AssemblyResolve(resolveAssembly)
 
-#if NETSTANDARD
-        // netstandard 2.1 has this property, unfortunately we don't build with that yet
-        //public event Func<Assembly, string, IntPtr> ResolvingUnmanagedDll
-        let resolveUnmanagedHandler = Func<System.Reflection.Assembly,string,IntPtr> (resolveUnmanagedDll)
-        let eventInfo = typeof<AssemblyLoadContext>.GetEvent("ResolvingUnmanagedDll")
-        if not (isNull eventInfo) then
-            eventInfo.AddEventHandler(AssemblyLoadContext.Default, resolveUnmanagedHandler)
-#endif
-
         { new System.IDisposable with
             member x.Dispose() =
                 AppDomain.CurrentDomain.remove_AssemblyResolve(resolveAssembly)
-#if NETSTANDARD
-                if not (isNull eventInfo) then
-                        eventInfo.RemoveEventHandler(AssemblyLoadContext.Default, resolveUnmanagedHandler)
-#endif
         }
 
 //----------------------------------------------------------------------------
@@ -1994,10 +1874,13 @@ type internal FsiInteractionProcessor
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
             | IHash (ParsedHashDirective(("reference" | "r"), [path], m), _) ->
-                let reportError errorType error =
-                     match errorType with
-                     | ErrorReportType.Warning -> warning(Error(error,m))
-                     | ErrorReportType.Error -> errorR(Error(error, m))
+                let reportError =
+                    let report errorType err msg =
+                        let error = err, msg
+                        match errorType with
+                        | ErrorReportType.Warning -> warning(Error(error, m))
+                        | ErrorReportType.Error -> errorR(Error(error, m))
+                    ResolvingErrorReport (report)
 
                 let dm = tcConfigB.dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, tcConfigB.outputDir |> Option.defaultValue "", reportError, path)
                 match dm with
@@ -2660,7 +2543,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     /// This reference cell holds the most recent interactive state
     let initialInteractiveState = fsiDynamicCompiler.GetInitialInteractiveState ()
-      
+
     let fsiStdinLexerProvider = FsiStdinLexerProvider(tcConfigB, fsiStdinSyphon, fsiConsoleInput, fsiConsoleOutput, fsiOptions, lexResourceManager)
 
     let fsiInteractionProcessor = FsiInteractionProcessor(fsi, tcConfigB, fsiOptions, fsiDynamicCompiler, fsiConsolePrompt, fsiConsoleOutput, fsiInterruptController, fsiStdinLexerProvider, lexResourceManager, initialInteractiveState) 
