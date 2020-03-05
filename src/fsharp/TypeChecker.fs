@@ -5337,11 +5337,39 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 | SynConstructorArgs.NamePatPairs (pairs, _) -> pairs.Length
             if numArgs <> 0 then error(Error(FSComp.SR.tcLiteralDoesNotTakeArguments(), m)) 
 
+        // Parse the arguments to an active pattern
+        // Note we parse arguments to parameterized pattern labels as patterns, not expressions. 
+        // This means the range of syntactic expression forms that can be used here is limited. 
+        let rec convSynPatToSynExpr x = 
+            match x with
+            | SynPat.FromParseError(p, _) -> convSynPatToSynExpr p
+            | SynPat.Const (c, m) -> SynExpr.Const (c, m)
+            | SynPat.Named (SynPat.Wild _, id, _, None, _) -> SynExpr.Ident id
+            | SynPat.Typed (p, cty, m) -> SynExpr.Typed (convSynPatToSynExpr p, cty, m)
+            | SynPat.LongIdent (LongIdentWithDots(longId, dotms) as lidwd, _, _tyargs, args, None, m) -> 
+                let args = match args with SynConstructorArgs.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
+                let e =
+                    if dotms.Length = longId.Length then
+                        let e = SynExpr.LongIdent (false, LongIdentWithDots(longId, List.truncate (dotms.Length - 1) dotms), None, m)
+                        SynExpr.DiscardAfterMissingQualificationAfterDot (e, unionRanges e.Range (List.last dotms))
+                    else SynExpr.LongIdent (false, lidwd, None, m)
+                List.fold (fun f x -> mkSynApp1 f (convSynPatToSynExpr x) m) e args
+            | SynPat.Tuple (isStruct, args, m) -> SynExpr.Tuple (isStruct, List.map convSynPatToSynExpr args, [], m)
+            | SynPat.Paren (p, _) -> convSynPatToSynExpr p
+            | SynPat.ArrayOrList (isArray, args, m) -> SynExpr.ArrayOrList (isArray,List.map convSynPatToSynExpr args, m)
+            | SynPat.QuoteExpr (e,_) -> e
+            | SynPat.Null m -> SynExpr.Null m
+            | _ -> error(Error(FSComp.SR.tcInvalidArgForParameterizedPattern(), x.Range))
+
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
         | Item.NewDef id -> 
             match args with 
             | SynConstructorArgs.Pats [] 
             | SynConstructorArgs.NamePatPairs ([], _)-> TcPat warnOnUpperForId cenv env topValInfo vFlags (tpenv, names, takenNames) ty (mkSynPatVar vis id)
+            | SynConstructorArgs.Pats [arg] when id.idText = "nameof" && cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf ->
+                match TcNameOfExpr cenv env tpenv (convSynPatToSynExpr arg) with
+                | Expr.Const(c, m, _) -> (fun _ -> TPat_const (c, m)), (tpenv, names, takenNames)
+                | _ -> failwith "Impossible: TcNameOfExpr must return an Expr.Const"
             | _ -> error (UndefinedName(0, FSComp.SR.undefinedNamePatternDiscriminator, id, NoSuggestions))
 
         | Item.ActivePatternCase(APElemRef(apinfo, vref, idx)) as item -> 
@@ -5366,30 +5394,6 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
             if not (isNil activePatArgsAsSynPats) && apinfo.ActiveTags.Length <> 1 then 
                 error(Error(FSComp.SR.tcRequireActivePatternWithOneResult(), m))
-
-            // Parse the arguments to an active pattern
-            // Note we parse arguments to parameterized pattern labels as patterns, not expressions. 
-            // This means the range of syntactic expression forms that can be used here is limited. 
-            let rec convSynPatToSynExpr x = 
-                match x with
-                | SynPat.FromParseError(p, _) -> convSynPatToSynExpr p
-                | SynPat.Const (c, m) -> SynExpr.Const (c, m)
-                | SynPat.Named (SynPat.Wild _, id, _, None, _) -> SynExpr.Ident id
-                | SynPat.Typed (p, cty, m) -> SynExpr.Typed (convSynPatToSynExpr p, cty, m)
-                | SynPat.LongIdent (LongIdentWithDots(longId, dotms) as lidwd, _, _tyargs, args, None, m) -> 
-                    let args = match args with SynConstructorArgs.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
-                    let e =
-                        if dotms.Length = longId.Length then
-                            let e = SynExpr.LongIdent (false, LongIdentWithDots(longId, List.truncate (dotms.Length - 1) dotms), None, m)
-                            SynExpr.DiscardAfterMissingQualificationAfterDot (e, unionRanges e.Range (List.last dotms))
-                        else SynExpr.LongIdent (false, lidwd, None, m)
-                    List.fold (fun f x -> mkSynApp1 f (convSynPatToSynExpr x) m) e args
-                | SynPat.Tuple (isStruct, args, m) -> SynExpr.Tuple (isStruct, List.map convSynPatToSynExpr args, [], m)
-                | SynPat.Paren (p, _) -> convSynPatToSynExpr p
-                | SynPat.ArrayOrList (isArray, args, m) -> SynExpr.ArrayOrList (isArray,List.map convSynPatToSynExpr args, m)
-                | SynPat.QuoteExpr (e,_) -> e
-                | SynPat.Null m -> SynExpr.Null m
-                | _ -> error(Error(FSComp.SR.tcInvalidArgForParameterizedPattern(), x.Range))
             let activePatArgsAsSynExprs = List.map convSynPatToSynExpr activePatArgsAsSynPats
 
             let activePatResTys = NewInferenceTypes apinfo.Names
