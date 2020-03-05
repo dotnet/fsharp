@@ -522,11 +522,23 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/DotNetFrameworkDependencies.fs">
       <Link>Driver\DotNetFrameworkDependencies.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/Interactive.DependencyManager/DependencyManager.fsi">
-      <Link>Driver/DependencyManager.fsi</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Interactive.DependencyManager/AssemblyResolveHandler.fsi">
+      <Link>Driver\AssemblyResolveHandler.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/Interactive.DependencyManager/DependencyManager.fs">
-      <Link>Driver/DependencyManager.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Interactive.DependencyManager/AssemblyResolveHandler.fs">
+      <Link>Driver\AssemblyResolveHandler.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Interactive.DependencyManager/NativeDllResolveHandler.fsi">
+      <Link>Driver\NativeDllResolveHandler.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Interactive.DependencyManager/NativeDllResolveHandler.fs">
+      <Link>Driver\NativeDllResolveHandler.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Interactive.DependencyManager/DependencyProvider.fsi">
+      <Link>Driver/DependencyProvider.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Interactive.DependencyManager/DependencyProvider.fs">
+      <Link>Driver/DependencyProvider.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CompileOps.fsi">
       <Link>Driver/CompileOps.fsi</Link>

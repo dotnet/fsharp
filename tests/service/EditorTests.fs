@@ -1361,3 +1361,14 @@ type R =
     y
 """
     assertContainsSymbolWithName "y" source
+
+
+[<Test>]
+let ``Inherit ctor arg recovery`` () =
+    let source = """
+    type T() as this =
+        inherit System.Exception('a', 'a')
+
+        let x = this
+    """
+    assertContainsSymbolWithName "x" source

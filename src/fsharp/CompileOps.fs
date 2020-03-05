@@ -2199,7 +2199,7 @@ type TcConfigBuilder =
       mutable productNameForBannerText: string
       /// show the MS (c) notice, e.g. with help or fsi? 
       mutable showBanner: bool
-        
+
       /// show times between passes? 
       mutable showTimes: bool
       mutable showLoadedAssemblies: bool
@@ -2229,7 +2229,7 @@ type TcConfigBuilder =
       mutable emitDebugInfoInQuotations: bool
 
       mutable exename: string option
-      
+
       // If true - the compiler will copy FSharp.Core.dll along the produced binaries
       mutable copyFSharpCore: CopyFSharpCoreFlag
 
@@ -2390,8 +2390,23 @@ type TcConfigBuilder =
           noConditionalErasure = false
           pathMap = PathMap.empty
           langVersion = LanguageVersion("default")
-          dependencyProvider = new DependencyProvider()
+          dependencyProvider = Unchecked.defaultof<DependencyProvider>
         }
+
+    // Directories to start probing in
+    // Algorithm:
+    //  Search for native libraries using:
+    //  1. Include directories
+    //  2. compilerToolPath directories
+    //  3. reference dll's
+    //  4. The implicit include directory
+    member private tcConfigB.nativeProbingRoots () =
+        seq {
+            yield! tcConfigB.includes
+            yield! tcConfigB.compilerToolPaths
+            yield! (tcConfigB.referencedDLLs |> Seq.map(fun ref -> Path.GetDirectoryName(ref.Text)))
+            yield tcConfigB.implicitIncludeDir
+        } |> Seq.distinct
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
                             isInteractive, isInvalidationSupported, defaultCopyFSharpCore, tryGetMetadataSnapshot) =
@@ -2401,17 +2416,20 @@ type TcConfigBuilder =
         if (String.IsNullOrEmpty defaultFSharpBinariesDir) then
             failwith "Expected a valid defaultFSharpBinariesDir"
 
-        { TcConfigBuilder.Initial with 
-            implicitIncludeDir = implicitIncludeDir
-            defaultFSharpBinariesDir = defaultFSharpBinariesDir
-            reduceMemoryUsage = reduceMemoryUsage
-            legacyReferenceResolver = legacyReferenceResolver
-            isInteractive = isInteractive
-            isInvalidationSupported = isInvalidationSupported
-            copyFSharpCore = defaultCopyFSharpCore
-            tryGetMetadataSnapshot = tryGetMetadataSnapshot
-            useFsiAuxLib = isInteractive
-        }
+        let tcConfigBuilder =
+            { TcConfigBuilder.Initial with 
+                implicitIncludeDir = implicitIncludeDir
+                defaultFSharpBinariesDir = defaultFSharpBinariesDir
+                reduceMemoryUsage = reduceMemoryUsage
+                legacyReferenceResolver = legacyReferenceResolver
+                isInteractive = isInteractive
+                isInvalidationSupported = isInvalidationSupported
+                copyFSharpCore = defaultCopyFSharpCore
+                tryGetMetadataSnapshot = tryGetMetadataSnapshot
+                useFsiAuxLib = isInteractive
+            }
+        tcConfigBuilder.dependencyProvider <- new DependencyProvider(NativeResolutionProbe(tcConfigBuilder.nativeProbingRoots))
+        tcConfigBuilder
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -4964,10 +4982,13 @@ let ProcessMetaCommandsFromInput
                 if not canHaveScriptMetaCommands then
                     errorR(HashReferenceNotAllowedInNonScript m)
 
-                let reportError errorType error =
-                    match errorType with
-                    | ErrorReportType.Warning -> warning(Error(error,m))
-                    | ErrorReportType.Error -> errorR(Error(error, m))
+                let reportError =
+                    let report errorType err msg =
+                        let error = err, msg
+                        match errorType with
+                        | ErrorReportType.Warning -> warning(Error(error, m))
+                        | ErrorReportType.Error -> errorR(Error(error, m))
+                    ResolvingErrorReport (report)
 
                 match args with
                 | [path] ->
@@ -5257,10 +5278,13 @@ module ScriptPreprocessClosure =
                     match packageManagerLines with
                     | [] -> ()
                     | (_, _, m)::_ ->
-                        let reportError errorType error =
-                             match errorType with
-                             | ErrorReportType.Warning -> warning(Error(error,m))
-                             | ErrorReportType.Error -> errorR(Error(error, m))
+                        let reportError =
+                            let report errorType err msg =
+                                let error = err, msg
+                                match errorType with
+                                | ErrorReportType.Warning -> warning(Error(error, m))
+                                | ErrorReportType.Error -> errorR(Error(error, m))
+                            ResolvingErrorReport (report)
 
                         match origTcConfig.packageManagerLines |> Map.tryFind packageManagerKey with
                         | Some oldDependencyManagerLines when oldDependencyManagerLines = packageManagerLines -> ()
@@ -5273,22 +5297,23 @@ module ScriptPreprocessClosure =
                             | dependencyManager ->
                                 let inline snd3 (_, b, _) = b
                                 let packageManagerTextLines = packageManagerLines |> List.map snd3
-                                match tcConfig.dependencyProvider.Resolve(dependencyManager, tcConfig.implicitIncludeDir, mainFile, scriptName, ".fsx", packageManagerTextLines, reportError, executionTfm) with
-                                | true, _references, generatedScripts, additionalIncludeFolders ->
+                                let result = tcConfig.dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, tcConfig.implicitIncludeDir, mainFile, scriptName)
+                                match result.Success with
+                                | true ->
                                     // Resolution produced no errors
-                                    if not (Seq.isEmpty additionalIncludeFolders) then
+                                    if not (Seq.isEmpty result.Roots) then
                                         let tcConfigB = tcConfig.CloneOfOriginalBuilder
-                                        for folder in additionalIncludeFolders do 
+                                        for folder in result.Roots do 
                                             tcConfigB.AddIncludePath(m, folder, "")
                                         tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
                                         tcConfig <- TcConfig.Create(tcConfigB, validate=false)
-                                    for script in generatedScripts do
+                                    for script in result.SourceFiles do
                                         let scriptText = File.ReadAllText script
                                         loadScripts.Add script |> ignore
                                         let iSourceText = SourceText.ofString scriptText
                                         yield! loop (ClosureSource(script, m, iSourceText, true))
 
-                                | false, _, _, _ ->
+                                | false ->
                                     // Resolution produced errors update packagerManagerLines entries to note these failure
                                     // failed resolutions will no longer be considered
                                     let tcConfigB = tcConfig.CloneOfOriginalBuilder
