@@ -5361,12 +5361,19 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             | SynPat.Null m -> SynExpr.Null m
             | _ -> error(Error(FSComp.SR.tcInvalidArgForParameterizedPattern(), x.Range))
 
+        let isNameof id =
+            try
+                match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
+                | Item.Value vref, _ -> valRefEq cenv.g vref cenv.g.nameof_vref
+                | _ -> false
+            with _ -> false
+
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
         | Item.NewDef id -> 
             match args with 
             | SynConstructorArgs.Pats [] 
             | SynConstructorArgs.NamePatPairs ([], _)-> TcPat warnOnUpperForId cenv env topValInfo vFlags (tpenv, names, takenNames) ty (mkSynPatVar vis id)
-            | SynConstructorArgs.Pats [arg] when id.idText = "nameof" && cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf ->
+            | SynConstructorArgs.Pats [arg] when cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf && isNameof id ->
                 match TcNameOfExpr cenv env tpenv (convSynPatToSynExpr arg) with
                 | Expr.Const(c, m, _) -> (fun _ -> TPat_const (c, m)), (tpenv, names, takenNames)
                 | _ -> failwith "Impossible: TcNameOfExpr must return an Expr.Const"
