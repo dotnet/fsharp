@@ -10,8 +10,6 @@ open System.Reflection
 open System.Runtime.CompilerServices
 open System.Runtime.Versioning
 
-open Internal.Utilities.FSharpEnvironment
-
 // Package reference information
 type PackageReference = {
     Include:string
