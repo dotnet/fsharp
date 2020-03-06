@@ -29,6 +29,8 @@ type public FSharpErrorSeverity =
 [<Class>]
 type public FSharpErrorInfo = 
     member FileName: string
+    member Start: pos
+    member End: pos
     member StartLineAlternate:int
     member EndLineAlternate:int
     member StartColumn:int
