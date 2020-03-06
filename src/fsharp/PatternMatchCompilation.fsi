@@ -34,6 +34,7 @@ type Pattern =
     | TPat_range of char * char * range
     | TPat_null of range
     | TPat_isinst of TType * TType * PatternValBinding option * range
+    | TPat_error of range
 
     member Range: range
 

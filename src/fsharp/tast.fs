@@ -4592,6 +4592,9 @@ and
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
 
+    /// Used in error recovery
+    | Error of range
+
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText = x.ToString()

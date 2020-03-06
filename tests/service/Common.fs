@@ -1,11 +1,14 @@
+[<AutoOpen>]
 module internal FSharp.Compiler.Service.Tests.Common
 
 open System
 open System.IO
 open System.Collections.Generic
 open FSharp.Compiler
+open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open FsUnit
+open NUnit.Framework
 
 #if NETCOREAPP
 let readRefs (folder : string) (projectFile: string) =
@@ -303,16 +306,29 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
                  yield (x :> FSharpSymbol)
           yield! allSymbolsInEntities compGen e.NestedEntities ]
 
-
 let getParseAndCheckResults (source: string) =
-     parseAndCheckScript("/home/user/Test.fsx", source)
+    parseAndCheckScript("/home/user/Test.fsx", source)
 
-let getSymbolUses (source: string) =
-    let _, typeCheckResults = parseAndCheckScript("/home/user/Test.fsx", source) 
+let inline dumpErrors results =
+    (^TResults: (member Errors: FSharpErrorInfo[]) results)
+    |> Array.map (fun e ->
+        let range = mkRange e.FileName e.Start e.End
+        let message =
+            e.Message.Split('\n')
+            |> Array.map (fun s -> s.Trim())
+            |> String.concat " "
+        sprintf "%s: %s" (range.ToShortString()) message)
+    |> List.ofArray
+
+
+let getSymbolUses (results: FSharpCheckFileResults) =
+    results.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+
+let getSymbolUsesFromSource (source: string) =
+    let _, typeCheckResults = getParseAndCheckResults source 
     typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
 
-let getSymbols (source: string) =
-    let symbolUses = getSymbolUses source
+let getSymbols (symbolUses: FSharpSymbolUse[]) =
     symbolUses |> Array.map (fun symbolUse -> symbolUse.Symbol)
 
 
@@ -329,13 +345,30 @@ let getSymbolName (symbol: FSharpSymbol) =
 
 
 let assertContainsSymbolWithName name source =
-    let symbols = getSymbols source
-    let names = symbols |> Array.choose getSymbolName
-
-    names
+    getSymbols source
+    |> Array.choose getSymbolName
     |> Array.contains name
     |> shouldEqual true
 
+let assertContainsSymbolsWithNames (names: string list) source =
+    let symbolNames =
+        getSymbols source
+        |> Array.choose getSymbolName
+
+    for name in names do
+        symbolNames
+        |> Array.contains name
+        |> shouldEqual true
+
+let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults) =
+    let symbolNames =
+        getSymbolUses results
+        |> getSymbols
+        |> Array.choose getSymbolName
+        |> set
+
+    for name in names do
+        Assert.That(Set.contains name symbolNames, name)
 
 let coreLibAssemblyName =
 #if NETCOREAPP
