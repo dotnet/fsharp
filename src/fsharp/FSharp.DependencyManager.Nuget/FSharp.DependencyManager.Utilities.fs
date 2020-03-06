@@ -11,7 +11,6 @@ open System.Runtime.CompilerServices
 open System.Runtime.Versioning
 
 open FSharp.DependencyManager.Nuget.ProjectFile
-open Internal.Utilities.FSharpEnvironment
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
 type DependencyManagerAttribute() = inherit System.Attribute()
