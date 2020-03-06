@@ -3944,6 +3944,7 @@ module DebugPrint =
         | (DecisionTreeTest.IsNull ) -> wordL(tagText "isnull")
         | (DecisionTreeTest.IsInst (_, ty)) -> wordL(tagText "isinst") ^^ typeL ty
         | (DecisionTreeTest.ActivePatternCase (exp, _, _, _, _)) -> wordL(tagText "query") ^^ exprL g exp
+        | (DecisionTreeTest.Error _) -> wordL (tagText "error recovery")
  
     and targetL g i (TTarget (argvs, body, _)) = leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL g body
 
@@ -4421,6 +4422,7 @@ and accFreeInTest (opts: FreeVarOptions) discrim acc =
         accFreeInExpr opts exp 
             (accFreeVarsInTys opts tys 
                 (Option.foldBack (fun (vref, tinst) acc -> accFreeValRef opts vref (accFreeVarsInTys opts tinst acc)) activePatIdentity acc))
+    | DecisionTreeTest.Error _ -> acc
 
 and accFreeInDecisionTree opts x (acc: FreeVars) =
     match x with 
@@ -5227,6 +5229,7 @@ and remapDecisionTree g compgen tmenv x =
                     | DecisionTreeTest.IsInst (srcty, tgty) -> DecisionTreeTest.IsInst (remapType tmenv srcty, remapType tmenv tgty) 
                     | DecisionTreeTest.IsNull -> DecisionTreeTest.IsNull 
                     | DecisionTreeTest.ActivePatternCase _ -> failwith "DecisionTreeTest.ActivePatternCase should only be used during pattern match compilation"
+                    | DecisionTreeTest.Error _ -> failwith "DecisionTreeTest.Error should only be used during pattern match compilation"
                   TCase(test', remapDecisionTree g compgen tmenv y)) csl, 
                 Option.map (remapDecisionTree g compgen tmenv) dflt, 
                 m)
