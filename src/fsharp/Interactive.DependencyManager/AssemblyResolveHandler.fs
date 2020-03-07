@@ -93,4 +93,4 @@ type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe) =
             new AssemblyResolveHandlerDeskTop(assemblyProbingPaths) :> IDisposable
 
     interface IDisposable with
-        member _x.Dispose() = handler.Dispose()
+        member _.Dispose() = handler.Dispose()
