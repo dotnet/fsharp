@@ -137,7 +137,7 @@ type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe) =
             None
 
     interface IDisposable with
-        member _x.Dispose() =
+        member _.Dispose() =
             match handler with
             | None -> ()
             | Some handler -> handler.Dispose()
