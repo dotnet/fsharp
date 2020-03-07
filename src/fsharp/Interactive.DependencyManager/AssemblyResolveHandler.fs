@@ -6,32 +6,21 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Reflection
+open Internal.Utilities.FSharpEnvironment
 
-#if NETSTANDARD
 open System.Runtime.Loader
-#endif
 
 /// Signature for ResolutionProbe callback
 /// host implements this, it's job is to return a list of assembly paths to probe.
 type AssemblyResolutionProbe = delegate of Unit -> IEnumerable<string>
 
-
 /// Type that encapsulates AssemblyResolveHandler for managed packages
-type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe) =
+type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProbe) =
 
-#if NETSTANDARD
     let resolveAssemblyNetStandard (ctxt: AssemblyLoadContext) (assemblyName: AssemblyName): Assembly =
 
         let loadAssembly path =
             ctxt.LoadFromAssemblyPath(path)
-
-#else
-    let resolveAssemblyNET (assemblyName: AssemblyName): Assembly =
-
-        let loadAssembly assemblyPath =
-            Assembly.LoadFrom(assemblyPath)
-
-#endif
 
         let assemblyPaths =
             match assemblyProbingPaths with
@@ -50,7 +39,6 @@ type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe) =
 
         with | _ -> Unchecked.defaultof<Assembly>
 
-#if NETSTANDARD
     let handler = Func<AssemblyLoadContext, AssemblyName, Assembly>(resolveAssemblyNetStandard)
     do AssemblyLoadContext.Default.add_Resolving(handler)
 
@@ -58,7 +46,31 @@ type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe) =
         member _x.Dispose() =
             AssemblyLoadContext.Default.remove_Resolving(handler)
 
-#else
+/// Type that encapsulates AssemblyResolveHandler for managed packages
+type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProbe) =
+
+    let resolveAssemblyNET (assemblyName: AssemblyName): Assembly =
+
+        let loadAssembly assemblyPath =
+            Assembly.LoadFrom(assemblyPath)
+
+        let assemblyPaths =
+            match assemblyProbingPaths with
+            | null -> Seq.empty<string>
+            | _ ->  assemblyProbingPaths.Invoke()
+
+        try
+            // args.Name is a displayname formatted assembly version.
+            // E.g:  "System.IO.FileSystem, Version=4.1.1.0, Culture=en-US, PublicKeyToken=b03f5f7f11d50a3a"
+            let simpleName = assemblyName.Name
+            let assemblyPathOpt = assemblyPaths |> Seq.tryFind(fun path -> Path.GetFileNameWithoutExtension(path) = simpleName)
+            match assemblyPathOpt with
+            | Some path ->
+                loadAssembly path
+            | None -> Unchecked.defaultof<Assembly>
+
+        with | _ -> Unchecked.defaultof<Assembly>
+
     let handler = new ResolveEventHandler(fun _ (args: ResolveEventArgs) -> resolveAssemblyNET (new AssemblyName(args.Name)))
     do AppDomain.CurrentDomain.add_AssemblyResolve(handler)
 
@@ -66,4 +78,13 @@ type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe) =
         member _x.Dispose() =
             AppDomain.CurrentDomain.remove_AssemblyResolve(handler)
 
-#endif
+type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe) =
+
+    let handler =
+        if isRunningOnCoreClr then
+            new AssemblyResolveHandlerCoreclr(assemblyProbingPaths) :> IDisposable
+        else
+            new AssemblyResolveHandlerDeskTop(assemblyProbingPaths) :> IDisposable
+
+    interface IDisposable with
+        member _x.Dispose() = handler.Dispose()

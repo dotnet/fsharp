@@ -235,6 +235,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
 type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) =
 
     let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots) :> IDisposable
+
     let assemblyResolveHandler = new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
 
     // Resolution Path = Location of FSharp.Compiler.Private.dll
