@@ -8,11 +8,13 @@ open System.IO
 open System.Reflection
 open Internal.Utilities.FSharpEnvironment
 
-open System.Runtime.Loader
-
 /// Signature for ResolutionProbe callback
 /// host implements this, it's job is to return a list of assembly paths to probe.
 type AssemblyResolutionProbe = delegate of Unit -> IEnumerable<string>
+
+#if NETSTANDARD
+
+open System.Runtime.Loader
 
 /// Type that encapsulates AssemblyResolveHandler for managed packages
 type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProbe) =
@@ -45,6 +47,8 @@ type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProb
     interface IDisposable with
         member _x.Dispose() =
             AssemblyLoadContext.Default.remove_Resolving(handler)
+
+#endif
 
 /// Type that encapsulates AssemblyResolveHandler for managed packages
 type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProbe) =
@@ -81,9 +85,11 @@ type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProb
 type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe) =
 
     let handler =
+#if NETSTANDARD
         if isRunningOnCoreClr then
             new AssemblyResolveHandlerCoreclr(assemblyProbingPaths) :> IDisposable
         else
+#endif
             new AssemblyResolveHandlerDeskTop(assemblyProbingPaths) :> IDisposable
 
     interface IDisposable with

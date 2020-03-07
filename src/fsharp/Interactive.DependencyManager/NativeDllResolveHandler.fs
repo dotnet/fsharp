@@ -7,9 +7,15 @@ open System.Collections.Generic
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
-open System.Runtime.Loader
-
 open Internal.Utilities.FSharpEnvironment
+
+/// Signature for Native library resolution probe callback
+/// host implements this, it's job is to return a list of package roots to probe.
+type NativeResolutionProbe = delegate of Unit -> IEnumerable<string>
+
+
+#if NETSTANDARD
+open System.Runtime.Loader
 
 // Cut down AssemblyLoadContext, for loading native libraries
 type NativeAssemblyLoadContext () =
@@ -22,11 +28,6 @@ type NativeAssemblyLoadContext () =
         raise (NotImplementedException())
 
     static member NativeLoadContext = new NativeAssemblyLoadContext()
-
-
-/// Signature for Native library resolution probe callback
-/// host implements this, it's job is to return a list of package roots to probe.
-type NativeResolutionProbe = delegate of Unit -> IEnumerable<string>
 
 
 /// Type that encapsulates Native library probing for managed packages
@@ -123,13 +124,17 @@ type NativeDllResolveHandlerCoreClr (_nativeProbingRoots: NativeResolutionProbe)
                 eventInfo.RemoveEventHandler(AssemblyLoadContext.Default, handler)
             ()
 
+#endif
 
 type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe) =
 
-    let handler =
+    let handler:IDisposable option =
+#if NETSTANDARD
         if isRunningOnCoreClr then
             Some (new NativeDllResolveHandlerCoreClr(_nativeProbingRoots) :> IDisposable)
-        else    None
+        else
+#endif
+            None
 
     interface IDisposable with
         member _x.Dispose() =
