@@ -7,6 +7,12 @@ open System.Collections.Generic
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
+open Internal.Utilities.FSharpEnvironment
+
+/// Signature for Native library resolution probe callback
+/// host implements this, it's job is to return a list of package roots to probe.
+type NativeResolutionProbe = delegate of Unit -> IEnumerable<string>
+
 
 #if NETSTANDARD
 open System.Runtime.Loader
@@ -22,17 +28,10 @@ type NativeAssemblyLoadContext () =
         raise (NotImplementedException())
 
     static member NativeLoadContext = new NativeAssemblyLoadContext()
-#endif
-
-
-/// Signature for Native library resolution probe callback
-/// host implements this, it's job is to return a list of package roots to probe.
-type NativeResolutionProbe = delegate of Unit -> IEnumerable<string>
 
 
 /// Type that encapsulates Native library probing for managed packages
-type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe) =
-#if NETSTANDARD
+type NativeDllResolveHandlerCoreClr (_nativeProbingRoots: NativeResolutionProbe) =
     let probingFileNames (name: string) =
         // coreclr native library probing algorithm: https://github.com/dotnet/coreclr/blob/9773db1e7b1acb3ec75c9cc0e36bd62dcbacd6d5/src/System.Private.CoreLib/shared/System/Runtime/Loader/LibraryNameVariation.Unix.cs
         let isRooted = Path.IsPathRooted name
@@ -118,12 +117,27 @@ type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe) =
     let handler = Func<Assembly, string, IntPtr> (_resolveUnmanagedDll)
 
     do if not (isNull eventInfo) then eventInfo.AddEventHandler(AssemblyLoadContext.Default, handler)
-#endif
 
     interface IDisposable with
         member _x.Dispose() =
-#if NETSTANDARD
             if not (isNull eventInfo) then
                 eventInfo.RemoveEventHandler(AssemblyLoadContext.Default, handler)
-#endif
             ()
+
+#endif
+
+type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe) =
+
+    let handler:IDisposable option =
+#if NETSTANDARD
+        if isRunningOnCoreClr then
+            Some (new NativeDllResolveHandlerCoreClr(_nativeProbingRoots) :> IDisposable)
+        else
+#endif
+            None
+
+    interface IDisposable with
+        member _.Dispose() =
+            match handler with
+            | None -> ()
+            | Some handler -> handler.Dispose()
