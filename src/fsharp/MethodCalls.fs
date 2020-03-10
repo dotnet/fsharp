@@ -1756,6 +1756,17 @@ let RecdFieldInstanceChecks g amap ad m (rfinfo: RecdFieldInfo) =
     CheckRecdFieldInfoAttributes g rfinfo m |> CommitOperationResult        
     CheckRecdFieldInfoAccessible amap m ad rfinfo
 
+let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
+    CheckILFieldInfoAccessible g amap m ad finfo
+    if not finfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(finfo.FieldName), m))
+
+    // Static IL interfaces fields are not supported in lower F# versions.
+    if isInterfaceTy g finfo.ApparentEnclosingType then    
+        tryLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+        tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+
+    CheckILFieldAttributes g finfo m
+
 let ILFieldInstanceChecks  g amap ad m (finfo : ILFieldInfo) =
     if finfo.IsStatic then error (Error (FSComp.SR.tcStaticFieldUsedWhenInstanceFieldExpected(), m))
     CheckILFieldInfoAccessible g amap m ad finfo

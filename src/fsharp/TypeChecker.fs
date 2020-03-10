@@ -9738,9 +9738,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
 
     | Item.ILField finfo -> 
 
-        CheckILFieldInfoAccessible g cenv.amap mItem ad finfo
-        if not finfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(finfo.FieldName), mItem))
-        CheckILFieldAttributes g finfo mItem
+        ILFieldStaticChecks g cenv.amap cenv.infoReader ad mItem finfo
         let fref = finfo.ILFieldRef
         let exprty = finfo.FieldType(cenv.amap, mItem)
         match delayed with 

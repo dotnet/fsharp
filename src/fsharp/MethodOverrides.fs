@@ -458,19 +458,23 @@ module DispatchSlotChecking =
 
                       // IL methods might have default implementations.
                       else
+                          let isMethodOptional (minfo: MethInfo) =
+                            // A DIM is considered *not* 'optional' if it is not language supported.
+                            g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMemberConsumption &&
+                            not minfo.IsAbstract
+
                           match GetMostSpecificOverrideMethods infoReader m mostSpecificInterfaceTys minfo with
                           // No override, no default implementation.
                           | [] ->
-                            yield RequiredSlot (minfo, false)
+                            if minfo.IsDefaultInterfaceMethod then
+                                yield DefaultInterfaceImplementationSlot (minfo, isMethodOptional minfo, false)
+                            else
+                                // Regular interface methods are never optional.
+                                yield RequiredSlot (minfo, false)
 
                           // One override, one default implementation.
                           | [ minfo2 ] ->
-                            // A DIM is considered *not* 'optional' if it is not language supported.
-                            let isOptional =
-                                g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMemberConsumption &&
-                                minfo2.IsAbstract
-
-                            yield DefaultInterfaceImplementationSlot (minfo, isOptional, false)
+                            yield DefaultInterfaceImplementationSlot (minfo, isMethodOptional minfo2, false)
 
                           // We found multiple override methods, means we might have ambiguity.
                           | _ ->
@@ -489,7 +493,7 @@ module DispatchSlotChecking =
             // So here we get and yield all of those.
             for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m do
                 if minfo.IsDispatchSlot then
-                    yield RequiredSlot(minfo, minfo.IsAbstract) ]
+                    yield RequiredSlot(minfo, not minfo.IsAbstract) ]
 
     /// Get a collection of slots for the given type and implied types.
     let GetDispatchSlotSet (infoReader: InfoReader) ad m availImpliedInterfaces mostSpecificInterfaceTys reqdTy impliedTys =

@@ -467,6 +467,121 @@ let f () =
         |])
 
     [<Test>]
+    let ``C# simple with static property - Errors with lang version not supported`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticProperty { get; set; }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open System
+open CSharpTest
+
+let f () =
+    I1.StaticProperty
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 3350, (8, 5, 8, 22), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+        |])
+
+    [<Test>]
+    let ``C# simple with static field - Errors with lang version not supported`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticField;
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open System
+open CSharpTest
+
+let f () =
+    I1.StaticField
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 3350, (8, 5, 8, 19), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+        |])
+
+    [<Test>]
+    let ``C# simple with static method using SRTP - Errors with lang version not supported`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticMethod(int x, int y)
+        {
+            return x + y;
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+let inline callStatic< ^T when ^T : (static member StaticMethod : int * int -> int)> x y =
+    ( ^T : (static member StaticMethod : int * int -> int) (x, y))
+
+let f1 () =
+    callStatic<I1> 1 2
+    """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fsx, Library, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 3350, (9, 5, 9, 15), "Feature 'default interface member consumption' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+        |])
+
+    [<Test>]
     let ``C# simple diamond inheritance - Errors with lang version not supported and should not see the error for specific implementation`` () =
         let csharpSource =
             """
@@ -4448,6 +4563,330 @@ let main _ =
             Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "IB.IA.M")
+
+    [<Test>]
+    let ``C# with interface statics - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticMethod(int x, int y)
+        {
+            return x + y;
+        }
+
+        public static int StaticProperty { get; set; }
+
+        public static int StaticField;
+    }
+ 
+    public interface I2 : I1
+    {}
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type I3 =
+    inherit I2
+
+let f () =
+    I1.StaticMethod (1, 2) |> ignore
+
+    // Even though I1 declares statics, it can be called by qualifying I2 or I3(declared in F#).
+    I2.StaticMethod (1, 2) |> ignore
+    I2.StaticProperty <- 5
+    let _value = I2.StaticProperty
+    I2.StaticField <- 5
+    let _value = I2.StaticField
+    ()
+    I3.StaticMethod (1, 2) |> ignore
+    I3.StaticProperty <- 5 + I2.StaticProperty
+    let _value = I3.StaticProperty
+    I3.StaticField <- 6 + I2.StaticField
+    let _value = I3.StaticField
+    
+    Console.Write I2.StaticProperty
+    Console.Write I3.StaticField
+
+f ()
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.ExecutionHasOutput(fsCmpl, "1011")
+
+    [<Test>]
+    let ``C# interface statics and F# SRTP (statically resolved type parameters) - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticMethod(int x, int y)
+        {
+            return x + y;
+        }
+
+        public static int StaticProperty { get; set; }
+
+        public static int StaticField;
+    }
+ 
+    public interface I2 : I1
+    {}
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type I3 =
+    inherit I2
+
+let inline callStatic< ^T when ^T : (static member StaticMethod : int * int -> int)> x y =
+    let value = ( ^T : (static member StaticMethod : int * int -> int) (x, y))
+    Console.Write value
+
+let f1 () =
+    callStatic<I1> 1 2
+
+let f2 () =
+    callStatic<I2> 2 3
+
+let f3 () =
+    callStatic<I3> 4 5
+
+f1 ()
+f2 ()
+f3 ()
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.ExecutionHasOutput(fsCmpl, "359")
+
+    [<Test>]
+    let ``C# interface statics - Errors with method not defined on C# class`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticMethod(int x, int y)
+        {
+            return x + y;
+        }
+
+        public static int StaticProperty { get; set; }
+
+        public static int StaticField;
+    }
+ 
+    public interface I2 : I1
+    {}
+
+    public class CSharpClass : I2 { }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+let f () =
+    CSharpClass.StaticMethod(1, 2)
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 39, (6, 17, 6, 29), "The type 'CSharpClass' does not define the field, constructor or member 'StaticMethod'.")
+        |])
+
+    [<Test>]
+    let ``C# interface statics - Errors with method not defined on F# class`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticMethod(int x, int y)
+        {
+            return x + y;
+        }
+
+        public static int StaticProperty { get; set; }
+
+        public static int StaticField;
+    }
+ 
+    public interface I2 : I1
+    {}
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type FSharpClass() =
+
+    interface I1
+    interface I2
+
+let f () =
+    FSharpClass.StaticMethod(1, 2)
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 39, (11, 17, 11, 29), "The type 'FSharpClass' does not define the field, constructor or member 'StaticMethod'.")
+        |])
+
+    [<Test>]
+    let ``C# interface statics - Errors with method not defined on C# class using SRTP`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticMethod(int x, int y)
+        {
+            return x + y;
+        }
+
+        public static int StaticProperty { get; set; }
+
+        public static int StaticField;
+    }
+ 
+    public interface I2 : I1
+    {}
+
+    public class CSharpClass : I2 { }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+let inline callStatic< ^T when ^T : (static member StaticMethod : int * int -> int)> x y =
+    ( ^T : (static member StaticMethod : int * int -> int) (x, y))
+
+let f () =
+    callStatic<CSharpClass> 1 2
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 1, (9, 5, 9, 15), "The type 'CSharpClass' does not support the operator 'StaticMethod'")
+        |])
+
+    [<Test>]
+    let ``C# interface statics - Errors with method not defined on F# class using SRTP`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface I1
+    {
+        public static int StaticMethod(int x, int y)
+        {
+            return x + y;
+        }
+
+        public static int StaticProperty { get; set; }
+
+        public static int StaticField;
+    }
+ 
+    public interface I2 : I1
+    {}
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type FSharpClass() =
+
+    interface I1
+    interface I2
+
+let inline callStatic< ^T when ^T : (static member StaticMethod : int * int -> int)> x y =
+    ( ^T : (static member StaticMethod : int * int -> int) (x, y))
+
+let f () =
+    callStatic<FSharpClass> 1 2
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 1, (14, 5, 14, 15), "The type 'FSharpClass' does not support the operator 'StaticMethod'")
+        |])
 
 #else
 
