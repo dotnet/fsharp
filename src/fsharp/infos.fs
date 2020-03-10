@@ -1168,16 +1168,6 @@ type MethInfo =
     member x.IsInterfaceMethod =
         x.IsVirtual && isInterfaceTy x.TcGlobals x.ApparentEnclosingType
 
-    /// Indicates if this is a default interface method.
-    /// The method could be a non-abstract implementation or an overrider. 
-    /// The overrider could also re-abstract the method; it's still considered a default interface method.
-    member x.IsDefaultInterfaceMethod =
-        x.IsInterfaceMethod &&
-        // We only support DIMs from interfaces defined outside of F#.
-        (match x with
-         | ILMeth (_, ilMethInfo, _) -> (ilMethInfo.IsNewSlot && not ilMethInfo.IsAbstract) || not ilMethInfo.IsNewSlot
-         | _ -> false)
-
     /// Check if this method is an explicit implementation of an interface member
     member x.IsFSharpExplicitInterfaceImplementation =
         match x with

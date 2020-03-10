@@ -466,11 +466,11 @@ module DispatchSlotChecking =
                           match GetMostSpecificOverrideMethods infoReader m mostSpecificInterfaceTys minfo with
                           // No override, no default implementation.
                           | [] ->
-                            if minfo.IsDefaultInterfaceMethod then
-                                yield DefaultInterfaceImplementationSlot (minfo, isMethodOptional minfo, false)
-                            else
+                            if minfo.IsAbstract then
                                 // Regular interface methods are never optional.
                                 yield RequiredSlot (minfo, false)
+                            else
+                                yield DefaultInterfaceImplementationSlot (minfo, isMethodOptional minfo, false)
 
                           // One override, one default implementation.
                           | [ minfo2 ] ->
