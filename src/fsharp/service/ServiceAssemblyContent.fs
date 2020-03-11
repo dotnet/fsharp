@@ -353,7 +353,7 @@ module AssemblyContentProvider =
 #endif
         | [], _ -> []
         | assemblies, Some fileName ->
-            let fileWriteTime = FileInfo(fileName).LastWriteTime 
+            let fileWriteTime = FileSystem.GetLastWriteTimeShim(fileName) 
             withCache <| fun cache ->
                 match contentType, cache.TryGet fileName with 
                 | _, Some entry
