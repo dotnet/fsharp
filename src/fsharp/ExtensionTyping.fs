@@ -282,7 +282,10 @@ module internal ExtensionTyping =
     [<AllowNullLiteral; Sealed>]
     type ProvidedType (x: System.Type, ctxt: ProvidedTypeContext) =
         inherit ProvidedMemberInfo(x, ctxt)
-        let measureAttibuteFullname = typeof<Microsoft.FSharp.Core.MeasureAttribute>.FullName
+        let isMeasure = 
+            lazy
+                x.CustomAttributes 
+                |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = typeof<MeasureAttribute>.FullName)
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
         interface IProvidedCustomAttributeProvider with 
             member __.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
@@ -335,8 +338,7 @@ module internal ExtensionTyping =
         member __.IsNestedPublic = x.IsNestedPublic
         member __.IsEnum = x.IsEnum
         member __.IsClass = x.IsClass
-        member __.IsMeasure =
-            x.CustomAttributes |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = measureAttibuteFullname)
+        member __.IsMeasure = isMeasure.Value
         member __.IsSealed = x.IsSealed
         member __.IsAbstract = x.IsAbstract
         member __.IsInterface = x.IsInterface
