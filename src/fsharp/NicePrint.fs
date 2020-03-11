@@ -1192,14 +1192,20 @@ module private PrintTypes =
         ty.GetAssemblyName()
 
 /// Printing TAST objects
-module private PrintTastMemberOrVals = 
-    open PrintTypes
-    let private prettyLayoutOfMember denv typarInst (v: Val) = 
+module private PrintTastMemberOrVals =
+    open PrintTypes 
+    let private prettyLayoutOfMemberShortOption denv typarInst (v:Val) short =
         let v = mkLocalValRef v
         let membInfo = Option.get v.MemberInfo
         let stat = PrintTypes.layoutMemberFlags membInfo.MemberFlags
         let _tps, argInfos, rty, _ = GetTypeOfMemberInFSharpForm denv.g v
         
+        if short then
+            for argInfo in argInfos do
+                for _,info in argInfo do
+                    info.Attribs <- []
+                    info.Name <- None
+
         let mkNameL niceMethodTypars tagFunction name =
             let nameL =
                 DemangleOperatorNameAsLayout (tagFunction >> mkNav v.DefinitionRange) name
@@ -1214,15 +1220,21 @@ module private PrintTastMemberOrVals =
 
         match membInfo.MemberFlags.MemberKind with 
         | MemberKind.Member -> 
-            let prettyTyparInst, niceMethodTypars, tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
-            let nameL = mkNameL niceMethodTypars tagMember v.LogicalName
-            let resL = stat --- (nameL ^^ WordL.colon ^^ tauL)
+            let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
+            let resL =
+                if short then tauL
+                else
+                    let nameL = mkNameL niceMethodTypars tagMember v.LogicalName
+                    stat --- (nameL ^^ WordL.colon ^^ tauL)
             prettyTyparInst, resL
         | MemberKind.ClassConstructor
         | MemberKind.Constructor -> 
             let prettyTyparInst, _, tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
-            let newL = layoutAccessibility denv v.Accessibility WordL.keywordNew
-            let resL = stat ++ newL ^^ wordL (tagPunctuation ":") ^^ tauL
+            let resL = 
+                if short then tauL
+                else
+                    let newL = layoutAccessibility denv v.Accessibility WordL.keywordNew
+                    stat ++ newL ^^ wordL (tagPunctuation ":") ^^ tauL
             prettyTyparInst, resL
         | MemberKind.PropertyGetSet -> 
             emptyTyparInst, stat
@@ -1231,17 +1243,23 @@ module private PrintTastMemberOrVals =
                 // use error recovery because intellisense on an incomplete file will show this
                 errorR(Error(FSComp.SR.tastInvalidFormForPropertyGetter(), v.Id.idRange))
                 let nameL = mkNameL [] tagProperty v.CoreDisplayName
-                let resL = stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
+                let resL = 
+                    if short then nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
+                    else stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordGet)
                 emptyTyparInst, resL
             else
                 let argInfos = 
                     match argInfos with 
                     | [[(ty, _)]] when isUnitTy denv.g ty -> []
                     | _ -> argInfos
-
-                let prettyTyparInst, niceMethodTypars, tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
-                let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
-                let resL = stat --- (nameL ^^ WordL.colon ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
+                let prettyTyparInst, niceMethodTypars,tauL = prettyLayoutOfMemberType denv v typarInst argInfos rty
+                let resL = 
+                    if short then
+                        if isNil argInfos then tauL 
+                        else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)
+                    else
+                        let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
+                        stat --- (nameL ^^ WordL.colon ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
                 prettyTyparInst, resL
         | MemberKind.PropertySet -> 
             if argInfos.Length <> 1 || isNil argInfos.Head then 
@@ -1253,9 +1271,20 @@ module private PrintTastMemberOrVals =
             else 
                 let argInfos, valueInfo = List.frontAndBack argInfos.Head
                 let prettyTyparInst, niceMethodTypars, tauL = prettyLayoutOfMemberType denv v typarInst (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
-                let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
-                let resL = stat --- (nameL ^^ wordL (tagPunctuation ":") ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
+                let resL = 
+                    if short then
+                        (tauL --- (WordL.keywordWith ^^ WordL.keywordSet))
+                    else
+                        let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
+                        stat --- (nameL ^^ wordL (tagPunctuation ":") ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
                 prettyTyparInst, resL
+                
+    let private prettyLayoutOfMemberShort denv typarInst (v:Val) = prettyLayoutOfMemberShortOption denv typarInst v true
+    
+    let prettyLayoutOfMember denv typarInst (v:Val) = prettyLayoutOfMemberShortOption denv typarInst v false
+
+    let prettyLayoutOfMemberNoInstShort denv v = 
+        prettyLayoutOfMemberShortOption denv emptyTyparInst v true |> snd
 
     let private layoutNonMemberVal denv (tps, v: Val, tau, cxs) =
         let env = SimplifyTypes.CollectInfo true [tau] cxs
@@ -2126,9 +2155,12 @@ let stringOfExnDef denv x = x |> TastDefinitionPrinting.layoutExnDefn denv |> sh
 let stringOfFSAttrib denv x = x |> PrintTypes.layoutAttrib denv |> squareAngleL |> showL
 let stringOfILAttrib denv x = x |> PrintTypes.layoutILAttrib denv |> squareAngleL |> showL
 
+
+
 let layoutInferredSigOfModuleExpr showHeader denv infoReader ad m expr = InferredSigPrinting.layoutInferredSigOfModuleExpr showHeader denv infoReader ad m expr 
-let prettyLayoutOfValOrMember denv typarInst v = PrintTastMemberOrVals.prettyLayoutOfValOrMember denv typarInst v
+let prettyLayoutOfValOrMember denv typarInst v = PrintTastMemberOrVals.prettyLayoutOfValOrMember denv typarInst v  
 let prettyLayoutOfValOrMemberNoInst denv v = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv v
+let prettyLayoutOfMemberNoInstShort denv v = PrintTastMemberOrVals.prettyLayoutOfMemberNoInstShort denv v 
 let prettyLayoutOfInstAndSig denv x = PrintTypes.prettyLayoutOfInstAndSig denv x
 
 /// Generate text for comparing two types.
