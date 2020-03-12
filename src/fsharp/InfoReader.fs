@@ -101,13 +101,15 @@ let GetTopHierarchyItemsByType g amap f xs =
         match f x with
         | None -> ()
         | Some (xTy, m) ->
-            if xs 
-               |> List.forall (fun y ->
+            let isEqual =
+                xs
+                |> List.forall (fun y ->
                     match f y with
                     | None -> true
                     | Some (yTy, _) ->
                         if typeEquiv g xTy yTy then true
-                        else not (TypeFeasiblySubsumesType 0 g amap m xTy CanCoerce yTy)) then
+                        else not (TypeFeasiblySubsumesType 0 g amap m xTy CanCoerce yTy))
+            if isEqual then
                 yield x ]
 
 /// A helper type to help collect properties.
@@ -351,51 +353,41 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
           ty
           None
 
-    let GetIntrinsicTopInterfaceOverrideMethodSetsUncached ((optFilter, ad, allowMultiIntfInst), m, ty) =
+    /// Visiting each type in the hierarchy and accumulate methods that are the OverrideBy target 
+    let GetIntrinsicOverrideMethodSetsUncached ((optFilter, _ad, _allowMultiIntfInst), m, ty) =
 
-        let checkMethod (minfo: MethInfo) (ilMethRef: ILMethodRef) =
-            minfo.IsFinal &&
-            minfo.IsVirtual &&
-            minfo.IsInterfaceMethod &&
-            ilMethRef.ArgCount = (match minfo.NumArgs with [] -> 0 | count :: _ -> count) && 
-            ilMethRef.GenericArity = minfo.GenericArity
-
-        FoldPrimaryHierarchyOfType (fun ty (acc: MethInfo list list) ->
             // Currently, F# supports DIMs from IL types, not F# defined types.
             match tryAppTy g ty with
             | ValueSome (tcref, _) when tcref.IsILTycon ->
+                let mimpls = tcref.ILTyconRawMetadata.MethodImpls.AsList
+                let mdefs = tcref.ILTyconRawMetadata.Methods
+
                 // MethodImpls contains a list of methods that override.
                 // OverrideBy is the method that does the overriding.
                 // Overrides is the method being overriden.
-                // Find the Overrides method first with optFilter, then search for the OverrideBy method.
-                //     If the OverrideBy method is found, add it to the method set for that type in the hierarchy.
-                (acc, tcref.ILTyconRawMetadata.MethodImpls.AsList)
+                (NameMap.Empty, mimpls)
                 ||> List.fold (fun acc ilMethImpl ->
-                    let optFilter2 =                     
+                    let overridesName = ilMethImpl.Overrides.MethodRef.Name
+                    let accumulate =     
                         match optFilter with
-                        | Some name when name = ilMethImpl.Overrides.MethodRef.Name ->
-                            Some ilMethImpl.OverrideBy.Name
+                        | None -> true
+                        | Some name when name = overridesName -> true
+                        | _ -> false
+                    if accumulate then
+                        let overrideBy = ilMethImpl.OverrideBy
+                        match mdefs.TryFindByNameAndCallingSignature (overrideBy.Name, overrideBy.MethodRef.CallingSignature) with
+                        | Some mdef ->
+                            let methInfo = MethInfo.CreateILMeth(amap, m, ty, mdef)
+                            match acc.TryGetValue overridesName with
+                            | true, methInfos ->
+                                NameMap.add overridesName (methInfo :: methInfos) acc
+                            | _ ->
+                                NameMap.add overridesName [methInfo] acc
                         | _ ->
-                            None
-
-                    if (optFilter.IsSome && optFilter2.IsSome) || optFilter.IsNone then
-                        let minfos =
-                            ([], GetImmediateIntrinsicMethInfosOfType (optFilter2, ad) g amap m ty)
-                            ||> List.fold (fun acc minfo ->
-                                if checkMethod minfo ilMethImpl.OverrideBy.MethodRef then
-                                    minfo :: acc
-                                else
-                                    acc)
-
-                        if List.isEmpty minfos then acc
-                        else minfos :: acc
+                            acc
                     else
                         acc)
-            | _ -> acc
-        ) g amap m allowMultiIntfInst ty []
-        |> List.concat
-        |> List.groupBy (fun minfo -> (minfo.LogicalName, minfo.NumArgs, minfo.GenericArity))
-        |> List.map (fun (_, minfos) -> GetTopHierarchyItemsByType g amap (fun (minfo: MethInfo) -> Some (minfo.ApparentEnclosingType, m)) minfos)
+            | _ -> NameMap.Empty
 
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
     /// caches computations for monomorphic types.
@@ -448,7 +440,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let ilFieldInfoCache = MakeInfoCache GetIntrinsicILFieldInfosUncached hashFlags1
     let eventInfoCache = MakeInfoCache GetIntrinsicEventInfosUncached hashFlags1
     let namedItemsCache = MakeInfoCache GetIntrinsicNamedItemsUncached hashFlags2
-    let topInterfaceOverrideMethodInfoCache = MakeInfoCache GetIntrinsicTopInterfaceOverrideMethodSetsUncached hashFlags0
+    let overrideMethodInfoCache = MakeInfoCache GetIntrinsicOverrideMethodSetsUncached hashFlags0
 
     let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierarchyUncached HashIdentity.Structural
     let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierarchyUncached HashIdentity.Structural
@@ -511,9 +503,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member x.TryFindNamedItemOfType (nm, ad, m, ty) =
         namedItemsCache.Apply(((nm, ad), m, ty))
 
-    /// Read the raw interface method sets of a type that is a topmost overrides. Cache the result for monomorphic types
-    member x.GetIntrinsicTopInterfaceOverrideMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
-        topInterfaceOverrideMethodInfoCache.Apply(((optFilter, ad, allowMultiIntfInst), m, ty))
+    /// Read the raw method sets of a type that are overrides. Cache the result for monomorphic types
+    member x.GetIntrinsicOverrideMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
+        overrideMethodInfoCache.Apply(((optFilter, ad, allowMultiIntfInst), m, ty))
 
     /// Get the super-types of a type, including interface types.
     member x.GetEntireTypeHierarchy (allowMultiIntfInst, m, ty) =
@@ -801,10 +793,13 @@ let TryFindIntrinsicMethInfo infoReader m ad nm ty =
 let TryFindPropInfo infoReader m ad nm ty = 
     GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty 
 
-/// Get a collection of topmost interface override methods.
+/// Get a collection of override methods.
 /// When providing a method name, it is the name of method that is being overriden.
-let GetIntrinisicTopInterfaceOverrideMethInfoSetsOfType (infoReader: InfoReader) (nm, ad) m ty =
-    infoReader.GetIntrinsicTopInterfaceOverrideMethodSetsOfType (nm, ad, AllowMultiIntfInstantiations.Yes, m, ty)
+let GetIntrinisicOverrideMethInfosOfType (infoReader: InfoReader) (nm, ad) m ty =
+    let sets = infoReader.GetIntrinsicOverrideMethodSetsOfType (None, ad, AllowMultiIntfInstantiations.Yes, m, ty)
+    match sets.TryGetValue nm with
+    | true, methInfos -> methInfos
+    | _ -> []
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events - these use method searching hence are in this file

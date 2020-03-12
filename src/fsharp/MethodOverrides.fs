@@ -427,13 +427,16 @@ module DispatchSlotChecking =
 
         mostSpecificInterfaceTys
         |> List.map (fun (ty, _) ->
-            GetIntrinisicTopInterfaceOverrideMethInfoSetsOfType infoReader (Some minfo.LogicalName, AccessibleFromSomewhere) m ty
-            |> List.concat
-            |> List.filter (fun minfo2 -> 
-                let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo2
-                IsSigExactMatch g amap m minfo overrideBy))
+            let result =
+                GetIntrinisicOverrideMethInfosOfType infoReader (minfo.LogicalName, AccessibleFromSomewhere) m ty
+                |> List.filter (fun minfo2 -> 
+                    if typeEquiv g ty minfo2.ApparentEnclosingType then
+                        let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo2
+                        IsSigExactMatch g amap m minfo overrideBy
+                    else
+                        false)
+            result)
         |> List.concat
-        |> GetTopHierarchyItemsByType g amap (fun minfo -> Some (minfo.ApparentEnclosingType, m))
 
     /// Get a collection of slots for the given interface type.
     let GetInterfaceDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces mostSpecificInterfaceTys interfaceTy =

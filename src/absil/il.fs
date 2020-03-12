@@ -1725,6 +1725,10 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
 
     member x.FindByNameAndArity (nm, arity) = x.FindByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
 
+    member x.TryFindByNameAndCallingSignature (nm, callingSig) = 
+        x.FindByName nm 
+        |> List.tryFind (fun x -> x.CallingSignature = callingSig)
+
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILEventDef(eventType: ILType option, name: string, attributes: EventAttributes,
                 addMethod: ILMethodRef, removeMethod: ILMethodRef, fireMethod: ILMethodRef option,
