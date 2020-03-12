@@ -2058,12 +2058,9 @@ and Construct =
         let id = ident (name, m)
         let kind = 
             let isMeasure = 
-                st.PApplyWithProvider((fun (st, provider) -> 
-                    let findAttrib (ty: System.Type) (a: CustomAttributeData) = (a.Constructor.DeclaringType.FullName = ty.FullName)  
-                    let ty = st.RawSystemType
+                st.PApplyWithProvider((fun (st, provider) ->
                     ignore provider
-                    ty.CustomAttributes
-                        |> Seq.exists (findAttrib typeof<Microsoft.FSharp.Core.MeasureAttribute>)), m)
+                    st.IsMeasure), m)
                   .PUntaintNoFailure(fun x -> x)
             if isMeasure then TyparKind.Measure else TyparKind.Type
 
