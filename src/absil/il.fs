@@ -309,6 +309,10 @@ type ILVersionInfo =
     new (major, minor, build, revision) =
         { Major = major; Minor = minor; Build = build; Revision = revision }
 
+    /// For debugging
+    override x.ToString() = sprintf "ILVersionInfo: %u %u %u %u" (x.Major) (x.Minor) (x.Build) (x.Revision)
+
+
 type Locale = string
 
 [<StructuralEquality; StructuralComparison>]

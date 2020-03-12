@@ -45,16 +45,11 @@ open FSharp.Compiler.ExtensionTyping
 ///
 /// The bool indicates if named using a '?', making the caller argument explicit-optional
 type CallerArg<'T> = 
-
     /// CallerArg(ty, range, isOpt, exprInfo)
-    | CallerArg of TType * range * bool * 'T  
-
+    | CallerArg of ty: TType * range: range * isOpt: bool * exprInfo: 'T  
     member x.CallerArgumentType = (let (CallerArg(ty, _, _, _)) = x in ty)
-
     member x.Range = (let (CallerArg(_, m, _, _)) = x in m)
-
     member x.IsExplicitOptional = (let (CallerArg(_, _, isOpt, _)) = x in isOpt)
-
     member x.Expr = (let (CallerArg(_, _, _, expr)) = x in expr)
     
 /// Represents the information about an argument in the method being called
@@ -113,6 +108,22 @@ type CallerNamedArg<'T> =
 
     member x.CallerArg = (let (CallerNamedArg(_, a)) = x in a)
 
+/// Represents the list of unnamed / named arguments at method call site
+/// remark: The usage of list list is due to tupling and currying of arguments,
+/// stemming from SynValInfo in the AST.
+[<Struct>]
+type CallerArgs<'T> = 
+    { 
+        Unnamed: CallerArg<'T> list list
+        Named: CallerNamedArg<'T> list list 
+    }
+    static member Empty : CallerArgs<'T> = { Unnamed = []; Named = [] }
+    member x.CallerArgCounts = (List.length x.Unnamed, List.length x.Named)
+    member x.CurriedCallerArgs = List.zip x.Unnamed x.Named
+    member x.ArgumentNamesAndTypes =
+      [ (x.Unnamed |> List.map (List.map (fun i -> None, i.CallerArgumentType))) |> List.concat
+        (x.Named |> List.map (List.map (fun i -> Some i.Name, i.CallerArg.CallerArgumentType))) |> List.concat ]
+      |> List.concat
 //-------------------------------------------------------------------------
 // Callsite conversions
 //------------------------------------------------------------------------- 
@@ -178,7 +189,7 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
         // CSharpMethod(x = arg), optional C#-style argument, may have type Nullable<ty>. 
         // The arg should have type ty. However for backwards compat, we also allow arg to have type Nullable<ty>
         | CallerSide _ ->
-            if isNullableTy g calledArgTy  && g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop  then 
+            if isNullableTy g calledArgTy && g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop then 
                 // If inference has worked out it's a nullable then use this
                 if isNullableTy g callerArg.CallerArgumentType then
                     calledArgTy
@@ -303,18 +314,31 @@ type CalledMeth<'T>
       (infoReader: InfoReader,
        nameEnv: NameResolutionEnv option,
        isCheckingAttributeCall,
-       freshenMethInfo, // a function to help generate fresh type variables the property setters methods in generic classes 
+       /// a function to help generate fresh type variables the property setters methods in generic classes
+       freshenMethInfo,
+       /// range
        m,
-       ad,                // the access domain of the place where the call is taking place
-       minfo: MethInfo,    // the method we're attempting to call 
-       calledTyArgs,      // the 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call 
-       callerTyArgs: TType list, // the 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call 
-       pinfoOpt: PropInfo option,   // the property related to the method we're attempting to call, if any  
-       callerObjArgTys: TType list,   // the types of the actual object argument, if any 
-       curriedCallerArgs: (CallerArg<'T> list * CallerNamedArg<'T> list) list,     // the data about any arguments supplied by the caller 
-       allowParamArgs: bool,       // do we allow the use of a param args method in its "expanded" form?
-       allowOutAndOptArgs: bool,  // do we allow the use of the transformation that converts out arguments as tuple returns?
-       tyargsOpt : TType option) // method parameters
+       /// the access domain of the place where the call is taking place
+       ad,
+       /// the method we're attempting to call
+       minfo: MethInfo,
+       /// the 'called type arguments', i.e. the fresh generic instantiation of the method we're attempting to call
+       calledTyArgs,
+       /// the 'caller type arguments', i.e. user-given generic instantiation of the method we're attempting to call
+       // todo: consider CallerTypeArgs record
+       callerTyArgs: TType list,
+       /// the property related to the method we're attempting to call, if any
+       pinfoOpt: PropInfo option,
+       /// the types of the actual object argument, if any
+       callerObjArgTys: TType list,
+       /// the 'caller method arguments', i.e. a list of user-given parameter expressions, split between unnamed and named arguments
+       callerArgs: CallerArgs<'T>,
+       /// do we allow the use of a param args method in its "expanded" form?
+       allowParamArgs: bool,
+       /// do we allow the use of the transformation that converts out arguments as tuple returns?
+       allowOutAndOptArgs: bool,
+       /// method parameters
+       tyargsOpt : TType option)    
     =
     let g = infoReader.g
     let methodRetTy = minfo.GetFSharpReturnTy(infoReader.amap, m, calledTyArgs)
@@ -323,7 +347,7 @@ type CalledMeth<'T>
     do assert (fullCurriedCalledArgs.Length = fullCurriedCalledArgs.Length)
  
     let argSetInfos = 
-        (curriedCallerArgs, fullCurriedCalledArgs) ||> List.map2 (fun (unnamedCallerArgs, namedCallerArgs) fullCalledArgs -> 
+        (callerArgs.CurriedCallerArgs, fullCurriedCalledArgs) ||> List.map2 (fun (unnamedCallerArgs, namedCallerArgs) fullCalledArgs -> 
             // Find the arguments not given by name 
             let unnamedCalledArgs = 
                 fullCalledArgs |> List.filter (fun calledArg -> 
@@ -514,7 +538,8 @@ type CalledMeth<'T>
 
     member x.ParamArrayCallerArgs = x.ArgSets |> List.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
 
-    member x.GetParamArrayElementType() = 
+    member x.GetParamArrayElementType() =
+        // turned as a method to avoid assert in variable inspector 
         assert (x.UsesParamArrayConversion)
         x.ParamArrayCalledArgOpt.Value.CalledArgumentType |> destArrayTy x.amap.g 
 
@@ -977,7 +1002,6 @@ let CoerceFromFSharpFuncToDelegate g amap traitCtxt infoReader ad callerArgTy m 
 
 // Handle adhoc argument conversions
 let AdjustCallerArgExprForCoercions (g: TcGlobals) amap traitCtxt infoReader ad isOutArg calledArgTy (reflArgInfo: ReflectedArgInfo) callerArgTy m callerArgExpr = 
-
    if isByrefTy g calledArgTy && isRefCellTy g callerArgTy then 
        None, Expr.Op (TOp.RefAddrGet false, [destRefCellTy g callerArgTy], [callerArgExpr], m) 
 
@@ -1162,11 +1186,6 @@ let AdjustCallerArgForOptional tcFieldInit eCallerMemberName (infoReader: InfoRe
                             let minfo = GetIntrinsicConstructorInfosOfType infoReader m calledArgTy |> List.head
                             let callerArgExprCoerced = mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr
                             MakeMethInfoCall amap m minfo [] [callerArgExprCoerced]
-                    elif isOptionTy g calledArgTy then 
-                        // CSharpMethod(x=b) when 'b' has nullable type and 'x' has optional type --> CSharpMethod(Some b.Value)
-                        let calledNonOptTy = destOptionTy g calledArgTy 
-                        let callerArgExprCoerced = mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr
-                        mkSome g (destNullableTy g callerArgTy) callerArgExprCoerced m
                     else 
                         // CSharpMethod(x=b) --> CSharpMethod(?x=b)
                         callerArgExpr

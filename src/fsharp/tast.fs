@@ -702,13 +702,16 @@ and /// Represents a type definition, exception definition, module definition or
         | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_compiled_name = name }
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters
-    member x.DisplayName = x.GetDisplayName(false, false)
+    member x.DisplayName = x.GetDisplayName()
+
+    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, plus static parameters if any
+    member x.DisplayNameWithStaticParametersAndTypars = x.GetDisplayName(withStaticParameters=true, withTypars=true, withUnderscoreTypars=false)
 
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, plus static parameters if any
-    member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.GetDisplayName(true, true)
+    member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=true)
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters if any
-    member x.DisplayNameWithStaticParameters = x.GetDisplayName(true, false)
+    member x.DisplayNameWithStaticParameters = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=false)
 
 #if !NO_EXTENSIONTYPING
     member x.IsStaticInstantiationTycon = 
@@ -717,15 +720,20 @@ and /// Represents a type definition, exception definition, module definition or
             args.Length > 0 
 #endif
 
-    member x.GetDisplayName(withStaticParameters, withUnderscoreTypars) = 
+    member x.GetDisplayName(?withStaticParameters, ?withTypars, ?withUnderscoreTypars) =
+        let withStaticParameters = defaultArg withStaticParameters false
+        let withTypars = defaultArg withTypars false
+        let withUnderscoreTypars = defaultArg withUnderscoreTypars false
         let nm = x.LogicalName
+
         let getName () =
             match x.TyparsNoRange with 
             | [] -> nm
             | tps -> 
                 let nm = DemangleGenericTypeName nm
-                if withUnderscoreTypars && not (List.isEmpty tps) then 
-                    nm + "<" + String.concat "," (Array.create tps.Length "_") + ">"
+                if (withUnderscoreTypars || withTypars) && not (List.isEmpty tps) then
+                    let typearNames = tps |> List.map (fun typar -> if withUnderscoreTypars then "_" else typar.Name)
+                    nm + "<" + String.concat "," typearNames + ">"
                 else
                     nm
 
@@ -854,7 +862,7 @@ and /// Represents a type definition, exception definition, module definition or
     member x.Typars m = x.entity_typars.Force m
 
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member x.TyparsNoRange = x.Typars x.Range
+    member x.TyparsNoRange: Typars = x.Typars x.Range
 
     /// Get the type abbreviated by this type definition, if it is an F# type abbreviation definition
     member x.TypeAbbrev = 
@@ -2416,7 +2424,7 @@ and
     ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of supportTys: TTypes * memberName: string * memFlags: MemberFlags * argTys: TTypes * retTy: TType option * traitSln: TraitConstraintSln option ref * traitContext: ITraitContext option
+    | TTrait of supportTys: TTypes * memberName: string * memFlags: MemberFlags * argTys: TTypes * returnTy: TType option * traitSln: TraitConstraintSln option ref * traitContext: ITraitContext option
 
     /// Get the support types that can help provide members to solve the constraint
     member x.SupportTypes = (let (TTrait(tys,_,_,_,_,_,_)) = x in tys)
@@ -3381,6 +3389,9 @@ and
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, not including static parameters
     member x.DisplayName = x.Deref.DisplayName
+
+    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, including static parameters
+    member x.DisplayNameWithStaticParametersAndTypars = x.Deref.DisplayNameWithStaticParametersAndTypars
 
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, including static parameters
     member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.Deref.DisplayNameWithStaticParametersAndUnderscoreTypars
@@ -4578,6 +4589,9 @@ and
     ///     idx -- The case number of the active pattern which the test relates to.
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
+
+    /// Used in error recovery
+    | Error of range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]

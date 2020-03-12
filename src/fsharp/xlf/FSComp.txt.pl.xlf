@@ -2,9 +2,54 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../FSComp.resx">
     <body>
+      <trans-unit id="csAvailableOverloads">
+        <source>Available overloads:\n{0}</source>
+        <target state="new">Available overloads:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
+        <source>Known types of arguments: {0}</source>
+        <target state="new">Known types of arguments: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixSingular">
+        <source>Known type of argument: {0}</source>
+        <target state="new">Known type of argument: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundReturnType">
+        <source>Known return type: {0}</source>
+        <target state="new">Known return type: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixPlural">
+        <source>Known type parameters: {0}</source>
+        <target state="new">Known type parameters: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixSingular">
+        <source>Known type parameter: {0}</source>
+        <target state="new">Known type parameter: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
+        <source>Argument at index {0} doesn't match</source>
+        <target state="new">Argument at index {0} doesn't match</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
+        <source>Argument '{0}' doesn't match</source>
+        <target state="new">Argument '{0}' doesn't match</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
         <target state="translated">{0} dla języka F# {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="formatDashItem">
+        <source> - {0}</source>
+        <target state="new"> - {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
@@ -90,6 +135,11 @@
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
         <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
+        <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
+        <target state="new">The type '{0}' does not define the field, constructor or member '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -1578,8 +1628,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
-        <source>None of the types '{0}' support the operator '{1}'</source>
-        <target state="translated">Żaden z typów „{0}” nie obsługuje operatora „{1}”</target>
+        <source>The types '{0}' do not support the operator '{1}'</source>
+        <target state="needs-review-translation">Żaden z typów „{0}” nie obsługuje operatora „{1}”</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperator">
@@ -1588,8 +1638,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperatorNullable">
-        <source>None of the types '{0}' support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
-        <target state="translated">Żaden z typów „{0}” nie obsługuje operatora „{1}”. Rozważ otwarcie modułu „Microsoft.FSharp.Linq.NullableOperators”.</target>
+        <source>The types '{0}' do not support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
+        <target state="needs-review-translation">Żaden z typów „{0}” nie obsługuje operatora „{1}”. Rozważ otwarcie modułu „Microsoft.FSharp.Linq.NullableOperators”.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperatorNullable">
@@ -1868,13 +1918,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csCandidates">
-        <source>Candidates: {0}</source>
-        <target state="translated">Kandydujący: {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csSeeAvailableOverloads">
-        <source>The available overloads are shown below.</source>
-        <target state="translated">Dostępne przeciążenia są pokazane poniżej.</target>
+        <source>Candidates:\n{0}</source>
+        <target state="needs-review-translation">Kandydujący: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="parsDoCannotHaveVisibilityDeclarations">
@@ -5023,8 +5068,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
-        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="translated">Jest to nieprawidłowy literał liczbowy. Do prawidłowych literałów liczbowych należą: 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1ui (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal) oraz 1I (BigInteger).</target>
+        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
+        <target state="needs-review-translation">Jest to nieprawidłowy literał liczbowy. Do prawidłowych literałów liczbowych należą: 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1ui (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal) oraz 1I (BigInteger).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">

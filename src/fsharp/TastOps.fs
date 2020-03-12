@@ -2568,6 +2568,11 @@ module PrettyTypes =
     let PrettifyType g x = PrettifyThings g id id x
     let PrettifyTypePair g x = PrettifyThings g (fun f -> foldPair (f, f)) (fun f -> mapPair (f, f)) x
     let PrettifyTypes g x = PrettifyThings g List.fold List.map x
+    
+    let PrettifyDiscriminantAndTypePairs g x = 
+      let tys, cxs = (PrettifyThings g List.fold List.map (x |> List.map snd))
+      List.zip (List.map fst x) tys, cxs
+      
     let PrettifyCurriedTypes g x = PrettifyThings g (fun f -> List.fold (List.fold f)) List.mapSquared x
     let PrettifyCurriedSigTypes g x = PrettifyThings g (fun f -> foldPair (List.fold (List.fold f), f)) (fun f -> mapPair (List.mapSquared f, f)) x
 
@@ -3997,6 +4002,7 @@ module DebugPrint =
         | (DecisionTreeTest.IsNull ) -> wordL(tagText "isnull")
         | (DecisionTreeTest.IsInst (_, ty)) -> wordL(tagText "isinst") ^^ typeL ty
         | (DecisionTreeTest.ActivePatternCase (exp, _, _, _, _)) -> wordL(tagText "query") ^^ exprL g exp
+        | (DecisionTreeTest.Error _) -> wordL (tagText "error recovery")
  
     and targetL g i (TTarget (argvs, body, _)) = leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL g body
 
@@ -4475,6 +4481,7 @@ and accFreeInTest (opts: FreeVarOptions) discrim acc =
         accFreeInExpr opts exp 
             (accFreeVarsInTys opts tys 
                 (Option.foldBack (fun (vref, tinst) acc -> accFreeValRef opts vref (accFreeVarsInTys opts tinst acc)) activePatIdentity acc))
+    | DecisionTreeTest.Error _ -> acc
 
 and accFreeInDecisionTree opts x (acc: FreeVars) =
     match x with 
@@ -5281,6 +5288,7 @@ and remapDecisionTree g compgen tmenv x =
                     | DecisionTreeTest.IsInst (srcty, tgty) -> DecisionTreeTest.IsInst (remapType tmenv srcty, remapType tmenv tgty) 
                     | DecisionTreeTest.IsNull -> DecisionTreeTest.IsNull 
                     | DecisionTreeTest.ActivePatternCase _ -> failwith "DecisionTreeTest.ActivePatternCase should only be used during pattern match compilation"
+                    | DecisionTreeTest.Error _ -> failwith "DecisionTreeTest.Error should only be used during pattern match compilation"
                   TCase(test', remapDecisionTree g compgen tmenv y)) csl, 
                 Option.map (remapDecisionTree g compgen tmenv) dflt, 
                 m)
@@ -6135,6 +6143,16 @@ let mkDerefAddrExpr mAddrGet expr mExpr exprTy =
 /// have intended effect (i.e. is a readonly pointer and/or a defensive copy).
 let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut expr addrExprVal m =
     if mustTakeAddress then 
+        let isNativePtr = 
+            match addrExprVal with
+            | Some vf -> valRefEq g vf g.addrof2_vref
+            | _ -> false
+
+        // If we are taking the native address using "&&" to get a nativeptr, disallow if it's readonly.
+        let checkTakeNativeAddress readonly =
+            if isNativePtr && readonly then
+                error(Error(FSComp.SR.tastValueMustBeMutable(), m))
+
         match expr with 
         // LVALUE of "*x" where "x" is byref is just the byref itself
         | Expr.Op (TOp.LValueOp (LByrefGet, vref), _, [], m) when MustTakeAddressOfByrefGet g vref || CanTakeAddressOfByrefGet g vref mut -> 
@@ -6147,6 +6165,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         | Expr.Val (vref, _, m) when MustTakeAddressOfVal g vref || CanTakeAddressOfImmutableVal g m vref mut ->
             let readonly = not (MustTakeAddressOfVal g vref)
             let writeonly = false
+            checkTakeNativeAddress readonly
             None, mkValAddr m readonly vref, readonly, writeonly
 
         // LVALUE of "e.f" where "f" is an instance F# field or record field. 
@@ -6191,15 +6210,11 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
 
         // LVALUE of "e.[n]" where e is an array of structs 
         | Expr.App (Expr.Val (vf, _, _), _, [elemTy], [aexpr;nexpr], _) when (valRefEq g vf g.array_get_vref) -> 
-        
+      
             let readonly = false // array address is never forced to be readonly
             let writeonly = false
             let shape = ILArrayShape.SingleDimensional
             let ilInstrReadOnlyAnnotation = if isTyparTy g elemTy && useReadonlyForGenericArrayAddress then ReadonlyAddress else NormalAddress
-            let isNativePtr = 
-                match addrExprVal with
-                | Some vf -> valRefEq g vf g.addrof2_vref
-                | _ -> false
             None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy, [aexpr; nexpr], m), readonly, writeonly
 
         // LVALUE of "e.[n1, n2]", "e.[n1, n2, n3]", "e.[n1, n2, n3, n4]" where e is an array of structs 
@@ -6210,11 +6225,6 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             let writeonly = false
             let shape = ILArrayShape.FromRank args.Length
             let ilInstrReadOnlyAnnotation = if isTyparTy g elemTy && useReadonlyForGenericArrayAddress then ReadonlyAddress else NormalAddress
-            let isNativePtr = 
-                match addrExprVal with
-                | Some vf -> valRefEq g vf g.addrof2_vref
-                | _ -> false
-            
             None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy, (aexpr :: args), m), readonly, writeonly
 
         // LVALUE: "&meth(args)" where meth has a byref or inref return. Includes "&span.[idx]".

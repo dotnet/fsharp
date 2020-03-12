@@ -446,6 +446,9 @@ type internal TcResultsSinkImpl =
     /// Get all open declarations reported to the sink
     member GetOpenDeclarations : unit -> OpenDeclaration[]
 
+    /// Get the format specifier locations
+    member GetFormatSpecifierLocations : unit -> (range * int)[]
+
     interface ITypecheckResultsSink
 
 /// An abstract type for reporting the results of name resolution and type checking, and which allows

@@ -83,8 +83,18 @@
       <Private>True</Private>
       <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager\FSharp.DependencyManager.fsproj">
-      <Name>FSharp.DependencyManager</Name>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj">
+      <Name>FSharp.DependencyManager.Nuget</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <Ngen>true</Ngen>
+      <NgenArchitecture>All</NgenArchitecture>
+      <NgenPriority>2</NgenPriority>
+      <Private>True</Private>
+      <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\Interactive.DependencyManager\Interactive.DependencyManager.fsproj">
+      <Name>Interactive.DependencyManager</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Ngen>true</Ngen>

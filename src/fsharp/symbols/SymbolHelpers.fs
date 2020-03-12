@@ -42,13 +42,17 @@ type FSharpErrorSeverity =
     | Warning 
     | Error
 
-type FSharpErrorInfo(fileName, s: pos, e: pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) = 
+type FSharpErrorInfo(fileName, s: pos, e: pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
+    member __.Start = s
+    member __.End = e
+
     member __.StartLine = Line.toZ s.Line
     member __.StartLineAlternate = s.Line
     member __.EndLine = Line.toZ e.Line
     member __.EndLineAlternate = e.Line
     member __.StartColumn = s.Column
     member __.EndColumn = e.Column
+
     member __.Severity = severity
     member __.Message = message
     member __.Subcategory = subcategory

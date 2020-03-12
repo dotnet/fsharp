@@ -89,13 +89,13 @@
     <SystemSecurityClaimsVersion>4.3.0</SystemSecurityClaimsVersion>
     <SystemSecurityCryptographyAlgorithmsVersion>4.3.0</SystemSecurityCryptographyAlgorithmsVersion>
     <SystemSecurityPrincipalVersion>4.3.0</SystemSecurityPrincipalVersion>
-    <SystemThreadingTasksDataflowPackageVersion>4.6.0</SystemThreadingTasksDataflowPackageVersion>
     <SystemThreadingTasksParallelVersion>4.3.0</SystemThreadingTasksParallelVersion>
     <SystemThreadingTasksDataflow>4.11.0</SystemThreadingTasksDataflow>
     <SystemThreadingThreadVersion>4.3.0</SystemThreadingThreadVersion>
     <SystemThreadingThreadPoolVersion>4.3.0</SystemThreadingThreadPoolVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <SystemBuffersVersion>4.5.0</SystemBuffersVersion>
+    <SystemMemoryVersion>4.5.3</SystemMemoryVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>

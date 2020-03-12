@@ -1206,7 +1206,8 @@ module FSharpExprConvert =
                         let e1R = ConvExpr cenv env e1
                         E.IfThenElse (E.TypeTest (ConvType cenv tgty, e1R)  |> Mk cenv m cenv.g.bool_ty, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
                     | DecisionTreeTest.ActivePatternCase _ -> wfail("unexpected Test.ActivePatternCase test in quoted expression", m)
-                    | DecisionTreeTest.ArrayLength _ -> wfail("FSharp.Compiler.Service cannot yet return array pattern matching", m))
+                    | DecisionTreeTest.ArrayLength _ -> wfail("FSharp.Compiler.Service cannot yet return array pattern matching", m)
+                    | DecisionTreeTest.Error m -> wfail("error recovery", m))
 
         | TDSuccess (args, n) -> 
                 // TAST stores pattern bindings in reverse order for some reason

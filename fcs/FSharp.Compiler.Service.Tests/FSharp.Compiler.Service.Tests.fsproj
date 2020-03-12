@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
   <Import Project="..\..\eng\Versions.props"/>   <!-- keep our test deps in line with the overall compiler -->
   <PropertyGroup>
@@ -60,6 +60,9 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\TreeVisitorTests.fs">
       <Link>TreeVisitorTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\PatternMatchCompilationTests.fs">
+      <Link>PatternMatchCompilationTests.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ScriptOptionsTests.fs">
       <Link>ScriptOptionsTests.fs</Link>

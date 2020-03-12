@@ -5,6 +5,7 @@ module FSharp.Compiler.Range
 
 open System
 open System.IO
+open System.Collections.Generic
 open System.Collections.Concurrent
 open Microsoft.FSharp.Core.Printf
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -379,5 +380,10 @@ module Range =
     let toZ (m:range) = Pos.toZ m.Start, Pos.toZ m.End
 
     let toFileZ (m:range) = m.FileName, toZ m
+
+    let comparer = 
+        { new IEqualityComparer<range> with 
+            member _.Equals(x1, x2) = equals x1 x2 
+            member _.GetHashCode o = o.GetHashCode() }
 
 

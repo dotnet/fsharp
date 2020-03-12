@@ -2406,7 +2406,8 @@ and p_dtree_discrim x st =
     | DecisionTreeTest.IsNull                    -> p_byte 2 st
     | DecisionTreeTest.IsInst (srcty, tgty)       -> p_byte 3 st; p_ty srcty st; p_ty tgty st
     | DecisionTreeTest.ArrayLength (n, ty)       -> p_byte 4 st; p_tup2 p_int p_ty (n, ty) st
-    | DecisionTreeTest.ActivePatternCase _                   -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
+    | DecisionTreeTest.ActivePatternCase _ -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
+    | DecisionTreeTest.Error _ -> pfailwith st "DecisionTreeTest.Error: only used during pattern match compilation"
 
 and p_target (TTarget(a, b, _)) st = p_tup2 p_Vals p_expr (a, b) st
 and p_bind (TBind(a, b, _)) st = p_tup2 p_Val p_expr (a, b) st
