@@ -591,17 +591,20 @@ module public FSharp.Compiler.PrettyNaming
     let IsActivePatternName (name: string) =
         // The name must contain at least one character between the starting and ending delimiters.
         let nameLen = name.Length
-        if nameLen < 3 || name.[0] <> '|' || name.[nameLen - 1] <> '|' then false else
+        if nameLen < 3 || name.[0] <> '|' || name.[nameLen - 1] <> '|' then
+            false
+        else
+            let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
+                if idx = name.Length - 1 then
+                    seenNonOpChar
+                else
+                    let c = name.[idx]
+                    if opCharSet.Contains(c) && c <> '|' && c <> ' ' then
+                        false
+                    else
+                        isCoreActivePatternName name (idx + 1) (seenNonOpChar || c <> '|')
 
-        let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
-            if idx = name.Length - 1 then seenNonOpChar else
-
-            let c = name.[idx]
-            if opCharSet.Contains(c) && c <> '|' && c <> ' ' then false else
-
-            isCoreActivePatternName name (idx + 1) (seenNonOpChar || c <> '|')
-
-        isCoreActivePatternName name 1 false
+            isCoreActivePatternName name 1 false
 
     //IsActivePatternName "|+|" = false
     //IsActivePatternName "|ABC|" = true
