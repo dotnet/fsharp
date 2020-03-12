@@ -280,46 +280,48 @@ stages:
             displayName: End to end build tests
 
         # Source Build Linux
-        - job: SourceBuild_Linux
-          pool:
-            vmImage: ubuntu-16.04
-          steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
-            displayName: Build
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents SourceBuild_Linux'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+        - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+          - job: SourceBuild_Linux
+            pool:
+              vmImage: ubuntu-16.04
+            steps:
+            - checkout: self
+              clean: true
+            - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
+              displayName: Build
+            - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+              displayName: Dump NuGet cache contents
+              condition: failed()
+            - task: PublishBuildArtifacts@1
+              displayName: Publish NuGet cache contents
+              inputs:
+                PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+                ArtifactName: 'NuGetPackageContents SourceBuild_Linux'
+                publishLocation: Container
+              continueOnError: true
+              condition: failed()
 
         # Source Build Windows
-        - job: SourceBuild_Windows
-          pool:
-            vmImage: windows-2019
-          steps:
-          - checkout: self
-            clean: true
-          - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
-            displayName: Build
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents SourceBuild_Windows'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+        - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+          - job: SourceBuild_Windows
+            pool:
+              vmImage: windows-2019
+            steps:
+            - checkout: self
+              clean: true
+            - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
+              displayName: Build
+            - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+              displayName: Dump NuGet cache contents
+              condition: failed()
+            - task: PublishBuildArtifacts@1
+              displayName: Publish NuGet cache contents
+              inputs:
+                PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+                ArtifactName: 'NuGetPackageContents SourceBuild_Windows'
+                publishLocation: Container
+              continueOnError: true
+              condition: failed()
 
         # Up-to-date
         - job: UpToDate_Windows
