@@ -2034,7 +2034,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.FormatLayout (denv:FSharpDisplayContext) =
         match x.IsMember, d with
         | true, V v ->
-            NicePrint.prettyLayoutOfValOrMemberNoInst { (denv.Contents cenv.g) with showMemberContainers=true } v.Deref
+            NicePrint.prettyLayoutOfMemberNoInstShort { (denv.Contents cenv.g) with showMemberContainers=true } v.Deref
         | _,_ ->
             checkIsResolved()
             let ty = 
