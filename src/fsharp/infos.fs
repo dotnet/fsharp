@@ -1164,10 +1164,6 @@ type MethInfo =
         | ILMeth _ -> true
         | _ -> false
 
-    /// Indicates if this is an interface method.
-    member x.IsInterfaceMethod =
-        x.IsVirtual && isInterfaceTy x.TcGlobals x.ApparentEnclosingType
-
     /// Check if this method is an explicit implementation of an interface member
     member x.IsFSharpExplicitInterfaceImplementation =
         match x with

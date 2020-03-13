@@ -420,22 +420,20 @@ module DispatchSlotChecking =
 
         res
 
-    /// This is to find override methods that are at the most specific in the hierarchy of the interfaces.
-    let GetMostSpecificOverrideMethods (infoReader: InfoReader) m mostSpecificInterfaceTys (minfo: MethInfo) =
+    /// This is to find override methods that are at the most specific in the hierarchy of interface types.
+    let GetMostSpecificOverrideInterfaceMethods (infoReader: InfoReader) m interfaceTys (minfo: MethInfo) =
         let g = infoReader.g
         let amap = infoReader.amap
 
-        mostSpecificInterfaceTys
+        interfaceTys
         |> List.map (fun (ty, _) ->
-            let overrides = GetIntrinisicOverrideMethInfosOfType infoReader (None, AccessibleFromSomewhere) m ty
-            match overrides.TryGetValue minfo.LogicalName with
-            | true, methInfos ->
-                methInfos
-                |> GetMostSpecificItemsByType g amap (fun methInfo -> Some(methInfo.ApparentEnclosingType, m))
+            if isInterfaceTy g ty then
+                GetIntrinisicMostSpecificOverrideMethInfosOfType infoReader minfo.LogicalName m ty
                 |> List.filter (fun minfo2 -> 
                     let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo2
                     IsSigExactMatch g amap m minfo overrideBy)
-            | _ -> [])
+            else
+                [])
         |> List.concat
         |> GetMostSpecificItemsByType g amap (fun methInfo -> Some(methInfo.ApparentEnclosingType, m))
 
@@ -467,7 +465,7 @@ module DispatchSlotChecking =
                             g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMemberConsumption &&
                             not minfo.IsAbstract
 
-                          match GetMostSpecificOverrideMethods infoReader m mostSpecificInterfaceTys minfo with
+                          match GetMostSpecificOverrideInterfaceMethods infoReader m mostSpecificInterfaceTys minfo with
                           // No override, no default implementation.
                           | [] ->
                             if minfo.IsAbstract then

@@ -1725,9 +1725,9 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
 
     member x.FindByNameAndArity (nm, arity) = x.FindByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
 
-    member x.TryFindByNameAndCallingSignature (nm, callingSig) = 
+    member x.TryFindInstanceByNameAndCallingSignature (nm, callingSig) = 
         x.FindByName nm 
-        |> List.tryFind (fun x -> x.CallingSignature = callingSig)
+        |> List.tryFind (fun x -> not x.IsStatic && x.CallingSignature = callingSig)
 
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILEventDef(eventType: ILType option, name: string, attributes: EventAttributes,

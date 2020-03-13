@@ -372,7 +372,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                     | _ -> false
                 if canAccumulate then
                     let overrideBy = ilMethImpl.OverrideBy
-                    match mdefs.TryFindByNameAndCallingSignature (overrideBy.Name, overrideBy.MethodRef.CallingSignature) with
+                    match mdefs.TryFindInstanceByNameAndCallingSignature (overrideBy.Name, overrideBy.MethodRef.CallingSignature) with
                     | Some mdef ->
                         let methInfo = MethInfo.CreateILMeth(amap, m, ty, mdef)
                         NameMultiMap.add overridesName methInfo acc
@@ -382,9 +382,10 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                     acc)
         | _ -> acc
 
-    /// Visiting each type in the hierarchy and accumulate methods that are the OverrideBy target from IL types.
-    let GetIntrinsicOverrideMethodSetsUncached ((optFilter, _ad, allowMultiIntfInst), m, ty) =
+    /// Visiting each type in the hierarchy and accumulate most specific methods that are the OverrideBy target from IL types.
+    let GetIntrinsicMostSpecificOverrideMethodSetsUncached ((optFilter, _ad, allowMultiIntfInst), m, ty) =
         FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicOverrideMethInfosOfType optFilter m ty acc) g amap m allowMultiIntfInst ty NameMultiMap.Empty
+        |> Map.map (fun _ methInfos -> methInfos |> GetMostSpecificItemsByType g amap (fun methInfo -> Some(methInfo.ApparentEnclosingType, m)))
 
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
     /// caches computations for monomorphic types.
@@ -437,7 +438,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     let ilFieldInfoCache = MakeInfoCache GetIntrinsicILFieldInfosUncached hashFlags1
     let eventInfoCache = MakeInfoCache GetIntrinsicEventInfosUncached hashFlags1
     let namedItemsCache = MakeInfoCache GetIntrinsicNamedItemsUncached hashFlags2
-    let overrideMethodInfoCache = MakeInfoCache GetIntrinsicOverrideMethodSetsUncached hashFlags0
+    let mostSpecificOverrideMethodInfoCache = MakeInfoCache GetIntrinsicMostSpecificOverrideMethodSetsUncached hashFlags0
 
     let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierarchyUncached HashIdentity.Structural
     let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierarchyUncached HashIdentity.Structural
@@ -500,9 +501,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
     member x.TryFindNamedItemOfType (nm, ad, m, ty) =
         namedItemsCache.Apply(((nm, ad), m, ty))
 
-    /// Read the raw method sets of a type that are overrides. Cache the result for monomorphic types
-    member x.GetIntrinsicOverrideMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
-        overrideMethodInfoCache.Apply(((optFilter, ad, allowMultiIntfInst), m, ty))
+    /// Read the raw method sets of a type that are the most specific overrides. Cache the result for monomorphic types
+    member x.GetIntrinsicMostSpecificOverrideMethodSetsOfType (optFilter, ad, allowMultiIntfInst, m, ty) =
+        mostSpecificOverrideMethodInfoCache.Apply(((optFilter, ad, allowMultiIntfInst), m, ty))
 
     /// Get the super-types of a type, including interface types.
     member x.GetEntireTypeHierarchy (allowMultiIntfInst, m, ty) =
@@ -790,10 +791,13 @@ let TryFindIntrinsicMethInfo infoReader m ad nm ty =
 let TryFindPropInfo infoReader m ad nm ty = 
     GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty 
 
-/// Get a collection of override methods.
-/// When providing a method name, it is the name of method that is being overriden.
-let GetIntrinisicOverrideMethInfosOfType (infoReader: InfoReader) (nm, ad) m ty =
-    infoReader.GetIntrinsicOverrideMethodSetsOfType (nm, ad, AllowMultiIntfInstantiations.Yes, m, ty)
+/// Get a collection of the most specific override methods by the given method name.
+/// The method name is the one that's being overriden.
+let GetIntrinisicMostSpecificOverrideMethInfosOfType (infoReader: InfoReader) nm m ty =
+    let overrides = infoReader.GetIntrinsicMostSpecificOverrideMethodSetsOfType (None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, m, ty)
+    match overrides.TryGetValue nm with
+    | true, methInfos -> methInfos
+    | _ -> []
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events - these use method searching hence are in this file
