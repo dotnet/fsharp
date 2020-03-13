@@ -3714,6 +3714,69 @@ let main _ =
         CompilerAssert.ExecutionHasOutput(fsCmpl, "OverrideA-NonDefaultMethod")
 
     [<Test>]
+    let ``C# with same methods names that hide with overloading - Runs`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest1
+    {
+        void Method1(int x)
+        {
+            Console.Write(x);
+        }
+    }
+
+    public interface ITest2 : ITest1
+    {
+        void Method1(int x)
+        {
+            Console.Write(x);
+        }
+    }
+
+    public interface ITest3 : ITest2
+    {
+        void ITest1.Method1(int x)
+        {
+            Console.Write(x);
+        }
+
+        void ITest2.Method1(int x)
+        {
+            Console.Write(x);
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+type Test () =
+
+    interface ITest2
+    interface ITest3
+
+[<EntryPoint>]
+let main _ =
+    0
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.ExecutionHasOutput(fsCmpl, "")
+
+    [<Test>]
     let ``C# with mutliple separate interfaces - Runs`` () =
         let csharpSource =
             """
