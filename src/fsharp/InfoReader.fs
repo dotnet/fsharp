@@ -229,7 +229,10 @@ let FilterMostSpecificMethInfoSets g amap m (minfoSets: NameMultiMap<_>) : NameM
     |> Map.map (fun _ minfos ->
         ([], minfos)
         ||> List.fold (fun minfoSpecifics minfo ->
-            let alreadySeen = minfoSpecifics |> List.exists (fun minfoSpecific -> MethInfosEquivByPartialSig EraseNone true g amap m minfo minfoSpecific)
+            let alreadySeen = 
+                minfoSpecifics 
+                |> List.exists (fun minfoSpecific -> 
+                    MethInfosEquivByPartialSig EraseNone true g amap m minfo minfoSpecific)
             if alreadySeen then
                 minfoSpecifics
             else
