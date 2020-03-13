@@ -2529,10 +2529,9 @@ let CompiledSigOfMeth g amap m (minfo: MethInfo) =
 
     CompiledSig(vargtys, vrty, formalMethTypars, fmtpinst)
 
-/// Used to hide/filter members from super classes based on signature
+
 /// Inref and outref parameter types will be treated as a byref type for equivalency.
-let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo) (minfo2: MethInfo) =
-    (minfo.LogicalName = minfo2.LogicalName) &&
+let MethInfosEquivByPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo) (minfo2: MethInfo) =
     (minfo.GenericArity = minfo2.GenericArity) &&
     (ignoreFinal || minfo.IsFinal = minfo2.IsFinal) &&
     let formalMethTypars = minfo.FormalMethodTypars
@@ -2543,6 +2542,12 @@ let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo: M
     let argtys2 = minfo2.GetParamTypes(amap, m, fminst2)
     (argtys, argtys2) ||> List.lengthsEqAndForall2 (List.lengthsEqAndForall2 (fun ty1 ty2 ->
         typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2) (stripByrefTy g ty1) (stripByrefTy g ty2)))
+
+/// Used to hide/filter members from super classes based on signature
+/// Inref and outref parameter types will be treated as a byref type for equivalency.
+let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo) (minfo2: MethInfo) =
+    (minfo.LogicalName = minfo2.LogicalName) &&
+    MethInfosEquivByPartialSig erasureFlag ignoreFinal g amap m minfo minfo2
 
 /// Used to hide/filter members from super classes based on signature
 let PropInfosEquivByNameAndPartialSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: PropInfo) =

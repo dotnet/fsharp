@@ -94,24 +94,6 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m origTy 
 let GetImmediateIntrinsicMethInfosOfType (optFilter, ad) g amap m ty = 
     GetImmediateIntrinsicMethInfosOfTypeAux (optFilter, ad) g amap m ty ty
 
-/// Get the items that are considered the most specific in the hierarchy out of the given items by type.
-/// REVIEW: Note complexity O(N^2)
-let GetMostSpecificItemsByType g amap f xs =
-    [ for x in xs do
-        match f x with
-        | None -> ()
-        | Some (xTy, m) ->
-            let isEqual =
-                xs
-                |> List.forall (fun y ->
-                    match f y with
-                    | None -> true
-                    | Some (yTy, _) ->
-                        if typeEquiv g xTy yTy then true
-                        else not (TypeFeasiblySubsumesType 0 g amap m xTy CanCoerce yTy))
-            if isEqual then
-                yield x ]
-
 /// A helper type to help collect properties.
 ///
 /// Join up getters and setters which are not associated in the F# data structure 
@@ -214,6 +196,44 @@ let IsIndexerType g amap ty =
         props |> List.exists (fun x -> x.PropertyName = "Item")
     | ValueNone -> false
 
+/// Get the items that are considered the most specific in the hierarchy out of the given items by type.
+/// REVIEW: Note complexity O(N^2)
+let GetMostSpecificItemsByType g amap f xs =
+    [ for x in xs do
+        match f x with
+        | None -> ()
+        | Some (xTy, m) ->
+            let isEqual =
+                xs
+                |> List.forall (fun y ->
+                    match f y with
+                    | None -> true
+                    | Some (yTy, _) ->
+                        if typeEquiv g xTy yTy then true
+                        else not (TypeFeasiblySubsumesType 0 g amap m xTy CanCoerce yTy))
+            if isEqual then
+                yield x ]
+
+/// Finds the most specific methods from a method collection by a given method's signature.
+let GetMostSpecificMethodInfosByMethInfoSig g amap m minfo minfos =
+    minfos
+    |> GetMostSpecificItemsByType g amap (fun minfo2 -> 
+        if MethInfosEquivByPartialSig EraseNone true g amap m minfo minfo2 then
+            Some(minfo2.ApparentEnclosingType, m)
+        else
+            None)
+
+/// From the given method sets, filter each set down to the most specific ones. 
+let FilterMostSpecificMethInfoSets g amap m (minfoSets: NameMultiMap<_>) : NameMultiMap<_> =
+    minfoSets
+    |> Map.map (fun _ minfos ->
+        ([], minfos)
+        ||> List.fold (fun minfoSpecifics minfo ->
+            let alreadySeen = minfoSpecifics |> List.exists (fun minfoSpecific -> MethInfosEquivByPartialSig EraseNone true g amap m minfo minfoSpecific)
+            if alreadySeen then
+                minfoSpecifics
+            else
+                GetMostSpecificMethodInfosByMethInfoSig g amap m minfo minfos @ minfoSpecifics))
 
 /// Sets of methods up the hierarchy, ignoring duplicates by name and sig.
 /// Used to collect sets of virtual methods, protected methods, protected
@@ -353,7 +373,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
           ty
           None
 
-    let GetImmediateIntrinsicOverrideMethInfosOfType optFilter m ty acc =
+    let GetImmediateIntrinsicOverrideMethodSetsOfType optFilter m ty acc =
         match tryAppTy g ty with
         | ValueSome (tcref, _) when tcref.IsILTycon ->
             let mimpls = tcref.ILTyconRawMetadata.MethodImpls.AsList
@@ -374,18 +394,17 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                     let overrideBy = ilMethImpl.OverrideBy
                     match mdefs.TryFindInstanceByNameAndCallingSignature (overrideBy.Name, overrideBy.MethodRef.CallingSignature) with
                     | Some mdef ->
-                        let methInfo = MethInfo.CreateILMeth(amap, m, ty, mdef)
-                        NameMultiMap.add overridesName methInfo acc
+                        NameMultiMap.add overridesName (MethInfo.CreateILMeth(amap, m, ty, mdef)) acc
                     | _ ->
                         acc
                 else
                     acc)
         | _ -> acc
 
-    /// Visiting each type in the hierarchy and accumulate most specific methods that are the OverrideBy target from IL types.
-    let GetIntrinsicMostSpecificOverrideMethodSetsUncached ((optFilter, _ad, allowMultiIntfInst), m, ty) =
-        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicOverrideMethInfosOfType optFilter m ty acc) g amap m allowMultiIntfInst ty NameMultiMap.Empty
-        |> Map.map (fun _ methInfos -> methInfos |> GetMostSpecificItemsByType g amap (fun methInfo -> Some(methInfo.ApparentEnclosingType, m)))
+    /// Visiting each type in the hierarchy and accumulate most specific methods that are the OverrideBy target from types.
+    let GetIntrinsicMostSpecificOverrideMethodSetsUncached ((optFilter, _ad, allowMultiIntfInst), m, ty) : NameMultiMap<_> =
+        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicOverrideMethodSetsOfType optFilter m ty acc) g amap m allowMultiIntfInst ty NameMultiMap.Empty
+        |> FilterMostSpecificMethInfoSets g amap m
 
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
     /// caches computations for monomorphic types.
@@ -445,16 +464,16 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     // Runtime feature support
 
-    let isRuntimeFeatureSupported runtimeFeature =
+    let isRuntimeFeatureSupported (infoReader: InfoReader) runtimeFeature =
         match g.System_Runtime_CompilerServices_RuntimeFeature_ty with
         | Some runtimeFeatureTy ->
-            this.GetILFieldInfosOfType (None, AccessorDomain.AccessibleFromEverywhere, range0, runtimeFeatureTy)
+            infoReader.GetILFieldInfosOfType (None, AccessorDomain.AccessibleFromEverywhere, range0, runtimeFeatureTy)
             |> List.exists (fun (ilFieldInfo: ILFieldInfo) -> ilFieldInfo.FieldName = runtimeFeature)
         | _ ->
             false
 
     let isRuntimeFeatureDefaultImplementationsOfInterfacesSupported =
-        lazy isRuntimeFeatureSupported "DefaultImplementationsOfInterfaces"
+        lazy isRuntimeFeatureSupported this "DefaultImplementationsOfInterfaces"
                                             
     member x.g = g
     member x.amap = amap
@@ -791,13 +810,9 @@ let TryFindIntrinsicMethInfo infoReader m ad nm ty =
 let TryFindPropInfo infoReader m ad nm ty = 
     GetIntrinsicPropInfosOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m ty 
 
-/// Get a collection of the most specific override methods by the given method name.
-/// The method name is the one that's being overriden.
-let GetIntrinisicMostSpecificOverrideMethInfosOfType (infoReader: InfoReader) nm m ty =
-    let overrides = infoReader.GetIntrinsicMostSpecificOverrideMethodSetsOfType (None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, m, ty)
-    match overrides.TryGetValue nm with
-    | true, methInfos -> methInfos
-    | _ -> []
+/// Get a set of most specific override methods.
+let GetIntrinisicMostSpecificOverrideMethInfoSetsOfType (infoReader: InfoReader) m ty =
+    infoReader.GetIntrinsicMostSpecificOverrideMethodSetsOfType (None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, m, ty)
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events - these use method searching hence are in this file

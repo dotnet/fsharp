@@ -421,24 +421,48 @@ module DispatchSlotChecking =
         res
 
     /// This is to find override methods that are at the most specific in the hierarchy of interface types.
-    let GetMostSpecificOverrideInterfaceMethods (infoReader: InfoReader) m interfaceTys (minfo: MethInfo) =
+    let GetMostSpecificOverrideInterfaceMethodSets (infoReader: InfoReader) allReqdTys =
         let g = infoReader.g
         let amap = infoReader.amap
 
-        interfaceTys
-        |> List.map (fun (ty, _) ->
-            if isInterfaceTy g ty then
-                GetIntrinisicMostSpecificOverrideMethInfosOfType infoReader minfo.LogicalName m ty
-                |> List.filter (fun minfo2 -> 
-                    let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo2
-                    IsSigExactMatch g amap m minfo overrideBy)
-            else
-                [])
-        |> List.concat
-        |> GetMostSpecificItemsByType g amap (fun methInfo -> Some(methInfo.ApparentEnclosingType, m))
+        let multipleSets =
+            allReqdTys
+            // Widdle down to the most specific interfaces.
+            |> GetMostSpecificItemsByType g amap (fun (ty, m) ->
+                if isInterfaceTy g ty then
+                    Some(ty, m)
+                else
+                    None)
+
+            // Get the most specific method overrides for each interface type.
+            |> List.choose (fun (ty, m) -> 
+                let mostSpecificOverrides = GetIntrinisicMostSpecificOverrideMethInfoSetsOfType infoReader m ty
+                if mostSpecificOverrides.IsEmpty then None
+                else Some mostSpecificOverrides)
+
+        match multipleSets with
+        | [] -> NameMultiMap.Empty
+        | [set] -> set
+        | _ ->
+            multipleSets
+            // Merge method sets together.
+            |> List.reduce (fun final minfoSets ->
+                Map.fold (fun acc key minfos -> 
+                    match acc.TryGetValue key with
+                    | true, minfos2 -> Map.add key (minfos @ minfos2) acc
+                    | _ -> Map.add key minfos acc) final minfoSets)
+
+            // Filter for most specifics when the sets have merged together.
+            |> FilterMostSpecificMethInfoSets g amap range0
+
+    /// Finds the override interface methods from the most specific overrides by the given method.
+    let GetMostSpecificOverrideInterfaceMethodsByMethod g amap m mostSpecificOverrides (minfo: MethInfo) =
+        let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo
+        NameMultiMap.find minfo.LogicalName mostSpecificOverrides
+        |> List.filter (fun minfo -> IsSigExactMatch g amap m minfo overrideBy)
 
     /// Get a collection of slots for the given interface type.
-    let GetInterfaceDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces mostSpecificInterfaceTys interfaceTy =
+    let GetInterfaceDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces (mostSpecificOverrides: NameMultiMap<MethInfo>) interfaceTy =
         let g = infoReader.g
         let amap = infoReader.amap
 
@@ -465,8 +489,8 @@ module DispatchSlotChecking =
                             g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMemberConsumption &&
                             not minfo.IsAbstract
 
-                          match GetMostSpecificOverrideInterfaceMethods infoReader m mostSpecificInterfaceTys minfo with
-                          // No override, no default implementation.
+                          match GetMostSpecificOverrideInterfaceMethodsByMethod g amap m mostSpecificOverrides minfo with
+                          // No override.
                           | [] ->
                             if minfo.IsAbstract then
                                 // Regular interface methods are never optional.
@@ -601,13 +625,7 @@ module DispatchSlotChecking =
                 (i, reqdTy, m, reduced))
 
         // Find the full set of most derived interfaces, used roots to search for default interface implementations of interface methods.
-        let mostSpecificInterfaceTys = 
-            allReqdTys
-            |> GetMostSpecificItemsByType g amap (fun ((ty, _) as x) -> 
-                if isInterfaceTy g ty then
-                    Some x
-                else
-                    None)
+        let mostSpecificOverrides = GetMostSpecificOverrideInterfaceMethodSets infoReader allReqdTys
 
         // Get the SlotImplSet for each implemented type
         // This contains the list of required members and the list of available members
@@ -631,7 +649,7 @@ module DispatchSlotChecking =
                 isImpliedInterfaceTable.ContainsKey (tcrefOfAppTy g ty) &&
                 impliedTys |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty)
 
-            let dispatchSlotSet = GetDispatchSlotSet infoReader ad reqdTyRange availImpliedInterfaces mostSpecificInterfaceTys reqdTy impliedTys
+            let dispatchSlotSet = GetDispatchSlotSet infoReader ad reqdTyRange availImpliedInterfaces mostSpecificOverrides reqdTy impliedTys
                 
             // Compute the methods that are available to implement abstract slots from the base class
             //
