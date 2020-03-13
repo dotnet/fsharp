@@ -427,16 +427,17 @@ module DispatchSlotChecking =
 
         mostSpecificInterfaceTys
         |> List.map (fun (ty, _) ->
-            let result =
-                GetIntrinisicOverrideMethInfosOfType infoReader (minfo.LogicalName, AccessibleFromSomewhere) m ty
+            let overrides = GetIntrinisicOverrideMethInfosOfType infoReader (None, AccessibleFromSomewhere) m ty
+            match overrides.TryGetValue minfo.LogicalName with
+            | true, methInfos ->
+                methInfos
+                |> GetMostSpecificItemsByType g amap (fun methInfo -> Some(methInfo.ApparentEnclosingType, m))
                 |> List.filter (fun minfo2 -> 
-                    if typeEquiv g ty minfo2.ApparentEnclosingType then
-                        let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo2
-                        IsSigExactMatch g amap m minfo overrideBy
-                    else
-                        false)
-            result)
+                    let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo2
+                    IsSigExactMatch g amap m minfo overrideBy)
+            | _ -> [])
         |> List.concat
+        |> GetMostSpecificItemsByType g amap (fun methInfo -> Some(methInfo.ApparentEnclosingType, m))
 
     /// Get a collection of slots for the given interface type.
     let GetInterfaceDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces mostSpecificInterfaceTys interfaceTy =
@@ -604,7 +605,7 @@ module DispatchSlotChecking =
         // Find the full set of most derived interfaces, used roots to search for default interface implementations of interface methods.
         let mostSpecificInterfaceTys = 
             allReqdTys
-            |> GetTopHierarchyItemsByType g amap (fun ((ty, _) as x) -> 
+            |> GetMostSpecificItemsByType g amap (fun ((ty, _) as x) -> 
                 if isInterfaceTy g ty then
                     Some x
                 else
