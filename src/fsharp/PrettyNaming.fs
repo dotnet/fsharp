@@ -149,7 +149,7 @@ module public FSharp.Compiler.PrettyNaming
                 false
 
         let startIndex = if skipParens then 2 else 0
-        let lastIndex = if skipParens then name.Length else name.Length - 2
+        let lastIndex = if skipParens then name.Length - 2 else name.Length
 
         isOperatorName name startIndex lastIndex || name = ".. .."
 
