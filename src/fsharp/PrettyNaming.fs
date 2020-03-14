@@ -133,7 +133,7 @@ module public FSharp.Compiler.PrettyNaming
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
         let rec isOperatorName (name: string) idx lastIdx =
-            if idx = lastIdx then
+            if idx > lastIdx then
                 true
             else
                 let c = name.[idx]
