@@ -385,14 +385,14 @@ module public FSharp.Compiler.PrettyNaming
         if String.IsNullOrEmpty s then false else
         match s with 
         | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
-        | _ -> (s.[0] = '!' && s <> "!=") || isTildaOnlyString s
+        | _ -> s.[0] = '!' && s <> "!=" || isTildaOnlyString s
 
     let IsPrefixOperator s =
         if String.IsNullOrEmpty s then false else
         let s = DecompileOpName s
         match s with 
         | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
-        | _ -> (s.[0] = '!' && s <> "!=") || isTildaOnlyString s
+        | _ -> s.[0] = '!' && s <> "!=" || isTildaOnlyString s
 
     let IsPunctuation s =
         if String.IsNullOrEmpty s then false else
