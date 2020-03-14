@@ -397,7 +397,11 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                     let overrideBy = ilMethImpl.OverrideBy
                     match mdefs.TryFindInstanceByNameAndCallingSignature (overrideBy.Name, overrideBy.MethodRef.CallingSignature) with
                     | Some mdef ->
-                        NameMultiMap.add overridesName (MethInfo.CreateILMeth(amap, m, ty, mdef)) acc
+                        let overridesILTy = ilMethImpl.Overrides.DeclaringType
+                        if Import.CanImportILType amap m overridesILTy then
+                            NameMultiMap.add overridesName (MethInfo.CreateILMeth(amap, m, ty, mdef)) acc
+                        else
+                            acc
                     | _ ->
                         acc
                 else
