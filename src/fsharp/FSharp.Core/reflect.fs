@@ -353,7 +353,7 @@ module internal Impl =
         //
         // Historically the FSharp.Core reflection utilities get used on implementations of
         // System.Type that don't have functionality such as .IsEnum and .FullName fully implemented.
-        // This happens particularly over TypeBuilderInstantiation types in the ProvideTypes implementation of System.TYpe
+        // This happens particularly over TypeBuilderInstantiation types in the ProvideTypes implementation of System.Type
         // used in F# type providers.
         typ.IsGenericType &&
         typ.Namespace = "System" &&
@@ -391,12 +391,12 @@ module internal Impl =
             | false, _ ->
                 // the Dictionary<>s here could be ConcurrentDictionary<>'s, but then
                 // that would lock while initializing the Type array (maybe not an issue)
-                let a = ref (Array.init<Type> 8 (fun i -> makeIt (i + 1)))
+                let mutable a = Array.init<Type> 8 (fun i -> makeIt (i + 1))
                 lock dictionaryLock (fun () ->
                     match tables.TryGetValue asm with
-                    | true, t -> a := t
-                    | false, _ -> tables.Add(asm, !a))
-                !a
+                    | true, t -> a <- t
+                    | false, _ -> tables.Add(asm, a))
+                a
             | true, t -> t
 
         match tys.Length with

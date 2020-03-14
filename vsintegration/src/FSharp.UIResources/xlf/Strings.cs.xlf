@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="Diagnostics">
         <source>Diagnostics</source>
-        <target state="new">Diagnostics</target>
+        <target state="translated">Diagnostika</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -200,11 +200,6 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Navrhovat názvy pro nerozpoznané identifikátory</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Use_out_of_process_language_server">
-        <source>(Preview) Use out of process language server</source>
-        <target state="translated">(Preview) Použít mimoprocesový jazykový server</target>
         <note />
       </trans-unit>
     </body>

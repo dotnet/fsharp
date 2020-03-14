@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="Diagnostics">
         <source>Diagnostics</source>
-        <target state="new">Diagnostics</target>
+        <target state="translated">Diagnóstico</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -200,11 +200,6 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Sugerir nombres para los identificadores no resueltos</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Use_out_of_process_language_server">
-        <source>(Preview) Use out of process language server</source>
-        <target state="translated">(Versión preliminar) Usar el servidor de lenguaje fuera del proceso</target>
         <note />
       </trans-unit>
     </body>

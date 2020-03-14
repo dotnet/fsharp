@@ -414,16 +414,16 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     | Expr.Op (op, tyargs, args, m) ->
         match op, tyargs, args with
         | TOp.UnionCase ucref, _, _ ->
-            let mkR = ConvUnionCaseRef cenv ucref m
+            let tcR, s = ConvUnionCaseRef cenv ucref m
             let tyargsR = ConvTypes cenv env m tyargs
             let argsR = ConvExprs cenv env args
-            QP.mkUnion(mkR, tyargsR, argsR)
+            QP.mkUnion(tcR, s, tyargsR, argsR)
 
 
         | TOp.Tuple tupInfo, tyargs, _ ->
             let tyR = ConvType cenv env m (mkAnyTupledTy cenv.g tupInfo tyargs)
             let argsR = ConvExprs cenv env args
-            QP.mkTuple(tyR, argsR) // TODO: propagate to quotations
+            QP.mkTuple(tyR, argsR)
 
         | TOp.Recd (_, tcref), _, _  ->
             let rgtypR = ConvTyconRef cenv tcref m
@@ -443,7 +443,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let rgtypR = ConvILTypeRef cenv tref
             let tyargsR = ConvTypes cenv env m tyargs
             let argsR = ConvExprs cenv env args
-            QP.mkRecdGet((rgtypR, anonInfo.SortedNames.[n]), tyargsR, argsR)
+            QP.mkRecdGet(rgtypR, anonInfo.SortedNames.[n], tyargsR, argsR)
 
         | TOp.UnionCaseFieldGet (ucref, n), tyargs, [e] ->
             ConvUnionFieldGet cenv env m ucref n tyargs e
@@ -475,7 +475,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let tyargsR = ConvTypes cenv env m enclTypeArgs
             let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.DeclaringTypeRef
             let argsR = ConvLValueArgs cenv env args
-            QP.mkFieldSet( (parentTyconR, fspec.Name), tyargsR, argsR)
+            QP.mkFieldSet(parentTyconR, fspec.Name, tyargsR, argsR)
 
         | TOp.ILAsm ([ AI_ceq ], _), _, [arg1;arg2]  ->
             let ty = tyOfExpr cenv.g arg1
@@ -506,15 +506,15 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.ValFieldSet rfref, _tinst, args     ->
             let argsR = ConvLValueArgs cenv env args
             let tyargsR = ConvTypes cenv env m tyargs
-            let ((_parentTyconR, fldOrPropName) as projR) = ConvRecdFieldRef cenv rfref m
+            let parentTyconR, fldOrPropName = ConvRecdFieldRef cenv rfref m
             if rfref.TyconRef.IsRecordTycon then
-                QP.mkRecdSet(projR, tyargsR, argsR)
+                QP.mkRecdSet(parentTyconR, fldOrPropName, tyargsR, argsR)
             else
                 let fspec = rfref.RecdField
                 let tcref = rfref.TyconRef
                 let parentTyconR = ConvTyconRef cenv tcref m
                 if useGenuineField tcref.Deref fspec then
-                    QP.mkFieldSet( projR, tyargsR, argsR)
+                    QP.mkFieldSet(parentTyconR, fldOrPropName, tyargsR, argsR)
                 else
                     let envinner = BindFormalTypars env (tcref.TyparsNoRange)
                     let propRetTypeR = ConvType cenv envinner m fspec.FormalType
@@ -604,12 +604,24 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.UInt16s arr, [], [] ->
               ConvExpr cenv env (Expr.Op (TOp.Array, [cenv.g.uint16_ty], List.ofArray (Array.map (mkUInt16 cenv.g m) arr), m))
 
-        | TOp.UnionCaseProof _, _, [e]       -> ConvExpr cenv env e  // Note: we erase the union case proof conversions when converting to quotations
-        | TOp.UnionCaseTagGet _tycr, _tinst, [_cx]          -> wfail(Error(FSComp.SR.crefQuotationsCantFetchUnionIndexes(), m))
-        | TOp.UnionCaseFieldSet (_c, _i), _tinst, [_cx;_x]     -> wfail(Error(FSComp.SR.crefQuotationsCantSetUnionFields(), m))
-        | TOp.ExnFieldSet (_tcref, _i), [], [_ex;_x] -> wfail(Error(FSComp.SR.crefQuotationsCantSetExceptionFields(), m))
-        | TOp.RefAddrGet _, _, _                       -> wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
-        | TOp.TraitCall (_ss), _, _                    -> wfail(Error(FSComp.SR.crefQuotationsCantCallTraitMembers(), m))
+        | TOp.UnionCaseProof _, _, [e] ->
+            ConvExpr cenv env e  // Note: we erase the union case proof conversions when converting to quotations
+
+        | TOp.UnionCaseTagGet _tycr, _tinst, [_cx] ->
+            wfail(Error(FSComp.SR.crefQuotationsCantFetchUnionIndexes(), m))
+
+        | TOp.UnionCaseFieldSet (_c, _i), _tinst, [_cx;_x] ->
+            wfail(Error(FSComp.SR.crefQuotationsCantSetUnionFields(), m))
+
+        | TOp.ExnFieldSet (_tcref, _i), [], [_ex;_x] ->
+            wfail(Error(FSComp.SR.crefQuotationsCantSetExceptionFields(), m))
+
+        | TOp.RefAddrGet _, _, _ ->
+            wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
+
+        | TOp.TraitCall (_ss), _, _ ->
+            wfail(Error(FSComp.SR.crefQuotationsCantCallTraitMembers(), m))
+
         | _ ->
             wfail(InternalError( "Unexpected expression shape", m))
 
@@ -620,14 +632,13 @@ and ConvLdfld cenv env m (fspec: ILFieldSpec) enclTypeArgs args =
     let tyargsR = ConvTypes cenv env m enclTypeArgs
     let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.DeclaringTypeRef
     let argsR = ConvLValueArgs cenv env args
-    QP.mkFieldGet( (parentTyconR, fspec.Name), tyargsR, argsR)
+    QP.mkFieldGet(parentTyconR, fspec.Name, tyargsR, argsR)
 
 and ConvUnionFieldGet cenv env m ucref n tyargs e =
     let tyargsR = ConvTypes cenv env m tyargs
     let tcR, s = ConvUnionCaseRef cenv ucref m
-    let projR = (tcR, s, n)
     let eR = ConvLValueExpr cenv env e
-    QP.mkUnionFieldGet(projR, tyargsR, eR)
+    QP.mkUnionFieldGet(tcR, s, n, tyargsR, eR)
 
 and ConvClassOrRecdFieldGet cenv env m rfref tyargs args =
     EmitDebugInfoIfNecessary cenv env m (ConvClassOrRecdFieldGetCore cenv env m rfref tyargs args)
@@ -635,14 +646,14 @@ and ConvClassOrRecdFieldGet cenv env m rfref tyargs args =
 and private ConvClassOrRecdFieldGetCore cenv env m rfref tyargs args =
     let tyargsR = ConvTypes cenv env m tyargs
     let argsR = ConvLValueArgs cenv env args
-    let ((parentTyconR, fldOrPropName) as projR) = ConvRecdFieldRef cenv rfref m
+    let (parentTyconR, fldOrPropName) = ConvRecdFieldRef cenv rfref m
     if rfref.TyconRef.IsRecordTycon then
-        QP.mkRecdGet(projR, tyargsR, argsR)
+        QP.mkRecdGet(parentTyconR, fldOrPropName, tyargsR, argsR)
     else
         let fspec = rfref.RecdField
         let tcref = rfref.TyconRef
         if useGenuineField tcref.Deref fspec then
-            QP.mkFieldGet(projR, tyargsR, argsR)
+            QP.mkFieldGet(parentTyconR, fldOrPropName, tyargsR, argsR)
         else
             let envinner = BindFormalTypars env tcref.TyparsNoRange
             let propRetTypeR = ConvType cenv envinner m fspec.FormalType
@@ -881,9 +892,9 @@ and ConvDecisionTree cenv env tgs typR x =
                   match discrim with
                   | DecisionTreeTest.UnionCase (ucref, tyargs) ->
                       let e1R = ConvLValueExpr cenv env e1
-                      let ucR = ConvUnionCaseRef cenv ucref m
+                      let tcR, s = ConvUnionCaseRef cenv ucref m
                       let tyargsR = ConvTypes cenv env m tyargs
-                      QP.mkCond (QP.mkUnionCaseTagTest (ucR, tyargsR, e1R), ConvDecisionTree cenv env tgs typR dtree, acc)
+                      QP.mkCond (QP.mkUnionCaseTagTest (tcR, s, tyargsR, e1R), ConvDecisionTree cenv env tgs typR dtree, acc)
 
                   | DecisionTreeTest.Const (Const.Bool true) ->
                       let e1R = ConvExpr cenv env e1
@@ -922,6 +933,8 @@ and ConvDecisionTree cenv env tgs typR x =
                   | DecisionTreeTest.ActivePatternCase _ -> wfail(InternalError( "DecisionTreeTest.ActivePatternCase test in quoted expression", m))
 
                   | DecisionTreeTest.ArrayLength _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainArrayPatternMatching(), m))
+
+                  | DecisionTreeTest.Error m -> wfail(InternalError( "DecisionTreeTest.Error in quoted expression", m))
                  )
         EmitDebugInfoIfNecessary cenv env m converted
 
@@ -988,6 +1001,7 @@ and ConvILTypeRef cenv (tr: ILTypeRef) =
         let assemblyRef =
             match tr.Scope with
             | ILScopeRef.Local -> "."
+            | ILScopeRef.PrimaryAssembly -> cenv.g.ilg.primaryAssemblyScopeRef.QualifiedName
             | _ -> tr.Scope.QualifiedName
 
         QP.Named(tr.BasicQualifiedName, assemblyRef)
@@ -1042,7 +1056,8 @@ and ConvReturnType cenv envinner m retTy =
     | None -> ConvVoidType cenv m
     | Some ty -> ConvType cenv envinner m ty
 
-let ConvExprPublic cenv env e =
+let ConvExprPublic cenv e =
+    let env = QuotationTranslationEnv.Empty
     let astExpr =
         let astExpr = ConvExpr cenv env e
         // always emit debug info for the top level expression
@@ -1107,6 +1122,24 @@ let ConvMethodBase cenv env (methName, v: Val) =
               Module = parentTyconR
               IsProperty = IsCompiledAsStaticProperty cenv.g v }
 
+let ConvReflectedDefinition cenv methName v e =
+    let g = cenv.g
+    let ety = tyOfExpr g e
+    let tps, taue, _ =
+        match e with
+        | Expr.TyLambda (_, tps, body, _, _) -> tps, body, applyForallTy g ety (List.map mkTyparTy tps)
+        | _ -> [], e, ety
+    let env = QuotationTranslationEnv.Empty
+    let env = env.BindTypars tps
+    let astExpr =
+        let astExpr = ConvExpr cenv env taue
+        // always emit debug info for ReflectedDefinition expression
+        let old = cenv.emitDebugInfoInQuotations
+        try 
+            cenv.emitDebugInfoInQuotations <- true
+            EmitDebugInfoIfNecessary cenv env e.Range astExpr
+        finally
+            cenv.emitDebugInfoInQuotations <- old
 
-// FSComp.SR.crefQuotationsCantContainLiteralByteArrays
-
+    let mbaseR = ConvMethodBase cenv env (methName, v)
+    mbaseR, astExpr

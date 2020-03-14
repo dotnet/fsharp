@@ -58,6 +58,7 @@ module internal ExtensionTyping =
           * isInteractive: bool
           * systemRuntimeContainsType : (string -> bool)
           * systemRuntimeAssemblyVersion : System.Version
+          * compilerToolsPath : string list
           * range -> Tainted<ITypeProvider> list
 
     /// Given an extension type resolver, supply a human-readable name suitable for error messages.
@@ -125,6 +126,7 @@ module internal ExtensionTyping =
         member IsEnum : bool
         member IsInterface : bool
         member IsClass : bool
+        member IsMeasure: bool
         member IsSealed : bool
         member IsAbstract : bool
         member IsPublic : bool
@@ -135,6 +137,11 @@ module internal ExtensionTyping =
         member GetArrayRank : unit -> int
         member RawSystemType : System.Type
         member GetEnumUnderlyingType : unit -> ProvidedType
+        member MakePointerType: unit -> ProvidedType
+        member MakeByRefType: unit -> ProvidedType
+        member MakeArrayType: unit -> ProvidedType
+        member MakeArrayType: rank: int -> ProvidedType
+        member MakeGenericType: args: ProvidedType[] -> ProvidedType
         static member Void : ProvidedType
         static member CreateNoContext : Type -> ProvidedType
         member TryGetILTypeRef : unit -> ILTypeRef option

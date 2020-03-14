@@ -1,5 +1,5 @@
 // #Regression #NoMT #Import 
-//<Expects status="error" span="(8,28)" id="FS0039">The field, constructor or member 'FamAndAssembly' is not defined.</Expects>
+//<Expects status="error" span="(8,28)" id="FS0039">The type 'Accessibility' does not define the field, constructor or member 'FamAndAssembly'. Maybe you want one of the following:</Expects>
 namespace NS
 
 type T() =

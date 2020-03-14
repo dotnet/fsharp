@@ -8,14 +8,9 @@
 module FSharp.Compiler.Service.Tests.TokenizerTests
 #endif
 
-open FSharp.Compiler
-open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.SourceCodeServices
 
 open NUnit.Framework
-open FsUnit
-open System
-open System.IO
 
 
 let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx")

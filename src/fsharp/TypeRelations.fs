@@ -11,7 +11,6 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Infos
-open FSharp.Compiler.PrettyNaming
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification. 
@@ -134,7 +133,7 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              match tpc with 
              | TyparConstraint.CoercesTo(x, m) -> 
                  join m x, m
-             | TyparConstraint.MayResolveMember(TTrait(_, _, _, _, _, _), m) ->
+             | TyparConstraint.MayResolveMember(_traitInfo, m) -> 
                  maxSoFar, m
              | TyparConstraint.SimpleChoice(_, m) -> 
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInPrintf(), m))

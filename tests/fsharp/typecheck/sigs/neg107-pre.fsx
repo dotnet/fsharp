@@ -1,4 +1,8 @@
 open System
 open System.IO
 
-File.WriteAllText("neg107.generated.fsx", sprintf @"#r @""%s\.nuget\packages\System.Memory\4.5.2\lib\netstandard2.0\System.Memory.dll""" (Environment.GetEnvironmentVariable("USERPROFILE")))
+let packagesDir = 
+    match Environment.GetEnvironmentVariable("NUGET_PACKAGES") with
+    | null -> Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), ".nuget", "packages")
+    | path -> path
+File.WriteAllText("neg107.generated.fsx", sprintf @"#r @""%s\System.Memory\4.5.3\lib\netstandard2.0\System.Memory.dll""" packagesDir)

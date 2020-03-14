@@ -100,7 +100,7 @@ type ExprValueInfo =
   ///    arities: The number of bunches of untupled args and type args, and 
   ///             the number of args in each bunch. NOTE: This include type arguments.
   ///    expr: The value, a lambda term.
-  ///    ty: The type of lamba term
+  ///    ty: The type of lambda term
   | CurriedLambdaValue of Unique * int * int * Expr * TType
 
   /// ConstExprValue(size, value)
@@ -350,14 +350,14 @@ type OptimizationSettings =
 
     member x.EliminateTupleFieldGet () = x.localOpt () 
 
-    member x.EliminatUnionCaseFieldGet () = x.localOpt () 
+    member x.EliminateUnionCaseFieldGet () = x.localOpt () 
 
     /// eliminate non-compiler generated immediate bindings 
     member x.EliminateImmediatelyConsumedLocals() = x.localOpt () 
 
     /// expand "let x = (exp1, exp2, ...)" bindings as prior tmps 
     /// expand "let x = Some exp1" bindings as prior tmps 
-    member x.ExpandStructrualValues() = x.localOpt () 
+    member x.ExpandStructuralValues() = x.localOpt () 
 
 type cenv =
     { g: TcGlobals
@@ -1132,7 +1132,7 @@ let AbstractOptimizationInfoToEssentials =
 /// Hide information because of a "let ... in ..." or "let rec ... in ... "
 let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
   // Module and member bindings can be skipped when checking abstraction, since abstraction of these values has already been done when 
-  // we hit the end of the module and called AbstractLazyModulInfoByHiding. If we don't skip these then we end up quadtratically retraversing  
+  // we hit the end of the module and called AbstractLazyModulInfoByHiding. If we don't skip these then we end up quadratically retraversing  
   // the inferred optimization data, i.e. at each binding all the way up a sequences of 'lets' in a module. 
   let boundVars = boundVars |> List.filter (fun v -> not v.IsMemberOrModuleBinding)
 
@@ -1524,7 +1524,7 @@ and RewriteBoolLogicCase data (TCase(test, tree)) =
     TCase(test, RewriteBoolLogicTree data tree)
 
 /// Repeatedly combine switch-over-match decision trees, see https://github.com/Microsoft/visualfsharp/issues/635.
-/// The outer decision tree is doing a swithc over a boolean result, the inner match is producing only
+/// The outer decision tree is doing a switch over a boolean result, the inner match is producing only
 /// constant boolean results in its targets.  
 let rec CombineBoolLogic expr = 
 
@@ -1576,7 +1576,7 @@ let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
     ve, mkCompGenBind v arg
            
 let ExpandStructuralBindingRaw cenv expr =
-    assert cenv.settings.ExpandStructrualValues()
+    assert cenv.settings.ExpandStructuralValues()
     match expr with
     | Expr.Let (TBind(v, rhs, tgtSeqPtOpt), body, m, _) 
         when (isRefTupleExpr rhs &&
@@ -1611,7 +1611,7 @@ let rec RearrangeTupleBindings expr fin =
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
-    assert cenv.settings.ExpandStructrualValues()
+    assert cenv.settings.ExpandStructuralValues()
     match expr with
     | Expr.Let (TBind(v, rhs, tgtSeqPtOpt), body, m, _)
         when (isRefTupleTy cenv.g v.Type &&
@@ -1708,7 +1708,7 @@ let (|AnyQueryBuilderOpTrans|_|) g = function
 //     | query.For(<qexprInner>, <other-arguments>) --> IQueryable if qexprInner is IQueryable, otherwise seq { qexprInner' } 
 //     | query.Yield <expr> --> not IQueryable, seq { <expr> } 
 //     | query.YieldFrom <expr> --> not IQueryable, seq { yield! <expr> } 
-//     | query.Op(<qexprOuter>, <other-arguments>) --> IQueryable if qexprOuter is IQueryable, otherwise query.Op(qexpOuter', <other-arguments>)   
+//     | query.Op(<qexprOuter>, <other-arguments>) --> IQueryable if qexprOuter is IQueryable, otherwise query.Op(qexprOuter', <other-arguments>)   
 let rec tryRewriteToSeqCombinators g (e: Expr) = 
     let m = e.Range
     match e with 
@@ -2070,9 +2070,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
    // guarantees to optimize.
   
     | TOp.ILCall (_, _, _, _, _, _, _, mref, _enclTypeArgs, _methTypeArgs, _tys), _, [arg]
-        when (mref.DeclaringTypeRef.Scope.IsAssemblyRef &&
-              mref.DeclaringTypeRef.Scope.AssemblyRef.Name = cenv.g.ilg.typ_Array.TypeRef.Scope.AssemblyRef.Name &&
-              mref.DeclaringTypeRef.Name = cenv.g.ilg.typ_Array.TypeRef.Name &&
+        when (mref.DeclaringTypeRef.Name = cenv.g.ilg.typ_Array.TypeRef.Name &&
               mref.Name = "get_Length" &&
               isArray1DTy cenv.g (tyOfExpr cenv.g arg)) -> 
          OptimizeExpr cenv env (Expr.Op (TOp.ILAsm (i_ldlen, [cenv.g.int_ty]), [], [arg], m))
@@ -2112,7 +2110,7 @@ and OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsR, arginfos, m) =
     | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos UnknownValue
 
 and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
-    // The generic case - we may collect information, but the construction/projection doesnRt disappear 
+    // The generic case - we may collect information, but the construction/projection doesn't disappear 
     let argsTSize = AddTotalSizes arginfos
     let argsFSize = AddFunctionSizes arginfos
     let argEffects = OrEffects arginfos
@@ -2230,7 +2228,7 @@ and TryOptimizeTupleFieldGet cenv _env (_tupInfo, e1info, tys, n, m) =
       
 and TryOptimizeUnionCaseGet cenv _env (e1info, cspec, _tys, n, m) =
     match e1info.Info with
-    | StripUnionCaseValue(cspec2, args) when cenv.settings.EliminatUnionCaseFieldGet() && not e1info.HasEffect && cenv.g.unionCaseRefEq cspec cspec2 ->
+    | StripUnionCaseValue(cspec2, args) when cenv.settings.EliminateUnionCaseFieldGet() && not e1info.HasEffect && cenv.g.unionCaseRefEq cspec cspec2 ->
         if n >= args.Length then errorR(InternalError( "TryOptimizeUnionCaseGet: term argument out of range", m))
         Some args.[n]
     | _ -> None
@@ -2298,7 +2296,7 @@ and OptimizeLinearExpr cenv env expr contf =
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
     let expr = DetectAndOptimizeForExpression cenv.g OptimizeAllForExpressions expr
-    let expr = if cenv.settings.ExpandStructrualValues() then ExpandStructuralBinding cenv expr else expr 
+    let expr = if cenv.settings.ExpandStructuralValues() then ExpandStructuralBinding cenv expr else expr 
     let expr = stripExpr expr
 
     match expr with 
@@ -2326,7 +2324,7 @@ and OptimizeLinearExpr cenv env expr contf =
       let (bindR, bindingInfo), env = OptimizeBinding cenv false env bind 
       OptimizeLinearExpr cenv env body (contf << (fun (bodyR, bodyInfo) ->  
         // PERF: This call to ValueIsUsedOrHasEffect/freeInExpr amounts to 9% of all optimization time.
-        // Is it quadratic or quasi-quadtratic?
+        // Is it quadratic or quasi-quadratic?
         if ValueIsUsedOrHasEffect cenv (fun () -> (freeInExpr CollectLocals bodyR).FreeLocals) (bindR, bindingInfo) then
             // Eliminate let bindings on the way back up
             let exprR, adjust = TryEliminateLet cenv env bindR bodyR m 
@@ -2785,7 +2783,10 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
                     match vref.ApparentEnclosingEntity with
                     | Parent tcr when (tyconRefEq cenv.g cenv.g.lazy_tcr_canon tcr) ->
                             match tcr.CompiledRepresentation with
-                            | CompiledTypeRepr.ILAsmNamed(iltr, _, _) -> iltr.Scope.AssemblyRef.Name = "FSharp.Core"
+                            | CompiledTypeRepr.ILAsmNamed(iltr, _, _) -> 
+                                match iltr.Scope with
+                                | ILScopeRef.Assembly aref -> aref.Name = "FSharp.Core"
+                                | _ -> false
                             | _ -> false
                     | _ -> false
                 | _ -> false                                          
@@ -3027,7 +3028,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
              // None of them should be byrefs 
              not (isByrefLikeTy cenv.g m v.Type) && 
              //  None of them should be local polymorphic constrained values 
-             not (IsGenericValWithGenericContraints cenv.g v) &&
+             not (IsGenericValWithGenericConstraints cenv.g v) &&
              // None of them should be mutable 
              not v.IsMutable)))) &&
     not (isByrefLikeTy cenv.g m (tyOfExpr cenv.g e)) 

@@ -31,7 +31,7 @@ val typeEquiv       :            TcGlobals  -> TType          -> TType         -
 /// Check the equivalence of two units-of-measure
 val measureEquiv    :            TcGlobals  -> Measure  -> Measure -> bool
 
-/// Reduce a type to its more anonical form subject to an erasure flag, inference equations and abbreviations
+/// Reduce a type to its more canonical form subject to an erasure flag, inference equations and abbreviations
 val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
 
 /// Build a function type
@@ -120,7 +120,7 @@ val mkMutableCompGenLocal : range -> string -> TType -> Val * Expr
 
 /// Make a new mutable compiler-generated local value, 'let' bind it to an expression 
 /// 'invisibly' (no sequence point etc.), and build an expression to reference it
-val mkCompGenLocalAndInvisbleBind : TcGlobals -> string -> range -> Expr -> Val * Expr * Binding 
+val mkCompGenLocalAndInvisibleBind : TcGlobals -> string -> range -> Expr -> Val * Expr * Binding 
 
 /// Build a lambda expression taking multiple values
 val mkMultiLambda : range -> Val list -> Expr * TType -> Expr
@@ -668,7 +668,7 @@ val destAppTy      : TcGlobals -> TType -> TyconRef * TypeInst
 
 val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
 
-val tryDestAppTy   : TcGlobals -> TType -> ValueOption<TyconRef>
+val tryTcrefOfAppTy   : TcGlobals -> TType -> ValueOption<TyconRef>
 
 val tryDestTyparTy : TcGlobals -> TType -> ValueOption<Typar>
 
@@ -931,6 +931,11 @@ module PrettyTypes =
     val PrettifyTypePair : TcGlobals -> TType * TType -> (TType * TType) * TyparConstraintsWithTypars
 
     val PrettifyTypes : TcGlobals -> TTypes -> TTypes * TyparConstraintsWithTypars
+    
+    /// same as PrettifyTypes, but allows passing the types along with a discriminant value
+    /// useful to prettify many types that need to be sorted out after prettifying operation
+    /// took place.
+    val PrettifyDiscriminantAndTypePairs : TcGlobals -> ('Discriminant * TType) list -> ('Discriminant * TType) list * TyparConstraintsWithTypars
 
     val PrettifyInst : TcGlobals -> TyparInst -> TyparInst * TyparConstraintsWithTypars
 
@@ -1150,7 +1155,7 @@ type SignatureRepackageInfo =
     { /// The list of corresponding values
       RepackagedVals: (ValRef * ValRef) list
 
-      /// The list of corresponding modules, namespacea and type definitions
+      /// The list of corresponding modules, namespaces and type definitions
       RepackagedEntities: (TyconRef * TyconRef) list  }
 
     /// The empty table
@@ -1208,18 +1213,18 @@ val MakeExportRemapping : CcuThunk -> ModuleOrNamespace -> Remap
 val ApplyExportRemappingToEntity :  TcGlobals -> Remap -> ModuleOrNamespace -> ModuleOrNamespace 
 
 /// Determine if a type definition is hidden by a signature
-val IsHiddenTycon     : TcGlobals -> (Remap * SignatureHidingInfo) list -> Tycon -> bool
+val IsHiddenTycon: (Remap * SignatureHidingInfo) list -> Tycon -> bool
 
 /// Determine if the representation of a type definition is hidden by a signature
-val IsHiddenTyconRepr : TcGlobals -> (Remap * SignatureHidingInfo) list -> Tycon -> bool
+val IsHiddenTyconRepr: (Remap * SignatureHidingInfo) list -> Tycon -> bool
 
 /// Determine if a member, function or value is hidden by a signature
-val IsHiddenVal       : (Remap * SignatureHidingInfo) list -> Val -> bool
+val IsHiddenVal: (Remap * SignatureHidingInfo) list -> Val -> bool
 
 /// Determine if a record field is hidden by a signature
-val IsHiddenRecdField : (Remap * SignatureHidingInfo) list -> RecdFieldRef -> bool
+val IsHiddenRecdField: (Remap * SignatureHidingInfo) list -> RecdFieldRef -> bool
 
-/// Adjust marks in expressions, replacing all marks by thegiven mark.
+/// Adjust marks in expressions, replacing all marks by the given mark.
 /// Used when inlining.
 val remarkExpr : range -> Expr -> Expr
  
@@ -1250,7 +1255,7 @@ val mkAddrGet  : range -> ValRef -> Expr
 /// &localv           
 val mkValAddr  : range -> readonly: bool -> ValRef -> Expr
 
-/// Build an exression representing the read of an instance class or record field.
+/// Build an expression representing the read of an instance class or record field.
 /// First take the address of the record expression if it is a struct.
 val mkRecdFieldGet : TcGlobals -> Expr * RecdFieldRef * TypeInst * range -> Expr
 
@@ -1280,7 +1285,7 @@ val AdjustArityOfLambdaBody : TcGlobals -> int -> Val list -> Expr -> Val list *
 /// Make an application expression, doing beta reduction by introducing let-bindings
 val MakeApplicationAndBetaReduce : TcGlobals -> Expr * TType * TypeInst list * Exprs * range -> Expr
 
-/// COmbine two static-resolution requirements on a type parameter
+/// Combine two static-resolution requirements on a type parameter
 val JoinTyparStaticReq : TyparStaticReq -> TyparStaticReq -> TyparStaticReq
 
 /// Layout for internal compiler debugging purposes
@@ -1481,10 +1486,10 @@ val destListTy : TcGlobals -> TType -> TType
 /// Build an array type of the given rank
 val mkArrayTy : TcGlobals -> int -> TType -> range -> TType
 
-/// Check if a type definition is one of the artifical type definitions used for array types of different ranks 
+/// Check if a type definition is one of the artificial type definitions used for array types of different ranks 
 val isArrayTyconRef : TcGlobals -> TyconRef -> bool
 
-/// Determine the rank of one of the artifical type definitions used for array types
+/// Determine the rank of one of the artificial type definitions used for array types
 val rankOfArrayTyconRef : TcGlobals -> TyconRef -> int
 
 /// Determine if a type is the F# unit type
@@ -1638,31 +1643,54 @@ val mkLazyForce           : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkRefCellContentsRef : TcGlobals -> RecdFieldRef
 
+/// Check if a type is an FSharpRef type 
 val isRefCellTy   : TcGlobals -> TType -> bool
 
+/// Get the element type of an FSharpRef type 
 val destRefCellTy : TcGlobals -> TType -> TType
 
+/// Create the FSharpRef type for a given element type
 val mkRefCellTy   : TcGlobals -> TType -> TType
 
+/// Create the IEnumerable (seq) type for a given element type
 val mkSeqTy          : TcGlobals -> TType -> TType
 
+/// Create the IEnumerator type for a given element type
 val mkIEnumeratorTy  : TcGlobals -> TType -> TType
 
+/// Create the list type for a given element type
 val mkListTy         : TcGlobals -> TType -> TType
 
+/// Create the option type for a given element type
 val mkOptionTy       : TcGlobals -> TType -> TType
 
+/// Create the Nullable type for a given element type
+val mkNullableTy: TcGlobals -> TType -> TType
+
+/// Create the union case 'None' for an option type
 val mkNoneCase  : TcGlobals -> UnionCaseRef
 
-val mkSomeCase  : TcGlobals -> UnionCaseRef
+/// Create the union case 'Some(expr)' for an option type
+val mkSomeCase: TcGlobals -> UnionCaseRef
 
+/// Create the expression '[]' for a list type
 val mkNil  : TcGlobals -> range -> TType -> Expr
 
+/// Create the expression 'headExpr :: tailExpr'
 val mkCons : TcGlobals -> TType -> Expr -> Expr -> Expr
 
+/// Create the expression 'Some(expr)'
 val mkSome : TcGlobals -> TType -> Expr -> range -> Expr
 
+/// Create the expression 'None' for an option-type
 val mkNone: TcGlobals -> TType -> range -> Expr
+
+/// Create the expression 'expr.Value' for an option-typed expression
+val mkOptionGetValueUnprovenViaAddr: TcGlobals -> Expr -> TType -> range -> Expr
+
+val mkOptionToNullable : TcGlobals -> range -> TType -> Expr -> Expr
+
+val mkOptionDefaultValue: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 //-------------------------------------------------------------------------
 // Make a few more expressions
@@ -2218,7 +2246,7 @@ val RewriteExpr : ExprRewritingEnv -> Expr -> Expr
 
 val RewriteImplFile : ExprRewritingEnv -> TypedImplFile -> TypedImplFile
 
-val IsGenericValWithGenericContraints: TcGlobals -> Val -> bool
+val IsGenericValWithGenericConstraints: TcGlobals -> Val -> bool
 
 type Entity with 
 

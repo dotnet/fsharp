@@ -237,14 +237,14 @@ function Make-BootstrapBuild() {
     Create-Directory $dir
 
     # prepare FsLex and Fsyacc and AssemblyCheck
-    Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" "/restore /t:Publish" -logFileName "BuildTools" -configuration $bootstrapConfiguration
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp2.1\publish" -Destination "$dir\fslex" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp2.1\publish" -Destination "$dir\fsyacc" -Force  -Recurse
-    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\netcoreapp2.1\publish" -Destination "$dir\AssemblyCheck" -Force  -Recurse
+    Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" "/restore /t:Publish /p:PublishWindowsPdb=false" -logFileName "BuildTools" -configuration $bootstrapConfiguration
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp3.0\publish" -Destination "$dir\fslex" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp3.0\publish" -Destination "$dir\fsyacc" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\netcoreapp3.0\publish" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
     $projectPath = "$RepoRoot\proto.proj"
-    Run-MSBuild $projectPath "/restore /t:Publish /p:TargetFramework=$bootstrapTfm;ProtoTargetFramework=$bootstrapTfm" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
+    Run-MSBuild $projectPath "/restore /t:Publish /p:TargetFramework=$bootstrapTfm;ProtoTargetFramework=$bootstrapTfm /p:PublishWindowsPdb=false" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
     Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsc" -Force -Recurse
     Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsi" -Force -Recurse
 

@@ -132,12 +132,21 @@ module public FSharp.Compiler.PrettyNaming
 
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
-        let name =
-            if name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") then
-                name.[2 .. name.Length - 3]
-            else name
-        // there is single operator containing a space - range operator with step: `.. ..`
-        name = ".. .." || name |> Seq.forall (fun c -> c <> ' ' && opCharSet.Contains c)
+        let rec isOperatorName (name: string) idx endIndex =
+            if idx = endIndex then
+                true
+            else
+                let c = name.[idx]
+                if not (opCharSet.Contains(c)) || c = ' ' then
+                    false
+                else
+                    isOperatorName name (idx + 1) endIndex
+
+        let skipParens = if name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") then true else false
+        let startIndex = if skipParens then 2 else 0
+        let endIndex = if skipParens then name.Length - 2 else name.Length
+
+        isOperatorName name startIndex endIndex || name = ".. .."
 
     let IsMangledOpName (n: string) =
         n.StartsWithOrdinal(opNamePrefix)
@@ -351,36 +360,40 @@ module public FSharp.Compiler.PrettyNaming
         c = '.'
         || IsIdentifierPartCharacter c
 
+    let isTildaOnlyString (s: string) =
+        let rec loop (s: string) idx =
+            if idx >= s.Length then
+                true
+            elif s.[idx] <> '~' then
+                false
+            else
+                loop s (idx + 1)
+        loop s 0
+
     let IsValidPrefixOperatorUse s =
         if String.IsNullOrEmpty s then false else
         match s with 
         | "?+" | "?-" | "+" | "-" | "+." | "-." | "%" | "%%" | "&" | "&&" -> true
-        | _ ->
-            s.[0] = '!'
-            // The check for the first character here could be eliminated since it's covered
-            // by the call to String.forall; it is a fast check used to avoid the call if possible.
-            || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
-    
+        | _ -> s.[0] = '!' || isTildaOnlyString s
+
     let IsValidPrefixOperatorDefinitionName s = 
         if String.IsNullOrEmpty s then false else
-        match s with 
-        | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
-        | _ ->
-            (s.[0] = '!' && s <> "!=")
-            // The check for the first character here could be eliminated since it's covered
-            // by the call to String.forall; it is a fast check used to avoid the call if possible.
-            || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
-        
+
+        match s.[0] with
+        | '~' ->
+            isTildaOnlyString s ||
+
+            match s with
+            | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
+            | _ -> false
+
+        | '!' -> s <> "!="
+        | _ -> false
+
     let IsPrefixOperator s =
         if String.IsNullOrEmpty s then false else
         let s = DecompileOpName s
-        match s with 
-        | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
-        | _ ->
-            (s.[0] = '!' && s <> "!=")
-            // The check for the first character here could be eliminated since it's covered
-            // by the call to String.forall; it is a fast check used to avoid the call if possible.
-            || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
+        IsValidPrefixOperatorDefinitionName s
 
     let IsPunctuation s =
         if String.IsNullOrEmpty s then false else
@@ -588,20 +601,23 @@ module public FSharp.Compiler.PrettyNaming
     let IllegalCharactersInTypeAndNamespaceNames = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"'; '`'  |]
 
     /// Determines if the specified name is a valid name for an active pattern.
-    let IsActivePatternName (nm: string) =
-        let nameLen = nm.Length
-        // The name must start and end with '|'
-        (nm.IndexOf '|' = 0) &&
-        (nm.LastIndexOf '|' = nameLen - 1) &&
+    let IsActivePatternName (name: string) =
         // The name must contain at least one character between the starting and ending delimiters.
-        nameLen >= 3 &&
-        (
-           let core = nm.Substring(1, nameLen - 2)
-           // no operator characters except '|' and ' '
-           core |> String.forall (fun c -> c = '|' || c = ' ' || not (opCharSet.Contains c)) &&
-           // at least one non-operator or space character
-           core |> String.exists (fun c -> c = ' ' || not (opCharSet.Contains c))
-        )
+        let nameLen = name.Length
+        if nameLen < 3 || name.[0] <> '|' || name.[nameLen - 1] <> '|' then
+            false
+        else
+            let rec isCoreActivePatternName (name: string) idx seenNonOpChar =
+                if idx = name.Length - 1 then
+                    seenNonOpChar
+                else
+                    let c = name.[idx]
+                    if opCharSet.Contains(c) && c <> '|' && c <> ' ' then
+                        false
+                    else
+                        isCoreActivePatternName name (idx + 1) (seenNonOpChar || c <> '|')
+
+            isCoreActivePatternName name 1 false
 
     //IsActivePatternName "|+|" = false
     //IsActivePatternName "|ABC|" = true

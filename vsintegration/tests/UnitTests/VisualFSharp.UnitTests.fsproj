@@ -7,7 +7,6 @@
     <PlatformTarget>x86</PlatformTarget>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);44;58;75;3005</NoWarn>
-    <DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DefaultValueTuplePackageVersion>$(SystemValueTupleVersion)</DefaultValueTuplePackageVersion>
@@ -92,9 +91,6 @@
     <Compile Include="..\..\..\tests\service\CSharpProjectAnalysis.fs">
       <Link>CompilerService\CSharpProjectAnalysis.fs</Link>
     </Compile>
-    <Compile Include="..\..\..\tests\service\ProjectOptionsTests.fs">
-      <Link>CompilerService\ProjectOptionsTests.fs</Link>
-    </Compile>
     <Compile Include="..\..\..\tests\service\StructureTests.fs">
       <Link>CompilerService\StructureTests.fs</Link>
     </Compile>
@@ -147,6 +143,9 @@
     </Compile>
     <Compile Include="CompletionProviderTests.fs">
       <Link>Roslyn\CompletionProviderTests.fs</Link>
+    </Compile>
+    <Compile Include="FsxCompletionProviderTests.fs">
+      <Link>Roslyn\FsxCompletionProviderTests.fs</Link>
     </Compile>
     <Compile Include="SignatureHelpProviderTests.fs">
       <Link>Roslyn\SignatureHelpProviderTests.fs</Link>

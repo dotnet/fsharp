@@ -20,6 +20,7 @@ type AssemblyLoader =
 
     /// Resolve an Abstract IL assembly reference to a Ccu
     abstract FindCcuFromScopeRef : CompilationThreadToken * range * ILScopeRef -> CcuResolutionResult
+    abstract FindCcuFromAssemblyRef : CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 
 #if !NO_EXTENSIONTYPING
     /// Get a flag indicating if an assembly is a provided assembly, plus the

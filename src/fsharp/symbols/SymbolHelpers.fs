@@ -8,7 +8,6 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System
-open System.Collections.Generic
 open System.IO
 
 open Microsoft.FSharp.Core.Printf
@@ -43,13 +42,17 @@ type FSharpErrorSeverity =
     | Warning 
     | Error
 
-type FSharpErrorInfo(fileName, s: pos, e: pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) = 
+type FSharpErrorInfo(fileName, s: pos, e: pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
+    member __.Start = s
+    member __.End = e
+
     member __.StartLine = Line.toZ s.Line
     member __.StartLineAlternate = s.Line
     member __.EndLine = Line.toZ e.Line
     member __.EndLineAlternate = e.Line
     member __.StartColumn = s.Column
     member __.EndColumn = e.Column
+
     member __.Severity = severity
     member __.Message = message
     member __.Subcategory = subcategory
@@ -117,7 +120,7 @@ type ErrorScope()  =
     /// may hit internal compiler failures.
     ///
     /// In some calling cases, we get a chance to report the error as part of user text. For example
-    /// if there is a "msising assembly" error while formatting the text of the description of an
+    /// if there is a "missing assembly" error while formatting the text of the description of an
     /// autocomplete, then the error message is shown in replacement of the text (rather than crashing Visual
     /// Studio, or swallowing the exception completely)
     static member Protect<'a> (m: range) (f: unit->'a) (err: string->'a): 'a = 
@@ -212,7 +215,7 @@ type FSharpXmlDoc =
 type FSharpToolTipElementData<'T> = 
     { MainDescription:  'T 
       XmlDoc: FSharpXmlDoc
-      /// typar insantiation text, to go after xml
+      /// typar instantiation text, to go after xml
       TypeMapping: 'T list
       Remarks: 'T option
       ParamName : string option }
@@ -720,9 +723,9 @@ module internal SymbolHelpers =
             // In this case just bail out and assume items are not equal
             protectAssemblyExploration false (fun () -> 
               let equalHeadTypes(ty1, ty2) =
-                  match tryDestAppTy g ty1 with
+                  match tryTcrefOfAppTy g ty1 with
                   | ValueSome tcref1 ->
-                    match tryDestAppTy g ty2 with
+                    match tryTcrefOfAppTy g ty2 with
                     | ValueSome tcref2 -> tyconRefEq g tcref1 tcref2
                     | _ -> typeEquiv g ty1 ty2
                   | _ -> typeEquiv g ty1 ty2
@@ -762,7 +765,7 @@ module internal SymbolHelpers =
               | Item.Property(_, pi1s), Item.Property(_, pi2s) -> 
                   List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Item.Event evt1, Item.Event evt2 -> 
-                  EventInfo.EventInfosUseIdenticalDefintions evt1 evt2
+                  EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
               | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
                  Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
@@ -781,7 +784,7 @@ module internal SymbolHelpers =
             protectAssemblyExploration 1027 (fun () -> 
               match item with 
               | ItemWhereTypIsPreferred ty -> 
-                  match tryDestAppTy g ty with
+                  match tryTcrefOfAppTy g ty with
                   | ValueSome tcref -> hash tcref.LogicalName
                   | _ -> 1010
               | Item.ILField(ILFieldInfo(_, fld)) -> 
@@ -840,19 +843,22 @@ module internal SymbolHelpers =
         // This may explore assemblies that are not in the reference set.
         // In this case just assume the item is not suppressed.
         protectAssemblyExploration true (fun () -> 
-         match item with 
-         | Item.Types(it, [ty]) -> 
-             isAppTy g ty &&
-             g.suppressed_types 
-             |> List.exists (fun supp -> 
-                let generalizedSupp = generalizedTyconRef supp
-                // check the display name is precisely the one we're suppressing
-                isAppTy g generalizedSupp && it = supp.DisplayName &&
-                // check if they are the same logical type (after removing all abbreviations)
-                let tcr1 = tcrefOfAppTy g ty
-                let tcr2 = tcrefOfAppTy g generalizedSupp
-                tyconRefEq g tcr1 tcr2) 
-         | _ -> false)
+            match item with 
+            | Item.Types(it, [ty]) -> 
+                match tryTcrefOfAppTy g ty with
+                | ValueSome tcr1 ->
+                    g.suppressed_types 
+                    |> List.exists (fun supp ->
+                        let generalizedSupp = generalizedTyconRef supp
+                        // check the display name is precisely the one we're suppressing
+                        match tryTcrefOfAppTy g generalizedSupp with
+                        | ValueSome tcr2 ->
+                            it = supp.DisplayName &&
+                            // check if they are the same logical type (after removing all abbreviations) 
+                            tyconRefEq g tcr1 tcr2
+                        | _ -> false) 
+                | _ -> false
+            | _ -> false)
 
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
     let RemoveExplicitlySuppressed (g: TcGlobals) (items: ItemWithInst list) = 
@@ -893,7 +899,7 @@ module internal SymbolHelpers =
         | Item.FakeInterfaceCtor ty 
         | Item.DelegateCtor ty 
         | Item.Types(_, ty :: _) -> 
-            match tryDestAppTy g ty with
+            match tryTcrefOfAppTy g ty with
             | ValueSome tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
@@ -1301,7 +1307,7 @@ module internal SymbolHelpers =
 
 #endif
 
-    /// Get the "F1 Keyword" associated with an item, for looking up documentatio help indexes on the web
+    /// Get the "F1 Keyword" associated with an item, for looking up documentation help indexes on the web
     let rec GetF1Keyword (g: TcGlobals) item = 
 
         let getKeywordForMethInfo (minfo : MethInfo) =

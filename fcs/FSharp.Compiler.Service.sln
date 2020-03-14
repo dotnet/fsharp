@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29418.71
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{B6B68AE6-E7A4-4D43-9B34-FFA74BFE192B}"
 	ProjectSection(SolutionItems) = preProject
@@ -9,7 +9,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{B6B6
 		build.sh = build.sh
 		nuget\FSharp.Compiler.Service.MSBuild.v12.nuspec = nuget\FSharp.Compiler.Service.MSBuild.v12.nuspec
 		nuget\FSharp.Compiler.Service.nuspec = nuget\FSharp.Compiler.Service.nuspec
-		nuget\FSharp.Compiler.Service.ProjectCracker.nuspec = nuget\FSharp.Compiler.Service.ProjectCracker.nuspec
 		paket.dependencies = paket.dependencies
 		README.md = README.md
 		RELEASE_NOTES.md = RELEASE_NOTES.md
@@ -41,23 +40,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{0554567F
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{E396742E-B4E5-4584-A9E4-CC1A491F5BC1}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EditorService", "samples\EditorService\EditorService.fsproj", "{A40507D6-FA48-43D3-B18A-AE3DAACE4020}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "EditorService", "samples\EditorService\EditorService.fsproj", "{A40507D6-FA48-43D3-B18A-AE3DAACE4020}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "InteractiveService", "samples\InteractiveService\InteractiveService.fsproj", "{067E95E5-E3DC-4CA7-813A-4D1E277D2D52}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "InteractiveService", "samples\InteractiveService\InteractiveService.fsproj", "{067E95E5-E3DC-4CA7-813A-4D1E277D2D52}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Tokenizer", "samples\Tokenizer\Tokenizer.fsproj", "{92793069-816F-4F69-84AC-0966F8275E65}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Tokenizer", "samples\Tokenizer\Tokenizer.fsproj", "{92793069-816F-4F69-84AC-0966F8275E65}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UntypedTree", "samples\UntypedTree\UntypedTree.fsproj", "{C816728D-BBEA-472D-9F6C-E8913957A673}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "UntypedTree", "samples\UntypedTree\UntypedTree.fsproj", "{C816728D-BBEA-472D-9F6C-E8913957A673}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FscExe", "samples\FscExe\FscExe.fsproj", "{C94C257C-3C0A-4858-B5D8-D746498D1F08}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FscExe", "samples\FscExe\FscExe.fsproj", "{C94C257C-3C0A-4858-B5D8-D746498D1F08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp_Analysis", "FSharp.Compiler.Service.Tests\CSharp_Analysis\CSharp_Analysis.csproj", "{887630A3-4B1D-40EA-B8B3-2D842E9C40DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp_Analysis", "FSharp.Compiler.Service.Tests\CSharp_Analysis\CSharp_Analysis.csproj", "{887630A3-4B1D-40EA-B8B3-2D842E9C40DB}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsiExe", "samples\FsiExe\FsiExe.fsproj", "{F9540CA8-1CE0-4546-A23A-A461E416E95B}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Service.ProjectCrackerTool", "FSharp.Compiler.Service.ProjectCrackerTool\FSharp.Compiler.Service.ProjectCrackerTool.fsproj", "{B1BDD96D-47E1-4E65-8107-FBAE23A06DB4}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Service.ProjectCracker", "FSharp.Compiler.Service.ProjectCracker\FSharp.Compiler.Service.ProjectCracker.fsproj", "{893C3CD9-5AF8-4027-A667-21E62FC2C703}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FsiExe", "samples\FsiExe\FsiExe.fsproj", "{F9540CA8-1CE0-4546-A23A-A461E416E95B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{098D1C35-D0FB-4720-83DD-8002293EA237}"
 	ProjectSection(SolutionItems) = preProject
@@ -71,14 +66,13 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "package", "package", "{9020E136-794A-473F-9B1B-9623C97B7161}"
 	ProjectSection(SolutionItems) = preProject
 		nuget\FSharp.Compiler.Service.template = nuget\FSharp.Compiler.Service.template
-		nuget\projectcracker.template = nuget\projectcracker.template
 	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Service.MSBuild.v12", "FSharp.Compiler.Service.MSBuild.v12\FSharp.Compiler.Service.MSBuild.v12.fsproj", "{8157B50E-397D-4232-A4E0-1977AFC7076D}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service.MSBuild.v12", "FSharp.Compiler.Service.MSBuild.v12\FSharp.Compiler.Service.MSBuild.v12.fsproj", "{8157B50E-397D-4232-A4E0-1977AFC7076D}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Service", "FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj", "{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service", "FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj", "{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Service.Tests", "FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj", "{EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service.Tests", "FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj", "{EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -114,14 +108,6 @@ Global
 		{F9540CA8-1CE0-4546-A23A-A461E416E95B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F9540CA8-1CE0-4546-A23A-A461E416E95B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F9540CA8-1CE0-4546-A23A-A461E416E95B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B1BDD96D-47E1-4E65-8107-FBAE23A06DB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B1BDD96D-47E1-4E65-8107-FBAE23A06DB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B1BDD96D-47E1-4E65-8107-FBAE23A06DB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B1BDD96D-47E1-4E65-8107-FBAE23A06DB4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{893C3CD9-5AF8-4027-A667-21E62FC2C703}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{893C3CD9-5AF8-4027-A667-21E62FC2C703}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{893C3CD9-5AF8-4027-A667-21E62FC2C703}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{893C3CD9-5AF8-4027-A667-21E62FC2C703}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8157B50E-397D-4232-A4E0-1977AFC7076D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8157B50E-397D-4232-A4E0-1977AFC7076D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8157B50E-397D-4232-A4E0-1977AFC7076D}.Release|Any CPU.ActiveCfg = Release|Any CPU

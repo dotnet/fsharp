@@ -475,10 +475,16 @@ module public AstTraversal =
                 | SynExpr.ImplicitZero (_range) -> None
                 | SynExpr.YieldOrReturn (_, synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.YieldOrReturnFrom (_, synExpr, _range) -> traverseSynExpr synExpr
-                | SynExpr.LetOrUseBang (_sequencePointInfoForBinding, _, _, synPat, synExpr, synExpr2, _range) -> 
-                    [dive synPat synPat.Range traversePat
-                     dive synExpr synExpr.Range traverseSynExpr
-                     dive synExpr2 synExpr2.Range traverseSynExpr]
+                | SynExpr.LetOrUseBang(_sequencePointInfoForBinding, _, _, synPat, synExpr, andBangSynExprs, synExpr2, _range) -> 
+                    [
+                        yield dive synPat synPat.Range traversePat
+                        yield dive synExpr synExpr.Range traverseSynExpr
+                        yield!
+                            [ for (_,_,_,andBangSynPat,andBangSynExpr,_) in andBangSynExprs do
+                                yield (dive andBangSynPat andBangSynPat.Range traversePat)
+                                yield (dive andBangSynExpr andBangSynExpr.Range traverseSynExpr)]
+                        yield dive synExpr2 synExpr2.Range traverseSynExpr
+                    ]
                     |> pick expr
                 | SynExpr.MatchBang (_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
