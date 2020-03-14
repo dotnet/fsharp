@@ -132,15 +132,15 @@ module public FSharp.Compiler.PrettyNaming
 
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
-        let rec isOperatorName (name: string) idx lastIdx =
-            if idx > lastIdx then
+        let rec isOperatorName (name: string) idx len =
+            if idx = len then
                 true
             else
                 let c = name.[idx]
                 if not (opCharSet.Contains(c)) || c = ' ' then
                     false
                 else
-                    isOperatorName name (idx + 1) lastIdx
+                    isOperatorName name (idx + 1) len
 
         let skipParens =
             if name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") then
@@ -149,7 +149,7 @@ module public FSharp.Compiler.PrettyNaming
                 false
 
         let startIndex = if skipParens then 2 else 0
-        let lastIndex = if skipParens then name.Length - 1 else name.Length - 3
+        let lastIndex = if skipParens then name.Length else name.Length - 2
 
         isOperatorName name startIndex lastIndex || name = ".. .."
 
