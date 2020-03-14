@@ -365,36 +365,34 @@ module public FSharp.Compiler.PrettyNaming
         c = '.'
         || IsIdentifierPartCharacter c
 
+    let rec isTildaOnlyString (s: string) =
+        let rec loop (s: string) idx =
+            if idx >= s.Length then
+                true
+            elif s.[idx] <> '~' then
+                false
+            else
+                loop s (idx + 1)
+        loop s 0
+
     let IsValidPrefixOperatorUse s =
         if String.IsNullOrEmpty s then false else
         match s with 
         | "?+" | "?-" | "+" | "-" | "+." | "-." | "%" | "%%" | "&" | "&&" -> true
-        | _ ->
-            s.[0] = '!'
-            // The check for the first character here could be eliminated since it's covered
-            // by the call to String.forall; it is a fast check used to avoid the call if possible.
-            || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
-    
+        | _ -> s.[0] = '!' || isTildaOnlyString s
+
     let IsValidPrefixOperatorDefinitionName s = 
         if String.IsNullOrEmpty s then false else
         match s with 
         | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
-        | _ ->
-            (s.[0] = '!' && s <> "!=")
-            // The check for the first character here could be eliminated since it's covered
-            // by the call to String.forall; it is a fast check used to avoid the call if possible.
-            || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
-        
+        | _ -> (s.[0] = '!' && s <> "!=") || isTildaOnlyString s
+
     let IsPrefixOperator s =
         if String.IsNullOrEmpty s then false else
         let s = DecompileOpName s
         match s with 
         | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
-        | _ ->
-            (s.[0] = '!' && s <> "!=")
-            // The check for the first character here could be eliminated since it's covered
-            // by the call to String.forall; it is a fast check used to avoid the call if possible.
-            || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
+        | _ -> (s.[0] = '!' && s <> "!=") || isTildaOnlyString s
 
     let IsPunctuation s =
         if String.IsNullOrEmpty s then false else
