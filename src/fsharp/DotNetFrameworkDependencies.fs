@@ -25,11 +25,13 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             // Use the location of this dll
             location
 
+    let inline ifEmptyUse alternative filename = if String.IsNullOrEmpty filename then alternative else filename
+    
     let getFSharpCoreLibraryName = "FSharp.Core"
     let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
     let getDefaultFSharpCoreLocation = Path.Combine(fSharpCompilerLocation, getFSharpCoreLibraryName + ".dll")
     let getDefaultFsiLibraryLocation = Path.Combine(fSharpCompilerLocation, getFsiLibraryName + ".dll")
-    let implementationAssemblyDir = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
+    let implementationAssemblyDir = Path.GetDirectoryName(typeof<obj>.Assembly.Location) |> ifEmptyUse fSharpCompilerLocation
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
