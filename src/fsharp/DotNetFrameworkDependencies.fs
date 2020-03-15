@@ -25,7 +25,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             // Use the location of this dll
             location
 
-    let inline ifEmptyUse alternative filename = if String.IsNullOrEmpty filename then alternative else filename
+    let inline ifEmptyUse alternative filename = if String.IsNullOrWhiteSpace filename then alternative else filename
     
     let getFSharpCoreLibraryName = "FSharp.Core"
     let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
