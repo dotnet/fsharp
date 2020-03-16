@@ -279,27 +279,27 @@ stages:
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests -c Release
             displayName: End to end build tests
 
-        # Source Build Linux
-        - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-          - job: SourceBuild_Linux
-            pool:
-              vmImage: ubuntu-16.04
-            steps:
-            - checkout: self
-              clean: true
-            - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
-              displayName: Build
-            - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-              displayName: Dump NuGet cache contents
-              condition: failed()
-            - task: PublishBuildArtifacts@1
-              displayName: Publish NuGet cache contents
-              inputs:
-                PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-                ArtifactName: 'NuGetPackageContents SourceBuild_Linux'
-                publishLocation: Container
-              continueOnError: true
-              condition: failed()
+        # Source Build Linux - disabled until MSBuild/NuGet issues are resolved
+        # - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+        #   - job: SourceBuild_Linux
+        #     pool:
+        #       vmImage: ubuntu-16.04
+        #     steps:
+        #     - checkout: self
+        #       clean: true
+        #     - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
+        #       displayName: Build
+        #     - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+        #       displayName: Dump NuGet cache contents
+        #       condition: failed()
+        #     - task: PublishBuildArtifacts@1
+        #       displayName: Publish NuGet cache contents
+        #       inputs:
+        #         PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+        #         ArtifactName: 'NuGetPackageContents SourceBuild_Linux'
+        #         publishLocation: Container
+        #       continueOnError: true
+        #       condition: failed()
 
         # Source Build Windows
         - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
