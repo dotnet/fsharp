@@ -360,7 +360,7 @@ module public FSharp.Compiler.PrettyNaming
         c = '.'
         || IsIdentifierPartCharacter c
 
-    let isTildaOnlyString (s: string) =
+    let isTildeOnlyString (s: string) =
         let rec loop (s: string) idx =
             if idx >= s.Length then
                 true
@@ -374,14 +374,14 @@ module public FSharp.Compiler.PrettyNaming
         if String.IsNullOrEmpty s then false else
         match s with 
         | "?+" | "?-" | "+" | "-" | "+." | "-." | "%" | "%%" | "&" | "&&" -> true
-        | _ -> s.[0] = '!' || isTildaOnlyString s
+        | _ -> s.[0] = '!' || isTildeOnlyString s
 
     let IsValidPrefixOperatorDefinitionName s = 
         if String.IsNullOrEmpty s then false else
 
         match s.[0] with
         | '~' ->
-            isTildaOnlyString s ||
+            isTildeOnlyString s ||
 
             match s with
             | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
