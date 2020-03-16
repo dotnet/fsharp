@@ -215,10 +215,13 @@ let GetMostSpecificItemsByType g amap f xs =
                 yield x ]
 
 /// Finds the most specific methods from a method collection by a given method's signature.
-let GetMostSpecificMethodInfosByMethInfoSig g amap m minfo minfos =
+let GetMostSpecificMethodInfosByMethInfoSig g amap m (ty, minfo) minfos =
     minfos
-    |> GetMostSpecificItemsByType g amap (fun minfo2 -> 
-        if MethInfosEquivByPartialSig EraseNone true g amap m minfo minfo2 then
+    |> GetMostSpecificItemsByType g amap (fun (ty2, minfo2) -> 
+        let isEqual =
+            typeEquiv g ty ty2 &&
+            MethInfosEquivByPartialSig EraseNone true g amap m minfo minfo2
+        if isEqual then
             Some(minfo2.ApparentEnclosingType, m)
         else
             None)
@@ -228,15 +231,16 @@ let FilterMostSpecificMethInfoSets g amap m (minfoSets: NameMultiMap<_>) : NameM
     minfoSets
     |> Map.map (fun _ minfos ->
         ([], minfos)
-        ||> List.fold (fun minfoSpecifics minfo ->
+        ||> List.fold (fun minfoSpecifics (ty, minfo) ->
             let alreadySeen = 
                 minfoSpecifics 
-                |> List.exists (fun minfoSpecific -> 
+                |> List.exists (fun (tySpecific, minfoSpecific) -> 
+                    typeEquiv g ty tySpecific &&
                     MethInfosEquivByPartialSig EraseNone true g amap m minfo minfoSpecific)
             if alreadySeen then
                 minfoSpecifics
             else
-                GetMostSpecificMethodInfosByMethInfoSig g amap m minfo minfos @ minfoSpecifics))
+                GetMostSpecificMethodInfosByMethInfoSig g amap m (ty, minfo) minfos @ minfoSpecifics))
 
 /// Sets of methods up the hierarchy, ignoring duplicates by name and sig.
 /// Used to collect sets of virtual methods, protected methods, protected
@@ -376,9 +380,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
           ty
           None
 
-    let GetImmediateIntrinsicOverrideMethodSetsOfType optFilter m ty acc =
+    let GetImmediateIntrinsicOverrideMethodSetsOfType optFilter m (interfaceTys: TType list) ty acc =
         match tryAppTy g ty with
-        | ValueSome (tcref, _) when tcref.IsILTycon ->
+        | ValueSome (tcref, _) when tcref.IsILTycon && tcref.ILTyconRawMetadata.IsInterface ->
             let mimpls = tcref.ILTyconRawMetadata.MethodImpls.AsList
             let mdefs = tcref.ILTyconRawMetadata.Methods
 
@@ -388,19 +392,33 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
             (acc, mimpls)
             ||> List.fold (fun acc ilMethImpl ->
                 let overridesName = ilMethImpl.Overrides.MethodRef.Name
+                let overrideBy = ilMethImpl.OverrideBy
                 let canAccumulate =     
                     match optFilter with
                     | None -> true
                     | Some name when name = overridesName -> true
                     | _ -> false
                 if canAccumulate then
-                    let overrideBy = ilMethImpl.OverrideBy
                     match mdefs.TryFindInstanceByNameAndCallingSignature (overrideBy.Name, overrideBy.MethodRef.CallingSignature) with
                     | Some mdef ->
                         let overridesILTy = ilMethImpl.Overrides.DeclaringType
-                        if Import.CanImportILType amap m overridesILTy then
-                            NameMultiMap.add overridesName (MethInfo.CreateILMeth(amap, m, ty, mdef)) acc
-                        else
+                        let overridesTyFullName = overridesILTy.TypeRef.FullName
+                        let overridesTyOpt = 
+                            interfaceTys
+                            |> List.tryPick (fun ty -> 
+                                match tryTcrefOfAppTy g ty with
+                                | ValueSome tcref when tcref.IsILTycon && tcref.ILTyconRawMetadata.Name = overridesTyFullName ->
+                                    let tinst =
+                                        tcref.Typars m
+                                        |> List.map mkTyparTy
+                                    ImportILType tcref.CompilationPath.ILScopeRef amap m tinst overridesILTy
+                                    |> Some
+                                | _ -> 
+                                    None)
+                        match overridesTyOpt with
+                        | Some overridesTy ->
+                            NameMultiMap.add overridesName (overridesTy, MethInfo.CreateILMeth(amap, m, ty, mdef)) acc
+                        | _ ->
                             acc
                     | _ ->
                         acc
@@ -410,7 +428,13 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
     /// Visiting each type in the hierarchy and accumulate most specific methods that are the OverrideBy target from types.
     let GetIntrinsicMostSpecificOverrideMethodSetsUncached ((optFilter, _ad, allowMultiIntfInst), m, ty) : NameMultiMap<_> =
-        FoldPrimaryHierarchyOfType (fun ty acc -> GetImmediateIntrinsicOverrideMethodSetsOfType optFilter m ty acc) g amap m allowMultiIntfInst ty NameMultiMap.Empty
+        let interfaceTys = 
+            FoldPrimaryHierarchyOfType (fun ty acc ->
+                if isInterfaceTy g ty then ty :: acc
+                else acc) g amap m allowMultiIntfInst ty []
+
+        (NameMultiMap.Empty, interfaceTys)
+        ||> List.fold (fun acc ty -> GetImmediateIntrinsicOverrideMethodSetsOfType optFilter m interfaceTys ty acc)
         |> FilterMostSpecificMethInfoSets g amap m
 
     /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 

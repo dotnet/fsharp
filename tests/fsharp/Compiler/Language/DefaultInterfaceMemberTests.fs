@@ -3721,7 +3721,7 @@ using System;
 
 namespace CSharpTest
 {
-    public interface ITest1
+    public interface ITest1<T>
     {
         void Method1(int x)
         {
@@ -3729,7 +3729,7 @@ namespace CSharpTest
         }
     }
 
-    public interface ITest2 : ITest1
+    public interface ITest2<T> : ITest1<T>
     {
         void Method1(int x)
         {
@@ -3737,14 +3737,14 @@ namespace CSharpTest
         }
     }
 
-    public interface ITest3 : ITest2
+    public interface ITest3 : ITest2<int>
     {
-        void ITest1.Method1(int x)
+        void ITest1<int>.Method1(int x)
         {
             Console.Write(x);
         }
 
-        void ITest2.Method1(int x)
+        void ITest2<int>.Method1(int x)
         {
             Console.Write(x);
         }
@@ -3759,7 +3759,7 @@ open CSharpTest
 
 type Test () =
 
-    interface ITest2
+    interface ITest2<int>
     interface ITest3
 
 [<EntryPoint>]

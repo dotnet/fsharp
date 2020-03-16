@@ -456,13 +456,15 @@ module DispatchSlotChecking =
             |> FilterMostSpecificMethInfoSets g amap range0
 
     /// Finds the override interface methods from the most specific overrides by the given method.
-    let GetMostSpecificOverrideInterfaceMethodsByMethod g amap m mostSpecificOverrides (minfo: MethInfo) =
+    let GetMostSpecificOverrideInterfaceMethodsByMethod g amap m (mostSpecificOverrides: NameMultiMap<TType * MethInfo>) (minfo: MethInfo) =
         let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo
         NameMultiMap.find minfo.LogicalName mostSpecificOverrides
-        |> List.filter (fun minfo -> IsSigExactMatch g amap m minfo overrideBy)
+        |> List.filter (fun (overridenTy, minfo2) -> 
+            typeEquiv g overridenTy minfo.ApparentEnclosingType && 
+            IsSigExactMatch g amap m minfo2 overrideBy)
 
     /// Get a collection of slots for the given interface type.
-    let GetInterfaceDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces (mostSpecificOverrides: NameMultiMap<MethInfo>) interfaceTy =
+    let GetInterfaceDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces mostSpecificOverrides interfaceTy =
         let g = infoReader.g
         let amap = infoReader.amap
 
@@ -499,7 +501,7 @@ module DispatchSlotChecking =
                                 yield DefaultInterfaceImplementationSlot (minfo, isMethodOptional minfo, false)
 
                           // One override, one default implementation.
-                          | [ minfo2 ] ->
+                          | [ (_, minfo2) ] ->
                             yield DefaultInterfaceImplementationSlot (minfo, isMethodOptional minfo2, false)
 
                           // We found multiple override methods, means we might have ambiguity.
@@ -522,12 +524,12 @@ module DispatchSlotChecking =
                     yield RequiredSlot(minfo, not minfo.IsAbstract) ]
 
     /// Get a collection of slots for the given type and implied types.
-    let GetDispatchSlotSet (infoReader: InfoReader) ad m availImpliedInterfaces mostSpecificInterfaceTys reqdTy impliedTys =
+    let GetDispatchSlotSet (infoReader: InfoReader) ad m availImpliedInterfaces mostSpecificOverrides reqdTy impliedTys =
         let g = infoReader.g
 
         if isInterfaceTy g reqdTy then 
             [ for impliedTy in impliedTys do
-                yield (impliedTy, GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces mostSpecificInterfaceTys impliedTy) ]
+                yield (impliedTy, GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces mostSpecificOverrides impliedTy) ]
         else                  
             [ (reqdTy, GetClassDispatchSlots infoReader ad m reqdTy) ]
 
