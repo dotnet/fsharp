@@ -54,7 +54,7 @@
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="new">From the end slicing with requires language version 5.0, use /langversion:preview.</target>
+        <target state="translated">La segmentación final requiere la versión de lenguaje 5.0, use /langversion:preview.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -84,7 +84,7 @@
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <target state="translated">La característica de administración de paquetes requiere la versión de lenguaje 5.0; use /langversion:preview</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -109,17 +109,17 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
+        <target state="translated">Este es un registro anónimo incorrecto. Debe tener los campos {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSubset">
         <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
+        <target state="translated">Este registro anónimo no tiene suficientes campos. Agregue los campos que faltan {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
+        <target state="translated">Este registro anónimo tiene demasiados campos. Quite los campos adicionales {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">Todas las ramas de una expresión de coincidencia de patrón deben devolver valores del mismo tipo. La primera rama devolvió un valor de tipo "{0}", pero esta rama devolvió un valor de tipo "\{1 \}".</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -1179,7 +1179,7 @@
       </trans-unit>
       <trans-unit id="augCustomEqNeedsObjEquals">
         <source>A type with attribute 'CustomEquality' must have an explicit implementation of at least one of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">Un tipo con atributo "CustomEquality" debe tener una implementación explícita de al menos uno de "Object.Equals (obj)", "System.IEquatable&lt;_&amp;gt"' o "System.Collections.IStructuralEquatable"</target>
+        <target state="translated">Un tipo con atributo "CustomEquality" debe tener una implementación explícita de al menos uno de "Object.Equals (obj)", "System.IEquatable&lt;_&gt;"' o "System.Collections.IStructuralEquatable"</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomCompareNeedsIComp">
@@ -2254,7 +2254,7 @@
       </trans-unit>
       <trans-unit id="parsIncompleteIf">
         <source>Incomplete conditional. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Condicional incompleta. Se esperaba "if &lt;expr&gt; then &lt;expr&gt;" o "if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&amp;gt".</target>
+        <target state="translated">Condicional incompleta. Se esperaba "if &lt;expr&gt; then &lt;expr&gt;" o "if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAssertIsNotFirstClassValue">
@@ -5464,7 +5464,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
         <source>Unexpected quotation operator '&lt;@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '&lt;' and '@' characters.</source>
-        <target state="translated">Operador de cita inesperada "&lt;@" en definición de tipo. Si desea pasar una cadena textual como un argumento estático a un proveedor de tipos, ponga un espacio entre los caracteres "&amp;lt" y "@".</target>
+        <target state="translated">Operador de cita inesperada "&lt;@" en definición de tipo. Si desea pasar una cadena textual como un argumento estático a un proveedor de tipos, ponga un espacio entre los caracteres "&lt;" y "@".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsErrorParsingAsOperatorName">
@@ -6259,7 +6259,7 @@
       </trans-unit>
       <trans-unit id="chkNoByrefsOfByrefs">
         <source>Type '{0}' is illegal because in byref&lt;T&gt;, T cannot contain byref types.</source>
-        <target state="translated">El tipo "{0}" no es válido porque en  byref&lt;T&gt;, T no puede contener tipos byref.</target>
+        <target state="translated">El tipo "{0}" no es válido porque en byref&lt;T&gt;, T no puede contener tipos byref.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastopsMaxArrayThirtyTwo">
@@ -7214,7 +7214,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="needs-review-translation">Dos tipos de registros anónimos tienen conjuntos de nombres de campo que no coinciden "{0}" y "{1}"</target>
+        <target state="translated">Este registro anónimo no coincide exactamente con la forma esperada. Agregue los campos que faltan {0} y quite los campos adicionales {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
@@ -7309,22 +7309,22 @@
       </trans-unit>
       <trans-unit id="optsCompilerTool">
         <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
-        <target state="new">Reference an assembly or directory containing a design time tool (Short form: -t)</target>
+        <target state="translated">Referencia a un ensamblado o directorio que contiene una herramienta de tiempo de diseño (forma corta: -t)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <target state="translated">La clave del administrador de paquetes "{0}" no se registró en {1}. Registrada actualmente: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
         <source>{0}</source>
-        <target state="new">{0}</target>
+        <target state="translated">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadDependencyManagerExtension">
         <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
-        <target state="new">The dependency manager extension {0} could not be loaded. Message: {1}</target>
+        <target state="translated">No se pudo cargar la extensión del administrador de dependencias {0}. Mensaje: {1}</target>
         <note />
       </trans-unit>
     </body>
