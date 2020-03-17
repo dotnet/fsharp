@@ -1489,6 +1489,7 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3350,chkFeatureNotLanguageSupported,"Feature '%s' is not available in F# %s. Please use language version %s or greater."
 3351,chkFeatureNotRuntimeSupported,"Feature '%s' is not supported by target runtime."
 3352,typrelInterfaceMemberNoMostSpecificImplementation,"Interface member '%s' does not have a most specific implementation."
+3401,ilxgenInvalidConstructInStateMachineDuringCodegen,"The resumable code construct '%s' may only be used in inlined code protected by 'if __useResumableCode then ...' and the overall composition must form valid resumable code."
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
 fSharpBannerVersion,"%s for F# %s"
 optsLangVersion,"Display the allowed values for language version, specify language version such as 'latest' or 'preview'"

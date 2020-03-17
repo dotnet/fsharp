@@ -3,7 +3,7 @@
 [<NUnit.Framework.Category "Collections.Seq">]
 [<NUnit.Framework.Category "Collections.List">]
 [<NUnit.Framework.Category "Collections.Array">]
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections.CollectionModulesConsistency
+module FSharp.Core.UnitTests.Collections.CollectionModulesConsistency
 
 open System
 open System.Collections.Generic

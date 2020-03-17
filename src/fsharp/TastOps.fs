@@ -1141,7 +1141,7 @@ let tryDestRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo, _, es, _) w
 let rec rangeOfExpr x = 
     match x with
     | Expr.Val (_, _, m) | Expr.Op (_, _, _, m) | Expr.Const (_, m, _) | Expr.Quote (_, _, _, m, _)
-    | Expr.Obj (_, _, _, _, _, _, m) | Expr.App (_, _, _, _, m) | Expr.Sequential (_, _, _, _, m) 
+    | Expr.Obj (_, _, _, _, _, _, _, m) | Expr.App (_, _, _, _, m) | Expr.Sequential (_, _, _, _, m) 
     | Expr.StaticOptimization (_, _, _, m) | Expr.Lambda (_, _, _, _, _, m, _) 
     | Expr.TyLambda (_, _, _, m, _)| Expr.TyChoose (_, _, m) | Expr.LetRec (_, _, m, _) | Expr.Let (_, _, m, _) | Expr.Match (_, _, _, _, m, _) -> m
     | Expr.Link eref -> rangeOfExpr (!eref)
@@ -1164,7 +1164,7 @@ type MatchBuilder(spBind, inpRange: Range.range) =
         targets.Add tg
         n
 
-    member x.AddResultTarget(e, spTarget) = TDSuccess([], x.AddTarget(TTarget([], e, spTarget)))
+    member x.AddResultTarget(e, spTarget) = TDSuccess([], x.AddTarget(TTarget([], e, spTarget, None)))
 
     member x.CloseTargets() = targets |> ResizeArray.toList
 
@@ -1203,7 +1203,7 @@ let mkTypeLambda m vs (b, tau_ty) = match vs with [] -> b | _ -> Expr.TyLambda (
 let mkTypeChoose m vs b = match vs with [] -> b | _ -> Expr.TyChoose (vs, b, m)
 
 let mkObjExpr (ty, basev, basecall, overrides, iimpls, m) = 
-    Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, m) 
+    Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, [], m) 
 
 let mkLambdas m tps (vs: Val list) (b, rty) = 
     mkTypeLambda m tps (List.foldBack (fun v (e, ty) -> mkLambda m v (e, ty), v.Type --> ty) vs (b, rty))
@@ -3706,7 +3706,7 @@ module DebugPrint =
         reprL
 
     and bindingL g (TBind(v, repr, _)) =
-        valAtBindL g v --- (wordL(tagText "=") ^^ exprL g repr)
+        (valAtBindL g v ^^ wordL(tagText "=")) @@-- exprL g repr
 
     and exprL g expr = exprWrapL g false expr
 
@@ -3720,15 +3720,13 @@ module DebugPrint =
         (aboveListL eqnsL @@ bodyL) 
 
     and letL g bind bodyL = 
-        let eqnL = wordL(tagText "let") ^^ bindingL g bind ^^ wordL(tagText "in")
+        let eqnL = wordL(tagText "let") ^^ bindingL g bind
         (eqnL @@ bodyL) 
 
     and exprWrapL g isAtomic expr =
         let atomL args = atomL g args
         let exprL expr = exprL g expr
-        let iimplL iimpls = iimplL g iimpls
         let valAtBindL v = valAtBindL g v
-        let overrideL tmeth = overrideL g tmeth
         let targetL targets = targetL g targets
         let wrap = bracketIfL isAtomic // wrap iff require atomic expr 
         let lay =
@@ -3747,8 +3745,8 @@ module DebugPrint =
             | Expr.Sequential (expr1, expr2, flag, _, _) -> 
                 let flag = 
                     match flag with
-                    | NormalSeq -> "; (*Seq*)"
-                    | ThenDoSeq -> "; (*ThenDo*)" 
+                    | NormalSeq -> ";"
+                    | ThenDoSeq -> "; ThenDo" 
                 ((exprL expr1 ^^ rightL (tagText flag)) @@ exprL expr2) |> wrap
             | Expr.Lambda (_, _, baseValOpt, argvs, body, _, _) -> 
                 let formalsL = spaceListL (List.map valAtBindL argvs) in
@@ -3823,22 +3821,22 @@ module DebugPrint =
                 let meth = ilMethRef.Name
                 wordL(tagText "ILCall") ^^
                    aboveListL 
-                      [ wordL(tagText "meth ") --- wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
-                        wordL(tagText "tinst ") --- listL typeL tinst
-                        wordL(tagText "minst ") --- listL typeL minst
-                        wordL(tagText "tyargs") --- listL typeL tyargs
-                        wordL(tagText "args ") --- listL exprL args ] 
+                      [ yield wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
+                        if not tinst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL tinst
+                        if not minst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL minst
+                        if not tyargs.IsEmpty then yield wordL (tagText "tyargs") --- listL typeL tyargs
+                        if not args.IsEmpty then yield listL exprL args ] 
                     |> wrap
             | Expr.Op (TOp.Array, [_], xs, _) -> 
                 leftL(tagText "[|") ^^ commaListL (List.map exprL xs) ^^ rightL(tagText "|]")
-            | Expr.Op (TOp.While _, [], [x1;x2], _) -> 
-                wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do") ^^ exprL x2 ^^ rightL(tagText "}")
-            | Expr.Op (TOp.For _, [], [x1;x2;x3], _) -> 
+            | Expr.Op (TOp.While _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
+                (wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do")) @@-- exprL x2
+            | Expr.Op (TOp.For _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
                 wordL(tagText "for") ^^ aboveListL [(exprL x1 ^^ wordL(tagText "to") ^^ exprL x2 ^^ wordL(tagText "do")); exprL x3 ] ^^ rightL(tagText "done")
-            | Expr.Op (TOp.TryCatch _, [_], [x1;x2], _) -> 
-                wordL(tagText "try") ^^ exprL x1 ^^ wordL(tagText "with") ^^ exprL x2 ^^ rightL(tagText "}")
-            | Expr.Op (TOp.TryFinally _, [_], [x1;x2], _) -> 
-                wordL(tagText "try") ^^ exprL x1 ^^ wordL(tagText "finally") ^^ exprL x2 ^^ rightL(tagText "}")
+            | Expr.Op (TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) -> 
+                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh) 
+            | Expr.Op (TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
+                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "finally") @@-- exprL x2)
             | Expr.Op (TOp.Bytes _, _, _, _) -> 
                 wordL(tagText "bytes++")
             | Expr.Op (TOp.UInt16s _, _, _, _) -> wordL(tagText "uint16++")
@@ -3848,15 +3846,21 @@ module DebugPrint =
             | Expr.Op (TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldSet...")
             | Expr.Op (TOp.TryFinally _, _tyargs, _args, _) -> wordL(tagText "TOp.TryFinally...")
             | Expr.Op (TOp.TryCatch _, _tyargs, _args, _) -> wordL(tagText "TOp.TryCatch...")
+            | Expr.Op (TOp.Goto l, _tys, args, _) -> wordL(tagText ("Expr.Goto " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
+            | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Quote (a, _, _, _, _) -> leftL(tagText "<@") ^^ atomL a ^^ rightL(tagText "@>")
-            | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _) -> 
-                wordL(tagText "OBJ:") ^^ 
-                aboveListL [typeL ty
-                            exprL ccall
-                            optionL valAtBindL basev
-                            aboveListL (List.map overrideL overrides)
-                            aboveListL (List.map iimplL iimpls)]
+            | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _stateVars, _) -> 
+                (leftL (tagText "{") 
+                 @@--
+                  ((wordL(tagText "new ") ++ typeL ty) 
+                   @@-- 
+                   aboveListL [exprL ccall
+                               optionL valAtBindL basev
+                               aboveListL (List.map (tmethodL g) overrides)
+                               aboveListL (List.map (iimplL g) iimpls)]))
+                @@
+                rightL (tagText "}")
 
             | Expr.StaticOptimization (_tcs, csx, x, _) -> 
                 (wordL(tagText "opt") @@- (exprL x)) @@--
@@ -3868,14 +3872,12 @@ module DebugPrint =
         else lay
 
     and implFilesL g implFiles =
-        let implFileL implFiles = implFileL g implFiles
-        aboveListL (List.map implFileL implFiles)
+        aboveListL (List.map (implFileL g) implFiles)
 
     and appL g flayout tys args =
-        let atomL args = atomL g args
         let z = flayout
-        let z = z ^^ instL typeL tys
-        let z = z --- sepL(tagText "`") --- (spaceListL (List.map atomL args))
+        let z = if tys.Length > 0 then z ^^ instL typeL tys else z
+        let z = if args.Length > 0 then z --- spaceListL (List.map (atomL g) args) else z
         z
 
     and implFileL g (TImplFile (_, _, mexpr, _, _, _)) =
@@ -3886,14 +3888,11 @@ module DebugPrint =
         | ModuleOrNamespaceExprWithSig(mtyp, defs, _) -> mdefL g defs @@- (wordL(tagText ":") @@- entityTypeL g mtyp)
 
     and mdefsL  g defs =
-        let mdefL x = mdefL g x
-        wordL(tagText "Module Defs") @@-- aboveListL(List.map mdefL defs)
+        wordL(tagText "Module Defs") @@-- aboveListL(List.map (mdefL g) defs)
 
     and mdefL g x =
-        let tyconL tycon = tyconL g tycon
-        let mbindL x =  mbindL g x 
         match x with
-        | TMDefRec(_, tycons, mbinds, _) -> aboveListL ((tycons |> List.map tyconL) @ List.map mbindL mbinds)
+        | TMDefRec(_, tycons, mbinds, _) -> aboveListL ((tycons |> List.map (tyconL g)) @ (mbinds |> List.map (mbindL g)))
         | TMDefLet(bind, _) -> letL g bind emptyL
         | TMDefDo(e, _) -> exprL g e
         | TMDefs defs -> mdefsL g defs
@@ -3906,9 +3905,8 @@ module DebugPrint =
         (wordL (tagText (if mspec.IsNamespace then "namespace" else "module")) ^^ (wordL (tagText mspec.DemangledModuleOrNamespaceName) |> stampL mspec.Stamp)) @@-- mdefL g rhs
 
     and entityTypeL g (mtyp: ModuleOrNamespaceType) =
-        let tyconL tycon = tyconL g tycon
         aboveListL [jlistL typeOfValL mtyp.AllValsAndMembers
-                    jlistL tyconL mtyp.AllEntities]
+                    jlistL (tyconL g) mtyp.AllEntities]
 
     and entityL g (ms: ModuleOrNamespace) =
         let header = wordL(tagText "module") ^^ (wordL (tagText ms.DemangledModuleOrNamespaceName) |> stampL ms.Stamp) ^^ wordL(tagText ":")
@@ -3919,17 +3917,15 @@ module DebugPrint =
     and ccuL g (ccu: CcuThunk) = entityL g ccu.Contents
 
     and decisionTreeL g x =
-        let exprL expr = exprL g expr
-        let dcaseL dcases = dcaseL g dcases
         match x with 
         | TDBind (bind, body) -> 
-            let bind = wordL(tagText "let") ^^ bindingL g bind ^^ wordL(tagText "in") 
+            let bind = wordL(tagText "let") ^^ bindingL g bind //^^ wordL(tagText "in") 
             (bind @@ decisionTreeL g body) 
         | TDSuccess (args, n) -> 
-            wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map exprL)
+            wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map (exprL g))
         | TDSwitch (test, dcases, dflt, _) ->
-            (wordL(tagText "Switch") --- exprL test) @@--
-            (aboveListL (List.map dcaseL dcases) @@
+            (wordL(tagText "Switch") --- exprL g test) @@--
+            (aboveListL (List.map (dcaseL g) dcases) @@
              match dflt with
              | None -> emptyL
              | Some dtree -> wordL(tagText "dflt:") --- decisionTreeL g dtree)
@@ -3946,22 +3942,19 @@ module DebugPrint =
         | (DecisionTreeTest.ActivePatternCase (exp, _, _, _, _)) -> wordL(tagText "query") ^^ exprL g exp
         | (DecisionTreeTest.Error _) -> wordL (tagText "error recovery")
  
-    and targetL g i (TTarget (argvs, body, _)) = leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL g body
+    and targetL g i (TTarget (argvs, body, _, _)) =
+        leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL g body
 
     and flatValsL vs = vs |> List.map valL
 
     and tmethodL g (TObjExprMethod(TSlotSig(nm, _, _, _, _, _), _, tps, vs, e, _)) =
-        let valAtBindL v = valAtBindL g v
-        (wordL(tagText "TObjExprMethod") --- (wordL (tagText nm)) ^^ wordL(tagText "=")) --
-          (wordL(tagText "METH-LAM") --- angleBracketListL (List.map typarL tps) ^^ rightL(tagText ".")) ---
-          (wordL(tagText "meth-lam") --- tupleL (List.map (List.map valAtBindL >> tupleL) vs) ^^ rightL(tagText ".")) ---
+        ((wordL(tagText "TObjExprMethod") --- (wordL (tagText nm)) ^^ wordL(tagText "=")) --
+         (angleBracketListL (List.map typarL tps) ^^ rightL(tagText ".")) ---
+         (tupleL (List.map (List.map (valAtBindL g) >> tupleL) vs) ^^ rightL(tagText ".")))
+        @@--
           (atomL g e) 
 
-    and overrideL g tmeth = wordL(tagText "with") ^^ tmethodL g tmeth 
-
-    and iimplL g (ty, tmeths) =
-        let tmethodL p = tmethodL g p 
-        wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map tmethodL tmeths) 
+    and iimplL g (ty, tmeths) = wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map (tmethodL g) tmeths) 
 
     let showType x = Layout.showL (typeL x)
 
@@ -4317,11 +4310,11 @@ let freeTyvarsAllPublic tyvars =
 
 let (|LinearMatchExpr|_|) expr = 
     match expr with 
-    | Expr.Match (sp, m, dtree, [|tg1;(TTarget([], e2, sp2))|], m2, ty) -> Some(sp, m, dtree, tg1, e2, sp2, m2, ty)
+    | Expr.Match (sp, m, dtree, [|tg1;(TTarget([], e2, sp2, _))|], m2, ty) -> Some(sp, m, dtree, tg1, e2, sp2, m2, ty)
     | _ -> None
     
 let rebuildLinearMatchExpr (sp, m, dtree, tg1, e2, sp2, m2, ty) = 
-    primMkMatch (sp, m, dtree, [|tg1;(TTarget([], e2, sp2))|], m2, ty)
+    primMkMatch (sp, m, dtree, [|tg1;(TTarget([], e2, sp2, None))|], m2, ty)
 
 /// Detect a subset of 'Expr.Op' expressions we process in a linear way (i.e. using tailcalls, rather than
 /// unbounded stack). Only covers Cons(args,Cons(args,Cons(args,Cons(args,...._)))).
@@ -4537,7 +4530,7 @@ and accFreeInExprNonLinear opts x acc =
     | Expr.Let _ -> 
         failwith "unreachable - linear expr"
 
-    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _) ->  
+    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, _) ->  
         unionFreeVars 
            (boundProtect
               (Option.foldBack (boundLocalVal opts) basev
@@ -4675,8 +4668,10 @@ and accFreeInOp opts op acc =
 and accFreeInTargets opts targets acc = 
     Array.foldBack (accFreeInTarget opts) targets acc
 
-and accFreeInTarget opts (TTarget(vs, expr, _)) acc = 
-    List.foldBack (boundLocalVal opts) vs (accFreeInExpr opts expr acc)
+and accFreeInTarget opts (TTarget(vs, expr, _, flags)) acc = 
+    match flags with 
+    | None -> List.foldBack (boundLocalVal opts) vs (accFreeInExpr opts expr acc)
+    | Some xs -> List.foldBack2 (fun v isStateVar acc -> if isStateVar then acc else boundLocalVal opts v acc) vs xs (accFreeInExpr opts expr acc)
 
 and accFreeInFlatExprs opts (exprs: Exprs) acc = List.foldBack (accFreeInExpr opts) exprs acc
 
@@ -5079,7 +5074,7 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
     | Expr.Quote (a, {contents=None}, isFromQueryExpression, m, ty) ->  
         Expr.Quote (remapExpr g (fixValCopyFlagForQuotations compgen) tmenv a, {contents=None}, isFromQueryExpression, m, remapType tmenv ty)
 
-    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
+    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, m) -> 
         let basev', tmenvinner = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv basev 
         mkObjExpr (remapType tmenv ty, basev', 
                    remapExpr g compgen tmenv basecall, 
@@ -5135,9 +5130,9 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
         let ty' = remapType tmenv ty 
         if ty === ty' then expr else Expr.Const (c, m, ty')
 
-and remapTarget g compgen tmenv (TTarget(vs, e, spTarget)) = 
+and remapTarget g compgen tmenv (TTarget(vs, e, spTarget, flags)) = 
     let vs', tmenvinner = copyAndRemapAndBindVals g compgen tmenv vs 
-    TTarget(vs', remapExpr g compgen tmenvinner e, spTarget)
+    TTarget(vs', remapExpr g compgen tmenvinner e, spTarget, flags)
 
 and remapLinearExpr g compgen tmenv expr contf =
 
@@ -5548,7 +5543,7 @@ let rec remarkExpr m x =
         Expr.Let (remarkBind m bind, remarkExpr m e, m, fvs)
 
     | Expr.Match (_, _, pt, targets, _, ty) ->
-        let targetsR = targets |> Array.map (fun (TTarget(vs, e, _)) -> TTarget(vs, remarkExpr m e, SuppressSequencePointAtTarget))
+        let targetsR = targets |> Array.map (fun (TTarget(vs, e, _, flags)) -> TTarget(vs, remarkExpr m e, SuppressSequencePointAtTarget, flags))
         primMkMatch (NoSequencePointAtInvisibleBinding, m, remarkDecisionTree m pt, targetsR, m, ty)
 
     | Expr.Val (x, valUseFlags, _) ->
@@ -5557,10 +5552,10 @@ let rec remarkExpr m x =
     | Expr.Quote (a, conv, isFromQueryExpression, _, ty) ->
         Expr.Quote (remarkExpr m a, conv, isFromQueryExpression, m, ty)
 
-    | Expr.Obj (n, ty, basev, basecall, overrides, iimpls, _) -> 
+    | Expr.Obj (n, ty, basev, basecall, overrides, iimpls, stateVars, _) -> 
         Expr.Obj (n, ty, basev, remarkExpr m basecall, 
                   List.map (remarkObjExprMethod m) overrides, 
-                  List.map (remarkInterfaceImpl m) iimpls, m)
+                  List.map (remarkInterfaceImpl m) iimpls, stateVars, m)
 
     | Expr.Op (op, tinst, args, _) -> 
         let op = 
@@ -5698,7 +5693,7 @@ let mkByteArrayTy (g: TcGlobals) = mkArrayType g g.byte_ty
 let rec tyOfExpr g e = 
     match e with 
     | Expr.App (_, fty, tyargs, args, _) -> applyTys g fty (tyargs, args)
-    | Expr.Obj (_, ty, _, _, _, _, _)  
+    | Expr.Obj (_, ty, _, _, _, _, _, _)  
     | Expr.Match (_, _, _, _, _, ty) 
     | Expr.Quote (_, _, _, _, ty) 
     | Expr.Const (_, _, ty) -> (ty)
@@ -5919,7 +5914,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
 
             /// rebuild the targets, replacing linear targets by ones that include all the 'let' bindings from the source
             let targets' = 
-                targets |> Array.mapi (fun i (TTarget(vs, exprTarget, spTarget) as tg) -> 
+                targets |> Array.mapi (fun i (TTarget(vs, exprTarget, spTarget, _) as tg) -> 
                     if isLinearTgtIdx i then
                         let (binds, es) = getLinearTgtIdx i
                         // The value bindings are moved to become part of the target.
@@ -5927,7 +5922,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
                         let mTarget = exprTarget.Range
                         let es = es |> List.map (remarkExpr mTarget)
                         // These are non-sticky - any sequence point for 'exprTarget' goes on 'exprTarget' _after_ the bindings have been evaluated
-                        TTarget(List.empty, mkLetsBind mTarget binds (mkInvisibleLetsFromBindings mTarget vs es exprTarget), spTarget)
+                        TTarget(List.empty, mkLetsBind mTarget binds (mkInvisibleLetsFromBindings mTarget vs es exprTarget), spTarget, None)
                     else tg )
      
             tree', targets'
@@ -5938,7 +5933,7 @@ let rec simplifyTrivialMatch spBind exprm matchm ty tree (targets : _[]) =
     | TDSuccess(es, n) -> 
         if n >= targets.Length then failwith "simplifyTrivialMatch: target out of range"
         // REVIEW: should we use _spTarget here?
-        let (TTarget(vs, rhs, _spTarget)) = targets.[n]
+        let (TTarget(vs, rhs, _spTarget, _)) = targets.[n]
         if vs.Length <> es.Length then failwith ("simplifyTrivialMatch: invalid argument, n = " + string n + ", List.length targets = " + string targets.Length)
         // These are non-sticky - any sequence point for 'rhs' goes on 'rhs' _after_ the bindings have been made
         mkInvisibleLetsFromBindings rhs.Range vs es rhs
@@ -6420,7 +6415,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
         | Expr.Quote (e, {contents=None}, _, _m, _) -> 
             exprF z e
 
-        | Expr.Obj (_n, _typ, _basev, basecall, overrides, iimpls, _m) -> 
+        | Expr.Obj (_n, _typ, _basev, basecall, overrides, iimpls, _stateVars, _m) -> 
             let z = exprF z basecall
             let z = List.fold tmethodF z overrides
             List.fold (foldOn snd (List.fold tmethodF)) z iimpls
@@ -6460,7 +6455,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
         match folders.targetIntercept exprFClosure z x with 
         | Some z -> z // intercepted 
         | None ->     // structurally recurse 
-            let (TTarget (_, body, _)) = x
+            let (TTarget (_, body, _, _)) = x
             exprF z body
               
     and tmethodF z x =
@@ -7087,7 +7082,9 @@ let destThrow = function
 let isThrow x = Option.isSome (destThrow x)
 
 // reraise - parsed as library call - internally represented as op form.
-let mkReraiseLibCall (g: TcGlobals) ty m = let ve, vt = typedExprForIntrinsic g m g.reraise_info in Expr.App (ve, vt, [ty], [mkUnit g m], m)
+let mkReraiseLibCall (g: TcGlobals) ty m =
+    let ve, vt = typedExprForIntrinsic g m g.reraise_info
+    Expr.App (ve, vt, [ty], [mkUnit g m], m)
 
 let mkReraise m returnTy = Expr.Op (TOp.Reraise, [returnTy], [], m) (* could suppress unitArg *)
 
@@ -7736,11 +7733,10 @@ let LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty) =
         | [] -> failwith "itemsProj: no items?"
         | [_] -> x (* no projection needed *)
         | tys -> Expr.Op (TOp.TupleFieldGet (tupInfoRef, i), tys, [x], m)
-    let isThrowingTarget = function TTarget(_, x, _) -> isThrow x
+    let isThrowingTarget = function TTarget(_, x, _, _) -> isThrow x
     if 1 + List.count isThrowingTarget targetsL = targetsL.Length then
-        (* Have failing targets and ONE successful one, so linearize *)
-        let (TTarget (vs, rhs, spTarget)) = Option.get (List.tryFind (isThrowingTarget >> not) targetsL)
-        (* note - old code here used copy value to generate locals - this was not right *)
+        // Have failing targets and ONE successful one, so linearize
+        let (TTarget (vs, rhs, spTarget, _)) = List.find (isThrowingTarget >> not) targetsL
         let fvs = vs |> List.map (fun v -> fst(mkLocal v.Range v.LogicalName v.Type)) (* fresh *)
         let vtys = vs |> List.map (fun v -> v.Type) 
         let tmpTy = mkRefTupledVarsTy g vs
@@ -7748,12 +7744,12 @@ let LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty) =
 
         AdjustValToTopVal tmp parent ValReprInfo.emptyValData
 
-        let newTg = TTarget (fvs, mkRefTupledVars g m fvs, spTarget)
-        let fixup (TTarget (tvs, tx, spTarget)) = 
+        let newTg = TTarget (fvs, mkRefTupledVars g m fvs, spTarget, None)
+        let fixup (TTarget (tvs, tx, spTarget, flags)) = 
            match destThrow tx with
            | Some (m, _, e) -> 
                let tx = mkThrow m tmpTy e
-               TTarget(tvs, tx, spTarget) (* Throwing targets, recast it's "return type" *)
+               TTarget(tvs, tx, spTarget, flags) (* Throwing targets, recast it's "return type" *)
            | None -> newTg (* Non-throwing target, replaced [new/old] *)
        
         let targets = Array.map fixup targets
@@ -8081,7 +8077,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
 
     else
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m)
-        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, SuppressSequencePointAtTarget)))
+        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, SuppressSequencePointAtTarget, None)))
         let tg3 = mbuilder.AddResultTarget(e3, SuppressSequencePointAtTarget)
         let dtree = TDSwitch(vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
@@ -8309,7 +8305,7 @@ and preRewriteExpr env expr =
 and postRewriteExpr env expr = 
      match env.PostTransform expr with 
      | None -> expr 
-     | Some expr -> expr 
+     | Some expr2 -> expr2
 
 and rewriteExprStructure env expr =  
   match expr with
@@ -8328,7 +8324,7 @@ and rewriteExprStructure env expr =
   | Expr.Quote (ast, {contents=None}, isFromQueryExpression, m, ty) -> 
       Expr.Quote ((if env.IsUnderQuotations then RewriteExpr env ast else ast), {contents=None}, isFromQueryExpression, m, ty)
 
-  | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
+  | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, m) -> 
       mkObjExpr(ty, basev, RewriteExpr env basecall, List.map (rewriteObjExprOverride env) overrides, 
                   List.map (rewriteObjExprInterfaceImpl env) iimpls, m)
   | Expr.Link eref -> 
@@ -8348,7 +8344,7 @@ and rewriteExprStructure env expr =
       mkTypeLambda m argtyvs (body, rty)
 
   | Expr.Match (spBind, exprm, dtree, targets, m, ty) -> 
-      let dtree' = rewriteDecisionTree env dtree
+      let dtree' = RewriteDecisionTree env dtree
       let targets' = rewriteTargets env targets
       mkAndSimplifyMatch spBind exprm m ty dtree' targets'
 
@@ -8397,7 +8393,7 @@ and rewriteLinearExpr env expr contf =
                 else rebuildLinearOpExpr (op, tyargs, argsFront', argLast', m)))
 
         | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, sp2, m2, ty) ->
-            let dtree = rewriteDecisionTree env dtree
+            let dtree = RewriteDecisionTree env dtree
             let tg1' = rewriteTarget env tg1
             // tailcall
             rewriteLinearExpr env expr2 (contf << (fun expr2' ->
@@ -8410,7 +8406,7 @@ and rewriteExprs env exprs = List.mapq (RewriteExpr env) exprs
 
 and rewriteFlatExprs env exprs = List.mapq (RewriteExpr env) exprs
 
-and rewriteDecisionTree env x =
+and RewriteDecisionTree env x =
   match x with 
   | TDSuccess (es, n) -> 
       let es' = rewriteFlatExprs env es
@@ -8419,24 +8415,26 @@ and rewriteDecisionTree env x =
 
   | TDSwitch (e, cases, dflt, m) ->
       let e' = RewriteExpr env e
-      let cases' = List.map (fun (TCase(discrim, e)) -> TCase(discrim, rewriteDecisionTree env e)) cases
-      let dflt' = Option.map (rewriteDecisionTree env) dflt
+      let cases' = List.map (fun (TCase(discrim, e)) -> TCase(discrim, RewriteDecisionTree env e)) cases
+      let dflt' = Option.map (RewriteDecisionTree env) dflt
       TDSwitch (e', cases', dflt', m)
 
   | TDBind (bind, body) ->
       let bind' = rewriteBind env bind
-      let body = rewriteDecisionTree env body
+      let body = RewriteDecisionTree env body
       TDBind (bind', body)
 
-and rewriteTarget env (TTarget(vs, e, spTarget)) = TTarget(vs, RewriteExpr env e, spTarget)
+and rewriteTarget env (TTarget(vs, e, spTarget, flags)) =
+    TTarget(vs, RewriteExpr env e, spTarget, flags)
 
-and rewriteTargets env targets = List.map (rewriteTarget env) (Array.toList targets)
+and rewriteTargets env targets =
+    List.map (rewriteTarget env) (Array.toList targets)
 
 and rewriteObjExprOverride env (TObjExprMethod(slotsig, attribs, tps, vs, e, m)) =
-  TObjExprMethod(slotsig, attribs, tps, vs, RewriteExpr env e, m)
+    TObjExprMethod(slotsig, attribs, tps, vs, RewriteExpr env e, m)
 
 and rewriteObjExprInterfaceImpl env (ty, overrides) = 
-  (ty, List.map (rewriteObjExprOverride env) overrides)
+    (ty, List.map (rewriteObjExprOverride env) overrides)
     
 and rewriteModuleOrNamespaceExpr env x = 
     match x with  
@@ -8649,9 +8647,11 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | TDSuccess (es, _n) -> es |> List.forall (checkExpr vrefs)
         | TDSwitch (e, cases, dflt, _m) -> checkExpr vrefs e && cases |> List.forall (checkDecisionTreeCase vrefs) && dflt |> Option.forall (checkDecisionTree vrefs)
         | TDBind (bind, body) -> checkExpr vrefs bind.Expr && checkDecisionTree (vrefs.Add bind.Var.Stamp) body
+
     and checkDecisionTreeCase vrefs (TCase(discrim, dtree)) = 
        (match discrim with DecisionTreeTest.Const _c -> true | _ -> false) && checkDecisionTree vrefs dtree
-    and checkDecisionTreeTarget vrefs (TTarget(vs, e, _)) = 
+
+    and checkDecisionTreeTarget vrefs (TTarget(vs, e, _, _)) = 
        let vrefs = ((vrefs, vs) ||> List.fold (fun s v -> s.Add v.Stamp)) 
        checkExpr vrefs e
 
@@ -8834,6 +8834,7 @@ let mkGetTupleItemN g m n (ty: ILType) isStruct te retty =
         mkAsmExpr ([mkNormalLdfld (mkILFieldSpecForTupleItem ty n) ], [], [te], [retty], m)
     else
         mkAsmExpr ([IL.mkNormalCall(mkILMethodSpecForTupleItem g ty n)], [], [te], [retty], m)
+
 /// Match an Int32 constant expression
 let (|Int32Expr|_|) expr = 
     match expr with 
@@ -9012,6 +9013,36 @@ let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
 
+let (|NewDelegateExpr|_|) g expr =
+    match expr with
+    | Expr.Obj (_, ty, _, _, [TObjExprMethod(_, _attribs, _, tmvs, body, _)], [], [], m) when isDelegateTy g ty ->
+        Some (tmvs, body, m)
+    | _ -> None
+
+let (|ValApp|_|) g vref expr =
+    match expr with
+    // use 'seq { ... }' as an indicator
+    | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 ->  Some (tyargs, args, m)
+    | _ -> None
+
+let (|GenerateCompiledStateMachinesExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh__useResumableCode_vref (_, _, _m) -> Some ()
+    | _ -> None
+
+/// Match 
+let (|IsThenElseExpr|_|) expr =
+    match expr with
+    | Expr.Match (_spBind, _exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.Const (Const.Bool true), TDSuccess ([], 0) )], Some (TDSuccess ([], 1)), _),
+                  [| TTarget([], thenExpr, _, _); TTarget([], elseExpr, _, _) |], _m, _ty) -> 
+        Some (cond, thenExpr,  elseExpr)
+    | _ -> None
+
+/// if __useResumableCode then ... else ...
+let (|IfGenerateCompiledStateMachinesExpr|_|) g expr =
+    match expr with
+    | IsThenElseExpr(GenerateCompiledStateMachinesExpr g (), thenExpr, elseExpr) -> Some (thenExpr, elseExpr)
+    | _ -> None
 
 let isStaticClass (g:TcGlobals) (x: EntityRef) =
     not x.IsModuleOrNamespace &&
