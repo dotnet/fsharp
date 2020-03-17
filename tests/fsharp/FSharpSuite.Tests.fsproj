@@ -60,6 +60,7 @@
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
+    <Compile Include="Compiler\Language\DefaultInterfaceMemberTests.fs" />
     <Compile Include="Compiler\Language\OptionalInteropTests.fs" />
     <Compile Include="Compiler\Language\UIntTests.fs" />
     <Compile Include="Compiler\Language\FixedIndexSliceTests.fs" />

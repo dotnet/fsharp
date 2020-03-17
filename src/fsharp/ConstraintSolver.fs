@@ -63,6 +63,7 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
+open FSharp.Compiler.Features
 
 //-------------------------------------------------------------------------
 // Generate type variables and record them in within the scope of the
@@ -2769,7 +2770,13 @@ and ResolveOverloading
     // Allow subsumption on arguments. Include the return type.
     // Unify return types.
     match calledMethOpt with 
-    | Some calledMeth -> 
+    | Some calledMeth ->
+    
+        // Static IL interfaces methods are not supported in lower F# versions.
+        if calledMeth.Method.IsILMethod && not calledMeth.Method.IsInstance && isInterfaceTy g calledMeth.Method.ApparentEnclosingType then
+            tryLanguageFeatureRuntimeErrorRecover csenv.InfoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+            tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+
         calledMethOpt, 
         trackErrors {
                         do! errors
