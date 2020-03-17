@@ -305,7 +305,7 @@ module internal ExtensionTyping =
         member __.Namespace = x.Namespace
         member __.FullName = x.FullName
         member __.IsArray = x.IsArray
-        member __.Assembly = x.Assembly |> ProvidedAssembly.Create ctxt
+        member __.Assembly = x.Assembly |> ProvidedAssembly.Create
         member __.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
         member __.GetMethods() = x.GetMethods bindingFlags |> ProvidedMethodInfo.CreateArray ctxt
         member __.GetEvents() = x.GetEvents bindingFlags |> ProvidedEventInfo.CreateArray ctxt
@@ -457,11 +457,11 @@ module internal ExtensionTyping =
         override __.GetHashCode() = assert false; x.GetHashCode()
 
     and [<AllowNullLiteral; Sealed>] 
-        ProvidedAssembly (x: System.Reflection.Assembly, _ctxt) = 
+        ProvidedAssembly (x: System.Reflection.Assembly) = 
         member __.GetName() = x.GetName()
         member __.FullName = x.FullName
         member __.GetManifestModuleContents(provider: ITypeProvider) = provider.GetGeneratedAssemblyContents x
-        static member Create ctxt x = match x with null -> null | t -> ProvidedAssembly (t, ctxt)
+        static member Create (x: System.Reflection.Assembly) = match x with null -> null | t -> ProvidedAssembly (t)
         member __.Handle = x
         override __.Equals y = assert false; match y with :? ProvidedAssembly as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
