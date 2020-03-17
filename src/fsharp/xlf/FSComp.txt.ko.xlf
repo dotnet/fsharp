@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="new">From the end slicing with requires language version 5.0, use /langversion:preview.</target>
+        <target state="translated">언어 버전 5.0이 필요한 끝 조각화에서는 /langversion:preview를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -89,7 +89,7 @@
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <target state="translated">패키지 관리 기능을 사용하려면 언어 버전 5.0이 필요합니다. /langversion:preview를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -114,17 +114,17 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
+        <target state="translated">잘못된 익명 레코드입니다. {0} 필드가 있어야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSubset">
         <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
+        <target state="translated">이 익명 레코드에 필드가 부족합니다. 누락된 필드 {0}을(를) 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
+        <target state="translated">이 익명 레코드에 필드가 너무 많습니다. 추가 필드 {0}을(를) 제거하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -1259,17 +1259,17 @@
       </trans-unit>
       <trans-unit id="forBadFormatSpecifier">
         <source>Bad format specifier (after l or L): Expected ld,li,lo,lu,lx or lX. In F# code you can use %d, %x, %o or %u instead, which are overloaded to work with all basic integer types.</source>
-        <target state="translated">l 또는 L 뒤에서 서식 지정자가 잘못되었습니다. ld, li, lo, lu, lx 또는 lX가 필요합니다. F# 코드에서는 모든 기본 정수 형식과 함께 사용할 수 있도록 오버로드되는 %d, %x, %o 또는 %u를 대신 사용할 수 있습니다.</target>
+        <target state="translated">l 또는 L 뒤에서 서식 지정자가 잘못되었습니다. ld, li, lo, lu, lx 또는 lX가 필요합니다. F# 코드에서는 모든 기본 정수 형식과 함께 사용할 수 있도록 오버로드되는 %d, %x, %o 또는 %u을(를) 대신 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="forLIsUnnecessary">
         <source>The 'l' or 'L' in this format specifier is unnecessary. In F# code you can use %d, %x, %o or %u instead, which are overloaded to work with all basic integer types.</source>
-        <target state="translated">이 서식 지정자에서 'l' 또는 'L'은 불필요합니다. F# 코드에서는 모든 기본 정수 형식과 함께 사용할 수 있도록 오버로드되는 %d, %x, %o 또는 %u를 대신 사용할 수 있습니다.</target>
+        <target state="translated">이 서식 지정자에서 'l' 또는 'L'은 불필요합니다. F# 코드에서는 모든 기본 정수 형식과 함께 사용할 수 있도록 오버로드되는 %d, %x, %o 또는 %u을(를) 대신 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="forHIsUnnecessary">
         <source>The 'h' or 'H' in this format specifier is unnecessary. You can use %d, %x, %o or %u instead, which are overloaded to work with all basic integer types.</source>
-        <target state="translated">이 서식 지정자에서 'h' 또는 'H'는 불필요합니다. 모든 기본 정수 형식과 함께 사용할 수 있도록 오버로드되는 %d, %x, %o 또는 %u를 대신 사용할 수 있습니다.</target>
+        <target state="translated">이 서식 지정자에서 'h' 또는 'H'는 불필요합니다. 모든 기본 정수 형식과 함께 사용할 수 있도록 오버로드되는 %d, %x, %o 또는 %u을(를) 대신 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="forDoesNotSupportPrefixFlag">
@@ -7219,7 +7219,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="needs-review-translation">두 무명 레코드 형식의 필드 이름 '{0}' 및 '{1}' 집합이 일치하지 않습니다.</target>
+        <target state="translated">이 익명 레코드는 필요한 도형과 정확하게 일치하지 않습니다. 누락된 필드 {0}을(를) 추가하고 추가 필드 {1}을(를) 제거하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
@@ -7314,22 +7314,22 @@
       </trans-unit>
       <trans-unit id="optsCompilerTool">
         <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
-        <target state="new">Reference an assembly or directory containing a design time tool (Short form: -t)</target>
+        <target state="translated">디자인 타임 도구를 포함하는 어셈블리 또는 디렉터리를 참조합니다(약식: -t).</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <target state="translated">패키지 관리자 키 '{0}'이(가) {1}에 등록되지 않았습니다. 현재 {2}이(가) 등록되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
         <source>{0}</source>
-        <target state="new">{0}</target>
+        <target state="translated">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadDependencyManagerExtension">
         <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
-        <target state="new">The dependency manager extension {0} could not be loaded. Message: {1}</target>
+        <target state="translated">종속성 관리자 확장 {0}을(를) 로드할 수 없습니다. 메시지: {1}</target>
         <note />
       </trans-unit>
     </body>
