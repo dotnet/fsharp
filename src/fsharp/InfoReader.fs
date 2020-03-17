@@ -408,10 +408,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                             |> List.tryPick (fun ty -> 
                                 match tryTcrefOfAppTy g ty with
                                 | ValueSome tcref when tcref.IsILTycon && tcref.ILTyconRawMetadata.Name = overridesTyFullName ->
-                                    let tinst =
-                                        tcref.Typars m
-                                        |> List.map mkTyparTy
-                                    ImportILType tcref.CompilationPath.ILScopeRef amap m tinst overridesILTy
+                                    generalizedTyconRef tcref
                                     |> Some
                                 | _ -> 
                                     None)

@@ -458,9 +458,10 @@ module DispatchSlotChecking =
     /// Finds the override interface methods from the most specific overrides by the given method.
     let GetMostSpecificOverrideInterfaceMethodsByMethod g amap m (mostSpecificOverrides: NameMultiMap<TType * MethInfo>) (minfo: MethInfo) =
         let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo
+        let minfoTy = generalizedTyconRef minfo.ApparentEnclosingTyconRef
         NameMultiMap.find minfo.LogicalName mostSpecificOverrides
         |> List.filter (fun (overridenTy, minfo2) -> 
-            typeEquiv g overridenTy minfo.ApparentEnclosingType && 
+            typeEquiv g overridenTy minfoTy && 
             IsSigExactMatch g amap m minfo2 overrideBy)
 
     /// Get a collection of slots for the given interface type.
