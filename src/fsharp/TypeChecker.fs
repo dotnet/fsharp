@@ -6880,7 +6880,7 @@ and TcObjectExprBinding cenv (env: TcEnv) implty tpenv (absSlotInfo, bind) =
 and ComputeObjectExprOverrides cenv (env: TcEnv) tpenv impls =
 
     // Compute the method sets each implemented type needs to implement
-    let slotImplSets = DispatchSlotChecking.GetSlotImplSets cenv.infoReader env.DisplayEnv true (impls |> List.map (fun (m, ty, _) -> ty, m))
+    let slotImplSets = DispatchSlotChecking.GetSlotImplSets cenv.infoReader env.DisplayEnv env.AccessRights true (impls |> List.map (fun (m, ty, _) -> ty, m))
 
     let allImpls = 
         (impls, slotImplSets) ||> List.map2 (fun (m, ty, binds) implTySet -> 
@@ -6903,7 +6903,7 @@ and ComputeObjectExprOverrides cenv (env: TcEnv) tpenv impls =
                |> List.unzip
                     
             // 2. collect all name/arity of all overrides 
-            let dispatchSlots = reqdSlots |> List.map (fun (RequiredSlot(dispatchSlot, _)) -> dispatchSlot)
+            let dispatchSlots = reqdSlots |> List.map (fun reqdSlot -> reqdSlot.MethodInfo)
             let virtNameAndArityPairs = dispatchSlots |> List.map (fun virt -> 
                 let vkey = (virt.LogicalName, virt.NumArgs) 
                 //dprintfn "vkey = %A" vkey
@@ -7043,7 +7043,7 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
 
             DispatchSlotChecking.CheckOverridesAreAllUsedOnce (env.DisplayEnv, cenv.g, cenv.amap, true, implty, dispatchSlotsKeyed, availPriorOverrides, overrideSpecs)
 
-            DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.g, cenv.amap, m, env.NameEnv, cenv.tcSink, false, implty, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
+            DispatchSlotChecking.CheckDispatchSlotsAreImplemented (env.DisplayEnv, cenv.infoReader, m, env.NameEnv, cenv.tcSink, false, implty, dispatchSlots, availPriorOverrides, overrideSpecs) |> ignore)
         
         // 6c. create the specs of overrides 
         let allTypeImpls = 
@@ -7055,7 +7055,8 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
                             let searchForOverride = 
                                 dispatchSlotsKeyed 
                                 |> NameMultiMap.find id.idText 
-                                |> List.tryPick (fun (RequiredSlot(virt, _)) -> 
+                                |> List.tryPick (fun reqdSlot -> 
+                                     let virt = reqdSlot.MethodInfo
                                      if DispatchSlotChecking.IsExactMatch cenv.g cenv.amap m virt ovinfo then 
                                          Some virt 
                                      else 
@@ -9841,9 +9842,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
 
     | Item.ILField finfo -> 
 
-        CheckILFieldInfoAccessible g cenv.amap mItem ad finfo
-        if not finfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(finfo.FieldName), mItem))
-        CheckILFieldAttributes g finfo mItem
+        ILFieldStaticChecks g cenv.amap cenv.infoReader ad mItem finfo
         let fref = finfo.ILFieldRef
         let exprty = finfo.FieldType(cenv.amap, mItem)
         match delayed with 
@@ -14707,10 +14706,19 @@ let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem mutRecNSInfo (envMutRec: 
       let binds: MutRecDefnsPhase2Info = 
           (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls tyconData -> 
               let (MutRecDefnsPhase2DataForTycon(tyconOpt, _, declKind, tcref, _, _, declaredTyconTypars, _, _, _, fixupFinalAttrs)) = tyconData
+              let envForDecls = 
+                // This allows to implement protected interface methods if it's a DIM.
+                // Does not need to be hidden behind a lang version as it needs to be possible to
+                //     implement protected interface methods in lower F# versions regardless if it's a DIM or not.
+                match tyconOpt with
+                | Some _ when declKind = DeclKind.ModuleOrMemberBinding ->
+                    MakeInnerEnvForTyconRef envForDecls tcref false
+                | _ -> 
+                    envForDecls
               let obinds = tyconBindingsOfTypeDefn tyconData
               let ibinds = 
                       let intfTypes = interfacesFromTypeDefn envForDecls tyconData
-                      let slotImplSets = DispatchSlotChecking.GetSlotImplSets cenv.infoReader envForDecls.DisplayEnv false (List.map (fun (ity, _, m) -> (ity, m)) intfTypes)
+                      let slotImplSets = DispatchSlotChecking.GetSlotImplSets cenv.infoReader envForDecls.DisplayEnv envForDecls.AccessRights false (List.map (fun (ity, _, m) -> (ity, m)) intfTypes)
                       (intfTypes, slotImplSets) ||> List.map2 (interfaceMembersFromTypeDefn tyconData) |> List.concat
               MutRecDefnsPhase2InfoForTycon(tyconOpt, tcref, declaredTyconTypars, declKind, obinds @ ibinds, fixupFinalAttrs))
       

@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
-        <target state="new">symbol '..^'</target>
+        <target state="translated">símbolo '..^'</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">

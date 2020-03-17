@@ -17,6 +17,7 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
+open FSharp.Compiler.Features
 
 //-------------------------------------------------------------------------
 // Completeness of classes
@@ -40,10 +41,34 @@ type OverrideInfo =
     member x.ReturnType = let (Override(_, _, _, _, _, b, _, _)) = x in b
     member x.IsCompilerGenerated = let (Override(_, _, _, _, _, _, _, b)) = x in b
 
-// If the bool is true then the slot is optional, i.e. is an interface slot
-// which does not _have_ to be implemented, because an inherited implementation 
-// is available.
-type RequiredSlot = RequiredSlot of MethInfo * (* isOptional: *) bool 
+type RequiredSlot = 
+    | RequiredSlot of MethInfo * isOptional: bool
+    | DefaultInterfaceImplementationSlot of MethInfo * isOptional: bool * possiblyNoMostSpecific: bool
+
+    /// A slot which does not have to be implemented, because an inherited implementation is available.
+    member this.IsOptional =
+        match this with
+        | RequiredSlot(_, isOptional)
+        | DefaultInterfaceImplementationSlot(_, isOptional, _) -> isOptional
+
+    /// A slot which has a default interface implementation.
+    /// A combination of this flag and the lack of IsOptional means the slot may have been reabstracted.
+    member this.HasDefaultInterfaceImplementation =
+        match this with
+        | DefaultInterfaceImplementationSlot _ -> true
+        | _ -> false
+            
+    /// A slot that *might* have ambiguity due to multiple inheritance; happens with default interface implementations.
+    member this.PossiblyNoMostSpecificImplementation =
+        match this with
+        | DefaultInterfaceImplementationSlot(_, _, possiblyNoMostSpecific) -> possiblyNoMostSpecific
+        | _ -> false
+
+    /// Gets the method info.
+    member this.MethodInfo =
+        match this with
+        | RequiredSlot(methInfo, _)
+        | DefaultInterfaceImplementationSlot(methInfo, _, _) -> methInfo
 
 type SlotImplSet = SlotImplSet of RequiredSlot list * NameMultiMap<RequiredSlot> * OverrideInfo list * PropInfo list
 
@@ -167,14 +192,18 @@ module DispatchSlotChecking =
     let IsTyparKindMatch (CompiledSig(_, _, fvmtps, _)) (Override(_, _, _, (mtps, _), _, _, _, _)) = 
         List.lengthsEqAndForall2 (fun (tp1: Typar) (tp2: Typar) -> tp1.Kind = tp2.Kind) mtps fvmtps
         
-    /// Check if an override is a partial match for the requirements for a dispatch slot 
-    let IsPartialMatch g (dispatchSlot: MethInfo) compiledSig (Override(_, _, _, (mtps, _), argTys, _retTy, _, _) as overrideBy) = 
-        IsNameMatch dispatchSlot overrideBy &&
+    /// Check if an override is a partial match for the requirements for a dispatch slot except for the name.
+    let IsSigPartialMatch g (dispatchSlot: MethInfo) compiledSig (Override(_, _, _, (mtps, _), argTys, _retTy, _, _) as overrideBy) =
         let (CompiledSig (vargtys, _, fvmtps, _)) = compiledSig
         mtps.Length = fvmtps.Length &&
         IsTyparKindMatch compiledSig overrideBy && 
         argTys.Length = vargtys.Length &&
-        IsImplMatch g dispatchSlot overrideBy  
+        IsImplMatch g dispatchSlot overrideBy
+        
+    /// Check if an override is a partial match for the requirements for a dispatch slot.
+    let IsPartialMatch g dispatchSlot compiledSig overrideBy = 
+        IsNameMatch dispatchSlot overrideBy &&
+        IsSigPartialMatch g dispatchSlot compiledSig overrideBy
           
     /// Compute the reverse of a type parameter renaming.
     let ReverseTyparRenaming g tinst = 
@@ -184,10 +213,10 @@ module DispatchSlotChecking =
     let ComposeTyparInsts inst1 inst2 = 
         inst1 |> List.map (map2Of2 (instType inst2)) 
      
-    /// Check if an override exactly matches the requirements for a dispatch slot 
-    let IsExactMatch g amap m dispatchSlot (Override(_, _, _, (mtps, mtpinst), argTys, retTy, _, _) as overrideBy) =
+    /// Check if an override exactly matches the requirements for a dispatch slot except for the name.
+    let IsSigExactMatch g amap m dispatchSlot (Override(_, _, _, (mtps, mtpinst), argTys, retTy, _, _) as overrideBy) =
         let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
-        IsPartialMatch g dispatchSlot compiledSig overrideBy &&
+        IsSigPartialMatch g dispatchSlot compiledSig overrideBy &&
         let (CompiledSig (vargtys, vrty, fvmtps, ttpinst)) = compiledSig
 
         // Compare the types. CompiledSigOfMeth, GetObjectExprOverrideInfo and GetTypeMemberOverrideInfo have already 
@@ -231,6 +260,11 @@ module DispatchSlotChecking =
         
         typarsAEquiv g aenv fvmtps mtps
 
+    /// Check if an override exactly matches the requirements for a dispatch slot.
+    let IsExactMatch g amap m dispatchSlot overrideBy =
+        IsNameMatch dispatchSlot overrideBy &&
+        IsSigExactMatch g amap m dispatchSlot overrideBy
+
     /// Check if an override implements a dispatch slot 
     let OverrideImplementsDispatchSlot g amap m dispatchSlot availPriorOverride =
         IsExactMatch g amap m dispatchSlot availPriorOverride &&
@@ -245,13 +279,15 @@ module DispatchSlotChecking =
 
 
     /// Check all dispatch slots are implemented by some override.
-    let CheckDispatchSlotsAreImplemented (denv, g, amap, m,
+    let CheckDispatchSlotsAreImplemented (denv, infoReader: InfoReader, m,
                                           nenv, sink: TcResultsSink,
                                           isOverallTyAbstract,
                                           reqdTy,
                                           dispatchSlots: RequiredSlot list,
                                           availPriorOverrides: OverrideInfo list,
                                           overrides: OverrideInfo list) = 
+        let g = infoReader.g
+        let amap = infoReader.amap
 
         let isReqdTyInterface = isInterfaceTy g reqdTy 
         let showMissingMethodsAndRaiseErrors = (isReqdTyInterface || not isOverallTyAbstract)
@@ -269,7 +305,13 @@ module DispatchSlotChecking =
         // we accumulate those to compose a more complete error message, see noimpl() bellow.
         let missingOverloadImplementation = ResizeArray()
 
-        for (RequiredSlot(dispatchSlot, isOptional)) in dispatchSlots do
+        for reqdSlot in dispatchSlots do
+            let dispatchSlot = reqdSlot.MethodInfo
+
+            // Always try to raise a target runtime error if we have a DIM.
+            if reqdSlot.HasDefaultInterfaceImplementation then
+                tryLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+
             let maybeResolvedSlot =
                 NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
                 |> List.filter (OverrideImplementsDispatchSlot g amap m dispatchSlot)
@@ -280,10 +322,17 @@ module DispatchSlotChecking =
                     let item = Item.MethodGroup(ovd.LogicalName, [dispatchSlot],None)
                     CallNameResolutionSink sink (ovd.Range, nenv, item,item, dispatchSlot.FormalMethodTyparInst, ItemOccurence.Implemented, denv,AccessorDomain.AccessibleFromSomewhere)
             | [] -> 
-                if not isOptional &&
+                if not reqdSlot.IsOptional &&
                    // Check that no available prior override implements this dispatch slot
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
                 then 
+                    // Always try to raise a language version error if we have a DIM that is not explicitly implemented.
+                    if reqdSlot.HasDefaultInterfaceImplementation then
+                        tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+
+                    if reqdSlot.PossiblyNoMostSpecificImplementation then
+                        errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
+
                     // error reporting path
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
                     
@@ -302,7 +351,7 @@ module DispatchSlotChecking =
                         | [ Override(_, _, _, (mtps, _), argTys, _, _, _) as overrideBy ] ->
                             let moreThanOnePossibleDispatchSlot =
                                 dispatchSlots
-                                |> List.filter (fun (RequiredSlot(dispatchSlot, _)) -> IsNameMatch dispatchSlot overrideBy && IsImplMatch g dispatchSlot overrideBy)
+                                |> List.filter (fun reqdSlot-> IsNameMatch reqdSlot.MethodInfo overrideBy && IsImplMatch g reqdSlot.MethodInfo overrideBy)
                                 |> isNilOrSingleton
                                 |> not
                             
@@ -323,7 +372,7 @@ module DispatchSlotChecking =
                             errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
 
                     | [ overrideBy ] -> 
-                        if dispatchSlots |> List.exists (fun (RequiredSlot(dispatchSlot, _)) -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) then
+                        if dispatchSlots |> List.exists (fun reqdSlot -> OverrideImplementsDispatchSlot g amap m reqdSlot.MethodInfo overrideBy) then
                             noimpl()
                         else
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
@@ -371,6 +420,120 @@ module DispatchSlotChecking =
 
         res
 
+    /// This is to find override methods that are at the most specific in the hierarchy of interface types.
+    let GetMostSpecificOverrideInterfaceMethodSets (infoReader: InfoReader) allReqdTys =
+        let g = infoReader.g
+        let amap = infoReader.amap
+
+        let multipleSets =
+            allReqdTys
+            // Widdle down to the most specific interfaces.
+            |> GetMostSpecificItemsByType g amap (fun (ty, m) ->
+                if isInterfaceTy g ty then
+                    Some(ty, m)
+                else
+                    None)
+
+            // Get the most specific method overrides for each interface type.
+            |> List.choose (fun (ty, m) -> 
+                let mostSpecificOverrides = GetIntrinisicMostSpecificOverrideMethInfoSetsOfType infoReader m ty
+                if mostSpecificOverrides.IsEmpty then None
+                else Some mostSpecificOverrides)
+
+        match multipleSets with
+        | [] -> NameMultiMap.Empty
+        | [set] -> set
+        | _ ->
+            multipleSets
+            // Merge method sets together.
+            |> List.reduce (fun final minfoSets ->
+                Map.fold (fun acc key minfos -> 
+                    match acc.TryGetValue key with
+                    | true, minfos2 -> Map.add key (minfos @ minfos2) acc
+                    | _ -> Map.add key minfos acc) final minfoSets)
+
+            // Filter for most specifics when the sets have merged together.
+            |> FilterMostSpecificMethInfoSets g amap range0
+
+    /// Finds the override interface methods from the most specific overrides by the given method.
+    let GetMostSpecificOverrideInterfaceMethodsByMethod g amap m (mostSpecificOverrides: NameMultiMap<TType * MethInfo>) (minfo: MethInfo) =
+        let overrideBy = GetInheritedMemberOverrideInfo g amap m OverrideCanImplement.CanImplementAnyInterfaceSlot minfo
+        let minfoTy = generalizedTyconRef minfo.ApparentEnclosingTyconRef
+        NameMultiMap.find minfo.LogicalName mostSpecificOverrides
+        |> List.filter (fun (overridenTy, minfo2) -> 
+            typeEquiv g overridenTy minfoTy && 
+            IsSigExactMatch g amap m minfo2 overrideBy)
+
+    /// Get a collection of slots for the given interface type.
+    let GetInterfaceDispatchSlots (infoReader: InfoReader) ad m availImpliedInterfaces mostSpecificOverrides interfaceTy =
+        let g = infoReader.g
+        let amap = infoReader.amap
+
+        if isInterfaceTy g interfaceTy then
+            // Check if the interface has an inherited implementation
+            // If so, you do not have to implement all the methods - each
+            // specific method is "optionally" implemented.
+            let isInterfaceOptional = ListSet.contains (typeEquiv g) interfaceTy availImpliedInterfaces
+            [ for minfo in GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m interfaceTy do
+                if minfo.IsNewSlot then
+                      // If the interface itself is considered optional, then we are finished and do not need anymore context.
+                      //     Even if the method is actually not abstract.
+                      if isInterfaceOptional then
+                          yield RequiredSlot (minfo, true)
+
+                      // F# defined interface methods have no notion of optional/abstract or DIMs.
+                      elif not minfo.IsILMethod then
+                          yield RequiredSlot (minfo, false)
+
+                      // IL methods might have default implementations.
+                      else
+                          let isMethodOptional (minfo: MethInfo) =
+                            // A DIM is considered *not* 'optional' if it is not language supported.
+                            g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMemberConsumption &&
+                            not minfo.IsAbstract
+
+                          match GetMostSpecificOverrideInterfaceMethodsByMethod g amap m mostSpecificOverrides minfo with
+                          // No override.
+                          | [] ->
+                            if minfo.IsAbstract then
+                                // Regular interface methods are never optional.
+                                yield RequiredSlot (minfo, false)
+                            else
+                                yield DefaultInterfaceImplementationSlot (minfo, isMethodOptional minfo, false)
+
+                          // One override, one default implementation.
+                          | [ (_, minfo2) ] ->
+                            yield DefaultInterfaceImplementationSlot (minfo, isMethodOptional minfo2, false)
+
+                          // We found multiple override methods, means we might have ambiguity.
+                          | _ ->
+                            // If DIMs are not language supported, then do not consider a slot to have a specific implementation.
+                            let possiblyNoMostSpecific =
+                                g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMemberConsumption
+
+                            yield DefaultInterfaceImplementationSlot (minfo, false, possiblyNoMostSpecific) ]
+            else
+                []
+
+    /// Get a collection of slots for the given class type.
+    let GetClassDispatchSlots (infoReader: InfoReader) ad m reqdTy =
+        [ if not (isInterfaceTy infoReader.g reqdTy) then
+            // In the normal case, the requirements for a class are precisely all the abstract slots up the whole hierarchy.
+            // So here we get and yield all of those.
+            for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m do
+                if minfo.IsDispatchSlot then
+                    yield RequiredSlot(minfo, not minfo.IsAbstract) ]
+
+    /// Get a collection of slots for the given type and implied types.
+    let GetDispatchSlotSet (infoReader: InfoReader) ad m availImpliedInterfaces mostSpecificOverrides reqdTy impliedTys =
+        let g = infoReader.g
+
+        if isInterfaceTy g reqdTy then 
+            [ for impliedTy in impliedTys do
+                yield (impliedTy, GetInterfaceDispatchSlots infoReader ad m availImpliedInterfaces mostSpecificOverrides impliedTy) ]
+        else                  
+            [ (reqdTy, GetClassDispatchSlots infoReader ad m reqdTy) ]
+
     /// Check all implementations implement some dispatch slot.
     let CheckOverridesAreAllUsedOnce(denv, g, amap, isObjExpr, reqdTy,
                                      dispatchSlotsKeyed: NameMultiMap<RequiredSlot>,
@@ -381,7 +544,7 @@ module DispatchSlotChecking =
           if not overrideBy.IsFakeEventProperty then
             let m = overrideBy.Range
             let relevantVirts = NameMultiMap.find overrideBy.LogicalName dispatchSlotsKeyed
-            let relevantVirts = relevantVirts |> List.map (fun (RequiredSlot(dispatchSlot, _)) -> dispatchSlot)
+            let relevantVirts = relevantVirts |> List.map (fun reqdSlot -> reqdSlot.MethodInfo)
 
             match relevantVirts |> List.filter (fun dispatchSlot -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) with
             | [] -> 
@@ -429,7 +592,7 @@ module DispatchSlotChecking =
     /// allReqdTys = {C;I2;I3}
     ///
     /// allReqdTys can include one class/record/union type. 
-    let GetSlotImplSets (infoReader: InfoReader) denv isObjExpr allReqdTys = 
+    let GetSlotImplSets (infoReader: InfoReader) denv ad isObjExpr allReqdTys = 
 
         let g = infoReader.g
         let amap = infoReader.amap
@@ -454,7 +617,7 @@ module DispatchSlotChecking =
         // For each implemented type, reduce its list of implied interfaces by subtracting out those implied 
         // by another implemented interface type.
         //
-        // REVIEW: Note complexity O(ity*jty)
+        // REVIEW: Note complexity O(N^2)
         let reqdTyInfos = 
             intfSets |> List.map (fun (i, reqdTy, impliedTys, m) -> 
                 let reduced = 
@@ -464,26 +627,17 @@ module DispatchSlotChecking =
                          else acc ) 
                 (i, reqdTy, m, reduced))
 
-        // Check that, for each implemented type, at least one implemented type is implied. This is enough to capture
-        // duplicates.
-        for (_i, reqdTy, m, impliedTys) in reqdTyInfos do
-            if isInterfaceTy g reqdTy && isNil impliedTys then 
-                errorR(Error(FSComp.SR.typrelDuplicateInterface(), m))
-
-        // Check that no interface type is implied twice
-        //
-        // Note complexity O(reqdTy*reqdTy)
-        for (i, _reqdTy, reqdTyRange, impliedTys) in reqdTyInfos do
-            for (j, _, _, impliedTys2) in reqdTyInfos do
-                if i > j then  
-                    let overlap = ListSet.intersect (TypesFeasiblyEquiv 0 g amap reqdTyRange) impliedTys impliedTys2
-                    overlap |> List.iter (fun overlappingTy -> 
-                        if not (isNil (GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual))) then
-                            errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)), reqdTyRange)))
+        // Find the full set of most derived interfaces, used roots to search for default interface implementations of interface methods.
+        let mostSpecificOverrides = GetMostSpecificOverrideInterfaceMethodSets infoReader allReqdTys
 
         // Get the SlotImplSet for each implemented type
         // This contains the list of required members and the list of available members
-        [ for (_, reqdTy, reqdTyRange, impliedTys) in reqdTyInfos do
+        [ for (i, reqdTy, reqdTyRange, impliedTys) in reqdTyInfos do
+
+            // Check that, for each implemented type, at least one implemented type is implied. This is enough to capture
+            // duplicates.
+            if isInterfaceTy g reqdTy && isNil impliedTys then 
+                errorR(Error(FSComp.SR.typrelDuplicateInterface(), reqdTyRange))
 
             // Build a set of the implied interface types, for quicker lookup, by nominal type
             let isImpliedInterfaceTable = 
@@ -498,28 +652,7 @@ module DispatchSlotChecking =
                 isImpliedInterfaceTable.ContainsKey (tcrefOfAppTy g ty) &&
                 impliedTys |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty)
 
-            //let isSlotImpl (minfo: MethInfo) = 
-            //    not minfo.IsAbstract && minfo.IsVirtual 
-
-            // Compute the abstract slots that require implementations
-            let dispatchSlots = 
-                [ if isInterfaceTy g reqdTy then 
-                      for impliedTy in impliedTys  do
-                          // Check if the interface has an inherited implementation
-                          // If so, you do not have to implement all the methods - each
-                          // specific method is "optionally" implemented.
-                          let isOptional = 
-                              ListSet.contains (typeEquiv g) impliedTy availImpliedInterfaces
-                          for reqdSlot in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomewhere) g amap reqdTyRange impliedTy do
-                              yield RequiredSlot(reqdSlot, isOptional)
-                  else
-                      
-                      // In the normal case, the requirements for a class are precisely all the abstract slots up the whole hierarchy.
-                      // So here we get and yield all of those.
-                      for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange do
-                         if minfo.IsDispatchSlot then
-                             yield RequiredSlot(minfo, (*isOptional=*) not minfo.IsAbstract) ]
-                
+            let dispatchSlotSet = GetDispatchSlotSet infoReader ad reqdTyRange availImpliedInterfaces mostSpecificOverrides reqdTy impliedTys
                 
             // Compute the methods that are available to implement abstract slots from the base class
             //
@@ -534,16 +667,28 @@ module DispatchSlotChecking =
                         match baseTyOpt with 
                         | None -> reqdTy
                         | Some baseTy -> baseTy 
-                    [ // Get any class hierarchy methods on this type 
+                    [ // Get any class hierarchy methods or default interface methods on this type on this type 
                       //
                       // NOTE: What we have below is an over-approximation that will get too many methods 
                       // and not always correctly relate them to the slots they implement. For example,
                       // we may get an override from a base class and believe it implements a fresh, new abstract
                       // slot in a subclass. 
-                      for minfos in infoReader.GetRawIntrinsicMethodSetsOfType(None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes, reqdTyRange, reqdTy) do
+                      for minfos in infoReader.GetRawIntrinsicMethodSetsOfType(None, ad, AllowMultiIntfInstantiations.Yes, reqdTyRange, reqdTy) do
                         for minfo in minfos do
                           if not minfo.IsAbstract then 
                               yield GetInheritedMemberOverrideInfo g amap reqdTyRange CanImplementAnyClassHierarchySlot minfo   ]
+
+            /// Check that no interface type is implied twice
+            for (j, _, _, impliedTys2) in reqdTyInfos do
+                if i > j then
+                    for (ty, dispatchSlots) in dispatchSlotSet do
+                        if impliedTys2 |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty) then
+                            if  dispatchSlots 
+                                |> List.exists (fun reqdSlot ->
+                                    let minfo = reqdSlot.MethodInfo
+                                    // If the slot is optional, then we do not need an explicit implementation.
+                                    minfo.IsNewSlot && not reqdSlot.IsOptional) then
+                                errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv ty), reqdTyRange))
                      
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
             let isRelevantRequiredProperty (x: PropInfo) = 
@@ -551,10 +696,11 @@ module DispatchSlotChecking =
                 isImpliedInterfaceType x.ApparentEnclosingType
                 
             let reqdProperties = 
-                GetIntrinsicPropInfosOfType infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange reqdTy 
+                GetIntrinsicPropInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes IgnoreOverrides reqdTyRange reqdTy 
                 |> List.filter isRelevantRequiredProperty
                 
-            let dispatchSlotsKeyed = dispatchSlots |> NameMultiMap.initBy (fun (RequiredSlot(v, _)) -> v.LogicalName) 
+            let dispatchSlots = dispatchSlotSet |> List.map snd |> List.concat
+            let dispatchSlotsKeyed = dispatchSlots |> NameMultiMap.initBy (fun reqdSlot -> reqdSlot.MethodInfo.LogicalName) 
             yield SlotImplSet(dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, reqdProperties) ]
 
 
@@ -577,7 +723,7 @@ module DispatchSlotChecking =
         let allImmediateMembers = tycon.MembersOfFSharpTyconSorted @ tycon.AllGeneratedValues
 
         // Get all the members we have to implement, organized by each type we explicitly implement
-        let slotImplSets = GetSlotImplSets infoReader denv false allReqdTys
+        let slotImplSets = GetSlotImplSets infoReader denv AccessibleFromSomewhere false allReqdTys
 
         let allImpls = List.zip allReqdTys slotImplSets
 
@@ -622,7 +768,7 @@ module DispatchSlotChecking =
                 
                 if isImplementation && not (isInterfaceTy g overallTy) then 
                     let overrides = allImmediateMembersThatMightImplementDispatchSlots |> List.map snd 
-                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, g, amap, m, nenv, sink, tcaug.tcaug_abstract, reqdTy, dispatchSlots, availPriorOverrides, overrides)
+                    let allCorrect = CheckDispatchSlotsAreImplemented (denv, infoReader, m, nenv, sink, tcaug.tcaug_abstract, reqdTy, dispatchSlots, availPriorOverrides, overrides)
                     
                     // Tell the user to mark the thing abstract if it was missing implementations
                     if not allCorrect && not tcaug.tcaug_abstract && not (isInterfaceTy g reqdTy) then 
@@ -650,7 +796,8 @@ module DispatchSlotChecking =
                     [ for ((reqdTy, m), (SlotImplSet(_dispatchSlots, dispatchSlotsKeyed, _, _))) in allImpls do
                           let overrideByInfo = GetTypeMemberOverrideInfo g reqdTy overrideBy
                           let overridenForThisSlotImplSet = 
-                              [ for (RequiredSlot(dispatchSlot, _)) in NameMultiMap.find overrideByInfo.LogicalName dispatchSlotsKeyed do 
+                              [ for reqdSlot in NameMultiMap.find overrideByInfo.LogicalName dispatchSlotsKeyed do
+                                    let dispatchSlot = reqdSlot.MethodInfo
                                     if OverrideImplementsDispatchSlot g amap m dispatchSlot overrideByInfo then 
                                         if tyconRefEq g overrideByInfo.BoundingTyconRef dispatchSlot.DeclaringTyconRef then 
                                              match dispatchSlot.ArbitraryValRef with 
@@ -747,7 +894,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
     let minfos = 
         match typToSearchForAbstractMembers with 
         | _, Some(SlotImplSet(_, dispatchSlotsKeyed, _, _)) -> 
-            NameMultiMap.find  memberName.idText dispatchSlotsKeyed |> List.map (fun (RequiredSlot(dispatchSlot, _)) -> dispatchSlot)
+            NameMultiMap.find  memberName.idText dispatchSlotsKeyed |> List.map (fun reqdSlot -> reqdSlot.MethodInfo)
         | ty, None -> 
             GetIntrinsicMethInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides bindm ty
     let dispatchSlots = minfos |> List.filter (fun minfo -> minfo.IsDispatchSlot)
