@@ -36,6 +36,8 @@
       <Replacement1>$(FSharpCoreShippedPackageVersion)</Replacement1>
       <Pattern2>{{FSharpCorePreviewPackageVersion}}</Pattern2>
       <Replacement2>$(FSharpCorePreviewPackageVersion)</Replacement2>
+      <Pattern3>{{FSCorePackageVersion}}</Pattern3>
+      <Replacement3>$(FSCorePackageVersion)</Replacement3>
     </NoneSubstituteText>
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

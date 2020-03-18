@@ -19,6 +19,7 @@
       <_ReplacementText>$([System.IO.File]::ReadAllText('%(NoneSubstituteText.FullPath)'))</_ReplacementText>
       <_ReplacementText Condition="'%(NoneSubstituteText.Pattern1)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern1)', '%(NoneSubstituteText.Replacement1)'))</_ReplacementText>
       <_ReplacementText Condition="'%(NoneSubstituteText.Pattern2)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern2)', '%(NoneSubstituteText.Replacement2)'))</_ReplacementText>
+      <_ReplacementText Condition="'%(NoneSubstituteText.Pattern3)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern3)', '%(NoneSubstituteText.Replacement3)'))</_ReplacementText>
 
       <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' != ''">%(NoneSubstituteText.CopyToOutputDirectory)</_CopyToOutputDirectory>
       <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' == ''">Never</_CopyToOutputDirectory>
