@@ -179,7 +179,7 @@
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
-    </Compile>    
+    </Compile>
     <FsLex Include="..\..\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbsIL\illex.fsl</Link>
@@ -410,6 +410,9 @@
     <Compile Include="..\AttributeChecking.fs">
       <Link>Logic\AttributeChecking.fs</Link>
     </Compile>
+    <Compile Include="..\TypeRelations.fs">
+      <Link>Logic\TypeRelations.fs</Link>
+    </Compile>
     <Compile Include="..\InfoReader.fs">
       <Link>Logic\InfoReader.fs</Link>
     </Compile>
@@ -427,9 +430,6 @@
     </Compile>
     <Compile Include="..\NameResolution.fs">
       <Link>Logic\NameResolution.fs</Link>
-    </Compile>
-    <Compile Include="..\TypeRelations.fs">
-      <Link>Logic\TypeRelations.fs</Link>
     </Compile>
     <Compile Include="..\SignatureConformance.fs">
       <Link>Logic\SignatureConformance.fs</Link>

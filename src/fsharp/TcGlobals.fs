@@ -1102,6 +1102,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     
   member __.tcref_System_Attribute = v_System_Attribute_tcr
 
+  // Review: Does this need to be an option type?
+  member val System_Runtime_CompilerServices_RuntimeFeature_ty = tryFindSysTyconRef sysCompilerServices "RuntimeFeature" |> Option.map mkNonGenericTy
+
   member val iltyp_TypedReference      = tryFindSysILTypeRef "System.TypedReference" |> Option.map mkILNonGenericValueTy
   member val iltyp_StreamingContext    = tryFindSysILTypeRef tname_StreamingContext  |> Option.map mkILNonGenericValueTy
   member val iltyp_SerializationInfo   = tryFindSysILTypeRef tname_SerializationInfo  |> Option.map mkILNonGenericBoxedTy
