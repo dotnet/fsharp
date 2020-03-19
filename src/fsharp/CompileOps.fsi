@@ -27,7 +27,7 @@ open Microsoft.FSharp.Core.CompilerServices
 open FSharp.Compiler.ExtensionTyping
 #endif
 
-open Interactive.DependencyManager
+open Microsoft.Interactive.DependencyManager
 
 #if DEBUG
 
