@@ -17877,6 +17877,7 @@ let ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs =
             if not tp.IsSolved then 
                 if (tp.StaticReq <> NoStaticReq) then
                     ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
+
     with e -> errorRecovery e m
 
 let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m = 
