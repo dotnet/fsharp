@@ -7,7 +7,7 @@ rem
 setlocal
 set __scriptpath=%~dp0
 set configuration=Debug
-
+set DisableFSharpCorePreviewCheck=true
 :parseargs
 if "%1" == "" goto argsdone
 if /i "%1" == "-c" goto set_configuration

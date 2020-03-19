@@ -74,8 +74,12 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <PropertyGroup>
     <DefaultValueTuplePackageVersion>4.4.0</DefaultValueTuplePackageVersion>
-    <DefaultFSharpCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)'!='false'">{{FSharpCoreShippedPackageVersion}}</DefaultFSharpCorePackageVersion>
-    <DefaultFSharpCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)'=='false'">{{FSCorePackageVersion}}</DefaultFSharpCorePackageVersion>
+    <!--
+        if $(DisableFSharpCorePreviewCheck) then use existing behaviour
+        otherwise pick fsharp.core version based on $(_NETCoreSdkIsPreview)
+    -->
+    <DefaultFSharpCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)'!='false' or '$(DisableFSharpCorePreviewCheck)' == 'true'">{{FSharpCoreShippedPackageVersion}}</DefaultFSharpCorePackageVersion>
+    <DefaultFSharpCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)'=='false' and '$(DisableFSharpCorePreviewCheck)'== 'false'">{{FSCorePackageVersion}}</DefaultFSharpCorePackageVersion>
     <DefaultFSharpCorePreviewPackageVersion>{{FSharpCorePreviewPackageVersion}}</DefaultFSharpCorePreviewPackageVersion>
     <ValueTupleImplicitPackageVersion>$(DefaultValueTuplePackageVersion)</ValueTupleImplicitPackageVersion>
     <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePackageVersion)</FSharpCoreImplicitPackageVersion>
