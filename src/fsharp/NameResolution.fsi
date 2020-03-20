@@ -32,10 +32,8 @@ val ActivePatternElemsOfModuleOrNamespace : ModuleOrNamespaceRef -> NameMap<Acti
 type ArgumentContainer =
     /// The named argument is an argument of a method
     | Method of MethInfo
-    /// The named argument is a static parameter to a provided type or a parameter to an F# exception constructor
+    /// The named argument is a static parameter to a provided type.
     | Type of TyconRef
-    /// The named argument is a static parameter to a union case constructor
-    | UnionCase of UnionCaseInfo * fieldIndex: int
 
 //---------------------------------------------------------------------------
 // 
@@ -52,7 +50,7 @@ type Item =
     | Value of  ValRef
 
     /// Represents the resolution of a name to an F# union case.
-    | UnionCase of UnionCaseInfo * bool
+    | UnionCase of UnionCaseInfo * hasRequireQualifiedAccessAttr: bool
 
     /// Represents the resolution of a name to an F# active pattern result.
     | ActivePatternResult of ActivePatternInfo * TType * int  * range
@@ -65,6 +63,9 @@ type Item =
 
     /// Represents the resolution of a name to an F# record field.
     | RecdField of RecdFieldInfo
+
+    /// Represents the resolution of a name to a union case or exception field.
+    | UnionCaseField of UnionCaseInfo * fieldIndex: int
 
     /// Represents the resolution of a name to a field of an anonymous record type.
     | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range

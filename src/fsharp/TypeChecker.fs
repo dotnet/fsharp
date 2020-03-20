@@ -5476,13 +5476,12 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                                 errorR (Error (FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName (id.idText), id.idRange))
 
                         | Some idx ->
-                            let argContainerOpt =
+                            let argItem =
                                 match item with
-                                | Item.UnionCase (uci, _) -> Some (ArgumentContainer.UnionCase (uci, idx))
-                                | Item.ExnCase tref -> Some (ArgumentContainer.Type tref)
-                                | _ -> None
+                                | Item.UnionCase (uci, _) -> Item.UnionCaseField (uci, idx)
+                                | Item.ExnCase tref -> Item.RecdField (RecdFieldInfo ([], RFRef (tref, id.idText)))
+                                | _ -> failwithf "Expecting union case or exception item, got: %O" item
 
-                            let argItem = Item.ArgName (argNames.[idx], argTys.[idx], argContainerOpt)   
                             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, argItem, argItem, emptyTyparInst, ItemOccurence.Pattern, env.DisplayEnv, ad)
 
                             match box result.[idx] with
@@ -9399,11 +9398,11 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                         | Some i -> 
                             if isNull(box fittedArgs.[i]) then
                                 fittedArgs.[i] <- arg
-                                let argContainerOpt = match item with
-                                                      | Item.UnionCase(uci, _) -> Some(ArgumentContainer.UnionCase (uci, i))
-                                                      | Item.ExnCase tref -> Some(ArgumentContainer.Type tref)
-                                                      | _ -> None
-                                let argItem = Item.ArgName (argNames.[i], argTys.[i], argContainerOpt)   
+                                let argItem =
+                                    match item with
+                                    | Item.UnionCase (uci, _) -> Item.UnionCaseField (uci, i)
+                                    | Item.ExnCase tref -> Item.RecdField (RecdFieldInfo ([], RFRef (tref, id.idText)))
+                                    | _ -> failwithf "Expecting union case or exception item, got: %O" item   
                                 CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, argItem, argItem, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, ad)
                             else error(Error(FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce(id.idText), id.idRange))
                             currentIndex <- SEEN_NAMED_ARGUMENT

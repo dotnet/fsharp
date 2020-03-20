@@ -352,11 +352,14 @@ module internal SymbolHelpers =
         | Some false -> ucinfo.UnionCase.DefinitionRange 
         | Some true -> ucinfo.UnionCase.SigRange
 
-    let rangeOfRecdFieldInfo preferFlag (rfinfo: RecdFieldInfo) =      
-        match preferFlag with 
-        | None -> rfinfo.RecdField.Range 
-        | Some false -> rfinfo.RecdField.DefinitionRange 
-        | Some true -> rfinfo.RecdField.SigRange
+    let rangeOfRecdField preferFlag (rField: RecdField) =
+        match preferFlag with
+        | None -> rField.Range
+        | Some false -> rField.DefinitionRange
+        | Some true -> rField.SigRange
+
+    let rangeOfRecdFieldInfo preferFlag (rfinfo: RecdFieldInfo) =
+        rangeOfRecdField preferFlag rfinfo.RecdField
 
     let rec rangeOfItem (g: TcGlobals) preferFlag d = 
         match d with
@@ -366,6 +369,7 @@ module internal SymbolHelpers =
         | Item.ExnCase tcref           -> Some tcref.Range
         | Item.AnonRecdField (_,_,_,m) -> Some m
         | Item.RecdField rfinfo        -> Some (rangeOfRecdFieldInfo preferFlag rfinfo)
+        | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> Some (rangeOfRecdField preferFlag (ucref.FieldByIndex(fieldIndex)))
         | Item.Event einfo             -> rangeOfEventInfo preferFlag einfo
         | Item.ILField _               -> None
         | Item.Property(_, pinfos)      -> rangeOfPropInfo preferFlag pinfos.Head 
@@ -630,7 +634,6 @@ module internal SymbolHelpers =
             match argContainer with 
             | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
             | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-            | ArgumentContainer.UnionCase (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
         |  _ -> FSharpXmlDoc.None
 
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
@@ -909,6 +912,7 @@ module internal SymbolHelpers =
         | Item.ArgName (id, _, _) -> id.idText
         | Item.SetterArg (_, item) -> FullNameOfItem g item
         | Item.ImplicitOp(id, _) -> id.idText
+        | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).Name
         // unreachable 
         | Item.UnqualifiedType([]) 
         | Item.Types(_, []) 
@@ -968,8 +972,6 @@ module internal SymbolHelpers =
                     if minfo.HasDirectXmlComment || minfo.XmlDoc.NonEmpty  then Some minfo.XmlDoc else None 
                 | Some(ArgumentContainer.Type tcref) ->
                     if tyconRefUsesLocalXmlDoc g.compilingFslib tcref || tcref.XmlDoc.NonEmpty  then Some tcref.XmlDoc else None
-                | Some(ArgumentContainer.UnionCase (ucinfo, _)) ->
-                    if tyconRefUsesLocalXmlDoc g.compilingFslib ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then Some ucinfo.UnionCase.XmlDoc else None
                 | _ -> None
             GetXmlCommentForItemAux xmldoc infoReader m item
 
@@ -1455,6 +1457,7 @@ module internal SymbolHelpers =
         | Item.CustomOperation (_, _, None)   // "into"
         | Item.NewDef _ // "let x$yz = ..." - no keyword
         | Item.ArgName _ // no keyword on named parameters 
+        | Item.UnionCaseField _ 
         | Item.TypeVar _ 
         | Item.ImplicitOp _
         | Item.ActivePatternResult _ // "let (|Foo|Bar|) = .. Fo$o ..." - no keyword

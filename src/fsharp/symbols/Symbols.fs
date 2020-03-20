@@ -248,6 +248,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
         | Item.UnionCase (uinfo, _) -> FSharpUnionCase(cenv, uinfo.UnionCaseRef) :> _
         | Item.ExnCase tcref -> FSharpEntity(cenv, tcref) :>_
         | Item.RecdField rfinfo -> FSharpField(cenv, RecdOrClass rfinfo.RecdFieldRef) :> _
+        | Item.UnionCaseField (UnionCaseInfo (_, ucref), index) -> FSharpField (cenv, Union (ucref, index)) :> _
 
         | Item.ILField finfo -> FSharpField(cenv, ILField finfo) :> _
 
@@ -292,12 +293,8 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
         | Item.ActivePatternResult (apinfo, ty, n, _) ->
              FSharpActivePatternCase(cenv, apinfo, ty, n, None, item) :> _
 
-        | Item.ArgName(id, ty, argOwner)  ->
-            match argOwner with
-            | Some (ArgumentContainer.UnionCase (UnionCaseInfo (_, ucref), fieldIndex)) ->
-                FSharpField(cenv, ucref, fieldIndex) :> _
-            | _ ->
-                FSharpParameter(cenv, id, ty, argOwner) :> _
+        | Item.ArgName(id, ty, argOwner) ->
+            FSharpParameter(cenv, id, ty, argOwner) :> _
 
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) ->
             FSharpMemberOrFunctionOrValue(cenv, V vref, item) :> _
@@ -873,9 +870,9 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
                                 | RecdOrClass v -> 
                                     checkEntityIsResolved v.TyconRef
                                     Item.RecdField(RecdFieldInfo(generalizeTypars v.TyconRef.TyparsNoRange, v))
-                                | Union (v, _) -> 
-                                    // This is not correct: there is no "Item" for a named union case field
-                                    Item.UnionCase(UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v), false)
+                                | Union (v, fieldIndex) ->
+                                    checkEntityIsResolved v.TyconRef
+                                    Item.UnionCaseField (UnionCaseInfo (generalizeTypars v.TyconRef.TyparsNoRange, v), fieldIndex)
                                 | ILField f -> 
                                     Item.ILField f), 
                           (fun this thisCcu2 ad -> 
