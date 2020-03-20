@@ -79,7 +79,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
         otherwise pick fsharp.core version based on $(_NETCoreSdkIsPreview)
     -->
     <DefaultFSharpCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)'!='false' or '$(DisableFSharpCorePreviewCheck)' == 'true'">{{FSharpCoreShippedPackageVersion}}</DefaultFSharpCorePackageVersion>
-    <DefaultFSharpCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)'=='false' and '$(DisableFSharpCorePreviewCheck)'== 'false'">{{FSCorePackageVersion}}</DefaultFSharpCorePackageVersion>
+    <DefaultFSharpCorePackageVersion Condition="'$(_NETCoreSdkIsPreview)'=='false' and '$(DisableFSharpCorePreviewCheck)'!= 'true'">{{FSCorePackageVersion}}</DefaultFSharpCorePackageVersion>
     <DefaultFSharpCorePreviewPackageVersion>{{FSharpCorePreviewPackageVersion}}</DefaultFSharpCorePreviewPackageVersion>
     <ValueTupleImplicitPackageVersion>$(DefaultValueTuplePackageVersion)</ValueTupleImplicitPackageVersion>
     <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePackageVersion)</FSharpCoreImplicitPackageVersion>

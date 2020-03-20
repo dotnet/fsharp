@@ -30,6 +30,7 @@ let FSI_BASIC = FSI_FILE
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
 module CoreTests =
+#if KEVIN
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
@@ -228,6 +229,7 @@ module CoreTests =
 
     [<Test>]
     let ``recordResolution-FSI_BASIC`` () = singleTestBuildAndRun "core/recordResolution" FSI_BASIC
+#endif
 
     [<Test>]
     let ``SDKTests`` () =

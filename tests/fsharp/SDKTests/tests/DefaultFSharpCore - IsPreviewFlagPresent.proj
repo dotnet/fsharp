@@ -1,0 +1,16 @@
+<Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Verifies that the SDK has set the _NETCoreSdkIsPreview property to some a value -->
+
+  <Import Project="Test.props" />
+
+  <PropertyGroup>
+    <Expects_NETCoreSdkIsPreviewFlag>true</Expects_NETCoreSdkIsPreviewFlag>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+    <ExpectsFSharpCore>false</ExpectsFSharpCore>
+  </PropertyGroup>
+
+  <Import Project="Test.targets" />
+
+</Project>
