@@ -447,6 +447,12 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/PatternMatchCompilation.fs">
       <Link>Logic/PatternMatchCompilation.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fsi">
+      <Link>Logic/FindUnsolved.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fs">
+      <Link>Logic/FindUnsolved.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ConstraintSolver.fsi">
       <Link>Logic/ConstraintSolver.fsi</Link>
     </Compile>
@@ -458,12 +464,6 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CheckFormatStrings.fs">
       <Link>Logic/CheckFormatStrings.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fsi">
-      <Link>Logic/FindUnsolved.fsi</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fs">
-      <Link>Logic/FindUnsolved.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QuotationTranslator.fsi">
       <Link>Logic/QuotationTranslator.fsi</Link>
