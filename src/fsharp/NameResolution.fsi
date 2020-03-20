@@ -35,7 +35,7 @@ type ArgumentContainer =
     /// The named argument is a static parameter to a provided type or a parameter to an F# exception constructor
     | Type of TyconRef
     /// The named argument is a static parameter to a union case constructor
-    | UnionCase of UnionCaseInfo
+    | UnionCase of UnionCaseInfo * fieldIndex: int
 
 //---------------------------------------------------------------------------
 // 

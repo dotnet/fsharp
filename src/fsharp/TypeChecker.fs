@@ -5478,7 +5478,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                         | Some idx ->
                             let argContainerOpt =
                                 match item with
-                                | Item.UnionCase (uci, _) -> Some (ArgumentContainer.UnionCase uci)
+                                | Item.UnionCase (uci, _) -> Some (ArgumentContainer.UnionCase (uci, idx))
                                 | Item.ExnCase tref -> Some (ArgumentContainer.Type tref)
                                 | _ -> None
 
@@ -9400,7 +9400,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                             if isNull(box fittedArgs.[i]) then
                                 fittedArgs.[i] <- arg
                                 let argContainerOpt = match item with
-                                                      | Item.UnionCase(uci, _) -> Some(ArgumentContainer.UnionCase uci)
+                                                      | Item.UnionCase(uci, _) -> Some(ArgumentContainer.UnionCase (uci, i))
                                                       | Item.ExnCase tref -> Some(ArgumentContainer.Type tref)
                                                       | _ -> None
                                 let argItem = Item.ArgName (argNames.[i], argTys.[i], argContainerOpt)   

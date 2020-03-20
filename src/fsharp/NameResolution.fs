@@ -130,7 +130,7 @@ type ArgumentContainer =
     /// The named argument is a static parameter to a provided type or a parameter to an F# exception constructor
     | Type of TyconRef
     /// The named argument is a static parameter to a union case constructor
-    | UnionCase of UnionCaseInfo
+    | UnionCase of UnionCaseInfo * fieldIndex: int
 
 // Note: Active patterns are encoded like this:
 //   let (|A|B|) x = if x < 0 then A else B    // A and B are reported as results using 'Item.ActivePatternResult'
