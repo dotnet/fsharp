@@ -795,8 +795,8 @@ let ``Test project2 all uses of all symbols`` () =
            ("DU", "file1", ((12, 25), (12, 27)), []);
            ("DUWithNamedFields", "file1", ((12, 5), (12, 22)), ["union"]);
            ("DU", "file1", ((14, 8), (14, 10)), []);
-           ("x", "file1", ((14, 11), (14, 12)), []);
-           ("y", "file1", ((14, 16), (14, 17)), []);
+           ("x", "file1", ((14, 11), (14, 12)), ["field"]);
+           ("y", "file1", ((14, 16), (14, 17)), ["field"])
            ("T", "file1", ((16, 18), (16, 20)), []);
            ("GenericClass", "file1", ((16, 5), (16, 17)), ["class"]);
            ("( .ctor )", "file1", ((16, 5), (16, 17)), ["member"; "ctor"]);
@@ -1811,7 +1811,7 @@ let ``Test project 8 all symbols`` () =
                 ("B", "B", "file1", ((4, 9), (4, 10)), ["defn"], []);
                 ("A", "A", "file1", ((4, 5), (4, 6)), ["defn"], ["union"]);
                 ("B", "B", "file1", ((5, 8), (5, 9)), [], []);
-                ("parameter xxx", "xxx", "file1", ((5, 10), (5, 13)), [], []);
+                ("field xxx", "xxx", "file1", ((5, 10), (5, 13)), [], ["field"]);
                 ("parameter yyy", "yyy", "file1", ((5, 17), (5, 20)), [], []);
                 ("val b", "b", "file1", ((5, 4), (5, 5)), ["defn"], ["val"]);
                 ("val b", "b", "file1", ((8, 10), (8, 11)), [], ["val"]);

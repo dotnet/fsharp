@@ -1675,6 +1675,7 @@ and
     member uc.RecdFields = uc.FieldTable.FieldsByIndex |> Array.toList
 
     member uc.GetFieldByName nm = uc.FieldTable.FieldByName nm
+    member uc.GetFieldByIndex nm = uc.FieldTable.FieldByIndex nm
 
     member uc.IsNullary = (uc.FieldTable.FieldsByIndex.Length = 0)
 
