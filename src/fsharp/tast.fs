@@ -5714,7 +5714,6 @@ let MakeRecdFieldsTable ucs: TyconRecdFields =
     { FieldsByIndex = Array.ofList ucs 
       FieldsByName = ucs |> NameMap.ofKeyedList (fun rfld -> rfld.Name) }
                                                                   
-
 let MakeUnionCases ucs: TyconUnionData = 
     { CasesTable=MakeUnionCasesTable ucs 
       CompiledRepresentation=newCache() }
@@ -5722,9 +5721,13 @@ let MakeUnionCases ucs: TyconUnionData =
 let MakeUnionRepr ucs = TUnionRepr (MakeUnionCases ucs)
 
 let NewTypar (kind, rigid, Typar(id, staticReq, isCompGen), isFromError, dynamicReq, attribs, eqDep, compDep) = 
+    let stamp = newStamp()
+    //printfn "stamp = %d" stamp
+    //if stamp = 16193L then 
+    //    assert false
     Typar.New
       { typar_id = id 
-        typar_stamp = newStamp() 
+        typar_stamp = stamp 
         typar_flags= TyparFlags(kind, rigid, isFromError, isCompGen, staticReq, dynamicReq, eqDep, compDep) 
         typar_solution = None
         typar_astype = Unchecked.defaultof<_>

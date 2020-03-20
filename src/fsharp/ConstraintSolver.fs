@@ -106,13 +106,8 @@ let NewByRefKindInferenceType (g: TcGlobals) m =
 
 let NewInferenceTypes l = l |> List.map (fun _ -> NewInferenceType ()) 
 
-// QUERY: should 'rigid' ever really be 'true'? We set this when we know 
-// we are going to have to generalize a typar, e.g. when implementing a 
-// abstract generic method slot. But we later check the generalization 
-// condition anyway, so we could get away with a non-rigid typar. This 
-// would sort of be cleaner, though give errors later. 
 let FreshenAndFixupTypars (traitCtxt: ITraitContext option) m rigid fctps tinst tpsorig = 
-    let copy_tyvar (tp: Typar) =  NewCompGenTypar (tp.Kind, rigid, tp.StaticReq, (if rigid=TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No), false)
+    let copy_tyvar (tp: Typar) = NewCompGenTypar (tp.Kind, rigid, tp.StaticReq, (if rigid=TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No), false)
     let tps = tpsorig |> List.map copy_tyvar 
     let renaming, tinst = FixupNewTypars traitCtxt m fctps tinst tpsorig tps
     tps, renaming, tinst
@@ -322,13 +317,13 @@ let rec occursCheck g un ty =
 type PermitWeakResolution = 
 
     /// Represents the point where we are generalizing inline code
-    | YesAtInlineGeneralization
+    | LegacyYesAtInlineGeneralization
     
     /// Represents points where we are choosing a default solution to trait constraints
     | YesAtChooseSolution
 
-    /// Represents legacy invocations of the constraint solver during codegen
-    | YesAtCodeGen
+    /// Represents invocations of the constraint solver during codegen or inlining to determine witnesses
+    | LegacyYesAtCodeGen
 
     /// No weak resolution allowed
     | No
@@ -339,15 +334,15 @@ type PermitWeakResolution =
         if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then 
             match x with
             | YesAtChooseSolution -> true
-            | YesAtInlineGeneralization
-            | YesAtCodeGen
+            | LegacyYesAtCodeGen
+            | LegacyYesAtInlineGeneralization
             | No -> false
         else
             //legacy 
             match x with
-            | YesAtChooseSolution -> true
-            | YesAtCodeGen -> true
-            | YesAtInlineGeneralization -> true
+            | YesAtChooseSolution
+            | LegacyYesAtCodeGen
+            | LegacyYesAtInlineGeneralization -> true
             | No -> false
 
 
@@ -447,7 +442,7 @@ let IsBinaryOpArgTypePair p1 p2 permitWeakResolution minfos g ty1 ty2 =
 
     // During regular canonicalization (weak resolution) we don't do any check on the other type at all - we 
     // ignore the possibility that method overloads may resolve the constraint
-    | PermitWeakResolution.YesAtInlineGeneralization
+    | PermitWeakResolution.LegacyYesAtInlineGeneralization
     | PermitWeakResolution.YesAtChooseSolution -> 
         // weak resolution lets the other type be a variable type
         isTyparTy g ty2 || 
@@ -457,7 +452,7 @@ let IsBinaryOpArgTypePair p1 p2 permitWeakResolution minfos g ty1 ty2 =
         typeEquivAux EraseMeasures g ty1 ty2
     
     // During codegen we only apply a builtin resolution if both the types are correct
-    | PermitWeakResolution.YesAtCodeGen ->
+    | PermitWeakResolution.LegacyYesAtCodeGen ->
         p2 ty2 &&
         // All built-in rules only apply in cases where left and right operator types are equal (after
         // erasing units)
@@ -1853,7 +1848,7 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep (pe
         SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo)
 
 and CanonicalizeRelevantMemberConstraints (csenv: ConstraintSolverEnv) ndeep trace tps isInline =
-    let permitWeakResolution = (if isInline then PermitWeakResolution.YesAtInlineGeneralization else PermitWeakResolution.YesAtChooseSolution)
+    let permitWeakResolution = (if isInline then PermitWeakResolution.LegacyYesAtInlineGeneralization else PermitWeakResolution.YesAtChooseSolution)
     SolveRelevantMemberConstraints csenv ndeep permitWeakResolution trace tps
   
 and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) traitInfo support (frees: Typar list) =
@@ -3148,17 +3143,6 @@ let CreateCodegenState tcVal g amap =
       ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
       InfoReader = new InfoReader(g, amap) }
 
-let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: TraitConstraintInfo) argExprs = trackErrors {
-    let css = CreateCodegenState tcVal g amap
-
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-
-    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.YesAtCodeGen 0 m NoTrace traitInfo
-
-    let sln = GenWitnessExpr amap g m traitInfo argExprs
-    return sln
-  }
-
 let ChooseTyparSolutionAndSolve css denv tp =
     let g = css.g
     let amap = css.amap
@@ -3168,6 +3152,25 @@ let ChooseTyparSolutionAndSolve css denv tp =
         (fun () -> SolveTyparEqualsType csenv 0 m NoTrace (mkTyparTy tp) max)
         (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
     |> RaiseOperationResult
+
+let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: TraitConstraintInfo) argExprs = trackErrors {
+    let css = CreateCodegenState tcVal g amap
+    let denv = DisplayEnv.Empty g
+
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+
+    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.LegacyYesAtCodeGen 0 m NoTrace traitInfo
+    let sln = GenWitnessExpr amap g m traitInfo argExprs
+
+    sln |> Option.iter (fun slnExpr -> 
+        let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfExpr g amap denv slnExpr
+
+        unsolved |> List.iter (fun tp -> 
+                if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
+                    ChooseTyparSolutionAndSolve css denv tp))
+
+    return sln
+  }
 
 let CheckDeclaredTypars denv css m typars1 typars2 = 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv

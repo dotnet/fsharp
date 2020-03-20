@@ -1303,6 +1303,9 @@ module DebugPrint =
     /// A global flag indicating whether debug output should include ranges
     val layoutRanges : bool ref
 
+    /// A global flag indicating whether debug output should include stamps
+    val layoutStamps : bool ref
+
     /// Convert a type to a string for debugging purposes
     val showType : TType -> string
 

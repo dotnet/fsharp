@@ -2743,7 +2743,7 @@ type DisplayEnv =
         maxMembers = None
         showObsoleteMembers = false
         showHiddenMembers = false
-        showTyparBinding = false
+        showTyparBinding = true
         showImperativeTyparAnnotations = false
         suppressInlineKeyword = false
         suppressMutableKeyword = false
@@ -3383,8 +3383,9 @@ module DebugPrint =
             else stat
         stat
 
-    let stampL _n w = 
-        w
+    let layoutStamps = ref false
+    let stampL (n: int64) w = 
+        if layoutStamps.Value then w ++ (wordL (tagText ("#" + string n))) else w
 
     let layoutTyconRef (tc: TyconRef) = 
         wordL (tagText tc.DisplayNameWithStaticParameters) |> stampL tc.Stamp
@@ -3901,7 +3902,7 @@ module DebugPrint =
                 wordL(tagText "bytes++")
             | Expr.Op (TOp.UInt16s _, _, _, _) -> wordL(tagText "uint16++")
             | Expr.Op (TOp.RefAddrGet _, _tyargs, _args, _) -> wordL(tagText "GetRefLVal...")
-            | Expr.Op (TOp.TraitCall _, _tyargs, _args, _) -> wordL(tagText "traitcall...")
+            | Expr.Op (TOp.TraitCall traitInfo, _tyargs, _args, _) -> wordL(tagText "traitcall") ^^ auxTraitL SimplifyTypes.typeSimplificationInfo0 traitInfo
             | Expr.Op (TOp.ExnFieldGet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldGet...")
             | Expr.Op (TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldSet...")
             | Expr.Op (TOp.TryFinally _, _tyargs, _args, _) -> wordL(tagText "TOp.TryFinally...")
@@ -7499,7 +7500,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
 
             let curriedInputTys, _ = stripFunTy g inputTy
 
-            assert (curriedActualArgTys.Length = curriedInputTys.Length)
+            if curriedActualArgTys.Length <> curriedInputTys.Length then None else
 
             let argTys = (curriedInputTys, curriedActualArgTys) ||> List.mapi2 (fun i x y -> (i, x, y))
 

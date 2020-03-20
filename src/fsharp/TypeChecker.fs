@@ -11481,7 +11481,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         let (ExplicitTyparInfo(_, declaredTypars, canInferTypars)) = flex
         let allDeclaredTypars = enclosingDeclaredTypars @ declaredTypars
         let generalizedTypars, prelimValSchemes2 = 
-            let canInferTypars = GeneralizationHelpers. ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, canInferTypars, None)
+            let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, canInferTypars, None)
 
             let maxInferredTypars = freeInTypeLeftToRight cenv.g false tauTy
 
@@ -11493,6 +11493,10 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
                    let canConstrain = GeneralizationHelpers.CanGeneralizeConstrainedTyparsForDecl declKind
                    GeneralizationHelpers.ComputeAndGeneralizeGenericTypars
                        (cenv, denv, m, freeInEnv, canInferTypars, canConstrain, inlineFlag, Some rhsExpr, allDeclaredTypars, maxInferredTypars, tauTy, false)
+
+            //printfn "Generalizing 'let' at %A" m
+            //printfn "  generalizedTypars = %s" (Layout.showL (DebugPrint.typarsL generalizedTypars))
+            //printfn "  rhsExpr = %s" (Layout.showL (DebugPrint.exprL cenv.g rhsExpr))
 
             let prelimValSchemes2 = GeneralizeVals cenv denv enclosingDeclaredTypars generalizedTypars nameToPrelimValSchemeMap
 
@@ -12394,6 +12398,10 @@ and TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv (pgr
 
     let canGeneralizeConstrained = GeneralizationHelpers.CanGeneralizeConstrainedTyparsForDecl rbinfo.DeclKind
     let generalizedTypars = GeneralizationHelpers.ComputeAndGeneralizeGenericTypars (cenv, denv, m, freeInEnv, canInferTypars, canGeneralizeConstrained, inlineFlag, Some expr, allDeclaredTypars, maxInferredTypars, tau, isCtor)
+
+    printfn "Generalizing 'member/let-rec' at %A" m
+    printfn "  generalizedTypars = %s" (Layout.showL (DebugPrint.typarsL generalizedTypars))
+    printfn "  rhsExpr = %s" (Layout.showL (DebugPrint.exprL cenv.g expr))
     generalizedTypars
 
 /// Compute the type variables which may have member constraints that need to be canonicalized prior to generalization 

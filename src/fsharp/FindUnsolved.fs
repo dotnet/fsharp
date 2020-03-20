@@ -276,4 +276,13 @@ let UnsolvedTyparsOfModuleDef g amap denv (mdef, extraAttribs) =
    accAttribs cenv Nix extraAttribs
    List.rev cenv.unsolved
 
+let UnsolvedTyparsOfExpr g amap denv expr =
+   let cenv = 
+      { g =g  
+        amap=amap 
+        denv=denv 
+        unsolved = [] }
+   accExpr cenv Nix expr
+   List.rev cenv.unsolved
+
 
