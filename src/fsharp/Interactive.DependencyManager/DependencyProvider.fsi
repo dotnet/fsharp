@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Helper members to integrate DependencyManagers into F# codebase
-namespace Interactive.DependencyManager
+namespace Microsoft.Interactive.DependencyManager
 
 open System
 open System.Runtime.InteropServices

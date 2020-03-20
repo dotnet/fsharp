@@ -51,7 +51,7 @@ open FSharp.Compiler.Text
 
 open FSharp.Compiler.DotNetFrameworkDependencies
 
-open Interactive.DependencyManager
+open Microsoft.Interactive.DependencyManager
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
