@@ -11494,10 +11494,6 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
                    GeneralizationHelpers.ComputeAndGeneralizeGenericTypars
                        (cenv, denv, m, freeInEnv, canInferTypars, canConstrain, inlineFlag, Some rhsExpr, allDeclaredTypars, maxInferredTypars, tauTy, false)
 
-            //printfn "Generalizing 'let' at %A" m
-            //printfn "  generalizedTypars = %s" (Layout.showL (DebugPrint.typarsL generalizedTypars))
-            //printfn "  rhsExpr = %s" (Layout.showL (DebugPrint.exprL cenv.g rhsExpr))
-
             let prelimValSchemes2 = GeneralizeVals cenv denv enclosingDeclaredTypars generalizedTypars nameToPrelimValSchemeMap
 
             generalizedTypars, prelimValSchemes2
@@ -12399,9 +12395,6 @@ and TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv (pgr
     let canGeneralizeConstrained = GeneralizationHelpers.CanGeneralizeConstrainedTyparsForDecl rbinfo.DeclKind
     let generalizedTypars = GeneralizationHelpers.ComputeAndGeneralizeGenericTypars (cenv, denv, m, freeInEnv, canInferTypars, canGeneralizeConstrained, inlineFlag, Some expr, allDeclaredTypars, maxInferredTypars, tau, isCtor)
 
-    //printfn "Generalizing 'member/let-rec' at %A" m
-    //printfn "  generalizedTypars = %s" (Layout.showL (DebugPrint.typarsL generalizedTypars))
-    //printfn "  rhsExpr = %s" (Layout.showL (DebugPrint.exprL cenv.g expr))
     generalizedTypars
 
 /// Compute the type variables which may have member constraints that need to be canonicalized prior to generalization 
@@ -14595,8 +14588,8 @@ module MutRecBindingChecking =
                      freeInTypar.Exists(fun otherTypar -> genSet.Contains otherTypar))
              //printfn "unsolvedTyparsInvolvingGeneralizedVariables.Length = %d" unsolvedTyparsInvolvingGeneralizedVariables.Length
              //for x in unsolvedTypars do 
+             //    printfn "unsolvedTyparsInvolvingGeneralizedVariable: %s #%d" x.DisplayName x.Stamp
              //   
-             unsolvedTyparsInvolvingGeneralizedVariable: %s #%d" x.DisplayName x.Stamp
              unsolvedTyparsInvolvingGeneralizedVariables
 
         for tp in unsolvedTyparsForRecursiveBlockInvolvingGeneralizedVariables do
