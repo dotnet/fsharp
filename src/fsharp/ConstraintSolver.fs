@@ -3153,25 +3153,6 @@ let ChooseTyparSolutionAndSolve css denv tp =
         (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
     |> RaiseOperationResult
 
-let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: TraitConstraintInfo) argExprs = trackErrors {
-    let css = CreateCodegenState tcVal g amap
-    let denv = DisplayEnv.Empty g
-
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-
-    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.LegacyYesAtCodeGen 0 m NoTrace traitInfo
-    let sln = GenWitnessExpr amap g m traitInfo argExprs
-
-    sln |> Option.iter (fun slnExpr -> 
-        let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfExpr g amap denv slnExpr
-
-        unsolved |> List.iter (fun tp -> 
-                if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
-                    ChooseTyparSolutionAndSolve css denv tp))
-
-    return sln
-  }
-
 let CheckDeclaredTypars denv css m typars1 typars2 = 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     TryD_IgnoreAbortForFailedOverloadResolution
@@ -3192,6 +3173,56 @@ let CanonicalizePartialInferenceProblem css denv m tps isInline =
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m))) 
     |> RaiseOperationResult
 
+/// Apply defaults arising from 'default' constraints in FSharp.Core
+/// for any unsolved free inference type variables.
+/// Defaults get applied before the module signature is checked and before the implementation conditions on virtuals/overrides. 
+/// Defaults get applied in priority order. Defaults listed last get priority 0 (lowest), 2nd last priority 1 etc. 
+let ApplyDefaultsForUnsolved css denv (unsolved: Typar list) =
+
+    // The priority order comes from the order of declaration of the defaults in FSharp.Core.
+    for priority = 10 downto 0 do
+        unsolved |> List.iter (fun tp -> 
+            if not tp.IsSolved then 
+                // Apply the first default. If we're defaulting one type variable to another then 
+                // the defaults will be propagated to the new type variable. 
+                ApplyTyparDefaultAtPriority denv css priority tp)
+
+    // OK, now apply defaults for any unsolved HeadTypeStaticReq 
+    unsolved |> List.iter (fun tp ->     
+        if not tp.IsSolved then 
+            if (tp.StaticReq <> NoStaticReq) then
+                ChooseTyparSolutionAndSolve css denv tp)
+
+/// Choose solutions for any remaining unsolved free inference type variables.
+let ChooseSolutionsForUnsolved css denv (unsolved: Typar list) =
+    unsolved |> List.iter (fun tp -> 
+        if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
+            ChooseTyparSolutionAndSolve css denv tp)
+
+let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: TraitConstraintInfo) argExprs = trackErrors {
+    let css = CreateCodegenState tcVal g amap
+    let denv = DisplayEnv.Empty g
+
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+
+    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.LegacyYesAtCodeGen 0 m NoTrace traitInfo
+    let sln = GenWitnessExpr amap g m traitInfo argExprs
+
+    // The process of generating witnesses can cause free inference type variables to arise from use
+    // of generic methods as extension constraint solutions. We eliminate these using the same
+    // sequence (ApplyDefault, ChooseSolutions) used at the end of type inference.
+    if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then 
+        sln |> Option.iter (fun slnExpr -> 
+            // Apply all defaults
+            let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfExpr g amap denv slnExpr
+            ApplyDefaultsForUnsolved css denv unsolved
+
+            // Search again and choose solutions
+            let unsolved2 = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfExpr g amap denv slnExpr
+            ChooseSolutionsForUnsolved css denv unsolved2)
+
+    return sln
+  }
 /// An approximation used during name resolution for intellisense to eliminate extension members which will not
 /// apply to a particular object argument. This is given as the isApplicableMeth argument to the partial name resolution
 /// functions in nameres.fs.

@@ -199,6 +199,13 @@ val CodegenWitnessThatTypeSupportsTraitConstraint: TcValF -> TcGlobals -> Import
 
 val ChooseTyparSolutionAndSolve: ConstraintSolverState -> DisplayEnv -> Typar -> unit
 
+/// Apply defaults arising from 'default' constraints in FSharp.Core
+/// for any unsolved free inference type variables.
+val ApplyDefaultsForUnsolved: ConstraintSolverState -> DisplayEnv -> Typar list -> unit
+
+/// Choose solutions for any remaining unsolved free inference type variables.
+val ChooseSolutionsForUnsolved: ConstraintSolverState -> DisplayEnv -> Typar list -> unit
+
 val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> ITraitContext option -> MethInfo -> TType -> bool
 
 val CanonicalizePartialInferenceProblem:  ConstraintSolverState -> DisplayEnv -> range -> Typars -> bool -> unit

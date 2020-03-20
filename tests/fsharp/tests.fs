@@ -3004,6 +3004,16 @@ module TypecheckTests =
     let ``type check neg132 preview`` () =
         singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg132"
 
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
+    [<Test>] 
+    let ``type check neg133`` () = singleNegTest (testConfig "typecheck/sigs") "neg133"
+
+    [<Test>] 
+    let ``type check neg133 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg133"
+
     [<Test>] 
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
 

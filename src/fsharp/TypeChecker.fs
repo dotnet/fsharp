@@ -12399,9 +12399,9 @@ and TcLetrecComputeAndGeneralizeGenericTyparsForBinding cenv denv freeInEnv (pgr
     let canGeneralizeConstrained = GeneralizationHelpers.CanGeneralizeConstrainedTyparsForDecl rbinfo.DeclKind
     let generalizedTypars = GeneralizationHelpers.ComputeAndGeneralizeGenericTypars (cenv, denv, m, freeInEnv, canInferTypars, canGeneralizeConstrained, inlineFlag, Some expr, allDeclaredTypars, maxInferredTypars, tau, isCtor)
 
-    printfn "Generalizing 'member/let-rec' at %A" m
-    printfn "  generalizedTypars = %s" (Layout.showL (DebugPrint.typarsL generalizedTypars))
-    printfn "  rhsExpr = %s" (Layout.showL (DebugPrint.exprL cenv.g expr))
+    //printfn "Generalizing 'member/let-rec' at %A" m
+    //printfn "  generalizedTypars = %s" (Layout.showL (DebugPrint.typarsL generalizedTypars))
+    //printfn "  rhsExpr = %s" (Layout.showL (DebugPrint.exprL cenv.g expr))
     generalizedTypars
 
 /// Compute the type variables which may have member constraints that need to be canonicalized prior to generalization 
@@ -14595,7 +14595,8 @@ module MutRecBindingChecking =
                      freeInTypar.Exists(fun otherTypar -> genSet.Contains otherTypar))
              //printfn "unsolvedTyparsInvolvingGeneralizedVariables.Length = %d" unsolvedTyparsInvolvingGeneralizedVariables.Length
              //for x in unsolvedTypars do 
-             //    printfn "unsolvedTyparsInvolvingGeneralizedVariable: %s #%d" x.DisplayName x.Stamp
+             //   
+             unsolvedTyparsInvolvingGeneralizedVariable: %s #%d" x.DisplayName x.Stamp
              unsolvedTyparsInvolvingGeneralizedVariables
 
         for tp in unsolvedTyparsForRecursiveBlockInvolvingGeneralizedVariables do
@@ -17864,27 +17865,13 @@ let rec IterTyconsOfModuleOrNamespaceType f (mty: ModuleOrNamespaceType) =
         IterTyconsOfModuleOrNamespaceType f v.ModuleOrNamespaceType)
 
 
-// Defaults get applied before the module signature is checked and before the implementation conditions on virtuals/overrides. 
-// Defaults get applied in priority order. Defaults listed last get priority 0 (lowest), 2nd last priority 1 etc. 
 let ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs = 
     try
-        let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
+        let unsolved = FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
-        ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css denvAtEnd m unsolved false
+        CanonicalizePartialInferenceProblem cenv.css denvAtEnd m unsolved false
 
-        // The priority order comes from the order of declaration of the defaults in FSharp.Core.
-        for priority = 10 downto 0 do
-            unsolved |> List.iter (fun tp -> 
-                if not tp.IsSolved then 
-                    // Apply the first default. If we're defaulting one type variable to another then 
-                    // the defaults will be propagated to the new type variable. 
-                    ConstraintSolver.ApplyTyparDefaultAtPriority denvAtEnd cenv.css priority tp)
-
-        // OK, now apply defaults for any unsolved HeadTypeStaticReq 
-        unsolved |> List.iter (fun tp ->     
-            if not tp.IsSolved then 
-                if (tp.StaticReq <> NoStaticReq) then
-                    ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
+        ConstraintSolver.ApplyDefaultsForUnsolved cenv.css denvAtEnd unsolved
 
     with e -> errorRecovery e m
 
@@ -17909,11 +17896,9 @@ let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m =
 
 
 let SolveInternalUnknowns g cenv denvAtEnd mexpr extraAttribs =
-    let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
+    let unsolved = FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
-    unsolved |> List.iter (fun tp -> 
-            if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
-                ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
+    ConstraintSolver.ChooseSolutionsForUnsolved cenv.css denvAtEnd unsolved
 
 let CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig mexpr =
         match rootSigOpt with 
