@@ -635,6 +635,7 @@ module internal SymbolHelpers =
             match argContainer with 
             | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
             | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+        | Item.UnionCaseField (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
         |  _ -> FSharpXmlDoc.None
 
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
@@ -974,6 +975,11 @@ module internal SymbolHelpers =
                 | Some(ArgumentContainer.Type tcref) ->
                     if tyconRefUsesLocalXmlDoc g.compilingFslib tcref || tcref.XmlDoc.NonEmpty  then Some tcref.XmlDoc else None
                 | _ -> None
+            GetXmlCommentForItemAux xmldoc infoReader m item
+
+        | Item.UnionCaseField (ucinfo, _) ->
+            let xmldoc =
+                if tyconRefUsesLocalXmlDoc g.compilingFslib ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then Some ucinfo.UnionCase.XmlDoc else None
             GetXmlCommentForItemAux xmldoc infoReader m item
 
         | Item.SetterArg (_, item) -> 
