@@ -1089,6 +1089,17 @@ module internal SymbolHelpers =
                 )
             FSharpStructuredToolTipElement.Single (layout, xml)
 
+        | Item.UnionCaseField (ucinfo, fieldIndex) ->
+            let rfield = ucinfo.UnionCase.GetFieldByIndex(fieldIndex)
+            let fieldTy, _ = PrettyTypes.PrettifyType g rfield.rfield_type
+            let id = rfield.Id
+            let layout =
+                wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
+                wordL (tagParameter id.idText) ^^
+                RightL.colon ^^
+                NicePrint.layoutType denv fieldTy
+            FSharpStructuredToolTipElement.Single (layout, xml, paramName = id.idText)
+
         // Not used
         | Item.NewDef id -> 
             let layout = 
