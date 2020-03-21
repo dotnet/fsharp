@@ -943,7 +943,16 @@ module internal SymbolHelpers =
             GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib ecref || ecref.XmlDoc.NonEmpty then Some ecref.XmlDoc else None) infoReader m item 
 
         | Item.RecdField rfinfo ->
-            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib rfinfo.TyconRef || rfinfo.TyconRef.XmlDoc.NonEmpty then Some rfinfo.RecdField.XmlDoc else None) infoReader m item 
+            let tcref = rfinfo.TyconRef
+            let xmldoc =
+                if tyconRefUsesLocalXmlDoc g.compilingFslib tcref || tcref.XmlDoc.NonEmpty then
+                    if tcref.IsExceptionDecl then
+                        Some tcref.XmlDoc
+                    else
+                        Some rfinfo.RecdField.XmlDoc
+                else
+                    None
+            GetXmlCommentForItemAux xmldoc infoReader m item 
 
         | Item.Event einfo ->
             GetXmlCommentForItemAux (if einfo.HasDirectXmlComment || einfo.XmlDoc.NonEmpty then Some einfo.XmlDoc else None) infoReader m item 
