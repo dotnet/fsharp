@@ -413,6 +413,7 @@ module internal SymbolHelpers =
         | Item.ActivePatternCase apref         -> ccuOfValRef apref.ActivePatternVal
         | Item.ExnCase tcref                   -> computeCcuOfTyconRef tcref
         | Item.RecdField rfinfo                -> computeCcuOfTyconRef rfinfo.RecdFieldRef.TyconRef
+        | Item.UnionCaseField (ucinfo, _)      -> computeCcuOfTyconRef ucinfo.TyconRef
         | Item.Event einfo                     -> einfo.DeclaringTyconRef |> computeCcuOfTyconRef
         | Item.ILField finfo                   -> finfo.DeclaringTyconRef |> computeCcuOfTyconRef
         | Item.Property(_, pinfos)              -> 
