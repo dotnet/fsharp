@@ -229,6 +229,11 @@ module CoreTests =
     [<Test>]
     let ``recordResolution-FSI_BASIC`` () = singleTestBuildAndRun "core/recordResolution" FSI_BASIC
 
+    [<Test>]
+    let ``SDKTests`` () =
+        let cfg = testConfig "SDKTests"
+        exec cfg cfg.DotNetExe ("msbuild " + Path.Combine(cfg.Directory, "AllSdkTargetsTests.proj"))
+
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC
