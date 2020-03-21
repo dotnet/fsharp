@@ -844,10 +844,9 @@ and FSharpFieldData =
 
     member x.TryDeclaringTyconRef =
         match x with 
-        | AnonField _ -> None
         | RecdOrClass v -> Some v.TyconRef
-        | Union (v, _) -> Some v.TyconRef
         | ILField f -> Some f.DeclaringTyconRef
+        | _ -> None
 
 and FSharpAnonRecordTypeDetails(cenv: SymbolEnv, anonInfo: AnonRecdTypeInfo)  =
     member __.Assembly = FSharpAssembly (cenv, anonInfo.Assembly)
@@ -957,6 +956,16 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         match d with 
         | AnonField (anonInfo, types, n, _) -> FSharpAnonRecordTypeDetails(cenv, anonInfo), [| for ty in types -> FSharpType(cenv, ty) |], n
         | _ -> invalidOp "not an anonymous record field"
+
+    member __.IsUnionCaseField = 
+        match d with 
+        | Union _ -> true
+        | _ -> false
+
+    member __.DeclaringUnionCase =
+        match d with
+        | Union (v, _) -> Some (FSharpUnionCase (cenv, v))
+        | _ -> None
 
     member __.XmlDocSig = 
         checkIsResolved()
