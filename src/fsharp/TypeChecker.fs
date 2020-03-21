@@ -12698,14 +12698,7 @@ module TcRecdUnionAndEnumDeclarations = begin
 
     let TcAnonFieldDecl cenv env parent tpenv nm (Field(Attributes attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m)) =
         let id = (match idOpt with None -> mkSynId m nm | Some id -> id)
-        let f = TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmldoc.ToXmlDoc(), vis, m) 
-        match idOpt with 
-        | None -> ()
-        | Some id -> 
-            let item = Item.ArgName(id, f.FormalType, None)
-            CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.AccessRights)
-        f
-
+        TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmldoc.ToXmlDoc(), vis, m)
 
     let TcNamedFieldDecl cenv env parent isIncrClass tpenv (Field(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m)) =
         match id with 
@@ -12744,7 +12737,7 @@ module TcRecdUnionAndEnumDeclarations = begin
             | _ ->
                 seen.Add(f.Name, sf)
                 
-    let TcUnionCaseDecl cenv env parent thisTy tpenv (UnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
+    let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (UnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
@@ -12756,7 +12749,14 @@ module TcRecdUnionAndEnumDeclarations = begin
             match args with
             | UnionCaseFields flds -> 
                 let nFields = flds.Length
-                let rfields = flds |> List.mapi (fun i fld -> TcAnonFieldDecl cenv env parent tpenv (mkName nFields i) fld)
+                let rfields = flds |> List.mapi (fun i (Field (idOpt = idOpt) as fld) ->
+                    match idOpt, parent with
+                    | Some fieldId, Parent tcref ->
+                        let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UCRef (tcref, id.idText)), i)
+                        CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.AccessRights)
+                    | _ -> ()
+
+                    TcAnonFieldDecl cenv env parent tpenv (mkName nFields i) fld)
                 ValidateFieldNames(flds, rfields)
                 
                 rfields, thisTy
@@ -12777,8 +12777,8 @@ module TcRecdUnionAndEnumDeclarations = begin
         NewUnionCase id rfields recordTy attrs (xmldoc.ToXmlDoc()) vis
 
 
-    let TcUnionCaseDecls cenv env parent (thisTy: TType) tpenv unionCases =
-        let unionCases' = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy tpenv) 
+    let TcUnionCaseDecls cenv env parent (thisTy: TType) thisTyInst tpenv unionCases =
+        let unionCases' = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv) 
         unionCases' |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
     let TcEnumDecl cenv env parent thisTy fieldTy (EnumCase(Attributes synAttrs, id, v, xmldoc, m)) =
@@ -15133,7 +15133,18 @@ module TcExceptionDeclarations =
         let ad = env.eAccessRights
         let id = exnc.Id
         
-        let args' = List.mapi (fun i fdef -> TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv ("Data" + string i) fdef) args
+        let args' =
+            args |> List.mapi (fun i (Field (idOpt = idOpt) as fdef) ->
+                match idOpt with
+                | Some fieldId ->
+                    let tcref = mkLocalTyconRef exnc
+                    let thisTypInst, _ = generalizeTyconRef tcref
+                    let item = Item.RecdField (RecdFieldInfo (thisTypInst, RFRef (tcref, fieldId.idText)))
+                    CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.AccessRights)
+                | _ -> ()
+
+                TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv ("Data" + string i) fdef)
+
         TcRecdUnionAndEnumDeclarations.ValidateFieldNames(args, args')
         let repr = 
           match reprIdOpt with 
@@ -16085,7 +16096,7 @@ module EstablishTypeDefinitionCores =
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck false
-                    let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy tpenv unionCases
+                    let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst tpenv unionCases
                         
                     if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
                       let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft.Name ]

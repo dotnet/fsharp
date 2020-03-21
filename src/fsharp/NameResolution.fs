@@ -1460,6 +1460,11 @@ let rec (|RecordFieldUse|_|) (item: Item) =
     | Item.SetterArg(_, RecordFieldUse f) -> Some f
     | _ -> None
 
+let (|UnionCaseFieldUse|_|) (item: Item) =
+    match item with
+    | Item.UnionCaseField (uci, fieldIndex) -> Some (fieldIndex, uci.UnionCaseRef)
+    | _ -> None
+
 let rec (|ILFieldUse|_|) (item: Item) =
     match item with
     | Item.ILField finfo -> Some finfo
@@ -1616,6 +1621,9 @@ let ItemsAreEffectivelyEqual g orig other =
     | RecordFieldUse(name1, tcref1), RecordFieldUse(name2, tcref2) ->
         name1 = name2 && tyconRefDefnEq g tcref1 tcref2
 
+    | UnionCaseFieldUse(fieldIndex1, ucref1), UnionCaseFieldUse(fieldIndex2, ucref2) ->
+        unionCaseRefDefnEq g ucref1 ucref2 && fieldIndex1 = fieldIndex2 
+
     | EventUse evt1, EventUse evt2 ->
         EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2  ||
         // Allow for equality up to signature matching
@@ -1641,6 +1649,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | ILFieldUse ilfinfo -> ilfinfo.ComputeHashCode()
     | UnionCaseUse ucase ->  hash ucase.CaseName
     | RecordFieldUse (name, _) -> hash name
+    | UnionCaseFieldUse (name, _) -> hash name
     | EventUse einfo -> einfo.ComputeHashCode()
     | Item.ModuleOrNamespaces (mref :: _) -> hash mref.DefinitionRange
     | _ -> 389329
