@@ -1072,6 +1072,16 @@ module internal SymbolHelpers =
             let remarks= OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
             FSharpStructuredToolTipElement.Single (layout, xml, remarks=remarks)
 
+        | Item.RecdField rfinfo when rfinfo.TyconRef.IsExceptionDecl ->
+            let ty, _ = PrettyTypes.PrettifyType g rfinfo.FieldType
+            let id = rfinfo.RecdField.Id
+            let layout =
+                wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
+                wordL (tagParameter id.idText) ^^
+                RightL.colon ^^
+                NicePrint.layoutType denv ty
+            FSharpStructuredToolTipElement.Single (layout, xml, paramName = id.idText)
+
         // F# record field names
         | Item.RecdField rfinfo ->
             let rfield = rfinfo.RecdField
