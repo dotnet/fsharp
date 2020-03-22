@@ -237,3 +237,29 @@ type MyClass() =
         CompilerAssert.Compile fsCmpl
         
 #endif
+
+    [<Test>]
+    let ``Can take native address to get a nativeptr of a mutable value`` () =
+        CompilerAssert.Pass
+            """
+#nowarn "51"
+
+let test () =
+    let mutable x = 1
+    let y = &&x
+    ()
+            """
+
+    [<Test>]
+    let ``Cannot take native address to get a nativeptr of an immmutable value`` () =
+        CompilerAssert.TypeCheckWithErrors
+            """
+#nowarn "51"
+
+let test () =
+    let x = 1
+    let y = &&x
+    ()
+            """ [|
+                    (FSharpErrorSeverity.Error, 256, (6, 13, 6, 16), "A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'")
+                |]

@@ -42,13 +42,17 @@ type FSharpErrorSeverity =
     | Warning 
     | Error
 
-type FSharpErrorInfo(fileName, s: pos, e: pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) = 
+type FSharpErrorInfo(fileName, s: pos, e: pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
+    member __.Start = s
+    member __.End = e
+
     member __.StartLine = Line.toZ s.Line
     member __.StartLineAlternate = s.Line
     member __.EndLine = Line.toZ e.Line
     member __.EndLineAlternate = e.Line
     member __.StartColumn = s.Column
     member __.EndColumn = e.Column
+
     member __.Severity = severity
     member __.Message = message
     member __.Subcategory = subcategory
@@ -719,9 +723,9 @@ module internal SymbolHelpers =
             // In this case just bail out and assume items are not equal
             protectAssemblyExploration false (fun () -> 
               let equalHeadTypes(ty1, ty2) =
-                  match tryDestAppTy g ty1 with
+                  match tryTcrefOfAppTy g ty1 with
                   | ValueSome tcref1 ->
-                    match tryDestAppTy g ty2 with
+                    match tryTcrefOfAppTy g ty2 with
                     | ValueSome tcref2 -> tyconRefEq g tcref1 tcref2
                     | _ -> typeEquiv g ty1 ty2
                   | _ -> typeEquiv g ty1 ty2
@@ -780,7 +784,7 @@ module internal SymbolHelpers =
             protectAssemblyExploration 1027 (fun () -> 
               match item with 
               | ItemWhereTypIsPreferred ty -> 
-                  match tryDestAppTy g ty with
+                  match tryTcrefOfAppTy g ty with
                   | ValueSome tcref -> hash tcref.LogicalName
                   | _ -> 1010
               | Item.ILField(ILFieldInfo(_, fld)) -> 
@@ -841,13 +845,13 @@ module internal SymbolHelpers =
         protectAssemblyExploration true (fun () -> 
             match item with 
             | Item.Types(it, [ty]) -> 
-                match tryDestAppTy g ty with
+                match tryTcrefOfAppTy g ty with
                 | ValueSome tcr1 ->
                     g.suppressed_types 
                     |> List.exists (fun supp ->
                         let generalizedSupp = generalizedTyconRef supp
                         // check the display name is precisely the one we're suppressing
-                        match tryDestAppTy g generalizedSupp with
+                        match tryTcrefOfAppTy g generalizedSupp with
                         | ValueSome tcr2 ->
                             it = supp.DisplayName &&
                             // check if they are the same logical type (after removing all abbreviations) 
@@ -895,7 +899,7 @@ module internal SymbolHelpers =
         | Item.FakeInterfaceCtor ty 
         | Item.DelegateCtor ty 
         | Item.Types(_, ty :: _) -> 
-            match tryDestAppTy g ty with
+            match tryTcrefOfAppTy g ty with
             | ValueSome tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 

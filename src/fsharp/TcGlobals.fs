@@ -387,6 +387,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mkListTy ty         = TType_app(v_list_tcr_nice, [ty])
   let mkSeqTy ty1         = TType_app(v_seq_tcr, [ty1])
   let mkRefCellTy ty      = TType_app(v_refcell_tcr_canon, [ty])
+  let mkOptionTy ty      = TType_app(v_option_tcr_nice, [ty])
   let mkQuerySourceTy ty1 ty2         = TType_app(v_querySource_tcr, [ty1; ty2])
   let v_tcref_System_Collections_IEnumerable         = findSysTyconRef sysCollections "IEnumerable";
   let mkArrayType rank (ty : TType) : TType =
@@ -682,6 +683,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_array2D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray2D"                           , None                 , None          , [vara],     ([[mkArrayType 2 varaTy];[v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array3D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray3D"                           , None                 , None          , [vara],     ([[mkArrayType 3 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array4D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray4D"                           , None                 , None          , [vara],     ([[mkArrayType 4 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
+
+  let v_option_toNullable_info     = makeIntrinsicValRef(fslib_MFOptionModule_nleref,                          "toNullable"                           , None                 , Some "ToNullable" , [vara],     ([[mkOptionTy varaTy]], mkNullableTy varaTy))
+  let v_option_defaultValue_info   = makeIntrinsicValRef(fslib_MFOptionModule_nleref,                          "defaultValue"                         , None                 , Some "DefaultValue" , [vara],     ([[varaTy]; [mkOptionTy varaTy]], varaTy))
 
   let v_nativeptr_tobyref_info     = makeIntrinsicValRef(fslib_MFNativePtrModule_nleref,                       "toByRef"                              , None                 , Some "ToByRefInlined", [vara], ([[mkNativePtrTy varaTy]], mkByrefTy varaTy))  
 
@@ -1098,6 +1102,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     
   member __.tcref_System_Attribute = v_System_Attribute_tcr
 
+  // Review: Does this need to be an option type?
+  member val System_Runtime_CompilerServices_RuntimeFeature_ty = tryFindSysTyconRef sysCompilerServices "RuntimeFeature" |> Option.map mkNonGenericTy
+
   member val iltyp_TypedReference      = tryFindSysILTypeRef "System.TypedReference" |> Option.map mkILNonGenericValueTy
   member val iltyp_StreamingContext    = tryFindSysILTypeRef tname_StreamingContext  |> Option.map mkILNonGenericValueTy
   member val iltyp_SerializationInfo   = tryFindSysILTypeRef tname_SerializationInfo  |> Option.map mkILNonGenericBoxedTy
@@ -1410,6 +1417,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.array2D_set_info           = v_array2D_set_info
   member __.array3D_set_info           = v_array3D_set_info
   member __.array4D_set_info           = v_array4D_set_info
+
+  member val option_toNullable_info     = v_option_toNullable_info
+  member val option_defaultValue_info     = v_option_defaultValue_info
 
   member __.deserialize_quoted_FSharp_20_plus_info       = v_deserialize_quoted_FSharp_20_plus_info
   member __.deserialize_quoted_FSharp_40_plus_info    = v_deserialize_quoted_FSharp_40_plus_info

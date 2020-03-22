@@ -12,7 +12,8 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal.Library  
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Utils
 
 open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
@@ -249,7 +250,7 @@ type ScriptClosureCacheToken() = interface LockToken
 
 
 // There is only one instance of this type, held in FSharpChecker
-type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses) as self =
+type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification) as self =
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.reactor: The one and only Reactor
     let reactor = Reactor.Singleton
     let beforeFileChecked = Event<string * obj option>()
@@ -306,7 +307,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                   (ctok, legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.SourceFiles, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
                    options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, FSharpCheckerResultsSettings.maxTimeShareMilliseconds,
-                   tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses)
+                   tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification)
 
         match builderOpt with 
         | None -> ()
@@ -699,6 +700,29 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 return (parseResults, typedResults)
            })
 
+    member __.FindReferencesInFile(filename: string, options: FSharpProjectOptions, symbol: FSharpSymbol, userOpName: string) =
+        reactor.EnqueueAndAwaitOpAsync(userOpName, "FindReferencesInFile", filename, fun ctok -> 
+          cancellable {
+            let! builderOpt, _ = getOrCreateBuilder (ctok, options, userOpName)
+            match builderOpt with
+            | None -> return Seq.empty
+            | Some builder -> 
+                let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
+                return 
+                    match checkResults.ItemKeyStore with
+                    | None -> Seq.empty
+                    | Some reader -> reader.FindAll symbol.Item })
+
+    member __.GetSemanticClassificationForFile(filename: string, options: FSharpProjectOptions, userOpName: string) =
+        reactor.EnqueueAndAwaitOpAsync(userOpName, "GetSemanticClassificationForFile", filename, fun ctok -> 
+            cancellable {
+            let! builderOpt, _ = getOrCreateBuilder (ctok, options, userOpName)
+            match builderOpt with
+            | None -> return [||]
+            | Some builder -> 
+                let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
+                return checkResults.SemanticClassification })
+
 
     /// Try to get recent approximate type check results for a file. 
     member __.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string) =
@@ -742,7 +766,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member bc.ParseAndCheckProject(options, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckProject", options.ProjectFileName, fun ctok -> bc.ParseAndCheckProjectImpl(options, ctok, userOpName))
 
-    member __.GetProjectOptionsFromScript(filename, sourceText, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, assumeDotNetFramework: bool option, extraProjectInfo: obj option, optionsStamp: int64 option, userOpName) = 
+    member __.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, assumeDotNetFramework: bool option, extraProjectInfo: obj option, optionsStamp: int64 option, userOpName) = 
         reactor.EnqueueAndAwaitOpAsync (userOpName, "GetProjectOptionsFromScript", filename, fun ctok -> 
           cancellable {
             use errors = new ErrorScope()
@@ -751,10 +775,16 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             let useFsiAuxLib = defaultArg useFsiAuxLib true
             let useSdkRefs =  defaultArg useSdkRefs true
             let reduceMemoryUsage = ReduceMemoryFlag.Yes
+            let previewEnabled = defaultArg previewEnabled false
 
             // Do we assume .NET Framework references for scripts?
             let assumeDotNetFramework = defaultArg assumeDotNetFramework true
-            let otherFlags = defaultArg otherFlags [| |]
+            let extraFlags =
+                if previewEnabled then
+                    [| "--langversion:preview" |]
+                else
+                    [||]
+            let otherFlags = defaultArg otherFlags extraFlags
             let useSimpleResolution = 
 #if ENABLE_MONO_SUPPORT
                 runningOnMono || otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
@@ -906,9 +936,10 @@ type FSharpChecker(legacyReferenceResolver,
                     keepAllBackgroundResolutions,
                     tryGetMetadataSnapshot,
                     suggestNamesForErrors,
-                    keepAllBackgroundSymbolUses) =
+                    keepAllBackgroundSymbolUses,
+                    enableBackgroundItemKeyStoreAndSemanticClassification) =
 
-    let backgroundCompiler = BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses)
+    let backgroundCompiler = BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification)
 
     static let globalInstance = lazy FSharpChecker.Create()
             
@@ -925,7 +956,7 @@ type FSharpChecker(legacyReferenceResolver,
     let maxMemEvent = new Event<unit>()
 
     /// Instantiate an interactive checker.    
-    static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?legacyReferenceResolver, ?tryGetMetadataSnapshot, ?suggestNamesForErrors, ?keepAllBackgroundSymbolUses) = 
+    static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?legacyReferenceResolver, ?tryGetMetadataSnapshot, ?suggestNamesForErrors, ?keepAllBackgroundSymbolUses, ?enableBackgroundItemKeyStoreAndSemanticClassification) = 
 
         let legacyReferenceResolver = 
             match legacyReferenceResolver with
@@ -938,7 +969,8 @@ type FSharpChecker(legacyReferenceResolver,
         let tryGetMetadataSnapshot = defaultArg tryGetMetadataSnapshot (fun _ -> None)
         let suggestNamesForErrors = defaultArg suggestNamesForErrors false
         let keepAllBackgroundSymbolUses = defaultArg keepAllBackgroundSymbolUses true
-        new FSharpChecker(legacyReferenceResolver, projectCacheSizeReal,keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses)
+        let enableBackgroundItemKeyStoreAndSemanticClassification = defaultArg enableBackgroundItemKeyStoreAndSemanticClassification false
+        new FSharpChecker(legacyReferenceResolver, projectCacheSizeReal,keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification)
 
     member __.ReferenceResolver = legacyReferenceResolver
 
@@ -1141,10 +1173,20 @@ type FSharpChecker(legacyReferenceResolver,
         ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseAndCheckProject(options, userOpName)
 
-    /// For a given script file, get the ProjectOptions implied by the #load closure
-    member __.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 
+    member ic.FindBackgroundReferencesInFile(filename:string, options: FSharpProjectOptions, symbol: FSharpSymbol, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.GetProjectOptionsFromScript(filename, source, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, assumeDotNetFramework, extraProjectInfo, optionsStamp, userOpName)
+        ic.CheckMaxMemoryReached()
+        backgroundCompiler.FindReferencesInFile(filename, options, symbol, userOpName)
+
+    member ic.GetBackgroundSemanticClassificationForFile(filename:string, options: FSharpProjectOptions, ?userOpName) =
+        let userOpName = defaultArg userOpName "Unknown"
+        ic.CheckMaxMemoryReached()
+        backgroundCompiler.GetSemanticClassificationForFile(filename, options, userOpName)
+
+    /// For a given script file, get the ProjectOptions implied by the #load closure
+    member __.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, assumeDotNetFramework, extraProjectInfo, optionsStamp, userOpName)
 
     member __.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?extraProjectInfo: obj) = 
         let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading

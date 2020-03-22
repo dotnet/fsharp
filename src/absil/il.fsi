@@ -1063,6 +1063,7 @@ type ILMethodDefs =
     member AsArray: ILMethodDef[]
     member AsList: ILMethodDef list
     member FindByName: string -> ILMethodDef list
+    member TryFindInstanceByNameAndCallingSignature: string * ILCallingSignature -> ILMethodDef option
 
 /// Field definitions.
 [<NoComparison; NoEquality>]
@@ -2011,8 +2012,6 @@ type ILPropertyRef =
      member DeclaringTypeRef: ILTypeRef
      member Name: string
      interface System.IComparable
-
-val runningOnMono: bool
 
 type ILReferences = 
     { AssemblyReferences: ILAssemblyRef list 

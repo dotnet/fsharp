@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
-        <target state="new">symbol '..^'</target>
+        <target state="translated">símbolo '..^'</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
@@ -75,11 +75,6 @@
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">Casos união discriminados e rótulos de exceção devem ser identificadores com maiúsculas</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Sobrecarga possível: '{0}'. {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -1625,6 +1620,11 @@
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
         <target state="translated">símbolo '|}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="new">keyword 'and!'</target>
         <note />
       </trans-unit>
     </body>

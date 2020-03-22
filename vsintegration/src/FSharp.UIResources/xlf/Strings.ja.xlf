@@ -202,11 +202,6 @@
         <target state="translated">未解決の識別子の名前を提案します</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_out_of_process_language_server">
-        <source>(Preview) Use out of process language server</source>
-        <target state="translated">(プレビュー) プロセス外言語サーバーの使用</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>

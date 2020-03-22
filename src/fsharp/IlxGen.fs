@@ -2440,24 +2440,27 @@ and GenConstant cenv cgbuf eenv (c, m, ty) sequel =
       | Some e ->
           GenExpr cenv cgbuf eenv SPSuppress e Continue
       | None ->
-          match c with
-          | Const.Bool b -> CG.EmitInstr cgbuf (pop 0) (Push [g.ilg.typ_Bool]) (mkLdcInt32 (if b then 1 else 0))
-          | Const.SByte i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
-          | Const.Int16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
-          | Const.Int32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 i)
-          | Const.Int64 i ->
-            // see https://github.com/Microsoft/visualfsharp/pull/3620
+          let emitInt64Constant i =
+            // see https://github.com/dotnet/fsharp/pull/3620
+            // and https://github.com/dotnet/fsharp/issue/8683
+            // and https://github.com/dotnet/roslyn/blob/98f12bb/src/Compilers/Core/Portable/CodeGen/ILBuilderEmit.cs#L679
             if i >= int64 System.Int32.MinValue && i <= int64 System.Int32.MaxValue then
                 CG.EmitInstrs cgbuf (pop 0) (Push [ilTy]) [ mkLdcInt32 (int32 i); AI_conv DT_I8 ]
             elif i >= int64 System.UInt32.MinValue && i <= int64 System.UInt32.MaxValue then
                 CG.EmitInstrs cgbuf (pop 0) (Push [ilTy]) [ mkLdcInt32 (int32 i); AI_conv DT_U8 ]
             else
                 CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (iLdcInt64 i)
+          match c with
+          | Const.Bool b -> CG.EmitInstr cgbuf (pop 0) (Push [g.ilg.typ_Bool]) (mkLdcInt32 (if b then 1 else 0))
+          | Const.SByte i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
+          | Const.Int16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
+          | Const.Int32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 i)
+          | Const.Int64 i -> emitInt64Constant i
           | Const.IntPtr i -> CG.EmitInstrs cgbuf (pop 0) (Push [ilTy]) [iLdcInt64 i; AI_conv DT_I ]
           | Const.Byte i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
           | Const.UInt16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
           | Const.UInt32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
-          | Const.UInt64 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (iLdcInt64 (int64 i))
+          | Const.UInt64 i -> emitInt64Constant (int64 i)
           | Const.UIntPtr i -> CG.EmitInstrs cgbuf (pop 0) (Push [ilTy]) [iLdcInt64 (int64 i); AI_conv DT_U ]
           | Const.Double f -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (AI_ldc (DT_R8, ILConst.R8 f))
           | Const.Single f -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (AI_ldc (DT_R4, ILConst.R4 f))
@@ -3789,9 +3792,9 @@ and GenQuotation cenv cgbuf eenv (ast, conv, m, ety) sequel =
         | None ->
             try
                 let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.No)
-                let astSpec = QuotationTranslator.ConvExprPublic qscope QuotationTranslator.QuotationTranslationEnv.Empty ast
-                let referencedTypeDefs, spliceTypes, spliceArgExprs = qscope.Close()
-                referencedTypeDefs, List.map fst spliceTypes, List.map fst spliceArgExprs, astSpec
+                let astSpec = QuotationTranslator.ConvExprPublic qscope ast
+                let referencedTypeDefs, typeSplices, exprSplices = qscope.Close()
+                referencedTypeDefs, List.map fst typeSplices, List.map fst exprSplices, astSpec
             with
                 QuotationTranslator.InvalidQuotedTerm e -> error e
 
@@ -3950,7 +3953,7 @@ and GenDefaultValue cenv cgbuf eenv (ty, m) =
     if isRefTy g ty then
         CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) AI_ldnull
     else
-        match tryDestAppTy g ty with
+        match tryTcrefOfAppTy g ty with
         | ValueSome tcref when (tyconRefEq g g.system_SByte_tcref tcref ||
                                    tyconRefEq g g.system_Int16_tcref tcref ||
                                    tyconRefEq g g.system_Int32_tcref tcref ||
@@ -5083,6 +5086,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                   error(InternalError("non-dense integer matches not implemented in codegen - these should have been removed by the pattern match compiler", switchm))
                 GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets repeatSP targetInfos sequel caseLabels cases contf
             | _ -> error(InternalError("these matches should never be needed", switchm))
+        | DecisionTreeTest.Error m -> error(InternalError("Trying to compile error recovery branch", m))
 
 and GenDecisionTreeCases cenv cgbuf stackAtTargets eenv defaultTargetOpt targets repeatSP targetInfos sequel caseLabels cases (contf: Zmap<_,_> -> FakeUnit) =
 
@@ -7579,14 +7583,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
             let defns =
               reflectedDefinitions |> List.choose (fun ((methName, v), e) ->
                     try
-                      let ety = tyOfExpr g e
-                      let tps, taue, _ =
-                        match e with
-                        | Expr.TyLambda (_, tps, b, _, _) -> tps, b, applyForallTy g ety (List.map mkTyparTy tps)
-                        | _ -> [], e, ety
-                      let env = QuotationTranslator.QuotationTranslationEnv.Empty.BindTypars tps
-                      let astExpr = QuotationTranslator.ConvExprPublic qscope env taue
-                      let mbaseR = QuotationTranslator.ConvMethodBase qscope env (methName, v)
+                      let mbaseR, astExpr = QuotationTranslator.ConvReflectedDefinition qscope methName v e
                   
                       Some(mbaseR, astExpr)
                     with

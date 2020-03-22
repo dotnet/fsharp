@@ -1047,7 +1047,13 @@ type TypeCheckAccumulator =
       tcModuleNamesDict: ModuleNamesDict
 
       /// Accumulated errors, last file first
-      tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list }
+      tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
+      
+      /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
+      itemKeyStore: ItemKeyStore option
+      
+      /// If enabled, holds semantic classification information for Item(symbol)s in a file.
+      semanticClassification: struct (range * SemanticClassificationType) [] }
 
       
 /// Global service state
@@ -1140,7 +1146,11 @@ type PartialCheckResults =
 
       LatestImplementationFile: TypedImplFile option 
 
-      LatestCcuSigForFile: ModuleOrNamespaceType option }
+      LatestCcuSigForFile: ModuleOrNamespaceType option
+      
+      ItemKeyStore: ItemKeyStore option
+      
+      SemanticClassification: struct (range * SemanticClassificationType) [] }
 
     member x.TcErrors  = Array.concat (List.rev x.TcErrorsRev)
     member x.TcSymbolUses  = List.rev x.TcSymbolUsesRev
@@ -1160,7 +1170,9 @@ type PartialCheckResults =
           ModuleNamesDict = tcAcc.tcModuleNamesDict
           TimeStamp = timestamp 
           LatestImplementationFile = tcAcc.latestImplFile 
-          LatestCcuSigForFile = tcAcc.latestCcuSigForFile }
+          LatestCcuSigForFile = tcAcc.latestCcuSigForFile
+          ItemKeyStore = tcAcc.itemKeyStore
+          SemanticClassification = tcAcc.semanticClassification }
 
 
 [<AutoOpen>]
@@ -1208,7 +1220,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
 type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInputs, nonFrameworkResolutions, unresolvedReferences, tcConfig: TcConfig, projectDirectory, outfile, 
                         assemblyName, niceNameGen: NiceNameGenerator, lexResourceManager, 
                         sourceFiles, loadClosureOpt: LoadClosure option, 
-                        keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds, keepAllBackgroundSymbolUses) =
+                        keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification) =
 
     let tcConfigP = TcConfigProvider.Constant tcConfig
     let fileParsed = new Event<string>()
@@ -1351,7 +1363,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
               latestCcuSigForFile=None
               tcDependencyFiles=basicDependencies
               tcErrorsRev = [ initialErrors ] 
-              tcModuleNamesDict = Map.empty }   
+              tcModuleNamesDict = Map.empty
+              itemKeyStore = None
+              semanticClassification = [||] }   
         return tcAcc }
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
@@ -1386,7 +1400,25 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     let implFile = if keepAssemblyContents then implFile else None
                     let tcResolutions = if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty
                     let tcEnvAtEndOfFile = (if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls)
-                    let tcSymbolUses = if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty 
+                    let tcSymbolUses = if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty
+                    
+                    // Build symbol keys
+                    let itemKeyStore, semanticClassification =
+                        if enableBackgroundItemKeyStoreAndSemanticClassification then
+                            let sResolutions = sink.GetResolutions()
+                            let builder = ItemKeyStoreBuilder()
+                            let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
+                                                                member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Range.posEq s1 s2 && Range.posEq e1 e2
+                                                                member _.GetHashCode o = o.GetHashCode() })
+                            sResolutions.CapturedNameResolutions
+                            |> Seq.iter (fun cnr ->
+                                let r = cnr.Range
+                                if preventDuplicates.Add struct(r.Start, r.End) then
+                                    builder.Write(cnr.Range, cnr.Item))
+
+                            builder.TryBuildAndReset(), sResolutions.GetSemanticClassification(tcAcc.tcGlobals, tcAcc.tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+                        else
+                            None, [||]
                     
                     RequireCompilationThread ctok // Note: events get raised on the CompilationThread
 
@@ -1402,7 +1434,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                        tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: tcAcc.tcOpenDeclarationsRev
                                        tcErrorsRev = newErrors :: tcAcc.tcErrorsRev 
                                        tcModuleNamesDict = moduleNamesDict
-                                       tcDependencyFiles = filename :: tcAcc.tcDependencyFiles } 
+                                       tcDependencyFiles = filename :: tcAcc.tcDependencyFiles
+                                       itemKeyStore = itemKeyStore
+                                       semanticClassification = semanticClassification } 
                 }
                     
             // Run part of the Eventually<_> computation until a timeout is reached. If not complete, 
@@ -1700,7 +1734,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                        projectReferences, projectDirectory,
                        useScriptResolutionRules, keepAssemblyContents,
                        keepAllBackgroundResolutions, maxTimeShareMilliseconds,
-                       tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses) =
+                       tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification) =
       let useSimpleResolutionSwitch = "--simpleresolution"
 
       cancellable {
@@ -1821,7 +1855,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                         keepAssemblyContents=keepAssemblyContents, 
                                         keepAllBackgroundResolutions=keepAllBackgroundResolutions, 
                                         maxTimeShareMilliseconds=maxTimeShareMilliseconds,
-                                        keepAllBackgroundSymbolUses=keepAllBackgroundSymbolUses)
+                                        keepAllBackgroundSymbolUses=keepAllBackgroundSymbolUses,
+                                        enableBackgroundItemKeyStoreAndSemanticClassification=enableBackgroundItemKeyStoreAndSemanticClassification)
             return Some builder
           with e -> 
             errorRecoveryNoRange e

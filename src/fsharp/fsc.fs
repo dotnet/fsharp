@@ -29,8 +29,9 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.ILBinaryReader 
-open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics
 
 open FSharp.Compiler.IlxGen
@@ -836,11 +837,24 @@ module MainModuleBuilder =
             v
 
     let productVersionToILVersionInfo (version: string) : ILVersionInfo =
-        let parseOrZero v = match System.UInt16.TryParse v with (true, i) -> i | (false, _) -> 0us
+        let parseOrZero i (v:string) =
+            let v =
+                // When i = 3 then this is the 4th part of the version.  The last part of the version can be trailed by any characters so we trim them off
+                if i <> 3 then
+                    v
+                else
+                    ((false, ""), v)
+                    ||> Seq.fold(fun (finished, v) c ->
+                        match finished with
+                        | false when Char.IsDigit(c) -> false, v + c.ToString()
+                        | _ -> true, v)
+                    |> snd
+            match System.UInt16.TryParse v with
+            | (true, i) -> i
+            | (false, _) -> 0us
         let validParts =
             version.Split('.')
-            |> Seq.map parseOrZero
-            |> Seq.takeWhile ((<>) 0us) 
+            |> Array.mapi(fun i v -> parseOrZero i v)
             |> Seq.toList
         match validParts @ [0us; 0us; 0us; 0us] with
         | major :: minor :: build :: rev :: _ -> ILVersionInfo(major, minor, build, rev)

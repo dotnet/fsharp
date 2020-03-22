@@ -181,10 +181,15 @@ function TestUsingNUnit() {
     exit 1
   fi
 
+  filterArgs=""
+  if [[ "${RunningAsPullRequest:-}" != "true" ]]; then
+    filterArgs=" --filter TestCategory!=PullRequest"
+  fi
+
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\""
+  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\"$filterArgs"
   "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
@@ -290,7 +295,6 @@ BuildSolution
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=netcoreapp3.0
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.LanguageServer.UnitTests/FSharp.Compiler.LanguageServer.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework

@@ -3,6 +3,7 @@
 
 module public FSharp.Compiler.Interactive.Shell
 
+open System.Collections.Generic
 open System.IO
 open System.Threading
 open FSharp.Compiler
@@ -233,26 +234,6 @@ type FsiEvaluationSession =
 
     /// A host calls this to report an unhandled exception in a standard way, e.g. an exception on the GUI thread gets printed to stderr
     member ReportUnhandledException : exn: exn -> unit
-
-    [<CLIEvent>]
-    /// Event fires every time an assembly reference is added to the execution environment, e.g., via `#r`.
-    member AssemblyReferenceAdded: IEvent<string>
-
-    [<CLIEvent>]
-    /// Event fires every time a path is added to the include search list, e.g., via `#I`.
-    member IncludePathAdded: IEvent<string>
-
-    [<CLIEvent>]
-    /// Event fires at the start of adding a dependency via the dependency manager.
-    member DependencyAdding: IEvent<string * string>
-
-    [<CLIEvent>]
-    /// Event fires at the successful completion of adding a dependency via the dependency manager.
-    member DependencyAdded: IEvent<string * string>
-
-    [<CLIEvent>]
-    /// Event fires at the failure to adding a dependency via the dependency manager.
-    member DependencyFailed: IEvent<string * string>
 
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
     member ValueBound : IEvent<obj * System.Type * string>
