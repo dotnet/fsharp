@@ -1,7 +1,7 @@
 ﻿
 #if INTERACTIVE
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -13,12 +13,8 @@ open FSharp.Compiler.SourceCodeServices
 
 open NUnit.Framework
 open FsUnit
-open System
 open System.IO
 
-open System
-open System.Collections.Generic
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
 let numProjectsForStressTest = 100
@@ -29,7 +25,6 @@ let internal tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.
 
 
 module internal Project1A = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let baseName = Path.GetTempFileName()
@@ -69,7 +64,6 @@ type U =
 
 //-----------------------------------------------------------------------------------------
 module internal Project1B = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let baseName = Path.GetTempFileName()
@@ -97,7 +91,6 @@ let x =
 
 // A project referencing two sub-projects
 module internal MultiProject1 = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let baseName = Path.GetTempFileName()
@@ -129,7 +122,7 @@ let u = Case1 3
 
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test multi project 1 whole project errors`` () = 
@@ -248,7 +241,6 @@ let ``Test multi project 1 xmldoc`` () =
 
 // A project referencing many sub-projects
 module internal ManyProjectsStressTest = 
-    open System.IO
 
     let numProjectsForStressTest = 100
   
@@ -314,7 +306,7 @@ let p = ("""
         FSharpChecker.Create(projectCacheSize=size)
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test ManyProjectsStressTest whole project errors`` () = 
@@ -347,11 +339,6 @@ let ``Test ManyProjectsStressTest basic`` () =
 let ``Test ManyProjectsStressTest cache too small`` () = 
 
     let checker = ManyProjectsStressTest.makeCheckerForStressTest false
-
-    // Because the cache is too small, we need explicit calls to KeepAlive to avoid disposal of project information
-    let disposals = 
-        [ for p in ManyProjectsStressTest.jointProject :: ManyProjectsStressTest.projects do
-             yield checker.KeepProjectAlive p.Options |> Async.RunSynchronously ]
 
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
 
@@ -395,7 +382,6 @@ let ``Test ManyProjectsStressTest all symbols`` () =
 //-----------------------------------------------------------------------------------------
 
 module internal MultiProjectDirty1 = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let baseName = Path.GetTempFileName()
@@ -417,7 +403,6 @@ let x = "F#"
         checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 module internal MultiProjectDirty2 = 
-    open System.IO
 
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -613,7 +598,6 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
 
 module internal Project2A = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let baseName1 = Path.GetTempFileName()
@@ -643,7 +627,6 @@ type C() =
 //Project2A.fileSource1
 // A project referencing Project2A
 module internal Project2B = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let dllName = Path.ChangeExtension(Project2A.baseName2, ".dll")
@@ -668,7 +651,6 @@ let v = Project2A.C().InternalMember // access an internal symbol
 //Project2A.fileSource1
 // A project referencing Project2A but without access to the internals of A
 module internal Project2C = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let dllName = Path.ChangeExtension(Project2A.baseName3, ".dll")
@@ -733,7 +715,6 @@ let ``Test multi project 2 all symbols`` () =
 //------------------------------------------------------------------------------------
 
 module internal Project3A = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let baseName = Path.GetTempFileName()
@@ -757,7 +738,6 @@ let (|DivisibleBy|_|) by n =
 
 // A project referencing a sub-project
 module internal MultiProject3 = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let baseName = Path.GetTempFileName()
@@ -839,11 +819,10 @@ let ``Test max memory gets triggered`` () =
 
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Type provider project references should not throw exceptions`` () =
-    //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
     let options = 
           {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/TypeProviderConsole.fsproj";
            ProjectId = None
@@ -929,13 +908,12 @@ let ``Type provider project references should not throw exceptions`` () =
 //------------------------------------------------------------------------------------
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #else
 [<Ignore("Getting vsunit tests passing again")>]
 #endif
 let ``Projects creating generated types should not utilize cross-project-references but should still analyze oK once project is built`` () =
-    //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
     let options = 
           {ProjectFileName =
             __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/TestConsole.fsproj";

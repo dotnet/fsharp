@@ -22,10 +22,8 @@ open System.Windows.Forms
 #endif
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.Lib
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.Interactive.Shell
-open FSharp.Compiler.Interactive
 open FSharp.Compiler.Interactive.Shell.Settings
 
 #nowarn "55"
@@ -42,14 +40,12 @@ do()
 
 
 /// Set the current ui culture for the current thread.
-#if FX_LCIDFROMCODEPAGE
 let internal SetCurrentUICultureForThread (lcid : int option) =
     let culture = Thread.CurrentThread.CurrentUICulture
     match lcid with
     | Some n -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
     | None -> ()
     { new IDisposable with member x.Dispose() = Thread.CurrentThread.CurrentUICulture <- culture }
-#endif
 
 let callStaticMethod (ty:Type) name args =
     ty.InvokeMember(name, (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, null, Array.ofList args,Globalization.CultureInfo.InvariantCulture)
@@ -69,13 +65,13 @@ type WinFormsEventLoop() =
     do mainForm.DoCreateHandle()
     let mutable lcid = None
     // Set the default thread exception handler
-    let restart = ref false
+    let mutable restart = false
     member __.LCID with get () = lcid and set v = lcid <- v
     interface IEventLoop with
          member x.Run() =  
-             restart := false
+             restart <- false
              Application.Run()
-             !restart
+             restart
          member x.Invoke (f: unit -> 'T) : 'T =   
             if not mainForm.InvokeRequired then 
                 f() 
@@ -83,7 +79,7 @@ type WinFormsEventLoop() =
 
                 // Workaround: Mono's Control.Invoke returns a null result.  Hence avoid the problem by 
                 // transferring the resulting state using a mutable location.
-                let mainFormInvokeResultHolder = ref None
+                let mutable mainFormInvokeResultHolder = None
 
                 // Actually, Mono's Control.Invoke isn't even blocking (or wasn't on 1.1.15)!  So use a signal to indicate completion.
                 // Indeed, we should probably do this anyway with a timeout so we can report progress from 
@@ -97,12 +93,8 @@ type WinFormsEventLoop() =
                                            try 
                                               // When we get called back, someone may jack our culture
                                               // So we must reset our UI culture every time
-#if FX_LCIDFROMCODEPAGE
                                               use _scope = SetCurrentUICultureForThread lcid
-#else
-                                              ignore lcid
-#endif
-                                              mainFormInvokeResultHolder := Some(f ())
+                                              mainFormInvokeResultHolder <- Some(f ())
                                            finally 
                                               doneSignal.Set() |> ignore)) |> ignore
 
@@ -111,9 +103,9 @@ type WinFormsEventLoop() =
                     () // if !progress then fprintf outWriter "." outWriter.Flush()
 
                 //if !progress then fprintfn outWriter "RunCodeOnWinFormsMainThread: Got completion signal, res = %b" (Option.isSome !mainFormInvokeResultHolder)
-                !mainFormInvokeResultHolder |> Option.get
+                mainFormInvokeResultHolder |> Option.get
 
-         member x.ScheduleRestart()  =   restart := true; Application.Exit()  
+         member x.ScheduleRestart() = restart <- true; Application.Exit()  
 
 /// Try to set the unhandled exception mode of System.Windows.Forms
 let internal TrySetUnhandledExceptionMode() =  
@@ -228,7 +220,7 @@ let evaluateSession(argv: string[]) =
 #if CROSS_PLATFORM_COMPILER
             SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
 #else
-            MSBuildReferenceResolver.Resolver
+            LegacyMSBuildReferenceResolver.getResolver()
 #endif
         // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig = 
@@ -316,7 +308,13 @@ let evaluateSession(argv: string[]) =
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
-    use e = new SaveAndRestoreConsoleEncoding()
+    let savedOut = Console.Out
+    use __ =
+        { new IDisposable with
+            member __.Dispose() =
+                try 
+                    Console.SetOut(savedOut)
+                with _ -> ()}
 
 #if !FX_NO_APP_DOMAINS
     let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")

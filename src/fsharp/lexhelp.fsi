@@ -25,15 +25,16 @@ type LightSyntaxStatus =
 
 [<Sealed>]
 type LexResourceManager =
-    new : unit -> LexResourceManager
+    new : ?capacity: int -> LexResourceManager
 
 type lexargs =
     { defines: string list
-      ifdefStack: LexerIfdefStack
+      mutable ifdefStack: LexerIfdefStack
       resourceManager: LexResourceManager
       lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger
-      applyLineDirectives: bool }
+      applyLineDirectives: bool
+      pathMap: PathMap }
 
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
@@ -41,7 +42,7 @@ type LongUnicodeLexResult =
     | Invalid
 
 val resetLexbufPos : string -> UnicodeLexing.Lexbuf -> unit
-val mkLexargs : 'a * string list * LightSyntaxStatus * LexResourceManager * LexerIfdefStack * ErrorLogger -> lexargs
+val mkLexargs : 'a * string list * LightSyntaxStatus * LexResourceManager * LexerIfdefStack * ErrorLogger * PathMap -> lexargs
 val reusingLexbufForParsing : UnicodeLexing.Lexbuf -> (unit -> 'a) -> 'a 
 
 val usingLexbufForParsing : UnicodeLexing.Lexbuf * string -> (UnicodeLexing.Lexbuf -> 'a) -> 'a
@@ -68,6 +69,7 @@ exception IndentationProblem of string * Range.range
 module Keywords = 
     val KeywordOrIdentifierToken : lexargs -> UnicodeLexing.Lexbuf -> string -> Parser.token
     val IdentifierToken : lexargs -> UnicodeLexing.Lexbuf -> string -> Parser.token
+    val DoesIdentifierNeedQuotation : string -> bool
     val QuoteIdentifierIfNeeded : string -> string
     val NormalizeIdentifierBackticks : string -> string
     val keywordNames : string list

@@ -10,6 +10,9 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
 --load:<file>                            #load the given file on startup
 --reference:<file>                       Reference an assembly (Short form:
                                          -r)
+--compilertool:<file>                    Reference an assembly or directory
+                                         containing a design time tool (Short
+                                         form: -t)
 -- ...                                   Treat remaining arguments as command
                                          line arguments, accessed using
                                          fsi.CommandLineArgs
@@ -33,6 +36,8 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
 --deterministic[+|-]                     Produce a deterministic assembly
                                          (including module version GUID and
                                          timestamp)
+--pathmap:<path=sourcePath;...>          Maps physical paths to source path
+                                         names output by the compiler
 --crossoptimize[+|-]                     Enable or disable cross-module
                                          optimizations
 
@@ -49,6 +54,10 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
 
 
 		- LANGUAGE -
+--langversion:{?|version|latest|preview} Display the allowed values for
+                                         language version, specify language
+                                         version such as 'latest' or
+                                         'preview'
 --checked[+|-]                           Generate overflow checks
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)

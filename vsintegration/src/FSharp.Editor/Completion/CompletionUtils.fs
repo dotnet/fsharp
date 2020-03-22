@@ -8,6 +8,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Completion
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 open System.Globalization
 open FSharp.Compiler.SourceCodeServices
 
@@ -81,7 +82,7 @@ module internal CompletionUtils =
             | _ -> false
 
     let isStartingNewWord (sourceText, position) =
-        CommonCompletionUtilities.IsStartingNewWord(sourceText, position, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
+        FSharpCommonCompletionUtilities.IsStartingNewWord(sourceText, position, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
 
     let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, sourceText: SourceText, triggerPosition: int) : bool =
         let textLines = sourceText.Lines

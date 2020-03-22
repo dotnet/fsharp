@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "fake-cli": {
+      "version": "5.18.3",
+      "commands": [
+        "fake"
+      ]
+    },
+    "paket": {
+      "version": "5.236.0",
+      "commands": [
+        "paket"
+      ]
+    }
+  }
+}

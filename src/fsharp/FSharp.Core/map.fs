@@ -174,7 +174,7 @@ module MapTree =
             partitionAux comparer f l acc
 
     let partition (comparer: IComparer<'Key>) f m =
-        partitionAux comparer (OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)) m (empty, empty)
+        partitionAux comparer (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m (empty, empty)
 
     let filter1 (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) k v acc =
         if f.Invoke (k, v) then add comparer k v acc else acc 
@@ -189,7 +189,7 @@ module MapTree =
             filterAux comparer f r acc
 
     let filter (comparer: IComparer<'Key>) f m =
-        filterAux comparer (OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)) m empty
+        filterAux comparer (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m empty
 
     let rec spliceOutSuccessor (m: MapTree<'Key, 'Value>) = 
         match m with 
@@ -234,7 +234,7 @@ module MapTree =
         | MapNode (k2, v2, l, r, _) -> iterOpt f l; f.Invoke (k2, v2); iterOpt f r
 
     let iter f m =
-        iterOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)) m
+        iterOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
     let rec tryPickOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) m =
         match m with 
@@ -250,7 +250,7 @@ module MapTree =
             tryPickOpt f r
 
     let tryPick f m =
-        tryPickOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)) m
+        tryPickOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
     let rec existsOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) m = 
         match m with 
@@ -259,7 +259,7 @@ module MapTree =
         | MapNode (k2, v2, l, r, _) -> existsOpt f l || f.Invoke (k2, v2) || existsOpt f r
 
     let exists f m =
-        existsOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)) m
+        existsOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
     let rec forallOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) m = 
         match m with 
@@ -268,7 +268,7 @@ module MapTree =
         | MapNode (k2, v2, l, r, _) -> forallOpt f l && f.Invoke (k2, v2) && forallOpt f r
 
     let forall f m =
-        forallOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)) m
+        forallOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
     let rec map f m = 
         match m with 
@@ -291,7 +291,7 @@ module MapTree =
             MapNode (k, v2, l2, r2, h)
 
     let mapi f m =
-        mapiOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)) m
+        mapiOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
     let rec foldBackOpt (f: OptimizedClosures.FSharpFunc<_, _, _, _>) m x = 
         match m with 
@@ -303,7 +303,7 @@ module MapTree =
             foldBackOpt f l x
 
     let foldBack f m x =
-        foldBackOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(f)) m x
+        foldBackOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
 
     let rec foldOpt (f: OptimizedClosures.FSharpFunc<_, _, _, _>) x m  = 
         match m with 
@@ -315,7 +315,7 @@ module MapTree =
             foldOpt f x r
 
     let fold f x m =
-        foldOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(f)) x m
+        foldOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) x m
 
     let foldSectionOpt (comparer: IComparer<'Key>) lo hi (f: OptimizedClosures.FSharpFunc<_, _, _, _>) m x =
         let rec foldFromTo (f: OptimizedClosures.FSharpFunc<_, _, _, _>) m x = 
@@ -337,14 +337,14 @@ module MapTree =
         if comparer.Compare(lo, hi) = 1 then x else foldFromTo f m x
 
     let foldSection (comparer: IComparer<'Key>) lo hi f m x =
-        foldSectionOpt comparer lo hi (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(f)) m x
+        foldSectionOpt comparer lo hi (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
 
     let toList m = 
         let rec loop m acc = 
             match m with 
             | MapEmpty -> acc
-            | MapOne (k, v) -> (k, v):: acc
-            | MapNode (k, v, l, r, _) -> loop l ((k, v):: loop r acc)
+            | MapOne (k, v) -> (k, v) :: acc
+            | MapNode (k, v, l, r, _) -> loop l ((k, v) :: loop r acc)
         loop m []
 
     let toArray m =
@@ -374,8 +374,8 @@ module MapTree =
             mkFromEnumerator comparer empty ie 
 
     let copyToArray m (arr: _[]) i =
-        let j = ref i 
-        m |> iter (fun x y -> arr.[!j] <- KeyValuePair(x, y); j := !j + 1)
+        let mutable j = i 
+        m |> iter (fun x y -> arr.[j] <- KeyValuePair(x, y); j <- j + 1)
 
     /// Imperative left-to-right iterators.
     [<NoEquality; NoComparison>]
@@ -446,21 +446,19 @@ module MapTree =
 [<CompiledName("FSharpMap`2")>]
 type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonConditionalOn>]'Value when 'Key : comparison >(comparer: IComparer<'Key>, tree: MapTree<'Key, 'Value>) =
 
-#if !FX_NO_BINARY_SERIALIZATION
     [<System.NonSerialized>]
-    // This type is logically immutable. This field is only mutated during deserialization. 
-    let mutable comparer = comparer 
+    // This type is logically immutable. This field is only mutated during deserialization.
+    let mutable comparer = comparer
  
     [<System.NonSerialized>]
-    // This type is logically immutable. This field is only mutated during deserialization. 
-    let mutable tree = tree 
+    // This type is logically immutable. This field is only mutated during deserialization.
+    let mutable tree = tree
 
-    // This type is logically immutable. This field is only mutated during serialization and deserialization. 
+    // This type is logically immutable. This field is only mutated during serialization and deserialization.
     //
-    // WARNING: The compiled name of this field may never be changed because it is part of the logical 
+    // WARNING: The compiled name of this field may never be changed because it is part of the logical
     // WARNING: permanent serialization format for this type.
-    let mutable serializedData = null 
-#endif
+    let mutable serializedData = null
 
     // We use .NET generics per-instantiation static fields to avoid allocating a new object for each empty
     // set (it is just a lookup into a .NET table of type-instantiation-indexed static fields).
@@ -468,10 +466,9 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
         let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
         new Map<'Key, 'Value>(comparer, MapTree<_, _>.MapEmpty)
 
-#if !FX_NO_BINARY_SERIALIZATION
     [<System.Runtime.Serialization.OnSerializingAttribute>]
     member __.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
-        ignore(context)
+        ignore context
         serializedData <- MapTree.toArray tree |> Array.map (fun (k, v) -> KeyValuePair(k, v))
 
     // Do not set this to null, since concurrent threads may also be serializing the data
@@ -481,11 +478,10 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
 
     [<System.Runtime.Serialization.OnDeserializedAttribute>]
     member __.OnDeserialized(context: System.Runtime.Serialization.StreamingContext) =
-        ignore(context)
+        ignore context
         comparer <- LanguagePrimitives.FastGenericComparer<'Key>
-        tree <- serializedData |> Array.map (fun (KeyValue(k, v)) -> (k, v)) |> MapTree.ofArray comparer 
+        tree <- serializedData |> Array.map (fun (KeyValue(k, v)) -> (k, v)) |> MapTree.ofArray comparer
         serializedData <- null
-#endif
 
     static member Empty : Map<'Key, 'Value> =
         empty
@@ -562,7 +558,7 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     member m.Count =
         MapTree.size tree
 
-    member m.ContainsKey(key) = 
+    member m.ContainsKey key = 
 #if TRACE_SETS_AND_MAPS
         MapTree.report()
         MapTree.numLookups <- MapTree.numLookups + 1
@@ -576,7 +572,7 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     member m.TryGetValue(key, [<System.Runtime.InteropServices.Out>] value: byref<'Value>) = 
         MapTree.tryGetValue comparer key &value tree
 
-    member m.TryFind(key) = 
+    member m.TryFind key = 
 #if TRACE_SETS_AND_MAPS
         MapTree.report()
         MapTree.numLookups <- MapTree.numLookups + 1
@@ -590,7 +586,7 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     member m.ToArray() =
         MapTree.toArray tree
 
-    static member ofList(l) : Map<'Key, 'Value> = 
+    static member ofList l : Map<'Key, 'Value> = 
        let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
        new Map<_, _>(comparer, MapTree.ofList comparer l)
 
@@ -602,7 +598,7 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
             res <- combineHash res (Unchecked.hash y)
         res
 
-    override this.Equals(that) = 
+    override this.Equals that = 
         match that with 
         | :? Map<'Key, 'Value> as that -> 
             use e1 = (this :> seq<_>).GetEnumerator() 
@@ -637,20 +633,20 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
 
         member m.Add(k, v) = ignore(k, v); raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member m.ContainsKey(k) = m.ContainsKey(k)
+        member m.ContainsKey k = m.ContainsKey k
 
         member m.TryGetValue(k, r) = m.TryGetValue(k, &r) 
 
-        member m.Remove(k : 'Key) = ignore(k); (raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated))) : bool)
+        member m.Remove(k : 'Key) = ignore k; (raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated))) : bool)
 
     interface ICollection<KeyValuePair<'Key, 'Value>> with 
-        member __.Add(x) = ignore(x); raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member __.Add x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member __.Clear() = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member __.Remove(x) = ignore(x); raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member __.Remove x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member m.Contains(x) = m.ContainsKey(x.Key) && Unchecked.equals m.[x.Key] x.Value
+        member m.Contains x = m.ContainsKey x.Key && Unchecked.equals m.[x.Key] x.Value
 
         member __.CopyTo(arr, i) = MapTree.copyToArray tree arr i
 
@@ -675,7 +671,7 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
 
     interface IReadOnlyDictionary<'Key, 'Value> with
 
-        member m.Item with get(key) = m.[key]
+        member m.Item with get key = m.[key]
 
         member m.Keys = seq { for kvp in m -> kvp.Key }
 
@@ -797,19 +793,19 @@ module Map =
 
     [<CompiledName("FindKey")>]
     let findKey predicate (table : Map<_, _>) =
-        table |> toSeq |> Seq.pick (fun (k, v) -> if predicate k v then Some(k) else None)
+        table |> toSeq |> Seq.pick (fun (k, v) -> if predicate k v then Some k else None)
 
     [<CompiledName("TryFindKey")>]
     let tryFindKey predicate (table : Map<_, _>) =
-        table |> toSeq |> Seq.tryPick (fun (k, v) -> if predicate k v then Some(k) else None)
+        table |> toSeq |> Seq.tryPick (fun (k, v) -> if predicate k v then Some k else None)
 
     [<CompiledName("OfList")>]
     let ofList (elements: ('Key * 'Value) list) =
-        Map<_, _>.ofList(elements)
+        Map<_, _>.ofList elements
 
     [<CompiledName("OfSeq")>]
     let ofSeq elements =
-        Map<_, _>.Create(elements)
+        Map<_, _>.Create elements
 
     [<CompiledName("OfArray")>]
     let ofArray (elements: ('Key * 'Value) array) = 

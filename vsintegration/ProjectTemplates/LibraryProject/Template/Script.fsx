@@ -1,4 +1,4 @@
-﻿// @@@LearnMore|Learn more about F# at http://fsharp.org@@@
+﻿// @@@LearnMore|Learn more about F# at https://fsharp.org@@@
 // @@@SeeTutorial|See the 'F# Tutorial' project for more help.@@@
 
 #load "Library1.fs"

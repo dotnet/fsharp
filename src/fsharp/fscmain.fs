@@ -62,7 +62,7 @@ module Driver =
 #if CROSS_PLATFORM_COMPILER
             SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
 #else
-            MSBuildReferenceResolver.Resolver
+            LegacyMSBuildReferenceResolver.getResolver()
 #endif
 
         // This is the only place where ReduceMemoryFlag.No is set. This is because fsc.exe is not a long-running process and
@@ -77,7 +77,6 @@ let main(argv) =
     System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
 
-    if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
     Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 
     try 

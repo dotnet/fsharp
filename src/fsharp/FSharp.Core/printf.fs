@@ -47,11 +47,6 @@ module internal PrintfImpl =
     open Microsoft.FSharp.Collections
     open LanguagePrimitives.IntrinsicOperators
 
-#if FX_RESHAPED_REFLECTION
-    open Microsoft.FSharp.Core.PrimReflectionAdapters
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
     open System.IO
     
     [<Flags>]
@@ -103,11 +98,9 @@ module internal PrintfImpl =
     /// Set of helpers to parse format string
     module private FormatString =
 
-        let inline isDigit c = c >= '0' && c <= '9'
-
-        let intFromString (s: string) pos = 
+        let intFromString (s: string) pos =
             let rec go acc i =
-                if isDigit s.[i] then 
+                if Char.IsDigit s.[i] then 
                     let n = int s.[i] - int '0'
                     go (acc * 10 + n) (i + 1)
                 else acc, i
@@ -125,13 +118,13 @@ module internal PrintfImpl =
 
         let parseWidth (s: string) i = 
             if s.[i] = '*' then StarValue, (i + 1)
-            elif isDigit (s.[i]) then intFromString s i
+            elif Char.IsDigit s.[i] then intFromString s i
             else NotSpecifiedValue, i
 
         let parsePrecision (s: string) i = 
             if s.[i] = '.' then
                 if s.[i + 1] = '*' then StarValue, i + 2
-                elif isDigit (s.[i + 1]) then intFromString s (i + 1)
+                elif Char.IsDigit s.[i + 1] then intFromString s (i + 1)
                 else raise (ArgumentException("invalid precision value"))
             else NotSpecifiedValue, i
         
@@ -160,7 +153,7 @@ module internal PrintfImpl =
                         else
                             raise (ArgumentException("Missing format specifier"))
                     else 
-                        buf.Append(c) |> ignore
+                        buf.Append c |> ignore
                         go (i + 1) buf
             go i (Text.StringBuilder())
 
@@ -617,7 +610,7 @@ module internal PrintfImpl =
             (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
                 (fun (f: 'State -> 'Residue) -> 
                     let env = env()
-                    env.Write(s1)
+                    env.Write s1
                     env.WriteT(f env.State)
                     env.Write s2
                     env.Finish()
@@ -628,10 +621,10 @@ module internal PrintfImpl =
                 (fun (f: 'State -> 'Residue) -> 
                     let env() = 
                         let env = env()
-                        env.Write(s1)
+                        env.Write s1
                         env.WriteT(f env.State)
                         env
-                    next(env): 'Tail
+                    next env: 'Tail
                 )
             )
 
@@ -843,7 +836,7 @@ module internal PrintfImpl =
                     adaptPaddedFormatted spec getFormat f right
 
         let inline withPadding (spec: FormatSpecifier) (f: 'T -> string) left right =
-            if not (spec.IsWidthSpecified) then
+            if not spec.IsWidthSpecified then
                 box f
             else
                 if isLeftJustify spec.Flags then
@@ -883,7 +876,7 @@ module internal PrintfImpl =
                     prefixForPositives + (if w = 0 then str else str.PadLeft(w - prefixForPositives.Length, '0')) // save space to 
                 else
                     if str.[0] = '-' then
-                        let str = str.Substring(1)
+                        let str = str.Substring 1
                         "-" + (if w = 0 then str else str.PadLeft(w - 1, '0'))
                     else
                         str.PadLeft(w, '0')
@@ -1066,18 +1059,16 @@ module internal PrintfImpl =
         
         static member GenericToStringCore(v: 'T, opts: Microsoft.FSharp.Text.StructuredPrintfImpl.FormatOptions, bindingFlags) = 
             // printfn %0A is considered to mean 'print width zero'
-            match box v with 
-            | null -> "<null>" 
-            | _ -> Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, v.GetType())
+            match box v with
+            | null ->
+                Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, typeof<'T>)
+            | _ ->
+                Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, v.GetType())
 
         static member GenericToString<'T>(spec: FormatSpecifier) = 
             let bindingFlags = 
-#if FX_RESHAPED_REFLECTION
-                isPlusForPositives spec.Flags // true - show non-public
-#else
                 if isPlusForPositives spec.Flags then BindingFlags.Public ||| BindingFlags.NonPublic
                 else BindingFlags.Public 
-#endif
 
             let useZeroWidth = isPadWithZeros spec.Flags
             let opts = 
@@ -1115,7 +1106,7 @@ module internal PrintfImpl =
 
         let ch = spec.TypeChar
 
-        match Type.GetTypeCode(ty) with
+        match Type.GetTypeCode ty with
         | TypeCode.Int32    -> numberToString ch spec identity (uint32: int -> uint32) 
         | TypeCode.Int64    -> numberToString ch spec identity (uint64: int64 -> uint64)
         | TypeCode.Byte     -> numberToString ch spec identity (byte: byte -> byte) 
@@ -1140,7 +1131,7 @@ module internal PrintfImpl =
 
     let basicFloatToString ty spec = 
         let defaultFormat = getFormatForFloat spec.TypeChar DefaultPrecision
-        match Type.GetTypeCode(ty) with
+        match Type.GetTypeCode ty with
         | TypeCode.Single   -> floatWithPadding spec (getFormatForFloat spec.TypeChar) defaultFormat (fun fmt (v: float32) -> toFormattedString fmt v)
         | TypeCode.Double   -> floatWithPadding spec (getFormatForFloat spec.TypeChar) defaultFormat (fun fmt (v: float) -> toFormattedString fmt v)
         | TypeCode.Decimal  -> decimalWithPadding spec (getFormatForFloat spec.TypeChar) defaultFormat (fun fmt (v: decimal) -> toFormattedString fmt v)
@@ -1170,11 +1161,11 @@ module internal PrintfImpl =
             basicFloatToString ty spec
         | 'A' ->
             let mi = typeof<ObjectPrinter>.GetMethod("GenericToString", NonPublicStatics)
-            let mi = mi.MakeGenericMethod(ty)
+            let mi = mi.MakeGenericMethod ty
             mi.Invoke(null, [| box spec |])
         | 'O' -> 
             let mi = typeof<ObjectPrinter>.GetMethod("ObjectToString", NonPublicStatics)
-            let mi = mi.MakeGenericMethod(ty)
+            let mi = mi.MakeGenericMethod ty
             mi.Invoke(null, [| box spec |])
         | _ -> 
             raise (ArgumentException(SR.GetString(SR.printfBadFormatSpecifier)))
@@ -1196,8 +1187,8 @@ module internal PrintfImpl =
         go ty 0    
     
     type private PrintfBuilderStack() = 
-        let args = Stack(10)
-        let types = Stack(5)
+        let args = Stack 10
+        let types = Stack 5
 
         let stackToArray size start count (s: Stack<_>) = 
             let arr = Array.zeroCreate size
@@ -1244,7 +1235,7 @@ module internal PrintfImpl =
             args.Push value
             types.Push ty
 
-        member __.HasContinuationOnStack(expectedNumberOfArguments) = 
+        member __.HasContinuationOnStack expectedNumberOfArguments = 
             types.Count = expectedNumberOfArguments + 1
 
         member __.IsEmpty = 
@@ -1338,7 +1329,7 @@ module internal PrintfImpl =
                         mi, [| box prefix; box suffix  |]
                     else
                         let argTy = argTys.[argTys.Length - 2]
-                        let mi = mi.MakeGenericMethod(argTy)
+                        let mi = mi.MakeGenericMethod argTy
                         let conv = getValueConverter argTy spec 
                         mi, [| box prefix; box conv; box suffix  |]
 
@@ -1366,7 +1357,7 @@ module internal PrintfImpl =
 #if DEBUG
             verifyMethodInfoWasTaken mi
 #endif
-            let mi = mi.MakeGenericMethod(argTypes)
+            let mi = mi.MakeGenericMethod argTypes
             mi.Invoke(null, args)
     
         let buildPlainChained(args: obj[], argTypes: Type[]) =
@@ -1382,7 +1373,7 @@ module internal PrintfImpl =
 #if DEBUG
             verifyMethodInfoWasTaken mi
 #endif
-            let mi = mi.MakeGenericMethod(argTypes)
+            let mi = mi.MakeGenericMethod argTypes
             mi.Invoke(null, args)
 
         let builderStack = PrintfBuilderStack()
@@ -1458,7 +1449,7 @@ module internal PrintfImpl =
                         builderStack.PushContinuationWithType(currentCont, funcTy)
                         ContinuationOnStack
                     else
-                        let hasCont = builderStack.HasContinuationOnStack(numberOfArgs)
+                        let hasCont = builderStack.HasContinuationOnStack numberOfArgs
                         
                         let expectedNumberOfItemsOnStack = numberOfArgs * 2
                         let sizeOfTypesArray = 
@@ -1529,10 +1520,10 @@ module internal PrintfImpl =
     /// printf is called in tight loop
     /// 2nd level is global dictionary that maps format string to the corresponding PrintfFactory
     type Cache<'T, 'State, 'Residue, 'Result>() =
-        static let generate(fmt) = PrintfBuilder<'State, 'Residue, 'Result>().Build<'T>(fmt)        
+        static let generate fmt = PrintfBuilder<'State, 'Residue, 'Result>().Build<'T>(fmt)        
         static let mutable map = System.Collections.Concurrent.ConcurrentDictionary<string, CachedItem<'T, 'State, 'Residue, 'Result>>()
         static let getOrAddFunc = Func<_, _>(generate)
-        static let get(key: string) = map.GetOrAdd(key, getOrAddFunc)
+        static let get (key: string) = map.GetOrAdd(key, getOrAddFunc)
 
         [<DefaultValue>]
         [<ThreadStatic>]
@@ -1543,7 +1534,7 @@ module internal PrintfImpl =
                 && key.Value.Equals (fst Cache<'T, 'State, 'Residue, 'Result>.last) then
                     snd Cache<'T, 'State, 'Residue, 'Result>.last
             else
-                let v = get(key.Value)
+                let v = get key.Value
                 Cache<'T, 'State, 'Residue, 'Result>.last <- (key.Value, v)
                 v
 
@@ -1553,11 +1544,11 @@ module internal PrintfImpl =
         let buf: string[] = Array.zeroCreate n
         let mutable ptr = 0
 
-        override __.Finish() : 'Result = k (String.Concat(buf))
+        override __.Finish() : 'Result = k (String.Concat buf)
         override __.Write(s: string) = 
             buf.[ptr] <- s
             ptr <- ptr + 1
-        override __.WriteT(s) =
+        override __.WriteT s =
             buf.[ptr] <- s
             ptr <- ptr + 1
 
@@ -1568,12 +1559,12 @@ module internal PrintfImpl =
 
         override __.Finish() : 'Result = k c
         override __.Write(s: string) = if isNull c then c <- s else c <- c + s
-        override __.WriteT(s) = if isNull c then c <- s else c <- c + s
+        override __.WriteT s = if isNull c then c <- s else c <- c + s
 
     type StringBuilderPrintfEnv<'Result>(k, buf) = 
         inherit PrintfEnv<Text.StringBuilder, unit, 'Result>(buf)
         override __.Finish() : 'Result = k ()
-        override __.Write(s: string) = ignore(buf.Append(s))
+        override __.Write(s: string) = ignore(buf.Append s)
         override __.WriteT(()) = ()
 
     type TextWriterPrintfEnv<'Result>(k, tw: IO.TextWriter) =
@@ -1584,7 +1575,7 @@ module internal PrintfImpl =
     
     let inline doPrintf fmt f = 
         let formatter, n = Cache<_, _, _, _>.Get fmt
-        let env() = f(n)
+        let env() = f n
         formatter env
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -1606,7 +1597,7 @@ module Printf =
     let ksprintf continuation (format: StringFormat<'T, 'Result>) : 'T = 
         doPrintf format (fun n ->
             if n <= 2 then
-                SmallStringPrintfEnv(continuation) :> PrintfEnv<_, _, _>
+                SmallStringPrintfEnv continuation :> PrintfEnv<_, _, _>
             else
                 StringPrintfEnv(continuation, n) :> PrintfEnv<_, _, _>
         )
@@ -1615,7 +1606,7 @@ module Printf =
     let sprintf (format: StringFormat<'T>) =
         doPrintf format (fun n ->
             if n <= 2 then
-                SmallStringPrintfEnv(id) :> PrintfEnv<_, _, _>
+                SmallStringPrintfEnv id :> PrintfEnv<_, _, _>
             else
                 StringPrintfEnv(id, n) :> PrintfEnv<_, _, _>
         )
@@ -1647,20 +1638,6 @@ module Printf =
     [<CompiledName("PrintFormatToStringThenFail")>]
     let failwithf format = ksprintf failwith format
 
-#if !FX_NO_SYSTEM_CONSOLE
-#if EXTRAS_FOR_SILVERLIGHT_COMPILER
-    [<CompiledName("PrintFormat")>]
-    let printf format = fprintf (!outWriter) format
-
-    [<CompiledName("PrintFormatToError")>]
-    let eprintf format = fprintf (!errorWriter) format
-
-    [<CompiledName("PrintFormatLine")>]
-    let printfn format = fprintfn (!outWriter) format
-
-    [<CompiledName("PrintFormatLineToError")>]
-    let eprintfn format = fprintfn (!errorWriter) format
-#else
     [<CompiledName("PrintFormat")>]
     let printf format = fprintf Console.Out format
 
@@ -1672,5 +1649,3 @@ module Printf =
 
     [<CompiledName("PrintFormatLineToError")>]
     let eprintfn format = fprintfn Console.Error format
-#endif
-#endif 

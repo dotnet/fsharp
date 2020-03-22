@@ -305,7 +305,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let m = implVal.Range
             if implVal.IsMutable <> sigVal.IsMutable then (err denv FSComp.SR.ValueNotContainedMutabilityAttributesDiffer)
             elif implVal.LogicalName <> sigVal.LogicalName then (err denv FSComp.SR.ValueNotContainedMutabilityNamesDiffer)
-            elif implVal.CompiledName <> sigVal.CompiledName then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
+            elif (implVal.CompiledName g.CompilerGlobalState) <> (sigVal.CompiledName g.CompilerGlobalState) then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
             elif implVal.DisplayName <> sigVal.DisplayName then (err denv FSComp.SR.ValueNotContainedMutabilityDisplayNamesDiffer)
             elif isLessAccessible implVal.Accessibility sigVal.Accessibility then (err denv FSComp.SR.ValueNotContainedMutabilityAccessibilityMore)
             elif implVal.MustInline <> sigVal.MustInline then (err denv FSComp.SR.ValueNotContainedMutabilityInlineFlagsDiffer)
@@ -346,8 +346,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             sigUnionCase.OtherRangeOpt <- Some (implUnionCase.Range, true)
             implUnionCase.OtherRangeOpt <- Some (sigUnionCase.Range, false)
             if implUnionCase.Id.idText <> sigUnionCase.Id.idText then  err FSComp.SR.ModuleContainsConstructorButNamesDiffer
-            elif implUnionCase.RecdFields.Length <> sigUnionCase.RecdFields.Length then err FSComp.SR.ModuleContainsConstructorButDataFieldsDiffer
-            elif not (List.forall2 (checkField aenv) implUnionCase.RecdFields sigUnionCase.RecdFields) then err FSComp.SR.ModuleContainsConstructorButTypesOfFieldsDiffer
+            elif implUnionCase.RecdFieldsArray.Length <> sigUnionCase.RecdFieldsArray.Length then err FSComp.SR.ModuleContainsConstructorButDataFieldsDiffer
+            elif not (Array.forall2 (checkField aenv) implUnionCase.RecdFieldsArray sigUnionCase.RecdFieldsArray) then err FSComp.SR.ModuleContainsConstructorButTypesOfFieldsDiffer
             elif isLessAccessible implUnionCase.Accessibility sigUnionCase.Accessibility then err FSComp.SR.ModuleContainsConstructorButAccessibilityDiffers
             else checkAttribs aenv implUnionCase.Attribs sigUnionCase.Attribs (fun attribs -> implUnionCase.Attribs <- attribs)
 
@@ -369,7 +369,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             match implMemberInfo, sigMemberInfo with 
             | None, None -> true
             | Some implMembInfo, Some sigMembInfo -> 
-                if not (implVal.CompiledName = sigVal.CompiledName) then 
+                if not ((implVal.CompiledName  g.CompilerGlobalState) = (sigVal.CompiledName g.CompilerGlobalState)) then 
                   err(FSComp.SR.ValueNotContainedMutabilityDotNetNamesDiffer)
                 elif not (implMembInfo.MemberFlags.IsInstance = sigMembInfo.MemberFlags.IsInstance) then 
                   err(FSComp.SR.ValueNotContainedMutabilityStaticsDiffer)

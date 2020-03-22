@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualFSharp.Type.Providers.Redist" Version="$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)" IncludeAssets="none" />
+    <PackageReference Include="Microsoft.VisualFSharp.Type.Providers.Redist" Version="$(MicrosoftVisualFSharpTypeProvidersRedistVersion)" IncludeAssets="none" />
   </ItemGroup>
 
   <!--
@@ -99,7 +99,7 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
   file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\FSharp.Core.optdata"
   file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\FSharp.Core.sigdata"
   file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\FSharp.Build.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
-  file source="$(NuGetPackageRoot)\Microsoft.VisualFSharp.Type.Providers.Redist\$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)\content\4.3.0.0\FSharp.Data.TypeProviders.dll"
+  file source="$(NuGetPackageRoot)\Microsoft.VisualFSharp.Type.Providers.Redist\$(MicrosoftVisualFSharpTypeProvidersRedistVersion)\content\$(FSharpDataTypeProvidersVersion)\FSharp.Data.TypeProviders.dll"
   file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Build.dll"
   file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Build.Framework.dll"
   file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Build.Tasks.Core.dll"

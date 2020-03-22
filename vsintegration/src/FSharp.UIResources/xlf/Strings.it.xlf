@@ -42,6 +42,11 @@
         <target state="translated">Elenchi di completamento</target>
         <note />
       </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="translated">Diagnostica</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">Prestazioni</target>
@@ -102,6 +107,11 @@
         <target state="translated">Sottolineatura _continua</target>
         <note />
       </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="translated">Passaggio del puntatore sul testo</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
         <source>Remove unused open statements</source>
         <target state="translated">Rimuovi istruzioni OPEN inutilizzate</target>
@@ -109,7 +119,7 @@
       </trans-unit>
       <trans-unit id="Unused_declaration_code_fix">
         <source>Analyze and suggest fixes for unused values</source>
-        <target state="translated">Analizar y sugerir correcciones para valores no utilizados</target>
+        <target state="translated">Analizza e suggerisci correzioni per valori inutilizzati</target>
         <note />
       </trans-unit>
       <trans-unit id="Block_Structure">

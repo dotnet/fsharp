@@ -31,7 +31,7 @@ FSharp.Compiler.Service.dll コンポーネントは FSharp.Core 4.3.0.0 に依�
               <bindingRedirect oldVersion="1.0.0.0-1.2.0.0" newVersion="1.2.1.0" />
             </dependentAssembly>
           </assemblyBinding>
-        </runtime>	
+        </runtime>
     </configuration>
 
 どの FSharp.Core と .NET フレームワークがコンパイル時に参照される？
@@ -42,17 +42,17 @@ FSharp.Combiler.Service コンポーネントは多かれ少なかれ、F#コー
 特定の FSharp.Core および .NET フレームワーク アセンブリ、またはそのいずれかをターゲットにする場合、 ``--noframework`` 引数と適切なコマンドライン引数を使います:
 
     [<Literal>]
-    let fsharpCorePath = 
+    let fsharpCorePath =
         @"C:\Program Files (x86)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0\FSharp.Core.dll"
-    let errors2, exitCode2 = 
+    let errors2, exitCode2 =
       scs.Compile(
-        [| "fsc.exe"; "--noframework"; 
-           "-r"; fsharpCorePath; 
-           "-r"; @"C:\Windows\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll"; 
-           "-o"; fn3; 
+        [| "fsc.exe"; "--noframework";
+           "-r"; fsharpCorePath;
+           "-r"; @"C:\Windows\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll";
+           "-o"; fn3;
            "-a"; fn2 |])
 
-これらのアセンブリが配置されている場所を指定する必要があります。クロスプラットフォームに対応した方法でDLL を配置して、それらをコマンドライン引数に変換する最も簡単な方法は、[F# プロジェクトファイルをクラックする](http://fsharp.github.io/FSharp.Compiler.Service/ja/project.html)ことです。
+これらのアセンブリが配置されている場所を指定する必要があります。クロスプラットフォームに対応した方法でDLL を配置して、それらをコマンドライン引数に変換する最も簡単な方法は、[F# プロジェクトファイルをクラックする](https://fsharp.github.io/FSharp.Compiler.Service/ja/project.html)ことです。
 自分で SDK のパスを処理する代わりに、[FSharp.Compiler.Service.dll 用のテスト](https://github.com/fsharp/FSharp.Compiler.Service/blob/8a943dd3b545648690cb3bed652a469bdb6dd869/tests/service/Common.fs#L54)で使用しているようなヘルパー関数も用意されています。
 
 

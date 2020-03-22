@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Exceptions 
 // Import C# exception in F#
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 #r "CSharpException.dll"

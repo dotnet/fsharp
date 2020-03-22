@@ -4,8 +4,8 @@ module internal FSharp.Compiler.Lib
 
 open System.IO
 open System.Collections.Generic
+open System.Runtime.InteropServices
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
 
@@ -13,8 +13,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 /// is this the developer-debug build? 
 let debug = false 
 let verbose = false
-let progress = ref false 
-let tracking = ref false // intended to be a general hook to control diagnostic output when tracking down bugs
+let mutable progress = false 
+let mutable tracking = false // intended to be a general hook to control diagnostic output when tracking down bugs
 
 let condition s = 
     try (System.Environment.GetEnvironmentVariable(s) <> null) with _ -> false
@@ -22,15 +22,6 @@ let condition s =
 let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
 let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
-
-type SaveAndRestoreConsoleEncoding () =
-    let savedOut = System.Console.Out
-
-    interface System.IDisposable with
-        member this.Dispose() = 
-            try 
-                System.Console.SetOut(savedOut)
-            with _ -> ()
 
 //-------------------------------------------------------------------------
 // Library: bits
@@ -107,31 +98,31 @@ module Check =
     
     /// Throw <c>System.InvalidOperationException()</c> if argument is <c>None</c>.
     /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
-    let NotNone argname (arg:'T option) : 'T = 
+    let NotNone argName (arg:'T option) : 'T = 
         match arg with 
-        | None -> raise (new System.InvalidOperationException(argname))
+        | None -> raise (new System.InvalidOperationException(argName))
         | Some x -> x
 
     /// Throw <c>System.ArgumentNullException()</c> if argument is <c>null</c>.
-    let ArgumentNotNull arg argname = 
+    let ArgumentNotNull arg argName = 
         match box(arg) with 
-        | null -> raise (new System.ArgumentNullException(argname))
+        | null -> raise (new System.ArgumentNullException(argName))
         | _ -> ()
        
         
     /// Throw <c>System.ArgumentNullException()</c> if array argument is <c>null</c>.
     /// Throw <c>System.ArgumentOutOfRangeException()</c> is array argument is empty.
-    let ArrayArgumentNotNullOrEmpty (arr:'T[]) argname = 
-        ArgumentNotNull arr argname
+    let ArrayArgumentNotNullOrEmpty (arr:'T[]) argName = 
+        ArgumentNotNull arr argName
         if (0 = arr.Length) then
-            raise (new System.ArgumentOutOfRangeException(argname))
+            raise (new System.ArgumentOutOfRangeException(argName))
 
     /// Throw <c>System.ArgumentNullException()</c> if string argument is <c>null</c>.
     /// Throw <c>System.ArgumentOutOfRangeException()</c> is string argument is empty.
-    let StringArgumentNotNullOrEmpty (s:string) argname = 
-        ArgumentNotNull s argname
+    let StringArgumentNotNullOrEmpty (s:string) argName = 
+        ArgumentNotNull s argName
         if s.Length = 0 then
-            raise (new System.ArgumentNullException(argname))
+            raise (new System.ArgumentNullException(argName))
 
 //-------------------------------------------------------------------------
 // Library 
@@ -163,7 +154,7 @@ module ListAssoc =
     let rec find f x l = 
       match l with 
       | [] -> notFound()
-      | (x2, y)::t -> if f x x2 then y else find f x t
+      | (x2, y) :: t -> if f x x2 then y else find f x t
 
     /// Treat a list of key-value pairs as a lookup collection.
     /// This function looks up a value based on a match from the supplied
@@ -171,7 +162,7 @@ module ListAssoc =
     let rec tryFind (f:'key->'key->bool) (x:'key) (l:('key*'value) list) : 'value option = 
         match l with 
         | [] -> None
-        | (x2, y)::t -> if f x x2 then Some y else tryFind f x t
+        | (x2, y) :: t -> if f x x2 then Some y else tryFind f x t
 
 //-------------------------------------------------------------------------
 // Library: lists as generalized sets
@@ -181,7 +172,7 @@ module ListSet =
     let inline contains f x l = List.exists (f x) l
 
     (* NOTE: O(n)! *)
-    let insert f x l = if contains f x l then l else x::l
+    let insert f x l = if contains f x l then l else x :: l
 
     let unionFavourRight f l1 l2 = 
         match l1, l2 with 
@@ -193,19 +184,19 @@ module ListSet =
     let rec private findIndexAux eq x l n =
         match l with
         | [] -> notFound()
-        | (h::t) -> if eq h x then n else findIndexAux eq x t (n+1)
+        | (h :: t) -> if eq h x then n else findIndexAux eq x t (n+1)
 
     let findIndex eq x l = findIndexAux eq x l 0
 
     let rec remove f x l = 
         match l with 
-        | (h::t) -> if f x h then t else h:: remove f x t
+        | (h :: t) -> if f x h then t else h :: remove f x t
         | [] -> []
 
     (* NOTE: quadratic! *)
     let rec subtract f l1 l2 = 
       match l2 with 
-      | (h::t) -> subtract f (remove (fun y2 y1 -> f y1 y2) h l1) t
+      | (h :: t) -> subtract f (remove (fun y2 y1 -> f y1 y2) h l1) t
       | [] -> l1
 
     let isSubsetOf f l1 l2 = List.forall (fun x1 -> contains f x1 l2) l1
@@ -223,7 +214,7 @@ module ListSet =
     (* NOTE: not tail recursive! *)
     let rec intersect f l1 l2 = 
         match l2 with 
-        | (h::t) -> if contains f h l1 then h::intersect f l1 t else intersect f l1 t
+        | (h :: t) -> if contains f h l1 then h :: intersect f l1 t else intersect f l1 t
         | [] -> []
 
     // Note: if duplicates appear, keep the ones toward the _front_ of the list
@@ -234,15 +225,15 @@ module ListSet =
         | [] -> false
         | [_] -> false
         | [x; y] -> f x y
-        | x::rest ->
+        | x :: rest ->
             let rec loop acc l =
                 match l with
                 | [] -> false
-                | x::rest ->
+                | x :: rest ->
                     if contains f x acc then
                         true 
                     else
-                        loop (x::acc) rest
+                        loop (x :: acc) rest
 
             loop [x] rest
 
@@ -322,19 +313,12 @@ let bufs f =
     f buf 
     buf.ToString()
 
-let buff (os: TextWriter) f x = 
+// writing to output stream via a string buffer.
+let writeViaBuffer (os: TextWriter) f x = 
     let buf = System.Text.StringBuilder 100 
     f buf x 
     os.Write(buf.ToString())
 
-// Converts "\n" into System.Environment.NewLine before writing to os. See lib.fs:buff
-let writeViaBufferWithEnvironmentNewLines (os: TextWriter) f x = 
-    let buf = System.Text.StringBuilder 100 
-    f buf x
-    let text = buf.ToString()
-    let text = text.Replace("\n", System.Environment.NewLine)
-    os.Write text
-        
 //---------------------------------------------------------------------------
 // Imperative Graphs 
 //---------------------------------------------------------------------------
@@ -358,7 +342,7 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
     member g.IterateCycles f = 
         let rec trace path node = 
             if List.exists (nodeIdentity >> (=) node.nodeId) path then f (List.rev path)
-            else List.iter (trace (node.nodeData::path)) node.nodeNeighbours
+            else List.iter (trace (node.nodeData :: path)) node.nodeNeighbours
         List.iter (fun node -> trace [] node) nodes 
 
 //---------------------------------------------------------------------------
@@ -387,23 +371,38 @@ let nullableSlotFull x = x
 type cache<'T> = { mutable cacheVal: 'T NonNullSlot }
 let newCache() = { cacheVal = nullableSlotEmpty() }
 
-let inline cached cache resf = 
+let inline cached cache resF = 
     match box cache.cacheVal with 
     | null -> 
-        let res = resf() 
+        let res = resF() 
         cache.cacheVal <- nullableSlotFull res 
         res
     | _ -> 
         cache.cacheVal
 
+let inline cacheOptByref (cache: byref<'T option>) f = 
+    match cache with 
+    | Some v -> v
+    | None -> 
+       let res = f()
+       cache <- Some res
+       res
+
+// REVIEW: this is only used because we want to mutate a record field,
+// and because you cannot take a byref<_> of such a thing directly,
+// we cannot use 'cacheOptByref'. If that is changed, this can be removed.
 let inline cacheOptRef cache f = 
-    match !cache with 
+    match !cache with
     | Some v -> v
     | None -> 
        let res = f()
        cache := Some res
        res 
 
+let inline tryGetCacheValue cache =
+    match box cache.cacheVal with
+    | null -> ValueNone
+    | _ -> ValueSome cache.cacheVal
 
 #if DUMPER
 type Dumper(x:obj) =
@@ -428,11 +427,11 @@ module internal AsyncUtil =
         | AsyncCanceled of OperationCanceledException
 
         static member Commit(res:AsyncResult<'T>) =
-            Async.FromContinuations (fun (cont, econt, ccont) ->
+            Async.FromContinuations (fun (cont, eCont, cCont) ->
                     match res with
                     | AsyncOk v -> cont v
-                    | AsyncException exn -> econt exn
-                    | AsyncCanceled exn -> ccont exn)
+                    | AsyncException exn -> eCont exn
+                    | AsyncCanceled exn -> cCont exn)
 
     /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
     [<Sealed>]
@@ -455,7 +454,7 @@ module internal AsyncUtil =
                     else
                         result <- Some res
                         // Invoke continuations in FIFO order
-                        // Continuations that Async.FromContinuations provide do QUWI/SynchContext.Post,
+                        // Continuations that Async.FromContinuations provide do QUWI/SyncContext.Post,
                         // so the order is not overly relevant but still. 
                         List.rev savedConts)
             let postOrQueue (sc:SynchronizationContext, cont) =
@@ -485,7 +484,7 @@ module internal AsyncUtil =
                         | None ->
                             // Otherwise save the continuation and call it in RegisterResult
                             let sc = SynchronizationContext.Current
-                            savedConts <- (sc, cont)::savedConts
+                            savedConts <- (sc, cont) :: savedConts
                             None)
                 // Run the action outside the lock
                 match grabbedResult with
@@ -522,11 +521,9 @@ module UnmanagedProcessExecutionOptions =
     extern UInt32 private GetLastError()
 
     // Translation of C# from http://swikb/v1/DisplayOnlineDoc.aspx?entryID=826 and copy in bug://5018
-#if !FX_NO_SECURITY_PERMISSIONS
     [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert, UnmanagedCode = true)>] 
-#endif
     let EnableHeapTerminationOnCorruption() =
-        if (System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&  System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
             System.Environment.Version.Major < 3) then // and CLR not 3.0 or higher 
             // "The flag HeapSetInformation sets is available in Windows XP SP3 and later.
             //  The data structure used for heap information is available on earlier versions of Windows.
@@ -545,3 +542,14 @@ module UnmanagedProcessExecutionOptions =
                             "HeapSetInformation() returned FALSE; LastError = 0x" + 
                             GetLastError().ToString("X").PadLeft(8, '0') + "."))
 
+[<RequireQualifiedAccess>]
+module StackGuard =
+
+    open System.Runtime.CompilerServices
+
+    [<Literal>] 
+    let private MaxUncheckedRecursionDepth = 20
+
+    let EnsureSufficientExecutionStack recursionDepth =
+        if recursionDepth > MaxUncheckedRecursionDepth then
+            RuntimeHelpers.EnsureSufficientExecutionStack ()

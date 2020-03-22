@@ -5,13 +5,12 @@
     <OutputType>Exe</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
-    <DefaultValueTuplePackageVersion>$(SystemValueTuplePackageVersion)</DefaultValueTuplePackageVersion>
+    <DefaultValueTuplePackageVersion>$(SystemValueTupleVersion)</DefaultValueTuplePackageVersion>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="ProjectCracker.fs" />
     <Compile Include="Options.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />

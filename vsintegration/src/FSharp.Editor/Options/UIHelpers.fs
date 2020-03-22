@@ -57,6 +57,10 @@ module internal OptionsUIHelpers =
             // next time         
             needsLoadOnNextActivate <- true
 
+        member this.GetService<'T when 'T : not struct>() =
+            let scm = this.Site.GetService(typeof<SComponentModel>) :?> IComponentModel
+            scm.GetService<'T>()
+
     //data binding helpers
     let radioButtonCoverter =
       { new IValueConverter with

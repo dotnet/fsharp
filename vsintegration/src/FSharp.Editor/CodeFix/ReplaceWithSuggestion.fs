@@ -46,26 +46,24 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
             let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLinePos.Character - 1)
                 
             let! declInfo = checkFileResults.GetDeclarationListInfo(Some parseFileResults, fcsCaretLineNumber, caretLine.ToString(), partialName, userOpName=userOpName) |> liftAsync
-            let namesToCheck = declInfo.Items |> Array.map (fun item -> item.Name)
+            let addNames (addToBuffer:string -> unit) = 
+                for item in declInfo.Items do
+                    addToBuffer item.Name
 
-            let suggestedNames = ErrorResolutionHints.getSuggestedNames namesToCheck unresolvedIdentifierText
-            match suggestedNames with
-            | None -> ()
-            | Some suggestions ->
-                let diagnostics =
-                    context.Diagnostics
-                    |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
-                    |> Seq.toImmutableArray
+            let diagnostics =
+                context.Diagnostics
+                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
+                |> Seq.toImmutableArray
 
-                for suggestion in suggestions do
-                    let replacement = Keywords.QuoteIdentifierIfNeeded suggestion
-                    let codeFix = 
-                        CodeFixHelpers.createTextChangeCodeFix(
-                            FSComp.SR.replaceWithSuggestion suggestion,
-                            context,
-                            (fun () -> asyncMaybe.Return [| TextChange(context.Span, replacement) |]))
+            for suggestion in ErrorResolutionHints.getSuggestedNames addNames unresolvedIdentifierText do
+                let replacement = Keywords.QuoteIdentifierIfNeeded suggestion
+                let codeFix =
+                    CodeFixHelpers.createTextChangeCodeFix(
+                        CompilerDiagnostics.getErrorMessage (ReplaceWithSuggestion suggestion),
+                        context,
+                        (fun () -> asyncMaybe.Return [| TextChange(context.Span, replacement) |]))
                 
-                    context.RegisterCodeFix(codeFix, diagnostics)
+                context.RegisterCodeFix(codeFix, diagnostics)
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

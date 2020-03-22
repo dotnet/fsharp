@@ -151,6 +151,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Diagnostics.
+        /// </summary>
+        public static string Diagnostics {
+            get {
+                return ResourceManager.GetString("Diagnostics", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to D_ot underline.
         /// </summary>
         public static string Dot_underline {
@@ -354,6 +363,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Suggest_names_for_errors_code_fix {
             get {
                 return ResourceManager.GetString("Suggest_names_for_errors_code_fix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Text hover.
+        /// </summary>
+        public static string Text_hover {
+            get {
+                return ResourceManager.GetString("Text_hover", resourceCulture);
             }
         }
         

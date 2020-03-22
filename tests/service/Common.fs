@@ -1,16 +1,16 @@
+[<AutoOpen>]
 module internal FSharp.Compiler.Service.Tests.Common
 
 open System
 open System.IO
 open System.Collections.Generic
 open FSharp.Compiler
+open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FsUnit
+open NUnit.Framework
 
-#if FX_RESHAPED_REFLECTION
-open ReflectionAdapters
-#endif
-
-#if NETCOREAPP2_0
+#if NETCOREAPP
 let readRefs (folder : string) (projectFile: string) =
     let runProcess (workingDir: string) (exePath: string) (args: string) =
         let psi = System.Diagnostics.ProcessStartInfo()
@@ -68,23 +68,18 @@ let getBackgroundCheckResultsForScriptText (input) =
 
 
 let sysLib nm = 
-#if !NETCOREAPP2_0
+#if !NETCOREAPP
     if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
         let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
-        programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\" + nm + ".dll"
+        programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\" + nm + ".dll"
     else
 #endif
-#if FX_NO_RUNTIMEENVIRONMENT
         let sysDir = System.AppContext.BaseDirectory
-#else
-        let sysDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-#endif
         let (++) a b = System.IO.Path.Combine(a,b)
         sysDir ++ nm + ".dll" 
 
 [<AutoOpen>]
 module Helpers = 
-    open System
     type DummyType = A | B
     let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharp.Compiler.SourceCodeServices.FSharpChecker>.Assembly.CodeBase).LocalPath), p)
 
@@ -92,7 +87,7 @@ let fsCoreDefaultReference() =
     PathRelativeToTestAssembly "FSharp.Core.dll"
 
 let mkStandardProjectReferences () = 
-#if NETCOREAPP2_0
+#if NETCOREAPP
             let file = "Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj"
             let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0")
             readRefs projDir file
@@ -132,7 +127,7 @@ let mkProjectCommandLineArgs (dllName, fileNames) =
   printfn "dllName = %A, args = %A" dllName args
   args
 
-#if NETCOREAPP2_0
+#if NETCOREAPP
 let mkProjectCommandLineArgsForScript (dllName, fileNames) = 
     [|  yield "--simpleresolution" 
         yield "--noframework" 
@@ -173,7 +168,7 @@ let parseAndCheckFile fileName source options =
 
 let parseAndCheckScript (file, input) = 
 
-#if NETCOREAPP2_0
+#if NETCOREAPP
     let dllName = Path.ChangeExtension(file, ".dll")
     let projName = Path.ChangeExtension(file, ".fsproj")
     let args = mkProjectCommandLineArgsForScript (dllName, [file])
@@ -198,13 +193,19 @@ let parseAndCheckScript (file, input) =
 let parseSourceCode (name: string, code: string) =
     let location = Path.Combine(Path.GetTempPath(),"test"+string(hash (name, code)))
     try Directory.CreateDirectory(location) |> ignore with _ -> ()
-    let projPath = Path.Combine(location, name + ".fsproj")
     let filePath = Path.Combine(location, name + ".fs")
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let parseResults = checker.ParseFile(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
     parseResults.ParseTree
+
+open FSharp.Compiler.Ast
+
+let parseSourceCodeAndGetModule (source: string) =
+    match parseSourceCode ("test", source) with
+    | Some (ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, [ moduleOrNamespace ], _))) -> moduleOrNamespace
+    | _ -> failwith "Could not get module decls"
 
 /// Extract range info 
 let tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
@@ -305,9 +306,72 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
                  yield (x :> FSharpSymbol)
           yield! allSymbolsInEntities compGen e.NestedEntities ]
 
+let getParseAndCheckResults (source: string) =
+    parseAndCheckScript("/home/user/Test.fsx", source)
+
+let inline dumpErrors results =
+    (^TResults: (member Errors: FSharpErrorInfo[]) results)
+    |> Array.map (fun e ->
+        let range = mkRange e.FileName e.Start e.End
+        let message =
+            e.Message.Split('\n')
+            |> Array.map (fun s -> s.Trim())
+            |> String.concat " "
+        sprintf "%s: %s" (range.ToShortString()) message)
+    |> List.ofArray
+
+
+let getSymbolUses (results: FSharpCheckFileResults) =
+    results.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+
+let getSymbolUsesFromSource (source: string) =
+    let _, typeCheckResults = getParseAndCheckResults source 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+
+let getSymbols (symbolUses: FSharpSymbolUse[]) =
+    symbolUses |> Array.map (fun symbolUse -> symbolUse.Symbol)
+
+
+let getSymbolName (symbol: FSharpSymbol) =
+    match symbol with
+    | :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv.LogicalName
+    | :? FSharpEntity as entity -> Some entity.LogicalName
+    | :? FSharpGenericParameter as parameter -> Some parameter.Name
+    | :? FSharpParameter as parameter -> parameter.Name
+    | :? FSharpStaticParameter as parameter -> Some parameter.Name
+    | :? FSharpActivePatternCase as case -> Some case.Name
+    | :? FSharpUnionCase as case -> Some case.Name
+    | _ -> None
+
+
+let assertContainsSymbolWithName name source =
+    getSymbols source
+    |> Array.choose getSymbolName
+    |> Array.contains name
+    |> shouldEqual true
+
+let assertContainsSymbolsWithNames (names: string list) source =
+    let symbolNames =
+        getSymbols source
+        |> Array.choose getSymbolName
+
+    for name in names do
+        symbolNames
+        |> Array.contains name
+        |> shouldEqual true
+
+let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults) =
+    let symbolNames =
+        getSymbolUses results
+        |> getSymbols
+        |> Array.choose getSymbolName
+        |> set
+
+    for name in names do
+        Assert.That(Set.contains name symbolNames, name)
 
 let coreLibAssemblyName =
-#if NETCOREAPP2_0
+#if NETCOREAPP
     "System.Runtime"
 #else
     "mscorlib"

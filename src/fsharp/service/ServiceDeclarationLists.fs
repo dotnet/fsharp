@@ -8,7 +8,6 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic
@@ -228,7 +227,7 @@ module internal DescriptionListsImpl =
                 | [] -> 
                     // handles cases like 'let foo = List.map'
                     getPrettyParamsOfTypes() 
-                | firstCurriedArgInfo::_ ->
+                | firstCurriedArgInfo :: _ ->
                     // result 'paramDatas' collection corresponds to the first argument of curried function
                     // i.e. let func (a : int) (b : int) = a + b
                     // paramDatas will contain information about a and retTy will be: int -> int
@@ -385,7 +384,7 @@ module internal DescriptionListsImpl =
          
          /// Find the glyph for the given type representation.
          let typeToGlyph ty = 
-            match tryDestAppTy denv.g ty with
+            match tryTcrefOfAppTy denv.g ty with
             | ValueSome tcref -> tcref.TypeReprInfo |> reprToGlyph
             | _ ->
                 if isStructTupleTy denv.g ty then FSharpGlyph.Struct
@@ -403,7 +402,7 @@ module internal DescriptionListsImpl =
                   if isFunction denv.g vref.Type then FSharpGlyph.Method
                   elif vref.LiteralValue.IsSome then FSharpGlyph.Constant
                   else FSharpGlyph.Variable
-            | Item.Types(_, ty::_) -> typeToGlyph (stripTyEqns denv.g ty)    
+            | Item.Types(_, ty :: _) -> typeToGlyph (stripTyEqns denv.g ty)    
             | Item.UnionCase _
             | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember   
             | Item.ExnCase _ -> FSharpGlyph.Exception   
@@ -437,7 +436,7 @@ module internal DescriptionListsImpl =
                     elif tydef.IsStruct then FSharpGlyph.Struct
                     else FSharpGlyph.Class
                 else FSharpGlyph.Class
-            | Item.ModuleOrNamespaces(modref::_) -> 
+            | Item.ModuleOrNamespaces(modref :: _) -> 
                   if modref.IsNamespace then FSharpGlyph.NameSpace else FSharpGlyph.Module
             | Item.ArgName _ -> FSharpGlyph.Variable
             | Item.SetterArg _ -> FSharpGlyph.Variable
@@ -492,19 +491,12 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
     member __.StructuredDescriptionTextAsync = 
         let userOpName = "ToolTip"
         match info with
-        | Choice1Of2 (items: CompletionItem list, infoReader, m, denv, reactor:IReactorOperations, checkAlive) -> 
+        | Choice1Of2 (items: CompletionItem list, infoReader, m, denv, reactor:IReactorOperations) -> 
             // reactor causes the lambda to execute on the background compiler thread, through the Reactor
             reactor.EnqueueAndAwaitOpAsync (userOpName, "StructuredDescriptionTextAsync", name, fun ctok -> 
                 RequireCompilationThread ctok
-                // This is where we do some work which may touch TAST data structures owned by the IncrementalBuilder - infoReader, item etc. 
-                // It is written to be robust to a disposal of an IncrementalBuilder, in which case it will just return the empty string. 
-                // It is best to think of this as a "weak reference" to the IncrementalBuilder, i.e. this code is written to be robust to its
-                // disposal. Yes, you are right to scratch your head here, but this is ok.
-                cancellable.Return(
-                    if checkAlive() then 
-                        FSharpToolTipText(items |> List.map (fun x -> SymbolHelpers.FormatStructuredDescriptionOfItem true infoReader m denv x.ItemWithInst))
-                    else 
-                        FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ]))
+                cancellable.Return(FSharpToolTipText(items |> List.map (fun x -> SymbolHelpers.FormatStructuredDescriptionOfItem true infoReader m denv x.ItemWithInst)))
+            )
             | Choice2Of2 result -> 
                 async.Return result
 
@@ -559,7 +551,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
     member __.IsError = isError
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, isAttributeApplicationContext: bool, checkAlive) = 
+    static member Create(infoReader:InfoReader, m: range, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, isAttributeApplicationContext: bool) = 
         let g = infoReader.g
         let isForType = items |> List.exists (fun x -> x.Type.IsSome)
         let items = items |> SymbolHelpers.RemoveExplicitlySuppressedCompletionItems g
@@ -623,21 +615,27 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
         // Filter out operators, active patterns (as values) and the empty list
         let items = 
             // Check whether this item looks like an operator.
-            let isOperatorItem(name, items: CompletionItem list) = 
-                match items |> List.map (fun x -> x.Item) with
-                | [Item.Value _ | Item.MethodGroup _ | Item.UnionCase _] -> IsOperatorName name
+            let isOperatorItem name (items: CompletionItem list) =
+                match items with
+                | [item] ->
+                    match item.Item with
+                    | Item.Value _ | Item.MethodGroup _ | Item.UnionCase _ -> IsOperatorName name
+                    | _ -> false
                 | _ -> false              
-            
+
             let isActivePatternItem (items: CompletionItem list) =
-                match items |> List.map (fun x -> x.Item) with
-                | [Item.Value vref] -> IsActivePatternName vref.CompiledName
+                match items with
+                | [item] ->
+                    match item.Item with
+                    | Item.Value vref -> IsActivePatternName vref.CoreDisplayName
+                    | _ -> false
                 | _ -> false
-            
+
             items |> List.filter (fun (displayName, items) -> 
-                not (isOperatorItem(displayName, items)) && 
+                not (isOperatorItem displayName items) && 
                 not (displayName = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
                 not (isActivePatternItem items))
-                    
+
         let decls = 
             items 
             |> List.map (fun (displayName, itemsWithSameFullName) -> 
@@ -697,7 +695,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                             | ns -> Some (System.String.Join(".", ns)))
 
                     FSharpDeclarationListItem(
-                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), getAccessibility item.Item,
+                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor), getAccessibility item.Item,
                         item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
         new FSharpDeclarationListInfo(Array.ofList decls, isForType, false)

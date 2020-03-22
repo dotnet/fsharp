@@ -41,7 +41,7 @@ let B = File1.A + File1.A"""
     interface IFileSystem with
         // 読み取りおよび書き込み用にファイルをオープンする機能を実装
         member __.FileStreamReadShim(fileName) = 
-            match files.TryGetValue(fileName) with
+            match files.TryGetValue fileName with
             | true, text -> new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
             | _ -> defaultFileSystem.FileStreamReadShim(fileName)
 
@@ -55,7 +55,7 @@ let B = File1.A + File1.A"""
             defaultFileSystem.FileStreamWriteExistingShim(fileName)
 
         member __.ReadAllBytesShim(fileName) = 
-            match files.TryGetValue(fileName) with
+            match files.TryGetValue fileName with
             | true, text -> Encoding.UTF8.GetBytes(text)
             | _ -> defaultFileSystem.ReadAllBytesShim(fileName)
 

@@ -9,18 +9,15 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.CompilerServices
     open System.Collections.Generic
-#if FX_RESHAPED_REFLECTION
-    open System.Reflection
-#endif
+    
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
     module List =
 
         let inline checkNonNull argName arg =
-            match box arg with
-            | null -> nullArg argName
-            | _ -> ()
+            if isNull arg then
+                nullArg argName
 
         let inline indexNotFound() = raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
@@ -28,18 +25,16 @@ namespace Microsoft.FSharp.Collections
         let length (list: 'T list) = list.Length
 
         [<CompiledName("Last")>]
-        let rec last (list: 'T list) =
-            match list with
-            | [x] -> x
-            | _ :: tail -> last tail
-            | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
+        let last (list: 'T list) =
+            match Microsoft.FSharp.Primitives.Basics.List.tryLastV list with
+            | ValueSome x -> x
+            | ValueNone -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
 
         [<CompiledName("TryLast")>]
         let rec tryLast (list: 'T list) =
-            match list with
-            | [x] -> Some x
-            | _ :: tail -> tryLast tail
-            | [] -> None
+            match Microsoft.FSharp.Primitives.Basics.List.tryLastV list with
+            | ValueSome x -> Some x
+            | ValueNone -> None            
 
         [<CompiledName("Reverse")>]
         let rev list = Microsoft.FSharp.Primitives.Basics.List.rev list
@@ -72,11 +67,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("CountBy")>]
         let countBy (projection:'T->'Key) (list:'T list) =
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then countByValueType projection list
                 else countByRefType   projection list
 
@@ -109,7 +100,7 @@ namespace Microsoft.FSharp.Collections
                 loop ([], state) (rev list)
 
         [<CompiledName("Iterate")>]
-        let iter action list = Microsoft.FSharp.Primitives.Basics.List.iter action list
+        let inline iter action (list:'T list) = for x in list do action x
 
         [<CompiledName("Distinct")>]
         let distinct (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctWithComparer HashIdentity.Structural<'T> list
@@ -173,18 +164,20 @@ namespace Microsoft.FSharp.Collections
         let takeWhile predicate (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.takeWhile predicate list
 
         [<CompiledName("IterateIndexed")>]
-        let iteri action list = Microsoft.FSharp.Primitives.Basics.List.iteri action list
+        let inline iteri action (list: 'T list) =
+            let mutable n = 0
+            for x in list do action n x; n <- n + 1
 
         [<CompiledName("Initialize")>]
         let init length initializer = Microsoft.FSharp.Primitives.Basics.List.init length initializer
 
-        let rec initConstAcc n x acc =
-            if n <= 0 then acc else initConstAcc (n-1) x (x :: acc)
-
         [<CompiledName("Replicate")>]
         let replicate count initial =
             if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            initConstAcc count initial []
+            let mutable result = []
+            for i in 0..count-1 do
+               result <- initial :: result
+            result
 
         [<CompiledName("Iterate2")>]
         let iter2 action list1 list2 =
@@ -386,10 +379,16 @@ namespace Microsoft.FSharp.Collections
                 exists2aux f list1 list2
 
         [<CompiledName("Find")>]
-        let rec find predicate list = match list with [] -> indexNotFound()  | h :: t -> if predicate h then h else find predicate t
+        let rec find predicate list = 
+            match list with
+            | [] -> indexNotFound()
+            | h :: t -> if predicate h then h else find predicate t
 
         [<CompiledName("TryFind")>]
-        let rec tryFind predicate list = match list with [] -> None | h :: t -> if predicate h then Some h else tryFind predicate t
+        let rec tryFind predicate list =
+            match list with
+            | [] -> None 
+            | h :: t -> if predicate h then Some h else tryFind predicate t
 
         [<CompiledName("FindBack")>]
         let findBack predicate list = list |> toArray |> Microsoft.FSharp.Primitives.Basics.Array.findBack predicate
@@ -441,11 +440,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (projection:'T->'Key) (list:'T list) =
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then groupByValueType projection list
                 else groupByRefType   projection list
 
@@ -534,12 +529,20 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("FindIndex")>]
         let findIndex predicate list =
-            let rec loop n = function[] -> indexNotFound()  | h :: t -> if predicate h then n else loop (n+1) t
+            let rec loop n list = 
+                match list with 
+                | [] -> indexNotFound()
+                | h :: t -> if predicate h then n else loop (n + 1) t
+
             loop 0 list
 
         [<CompiledName("TryFindIndex")>]
         let tryFindIndex predicate list =
-            let rec loop n = function[] -> None | h :: t -> if predicate h then Some n else loop (n+1) t
+            let rec loop n list = 
+                match list with
+                | [] -> None
+                | h :: t -> if predicate h then Some n else loop (n + 1) t
+
             loop 0 list
 
         [<CompiledName("FindIndexBack")>]
@@ -549,27 +552,27 @@ namespace Microsoft.FSharp.Collections
         let tryFindIndexBack predicate list = list |> toArray |> Microsoft.FSharp.Primitives.Basics.Array.tryFindIndexBack predicate
 
         [<CompiledName("Sum")>]
-        let inline sum          (list:list<'T>) =
+        let inline sum (list:list<'T>) =
             match list with
-            | [] ->  LanguagePrimitives.GenericZero< 'T >
+            | [] -> LanguagePrimitives.GenericZero<'T>
             | t ->
-                let mutable acc = LanguagePrimitives.GenericZero< 'T >
+                let mutable acc = LanguagePrimitives.GenericZero<'T>
                 for x in t do
                     acc <- Checked.(+) acc x
                 acc
 
         [<CompiledName("SumBy")>]
-        let inline sumBy (projection: 'T -> 'U)     (list:list<'T>) =
+        let inline sumBy (projection: 'T -> 'U) (list:list<'T>) =
             match list with
-            | [] ->  LanguagePrimitives.GenericZero< 'U >
+            | [] -> LanguagePrimitives.GenericZero<'U>
             | t ->
-                let mutable acc = LanguagePrimitives.GenericZero< 'U >
+                let mutable acc = LanguagePrimitives.GenericZero<'U>
                 for x in t do
                     acc <- Checked.(+) acc (projection x)
                 acc
 
         [<CompiledName("Max")>]
-        let inline max          (list:list<_>) =
+        let inline max (list:list<_>) =
             match list with
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | h :: t ->
@@ -594,7 +597,7 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("Min")>]
-        let inline min          (list:list<_>) =
+        let inline min (list:list<_>) =
             match list with
             | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | h :: t ->
@@ -619,11 +622,11 @@ namespace Microsoft.FSharp.Collections
                 acc
 
         [<CompiledName("Average")>]
-        let inline average      (list:list<'T>) =
+        let inline average (list:list<'T>) =
             match list with
             | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | xs ->
-                let mutable sum = LanguagePrimitives.GenericZero< 'T >
+                let mutable sum = LanguagePrimitives.GenericZero<'T>
                 let mutable count = 0
                 for x in xs do
                     sum <- Checked.(+) sum x
@@ -635,7 +638,7 @@ namespace Microsoft.FSharp.Collections
             match list with
             | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | xs ->
-                let mutable sum = LanguagePrimitives.GenericZero< 'U >
+                let mutable sum = LanguagePrimitives.GenericZero<'U>
                 let mutable count = 0
                 for x in xs do
                     sum <- Checked.(+) sum (projection x)

@@ -162,11 +162,6 @@ open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open Microsoft.FSharp.Quotations.DerivedPatterns
 
-#if FX_RESHAPED_REFLECTION
-open PrimReflectionAdapters
-open ReflectionAdapters
-#endif
-
 module LeafExpressionConverter =
 
     // The following is recognized as a LINQ 'member initialization pattern' in a quotation.
@@ -213,17 +208,13 @@ module LeafExpressionConverter =
 
     let SubstHelperRaw (q:Expr, x:Var[], y:obj[]) : Expr =
         let d = Map.ofArray (Array.zip x y)
-        q.Substitute(fun v -> v |> d.TryFind |> Option.map (fun x -> Expr.Value(x, v.Type)))
+        q.Substitute(fun v -> v |> d.TryFind |> Option.map (fun x -> Expr.Value (x, v.Type)))
 
     let SubstHelper<'T> (q:Expr, x:Var[], y:obj[]) : Expr<'T> =
         SubstHelperRaw(q, x, y) |> Expr.Cast
 
     let showAll =
-#if FX_RESHAPED_REFLECTION
-        true
-#else
         BindingFlags.Public ||| BindingFlags.NonPublic
-#endif
 
     let NullableConstructor =
         typedefof<Nullable<int>>.GetConstructors().[0]
@@ -235,9 +226,7 @@ module LeafExpressionConverter =
             match tm with
             | Call(obj, minfo2, args)
                 when (
-#if !FX_NO_REFLECTION_METADATA_TOKENS
                         minfo.MetadataToken = minfo2.MetadataToken &&
-#endif
                         if isg1 then minfo2.IsGenericMethod && gmd = minfo2.GetGenericMethodDefinition()
                         else minfo = minfo2
                      ) ->
@@ -746,7 +735,12 @@ module LeafExpressionConverter =
             Expression.Lambda(dty, bodyP, vsP) |> asExpr
 
         | Patterns.NewTuple args ->
-             let tupTy = args |> List.map (fun arg -> arg.Type) |> Array.ofList |> Reflection.FSharpType.MakeTupleType
+             let tupTy = 
+                let argTypes = args |> List.map (fun arg -> arg.Type) |> Array.ofList
+                if inp.Type.IsValueType then 
+                    Reflection.FSharpType.MakeStructTupleType(inp.Type.Assembly, argTypes)
+                else
+                    Reflection.FSharpType.MakeTupleType(argTypes)
              let argsP = ConvExprsToLinq env args
              let rec build ty (argsP: Expression[]) =
                  match Reflection.FSharpValue.PreComputeTupleConstructorInfo ty with
@@ -846,9 +840,9 @@ module LeafExpressionConverter =
        | Value (obj, _) -> obj
        | _ ->
        let ty = e.Type
-       let e = Expr.NewDelegate(Expression.GetFuncType([|typeof<unit>; ty |]), [new Var("unit", typeof<unit>)], e)
+       let e = Expr.NewDelegate (Expression.GetFuncType([|typeof<unit>; ty |]), [new Var("unit", typeof<unit>)], e)
        let linqExpr = (ConvExprToLinq e:?> LambdaExpression)
-       let d = linqExpr.Compile()
+       let d = linqExpr.Compile ()
        try
            d.DynamicInvoke [| box () |]
        with :? System.Reflection.TargetInvocationException as exn ->

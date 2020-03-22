@@ -1642,7 +1642,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="RSE_Err_RenameNotSupported">
         <source>The current object is auto-generated and only supports renaming through the Managed Resources Editor.</source>
-        <target state="translated">現在のオブジェクトは自動生成されていて、マネージ リソース エディターによる名前の変更のみサポートしています。</target>
+        <target state="translated">現在のオブジェクトは自動生成されていて、マネージド リソース エディターによる名前の変更のみサポートしています。</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_Err_CantFindResourceFile_1Arg">
@@ -1830,7 +1830,6 @@ CONSIDER: get this from CodeDom</note>
         <source>{0} x {1}</source>
         <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
@@ -2730,7 +2729,7 @@ app.config ファイルでの新しい値は '{1}' です
       </trans-unit>
       <trans-unit id="PPG_WPFApp_CantOpenOrCreateAppXaml_1Arg">
         <source>There was an error trying to open or create the application definition file for this project.  {0}</source>
-        <target state="translated">このプロジェクトのアプリケーション定義ファイル {0} を開くときまたは作成するときにエラーが発生しました。{0}</target>
+        <target state="translated">このプロジェクトのアプリケーション定義ファイルを開くときまたは作成するときにエラーが発生しました。{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_ErrorControlMessage_1Arg">
@@ -2755,7 +2754,7 @@ app.config ファイルでの新しい値は '{1}' です
       </trans-unit>
       <trans-unit id="PPG_WPFApp_CouldntCreateApplicationEventsFile_1Arg">
         <source>An error occurred trying to create the application events file.  {0}</source>
-        <target state="translated">アプリケーション イベント ファイル {0} を作成するときにエラーが発生しました。{0}</target>
+        <target state="translated">アプリケーション イベント ファイルを作成するときにエラーが発生しました。{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="General_InvalidArgument_1Arg">
@@ -2930,7 +2929,7 @@ app.config ファイルでの新しい値は '{1}' です
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_XBAPOutOfTrustZoneToolTip">
         <source>The application will fail to run in the selected zone because of this requested elevated permission. Click the help link above for more info.</source>
-        <target state="translated">この引き上げられたアクセス許可が原因で、選択されたゾーンでのアプリケーションの実行は失敗します。詳細については、ヘルプ リンクをクリックしてください。</target>
+        <target state="translated">要求されたこの引き上げられたアクセス許可が原因で、選択されたゾーンでのアプリケーションの実行は失敗します。詳細については、ヘルプ リンクをクリックしてください。</target>
         <note />
       </trans-unit>
     </body>

@@ -42,6 +42,11 @@
         <target state="translated">完成列表</target>
         <note />
       </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="translated">诊断</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">性能</target>
@@ -49,7 +54,7 @@
       </trans-unit>
       <trans-unit id="Dash_underline">
         <source>D_ash underline</source>
-        <target state="translated">短线下划线(_A）</target>
+        <target state="translated">短线下划线(_A)</target>
         <note />
       </trans-unit>
       <trans-unit id="Dot_underline">
@@ -74,7 +79,7 @@
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
-        <target state="translated">键入字符后显示完成列表</target>
+        <target state="translated">键入字符后显示完成列表(_S)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_in_memory_cross_project_references">
@@ -100,6 +105,11 @@
       <trans-unit id="Solid_underline">
         <source>_Solid underline</source>
         <target state="translated">实线下划线(_S)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="translated">文本悬停</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">

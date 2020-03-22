@@ -2,7 +2,6 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Text
 
@@ -148,7 +147,7 @@ module XmlDocParsing =
 
         and getXmlDocablesInput input =
             match input with
-            | ParsedInput.ImplFile(ParsedImplFileInput(modules = symModules))-> 
+            | ParsedInput.ImplFile (ParsedImplFileInput (modules = symModules))-> 
                 symModules |> List.collect getXmlDocablesSynModuleOrNamespace
             | ParsedInput.SigFile _ -> []
 

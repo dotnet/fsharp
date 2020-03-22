@@ -2,16 +2,12 @@
 
 module internal FSharp.Compiler.AbstractIL.ILAsciiWriter
 
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open FSharp.Compiler.AbstractIL.Internal.AsciiConstants
 open FSharp.Compiler.AbstractIL.IL
 
-open System.Text
 open System.IO
 open System.Reflection
 
@@ -161,12 +157,14 @@ let output_ieee32 os (x:float32) = output_string os "float32 ("; output_string o
 
 let output_ieee64 os (x:float) = output_string os "float64 ("; output_string os (string (bits_of_float x)); output_string os ")"
 
-let rec goutput_scoref _env os = function
+let rec goutput_scoref env os = function
   | ILScopeRef.Local -> ()
   | ILScopeRef.Assembly aref ->
       output_string os "["; output_sqstring os aref.Name; output_string os "]"
   | ILScopeRef.Module mref ->
       output_string os "[.module "; output_sqstring os mref.Name; output_string os "]"
+  | ILScopeRef.PrimaryAssembly ->
+      output_string os "["; output_sqstring os env.ilGlobals.primaryAssemblyName; output_string os "]"
 
 and goutput_type_name_ref env os (scoref, enc, n) =
   goutput_scoref env os scoref
@@ -1028,8 +1026,7 @@ let goutput_resource env os r =
   output_string os " { "
   goutput_custom_attrs env os r.CustomAttrs
   match r.Location with
-  | ILResourceLocation.LocalIn _
-  | ILResourceLocation.LocalOut _ ->
+  | ILResourceLocation.Local _ ->
       output_string os " /* loc nyi */ "
   | ILResourceLocation.File (mref, off) ->
       output_string os " .file "
@@ -1070,7 +1067,7 @@ let output_module_fragment_aux _refs os (ilg: ILGlobals) modul =
     reraise()
 
 let output_module_fragment os (ilg: ILGlobals) modul =
-  let refs = computeILRefs modul
+  let refs = computeILRefs ilg modul
   output_module_fragment_aux refs os ilg modul
   refs
 
@@ -1091,7 +1088,7 @@ let goutput_module_manifest env os modul =
 
 let output_module os (ilg: ILGlobals) modul =
   try
-    let refs = computeILRefs modul
+    let refs = computeILRefs ilg modul
     let env = mk_ppenv ilg
     let env = ppenv_enter_modul env
     output_module_refs  os refs

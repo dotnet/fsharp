@@ -6,19 +6,15 @@ open System
 open System.Text
 
 open Internal.Utilities
-open Internal.Utilities.Collections
-open Internal.Utilities.Text
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Ast
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.Range
 open FSharp.Compiler.Parser
 
@@ -40,37 +36,41 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 
 /// Manage lexer resources (string interning)
 [<Sealed>]
-type LexResourceManager() =
-    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(1024)
+type LexResourceManager(?capacity: int) =
+    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(defaultArg capacity 1024)
     member x.InternIdentifierToken(s) = 
-        let mutable res = Unchecked.defaultof<_> 
-        let ok = strings.TryGetValue(s, &res)  
-        if ok then res  else 
-        let res = IDENT s
-        (strings.[s] <- res; res)
-              
+        match strings.TryGetValue s with
+        | true, res -> res
+        | _ ->
+            let res = IDENT s
+            strings.[s] <- res
+            res
+
 /// Lexer parameters 
 type lexargs =  
     { defines: string list
-      ifdefStack: LexerIfdefStack
+      mutable ifdefStack: LexerIfdefStack
       resourceManager: LexResourceManager
       lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger
-      applyLineDirectives: bool }
+      applyLineDirectives: bool
+      pathMap: PathMap }
 
-/// possible results of lexing a long unicode escape sequence in a string literal, e.g. "\UDEADBEEF"
+/// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
+/// "\U000000E7", or "\UDEADBEEF" returning SurrogatePair, SingleChar, or Invalid, respectively
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (_filename, defines, lightSyntaxStatus, resourceManager, ifdefStack, errorLogger) =
+let mkLexargs (_filename, defines, lightSyntaxStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
     { defines = defines
       ifdefStack= ifdefStack
       lightSyntaxStatus=lightSyntaxStatus
       resourceManager=resourceManager
       errorLogger=errorLogger
-      applyLineDirectives=true }
+      applyLineDirectives=true
+      pathMap=pathMap }
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f = 
@@ -166,7 +166,9 @@ let unicodeGraphLong (s:string) =
     if high = 0 then SingleChar(uint16 low)
     // invalid encoding
     elif high > 0x10 then Invalid
-    // valid surrogate pair - see http://www.unicode.org/unicode/uni2book/ch03.pdf, section 3.7 *)
+    // valid supplementary character: code points U+10000 to U+10FFFF
+    // valid surrogate pair: see http://www.unicode.org/versions/latest/ch03.pdf , "Surrogates" section
+    // high-surrogate code point (U+D800 to U+DBFF) followed by low-surrogate code point (U+DC00 to U+DFFF)
     else
       let codepoint = high * 0x10000 + low
       let hiSurr = uint16 (0xD800 + ((codepoint - 0x10000) / 0x400))
@@ -325,16 +327,19 @@ module Keywords =
             match s with 
             | "__SOURCE_DIRECTORY__" ->
                 let filename = fileOfFileIndex lexbuf.StartPos.FileIndex
-                let dirname = 
+                let dirname =
                     if String.IsNullOrWhiteSpace(filename) then
                         String.Empty
                     else if filename = stdinMockFilename then
                         System.IO.Directory.GetCurrentDirectory()
                     else
-                        filename 
+                        filename
                         |> FileSystem.GetFullPathShim (* asserts that path is already absolute *)
                         |> System.IO.Path.GetDirectoryName
-                KEYWORD_STRING dirname
+
+                if String.IsNullOrEmpty dirname then dirname
+                else PathMap.applyDir args.pathMap dirname
+                |> KEYWORD_STRING
             | "__SOURCE_FILE__" -> 
                 KEYWORD_STRING (System.IO.Path.GetFileName((fileOfFileIndex lexbuf.StartPos.FileIndex))) 
             | "__LINE__" -> 
@@ -342,7 +347,7 @@ module Keywords =
             | _ -> 
                 IdentifierToken args lexbuf s
 
-    let inline private DoesIdentifierNeedQuotation (s : string) : bool =
+    let DoesIdentifierNeedQuotation (s : string) : bool =
         not (String.forall IsIdentifierPartCharacter s)              // if it has funky chars
         || s.Length > 0 && (not(IsIdentifierFirstCharacter s.[0]))  // or if it starts with a non-(letter-or-underscore)
         || keywordTable.ContainsKey s                               // or if it's a language keyword like "type"

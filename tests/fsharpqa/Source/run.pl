@@ -75,7 +75,10 @@ if (defined($ENV{EXCLUDEIF})){
 $VerifyStrongName = 1 if ($ENV{VERIFYSTRONGNAME} =~ /TRUE/i);
 
 # Check for any compiler flags
-my $SCFLAGS = $ENV{SCFLAGS};
+my $CWD = cwd();
+$_ = $ENV{SCFLAGS};
+s/\$CWD/$CWD/g;
+my $SCFLAGS = $_;
 
 # Check for any compiler 'tail' flags
 my $TAILFLAGS = $ENV{TAILFLAGS};
@@ -492,11 +495,9 @@ sub RunCommand {
 # GetSrc -- Find the source file to build
 #
 sub GetSrc() {
-  my $cwd = cwd();
-  
   # The environment SOURCE var usually defines what to compile
   $_ = $ENV{SOURCE};
-  s/\$CWD/$cwd/;
+  s/\$CWD/$CWD/;
   my $source = $_;
   return($source) if defined($source);
 

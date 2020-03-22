@@ -3,7 +3,6 @@
 module FSharp.Compiler.Layout
 
 open System
-open System.Collections.Generic
 open System.IO
 open Internal.Utilities.StructuredFormat
 open Microsoft.FSharp.Core.Printf
@@ -238,10 +237,10 @@ let (@@--)  l r = apply2 (fun l r -> mkNode l r (Broken 2)) l r
 let tagListL tagger = function
   | []    -> emptyL
   | [x]   -> x
-  | x::xs ->
+  | x :: xs ->
       let rec process' prefixL = function
       | []    -> prefixL
-      | y::ys -> process' ((tagger prefixL) ++ y) ys in
+      | y :: ys -> process' ((tagger prefixL) ++ y) ys in
       process' x xs
 
 let commaListL x = tagListL (fun prefixL -> prefixL ^^ rightL Literals.comma) x
@@ -254,7 +253,7 @@ let tupleL xs = bracketL (sepListL (sepL Literals.comma) xs)
 let aboveListL = function
   | []    -> emptyL
   | [x]   -> x
-  | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
+  | x :: ys -> List.fold (fun pre y -> pre @@ y) x ys
 
 let optionL xL = function
   | None   -> wordL (tagUnionCase "None")
@@ -389,7 +388,7 @@ type LayoutRenderer<'a, 'b> =
 let renderL (rr: LayoutRenderer<_, _>) layout =
     let rec addL z pos i layout k = 
       match layout with
-      | ObjLeaf _ -> failwith "ObjLeaf should never apper here"
+      | ObjLeaf _ -> failwith "ObjLeaf should never appear here"
         (* pos is tab level *)
       | Leaf (_, text, _)                 -> 
           k(rr.AddText z text, i + text.Text.Length)
@@ -419,7 +418,7 @@ let renderL (rr: LayoutRenderer<_, _>) layout =
 let stringR =
   { new LayoutRenderer<string, string list> with 
       member x.Start () = []
-      member x.AddText rstrs taggedText = taggedText.Text::rstrs
+      member x.AddText rstrs taggedText = taggedText.Text :: rstrs
       member x.AddBreak rstrs n = (spaces n) :: "\n" ::  rstrs 
       member x.AddTag z (_, _, _) = z
       member x.Finish rstrs = String.Join("", Array.ofList (List.rev rstrs)) }

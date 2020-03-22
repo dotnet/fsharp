@@ -45,9 +45,9 @@ module Structure =
     let longIdentRange (longId:LongIdent) =
         match longId with 
         | [] -> range0
-        | head::_ -> Range.startToEnd head.idRange (List.last longId).idRange
+        | head :: _ -> Range.startToEnd head.idRange (List.last longId).idRange
 
-    /// Caclulate the range of the provided type arguments (<'a, ..., 'z>) 
+    /// Calculate the range of the provided type arguments (<'a, ..., 'z>) 
     /// or return the range `other` when `typeArgs` = []
     let rangeOfTypeArgsElse other (typeArgs:SynTyparDecl list) =
         match typeArgs with
@@ -77,7 +77,7 @@ module Structure =
         | Below
         | Same
 
-    /// Tag to identify the constuct that can be stored alongside its associated ranges
+    /// Tag to identify the construct that can be stored alongside its associated ranges
     [<RequireQualifiedAccess>]
     type Scope =
         | Open
@@ -177,7 +177,7 @@ module Structure =
             | Comment             -> "Comment"
             | XmlDocComment       -> "XmlDocComment"
 
-    /// Stores the range for a construct, the sub-range that should be collapsed for outlinging,
+    /// Stores the range for a construct, the sub-range that should be collapsed for outlining,
     /// a tag for the construct type, and a tag for the collapse style
     [<NoComparison>]
     type ScopeRange = 
@@ -204,7 +204,7 @@ module Structure =
     let getOutliningRanges (sourceLines: string[]) (parsedInput: ParsedInput) =
         let acc = ResizeArray()
 
-        /// Validation function to ensure that ranges yielded for outlinging span 2 or more lines
+        /// Validation function to ensure that ranges yielded for outlining span 2 or more lines
         let inline rcheck scope collapse (fullRange: range) (collapseRange: range) = 
             if fullRange.StartLine <> fullRange.EndLine then 
                 acc.Add { Scope = scope
@@ -220,7 +220,7 @@ module Structure =
             match expression with
             | SynExpr.Upcast (e, _, _)
             | SynExpr.Downcast (e, _, _)
-            | SynExpr.AddressOf(_, e, _, _)
+            | SynExpr.AddressOf (_, e, _, _)
             | SynExpr.InferredDowncast (e, _)
             | SynExpr.InferredUpcast (e, _)
             | SynExpr.DotGet (e, _, _, _)
@@ -245,14 +245,21 @@ module Structure =
             | SynExpr.DoBang (e, r) ->
                 rcheck Scope.Do Collapse.Below r <| Range.modStart 3 r
                 parseExpr e
-            | SynExpr.LetOrUseBang (_, _, _, pat, e1, e2, _) ->
-                // for `let!` or `use!` the pattern begins at the end of the keyword so that
-                // this scope can be used without adjustment if there is no `=` on the same line
-                // if there is an `=` the range will be adjusted during the tooltip creation
-                let r = Range.endToEnd pat.Range e1.Range
-                rcheck Scope.LetOrUseBang Collapse.Below r r
-                parseExpr e1
-                parseExpr e2
+            | SynExpr.LetOrUseBang (_, _, _, pat, eLet, es, eBody, _) ->
+                [
+                    yield eLet
+                    yield! [ for (_,_,_,_,eAndBang,_) in es do yield eAndBang ]
+                ]
+                |> List.iter (fun e ->
+                    // for `let!`, `use!` or `and!` the pattern begins at the end of the
+                    // keyword so that this scope can be used without adjustment if there is no `=`
+                    // on the same line. If there is an `=` the range will be adjusted during the
+                    // tooltip creation
+                    let r = Range.endToEnd pat.Range e.Range
+                    rcheck Scope.LetOrUseBang Collapse.Below r r
+                    parseExpr e
+                )
+                parseExpr eBody
             | SynExpr.For (_, _, _, _, _, e, r)
             | SynExpr.ForEach (_, _, _, _, _, e, r) ->
                 rcheck Scope.For Collapse.Below r r
@@ -281,7 +288,7 @@ module Structure =
                 if ExprAtomicFlag.NonAtomic=atomicFlag && (not isInfix)
                    && (function SynExpr.Ident _    -> true  | _ -> false) funcExpr
                    && (function SynExpr.CompExpr _ -> false | _ -> true ) argExpr then
-                   // if the argExrp is a computation expression another match will handle the outlining
+                   // if the argExpr is a computation expression another match will handle the outlining
                    // these cases must be removed to prevent creating unnecessary tags for the same scope
                     let collapse = Range.endToEnd funcExpr.Range r
                     rcheck Scope.SpecialFunc Collapse.Below r collapse
@@ -405,7 +412,7 @@ module Structure =
             rcheck Scope.MatchClause Collapse.Same e.Range collapse
             parseExpr e
 
-        and parseAttributes (attrs: SynAttributes) =
+        and parseAttributes (Attributes attrs) =
             let attrListRange() =
                 if not (List.isEmpty attrs) then
                     let range = Range.startToEnd (attrs.[0].Range) (attrs.[attrs.Length-1].ArgExpr.Range)
@@ -548,13 +555,13 @@ module Structure =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with
                     | [], [] -> List.rev res
-                    | [], _ -> List.rev (currentBulk::res)
+                    | [], _ -> List.rev (currentBulk :: res)
                     | r :: rest, [] -> loop rest res [r]
                     | r :: rest, last :: _ 
                         when r.StartLine = last.EndLine + 1 || 
                              sourceLines.[last.EndLine..r.StartLine - 2] |> Array.forall System.String.IsNullOrWhiteSpace ->
-                        loop rest res (r::currentBulk)
-                    | r :: rest, _ -> loop rest (currentBulk::res) [r]
+                        loop rest res (r :: currentBulk)
+                    | r :: rest, _ -> loop rest (currentBulk :: res) [r]
                 loop input [] []
 
             let selectRanges (ranges: range list) =
@@ -624,7 +631,7 @@ module Structure =
             collectOpens decls
             List.iter parseDeclaration decls
 
-        /// Determine if a line is a single line or xml docummentation comment
+        /// Determine if a line is a single line or xml documentation comment
         let (|Comment|_|) (line: string) =
             if line.StartsWithOrdinal("///") then Some XmlDoc
             elif line.StartsWithOrdinal("//") then Some SingleLine
@@ -776,11 +783,11 @@ module Structure =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with
                     | [], [] -> List.rev res
-                    | [], _ -> List.rev (currentBulk::res)
+                    | [], _ -> List.rev (currentBulk :: res)
                     | r :: rest, [] -> loop rest res [r]
                     | r :: rest, last :: _ when r.StartLine = last.EndLine + 1 ->
-                        loop rest res (r::currentBulk)
-                    | r :: rest, _ -> loop rest (currentBulk::res) [r]
+                        loop rest res (r :: currentBulk)
+                    | r :: rest, _ -> loop rest (currentBulk :: res) [r]
                 loop input [] []
 
             let selectSigRanges (ranges: range list) =

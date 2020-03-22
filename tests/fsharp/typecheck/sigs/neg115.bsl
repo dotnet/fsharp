@@ -1,2 +1,2 @@
 
-neg115.fs(8,30,8,34): typecheck error FS0001: Expecting a type supporting the operator 'get_Item1' but given a tuple type
+neg115.fs(6,9,6,17): parse error FS0525: An integer for loop must use a simple identifier

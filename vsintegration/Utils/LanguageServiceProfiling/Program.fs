@@ -2,19 +2,19 @@
 
 Background check a project "CXGSCGS" (Check, Flush, GC, Stats, Check, GC, Stats)
 
-  .\Release\net40\bin\LanguageServiceProfiling.exe ..\FSharp.Compiler.Service CXGSCGS 
+  .\Release\net40\bin\LanguageServiceProfiling.exe ..\FSharp.Compiler.Service CXGSCGS
 
 Foreground check new versions of multiple files in an already-checked project and keep intellisense info "CGSFGS" (Check, GC, Stats, File, GC, Stats)
 
-  .\Release\net40\bin\LanguageServiceProfiling.exe ..\FSharp.Compiler.Service CGSFGS 
+  .\Release\net40\bin\LanguageServiceProfiling.exe ..\FSharp.Compiler.Service CGSFGS
 
 
 
 Use the following to collect memory usage stats, appending to the existing stats files:
 
-  git clone http://github.com/fsharp/FSharp.Compiler.Service  tests\scripts\tmp\FSharp.Compiler.Service
+  git clone https://github.com/fsharp/FSharp.Compiler.Service  tests\scripts\tmp\FSharp.Compiler.Service
   pushd tests\scripts\tmp\FSharp.Compiler.Service
-  git checkout  2d51df21ca1d86d4d6676ead3b1fb125b2a0d1ba 
+  git checkout  2d51df21ca1d86d4d6676ead3b1fb125b2a0d1ba
   .\build Build.NetFx
   popd
 
@@ -59,7 +59,7 @@ let internal getQuickInfoText (FSharpToolTipText.FSharpToolTipText elements) : s
     elements |> List.map (parseElement) |> String.concat "\n" |> normalizeLineEnds
 
 [<EntryPoint>]
-let main argv = 
+let main argv =
     let rootDir = argv.[0]
     let scriptOpt = if argv.Length >= 2 then Some argv.[1] else None
     let msgOpt = if argv.Length >= 3 then Some argv.[2] else None
@@ -72,7 +72,7 @@ let main argv =
     eprintfn "Found options for %s." options.Options.ProjectFileName
     let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false)
     let waste = new ResizeArray<int[]>()
-    
+
     let checkProject() : Async<FSharpCheckProjectResults option> =
         async {
             eprintfn "ParseAndCheckProject(%s)..." (Path.GetFileName options.Options.ProjectFileName)
@@ -81,7 +81,7 @@ let main argv =
             if result.HasCriticalErrors then
                 eprintfn "Finished with ERRORS: %+A" result.Errors
                 return None
-            else 
+            else
                 eprintfn "Finished successfully in %O" sw.Elapsed
                 return Some result
         }
@@ -99,29 +99,29 @@ let main argv =
                 if results.Errors |> Array.exists (fun x -> x.Severity = FSharpErrorSeverity.Error) then
                     eprintfn "Finished with ERRORS in %O: %+A" sw.Elapsed results.Errors
                     return None
-                else 
+                else
                     eprintfn "Finished successfully in %O" sw.Elapsed
                     return Some results
         }
-    
+
     let checkFiles (fileVersion: int) =
         async {
-            eprintfn "multiple ParseAndCheckFileInProject(...)..." 
+            eprintfn "multiple ParseAndCheckFileInProject(...)..."
             let sw = Stopwatch.StartNew()
-            let answers = 
-               options.FilesToCheck |> List.map (fun file -> 
+            let answers =
+               options.FilesToCheck |> List.map (fun file ->
                    eprintfn "doing %s" file
                    checker.ParseAndCheckFileInProject(file, fileVersion, SourceText.ofString (File.ReadAllText file), options.Options) |> Async.RunSynchronously)
-            for _,answer in answers do 
+            for _,answer in answers do
                 match answer with
                 | FSharpCheckFileAnswer.Aborted ->
-                    eprintfn "Aborted!" 
+                    eprintfn "Aborted!"
                 | FSharpCheckFileAnswer.Succeeded results ->
                     if results.Errors |> Array.exists (fun x -> x.Severity = FSharpErrorSeverity.Error) then
                         eprintfn "Finished with ERRORS: %+A" results.Errors
             eprintfn "Finished in %O" sw.Elapsed
         }
-    
+
     let findAllReferences (fileVersion: int) : Async<FSharpSymbolUse[]> =
         async {
             eprintfn "Find all references (symbol = '%s', file = '%s')" options.SymbolText options.FileToCheck
@@ -139,13 +139,13 @@ let main argv =
                         let! symbolUses = projectResults.GetUsesOfSymbol(symbolUse.Symbol)
                         eprintfn "Found %d symbol uses in %O" symbolUses.Length sw.Elapsed
                         return symbolUses
-                    | None -> 
+                    | None ->
                         eprintfn "Symbol '%s' was not found at (%d, %d) in %s" options.SymbolText options.SymbolPos.Line options.SymbolPos.Column options.FileToCheck
                         return [||]
-                | None -> 
+                | None ->
                     eprintfn "No file check results for %s" options.FileToCheck
                     return [||]
-             | None -> 
+             | None ->
                 eprintfn "No project results for %s" options.Options.ProjectFileName
                 return [||]
         }
@@ -158,7 +158,7 @@ let main argv =
                 match fileResults with
                 | Some fileResults ->
                     let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(options.Options)
-                    let! parseResult = checker.ParseFile(options.FileToCheck, SourceText.ofString (getFileText()), parsingOptions) 
+                    let! parseResult = checker.ParseFile(options.FileToCheck, SourceText.ofString (getFileText()), parsingOptions)
                     for completion in options.CompletionPositions do
                         eprintfn "querying %A %s" completion.QualifyingNames completion.PartialName
                         let! listInfo =
@@ -171,18 +171,18 @@ let main argv =
                                   EndColumn = completion.Position.Column - 1
                                   LastDotPos = None },
                                 fun() -> [])
-                           
+
                         for i in listInfo.Items do
                             eprintfn "%s" (getQuickInfoText i.DescriptionText)
 
                 | None -> eprintfn "no declarations"
             | None -> eprintfn "no declarations"
         }
-    
+
     let wasteMemory () =
         waste.Add(Array.zeroCreate (1024 * 1024 * 25))
 
-    if useConsole then 
+    if useConsole then
         eprintfn """Press:
 
 <C> for check the project
@@ -197,7 +197,7 @@ let main argv =
 <Enter> for exit."""
 
     let mutable tPrev = None
-    let stats() = 
+    let stats() =
         // Note that timing calls are relatively expensive on the startup path so we don't
         // make this call unless showTimes has been turned on.
         let uproc = System.Diagnostics.Process.GetCurrentProcess()
@@ -209,9 +209,9 @@ let main argv =
         match tPrev with
         | Some (timePrev, gcPrev:int[], wsPrev)->
             let spanGC = [| for i in 0 .. maxGen -> System.GC.CollectionCount(i) - gcPrev.[i] |]
-            printfn "%s     TimeDelta: %4.2f     MemDelta: %4d     G0: %4d     G1: %4d     G2: %4d" 
+            printfn "%s     TimeDelta: %4.2f     MemDelta: %4d     G0: %4d     G1: %4d     G2: %4d"
                 (match msgOpt with Some msg -> msg | None -> "statistics:")
-                (timeNow - timePrev) 
+                (timeNow - timePrev)
                 (wsNow - wsPrev)
                 spanGC.[min 0 maxGen] spanGC.[min 1 maxGen] spanGC.[min 2 maxGen]
 
@@ -219,11 +219,11 @@ let main argv =
         tPrev <- Some (timeNow, gcNow, wsNow)
 
     let processCmd (fileVersion: int) c =
-        match c with 
-        | 'C' -> 
+        match c with
+        | 'C' ->
             checkProject() |> Async.RunSynchronously |> ignore
             fileVersion
-        | 'G' -> 
+        | 'G' ->
             eprintfn "GC is running..."
             let sw = Stopwatch.StartNew()
             GC.Collect 2
@@ -248,7 +248,7 @@ let main argv =
             stats()
             fileVersion
         | 'X' ->
-            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() 
+            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             fileVersion
         | 'P' ->
             eprintfn "pausing (press any key)...";
@@ -256,24 +256,24 @@ let main argv =
             fileVersion
         | _ -> fileVersion
 
-    let rec console fileVersion = 
+    let rec console fileVersion =
         match Console.ReadKey().Key with
         | ConsoleKey.C -> processCmd fileVersion 'C' |> console
         | ConsoleKey.G -> processCmd fileVersion 'G' |> console
         | ConsoleKey.F -> processCmd fileVersion 'F' |> console
         | ConsoleKey.R -> processCmd fileVersion 'R' |> console
         | ConsoleKey.L -> processCmd fileVersion 'L' |> console
-        | ConsoleKey.W -> processCmd fileVersion 'W' |> console            
+        | ConsoleKey.W -> processCmd fileVersion 'W' |> console
         | ConsoleKey.M -> processCmd fileVersion 'M' |> console
         | ConsoleKey.X -> processCmd fileVersion 'X' |> console
         | ConsoleKey.P -> processCmd fileVersion 'P' |> console
         | ConsoleKey.Enter -> ()
         | _ -> console fileVersion
 
-    let runScript (script:string)  = 
+    let runScript (script:string)  =
         (0,script) ||> Seq.fold processCmd |> ignore
 
-    match scriptOpt with 
+    match scriptOpt with
     | None ->  console 0
     | Some s -> runScript  s
     0

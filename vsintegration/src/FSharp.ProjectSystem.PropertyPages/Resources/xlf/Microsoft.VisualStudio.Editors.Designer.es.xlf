@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="PPG_DebugTitle">
         <source>Debug</source>
-        <target state="translated">depurar</target>
+        <target state="translated">Depurar</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_DeployTitle">
@@ -108,7 +108,7 @@ Haga clic en ACEPTAR para pasar esto por alto y continuar. Haga clic en CANCELAR
       </trans-unit>
       <trans-unit id="PPG_KeyFileBrowseText">
         <source>&lt;Browse...&gt;</source>
-        <target state="translated">&lt;Examinar... &gt;</target>
+        <target state="translated">&lt;Examinar...&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ComboBoxSelect_None">
@@ -365,7 +365,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Error">
         <source>Error</source>
-        <target state="translated">Fehler</target>
+        <target state="translated">Error</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_OptionStrict_Custom">
@@ -614,7 +614,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_PermCalcFailedCaption">
         <source>Error</source>
-        <target state="translated">Fehler</target>
+        <target state="translated">Error</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityAdvancedPage_Title">
@@ -1830,7 +1830,6 @@ CONSIDER: get this from CodeDom</note>
         <source>{0} x {1}</source>
         <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>

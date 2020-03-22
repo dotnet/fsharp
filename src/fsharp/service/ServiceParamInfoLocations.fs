@@ -41,10 +41,10 @@ module internal NoteworthyParamInfoLocationsImpl =
     let rec digOutIdentFromFuncExpr synExpr =
         // we found it, dig out ident
         match synExpr with
-        | SynExpr.Ident(id) -> Some ([id.idText], id.idRange)
-        | SynExpr.LongIdent(_, LongIdentWithDots(lid, _), _, lidRange) 
-        | SynExpr.DotGet(_, _, LongIdentWithDots(lid, _), lidRange) -> Some (pathOfLid lid, lidRange)
-        | SynExpr.TypeApp(synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
+        | SynExpr.Ident (id) -> Some ([id.idText], id.idRange)
+        | SynExpr.LongIdent (_, LongIdentWithDots(lid, _), _, lidRange) 
+        | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _), lidRange) -> Some (pathOfLid lid, lidRange)
+        | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
         | _ -> None
 
     type FindResult = 
@@ -60,17 +60,17 @@ module internal NoteworthyParamInfoLocationsImpl =
     let getNamedParamName e =
         match e with
         // f(x=4)
-        | SynExpr.App(ExprAtomicFlag.NonAtomic, _, 
-                        SynExpr.App(ExprAtomicFlag.NonAtomic, true, 
+        | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
+                        SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
                                     SynExpr.Ident op, 
                                     SynExpr.Ident n, 
                                     _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         // f(?x=4)
-        | SynExpr.App(ExprAtomicFlag.NonAtomic, _, 
-                        SynExpr.App(ExprAtomicFlag.NonAtomic, true, 
+        | SynExpr.App (ExprAtomicFlag.NonAtomic, _, 
+                        SynExpr.App (ExprAtomicFlag.NonAtomic, true, 
                                     SynExpr.Ident op, 
-                                    SynExpr.LongIdent(true(*isOptional*), LongIdentWithDots([n], _), _ref, _lidrange), _range), 
+                                    SynExpr.LongIdent (true(*isOptional*), LongIdentWithDots([n], _), _ref, _lidrange), _range), 
                         _, _) when op.idText="op_Equality" -> Some n.idText
         | _ -> None
 
@@ -96,7 +96,7 @@ module internal NoteworthyParamInfoLocationsImpl =
     // see bug 345385.
     let rec searchSynArgExpr traverseSynExpr pos expr =
         match expr with 
-        | SynExprParen((SynExpr.Tuple(false, synExprList, commaRanges, _tupleRange) as synExpr), _lpRange, rpRangeOpt, parenRange) -> // tuple argument
+        | SynExprParen((SynExpr.Tuple (false, synExprList, commaRanges, _tupleRange) as synExpr), _lpRange, rpRangeOpt, parenRange) -> // tuple argument
             let inner = traverseSynExpr synExpr
             match inner with
             | None ->
@@ -108,7 +108,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                     NotFound, None
             | _ -> NotFound, None
 
-        | SynExprParen(SynExprParen(SynExpr.Tuple(false, _, _, _), _, _, _) as synExpr, _, rpRangeOpt, parenRange) -> // f((x, y)) is special, single tuple arg
+        | SynExprParen(SynExprParen(SynExpr.Tuple (false, _, _, _), _, _, _) as synExpr, _, rpRangeOpt, parenRange) -> // f((x, y)) is special, single tuple arg
             handleSingleArg traverseSynExpr (pos, synExpr, parenRange, rpRangeOpt)
 
         // dig into multiple parens
@@ -119,14 +119,14 @@ module internal NoteworthyParamInfoLocationsImpl =
         | SynExprParen(synExpr, _lpRange, rpRangeOpt, parenRange) -> // single argument
             handleSingleArg traverseSynExpr (pos, synExpr, parenRange, rpRangeOpt)
 
-        | SynExpr.ArbitraryAfterError(_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
+        | SynExpr.ArbitraryAfterError (_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
             if AstTraversal.rangeContainsPosEdgesExclusive range pos then
                 let r = Found (range.Start, [(range.End, None)], false)
                 r, None
             else
                 NotFound, None
 
-        | SynExpr.Const(SynConst.Unit, unitRange) ->
+        | SynExpr.Const (SynConst.Unit, unitRange) ->
             if AstTraversal.rangeContainsPosEdgesExclusive unitRange pos then
                 let r = Found (unitRange.Start, [(unitRange.End, None)], true)
                 r, None
@@ -164,7 +164,7 @@ module internal NoteworthyParamInfoLocationsImpl =
             match expr with
 
             // new LID<tyarg1, ...., tyargN>(...)  and error recovery of these
-            | SynExpr.New(_, synType, synExpr, _) -> 
+            | SynExpr.New (_, synType, synExpr, _) -> 
                 let constrArgsResult, cacheOpt = searchSynArgExpr traverseSynExpr pos synExpr
                 match constrArgsResult, cacheOpt with
                 | Found(parenLoc, args, isThereACloseParen), _ ->
@@ -178,7 +178,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                     | _ -> traverseSynExpr synExpr
 
             // EXPR<  = error recovery of a form of half-written TypeApp
-            | SynExpr.App(_, _, SynExpr.App(_, true, SynExpr.Ident op, synExpr, openm), SynExpr.ArbitraryAfterError _, wholem) when op.idText = "op_LessThan" ->
+            | SynExpr.App (_, _, SynExpr.App (_, true, SynExpr.Ident op, synExpr, openm), SynExpr.ArbitraryAfterError _, wholem) when op.idText = "op_LessThan" ->
                 // Look in the function expression
                 let fResult = traverseSynExpr synExpr
                 match fResult with
@@ -194,7 +194,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                         None
 
             // EXPR EXPR2
-            | SynExpr.App(_exprAtomicFlag, isInfix, synExpr, synExpr2, _range) ->
+            | SynExpr.App (_exprAtomicFlag, isInfix, synExpr, synExpr2, _range) ->
                 // Look in the function expression
                 let fResult = traverseSynExpr synExpr
                 match fResult with
@@ -219,7 +219,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                     | _ -> traverseSynExpr synExpr2
 
             // ID<tyarg1, ...., tyargN>  and error recovery of these
-            | SynExpr.TypeApp(synExpr, openm, tyArgs, commas, closemOpt, _, wholem) ->
+            | SynExpr.TypeApp (synExpr, openm, tyArgs, commas, closemOpt, _, wholem) ->
                 match traverseSynExpr synExpr with
                 | Some _ as r -> r
                 | None -> 

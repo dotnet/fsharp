@@ -1,10 +1,5 @@
 #light
 
-#if !NETSTANDARD
-#r @"System.Core.dll"
-#r @"System.Data.Linq.dll"
-#endif
-
 #nowarn "57"
 
 open Microsoft.FSharp.Quotations
@@ -665,22 +660,29 @@ module QuotationEvaluation =
             let env = Map.add v (vP |> asExpr) env 
             let tyargs = [| v.Type; body.Type |]
             let bodyP = ConvExpr env body
-            let convType = typedefof<System.Converter<obj,obj>>.MakeGenericType tyargs
+            let lambdaTy, tyargs =
+                if bodyP.Type = typeof<System.Void> then
+                    let tyargs = [| vP.Type |]
+                    typedefof<Action<_>>, tyargs
+                else
+                    let tyargs = [| vP.Type; bodyP.Type |]
+                    typedefof<Func<_, _>>, tyargs
+            let convType = lambdaTy.MakeGenericType tyargs
             let convDelegate = Expression.Lambda(convType, bodyP, [| vP |]) |> asExpr
-            Expression.Call(typeof<FuncConvert>,"ToFSharpFunc",tyargs,[| convDelegate |]) |> asExpr
-    
+            Expression.Call(typeof<FuncConvert>, "ToFSharpFunc", tyargs, [| convDelegate |]) |> asExpr
+
         | Patterns.WhileLoop(gd,b) -> 
             let gdP = ConvExpr env <@@ (fun () -> (%%gd:bool)) @@>
             let bP = ConvExpr env <@@ (fun () -> (%%b:unit)) @@>
             let minfo = WhileMethod.GetGenericMethodDefinition().MakeGenericMethod [| typeof<unit> |]
             Expression.Call(minfo,[| gdP; bP |]) |> asExpr
-        
+
         | Patterns.TryFinally(e,h) -> 
             let eP = ConvExpr env (Expr.Lambda(new Var("unitVar",typeof<unit>), e))
             let hP = ConvExpr env <@@ (fun () -> (%%h:unit)) @@>
             let minfo = TryFinallyMethod.GetGenericMethodDefinition().MakeGenericMethod [| e.Type |]
             Expression.Call(minfo,[| eP; hP |]) |> asExpr
-        
+
         | Patterns.TryWith(e,vf,filter,vh,handler) -> 
             let eP = ConvExpr env (Expr.Lambda(new Var("unitVar",typeof<unit>), e))
             let filterP = ConvExpr env (Expr.Lambda(vf,filter))

@@ -34,8 +34,6 @@ let mkFlexibleDecimalFormatTypar (g: TcGlobals) m =
 let mkFlexibleFloatFormatTypar (g: TcGlobals) m = 
     mkFlexibleFormatTypar m [ g.float_ty; g.float32_ty; g.decimal_ty ] g.float_ty
 
-let isDigit c = ('0' <= c && c <= '9')
-
 type FormatInfoRegister = 
   { mutable leftJustify    : bool 
     mutable numPrefixIfPos : char option
@@ -117,13 +115,13 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
               let rec digitsPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
-                | c when isDigit c -> digitsPrecision (i+1)
+                | c when System.Char.IsDigit c -> digitsPrecision (i+1)
                 | _ -> i 
 
               let precision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadWidth()
                 match fmt.[i] with
-                | c when isDigit c -> info.precision <- true; false,digitsPrecision (i+1)
+                | c when System.Char.IsDigit c -> info.precision <- true; false,digitsPrecision (i+1)
                 | '*' -> info.precision <- true; true,(i+1)
                 | _ -> failwithf "%s" <| FSComp.SR.forPrecisionMissingAfterDot()
 
@@ -136,20 +134,20 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
               let rec digitsWidthAndPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
-                | c when isDigit c -> digitsWidthAndPrecision (i+1)
+                | c when System.Char.IsDigit c -> digitsWidthAndPrecision (i+1)
                 | _ -> optionalDotAndPrecision i
 
               let widthAndPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
-                | c when isDigit c -> false,digitsWidthAndPrecision i
+                | c when System.Char.IsDigit c -> false,digitsWidthAndPrecision i
                 | '*' -> true,optionalDotAndPrecision (i+1)
                 | _ -> false,optionalDotAndPrecision i
 
               let rec digitsPosition n i =
                   if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                   match fmt.[i] with
-                  | c when isDigit c -> digitsPosition (n*10 + int c - int '0') (i+1)
+                  | c when System.Char.IsDigit c -> digitsPosition (n*10 + int c - int '0') (i+1)
                   | '$' -> Some n, i+1
                   | _ -> None, i
 

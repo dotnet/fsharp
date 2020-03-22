@@ -1,7 +1,7 @@
 
 #if INTERACTIVE
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -20,10 +20,6 @@ open FSharp.Compiler.Service.Tests.Common
 
 open NUnit.Framework
 
-#if FX_RESHAPED_REFLECTION
-open ReflectionAdapters
-#endif
-
 exception 
    VerificationException of (*assembly:*)string * (*errorCode:*)int * (*output:*)string
    with override e.Message = sprintf "Verification of '%s' failed with code %d, message <<<%s>>>" e.Data0 e.Data1 e.Data2
@@ -41,7 +37,7 @@ type PEVerifier () =
     static let runsOnMono = try System.Type.GetType("Mono.Runtime") <> null with _ -> false
 
     let verifierInfo =
-#if NETCOREAPP2_0
+#if NETCOREAPP
         None
 #else           
         if runsOnMono then
@@ -96,7 +92,7 @@ let checker = FSharpChecker.Create()
 /// Ensures the default FSharp.Core referenced by the F# compiler service (if none is 
 /// provided explicitly) is available in the output directory.
 let ensureDefaultFSharpCoreAvailable tmpDir  =
-#if NETCOREAPP2_0
+#if NETCOREAPP
     ignore tmpDir
 #else
     // FSharp.Compiler.Service references FSharp.Core 4.3.0.0 by default.  That's wrong? But the output won't verify

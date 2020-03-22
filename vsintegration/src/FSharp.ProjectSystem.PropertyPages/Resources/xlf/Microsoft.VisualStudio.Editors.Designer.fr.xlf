@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="PPG_DebugTitle">
         <source>Debug</source>
-        <target state="translated">déboguer</target>
+        <target state="translated">Déboguer</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_DeployTitle">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="PPG_VdtGeneralTitle">
         <source>Database</source>
-        <target state="translated">Base de données </target>
+        <target state="translated">Base de données</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Security">
@@ -1830,7 +1830,6 @@ CONSIDER: get this from CodeDom</note>
         <source>{0} x {1}</source>
         <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
@@ -2840,7 +2839,7 @@ Voulez-vous mettre à jour la valeur dans le fichier .settings ?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">
         <source>To enable client application services, you must set the Target Framework for your application to .NET Framework 3.5 or later. In C#, you can do this on the Application property page. In Visual Basic, you can do this one the Compile property page by clicking Advanced Compile Options.</source>
-        <target state="translated">Pour activer les services d'application cliente, vous devez définir le Framework cible pour votre application à .NET Framework 3.5 ou version ultérieure. En C#, vous le faites sur la page de propriétés Application. En Visual Basic, vous le faites sur le page de propriétés Compiler en cliquant sur Options avancées de compilation.</target>
+        <target state="translated">Pour activer les services d'application cliente, vous devez définir le Framework cible pour votre application sur .NET Framework 3.5 ou version ultérieure. En C#, vous le faites sur la page de propriétés Application. En Visual Basic, vous le faites sur le page de propriétés Compiler en cliquant sur Options avancées de compilation.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidAppConfigXml">

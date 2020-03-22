@@ -9,10 +9,8 @@ module internal FSharp.Compiler.AbstractIL.Extensions.ILX.EraseUnions
 
 open System.Collections.Generic
 
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open System.Reflection
 
@@ -587,9 +585,9 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
         for (i,case) in cases do dict.[i] <- case
         let failLab = cg.GenerateDelayMark ()
         let emitCase i _ = 
-            let mutable res = Unchecked.defaultof<_>
-            let ok = dict.TryGetValue(i, &res)
-            if ok then res else cg.CodeLabel failLab
+            match dict.TryGetValue i with
+            | true, res -> res
+            | _ -> cg.CodeLabel failLab
 
         let dests = Array.mapi emitCase cuspec.AlternativesArray
         cg.EmitInstrs (mkGetTag ilg cuspec)

@@ -5,6 +5,7 @@ module FSharp.Compiler.Range
 
 open System
 open System.IO
+open System.Collections.Generic
 open System.Collections.Concurrent
 open Microsoft.FSharp.Core.Printf
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -146,13 +147,13 @@ type FileIndexTable() =
     //
     // TO move forward we should eventually introduce a new type NormalizedFileName that tracks this invariant.
     member t.FileToIndex normalize filePath = 
-        match fileToIndexTable.TryGetValue(filePath) with 
+        match fileToIndexTable.TryGetValue filePath with 
         | true, idx -> idx
         | _ -> 
         
         // Try again looking for a normalized entry.
         let normalizedFilePath = if normalize then normalizeFilePath filePath else filePath
-        match fileToIndexTable.TryGetValue(normalizedFilePath) with 
+        match fileToIndexTable.TryGetValue normalizedFilePath with 
         | true, idx ->
             // Record the non-normalized entry if necessary
             if filePath <> normalizedFilePath then 
@@ -200,6 +201,10 @@ let fileOfFileIndex idx = fileIndexTable.IndexToFile idx
 
 let mkPos l c = pos (l, c)
 
+let unknownFileName = "unknown"
+let startupFileName = "startup"
+let commandLineArgsFileName = "commandLineArgs"
+
 [<Struct; CustomEquality; NoComparison>]
 #if DEBUG
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {FileName} IsSynthetic={IsSynthetic} -> {DebugCode}")>]
@@ -208,8 +213,8 @@ let mkPos l c = pos (l, c)
 #endif
 type range(code1:int64, code2: int64) =
     static member Zero = range(0L, 0L)
-    new (fidx, bl, bc, el, ec) = 
-        let code1 = ((int64 fidx) &&& fileIndexMask)
+    new (fIdx, bl, bc, el, ec) = 
+        let code1 = ((int64 fIdx) &&& fileIndexMask)
                 ||| ((int64 bc        <<< startColumnShift) &&& startColumnMask)
                 ||| ((int64 ec        <<< endColumnShift)  &&& endColumnMask)
         let code2 = 
@@ -217,7 +222,7 @@ type range(code1:int64, code2: int64) =
                 ||| ((int64 (el-bl)   <<< heightShift) &&& heightMask)
         range(code1, code2)
 
-    new (fidx, b:pos, e:pos) = range(fidx, b.Line, b.Column, e.Line, e.Column)
+    new (fIdx, b:pos, e:pos) = range(fIdx, b.Line, b.Column, e.Line, e.Column)
 
     member r.StartLine   = int32((code2 &&& startLineMask)   >>> startLineShift)
 
@@ -249,14 +254,20 @@ type range(code1:int64, code2: int64) =
 
 #if DEBUG
     member r.DebugCode =
+        let name = r.FileName
+        if name = unknownFileName || name = startupFileName || name = commandLineArgsFileName then name else
+
         try
             let endCol = r.EndColumn - 1
             let startCol = r.StartColumn - 1
-            File.ReadAllLines(r.FileName)
-            |> Seq.skip (r.StartLine - 1)
-            |> Seq.take (r.EndLine - r.StartLine + 1)
-            |> String.concat "\n"
-            |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
+            if FileSystem.IsInvalidPathShim r.FileName then "path invalid: " + r.FileName
+            elif not (FileSystem.SafeExists r.FileName) then "non existing file: " + r.FileName
+            else
+              File.ReadAllLines(r.FileName)
+              |> Seq.skip (r.StartLine - 1)
+              |> Seq.take (r.EndLine - r.StartLine + 1)
+              |> String.concat "\n"
+              |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
         with e ->
             e.ToString()        
 #endif
@@ -285,9 +296,12 @@ let outputPos   (os:TextWriter) (m:pos)   = fprintf os "(%d,%d)" m.Line m.Column
 
 let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End
     
-let posGt (p1:pos) (p2:pos) = (p1.Line > p2.Line || (p1.Line = p2.Line && p1.Column > p2.Column))
+let posGt (p1: pos) (p2: pos) =
+    let p1Line = p1.Line
+    let p2Line = p2.Line
+    p1Line > p2Line || p1Line = p2Line && p1.Column > p2.Column
 
-let posEq (p1:pos) (p2:pos) = (p1.Line = p2.Line &&  p1.Column = p2.Column)
+let posEq (p1: pos) (p2: pos) = p1.Encoding = p2.Encoding
 
 let posGeq p1 p2 = posEq p1 p2 || posGt p1 p2
 
@@ -320,11 +334,11 @@ let rangeN filename line = mkRange filename (mkPos line 0) (mkPos line 0)
 
 let pos0 = mkPos 1 0
 
-let range0 =  rangeN "unknown" 1
+let range0 =  rangeN unknownFileName 1
 
-let rangeStartup = rangeN "startup" 1
+let rangeStartup = rangeN startupFileName 1
 
-let rangeCmdArgs = rangeN "commandLineArgs" 0
+let rangeCmdArgs = rangeN commandLineArgsFileName 0
 
 let trimRangeToLine (r:range) =
     let startL, startC = r.StartLine, r.StartColumn
@@ -369,5 +383,10 @@ module Range =
     let toZ (m:range) = Pos.toZ m.Start, Pos.toZ m.End
 
     let toFileZ (m:range) = m.FileName, toZ m
+
+    let comparer = 
+        { new IEqualityComparer<range> with 
+            member _.Equals(x1, x2) = equals x1 x2 
+            member _.GetHashCode o = o.GetHashCode() }
 
 

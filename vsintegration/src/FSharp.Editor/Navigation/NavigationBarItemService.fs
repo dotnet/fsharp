@@ -6,19 +6,19 @@ open System.Composition
 open System.Collections.Generic
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Notification
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
 open FSharp.Compiler.SourceCodeServices
 
 type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
-    inherit NavigationBarItem(text, glyph, spans, childItems)
+    inherit FSharpNavigationBarItem(text, glyph, spans, childItems)
 
-[<ExportLanguageService(typeof<INavigationBarItemService>, FSharpConstants.FSharpLanguageName); Shared>]
+[<Export(typeof<IFSharpNavigationBarItemService>)>]
 type internal FSharpNavigationBarItemService
     [<ImportingConstructor>]
     (
@@ -27,17 +27,17 @@ type internal FSharpNavigationBarItemService
     ) =
     
     static let userOpName = "NavigationBarItem"
-    static let emptyResult: IList<NavigationBarItem> = upcast [||]
+    static let emptyResult: IList<FSharpNavigationBarItem> = upcast [||]
 
-    interface INavigationBarItemService with
-        member __.GetItemsAsync(document, cancellationToken) : Task<IList<NavigationBarItem>> = 
+    interface IFSharpNavigationBarItemService with
+        member __.GetItemsAsync(document, cancellationToken) : Task<IList<FSharpNavigationBarItem>> = 
             asyncMaybe {
                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! parsedInput = checkerProvider.Checker.ParseDocument(document, parsingOptions, sourceText=sourceText, userOpName=userOpName)
-                let navItems = NavigationImpl.getNavigation parsedInput
+                let navItems = FSharpNavigation.getNavigation parsedInput
                 let rangeToTextSpan range = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
-                return 
+                return
                     navItems.Declarations
                     |> Array.choose (fun topLevelDecl ->
                         rangeToTextSpan(topLevelDecl.Declaration.Range)
@@ -47,25 +47,10 @@ type internal FSharpNavigationBarItemService
                                 |> Array.choose (fun decl ->
                                     rangeToTextSpan(decl.Range)
                                     |> Option.map(fun textSpan ->
-                                        NavigationBarSymbolItem(decl.Name, decl.RoslynGlyph, [| textSpan |], null) :> NavigationBarItem))
+                                        NavigationBarSymbolItem(decl.Name, decl.RoslynGlyph, [| textSpan |], null) :> FSharpNavigationBarItem))
                             
                             NavigationBarSymbolItem(topLevelDecl.Declaration.Name, topLevelDecl.Declaration.RoslynGlyph, [| topLevelTextSpan |], childItems)
-                            :> NavigationBarItem)) :> IList<_>
+                            :> FSharpNavigationBarItem)) :> IList<_>
             } 
             |> Async.map (Option.defaultValue emptyResult)
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
-        
-        member __.ShowItemGrayedIfNear (_item) : bool = false
-        
-        member __.NavigateToItem(document, item, _view, _cancellationToken) =
-            match item.Spans |> Seq.tryHead with
-            | Some span ->
-                let workspace = document.Project.Solution.Workspace
-                let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
-                
-                if navigationService.CanNavigateToPosition(workspace, document.Id, span.Start) then
-                    navigationService.TryNavigateToPosition(workspace, document.Id, span.Start) |> ignore
-                else
-                    let notificationService = workspace.Services.GetService<INotificationService>()
-                    notificationService.SendNotification(EditorFeaturesResources.The_definition_of_the_object_is_hidden, severity = NotificationSeverity.Error)
-            | None -> ()

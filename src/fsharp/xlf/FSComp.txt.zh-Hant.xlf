@@ -2,6 +2,226 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSComp.resx">
     <body>
+      <trans-unit id="chkFeatureNotLanguageSupported">
+        <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
+        <target state="new">Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkFeatureNotRuntimeSupported">
+        <source>Feature '{0}' is not supported by target runtime.</source>
+        <target state="new">Feature '{0}' is not supported by target runtime.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csAvailableOverloads">
+        <source>Available overloads:\n{0}</source>
+        <target state="new">Available overloads:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
+        <source>Known types of arguments: {0}</source>
+        <target state="new">Known types of arguments: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixSingular">
+        <source>Known type of argument: {0}</source>
+        <target state="new">Known type of argument: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundReturnType">
+        <source>Known return type: {0}</source>
+        <target state="new">Known return type: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixPlural">
+        <source>Known type parameters: {0}</source>
+        <target state="new">Known type parameters: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixSingular">
+        <source>Known type parameter: {0}</source>
+        <target state="new">Known type parameter: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
+        <source>Argument at index {0} doesn't match</source>
+        <target state="new">Argument at index {0} doesn't match</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
+        <source>Argument '{0}' doesn't match</source>
+        <target state="new">Argument '{0}' doesn't match</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fSharpBannerVersion">
+        <source>{0} for F# {1}</source>
+        <target state="translated">F # {1} 的 {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureAndBang">
+        <source>and bang</source>
+        <target state="new">and bang</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDefaultInterfaceMemberConsumption">
+        <source>default interface member consumption</source>
+        <target state="new">default interface member consumption</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDotlessFloat32Literal">
+        <source>dotless float32 literal</source>
+        <target state="new">dotless float32 literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureFixedIndexSlice3d4d">
+        <source>fixed-index slice 3d/4d</source>
+        <target state="new">fixed-index slice 3d/4d</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureFromEndSlicing">
+        <source>from-end slicing</source>
+        <target state="new">from-end slicing</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureImplicitYield">
+        <source>implicit yield</source>
+        <target state="new">implicit yield</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNameOf">
+        <source>nameof</source>
+        <target state="new">nameof</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNullableOptionalInterop">
+        <source>nullable optional interop</source>
+        <target state="new">nullable optional interop</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOpenStaticClasses">
+        <source>open static classes</source>
+        <target state="new">open static classes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePackageManagement">
+        <source>package management</source>
+        <target state="new">package management</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRelaxWhitespace">
+        <source>whitespace relexation</source>
+        <target state="new">whitespace relexation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureSingleUnderscorePattern">
+        <source>single underscore pattern</source>
+        <target state="new">single underscore pattern</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWildCardInForLoop">
+        <source>wild card in for loop</source>
+        <target state="new">wild card in for loop</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="formatDashItem">
+        <source> - {0}</source>
+        <target state="new"> - {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fromEndSlicingRequiresVFive">
+        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
+        <target state="translated">從結尾處切割需要語言版本 5.0，請使用 /langversion:preview。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="translated">資料流未以 null 資源開頭，並且未使用 '.RES' 格式。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="translated">從位移 {0} 開始的資源標頭格式錯誤。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">顯示語言版本允許的值，指定 'latest' 或 'preview' 等語言版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">支援的語言版本:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">對 --langversion 為無法識別的值 '{0}'，對完整清單使用 --langversion:?</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="translated">套件管理功能需要語言版本 5.0，請使用 /langversion:preview</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">成員定義中的非預期符號 '.'。預期為 'with'、'=' 或其他語彙基元。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsChecksumAlgorithm">
+        <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
+        <target state="translated">請指定用來計算 PDB 中所儲存來源檔案總和檢查碼的演算法。支援的值為: SHA1 或 SHA256 (預設)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnknownChecksumAlgorithm">
+        <source>Algorithm '{0}' is not supported</source>
+        <target state="translated">不支援演算法 '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAndBangNotSupported">
+        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
+        <target state="new">This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameDifferent">
+        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
+        <target state="translated">此為錯誤的匿名記錄。其應有欄位 {0}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSubset">
+        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
+        <target state="translated">此匿名記錄沒有足夠的欄位。請新增缺少的欄位 {0}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSuperset">
+        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
+        <target state="translated">此匿名記錄有太多欄位。請移除額外的欄位 {0}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="translated">屬性無法套用到類型延伸模組。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
+        <source>use! may not be combined with and!</source>
+        <target state="new">use! may not be combined with and!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRequireMergeSourcesOrBindN">
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
+        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
+        <source>Interface member '{0}' does not have a most specific implementation.</source>
+        <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
+        <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
+        <target state="new">The type '{0}' does not define the field, constructor or member '{1}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">未定義命名空間 '{0}'。</target>
@@ -137,6 +357,11 @@
         <target state="translated">請考慮使用 'return!'，而不使用 'return'。</target>
         <note />
       </trans-unit>
+      <trans-unit id="useSdkRefs">
+        <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
+        <target state="translated">請在可行的情況下使用適用於 .NET 架構參考的參考組件 (預設會啟用)。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
         <source>Consider using 'yield!' instead of 'yield'.</source>
         <target state="translated">請考慮使用 'yield!' 而不使用 'yield'。</target>
@@ -210,11 +435,6 @@
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
         <target state="translated">受控資源的無法辨識隱私設定 '{0}'，有效的選項是 'public' 和 'private'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">不允許多次參考 '{0}.dll'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
@@ -1778,13 +1998,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csCandidates">
-        <source>Candidates: {0}</source>
-        <target state="translated">候選: {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csSeeAvailableOverloads">
-        <source>The available overloads are shown below.</source>
-        <target state="translated">可用的多載顯示如下。</target>
+        <source>Candidates:\n{0}</source>
+        <target state="needs-review-translation">候選: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="parsDoCannotHaveVisibilityDeclarations">
@@ -1909,7 +2124,7 @@
       </trans-unit>
       <trans-unit id="parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate">
         <source>The '{0}' visibility attribute is not allowed on module abbreviation. Module abbreviations are always private.</source>
-        <target state="translated">模組縮寫不得包含 '{0}' 可視性屬性。模組縮寫一律為私用。</target>
+        <target state="translated">模組縮寫不得包含 '{0}' 可見度屬性。模組縮寫一律為私用。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnClosedBlockInHashLight">
@@ -2014,12 +2229,12 @@
       </trans-unit>
       <trans-unit id="parsInterfacesHaveSameVisibilityAsEnclosingType">
         <source>Interfaces always have the same visibility as the enclosing type</source>
-        <target state="translated">介面一定與封入類型採用相同的可見性</target>
+        <target state="translated">介面一定與封入類型採用相同的可見度</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAccessibilityModsIllegalForAbstract">
         <source>Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.</source>
-        <target state="translated">不允許在這個成員上使用存取範圍修飾詞。抽象位置一定與封入類型採用相同的可見性。</target>
+        <target state="translated">不允許在這個成員上使用存取範圍修飾詞。抽象位置一定與封入類型採用相同的可見度。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAttributesIllegalOnInherit">
@@ -2344,12 +2559,12 @@
       </trans-unit>
       <trans-unit id="tcMultipleVisibilityAttributes">
         <source>Multiple visibility attributes have been specified for this identifier</source>
-        <target state="translated">已經為這個識別碼指定多個可見性屬性</target>
+        <target state="translated">已經為這個識別碼指定多個可見度屬性</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleVisibilityAttributesWithLet">
         <source>Multiple visibility attributes have been specified for this identifier. 'let' bindings in classes are always private, as are any 'let' bindings inside expressions.</source>
-        <target state="translated">已經為這個識別碼指定多個可見性屬性。類別中的 'let' 繫結一定是私用的，就如同運算式內的任何 'let' 繫結一樣。</target>
+        <target state="translated">已經為這個識別碼指定多個可見度屬性。類別中的 'let' 繫結一定是私用的，就如同運算式內的任何 'let' 繫結一樣。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMethodNameForRelationalOperator">
@@ -4933,8 +5148,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
-        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="translated">這不是有效的數值常值。有效的數值常值包括 1、0x1、0b0001 (int)、1u (uint32)、1L (int64)、1UL (uint64)、1s (int16)、1y (sbyte)、1uy (byte)、1.0 (float)、1.0f (float32)、1.0m (decimal)、1I (BigInteger)。</target>
+        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
+        <target state="needs-review-translation">這不是有效的數值常值。有效的數值常值包括 1、0x1、0b0001 (int)、1u (uint32)、1L (int64)、1UL (uint64)、1s (int16)、1y (sbyte)、1uy (byte)、1.0 (float)、1.0f (float32)、1.0m (decimal)、1I (BigInteger)。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -5272,11 +5487,6 @@
         <target state="translated">DLLImport 繫結必須是類別中的靜態成員或模組中的函式定義</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll or FSharp.Core.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="translated">如果明確參考了 mscorlib.dll 或 FSharp.Core.dll，就必須同時傳遞 {0} 選項</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">找不到與 FSharp.Core 並存的 FSharp.Core.sigdata。檔案應位於 {0}。請考慮升級至最新版的 FSharp.Core，其中不再需要此檔案。</target>
@@ -5538,7 +5748,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
-        <source>Determinstic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
+        <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
         <target state="translated">確定性組建僅支援可攜式 PDB (--debug:portable 或 --debug:embedded)</target>
         <note />
       </trans-unit>
@@ -6834,7 +7044,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable</source>
-        <target state="needs-review-translation">用來對需要 Dispose 才能呼叫以釋放資源的值取代 let。</target>
+        <target state="translated">對於實作 IDisposable 的值，會使用此項而非 let</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
@@ -7083,8 +7293,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
-        <target state="translated">兩個匿名的記錄類型有兩組不相符的欄位名稱 '{0}' 和 '{1}'</target>
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="translated">此匿名記錄與預期的圖形未完全相符。請新增缺少的欄位 {0}，並移除額外的欄位 {1}。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
@@ -7130,6 +7340,71 @@
       <trans-unit id="chkInvalidFunctionReturnType">
         <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
         <target state="translated">函式或方法的傳回型別 '{0}' 無效。Common IL 的規則不允許此狀況。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveral">
+        <source>No implementation was given for those members: {0}</source>
+        <target state="translated">未提供任何實作給這些成員: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
+        <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
+        <target state="translated">未提供任何實作給這些成員: {0}請注意，所有介面成員都必須經過實作，並列於適當的 'interface' 宣告下，例如 'interface ... with member ...'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
+        <source>No implementation was given for those members (some results omitted): {0}</source>
+        <target state="translated">未提供任何實作給這些成員 (部分結果已省略): {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
+        <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
+        <target state="translated">未提供任何實作給這些成員 (部分結果已省略): {0}請注意，所有介面成員都必須經過實作，並列於適當的 'interface' 宣告下，例如 'interface ... with member ...'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">運算式沒有名稱。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">不允許使用"nameof" 運算子作為第一類函式值。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsPathMap">
+        <source>Maps physical paths to source path names output by the compiler</source>
+        <target state="translated">將實體路徑對應至來源路徑名稱，由編譯器輸出</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fscPathMapDebugRequiresPortablePdb">
+        <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
+        <target state="translated">--pathmap 只能搭配可攜式 PDB 使用 (--debug:portable 或 --debug:embedded)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsInvalidPathMapFormat">
+        <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
+        <target state="translated">路徑對應無效。對應必須以逗號分隔，且格式應為 'path=sourcePath'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsCompilerTool">
+        <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
+        <target state="translated">參考包含設計階段工具的組件或目錄 (簡短形式: -t)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerUnknown">
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
+        <target state="translated">套件管理員金鑰 '{0}' 未在 {1} 中註冊。目前已註冊: {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerError">
+        <source>{0}</source>
+        <target state="translated">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotLoadDependencyManagerExtension">
+        <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
+        <target state="translated">無法載入相依性管理員延伸模組 {0}。訊息: {1}</target>
         <note />
       </trans-unit>
     </body>

@@ -2,8 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
     <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
@@ -27,10 +27,55 @@
     <Compile Include="..\FSharp.Compiler.UnitTests\NunitHelpers.fs">
       <Link>NunitHelpers.fs</Link>
     </Compile>
+    <Compile Include="HandleExpects.fs" />
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
-    <Content Include="packages.config" />
+    <Compile Include="Compiler\ILChecker.fs" />
+    <Compile Include="Compiler\Utilities.fs" />
+    <Compile Include="Compiler\CompilerAssert.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\LiteralValue.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\TailCalls.fs" />
+    <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
+    <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
+    <Compile Include="Compiler\ErrorMessages\ConstructorTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\ClassesTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\ElseBranchHasWrongTypeTests.fs" />
+    <Compile Include="Compiler\ConstraintSolver\PrimitiveConstraints.fs" />
+    <Compile Include="Compiler\ConstraintSolver\MemberConstraints.fs" />
+    <Compile Include="Compiler\ErrorMessages\MissingElseBranch.fs" />
+    <Compile Include="Compiler\ErrorMessages\UnitGenericAbstactType.fs" />
+    <Compile Include="Compiler\ErrorMessages\NameResolutionTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\TypeMismatchTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\UpcastDowncastTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\AssignmentErrorTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\SuggestionsTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\WrongSyntaxInForLoop.fs" />
+    <Compile Include="Compiler\ErrorMessages\WarnExpressionTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\DontSuggestTests.fs" />
+    <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
+    <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
+    <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
+    <Compile Include="Compiler\SourceTextTests.fs" />
+    <Compile Include="Compiler\Language\DefaultInterfaceMemberTests.fs" />
+    <Compile Include="Compiler\Language\OptionalInteropTests.fs" />
+    <Compile Include="Compiler\Language\UIntTests.fs" />
+    <Compile Include="Compiler\Language\FixedIndexSliceTests.fs" />
+    <Compile Include="Compiler\Language\SlicingQuotationTests.fs" />
+    <Compile Include="Compiler\Language\CustomCollectionTests.fs" />
+    <Compile Include="Compiler\Language\HatDesugaringTests.fs" />
+    <Compile Include="Compiler\Language\TypeAttributeTests.fs" />
+    <Compile Include="Compiler\Language\ByrefTests.fs" />
+    <Compile Include="Compiler\Language\AnonRecordTests.fs" />
+    <Compile Include="Compiler\Language\OpenStaticClasses.fs" />
+    <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
+    <Compile Include="Compiler\Language\SpanTests.fs" />
+    <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
+    <Compile Include="Compiler\Stress\LargeExprTests.fs" />
+    <Compile Include="Compiler\Regressions\ForInDoMutableRegressionTest.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
@@ -44,12 +89,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersPackageVersion)" />
-    <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmPackageVersion)" />
-    <PackageReference Include="StrawberryPerl64" Version="$(StrawberryPerl64PackageVersion)" PrivateAssets="all" />
-    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
-    <PackageReference Include="System.Memory" Version="$(SystemMemoryPackageVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
+    <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
+    <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
+    <PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
+    <PackageReference Include="StrawberryPerl" Version="$(StrawberryPerlVersion)" ExcludeAssets="all" />
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
   </ItemGroup>
 
 </Project>

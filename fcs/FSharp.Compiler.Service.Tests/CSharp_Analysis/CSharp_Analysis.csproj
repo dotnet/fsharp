@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\netfx.props" />
   <PropertyGroup>
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>$(FcsTargetNetFxFramework);netstandard2.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <NoWarn>$(NoWarn);0067;1591</NoWarn>
   </PropertyGroup>

@@ -2007,7 +2007,6 @@ module TestQuotationOfCOnstructors =
                 
         | _ -> false)
 
-#if !FX_RESHAPED_REFLECTION
     // Also test getting the reflected definition for private members implied by "let f() = ..." bindings
     let fMethod = (typeof<MyClassWithAsLetMethod>.GetMethod("f", Reflection.BindingFlags.Instance ||| Reflection.BindingFlags.Public ||| Reflection.BindingFlags.NonPublic))
 
@@ -2020,9 +2019,7 @@ module TestQuotationOfCOnstructors =
             -> unitVar.Type = typeof<unit>
         | _ -> false)
 
-    
     Expr.TryGetReflectedDefinition fMethod |> printfn "%A"
-#endif
 
     test "vkjnkvrw0"
        (match Expr.TryGetReflectedDefinition (typeof<MyClassWithNoFields>.GetConstructors().[0]) with 
@@ -2312,29 +2309,17 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       type U = A of int | B of string | C of System.DateTime 
-#if FX_RESHAPED_REFLECTION
-      for m in typeof<R>.GetMethods() do 
-#else
       for m in typeof<U>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
-#endif
           check "celnwer33" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
       // This type has some implicit codegen
       exception X of string * int
-#if FX_RESHAPED_REFLECTION
-      for m in typeof<R>.GetMethods() do 
-#else
       for m in typeof<X>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
-#endif
           check "celnwer34" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       [<Struct>] type SR = { x:int; y:string; z:System.DateTime }
-#if FX_RESHAPED_REFLECTION
-      for m in typeof<SR>.GetMethods() do 
-#else
       for m in typeof<SR>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
-#endif
           check "celnwer35" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
 #if !NETCOREAPP
@@ -3175,13 +3160,10 @@ module TestMatchBang =
             | expr -> Error "Delay is incorrect")
             (Ok ())
 
-    testSimpleMatchBang()        
-    
+    testSimpleMatchBang()
 
-#if !FX_RESHAPED_REFLECTION
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
-#endif
 
 #if TESTS_AS_APP
 let RUN() = !failures

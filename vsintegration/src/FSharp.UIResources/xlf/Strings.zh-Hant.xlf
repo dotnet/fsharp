@@ -42,6 +42,11 @@
         <target state="translated">完成清單</target>
         <note />
       </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="translated">診斷</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">效能</target>
@@ -100,6 +105,11 @@
       <trans-unit id="Solid_underline">
         <source>_Solid underline</source>
         <target state="translated">實線底線(_S)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="translated">文字暫留</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">

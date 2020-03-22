@@ -1,6 +1,6 @@
 ﻿#if INTERACTIVE
-#r "../../artifacts/bin/fcs/net46/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net46/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -10,11 +10,8 @@ module FSharp.Compiler.Service.Tests.PerfTests
 
 open NUnit.Framework
 open FsUnit
-open System
 open System.IO
-open System.Collections.Generic
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
@@ -23,7 +20,6 @@ open FSharp.Compiler.Service.Tests.Common
 let internal checker = FSharpChecker.Create()
 
 module internal Project1 = 
-    open System.IO
 
     let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(Path.GetTempFileName(), ".fs")) ]
     let base2 = Path.GetTempFileName()

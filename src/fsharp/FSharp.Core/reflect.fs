@@ -27,11 +27,6 @@ module internal ReflectionUtils =
 [<AutoOpen>]
 module internal Impl =
 
-#if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
-    open ReflectionAdapters
-#endif
-
     let getBindingFlags allowAccess = ReflectionUtils.toBindingFlags (defaultArg allowAccess false)
 
     let inline checkNonNull argName (v: 'T) =
@@ -42,11 +37,11 @@ module internal Impl =
     let isNamedType(typ: Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
 
     let equivHeadTypes (ty1: Type) (ty2: Type) =
-        isNamedType(ty1) &&
+        isNamedType ty1 &&
         if ty1.IsGenericType then
           ty2.IsGenericType && (ty1.GetGenericTypeDefinition()).Equals(ty2.GetGenericTypeDefinition())
         else
-          ty1.Equals(ty2)
+          ty1.Equals ty2
 
     let func = typedefof<(obj -> obj)>
 
@@ -56,31 +51,18 @@ module internal Impl =
 
     //-----------------------------------------------------------------
     // GENERAL UTILITIES
-#if FX_RESHAPED_REFLECTION
-    let instanceFieldFlags = BindingFlags.Instance
-    let instancePropertyFlags = BindingFlags.Instance
-    let staticPropertyFlags = BindingFlags.Static
-    let staticFieldFlags = BindingFlags.Static
-    let staticMethodFlags = BindingFlags.Static
-#else
     let instanceFieldFlags = BindingFlags.GetField ||| BindingFlags.Instance
     let instancePropertyFlags = BindingFlags.GetProperty ||| BindingFlags.Instance
     let staticPropertyFlags = BindingFlags.GetProperty ||| BindingFlags.Static
     let staticFieldFlags = BindingFlags.GetField ||| BindingFlags.Static
     let staticMethodFlags = BindingFlags.Static
-#endif
-
     let getInstancePropertyInfo (typ: Type, propName, bindingFlags) = typ.GetProperty(propName, instancePropertyFlags ||| bindingFlags)
     let getInstancePropertyInfos (typ, names, bindingFlags) = names |> Array.map (fun nm -> getInstancePropertyInfo (typ, nm, bindingFlags))
-
     let getInstancePropertyReader (typ: Type, propName, bindingFlags) =
         match getInstancePropertyInfo(typ, propName, bindingFlags) with
         | null -> None
-#if FX_RESHAPED_REFLECTION
-        | prop -> Some(fun (obj: obj) -> prop.GetValue (obj, null))
-#else
         | prop -> Some(fun (obj: obj) -> prop.GetValue (obj, instancePropertyFlags ||| bindingFlags, null, null, null))
-#endif
+
     //-----------------------------------------------------------------
     // ATTRIBUTE DECOMPILATION
 
@@ -95,7 +77,6 @@ module internal Impl =
       | None -> failwith "no compilation mapping attribute"
       | Some a -> a
 
-#if !FX_NO_REFLECTION_ONLY
     let cmaName = typeof<CompilationMappingAttribute>.FullName
     let assemblyName = typeof<CompilationMappingAttribute>.Assembly.GetName().Name
     let _ = assert (assemblyName = "FSharp.Core")
@@ -121,33 +102,26 @@ module internal Impl =
       match tryFindCompilationMappingAttributeFromData attrs with
       | None -> failwith "no compilation mapping attribute"
       | Some a -> a
-#endif
 
     let tryFindCompilationMappingAttributeFromType       (typ: Type)        =
-#if !FX_NO_REFLECTION_ONLY
         let assem = typ.Assembly
         if (not (isNull assem)) && assem.ReflectionOnly then
            tryFindCompilationMappingAttributeFromData ( typ.GetCustomAttributesData())
         else
-#endif
         tryFindCompilationMappingAttribute ( typ.GetCustomAttributes (typeof<CompilationMappingAttribute>, false))
 
     let tryFindCompilationMappingAttributeFromMemberInfo (info: MemberInfo) =
-#if !FX_NO_REFLECTION_ONLY
         let assem = info.DeclaringType.Assembly
         if (not (isNull assem)) && assem.ReflectionOnly then
            tryFindCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
-#endif
         tryFindCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>, false))
 
     let    findCompilationMappingAttributeFromMemberInfo (info: MemberInfo) =
-#if !FX_NO_REFLECTION_ONLY
         let assem = info.DeclaringType.Assembly
         if (not (isNull assem)) && assem.ReflectionOnly then
             findCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
-#endif
         findCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>, false))
 
     let sequenceNumberOfMember          (x: MemberInfo) = let (_, n, _) = findCompilationMappingAttributeFromMemberInfo x in n
@@ -156,7 +130,7 @@ module internal Impl =
     let sortFreshArray f arr = Array.sortInPlaceWith f arr; arr
 
     let isFieldProperty (prop : PropertyInfo) =
-        match tryFindCompilationMappingAttributeFromMemberInfo(prop) with
+        match tryFindCompilationMappingAttributeFromMemberInfo prop with
         | None -> false
         | Some (flags, _n, _vn) -> (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Field
 
@@ -185,7 +159,7 @@ module internal Impl =
         | null ->
             typ.GetMethods(staticMethodFlags ||| bindingFlags)
             |> Array.choose (fun minfo ->
-                match tryFindCompilationMappingAttributeFromMemberInfo(minfo) with
+                match tryFindCompilationMappingAttributeFromMemberInfo minfo with
                 | None -> None
                 | Some (flags, n, _vn) ->
                     if (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.UnionCase then
@@ -203,8 +177,8 @@ module internal Impl =
         | _ ->
             enumTyp.GetFields(staticFieldFlags ||| bindingFlags)
             |> Array.filter (fun (f: FieldInfo) -> f.IsStatic && f.IsLiteral)
-            |> sortFreshArray (fun f1 f2 -> compare (f1.GetValue (null) :?> int) (f2.GetValue (null) :?> int))
-            |> Array.map (fun tagfield -> (tagfield.GetValue (null) :?> int), tagfield.Name)
+            |> sortFreshArray (fun f1 f2 -> compare (f1.GetValue null :?> int) (f2.GetValue null :?> int))
+            |> Array.map (fun tagfield -> (tagfield.GetValue null :?> int), tagfield.Name)
 
     let getUnionCaseTyp (typ: Type, tag: int, bindingFlags) =
         let tagFields = getUnionTypeTagNameMap(typ, bindingFlags)
@@ -244,11 +218,11 @@ module internal Impl =
         isListType typ ||
         match tryFindSourceConstructFlagsOfType typ with
         | None -> false
-        | Some(flags) ->
+        | Some flags ->
           (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.SumType &&
           // We see private representations only if BindingFlags.NonPublic is set
-          (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum(0) then
-              (bindingFlags &&& BindingFlags.NonPublic) <> enum(0)
+          (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum 0 then
+              (bindingFlags &&& BindingFlags.NonPublic) <> enum 0
            else
               true)
 
@@ -285,11 +259,8 @@ module internal Impl =
 
     let getUnionCaseRecordReader (typ: Type, tag: int, bindingFlags) =
         let props = fieldsPropsOfUnionCase (typ, tag, bindingFlags)
-#if FX_RESHAPED_REFLECTION
-        (fun (obj: obj) -> props |> Array.map (fun prop -> prop.GetValue (obj, null)))
-#else
         (fun (obj: obj) -> props |> Array.map (fun prop -> prop.GetValue (obj, bindingFlags, null, null, null)))
-#endif
+
     let getUnionTagReader (typ: Type, bindingFlags) : (obj -> int) =
         if isOptionType typ then
             (fun (obj: obj) -> match obj with null -> 0 | _ -> 1)
@@ -302,20 +273,12 @@ module internal Impl =
                 | Some reader -> (fun (obj: obj) -> reader obj :?> int)
                 | None ->
                     (fun (obj: obj) ->
-#if FX_RESHAPED_REFLECTION
-                        let m2b = typ.GetMethod("GetTag", [| typ |])
-#else
                         let m2b = typ.GetMethod("GetTag", BindingFlags.Static ||| bindingFlags, null, [| typ |], null)
-#endif
                         m2b.Invoke(null, [|obj|]) :?> int)
 
     let getUnionTagMemberInfo (typ: Type, bindingFlags) =
         match getInstancePropertyInfo (typ, "Tag", bindingFlags) with
-#if FX_RESHAPED_REFLECTION
-        | null -> (typ.GetMethod("GetTag") :> MemberInfo)
-#else
         | null -> (typ.GetMethod("GetTag", BindingFlags.Static ||| bindingFlags) :> MemberInfo)
-#endif
         | info -> (info :> MemberInfo)
 
     let isUnionCaseNullary (typ: Type, tag: int, bindingFlags) =
@@ -335,11 +298,8 @@ module internal Impl =
     let getUnionCaseConstructor (typ: Type, tag: int, bindingFlags) =
         let meth = getUnionCaseConstructorMethod (typ, tag, bindingFlags)
         (fun args ->
-#if FX_RESHAPED_REFLECTION
-            meth.Invoke(null, args))
-#else
             meth.Invoke(null, BindingFlags.Static ||| BindingFlags.InvokeMethod ||| bindingFlags, null, args, null))
-#endif
+
     let checkUnionType (unionType, bindingFlags) =
         checkNonNull "unionType" unionType
         if not (isUnionType (unionType, bindingFlags)) then
@@ -393,7 +353,7 @@ module internal Impl =
         //
         // Historically the FSharp.Core reflection utilities get used on implementations of
         // System.Type that don't have functionality such as .IsEnum and .FullName fully implemented.
-        // This happens particularly over TypeBuilderInstantiation types in the ProvideTypes implementation of System.TYpe
+        // This happens particularly over TypeBuilderInstantiation types in the ProvideTypes implementation of System.Type
         // used in F# type providers.
         typ.IsGenericType &&
         typ.Namespace = "System" &&
@@ -427,26 +387,26 @@ module internal Impl =
                 | _ -> invalidArg "tys" (SR.GetString (SR.invalidTupleTypes))
 
             let tables = if isStruct then valueTupleTypes else refTupleTypes
-            match lock dictionaryLock (fun () -> tables.TryGetValue(asm)) with
+            match lock dictionaryLock (fun () -> tables.TryGetValue asm) with
             | false, _ ->
                 // the Dictionary<>s here could be ConcurrentDictionary<>'s, but then
                 // that would lock while initializing the Type array (maybe not an issue)
-                let a = ref (Array.init<Type> 8 (fun i -> makeIt (i + 1)))
+                let mutable a = Array.init<Type> 8 (fun i -> makeIt (i + 1))
                 lock dictionaryLock (fun () ->
-                    match tables.TryGetValue(asm) with
-                    | true, t -> a := t
-                    | false, _ -> tables.Add(asm, !a))
-                !a
+                    match tables.TryGetValue asm with
+                    | true, t -> a <- t
+                    | false, _ -> tables.Add(asm, a))
+                a
             | true, t -> t
 
         match tys.Length with
-        | 1 -> table.[0].MakeGenericType(tys)
-        | 2 -> table.[1].MakeGenericType(tys)
-        | 3 -> table.[2].MakeGenericType(tys)
-        | 4 -> table.[3].MakeGenericType(tys)
-        | 5 -> table.[4].MakeGenericType(tys)
-        | 6 -> table.[5].MakeGenericType(tys)
-        | 7 -> table.[6].MakeGenericType(tys)
+        | 1 -> table.[0].MakeGenericType tys
+        | 2 -> table.[1].MakeGenericType tys
+        | 3 -> table.[2].MakeGenericType tys
+        | 4 -> table.[3].MakeGenericType tys
+        | 5 -> table.[4].MakeGenericType tys
+        | 6 -> table.[5].MakeGenericType tys
+        | 7 -> table.[6].MakeGenericType tys
         | n when n >= maxTuple ->
             let tysA = tys.[0..tupleEncField-1]
             let tysB = tys.[maxTuple-1..]
@@ -513,18 +473,10 @@ module internal Impl =
         let ctor =
             if typ.IsValueType then
                 let fields = typ.GetFields (instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields
-#if FX_RESHAPED_REFLECTION
-                typ.GetConstructor(fields |> Array.map (fun fi -> fi.FieldType))
-#else
                 typ.GetConstructor(BindingFlags.Public ||| BindingFlags.Instance, null, fields |> Array.map (fun fi -> fi.FieldType), null)
-#endif
             else
                 let props = typ.GetProperties() |> orderTupleProperties
-#if FX_RESHAPED_REFLECTION
-                typ.GetConstructor(props |> Array.map (fun p -> p.PropertyType))
-#else
                 typ.GetConstructor(BindingFlags.Public ||| BindingFlags.Instance, null, props |> Array.map (fun p -> p.PropertyType), null)
-#endif
         match ctor with
         | null -> raise (ArgumentException (String.Format (SR.GetString (SR.invalidTupleTypeConstructorNotDefined), typ.FullName)))
         | _ -> ()
@@ -533,11 +485,7 @@ module internal Impl =
     let getTupleCtor(typ: Type) =
           let ctor = getTupleConstructorMethod typ
           (fun (args: obj[]) ->
-#if FX_RESHAPED_REFLECTION
-              ctor.Invoke(args))
-#else
               ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public, null, args, null))
-#endif
 
     let rec getTupleReader (typ: Type) =
         let etys = typ.GetGenericArguments()
@@ -545,7 +493,7 @@ module internal Impl =
         let reader =
             if typ.IsValueType then
                 let fields = (typ.GetFields (instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields)
-                ((fun (obj: obj) -> fields |> Array.map (fun field -> field.GetValue (obj))))
+                ((fun (obj: obj) -> fields |> Array.map (fun field -> field.GetValue obj)))
             else
                 let props = (typ.GetProperties (instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties)
                 ((fun (obj: obj) -> props |> Array.map (fun prop -> prop.GetValue (obj, null))))
@@ -553,7 +501,7 @@ module internal Impl =
         then reader
         else
             let tyBenc = etys.[tupleEncField]
-            let reader2 = getTupleReader(tyBenc)
+            let reader2 = getTupleReader tyBenc
             (fun obj ->
                 let directVals = reader obj
                 let encVals = reader2 directVals.[tupleEncField]
@@ -566,7 +514,7 @@ module internal Impl =
         then maker1
         else
             let tyBenc = etys.[tupleEncField]
-            let maker2 = getTupleConstructor(tyBenc)
+            let maker2 = getTupleConstructor tyBenc
             (fun (args: obj[]) ->
                 let encVal = maker2 args.[tupleEncField..]
                 maker1 (Array.append args.[0..tupleEncField-1] [| encVal |]))
@@ -610,7 +558,7 @@ module internal Impl =
     let isModuleType (typ: Type) =
       match tryFindSourceConstructFlagsOfType typ with
       | None -> false
-      | Some(flags) ->
+      | Some flags ->
         (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Module
 
     let rec isClosureRepr typ =
@@ -620,11 +568,11 @@ module internal Impl =
     let isRecordType (typ: Type, bindingFlags: BindingFlags) =
       match tryFindSourceConstructFlagsOfType typ with
       | None -> false
-      | Some(flags) ->
+      | Some flags ->
         (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.RecordType &&
         // We see private representations only if BindingFlags.NonPublic is set
-        (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum(0) then
-            (bindingFlags &&& BindingFlags.NonPublic) <> enum(0)
+        (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum 0 then
+            (bindingFlags &&& BindingFlags.NonPublic) <> enum 0
          else
             true)
 
@@ -639,11 +587,7 @@ module internal Impl =
 
     let getRecordConstructorMethod(typ: Type, bindingFlags) =
         let props = fieldPropsOfRecordType(typ, bindingFlags)
-#if FX_RESHAPED_REFLECTION
-        let ctor = typ.GetConstructor(props |> Array.map (fun p -> p.PropertyType))
-#else
         let ctor = typ.GetConstructor(BindingFlags.Instance ||| bindingFlags, null, props |> Array.map (fun p -> p.PropertyType), null)
-#endif
         match ctor with
         | null -> raise <| ArgumentException (String.Format (SR.GetString (SR.invalidRecordTypeConstructorNotDefined), typ.FullName))
         | _ -> ()
@@ -652,11 +596,7 @@ module internal Impl =
     let getRecordConstructor(typ: Type, bindingFlags) =
         let ctor = getRecordConstructorMethod(typ, bindingFlags)
         (fun (args: obj[]) ->
-#if FX_RESHAPED_REFLECTION
-            ctor.Invoke(args))
-#else
             ctor.Invoke(BindingFlags.InvokeMethod  ||| BindingFlags.Instance ||| bindingFlags, null, args, null))
-#endif
 
     /// EXCEPTION DECOMPILATION
     // Check the base type - if it is also an F# type then
@@ -664,11 +604,11 @@ module internal Impl =
     let isExceptionRepr (typ: Type, bindingFlags) =
         match tryFindSourceConstructFlagsOfType typ with
         | None -> false
-        | Some(flags) ->
+        | Some flags ->
           ((flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Exception) &&
           // We see private representations only if BindingFlags.NonPublic is set
-          (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum(0) then
-              (bindingFlags &&& BindingFlags.NonPublic) <> enum(0)
+          (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum 0 then
+              (bindingFlags &&& BindingFlags.NonPublic) <> enum 0
            else
               true)
 
@@ -703,10 +643,6 @@ module internal Impl =
         if not (isTupleType tupleType) then
             invalidArg argName (String.Format (SR.GetString (SR.notATupleType), tupleType.FullName))
 
-#if FX_RESHAPED_REFLECTION
-open ReflectionAdapters
-#endif
-
 [<Sealed>]
 type UnionCaseInfo(typ: System.Type, tag: int) =
 
@@ -730,9 +666,9 @@ type UnionCaseInfo(typ: System.Type, tag: int) =
         fieldsPropsOfUnionCase (typ, tag, BindingFlags.Public ||| BindingFlags.NonPublic)
 
     member __.GetCustomAttributes() =
-        getMethInfo().GetCustomAttributes(false)
+        getMethInfo().GetCustomAttributes false
 
-    member __.GetCustomAttributes(attributeType) =
+    member __.GetCustomAttributes attributeType =
         getMethInfo().GetCustomAttributes(attributeType, false)
 
     member __.GetCustomAttributesData() =
@@ -890,7 +826,7 @@ type FSharpValue =
         let domain, range = getFunctionTypeInfo functionType
         let dynCloMakerTy = typedefof<DynamicFunction<obj, obj>>
         let saverTy = dynCloMakerTy.MakeGenericType [| domain; range |]
-        let o = Activator.CreateInstance(saverTy)
+        let o = Activator.CreateInstance saverTy
         let (f : (obj -> obj) -> obj) = downcast o
         f implementation
 

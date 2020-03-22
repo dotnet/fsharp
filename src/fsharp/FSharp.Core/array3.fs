@@ -14,18 +14,17 @@ namespace Microsoft.FSharp.Collections
     module Array3D =
 
         let inline checkNonNull argName arg = 
-            match box arg with 
-            | null -> nullArg argName 
-            | _ -> ()
+            if isNull arg then
+                nullArg argName
 
         [<CompiledName("Length1")>]
-        let length1 (array: 'T[,,]) =  (# "ldlen.multi 3 0" array : int #)  
+        let length1 (array: 'T[,,]) = (# "ldlen.multi 3 0" array : int #)
  
         [<CompiledName("Length2")>]
-        let length2 (array: 'T[,,]) =  (# "ldlen.multi 3 1" array : int #)  
+        let length2 (array: 'T[,,]) = (# "ldlen.multi 3 1" array : int #)
  
         [<CompiledName("Length3")>]
-        let length3 (array: 'T[,,]) =  (# "ldlen.multi 3 2" array : int #)  
+        let length3 (array: 'T[,,]) = (# "ldlen.multi 3 2" array : int #)
  
         [<CompiledName("Get")>]
         let get (array: 'T[,,]) index1 index2 index3 = array.[index1,index2,index3]
@@ -114,16 +113,16 @@ namespace Microsoft.FSharp.Collections
     module Array4D =
 
         [<CompiledName("Length1")>]
-        let length1 (array: 'T[,,,]) =  (# "ldlen.multi 4 0" array : int #)  
+        let length1 (array: 'T[,,,]) = (# "ldlen.multi 4 0" array : int #)
  
         [<CompiledName("Length2")>]
-        let length2 (array: 'T[,,,]) =  (# "ldlen.multi 4 1" array : int #)  
+        let length2 (array: 'T[,,,]) = (# "ldlen.multi 4 1" array : int #)
  
         [<CompiledName("Length3")>]
-        let length3 (array: 'T[,,,]) =  (# "ldlen.multi 4 2" array : int #)  
+        let length3 (array: 'T[,,,]) = (# "ldlen.multi 4 2" array : int #)
  
         [<CompiledName("Length4")>]
-        let length4 (array: 'T[,,,]) =  (# "ldlen.multi 4 3" array : int #)  
+        let length4 (array: 'T[,,,]) = (# "ldlen.multi 4 3" array : int #)
  
         [<CompiledName("ZeroCreate")>]
         let zeroCreate length1 length2 length3 length4 = 
@@ -153,7 +152,6 @@ namespace Microsoft.FSharp.Collections
                   for m = 0 to length4 - 1 do 
                     arr.[i,j,k,m] <- f.Invoke(i, j, k, m)
             arr
-
 
         [<CompiledName("Get")>]
         let get (array: 'T[,,,]) index1 index2 index3 index4 = array.[index1,index2,index3,index4]

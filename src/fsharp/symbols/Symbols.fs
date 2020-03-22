@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Compiler.SourceCodeServices
 
@@ -34,7 +34,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
         | _ when List.forall isInternalCompPath p  -> Internal 
         | _ -> Private
 
-    member __.IsPublic = not isProtected && match a with Public -> true | _ -> false
+    member __.IsPublic = not isProtected && match a with TAccess [] -> true | _ -> false
 
     member __.IsPrivate = not isProtected && match a with Private -> true | _ -> false
 
@@ -73,7 +73,7 @@ module Impl =
     let makeReadOnlyCollection (arr: seq<'T>) = 
         System.Collections.ObjectModel.ReadOnlyCollection<_>(Seq.toArray arr) :> IList<_>
         
-    let makeXmlDoc (XmlDoc x) = makeReadOnlyCollection (x)
+    let makeXmlDoc (XmlDoc x) = makeReadOnlyCollection x
     
     let rescopeEntity optViewedCcu (entity: Entity) = 
         match optViewedCcu with 
@@ -90,7 +90,7 @@ module Impl =
         | _ -> false
 
     let checkEntityIsResolved(entity:EntityRef) = 
-        if entityIsUnresolved(entity) then 
+        if entityIsUnresolved entity then 
             let poorQualifiedName =
                 if entity.nlr.AssemblyName = "mscorlib" then 
                     entity.nlr.DisplayName + ", mscorlib"
@@ -99,7 +99,7 @@ module Impl =
             invalidOp (sprintf "The entity '%s' does not exist or is in an unresolved assembly." poorQualifiedName)
 
     /// Checking accessibility that arise from different compilations needs more care - this is a duplicate of the F# compiler code for this case
-    let checkForCrossProjectAccessibility (thisCcu2:CcuThunk, ad2) (thisCcu1, taccess1) = 
+    let checkForCrossProjectAccessibility (ilg: ILGlobals) (thisCcu2:CcuThunk, ad2) (thisCcu1, taccess1) = 
         match ad2 with 
         | AccessibleFrom(cpaths2, _) ->
             let nameOfScoRef (thisCcu:CcuThunk) scoref = 
@@ -107,10 +107,11 @@ module Impl =
                 | ILScopeRef.Local -> thisCcu.AssemblyName 
                 | ILScopeRef.Assembly aref -> aref.Name 
                 | ILScopeRef.Module mref -> mref.Name
+                | ILScopeRef.PrimaryAssembly -> ilg.primaryAssemblyName
             let canAccessCompPathFromCrossProject (CompPath(scoref1, cpath1)) (CompPath(scoref2, cpath2)) =
                 let rec loop p1 p2  = 
                     match p1, p2 with 
-                    | (a1, k1)::rest1, (a2, k2)::rest2 -> (a1=a2) && (k1=k2) && loop rest1 rest2
+                    | (a1, k1) :: rest1, (a2, k2) :: rest2 -> (a1=a2) && (k1=k2) && loop rest1 rest2
                     | [], _ -> true 
                     | _ -> false // cpath1 is longer
                 loop cpath1 cpath2 &&
@@ -187,8 +188,12 @@ module Impl =
         | _ -> ""
 
 type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) = 
-    member x.Contents(g) = denv(g)
-    static member Empty = FSharpDisplayContext(fun g -> DisplayEnv.Empty(g))
+    member x.Contents g = denv g
+
+    static member Empty = FSharpDisplayContext(fun g -> DisplayEnv.Empty g)
+
+    member x.WithShortTypeNames shortNames =
+         FSharpDisplayContext(fun g -> { denv g with shortTypeNames = shortNames })
 
 
 // delay the realization of 'item' in case it is unresolved
@@ -206,12 +211,12 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
 
     member x.DeclarationLocation = SymbolHelpers.rangeOfItem cenv.g None x.Item
 
-    member x.ImplementationLocation = SymbolHelpers.rangeOfItem cenv.g (Some(false)) x.Item
+    member x.ImplementationLocation = SymbolHelpers.rangeOfItem cenv.g (Some false) x.Item
 
-    member x.SignatureLocation = SymbolHelpers.rangeOfItem cenv.g (Some(true)) x.Item
+    member x.SignatureLocation = SymbolHelpers.rangeOfItem cenv.g (Some true) x.Item
 
     member x.IsEffectivelySameAs(y:FSharpSymbol) = 
-        x.Equals(y) || ItemsAreEffectivelyEqual cenv.g x.Item y.Item
+        x.Equals y || ItemsAreEffectivelyEqual cenv.g x.Item y.Item
 
     member x.GetEffectivelySameAsHash() = ItemsAreEffectivelyEqualHash cenv.g x.Item
 
@@ -320,11 +325,11 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
 and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) = 
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
-                              checkEntityIsResolved(entity)
+                              checkEntityIsResolved entity
                               if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity] 
                               else Item.UnqualifiedType [entity]), 
                          (fun _this thisCcu2 ad -> 
-                             checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
+                             checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
                              // && AccessibilityLogic.IsEntityAccessible cenv.amap range0 ad entity)
                              )
 
@@ -535,11 +540,11 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
       
 
     member __.Accessibility = 
-        if isUnresolved() then FSharpAccessibility(taccessPublic) else
+        if isUnresolved() then FSharpAccessibility taccessPublic else
         FSharpAccessibility(getApproxFSharpAccessibilityOfEntity entity) 
 
     member __.RepresentationAccessibility = 
-        if isUnresolved() then FSharpAccessibility(taccessPublic) else
+        if isUnresolved() then FSharpAccessibility taccessPublic else
         FSharpAccessibility(entity.TypeReprAccessibility)
 
     member x.DeclaredInterfaces = 
@@ -641,7 +646,7 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         | TProvidedTypeExtensionPoint info -> 
             let m = x.DeclarationLocation
             let typeBeforeArguments = info.ProvidedType 
-            let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters(provider)), range=m) 
+            let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m) 
             let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
             [| for p in staticParameters -> FSharpStaticParameter(cenv, p, m) |]
 #endif
@@ -674,7 +679,7 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
             let formalTypeInfo = ILTypeInfo.FromType cenv.g ty
             tdef.Fields.AsList
             |> List.map (fun tdef -> let ilFieldInfo = ILFieldInfo(formalTypeInfo, tdef)
-                                     FSharpField(cenv, FSharpFieldData.ILField(ilFieldInfo) ))
+                                     FSharpField(cenv, FSharpFieldData.ILField ilFieldInfo ))
             |> makeReadOnlyCollection
 
         else
@@ -753,7 +758,7 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
                                checkEntityIsResolved v.TyconRef
                                Item.UnionCase(UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v), false)), 
                           (fun _this thisCcu2 ad -> 
-                               checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, v.UnionCase.Accessibility)) 
+                               checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, v.UnionCase.Accessibility)) 
                                //&& AccessibilityLogic.IsUnionCaseAccessible cenv.amap range0 ad v)
                                )
 
@@ -777,9 +782,13 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
         checkIsResolved()
         v.Range
 
+    member __.HasFields =
+        if isUnresolved() then false else
+        v.UnionCase.RecdFieldsArray.Length <> 0
+
     member __.UnionCaseFields = 
         if isUnresolved() then makeReadOnlyCollection [] else
-        v.UnionCase.RecdFields |> List.mapi (fun i _ ->  FSharpField(cenv, FSharpFieldData.Union (v, i))) |> makeReadOnlyCollection
+        v.UnionCase.RecdFieldsArray |> Array.mapi (fun i _ ->  FSharpField(cenv, FSharpFieldData.Union (v, i))) |> makeReadOnlyCollection
 
     member __.ReturnType = 
         checkIsResolved()
@@ -805,7 +814,7 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
         v.Attribs |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
 
     member __.Accessibility =  
-        if isUnresolved() then FSharpAccessibility(taccessPublic) else
+        if isUnresolved() then FSharpAccessibility taccessPublic else
         FSharpAccessibility(v.UnionCase.Accessibility)
 
     member private x.V = v
@@ -814,11 +823,10 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
         match other with
         |   :? FSharpUnionCase as uc -> v === uc.V
         |   _ -> false
-    
+
     override x.GetHashCode() = hash v.CaseName
 
     override x.ToString() = x.CompiledName
-
 
 and FSharpFieldData = 
     | AnonField of AnonRecdTypeInfo * TTypes * int * range
@@ -830,7 +838,7 @@ and FSharpFieldData =
         match x with 
         | AnonField (anonInfo, tinst, n, m) -> (anonInfo, tinst, n, m) |> Choice3Of3
         | RecdOrClass v -> v.RecdField |> Choice1Of3
-        | Union (v, n) -> v.FieldByIndex(n) |> Choice1Of3
+        | Union (v, n) -> v.FieldByIndex n |> Choice1Of3
         | ILField f -> f |> Choice2Of3
 
     member x.TryDeclaringTyconRef =
@@ -867,7 +875,7 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
                                 | ILField f -> 
                                     Item.ILField f), 
                           (fun this thisCcu2 ad -> 
-                                checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, (this :?> FSharpField).Accessibility.Contents)) 
+                                checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, (this :?> FSharpField).Accessibility.Contents)) 
                                 //&&
                                 //match d with 
                                 //| Recd v -> AccessibilityLogic.IsRecdFieldAccessible cenv.amap range0 ad v
@@ -896,7 +904,7 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
 
     new (cenv, ucref, n) = FSharpField(cenv, FSharpFieldData.Union(ucref, n))
 
-    new (cenv, rfref) = FSharpField(cenv, FSharpFieldData.RecdOrClass(rfref))
+    new (cenv, rfref) = FSharpField(cenv, FSharpFieldData.RecdOrClass rfref)
 
     member __.DeclaringEntity = 
         d.TryDeclaringTyconRef |> Option.map (fun tcref -> FSharpEntity(cenv, tcref))
@@ -1034,13 +1042,13 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         |> makeReadOnlyCollection
 
     member __.Accessibility: FSharpAccessibility =  
-        if isUnresolved() then FSharpAccessibility(taccessPublic) else 
+        if isUnresolved() then FSharpAccessibility taccessPublic else 
         let access = 
             match d.TryRecdField with 
             | Choice1Of3 r -> r.Accessibility
             | Choice2Of3 _ -> taccessPublic
             | Choice3Of3 _ -> taccessPublic
-        FSharpAccessibility(access) 
+        FSharpAccessibility access 
 
     member private x.V = d
 
@@ -1359,7 +1367,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                          (fun () -> item), 
                          (fun this thisCcu2 ad -> 
                               let this = this :?> FSharpMemberOrFunctionOrValue 
-                              checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, this.Accessibility.Contents)) 
+                              checkForCrossProjectAccessibility cenv.g.ilg (thisCcu2, ad) (cenv.thisCcu, this.Accessibility.Contents)) 
                               //&& 
                               //match d with 
                               //| E e -> 
@@ -1394,7 +1402,12 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     let mkEventSym einfo = FSharpMemberOrFunctionOrValue(cenv, E einfo, Item.Event einfo)
 
     new (cenv, vref) = FSharpMemberFunctionOrValue(cenv, V vref, Item.Value vref)
-    new (cenv, minfo) =  FSharpMemberFunctionOrValue(cenv, M minfo, Item.MethodGroup(minfo.LogicalName, [minfo], None))
+
+    new (cenv, minfo: MethInfo) =
+        if minfo.IsConstructor || minfo.IsClassConstructor then
+            FSharpMemberFunctionOrValue(cenv, C minfo, Item.CtorGroup(minfo.LogicalName, [minfo]))
+        else
+            FSharpMemberFunctionOrValue(cenv, M minfo, Item.MethodGroup(minfo.LogicalName, [minfo], None))
 
     member __.IsUnresolved = 
         isUnresolved()
@@ -1408,16 +1421,22 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.Overloads matchParameterNumber =
         checkIsResolved()
         match d with
-        | M m ->
+        | M m | C m ->
             match item with
-            | Item.MethodGroup (_name, methodInfos, _) ->
+            | Item.MethodGroup (_, methodInfos, _)
+            | Item.CtorGroup (_, methodInfos) ->
+                let isConstructor = x.IsConstructor
                 let methods =
                     if matchParameterNumber then
                         methodInfos
                         |> List.filter (fun methodInfo -> not (methodInfo.NumArgs = m.NumArgs) )
                     else methodInfos
                 methods
-                |> List.map (fun mi -> FSharpMemberOrFunctionOrValue(cenv, M mi, item))
+                |> List.map (fun mi ->
+                    if isConstructor then
+                        FSharpMemberOrFunctionOrValue(cenv, C mi, item)
+                    else
+                        FSharpMemberOrFunctionOrValue(cenv, M mi, item))
                 |> makeReadOnlyCollection
                 |> Some
             | _ -> None
@@ -1740,7 +1759,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.CompiledName = 
         checkIsResolved()
         match fsharpInfo() with 
-        | Some v -> v.CompiledName
+        | Some v -> v.CompiledName cenv.g.CompilerGlobalState
         | None -> x.LogicalName
 
     member __.LogicalName = 
@@ -1932,7 +1951,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
       /// How visible is this? 
     member this.Accessibility: FSharpAccessibility  = 
-        if isUnresolved() then FSharpAccessibility(taccessPublic) else 
+        if isUnresolved() then FSharpAccessibility taccessPublic else 
         match fsharpInfo() with 
         | Some v -> FSharpAccessibility(v.Accessibility)
         | None ->  
@@ -1940,7 +1959,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         // Note, returning "public" is wrong for IL members that are private
         match d with 
         | E e ->  
-            // For IL events, we get an approximate accessiblity that at least reports "internal" as "internal" and "private" as "private"
+            // For IL events, we get an approximate accessibility that at least reports "internal" as "internal" and "private" as "private"
             let access = 
                 match e with 
                 | ILEvent ileinfo -> 
@@ -1948,10 +1967,10 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     getApproxFSharpAccessibilityOfMember this.DeclaringEntity.Value.Entity ilAccess
                 | _ -> taccessPublic
 
-            FSharpAccessibility(access)
+            FSharpAccessibility access
 
         | P p ->  
-            // For IL  properties, we get an approximate accessiblity that at least reports "internal" as "internal" and "private" as "private"
+            // For IL  properties, we get an approximate accessibility that at least reports "internal" as "internal" and "private" as "private"
             let access = 
                 match p with 
                 | ILProp ilpinfo -> 
@@ -1959,17 +1978,17 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     getApproxFSharpAccessibilityOfMember this.DeclaringEntity.Value.Entity  ilAccess
                 | _ -> taccessPublic
 
-            FSharpAccessibility(access)
+            FSharpAccessibility access
 
         | M m | C m ->  
 
-            // For IL  methods, we get an approximate accessiblity that at least reports "internal" as "internal" and "private" as "private"
+            // For IL  methods, we get an approximate accessibility that at least reports "internal" as "internal" and "private" as "private"
             let access = 
                 match m with 
                 | ILMeth (_, x, _) -> getApproxFSharpAccessibilityOfMember x.DeclaringTyconRef x.RawMetadata.Access 
                 | _ -> taccessPublic
 
-            FSharpAccessibility(access, isProtected=m.IsProtectedAccessiblity)
+            FSharpAccessibility(access, isProtected=m.IsProtectedAccessibility)
 
         | V v -> FSharpAccessibility(v.Accessibility)
 
@@ -1996,9 +2015,10 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match other with
         |   :? FSharpMemberOrFunctionOrValue as other ->
             match d, other.Data with 
-            | E evt1, E evt2 -> EventInfo.EventInfosUseIdenticalDefintions evt1 evt2 
+            | E evt1, E evt2 -> EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2 
             | P p1, P p2 ->  PropInfo.PropInfosUseIdenticalDefinitions p1 p2
-            | M m1, M m2 ->  MethInfo.MethInfosUseIdenticalDefinitions m1 m2
+            | M m1, M m2
+            | C m1, C m2 ->  MethInfo.MethInfosUseIdenticalDefinitions m1 m2
             | V v1, V v2 -> valRefEq cenv.g v1 v2
             | _ -> false
         |   _ -> false
@@ -2007,13 +2027,13 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     override x.ToString() = 
         try  
             let prefix = (if x.IsEvent then "event " elif x.IsProperty then "property " elif x.IsMember then "member " else "val ") 
-            prefix + x.LogicalName 
+            prefix + x.LogicalName
         with _  -> "??"
 
     member x.FormatLayout (denv:FSharpDisplayContext) =
         match x.IsMember, d with
         | true, V v ->
-            NicePrint.prettyLayoutOfValOrMemberNoInst { (denv.Contents cenv.g) with showMemberContainers=true } v.Deref
+            NicePrint.prettyLayoutOfMemberNoInstShort { (denv.Contents cenv.g) with showMemberContainers=true } v.Deref
         | _,_ ->
             checkIsResolved()
             let ty = 
@@ -2160,7 +2180,7 @@ and FSharpType(cenv, ty:TType) =
     member private x.V = ty
     member private x.cenv = cenv
 
-    member private ty.AdjustType(t) = 
+    member private ty.AdjustType t = 
         FSharpType(ty.cenv, t)
 
     // Note: This equivalence relation is modulo type abbreviations
@@ -2208,12 +2228,12 @@ and FSharpType(cenv, ty:TType) =
         | h :: _ -> 
             let cenv = h.cenv
             let prettyTys = PrettyTypes.PrettifyTypes cenv.g [ for t in xs -> t.V ] |> fst
-            (xs, prettyTys) ||> List.map2 (fun p pty -> p.AdjustType(pty))
+            (xs, prettyTys) ||> List.map2 (fun p pty -> p.AdjustType pty)
         |> makeReadOnlyCollection
 
     static member Prettify(parameter: FSharpParameter) = 
         let prettyTy = parameter.V |> PrettyTypes.PrettifyType parameter.cenv.g |> fst
-        parameter.AdjustType(prettyTy)
+        parameter.AdjustType prettyTy
 
     static member Prettify(parameters: IList<FSharpParameter>) = 
         let parameters = parameters |> List.ofSeq
@@ -2222,7 +2242,7 @@ and FSharpType(cenv, ty:TType) =
         | h :: _ -> 
             let cenv = h.cenv
             let prettyTys = parameters |> List.map (fun p -> p.V) |> PrettyTypes.PrettifyTypes cenv.g |> fst
-            (parameters, prettyTys) ||> List.map2 (fun p pty -> p.AdjustType(pty))
+            (parameters, prettyTys) ||> List.map2 (fun p pty -> p.AdjustType pty)
         |> makeReadOnlyCollection
 
     static member Prettify(parameters: IList<IList<FSharpParameter>>) = 
@@ -2233,15 +2253,15 @@ and FSharpType(cenv, ty:TType) =
         | Some h -> 
             let cenv = h.cenv
             let prettyTys = xs |> List.mapSquared (fun p -> p.V) |> PrettyTypes.PrettifyCurriedTypes cenv.g |> fst
-            (xs, prettyTys) ||> List.map2 (List.map2 (fun p pty -> p.AdjustType(pty)))
+            (xs, prettyTys) ||> List.map2 (List.map2 (fun p pty -> p.AdjustType pty))
         |> List.map makeReadOnlyCollection |> makeReadOnlyCollection
 
     static member Prettify(parameters: IList<IList<FSharpParameter>>, returnParameter: FSharpParameter) = 
         let xs = parameters |> List.ofSeq |> List.map List.ofSeq
         let cenv = returnParameter.cenv
         let prettyTys, prettyRetTy = xs |> List.mapSquared (fun p -> p.V) |> (fun tys -> PrettyTypes.PrettifyCurriedSigTypes cenv.g (tys, returnParameter.V) )|> fst
-        let ps = (xs, prettyTys) ||> List.map2 (List.map2 (fun p pty -> p.AdjustType(pty))) |> List.map makeReadOnlyCollection |> makeReadOnlyCollection
-        ps, returnParameter.AdjustType(prettyRetTy)
+        let ps = (xs, prettyTys) ||> List.map2 (List.map2 (fun p pty -> p.AdjustType pty)) |> List.map makeReadOnlyCollection |> makeReadOnlyCollection
+        ps, returnParameter.AdjustType prettyRetTy
 
 and FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) = 
 
@@ -2331,7 +2351,7 @@ and FSharpParameter(cenv, paramTy:TType, topArgInfo:ArgReprInfo, mOpt, isParamAr
 
     member __.cenv: SymbolEnv = cenv
 
-    member __.AdjustType(t) = FSharpParameter(cenv, t, topArgInfo, mOpt, isParamArrayArg, isInArg, isOutArg, isOptionalArg)
+    member __.AdjustType t = FSharpParameter(cenv, t, topArgInfo, mOpt, isParamArrayArg, isInArg, isOutArg, isOptionalArg)
 
     member __.Type: FSharpType = FSharpType(cenv, paramTy)
 
@@ -2443,7 +2463,12 @@ and FSharpAssembly internal (cenv, ccu: CcuThunk) =
 
     member __.Contents : FSharpAssemblySignature = FSharpAssemblySignature(cenv, ccu)
                  
-    override x.ToString() = ccu.ILScopeRef.QualifiedName
+    override x.ToString() = 
+        match ccu.ILScopeRef with
+        | ILScopeRef.PrimaryAssembly ->
+            cenv.g.ilg.primaryAssemblyRef.QualifiedName
+        | scoref ->
+            scoref.QualifiedName
 
 /// Represents open declaration in F# code.
 [<Sealed>]
@@ -2493,5 +2518,30 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
     member __.Range = Range.toZ range
 
     member __.RangeAlternate = range
+     
+    member this.IsPrivateToFile = 
+        let isPrivate =
+            match this.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as m -> not m.IsModuleValueOrMember || m.Accessibility.IsPrivate
+            | :? FSharpEntity as m -> m.Accessibility.IsPrivate
+            | :? FSharpGenericParameter -> true
+            | :? FSharpUnionCase as m -> m.Accessibility.IsPrivate
+            | :? FSharpField as m -> m.Accessibility.IsPrivate
+            | _ -> false
+            
+        let declarationLocation =
+            match this.Symbol.SignatureLocation with
+            | Some x -> Some x
+            | _ ->
+                match this.Symbol.DeclarationLocation with
+                | Some x -> Some x
+                | _ -> this.Symbol.ImplementationLocation
+            
+        let declaredInTheFile = 
+            match declarationLocation with
+            | Some declRange -> declRange.FileName = this.RangeAlternate.FileName
+            | _ -> false
+            
+        isPrivate && declaredInTheFile   
 
     override __.ToString() = sprintf "%O, %O, %O" symbol itemOcc range 

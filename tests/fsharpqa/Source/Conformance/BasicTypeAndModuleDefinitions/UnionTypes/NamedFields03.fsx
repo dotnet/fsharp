@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Unions 
 // Potentially ambiguous cases where we need to decide if user is specifying named argument or passing result of equality comparison to boolean/generic field
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 let checkType (o : obj) ty =
     if o.GetType() = ty then ()

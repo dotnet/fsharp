@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">Kodu Etkileşimli F#'da yürütmek için kodun bir bölümünü vurgulayın ve Alt-Enter'a basın veya sağ tıklatın</target>
+        <target state="translated">Kodu F# Etkileşimli’de yürütmek için kodun bir bölümünü vurgulayın ve Alt-Enter'a basın veya sağ tıklatın</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
@@ -589,7 +589,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line10">
         <source>use Partial Application and the input and output types of each data processing operation match</source>
-        <target state="translated">ve her bir veri işleme işleminin giriş ve çıkış türleri kullandığımız işlevlerin imzaları ile eşleştiği için</target>
+        <target state="translated">ve her bir bilgi işlem işleminin giriş ve çıkış türleri kullandığımız işlevlerin imzaları ile eşleştiği için</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line11">
@@ -694,7 +694,7 @@
       </trans-unit>
       <trans-unit id="Arrays-Line2">
         <source>Although they are similar to Lists (they support enumeration and have similar combinators for data processing),</source>
-        <target state="translated">Lists'e benzer olsalar da (numaralandırmayı desteklerler ve veri işleme için benzer birleştiricilere sahiptirler)</target>
+        <target state="translated">Lists'e benzer olsalar da (numaralandırmayı desteklerler ve bilgi işlem için benzer birleştiricilere sahiptirler)</target>
         <note />
       </trans-unit>
       <trans-unit id="Arrays-Line3">

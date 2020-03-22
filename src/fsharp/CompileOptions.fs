@@ -6,10 +6,13 @@ module internal FSharp.Compiler.CompileOptions
 
 open Internal.Utilities
 open System
+open System.IO
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompileOps
@@ -17,6 +20,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops 
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.IlxGen
@@ -71,7 +75,7 @@ let GetOptionsOfBlock block =
 let FilterCompilerOptionBlock pred block =
     match block with
     | PublicOptions(heading, opts) -> PublicOptions(heading, List.filter pred opts)
-    | PrivateOptions(opts)        -> PrivateOptions(List.filter pred opts)
+    | PrivateOptions opts        -> PrivateOptions(List.filter pred opts)
 
 let compilerOptionUsage (CompilerOption(s, tag, spec, _, _)) =
     let s = if s="--" then "" else s (* s="flag" for "--flag" options. s="--" for "--" option. Adjust printing here for "--" case. *)
@@ -172,7 +176,7 @@ module ResponseFile =
     let parseFile path: Choice<ResponseFileData, Exception> =
         let parseLine (l: string) =
             match l with
-            | s when String.IsNullOrWhiteSpace(s) -> None
+            | s when String.IsNullOrWhiteSpace s -> None
             | s when l.StartsWithOrdinal("#") -> Some (ResponseFileLine.Comment (s.TrimStart('#')))
             | s -> Some (ResponseFileLine.CompilerOptionSpec (s.Trim()))
 
@@ -254,9 +258,9 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             match fullpath with
             | None ->
-                errorR(Error(FSComp.SR.optsResponseFileNameInvalid(rsp), rangeCmdArgs))
+                errorR(Error(FSComp.SR.optsResponseFileNameInvalid rsp, rangeCmdArgs))
                 []
-            | Some(path) when not (FileSystem.SafeExists path) ->
+            | Some path when not (FileSystem.SafeExists path) ->
                 errorR(Error(FSComp.SR.optsResponseFileNotFound(rsp, path), rangeCmdArgs))
                 []
             | Some path ->
@@ -279,7 +283,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
         let reportDeprecatedOption errOpt =
           match errOpt with
-          | Some(e) -> warning(e)
+          | Some e -> warning e
           | None -> ()
 
         let rec attempt l = 
@@ -290,7 +294,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
           | (CompilerOption(s, _, OptionUnit f, d, _) :: _) when optToken = s  && argString = "" -> 
               reportDeprecatedOption d
               f (); t
-          | (CompilerOption(s, _, OptionSwitch f, d, _) :: _) when getSwitchOpt(optToken) = s && argString = "" -> 
+          | (CompilerOption(s, _, OptionSwitch f, d, _) :: _) when getSwitchOpt optToken = s && argString = "" -> 
               reportDeprecatedOption d
               f (getSwitch opt); t
           | (CompilerOption(s, _, OptionSet f, d, _) :: _) when optToken = s && argString = "" -> 
@@ -309,14 +313,14 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
               reportDeprecatedOption d
               let oa = getOptionArg compilerOption argString
               if oa <> "" then 
-                  f (try int32 (oa) with _ -> 
+                  f (try int32 oa with _ -> 
                       errorR(Error(FSComp.SR.buildArgInvalidInt(getOptionArg compilerOption argString), rangeCmdArgs)); 0)
               t
           | (CompilerOption(s, _, OptionFloat f, d, _) as compilerOption :: _) when optToken = s -> 
               reportDeprecatedOption d
               let oa = getOptionArg compilerOption argString
               if oa <> "" then
-                  f (try float (oa) with _ -> 
+                  f (try float oa with _ -> 
                       errorR(Error(FSComp.SR.buildArgInvalidFloat(getOptionArg compilerOption argString), rangeCmdArgs)); 0.0)
               t
           | (CompilerOption(s, _, OptionRest f, d, _) :: _) when optToken = s -> 
@@ -326,14 +330,14 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
-                  List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt(i), rangeCmdArgs)); 0)) al 
+                  List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt i, rangeCmdArgs)); 0)) al 
               t
-          | (CompilerOption(s, _, OptionIntListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt(optToken) = s -> 
+          | (CompilerOption(s, _, OptionIntListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt optToken = s -> 
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
-                  let switch = getSwitch(opt)
-                  List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt(i), rangeCmdArgs)); 0) switch) al  
+                  let switch = getSwitch opt
+                  List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt i, rangeCmdArgs)); 0) switch) al  
               t
               // here
           | (CompilerOption(s, _, OptionStringList f, d, _) as compilerOption :: _) when optToken = s -> 
@@ -342,11 +346,11 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
               if al <> [] then
                   List.iter f (getOptionArgList compilerOption argString)
               t
-          | (CompilerOption(s, _, OptionStringListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt(optToken) = s -> 
+          | (CompilerOption(s, _, OptionStringListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt optToken = s -> 
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
-                  let switch = getSwitch(opt)
+                  let switch = getSwitch opt
                   List.iter (fun s -> f s switch) (getOptionArgList compilerOption argString)
               t
           | (CompilerOption(_, _, OptionGeneral (pred, exec), d, _) :: _) when pred args -> 
@@ -358,7 +362,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                then 
                   // want the whole opt token - delimiter and all
                   let unrecOpt = (opt.Split([|':'|]).[0])
-                  errorR(Error(FSComp.SR.buildUnrecognizedOption(unrecOpt), rangeCmdArgs)) 
+                  errorR(Error(FSComp.SR.buildUnrecognizedOption unrecOpt, rangeCmdArgs)) 
                   t
               else 
                  (collectOtherArgument opt; t)
@@ -399,13 +403,20 @@ let SetOptimizeOn(tcConfigB: TcConfigBuilder) =
     tcConfigB.doFinalSimplify <- true
 
 let SetOptimizeSwitch (tcConfigB: TcConfigBuilder) switch = 
-    if (switch = OptionSwitch.On) then SetOptimizeOn(tcConfigB) else SetOptimizeOff(tcConfigB)
+    if (switch = OptionSwitch.On) then SetOptimizeOn tcConfigB else SetOptimizeOff tcConfigB
 
 let SetTailcallSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.emitTailcalls <- (switch = OptionSwitch.On)
 
 let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.deterministic <- (switch = OptionSwitch.On)
+
+let AddPathMapping (tcConfigB: TcConfigBuilder) (pathPair: string) =
+    match pathPair.Split([|'='|], 2) with
+    | [| oldPrefix; newPrefix |] ->
+        tcConfigB.AddPathMapping (oldPrefix, newPrefix)
+    | _ ->
+        error(Error(FSComp.SR.optsInvalidPathMapFormat(), rangeCmdArgs))
 
 let jitoptimizeSwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some (switch = OptionSwitch.On) }
@@ -426,10 +437,10 @@ let useHighEntropyVASwitch (tcConfigB: TcConfigBuilder) switch =
     tcConfigB.useHighEntropyVA <- switch = OptionSwitch.On
 
 let subSystemVersionSwitch (tcConfigB: TcConfigBuilder) (text: string) = 
-    let fail() = error(Error(FSComp.SR.optsInvalidSubSystemVersion(text), rangeCmdArgs))
+    let fail() = error(Error(FSComp.SR.optsInvalidSubSystemVersion text, rangeCmdArgs))
 
     // per spec for 357994: Validate input string, should be two positive integers x.y when x>=4 and y>=0 and both <= 65535
-    if System.String.IsNullOrEmpty(text) then 
+    if System.String.IsNullOrEmpty text then 
        fail()
     else
         match text.Split('.') with
@@ -442,6 +453,9 @@ let subSystemVersionSwitch (tcConfigB: TcConfigBuilder) (text: string) =
             | _ -> fail()
         | _ -> fail()
 
+let SetUseSdkSwitch (tcConfigB: TcConfigBuilder) switch =
+    tcConfigB.useSdkRefs <- (switch = OptionSwitch.On)
+
 let (++) x s = x @ [s]
 
 let SetTarget (tcConfigB: TcConfigBuilder)(s: string) =
@@ -450,11 +464,11 @@ let SetTarget (tcConfigB: TcConfigBuilder)(s: string) =
     | "winexe"  ->  tcConfigB.target <- CompilerTarget.WinExe
     | "library" ->  tcConfigB.target <- CompilerTarget.Dll
     | "module"  ->  tcConfigB.target <- CompilerTarget.Module
-    | _         ->  error(Error(FSComp.SR.optsUnrecognizedTarget(s), rangeCmdArgs))
+    | _         ->  error(Error(FSComp.SR.optsUnrecognizedTarget s, rangeCmdArgs))
 
 let SetDebugSwitch (tcConfigB: TcConfigBuilder) (dtype: string option) (s: OptionSwitch) =
     match dtype with
-    | Some(s) ->
+    | Some s ->
        match s with 
        | "portable" ->  
            tcConfigB.portablePDB <- true
@@ -483,15 +497,17 @@ let SetDebugSwitch (tcConfigB: TcConfigBuilder) (dtype: string option) (s: Optio
            tcConfigB.jitTracking <- true
 #endif
 
-       | _ -> error(Error(FSComp.SR.optsUnrecognizedDebugType(s), rangeCmdArgs))
+       | _ -> error(Error(FSComp.SR.optsUnrecognizedDebugType s, rangeCmdArgs))
     | None ->           tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- s = OptionSwitch.On
     tcConfigB.debuginfo <- s = OptionSwitch.On
 
 let SetEmbedAllSourceSwitch (tcConfigB: TcConfigBuilder) switch = 
     if (switch = OptionSwitch.On) then tcConfigB.embedAllSource <- true else tcConfigB.embedAllSource <- false
 
-let setOutFileName tcConfigB s = 
-    tcConfigB.outputFile <- Some s
+let setOutFileName tcConfigB path =
+    let outputDir = Path.GetDirectoryName(path)
+    tcConfigB.outputDir <- Some outputDir
+    tcConfigB.outputFile <- Some path
 
 let setSignatureFile tcConfigB s = 
     tcConfigB.printSignature <- true 
@@ -512,8 +528,11 @@ let tagFullPDBOnlyPortable = "{full|pdbonly|portable|embedded}"
 let tagWarnList = "<warn;...>"
 let tagSymbolList = "<symbol;...>"
 let tagAddress = "<address>"
+let tagAlgorithm = "{SHA1|SHA256}"
 let tagInt = "<n>"
+let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
+let tagLangVersionValues = "{?|version|latest|preview}"
 
 // PrintOptionInfo
 //----------------
@@ -544,29 +563,39 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
 // OptionBlock: Input files
 //-------------------------
 
-let inputFileFlagsBoth (tcConfigB : TcConfigBuilder) =
-    [   CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None,
-                            Some (FSComp.SR.optsReference()) )
+let inputFileFlagsBoth (tcConfigB : TcConfigBuilder) = [
+    CompilerOption("reference", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some (FSComp.SR.optsReference()))
+    CompilerOption("compilertool", tagFile, OptionString (fun s -> tcConfigB.AddCompilerToolsByPath s), None, Some (FSComp.SR.optsCompilerTool()))
     ]
 
-let referenceFlagAbbrev (tcConfigB: TcConfigBuilder) = 
-        CompilerOption("r", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None,
-                            Some(FSComp.SR.optsShortFormOf("--reference")) )
-      
-let inputFileFlagsFsi tcConfigB = inputFileFlagsBoth tcConfigB
+let referenceFlagAbbrev (tcConfigB : TcConfigBuilder) =
+    CompilerOption("r", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)), None, Some(FSComp.SR.optsShortFormOf("--reference")))
+
+let compilerToolFlagAbbrev (tcConfigB : TcConfigBuilder) =
+    CompilerOption("t", tagFile, OptionString (fun s -> tcConfigB.AddCompilerToolsByPath s), None, Some(FSComp.SR.optsShortFormOf("--compilertool")))
+
 let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
+let inputFileFlagsFsiBase (_tcConfigB: TcConfigBuilder) =
+#if NETSTANDARD
+    [ CompilerOption("usesdkrefs", tagNone, OptionSwitch (SetUseSdkSwitch _tcConfigB), None, Some (FSComp.SR.useSdkRefs())) ]
+#else
+    List.empty<CompilerOption>
+#endif
+
+let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
+    List.concat [ inputFileFlagsBoth tcConfigB; inputFileFlagsFsiBase tcConfigB]
 
 // OptionBlock: Errors and warnings
 //---------------------------------
 
 let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) = 
-    let trimFS (s:string) = if s.StartsWithOrdinal("FS") = true then s.Substring(2) else s
+    let trimFS (s:string) = if s.StartsWithOrdinal("FS") = true then s.Substring 2 else s
     let trimFStoInt (s:string) =
         try
             Some (int32 (trimFS s))
         with _ ->
-            errorR(Error(FSComp.SR.buildArgInvalidInt(s), rangeCmdArgs))
+            errorR(Error(FSComp.SR.buildArgInvalidInt s, rangeCmdArgs))
             None
     [
         CompilerOption("warnaserror", tagNone, OptionSwitch(fun switch ->
@@ -592,7 +621,7 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption("warn", tagInt, OptionInt (fun n ->
                  tcConfigB.errorSeverityOptions <-
                      { tcConfigB.errorSeverityOptions with
-                         WarnLevel = if (n >= 0 && n <= 5) then n else error(Error (FSComp.SR.optsInvalidWarningLevel(n), rangeCmdArgs)) }
+                         WarnLevel = if (n >= 0 && n <= 5) then n else error(Error (FSComp.SR.optsInvalidWarningLevel n, rangeCmdArgs)) }
             ), None, Some (FSComp.SR.optsWarn()))
 
         CompilerOption("nowarn", tagWarnList, OptionStringList (fun n ->
@@ -655,12 +684,12 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
 
         CompilerOption
            ("keyfile", tagFile,
-            OptionString (fun s -> tcConfigB.signer <- Some(s)), None,
+            OptionString (fun s -> tcConfigB.signer <- Some s), None,
             Some (FSComp.SR.optsStrongKeyFile()))
 
         CompilerOption
            ("keycontainer", tagString,
-            OptionString(fun s -> tcConfigB.container <- Some(s)), None,
+            OptionString(fun s -> tcConfigB.container <- Some s), None,
             Some(FSComp.SR.optsStrongKeyContainer()))
 
         CompilerOption
@@ -675,7 +704,7 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
                         tcConfigB.prefer32Bit <- true
                         None 
                     | "anycpu" -> None 
-                    | _ -> error(Error(FSComp.SR.optsUnknownPlatform(s), rangeCmdArgs))), None,
+                    | _ -> error(Error(FSComp.SR.optsUnknownPlatform s, rangeCmdArgs))), None,
             Some(FSComp.SR.optsPlatform())) 
 
         CompilerOption
@@ -745,7 +774,7 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
          
           CompilerOption
              ("debug", tagFullPDBOnlyPortable,
-              OptionString (fun s -> SetDebugSwitch tcConfigB (Some(s)) OptionSwitch.On), None,
+              OptionString (fun s -> SetDebugSwitch tcConfigB (Some s) OptionSwitch.On), None,
               Some (FSComp.SR.optsDebug(if isFsi then "pdbonly" else "full")))
         ]
     let embed =
@@ -780,7 +809,12 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
            ("deterministic", tagNone,
             OptionSwitch (SetDeterministicSwitch tcConfigB), None,
             Some (FSComp.SR.optsDeterministic()))
-         
+
+          CompilerOption
+           ("pathmap", tagPathMap,
+            OptionStringList (AddPathMapping tcConfigB), None,
+            Some (FSComp.SR.optsPathMap()))
+
           CompilerOption
            ("crossoptimize", tagNone,
             OptionSwitch (crossOptimizeSwitch tcConfigB), None,
@@ -793,28 +827,41 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
 //----------------------
 
 let defineSymbol tcConfigB s = tcConfigB.conditionalCompilationDefines <- s :: tcConfigB.conditionalCompilationDefines
-      
+
 let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) = 
     CompilerOption
        ("mlcompatibility", tagNone,
         OptionUnit (fun () -> tcConfigB.mlCompatibility<-true; tcConfigB.TurnWarningOff(rangeCmdArgs, "62")), None,
         Some (FSComp.SR.optsMlcompatibility()))
 
+/// LanguageVersion management
+let setLanguageVersion (specifiedVersion) =
+
+    let languageVersion = new LanguageVersion(specifiedVersion)
+    let dumpAllowedValues () =
+        printfn "%s" (FSComp.SR.optsSupportedLangVersions())
+        for v in languageVersion.ValidOptions do printfn "%s" v
+        for v in languageVersion.ValidVersions do printfn "%s" v
+        exit 0
+
+    if specifiedVersion = "?" then dumpAllowedValues ()
+    if not (languageVersion.ContainsVersion specifiedVersion) then error(Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
+    languageVersion
+
 let languageFlags tcConfigB =
     [
-        CompilerOption
-            ("checked", tagNone,
-             OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None,
-             Some (FSComp.SR.optsChecked()))
-        
-        CompilerOption
-            ("define", tagString,
-             OptionString (defineSymbol tcConfigB), None,
-             Some (FSComp.SR.optsDefine()))
-        
+        // -langversion:?                Display the allowed values for language version
+        // -langversion:<string>         Specify language version such as
+        //                               'default' (latest major version), or
+        //                               'latest' (latest version, including minor versions),
+        //                               'preview' (features for preview)
+        //                               or specific versions like '4.7'
+        CompilerOption("langversion", tagLangVersionValues, OptionString (fun switch -> tcConfigB.langVersion <- setLanguageVersion(switch)), None, Some (FSComp.SR.optsLangVersion()))
+
+        CompilerOption("checked", tagNone, OptionSwitch (fun switch -> tcConfigB.checkOverflow <- (switch = OptionSwitch.On)), None, Some (FSComp.SR.optsChecked()))
+        CompilerOption("define", tagString, OptionString (defineSymbol tcConfigB), None, Some (FSComp.SR.optsDefine()))
         mlCompatibilityFlag tcConfigB
     ]
-    
 
 // OptionBlock: Advanced user options
 //-----------------------------------
@@ -825,28 +872,22 @@ let libFlag (tcConfigB: TcConfigBuilder) =
          OptionStringList (fun s -> tcConfigB.AddIncludePath (rangeStartup, s, tcConfigB.implicitIncludeDir)), None,
          Some (FSComp.SR.optsLib()))
 
-let libFlagAbbrev (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("I", tagDirList,
-         OptionStringList (fun s -> tcConfigB.AddIncludePath (rangeStartup, s, tcConfigB.implicitIncludeDir)), None,
-         Some (FSComp.SR.optsShortFormOf("--lib")))
-
 let codePageFlag (tcConfigB: TcConfigBuilder) = 
     CompilerOption
         ("codepage", tagInt,
          OptionInt (fun n -> 
             try 
-                System.Text.Encoding.GetEncoding(n) |> ignore
+                System.Text.Encoding.GetEncoding n |> ignore
             with :? System.ArgumentException as err -> 
                 error(Error(FSComp.SR.optsProblemWithCodepage(n, err.Message), rangeCmdArgs))
 
-            tcConfigB.inputCodePage <- Some(n)), None,
+            tcConfigB.inputCodePage <- Some n), None,
                 Some (FSComp.SR.optsCodepage()))
 
 let preferredUiLang (tcConfigB: TcConfigBuilder) = 
     CompilerOption
         ("preferreduilang", tagString,
-         OptionString (fun s -> tcConfigB.preferredUiLang <- Some(s)), None,
+         OptionString (fun s -> tcConfigB.preferredUiLang <- Some s), None,
          Some(FSComp.SR.optsPreferredUiLang()))
 
 let utf8OutputFlag (tcConfigB: TcConfigBuilder) = 
@@ -876,7 +917,7 @@ let SetTargetProfile tcConfigB v =
         | "netcore"  -> PrimaryAssembly.System_Runtime
         // Indicates we assume "netstandard.dll", i.e .NET Standard 2.0 and above
         | "netstandard"  -> PrimaryAssembly.NetStandard
-        | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile(v), rangeCmdArgs))
+        | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile v, rangeCmdArgs))
 
 let advancedFlagsBoth tcConfigB =
     [
@@ -919,6 +960,16 @@ let advancedFlagsFsc tcConfigB =
                   ("baseaddress", tagAddress,
                    OptionString (fun s -> tcConfigB.baseAddress <- Some(int32 s)), None,
                    Some (FSComp.SR.optsBaseaddress()))
+
+        yield CompilerOption
+                  ("checksumalgorithm", tagAlgorithm,
+                   OptionString (fun s ->
+                       tcConfigB.checksumAlgorithm <-
+                        match s.ToUpperInvariant() with
+                        | "SHA1" -> HashAlgorithm.Sha1
+                        | "SHA256" -> HashAlgorithm.Sha256
+                        | _ -> error(Error(FSComp.SR.optsUnknownChecksumAlgorithm s, rangeCmdArgs))), None,
+                        Some (FSComp.SR.optsChecksumAlgorithm()))
 
         yield noFrameworkFlag true tcConfigB
 
@@ -975,7 +1026,7 @@ let testFlag tcConfigB =
                 match s with
                 | "StackSpan"        -> tcConfigB.internalTestSpanStackReferring <- true
                 | "ErrorRanges"      -> tcConfigB.errorStyle <- ErrorStyle.TestErrors
-                | "Tracking"         -> Lib.tracking := true (* general purpose on/off diagnostics flag *)
+                | "Tracking"         -> Lib.tracking <- true (* general purpose on/off diagnostics flag *)
                 | "NoNeedToTailcall" -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportNoNeedToTailcall = true }
                 | "FunctionSizes"    -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportFunctionSizes = true }
                 | "TotalSizes"       -> tcConfigB.optSettings <- { tcConfigB.optSettings with reportTotalSizes = true }
@@ -985,18 +1036,18 @@ let testFlag tcConfigB =
                 | "DumpDebugInfo"    -> tcConfigB.dumpDebugInfo <- true
                 | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
                 | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
-                | str                -> warning(Error(FSComp.SR.optsUnknownArgumentToTheTestSwitch(str), rangeCmdArgs))), None,
+                | str                -> warning(Error(FSComp.SR.optsUnknownArgumentToTheTestSwitch str, rangeCmdArgs))), None,
              None)
 
 // Not shown in fsc.exe help, no warning on use, motivation is for use from tooling.
 let editorSpecificFlags (tcConfigB: TcConfigBuilder) = 
   [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.VSErrors), None, None)
-    CompilerOption("validate-type-providers", tagNone, OptionUnit (id), None, None)  // preserved for compatibility's sake, no longer has any effect
+    CompilerOption("validate-type-providers", tagNone, OptionUnit id, None, None)  // preserved for compatibility's sake, no longer has any effect
     CompilerOption("LCID", tagInt, OptionInt ignore, None, None)
     CompilerOption("flaterrors", tagNone, OptionUnit (fun () -> tcConfigB.flatErrors <- true), None, None) 
     CompilerOption("sqmsessionguid", tagNone, OptionString ignore, None, None)
     CompilerOption("gccerrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.GccErrors), None, None) 
-    CompilerOption("exename", tagNone, OptionString (fun s -> tcConfigB.exename <- Some(s)), None, None)
+    CompilerOption("exename", tagNone, OptionString (fun s -> tcConfigB.exename <- Some s), None, None)
     CompilerOption("maxerrors", tagInt, OptionInt (fun n -> tcConfigB.maxErrors <- n), None, None)
     CompilerOption("noconditionalerasure", tagNone, OptionUnit (fun () -> tcConfigB.noConditionalErasure <- true), None, None) ]
 
@@ -1041,7 +1092,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     
     CompilerOption
        ("simulateException", tagNone,
-        OptionString (fun s -> tcConfigB.simulateException <- Some(s)),
+        OptionString (fun s -> tcConfigB.simulateException <- Some s),
         Some(InternalCommandLineOption("--simulateException", rangeCmdArgs)), Some "Simulate an exception from some part of the compiler")    
     
     CompilerOption
@@ -1188,14 +1239,13 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
 
     CompilerOption
        ("metadataversion", tagString,
-        OptionString (fun s -> tcConfigB.metadataVersion <- Some(s)),
+        OptionString (fun s -> tcConfigB.metadataVersion <- Some s),
         Some(InternalCommandLineOption("metadataversion", rangeCmdArgs)), None)
   ]
 
-  
 // OptionBlock: Deprecated flags (fsc, service only)
 //--------------------------------------------------
-    
+
 let compilingFsLibFlag (tcConfigB: TcConfigBuilder) = 
     CompilerOption
         ("compiling-fslib", tagNone,
@@ -1203,26 +1253,17 @@ let compilingFsLibFlag (tcConfigB: TcConfigBuilder) =
             tcConfigB.compilingFslib <- true 
             tcConfigB.TurnWarningOff(rangeStartup, "42") 
             ErrorLogger.reportLibraryOnlyFeatures <- false
-            IlxSettings.ilxCompilingFSharpCoreLib := true),
+            IlxSettings.ilxCompilingFSharpCoreLib <- true),
          Some(InternalCommandLineOption("--compiling-fslib", rangeCmdArgs)), None)
 
-let compilingFsLib20Flag (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("compiling-fslib-20", tagNone,
-         OptionString (fun s -> tcConfigB.compilingFslib20 <- Some s ),
-         Some(InternalCommandLineOption("--compiling-fslib-20", rangeCmdArgs)), None)
+let compilingFsLib20Flag =
+    CompilerOption ("compiling-fslib-20", tagNone, OptionString (fun _ -> () ), None, None)
 
-let compilingFsLib40Flag (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("compiling-fslib-40", tagNone,
-         OptionUnit (fun () -> tcConfigB.compilingFslib40 <- true ),
-         Some(InternalCommandLineOption("--compiling-fslib-40", rangeCmdArgs)), None)
+let compilingFsLib40Flag =
+    CompilerOption ("compiling-fslib-40", tagNone, OptionUnit (fun () -> ()), None, None)
 
-let compilingFsLibNoBigIntFlag (tcConfigB: TcConfigBuilder) = 
-    CompilerOption
-        ("compiling-fslib-nobigint", tagNone,
-         OptionUnit (fun () -> tcConfigB.compilingFslibNoBigInt <- true ),
-         Some(InternalCommandLineOption("--compiling-fslib-nobigint", rangeCmdArgs)), None)
+let compilingFsLibNoBigIntFlag =
+    CompilerOption ("compiling-fslib-nobigint", tagNone, OptionUnit (fun () -> () ), None, None)
 
 let mlKeywordsFlag = 
     CompilerOption
@@ -1237,23 +1278,23 @@ let gnuStyleErrorsFlag tcConfigB =
          Some(DeprecatedCommandLineOptionNoDescription("--gnu-style-errors", rangeCmdArgs)), None)
 
 let deprecatedFlagsBoth tcConfigB =
-    [ 
+    [
       CompilerOption
          ("light", tagNone,
-          OptionUnit (fun () -> tcConfigB.light <- Some(true)),
+          OptionUnit (fun () -> tcConfigB.light <- Some true),
           Some(DeprecatedCommandLineOptionNoDescription("--light", rangeCmdArgs)), None)
 
       CompilerOption
          ("indentation-syntax", tagNone,
-          OptionUnit (fun () -> tcConfigB.light <- Some(true)),
+          OptionUnit (fun () -> tcConfigB.light <- Some true),
           Some(DeprecatedCommandLineOptionNoDescription("--indentation-syntax", rangeCmdArgs)), None)
 
       CompilerOption
          ("no-indentation-syntax", tagNone,
-          OptionUnit (fun () -> tcConfigB.light <- Some(false)),
+          OptionUnit (fun () -> tcConfigB.light <- Some false),
           Some(DeprecatedCommandLineOptionNoDescription("--no-indentation-syntax", rangeCmdArgs)), None) 
     ]
-          
+
 let deprecatedFlagsFsi tcConfigB = deprecatedFlagsBoth tcConfigB
 
 let deprecatedFlagsFsc tcConfigB =
@@ -1282,13 +1323,13 @@ let deprecatedFlagsFsc tcConfigB =
 
     CompilerOption
        ("progress", tagNone,
-        OptionUnit (fun () -> progress := true),
+        OptionUnit (fun () -> progress <- true),
         Some(DeprecatedCommandLineOptionNoDescription("--progress", rangeCmdArgs)), None)
 
     compilingFsLibFlag tcConfigB
-    compilingFsLib20Flag tcConfigB 
-    compilingFsLib40Flag tcConfigB
-    compilingFsLibNoBigIntFlag tcConfigB
+    compilingFsLib20Flag
+    compilingFsLib40Flag
+    compilingFsLibNoBigIntFlag
 
     CompilerOption
        ("version", tagString,
@@ -1352,7 +1393,7 @@ let deprecatedFlagsFsc tcConfigB =
     
     CompilerOption
        ("Ooff", tagNone,
-        OptionUnit (fun () -> SetOptimizeOff(tcConfigB)),
+        OptionUnit (fun () -> SetOptimizeOff tcConfigB),
         Some(DeprecatedCommandLineOptionSuggestAlternative("-Ooff", "--optimize-", rangeCmdArgs)), None)
 
     mlKeywordsFlag 
@@ -1395,8 +1436,10 @@ let abbreviatedFlagsBoth tcConfigB =
         CompilerOption("O", tagNone, OptionSwitch (SetOptimizeSwitch tcConfigB), None, Some(FSComp.SR.optsShortFormOf("--optimize[+|-]")))
         CompilerOption("g", tagNone, OptionSwitch (SetDebugSwitch tcConfigB None), None, Some(FSComp.SR.optsShortFormOf("--debug")))
         CompilerOption("i", tagString, OptionUnit (fun () -> tcConfigB.printSignature <- true), None, Some(FSComp.SR.optsShortFormOf("--sig")))
-        referenceFlagAbbrev tcConfigB (* -r <dll> *)
-        libFlagAbbrev tcConfigB       (* -I <dir> *)
+        CompilerOption("r", tagFile, OptionString (fun s -> tcConfigB.AddReferencedAssemblyByPath (rangeStartup, s)),
+            None, Some(FSComp.SR.optsShortFormOf("--reference")))
+        CompilerOption("I", tagDirList, OptionStringList (fun s -> tcConfigB.AddIncludePath (rangeStartup, s, tcConfigB.implicitIncludeDir)), 
+            None, Some (FSComp.SR.optsShortFormOf("--lib")))
     ]
 
 let abbreviatedFlagsFsi tcConfigB = abbreviatedFlagsBoth tcConfigB
@@ -1543,10 +1586,10 @@ let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =
 
 let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string list, commandLineArgs) =
     try
-        let sourceFilesAcc = ResizeArray(sourceFiles)
-        let collect name = if not (Filename.isDll name) then sourceFilesAcc.Add(name)
+        let sourceFilesAcc = ResizeArray sourceFiles
+        let collect name = if not (Filename.isDll name) then sourceFilesAcc.Add name
         ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, commandLineArgs)
-        ResizeArray.toList(sourceFilesAcc)
+        ResizeArray.toList sourceFilesAcc
     with e ->
         errorRecovery e range0
         sourceFiles
@@ -1556,29 +1599,28 @@ let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string list, c
 // PrintWholeAssemblyImplementation
 //----------------------------------------------------------------------------
 
-let showTermFileCount = ref 0    
-let PrintWholeAssemblyImplementation (tcConfig:TcConfig) outfile header expr =
+let mutable showTermFileCount = 0    
+let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then 
             let filename = outfile + ".terms"
-            let n = !showTermFileCount
-            showTermFileCount := n+1
-            use f = System.IO.File.CreateText (filename + "-" + string n + "-" + header)
-            Layout.outL f (Layout.squashTo 192 (DebugPrint.implFilesL expr))
+            use f = System.IO.File.CreateText (filename + "-" + string showTermFileCount + "-" + header)
+            showTermFileCount <- showTermFileCount + 1
+            Layout.outL f (Layout.squashTo 192 (DebugPrint.implFilesL g expr))
         else 
             dprintf "\n------------------\nshowTerm: %s:\n" header
-            Layout.outL stderr (Layout.squashTo 192 (DebugPrint.implFilesL expr))
+            Layout.outL stderr (Layout.squashTo 192 (DebugPrint.implFilesL g expr))
             dprintf "\n------------------\n"
 
 //----------------------------------------------------------------------------
 // ReportTime 
 //----------------------------------------------------------------------------
 
-let tPrev = ref None
-let nPrev = ref None
+let mutable tPrev = None
+let mutable nPrev = None
 let ReportTime (tcConfig:TcConfig) descr =
     
-    match !nPrev with
+    match nPrev with
     | None -> ()
     | Some prevDescr ->
         if tcConfig.pause then 
@@ -1589,16 +1631,10 @@ let ReportTime (tcConfig:TcConfig) descr =
         | Some("fsc-oom") -> raise(System.OutOfMemoryException())
         | Some("fsc-an") -> raise(System.ArgumentNullException("simulated"))
         | Some("fsc-invop") -> raise(System.InvalidOperationException())
-#if FX_REDUCED_EXCEPTIONS
-#else
         | Some("fsc-av") -> raise(System.AccessViolationException())
-#endif
         | Some("fsc-aor") -> raise(System.ArgumentOutOfRangeException())
         | Some("fsc-dv0") -> raise(System.DivideByZeroException())
-#if FX_REDUCED_EXCEPTIONS
-#else
         | Some("fsc-nfn") -> raise(System.NotFiniteNumberException())
-#endif
         | Some("fsc-oe") -> raise(System.OverflowException())
         | Some("fsc-atmm") -> raise(System.ArrayTypeMismatchException())
         | Some("fsc-bif") -> raise(System.BadImageFormatException())
@@ -1621,13 +1657,13 @@ let ReportTime (tcConfig:TcConfig) descr =
         // make this call unless showTimes has been turned on.
         let timeNow = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
         let maxGen = System.GC.MaxGeneration
-        let gcNow = [| for i in 0 .. maxGen -> System.GC.CollectionCount(i) |]
+        let gcNow = [| for i in 0 .. maxGen -> System.GC.CollectionCount i |]
         let ptime = System.Diagnostics.Process.GetCurrentProcess()
         let wsNow = ptime.WorkingSet64/1000000L
 
-        match !tPrev, !nPrev with
+        match tPrev, nPrev with
         | Some (timePrev, gcPrev:int []), Some prevDescr ->
-            let spanGC = [| for i in 0 .. maxGen -> System.GC.CollectionCount(i) - gcPrev.[i] |]
+            let spanGC = [| for i in 0 .. maxGen -> System.GC.CollectionCount i - gcPrev.[i] |]
             dprintf "TIME: %4.1f Delta: %4.1f Mem: %3d" 
                 timeNow (timeNow - timePrev) 
                 wsNow
@@ -1636,18 +1672,18 @@ let ReportTime (tcConfig:TcConfig) descr =
                 prevDescr
 
         | _ -> ()
-        tPrev := Some (timeNow, gcNow)
+        tPrev <- Some (timeNow, gcNow)
 
-    nPrev := Some descr
+    nPrev <- Some descr
 
 //----------------------------------------------------------------------------
 // OPTIMIZATION - support - addDllToOptEnv
 //----------------------------------------------------------------------------
 
-let AddExternalCcuToOpimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) =
+let AddExternalCcuToOptimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) =
     match ccuinfo.FSharpOptimizationData.Force() with 
     | None -> optEnv
-    | Some(data) -> Optimizer.BindCcu ccuinfo.FSharpViewOfMetadata data optEnv tcGlobals
+    | Some data -> Optimizer.BindCcu ccuinfo.FSharpViewOfMetadata data optEnv tcGlobals
 
 //----------------------------------------------------------------------------
 // OPTIMIZATION - support - optimize
@@ -1656,7 +1692,7 @@ let AddExternalCcuToOpimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) 
 let GetInitialOptimizationEnv (tcImports:TcImports, tcGlobals:TcGlobals) =
     let ccuinfos = tcImports.GetImportedAssemblies()
     let optEnv = Optimizer.IncrementalOptimizationEnv.Empty
-    let optEnv = List.fold (AddExternalCcuToOpimizationEnv tcGlobals) optEnv ccuinfos 
+    let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) optEnv ccuinfos 
     optEnv
    
 let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu:CcuThunk, implFiles) =
@@ -1665,13 +1701,13 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
     // Always optimize once - the results of this step give the x-module optimization 
     // info.  Subsequent optimization steps choose representations etc. which we don't 
     // want to save in the x-module info (i.e. x-module info is currently "high level"). 
-    PrintWholeAssemblyImplementation tcConfig outfile "pass-start" implFiles
+    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-start" implFiles
 #if DEBUG
     if tcConfig.showOptimizationData then 
-        dprintf "Expression prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.implFilesL implFiles)))
+        dprintf "Expression prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.implFilesL tcGlobals implFiles)))
     
     if tcConfig.showOptimizationData then 
-        dprintf "CCU prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.entityL ccu.Contents)))
+        dprintf "CCU prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.entityL tcGlobals ccu.Contents)))
 #endif
 
     let optEnv0 = optEnv
@@ -1752,12 +1788,10 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 
     let implFiles, implFileOptDatas = List.unzip results
     let assemblyOptData = Optimizer.UnionOptimizationInfos implFileOptDatas
-    let tassembly = TypedAssemblyAfterOptimization(implFiles)
-    PrintWholeAssemblyImplementation tcConfig outfile "pass-end" (List.map fst implFiles)
+    let tassembly = TypedAssemblyAfterOptimization implFiles
+    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-end" (List.map fst implFiles)
     ReportTime tcConfig ("Ending Optimizations")
-
     tassembly, assemblyOptData, optEnvFirstLoop
-
 
 //----------------------------------------------------------------------------
 // ILX generation 
@@ -1800,14 +1834,17 @@ let GenerateIlxCode
 // by the same references. Only used for static linking.
 //----------------------------------------------------------------------------
 
-let NormalizeAssemblyRefs (ctok, tcImports:TcImports) scoref =
+let NormalizeAssemblyRefs (ctok, ilGlobals: ILGlobals, tcImports:TcImports) scoref =
+    let normalizeAssemblyRefByName nm =
+        match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, nm, lookupOnly=false) with 
+        | Some dllInfo -> dllInfo.ILScopeRef
+        | None -> scoref
+
     match scoref with 
     | ILScopeRef.Local 
     | ILScopeRef.Module _ -> scoref
-    | ILScopeRef.Assembly aref -> 
-        match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
-        | Some dllInfo -> dllInfo.ILScopeRef
-        | None -> scoref
+    | ILScopeRef.PrimaryAssembly -> normalizeAssemblyRefByName ilGlobals.primaryAssemblyName
+    | ILScopeRef.Assembly aref -> normalizeAssemblyRefByName aref.Name
 
 let GetGeneratedILModuleName (t:CompilerTarget) (s:string) = 
     // return the name of the file as a module name
