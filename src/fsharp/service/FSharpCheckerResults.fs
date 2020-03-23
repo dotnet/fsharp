@@ -230,15 +230,17 @@ type internal TypeCheckInfo
                 NameResResult.Members (items, denv, m) 
         else NameResResult.Empty
 
-    let GetCapturedNameResolutions endOfNamesPos resolveOverloads =
+    let GetCapturedNameResolutions (endOfNamesPos: pos) resolveOverloads =
 
         let quals = 
             match resolveOverloads with 
             | ResolveOverloads.Yes -> sResolutions.CapturedNameResolutions 
             | ResolveOverloads.No -> sResolutions.CapturedMethodGroupResolutions
 
-        let quals = quals |> ResizeArray.filter (fun cnr ->  posEq cnr.Pos endOfNamesPos)
-        
+        let quals = quals |> ResizeArray.filter (fun cnr ->
+            let range = cnr.Range
+            range.EndLine = endOfNamesPos.Line && range.EndColumn = endOfNamesPos.Column)
+
         quals
 
     /// Looks at the exact name resolutions that occurred during type checking
@@ -254,7 +256,7 @@ type internal TypeCheckInfo
         
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
-        | CNR(_,Item.Types(_,(ty::_)), _, denv, nenv, ad, m)::_, Some _ -> 
+        | CNR(Item.Types(_,(ty::_)), _, denv, nenv, ad, m)::_, Some _ -> 
             let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true ty 
             let items = List.map ItemWithNoInst items
             ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck 
@@ -266,7 +268,7 @@ type internal TypeCheckInfo
         //   let varA = if b then 0 else varA.
         // then the expression typings get confused (thinking 'varA:int'), so we use name resolution even for usual values.
         
-        | CNR(_, Item.Value(vref), occurence, denv, nenv, ad, m)::_, Some _ ->
+        | CNR(Item.Value(vref), occurence, denv, nenv, ad, m)::_, Some _ ->
             if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then 
               // Return empty list to stop further lookup - for value declarations
               NameResResult.Cancel(denv, m)
@@ -293,7 +295,7 @@ type internal TypeCheckInfo
               ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck
         
         // No residue, so the items are the full resolution of the name
-        | CNR(_, _, _, denv, _, _, m) :: _, None -> 
+        | CNR(_, _, denv, _, _, m) :: _, None -> 
             let items = 
                 cnrs 
                 |> List.map (fun cnr -> cnr.ItemWithInst)
@@ -308,8 +310,8 @@ type internal TypeCheckInfo
         let items = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
         
         match items, membersByResidue with 
-        | CNR(_,Item.Types(_,(ty::_)),_,_,_,_,_)::_, Some _ -> Some ty
-        | CNR(_, Item.Value(vref), occurence,_,_,_,_)::_, Some _ ->
+        | CNR(Item.Types(_,(ty::_)),_,_,_,_,_)::_, Some _ -> Some ty
+        | CNR(Item.Value(vref), occurence,_,_,_,_)::_, Some _ ->
             if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then None
             else Some (StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
         | _, _ -> None
@@ -330,12 +332,12 @@ type internal TypeCheckInfo
         let cnrs = GetCapturedNameResolutions endOfExprPos ResolveOverloads.No |> ResizeArray.toList |> List.rev
         let result =
             match cnrs with
-            | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
+            | CNR(Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
                 let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.ApparentEnclosingType
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
                 Some (denv, m, items)
-            | CNR(_, Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) ::_ ->
+            | CNR(Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) ::_ ->
                 let props = 
                     methods
                     |> List.collect (fun meth ->
