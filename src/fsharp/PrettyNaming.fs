@@ -714,3 +714,24 @@ module public FSharp.Compiler.PrettyNaming
         mangleProvidedTypeName (nm, nonDefaultArgs)
 
     let outArgCompilerGeneratedName = "outArg"
+
+
+    /// Reuses generated union case field name objects for common field numbers
+    let mkUnionCaseFieldName =
+        let names =
+            [| 1 .. 10 |]
+            |> Array.map (fun i -> "Item" + string i)
+
+        fun nFields i ->
+            match nFields with
+            | 0 | 1 -> "Item"
+            | _ -> if i < 10 then names.[i] else "Item" + string (i + 1)
+
+    /// Reuses generated exception field name objects for common field numbers
+    let mkExceptionFieldName =
+        let names =
+            [| 0 .. 9 |]
+            |> Array.map (fun i -> "Data" + string i)
+
+        fun i ->
+            if i < 10 then names.[i] else "Data" + string i

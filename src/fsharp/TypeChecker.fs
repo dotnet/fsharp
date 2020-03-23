@@ -12752,12 +12752,11 @@ module TcRecdUnionAndEnumDeclarations = begin
 
         CheckUnionCaseName cenv id
 
-        let mkName nFields i = if nFields <= 1 then "Item" else "Item"+string (i+1)
         let rfields, recordTy = 
             match args with
             | UnionCaseFields flds -> 
                 let nFields = flds.Length
-                let rfields = flds |> List.mapi (fun i fld -> TcAnonFieldDecl cenv env parent tpenv (mkName nFields i) fld)
+                let rfields = flds |> List.mapi (fun i fld -> TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
                 ValidateFieldNames(flds, rfields)
                 
                 rfields, thisTy
@@ -12770,7 +12769,7 @@ module TcRecdUnionAndEnumDeclarations = begin
                 let nFields = argTys.Length
                 let rfields = 
                     argTys |> List.mapi (fun i (argty, argInfo) ->
-                        let id = (match argInfo.Name with Some id -> id | None -> mkSynId m (mkName nFields i))
+                        let id = (match argInfo.Name with Some id -> id | None -> mkSynId m (mkUnionCaseFieldName nFields i))
                         MakeRecdFieldSpec cenv env parent (false, None, argty, [], [], id, argInfo.Name.IsNone, false, false, XmlDoc.Empty, None, m))
                 if not (typeEquiv cenv.g recordTy thisTy) then 
                     error(Error(FSComp.SR.tcReturnTypesForUnionMustBeSameAsType(), m))
@@ -15134,7 +15133,7 @@ module TcExceptionDeclarations =
         let ad = env.eAccessRights
         let id = exnc.Id
         
-        let args' = List.mapi (fun i fdef -> TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv ("Data" + string i) fdef) args
+        let args' = List.mapi (fun i fdef -> TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkExceptionFieldName i) fdef) args
         TcRecdUnionAndEnumDeclarations.ValidateFieldNames(args, args')
         let repr = 
           match reprIdOpt with 
