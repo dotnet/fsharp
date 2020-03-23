@@ -15171,7 +15171,7 @@ module TcExceptionDeclarations =
                     let tcref = mkLocalTyconRef exnc
                     let thisTypInst, _ = generalizeTyconRef tcref
                     let item = Item.RecdField (RecdFieldInfo (thisTypInst, RFRef (tcref, fieldId.idText)))
-                    CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.AccessRights)
+                    CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
                 | _ -> ()
 
                 TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkExceptionFieldName i) fdef)
