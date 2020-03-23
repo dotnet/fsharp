@@ -32,7 +32,7 @@ type SemanticClassificationType =
 [<AutoOpen>]
 module internal TcResolutionsExtensions =
 
-    val (|CNR|) : cnr: CapturedNameResolution -> (pos * Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range)
+    val (|CNR|) : cnr: CapturedNameResolution -> (Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range)
 
     type TcResolutions with
 
