@@ -1649,7 +1649,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | ILFieldUse ilfinfo -> ilfinfo.ComputeHashCode()
     | UnionCaseUse ucase ->  hash ucase.CaseName
     | RecordFieldUse (name, _) -> hash name
-    | UnionCaseFieldUse (name, _) -> hash name
+    | UnionCaseFieldUse (fieldIndex, case) -> hash (case.CaseName, fieldIndex)
     | EventUse einfo -> einfo.ComputeHashCode()
     | Item.ModuleOrNamespaces (mref :: _) -> hash mref.DefinitionRange
     | _ -> 389329
