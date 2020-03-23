@@ -179,7 +179,7 @@
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
-    </Compile>    
+    </Compile>
     <FsLex Include="..\..\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbsIL\illex.fsl</Link>
@@ -410,6 +410,9 @@
     <Compile Include="..\AttributeChecking.fs">
       <Link>Logic\AttributeChecking.fs</Link>
     </Compile>
+    <Compile Include="..\TypeRelations.fs">
+      <Link>Logic\TypeRelations.fs</Link>
+    </Compile>
     <Compile Include="..\InfoReader.fs">
       <Link>Logic\InfoReader.fs</Link>
     </Compile>
@@ -427,9 +430,6 @@
     </Compile>
     <Compile Include="..\NameResolution.fs">
       <Link>Logic\NameResolution.fs</Link>
-    </Compile>
-    <Compile Include="..\TypeRelations.fs">
-      <Link>Logic\TypeRelations.fs</Link>
     </Compile>
     <Compile Include="..\SignatureConformance.fs">
       <Link>Logic\SignatureConformance.fs</Link>
@@ -521,12 +521,6 @@
     <!-- includes the core of the F# Compiler fsc.exe implementation -->
     <Compile Include="..\DotNetFrameworkDependencies.fs">
       <Link>Driver\DotNetFrameworkDependencies.fs</Link>
-    </Compile>
-    <Compile Include="..\DependencyManager.Integration.fsi">
-      <Link>Driver\DependencyManager.Integration.fsi</Link>
-    </Compile>
-    <Compile Include="..\DependencyManager.Integration.fs">
-      <Link>Driver\DependencyManager.Integration.fs</Link>
     </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
@@ -720,9 +714,9 @@
     </Compile>
   </ItemGroup>
 
-
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Interactive.DependencyManager\Interactive.DependencyManager.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">

@@ -10,8 +10,6 @@ open System.Reflection
 open System.Runtime.CompilerServices
 open System.Runtime.Versioning
 
-open Internal.Utilities.FSharpEnvironment
-
 // Package reference information
 type PackageReference = {
     Include:string
@@ -123,6 +121,7 @@ $(POUND_R)
     <IsPackable>false</IsPackable>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
 
     <!-- Temporary fix some sdks, shipped internally with broken parameterization -->
     <FSharpCoreImplicitPackageVersion Condition="'$(FSharpCoreImplicitPackageVersion)' == '{{FSharpCoreShippedPackageVersion}}'">4.7.0</FSharpCoreImplicitPackageVersion>
@@ -185,7 +184,10 @@ $(PACKAGEREFERENCES)
 
     <ItemGroup>
       <ResolvedReferenceLines Remove='*' />
-      <ResolvedReferenceLines Include='%(InteractiveResolvedFile.NugetPackageId),%(InteractiveResolvedFile.NugetPackageVersion),%(InteractiveResolvedFile.PackageRoot),%(InteractiveResolvedFile.FullPath),%(InteractiveResolvedFile.IsNotImplementationReference),%(InteractiveResolvedFile.InitializeSourcePath),%(NativeIncludeRoots.Path)' KeepDuplicates="false" />
+      <ResolvedReferenceLines
+          Condition="'$(SCRIPTEXTENSION)'=='.csx' or '%(InteractiveResolvedFile.NugetPackageId)'!='FSharp.Core'"
+          Include='%(InteractiveResolvedFile.NugetPackageId),%(InteractiveResolvedFile.NugetPackageVersion),%(InteractiveResolvedFile.PackageRoot),%(InteractiveResolvedFile.FullPath),%(InteractiveResolvedFile.IsNotImplementationReference),%(InteractiveResolvedFile.InitializeSourcePath),%(NativeIncludeRoots.Path)'
+          KeepDuplicates="false" />
     </ItemGroup>
 
     <WriteLinesToFile Lines='@(ResolvedReferenceLines)' 

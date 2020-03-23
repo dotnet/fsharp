@@ -1149,7 +1149,6 @@ type MethInfo =
 #endif
 
     member x.IsNewSlot =
-        isInterfaceTy x.TcGlobals x.ApparentEnclosingType  ||
         (x.IsVirtual &&
           (match x with
            | ILMeth(_, x, _) -> x.IsNewSlot
@@ -1158,6 +1157,12 @@ type MethInfo =
            | ProvidedMeth(_, mi, _, m) -> mi.PUntaint((fun mi -> mi.IsHideBySig), m) // REVIEW: Check this is correct
 #endif
            | DefaultStructCtor _ -> false))
+
+    /// Indicates if this is an IL method.
+    member x.IsILMethod =
+        match x with
+        | ILMeth _ -> true
+        | _ -> false
 
     /// Check if this method is an explicit implementation of an interface member
     member x.IsFSharpExplicitInterfaceImplementation =
@@ -2524,10 +2529,9 @@ let CompiledSigOfMeth g amap m (minfo: MethInfo) =
 
     CompiledSig(vargtys, vrty, formalMethTypars, fmtpinst)
 
-/// Used to hide/filter members from super classes based on signature
+
 /// Inref and outref parameter types will be treated as a byref type for equivalency.
-let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo) (minfo2: MethInfo) =
-    (minfo.LogicalName = minfo2.LogicalName) &&
+let MethInfosEquivByPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo) (minfo2: MethInfo) =
     (minfo.GenericArity = minfo2.GenericArity) &&
     (ignoreFinal || minfo.IsFinal = minfo2.IsFinal) &&
     let formalMethTypars = minfo.FormalMethodTypars
@@ -2538,6 +2542,12 @@ let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo: M
     let argtys2 = minfo2.GetParamTypes(amap, m, fminst2)
     (argtys, argtys2) ||> List.lengthsEqAndForall2 (List.lengthsEqAndForall2 (fun ty1 ty2 ->
         typeAEquivAux erasureFlag g (TypeEquivEnv.FromEquivTypars formalMethTypars formalMethTypars2) (stripByrefTy g ty1) (stripByrefTy g ty2)))
+
+/// Used to hide/filter members from super classes based on signature
+/// Inref and outref parameter types will be treated as a byref type for equivalency.
+let MethInfosEquivByNameAndPartialSig erasureFlag ignoreFinal g amap m (minfo: MethInfo) (minfo2: MethInfo) =
+    (minfo.LogicalName = minfo2.LogicalName) &&
+    MethInfosEquivByPartialSig erasureFlag ignoreFinal g amap m minfo minfo2
 
 /// Used to hide/filter members from super classes based on signature
 let PropInfosEquivByNameAndPartialSig erasureFlag g amap m (pinfo: PropInfo) (pinfo2: PropInfo) =

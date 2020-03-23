@@ -229,6 +229,11 @@ module CoreTests =
     [<Test>]
     let ``recordResolution-FSI_BASIC`` () = singleTestBuildAndRun "core/recordResolution" FSI_BASIC
 
+    [<Test>]
+    let ``SDKTests`` () =
+        let cfg = testConfig "SDKTests"
+        exec cfg cfg.DotNetExe ("msbuild " + Path.Combine(cfg.Directory, "AllSdkTargetsTests.proj"))
+
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC
@@ -2950,17 +2955,35 @@ module GeneratedSignatureTests =
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module OverloadResolution =
-    module FSharpQAMigrated = 
+    module ``fsharpqa migrated tests`` = 
         let [<Test>] ``Conformance\Expressions\SyntacticSugar (E_Slices01.fs)`` () = singleNegTest (testConfig "conformance/expressions/syntacticsugar") "E_Slices01"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_OneTypeVariable03.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_OneTypeVariable03rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03rec"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoDifferentTypeVariables01.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariables01"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoDifferentTypeVariables01rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariables01rec"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoDifferentTypeVariablesGen00rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariablesGen00rec"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoEqualTypeVariables02.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoEqualTypeVariables02"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoEqualYypeVariables02rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoEqualYypeVariables02rec"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_LeftToRightOverloadResolution01.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_LeftToRightOverloadResolution01"
-        let [<Test>] ``Conformance\InferenceProcedures\WellFormednessChecking (E_Clashing_Values_in_AbstractClass01.fs) `` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass01"
-        let [<Test>] ``Conformance\InferenceProcedures\WellFormednessChecking (E_Clashing_Values_in_AbstractClass03.fs) `` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass03"
-        let [<Test>] ``Conformance\InferenceProcedures\WellFormednessChecking (E_Clashing_Values_in_AbstractClass04.fs) `` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass04"
+        let [<Test>] ``Conformance\Expressions\Type-relatedExpressions (E_RigidTypeAnnotation03.fsx)`` () = singleNegTest (testConfig "conformance/expressions/type-relatedexpressions") "E_RigidTypeAnnotation03"
+        let [<Test>] ``Conformance\Inference (E_OneTypeVariable03.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03"
+        let [<Test>] ``Conformance\Inference (E_OneTypeVariable03rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03rec"
+        let [<Test>] ``Conformance\Inference (E_TwoDifferentTypeVariablesGen00.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariablesGen00"
+        let [<Test>] ``Conformance\Inference (E_TwoDifferentTypeVariables01.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariables01"
+        let [<Test>] ``Conformance\Inference (E_TwoDifferentTypeVariables01rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariables01rec"
+        let [<Test>] ``Conformance\Inference (E_TwoDifferentTypeVariablesGen00rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariablesGen00rec"
+        let [<Test>] ``Conformance\Inference (E_TwoEqualTypeVariables02.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoEqualTypeVariables02"
+        let [<Test>] ``Conformance\Inference (E_TwoEqualYypeVariables02rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoEqualYypeVariables02rec"
+        let [<Test>] ``Conformance\Inference (E_LeftToRightOverloadResolution01.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_LeftToRightOverloadResolution01"
+        let [<Test>] ``Conformance\WellFormedness (E_Clashing_Values_in_AbstractClass01.fs)`` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass01"
+        let [<Test>] ``Conformance\WellFormedness (E_Clashing_Values_in_AbstractClass03.fs)`` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass03"
+        let [<Test>] ``Conformance\WellFormedness (E_Clashing_Values_in_AbstractClass04.fs)`` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass04"
+        // note: this test still exist in fsharpqa to assert the compiler doesn't crash
+        // the part of the code generating a flaky error due to https://github.com/dotnet/fsharp/issues/6725
+        // is elided here to focus on overload resolution error messages
+        let [<Test>] ``Conformance\LexicalAnalysis\SymbolicOperators (E_LessThanDotOpenParen001.fs)`` () = singleNegTest (testConfig "conformance/lexicalanalysis") "E_LessThanDotOpenParen001"
+    
+    module ``error messages using BCL``=
+        let [<Test>] ``neg_System.Convert.ToString.OverloadList``() = singleNegTest (testConfig "typecheck/overloads") "neg_System.Convert.ToString.OverloadList"
+        let [<Test>] ``neg_System.Threading.Tasks.Task.Run.OverloadList``() = singleNegTest (testConfig "typecheck/overloads") "neg_System.Threading.Tasks.Task.Run.OverloadList"
+        let [<Test>] ``neg_System.Drawing.Graphics.DrawRectangleOverloadList.fsx``() = singleNegTest (testConfig "typecheck/overloads") "neg_System.Drawing.Graphics.DrawRectangleOverloadList"
+
+    module ``ad hoc code overload error messages``=
+        let [<Test>] ``neg_many_many_overloads`` () = singleNegTest (testConfig "typecheck/overloads") "neg_many_many_overloads"
+        let [<Test>] ``neg_interface_generics`` () = singleNegTest (testConfig "typecheck/overloads") "neg_interface_generics"
+        let [<Test>] ``neg_known_return_type_and_known_type_arguments`` () = singleNegTest (testConfig "typecheck/overloads") "neg_known_return_type_and_known_type_arguments"
+        let [<Test>] ``neg_generic_known_argument_types`` () = singleNegTest (testConfig "typecheck/overloads") "neg_generic_known_argument_types"
+        let [<Test>] ``neg_tupled_arguments`` () = singleNegTest (testConfig "typecheck/overloads") "neg_tupled_arguments"
 #endif

@@ -21,15 +21,6 @@ type FSharpScript(?additionalArgs: string[]) =
 
     member __.ValueBound = fsi.ValueBound
 
-    [<CLIEvent>]
-    member __.DependencyAdding = fsi.DependencyAdding
-
-    [<CLIEvent>]
-    member __.DependencyAdded = fsi.DependencyAdded
-
-    [<CLIEvent>]
-    member __.DependencyFailed = fsi.DependencyFailed
-
     member __.Fsi = fsi
 
     member __.Eval(code: string, ?cancellationToken: CancellationToken) =

@@ -1,6 +1,6 @@
 // #Regression #Conformance #DeclarationElements #Accessibility 
 //
-//<Expects status="error" span="(13,12-13,67)" id="FS0561">Accessibility modifiers are not allowed on this member\. Abstract slots always have the same visibility as the enclosing type</Expects>
+//<Expects status="error" span="(13,5-13,67)" id="FS0561">Accessibility modifiers are not allowed on this member\. Abstract slots always have the same visibility as the enclosing type</Expects>
 //
 
 type public IDoStuffAsWell =

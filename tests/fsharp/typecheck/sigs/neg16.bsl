@@ -63,11 +63,15 @@ but here has type
 
 neg16.fs(85,8,85,18): typecheck error FS0039: The pattern discriminator 'FooA++' is not defined.
 
+neg16.fs(85,7,85,22): typecheck error FS0025: Incomplete pattern matches on this expression.
+
 neg16.fs(87,50,87,54): typecheck error FS0039: The value or constructor 'OneA' is not defined.
 
 neg16.fs(87,60,87,69): typecheck error FS0039: The value or constructor 'TwoA+' is not defined.
 
 neg16.fs(90,8,90,18): typecheck error FS0039: The pattern discriminator 'FooB++' is not defined.
+
+neg16.fs(90,7,90,22): typecheck error FS0025: Incomplete pattern matches on this expression.
 
 neg16.fs(97,15,97,16): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
 

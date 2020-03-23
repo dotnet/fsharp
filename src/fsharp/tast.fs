@@ -2058,12 +2058,9 @@ and Construct =
         let id = ident (name, m)
         let kind = 
             let isMeasure = 
-                st.PApplyWithProvider((fun (st, provider) -> 
-                    let findAttrib (ty: System.Type) (a: CustomAttributeData) = (a.Constructor.DeclaringType.FullName = ty.FullName)  
-                    let ty = st.RawSystemType
+                st.PApplyWithProvider((fun (st, provider) ->
                     ignore provider
-                    ty.CustomAttributes
-                        |> Seq.exists (findAttrib typeof<Microsoft.FSharp.Core.MeasureAttribute>)), m)
+                    st.IsMeasure), m)
                   .PUntaintNoFailure(fun x -> x)
             if isMeasure then TyparKind.Measure else TyparKind.Type
 
@@ -2407,11 +2404,9 @@ and
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TraitConstraintInfo = 
 
-    /// TTrait(tys, nm, memFlags, argtys, rty, solution)
-    ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of TTypes * string * MemberFlags * TTypes * TType option * TraitConstraintSln option ref 
+    | TTrait of tys: TTypes * memberName: string * _memFlags: MemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
 
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
@@ -4569,6 +4564,9 @@ and
     ///     idx -- The case number of the active pattern which the test relates to.
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
+
+    /// Used in error recovery
+    | Error of range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]

@@ -282,6 +282,10 @@ module internal ExtensionTyping =
     [<AllowNullLiteral; Sealed>]
     type ProvidedType (x: System.Type, ctxt: ProvidedTypeContext) =
         inherit ProvidedMemberInfo(x, ctxt)
+        let isMeasure = 
+            lazy
+                x.CustomAttributes 
+                |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = typeof<MeasureAttribute>.FullName)
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
         interface IProvidedCustomAttributeProvider with 
             member __.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
@@ -301,7 +305,7 @@ module internal ExtensionTyping =
         member __.Namespace = x.Namespace
         member __.FullName = x.FullName
         member __.IsArray = x.IsArray
-        member __.Assembly = x.Assembly |> ProvidedAssembly.Create ctxt
+        member __.Assembly = x.Assembly |> ProvidedAssembly.Create
         member __.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
         member __.GetMethods() = x.GetMethods bindingFlags |> ProvidedMethodInfo.CreateArray ctxt
         member __.GetEvents() = x.GetEvents bindingFlags |> ProvidedEventInfo.CreateArray ctxt
@@ -334,6 +338,7 @@ module internal ExtensionTyping =
         member __.IsNestedPublic = x.IsNestedPublic
         member __.IsEnum = x.IsEnum
         member __.IsClass = x.IsClass
+        member __.IsMeasure = isMeasure.Value
         member __.IsSealed = x.IsSealed
         member __.IsAbstract = x.IsAbstract
         member __.IsInterface = x.IsInterface
@@ -343,7 +348,14 @@ module internal ExtensionTyping =
         /// Type.GetEnumUnderlyingType either returns type or raises exception, null is not permitted
         member __.GetEnumUnderlyingType() = 
             x.GetEnumUnderlyingType() 
-            |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"
+            |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"    
+        member __.MakePointerType() = ProvidedType.CreateNoContext(x.MakePointerType())
+        member __.MakeByRefType() = ProvidedType.CreateNoContext(x.MakeByRefType())
+        member __.MakeArrayType() = ProvidedType.CreateNoContext(x.MakeArrayType())
+        member __.MakeArrayType rank = ProvidedType.CreateNoContext(x.MakeArrayType(rank))
+        member __.MakeGenericType (args: ProvidedType[]) =
+            let argTypes = args |> Array.map (fun arg -> arg.RawSystemType)
+            ProvidedType.CreateNoContext(x.MakeGenericType(argTypes))
         static member Create ctxt x = match x with null -> null | t -> ProvidedType (t, ctxt)
         static member CreateWithNullCheck ctxt name x = match x with null -> nullArg name | t -> ProvidedType (t, ctxt)
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedType.Create ctxt)
@@ -445,11 +457,11 @@ module internal ExtensionTyping =
         override __.GetHashCode() = assert false; x.GetHashCode()
 
     and [<AllowNullLiteral; Sealed>] 
-        ProvidedAssembly (x: System.Reflection.Assembly, _ctxt) = 
+        ProvidedAssembly (x: System.Reflection.Assembly) = 
         member __.GetName() = x.GetName()
         member __.FullName = x.FullName
         member __.GetManifestModuleContents(provider: ITypeProvider) = provider.GetGeneratedAssemblyContents x
-        static member Create ctxt x = match x with null -> null | t -> ProvidedAssembly (t, ctxt)
+        static member Create (x: System.Reflection.Assembly) = match x with null -> null | t -> ProvidedAssembly (t)
         member __.Handle = x
         override __.Equals y = assert false; match y with :? ProvidedAssembly as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
@@ -1087,9 +1099,8 @@ module internal ExtensionTyping =
                           /// Find the name of the representation type for the static parameter
                           let spReprTypeName = 
                               sp.PUntaint((fun sp -> 
-                                  let pt = sp.ParameterType 
-                                  let ut = pt.RawSystemType
-                                  let uet = if pt.IsEnum then ut.GetEnumUnderlyingType() else ut
+                                  let pt = sp.ParameterType
+                                  let uet = if pt.IsEnum then pt.GetEnumUnderlyingType() else pt
                                   uet.FullName), m)
 
                           match spReprTypeName with 

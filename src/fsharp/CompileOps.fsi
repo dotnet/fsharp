@@ -27,6 +27,7 @@ open Microsoft.FSharp.Core.CompilerServices
 open FSharp.Compiler.ExtensionTyping
 #endif
 
+open Microsoft.Interactive.DependencyManager
 
 #if DEBUG
 
@@ -389,6 +390,9 @@ type TcConfigBuilder =
       mutable pathMap : PathMap
 
       mutable langVersion : LanguageVersion
+
+      mutable dependencyProvider : DependencyProvider
+
     }
 
     static member Initial: TcConfigBuilder
@@ -685,7 +689,7 @@ val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: s
 
 /// Processing # commands
 val ProcessMetaCommandsFromInput : 
-    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> DependencyManagerIntegration.IDependencyManagerProvider * range * string -> 'T) * ('T -> range * string -> unit)) 
+    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> IDependencyManagerProvider * range * string -> 'T) * ('T -> range * string -> unit)) 
     -> TcConfigBuilder * Ast.ParsedInput * string * 'T 
     -> 'T
 
