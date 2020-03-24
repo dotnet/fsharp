@@ -412,8 +412,8 @@ module public AstTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
                 | SynExpr.Lazy (synExpr, _range) -> traverseSynExpr synExpr
-                | SynExpr.SequentialOrImplicitYield (_SequencePointInfoForSequential, synExpr, synExpr2, _, _range) 
-                | SynExpr.Sequential (_SequencePointInfoForSequential, _, synExpr, synExpr2, _range) -> 
+                | SynExpr.SequentialOrImplicitYield (_sequencePointInfoForSequential, synExpr, synExpr2, _, _range) 
+                | SynExpr.Sequential (_sequencePointInfoForSequential, _, synExpr, synExpr2, _range) -> 
                     [dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
