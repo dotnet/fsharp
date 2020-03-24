@@ -4714,7 +4714,7 @@ and
     | Val of ValRef * ValUseFlag * range
 
     /// Sequence expressions, used for "a;b", "let a = e in b;a" and "a then b" (the last an OO constructor). 
-    | Sequential of Expr * Expr * SequentialOpKind * SequencePointInfoForSeq * range
+    | Sequential of Expr * Expr * SequentialOpKind * SequencePointInfoForSequential * range
 
     /// Lambda expressions. 
     

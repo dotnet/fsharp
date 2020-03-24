@@ -5579,7 +5579,7 @@ let rec remarkExpr m x =
         Expr.App (remarkExpr m e1, e1ty, tyargs, remarkExprs m args, m)
 
     | Expr.Sequential (e1, e2, dir, _, _) ->
-        Expr.Sequential (remarkExpr m e1, remarkExpr m e2, dir, SuppressSequencePointOnExprOfSequential, m)
+        Expr.Sequential (remarkExpr m e1, remarkExpr m e2, dir, SequencePointInfoForSequential.StmtOnly, m)
 
     | Expr.StaticOptimization (eqns, e2, e3, _) ->
         Expr.StaticOptimization (eqns, remarkExpr m e2, remarkExpr m e3, m)
@@ -6569,7 +6569,7 @@ let mkRefCellContentsRef (g: TcGlobals) = mkRecdFieldRef g.refcell_tcr_canon "co
 
 let mkSequential spSeq m e1 e2 = Expr.Sequential (e1, e2, NormalSeq, spSeq, m)
 
-let mkCompGenSequential m e1 e2 = mkSequential SuppressSequencePointOnExprOfSequential m e1 e2
+let mkCompGenSequential m e1 e2 = mkSequential SequencePointInfoForSequential.StmtOnly m e1 e2
 
 let rec mkSequentials spSeq g m es = 
     match es with 

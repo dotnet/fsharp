@@ -1696,11 +1696,11 @@ val mkOptionDefaultValue: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 // Make a few more expressions
 //------------------------------------------------------------------------- 
 
-val mkSequential  : SequencePointInfoForSeq -> range -> Expr -> Expr -> Expr
+val mkSequential  : SequencePointInfoForSequential -> range -> Expr -> Expr -> Expr
 
 val mkCompGenSequential  : range -> Expr -> Expr -> Expr
 
-val mkSequentials : SequencePointInfoForSeq -> TcGlobals -> range -> Exprs -> Expr   
+val mkSequentials : SequencePointInfoForSequential -> TcGlobals -> range -> Exprs -> Expr   
 
 val mkRecordExpr : TcGlobals -> RecordConstructionInfo * TyconRef * TypeInst * RecdFieldRef list * Exprs * range -> Expr
 

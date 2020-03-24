@@ -204,8 +204,8 @@ let LowerSeqExpr g amap overallExpr =
         let (TBind(v, e, sp)) = bind
         let sp, spm =
             match sp with
-            | SequencePointAtBinding m -> SequencePointsAtSeq, m
-            | _ -> SuppressSequencePointOnExprOfSequential, e.Range
+            | SequencePointAtBinding m -> SequencePointInfoForSequential.Both, m
+            | _ -> SequencePointInfoForSequential.StmtOnly, e.Range
         let vref = mkLocalValRef v
         { res2 with
             phase2 = (fun ctxt ->
@@ -251,7 +251,7 @@ let LowerSeqExpr g amap overallExpr =
                         let generate =
                             mkCompGenSequential m
                                 (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
-                                (mkSequential SequencePointsAtSeq m
+                                (mkSequential SequencePointInfoForSequential.Both m
                                     (mkValSet m currVar e)
                                     (mkCompGenSequential m
                                         (Expr.Op (TOp.Return, [], [mkOne g m], m))
@@ -553,7 +553,7 @@ let LowerSeqExpr g amap overallExpr =
                                     let generate =
                                         mkCompGenSequential m
                                             (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
-                                            (mkSequential SequencePointsAtSeq m
+                                            (mkSequential SequencePointInfoForSequential.Both m
                                                 (mkAddrSet m nextVar arbitrarySeqExpr)
                                                 (mkCompGenSequential m
                                                     (Expr.Op (TOp.Return, [], [mkTwo g m], m))

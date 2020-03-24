@@ -463,7 +463,7 @@ module Structure =
 
         and parseSynMemberDefn (objectModelRange: range) d =
             match d with
-            | SynMemberDefn.Member(SynBinding.Binding (attrs=attrs; valData=valData; headPat=synPat; range=bindingRange) as binding, _) ->
+            | SynMemberDefn.Member(SynBinding.Binding (attributes=attrs; valData=valData; headPat=synPat; range=bindingRange) as binding, _) ->
                match valData with
                | SynValData (Some { MemberKind=MemberKind.Constructor }, _, _) ->
                   let collapse = Range.endToEnd synPat.Range d.Range
@@ -550,7 +550,7 @@ module Structure =
                List.iter (parseSynMemberDefn r) members
            | SynTypeDefnRepr.Exception _ -> ()
 
-        let getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope: Scope) (decls: SynModuleDecls) =
+        let getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope: Scope) (decls: SynModuleDecl list) =
             let groupConsecutiveDecls input =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with

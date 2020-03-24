@@ -1128,7 +1128,7 @@ type internal FsiDynamicCompiler
         istate
 
     /// Evaluate the given definitions and produce a new interactive state.
-    member __.EvalParsedDefinitions (ctok, errorLogger: ErrorLogger, istate, showTypes, isInteractiveItExpr, defs: SynModuleDecls) =
+    member __.EvalParsedDefinitions (ctok, errorLogger: ErrorLogger, istate, showTypes, isInteractiveItExpr, defs) =
         let filename = Lexhelp.stdinMockFilename
         let i = nextFragmentId()
         let prefix = mkFragmentPath i
@@ -2222,7 +2222,7 @@ type internal FsiInteractionProcessor
             let expr = parseExpression tokenizer 
             let m = expr.Range
             // Make this into "(); expr" to suppress generalization and compilation-as-function
-            let exprWithSeq = SynExpr.Sequential (SequencePointInfoForSeq.SuppressSequencePointOnStmtOfSequential,true,SynExpr.Const (SynConst.Unit,m.StartRange), expr, m)
+            let exprWithSeq = SynExpr.Sequential (SequencePointInfoForSequential.ExprOnly, true, SynExpr.Const (SynConst.Unit,m.StartRange), expr, m)
             mainThreadProcessParsedExpression ctok errorLogger (exprWithSeq, istate))
         |> commitResult
 

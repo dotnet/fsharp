@@ -2053,9 +2053,9 @@ let rec FirstEmittedCodeWillBeSequencePoint g sp expr =
             (binds |> List.forall (BindingEmitsNoCode g) && FirstEmittedCodeWillBeSequencePoint g sp body)
         | Expr.Sequential (_, _, NormalSeq, spSeq, _) ->
             match spSeq with
-            | SequencePointsAtSeq -> true
-            | SuppressSequencePointOnExprOfSequential -> true
-            | SuppressSequencePointOnStmtOfSequential -> false
+            | SequencePointInfoForSequential.Both -> true
+            | SequencePointInfoForSequential.StmtOnly -> true
+            | SequencePointInfoForSequential.ExprOnly -> false
         | Expr.Match (SequencePointAtBinding _, _, _, _, _, _) -> true
         | Expr.Op ((TOp.TryCatch (SequencePointAtTry _, _)
                   | TOp.TryFinally (SequencePointAtTry _, _)
@@ -2564,9 +2564,9 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessSequencePoint (contf:
         // left and right of the sequence
         let spAction, spExpr =
             (match spSeq with
-             | SequencePointsAtSeq -> SPAlways, SPAlways
-             | SuppressSequencePointOnExprOfSequential -> SPSuppress, sp
-             | SuppressSequencePointOnStmtOfSequential -> sp, SPSuppress)
+             | SequencePointInfoForSequential.Both -> SPAlways, SPAlways
+             | SequencePointInfoForSequential.StmtOnly -> SPSuppress, sp
+             | SequencePointInfoForSequential.ExprOnly -> sp, SPSuppress)
         match specialSeqFlag with
         | NormalSeq ->
             GenExpr cenv cgbuf eenv spAction e1 discard

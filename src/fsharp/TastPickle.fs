@@ -2601,7 +2601,7 @@ and u_expr st =
            let b = u_expr st
            let c = u_int st
            let d = u_dummy_range  st
-           Expr.Sequential (a, b, (match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"), SuppressSequencePointOnExprOfSequential, d)
+           Expr.Sequential (a, b, (match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"), SequencePointInfoForSequential.StmtOnly, d)
     | 4 -> let a0 = u_option u_Val st
            let b0 = u_option u_Val st
            let b1 = u_Vals st

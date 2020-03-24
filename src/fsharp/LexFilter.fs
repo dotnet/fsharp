@@ -2258,11 +2258,17 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                   | MINUS -> true 
                   | _ -> false
               let nextTokenTup = popNextTokenTup()
+
               /// Merge the location of the prefix token and the literal
               let delayMergedToken tok = 
-                  delayToken(let rented = pool.Rent() in rented.Token <- tok; rented.LexbufState <- new LexbufState(tokenTup.LexbufState.StartPos, nextTokenTup.LexbufState.EndPos, nextTokenTup.LexbufState.PastEOF); rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
+                  let rented = pool.Rent()
+                  rented.Token <- tok
+                  rented.LexbufState <- new LexbufState(tokenTup.LexbufState.StartPos, nextTokenTup.LexbufState.EndPos, nextTokenTup.LexbufState.PastEOF)
+                  rented.LastTokenPos <- tokenTup.LastTokenPos
+                  delayToken(rented)
                   pool.Return nextTokenTup
                   pool.Return tokenTup
+
               let noMerge() = 
                   let tokenName = 
                       match tokenTup.Token with 

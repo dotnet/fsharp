@@ -2525,7 +2525,7 @@ module BindingNormalization =
             // of available items, to the point that you can't even define a function with the same name as an existing union case. 
             match pat with 
             | SynPat.FromParseError(p, _) -> normPattern p
-            | SynPat.LongIdent (LongIdentWithDots(longId, _), toolId, tyargs, SynConstructorArgs.Pats args, vis, m) ->
+            | SynPat.LongIdent (LongIdentWithDots(longId, _), toolId, tyargs, SynArgPats.Pats args, vis, m) ->
                 let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
                 match memberFlagsOpt with 
                 | None ->                
@@ -3973,7 +3973,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
                    let ty = tyOfExpr g recdExpr
                    let thisExpr = mkGetArg0 m ty
                    let setExpr = mkRefCellSet g m ty (exprForValRef m (mkLocalValRef safeInitVal)) thisExpr
-                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, SuppressSequencePointOnExprOfSequential, m)
+                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, SequencePointInfoForSequential.StmtOnly, m)
            let recdExpr =                        
                match ctorInfo.safeInitInfo with 
                | NoSafeInitInfo -> recdExpr
@@ -3982,7 +3982,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
                    let thisExpr = mkGetArg0 m thisTy
                    let thisTyInst = argsOfAppTy g thisTy
                    let setExpr = mkRecdFieldSetViaExprAddr (thisExpr, rfref, thisTyInst, mkOne g m, m)
-                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, SuppressSequencePointOnExprOfSequential, m)
+                   Expr.Sequential (recdExpr, setExpr, ThenDoSeq, SequencePointInfoForSequential.StmtOnly, m)
            recdExpr
        
 
@@ -5342,21 +5342,21 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         if Option.isSome tyargs then errorR(Error(FSComp.SR.tcInvalidTypeArgumentUsage(), m))
         let warnOnUpperForId = 
             match args with
-            | SynConstructorArgs.Pats [] -> warnOnUpper
+            | SynArgPats.Pats [] -> warnOnUpper
             | _ -> AllIdsOK
 
         let lidRange = rangeOfLid longId
 
         let checkNoArgsForLiteral () = 
             match args with
-            | SynConstructorArgs.Pats []
-            | SynConstructorArgs.NamePatPairs ([], _) -> ()
+            | SynArgPats.Pats []
+            | SynArgPats.NamePatPairs ([], _) -> ()
             | _ -> errorR (Error (FSComp.SR.tcLiteralDoesNotTakeArguments (), m)) 
 
         let getArgPatterns () =
             match args with
-            | SynConstructorArgs.Pats args -> args
-            | SynConstructorArgs.NamePatPairs (pairs, _) -> List.map snd pairs
+            | SynArgPats.Pats args -> args
+            | SynArgPats.NamePatPairs (pairs, _) -> List.map snd pairs
 
         let tcArgPatterns () =
             let args = getArgPatterns ()
@@ -5376,7 +5376,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             CallNameResolutionSink cenv.tcSink (rangeOfLid longId, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Pattern, env.eAccessRights)
 
             match args with
-            | SynConstructorArgs.Pats _ -> ()
+            | SynArgPats.Pats _ -> ()
             | _ -> errorR (Error (FSComp.SR.tcNamedActivePattern (apinfo.ActiveTags.[idx]), m))
 
             let args = getArgPatterns ()
@@ -5412,7 +5412,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 | SynPat.Named (SynPat.Wild _, id, _, None, _) -> SynExpr.Ident id
                 | SynPat.Typed (p, cty, m) -> SynExpr.Typed (convSynPatToSynExpr p, cty, m)
                 | SynPat.LongIdent (LongIdentWithDots (longId, dotms) as lidwd, _, _tyargs, args, None, m) -> 
-                    let args = match args with SynConstructorArgs.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
+                    let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynArgPats.Pats"
                     let e =
                         if dotms.Length = longId.Length then
                             let e = SynExpr.LongIdent (false, LongIdentWithDots(longId, List.truncate (dotms.Length - 1) dotms), None, m)
@@ -5453,8 +5453,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
             let args, extraPatternsFromNames =
                 match args with
-                | SynConstructorArgs.Pats args -> args, []
-                | SynConstructorArgs.NamePatPairs (pairs, m) ->
+                | SynArgPats.Pats args -> args, []
+                | SynArgPats.NamePatPairs (pairs, m) ->
                     // rewrite patterns from the form (name-N = pat-N; ...) to (..._, pat-N, _...)
                     // so type T = Case of name: int * value: int
                     // | Case(value = v)
@@ -8132,7 +8132,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             // 2. incompatible types: int and string
             // with SynExpr.ArbitraryAfterError we have only first one
             let wrapInArbErrSequence l caption = 
-                SynExpr.Sequential (SequencePointInfoForSeq.SequencePointsAtSeq, true, l, (arbExpr(caption, l.Range.EndRange)), l.Range)
+                SynExpr.Sequential (SequencePointInfoForSequential.Both, true, l, (arbExpr(caption, l.Range.EndRange)), l.Range)
 
             let mkOverallExprGivenVarSpaceExpr, varSpaceInner =
                 let isNullableOp opId =
@@ -8317,9 +8317,9 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 | SynExpr.DoBang (rhsExpr, m) -> 
                     let sp = 
                         match sp with 
-                        | SuppressSequencePointOnStmtOfSequential -> SequencePointAtBinding m
-                        | SuppressSequencePointOnExprOfSequential -> NoSequencePointAtDoBinding 
-                        | SequencePointsAtSeq -> SequencePointAtBinding m
+                        | SequencePointInfoForSequential.ExprOnly -> SequencePointAtBinding m
+                        | SequencePointInfoForSequential.StmtOnly -> NoSequencePointAtDoBinding 
+                        | SequencePointInfoForSequential.Both -> SequencePointAtBinding m
                     Some(trans true q varSpace (SynExpr.LetOrUseBang (sp, false, true, SynPat.Const(SynConst.Unit, rhsExpr.Range), rhsExpr, [], innerComp2, m)) translatedCtxt)
 
                 // "expr; cexpr" is treated as sequential execution
@@ -8737,9 +8737,9 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         let fillExpr = 
                             if enableImplicitYield then 
                                 let implicitYieldExpr = mkSynCall "Yield" comp.Range [comp]
-                                SynExpr.SequentialOrImplicitYield(SuppressSequencePointOnStmtOfSequential, comp, holeFill, implicitYieldExpr, comp.Range)
+                                SynExpr.SequentialOrImplicitYield(SequencePointInfoForSequential.ExprOnly, comp, holeFill, implicitYieldExpr, comp.Range)
                             else
-                                SynExpr.Sequential(SuppressSequencePointOnStmtOfSequential, true, comp, holeFill, comp.Range)
+                                SynExpr.Sequential(SequencePointInfoForSequential.ExprOnly, true, comp, holeFill, comp.Range)
                         translatedCtxt fillExpr) 
 
     and transBind q varSpace bindRange bindName bindArgs (consumePat: SynPat) spBind (innerComp: SynExpr) translatedCtxt = 
@@ -9080,7 +9080,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
             expr, tpenv
         | Choice2Of2 stmt -> 
             let m = comp.Range
-            let resExpr = Expr.Sequential(stmt, mkSeqEmpty cenv env m genOuterTy, NormalSeq, SuppressSequencePointOnStmtOfSequential, m)
+            let resExpr = Expr.Sequential(stmt, mkSeqEmpty cenv env m genOuterTy, NormalSeq, SequencePointInfoForSequential.ExprOnly, m)
             resExpr, tpenv
 
     and tcSequenceExprBodyAsSequenceOrStatement env genOuterTy tpenv comp =
@@ -11520,7 +11520,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // Don't introduce temporary or 'let' for 'match against wild' or 'match against unit' 
 
         | (TPat_wild _ | TPat_const (Const.Unit, _)) when not isUse && not isFixed && isNil generalizedTypars ->
-            let mkSequentialBind (tm, tmty) = (mkSequential SequencePointsAtSeq m rhsExpr tm, tmty)
+            let mkSequentialBind (tm, tmty) = (mkSequential SequencePointInfoForSequential.Both m rhsExpr tm, tmty)
             (buildExpr >> mkSequentialBind, env, tpenv)
         | _ -> 
 
@@ -12856,7 +12856,7 @@ let TcAndPublishMemberSpec cenv env containerInfo declKind tpenv memb =
         [], tpenv
 
   
-let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMemberSigs) =
+let TcTyconMemberSpecs cenv env containerInfo declKind tpenv augSpfn =
     let members, tpenv = List.mapFold (TcAndPublishMemberSpec cenv env containerInfo declKind) tpenv augSpfn
     List.concat members, tpenv
 
@@ -13561,7 +13561,7 @@ module IncrClassChecking =
 
                 (isPriorToSuperInit, (fun e -> 
                      let e = match adjustSafeInitFieldExprOpt with None -> e | Some ae -> mkCompGenSequential m ae e
-                     mkSequential SequencePointsAtSeq m assignExpr e)), []
+                     mkSequential SequencePointInfoForSequential.Both m assignExpr e)), []
 
         /// Work out the implicit construction side effects of a 'let', 'let rec' or 'do' 
         /// binding in the implicit class construction sequence 
@@ -13589,7 +13589,7 @@ module IncrClassChecking =
 
               | IncrClassDo (doExpr, isStatic) -> 
                   let doExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst doExpr
-                  let binder = (fun e -> mkSequential SequencePointsAtSeq doExpr.Range doExpr e)
+                  let binder = (fun e -> mkSequential SequencePointInfoForSequential.Both doExpr.Range doExpr e)
                   let isPriorToSuperInit = false
                   if isStatic then 
                       ([(isPriorToSuperInit, binder)], [], []), reps
@@ -13609,7 +13609,7 @@ module IncrClassChecking =
                       | Some v -> 
                         let setExpr = mkRefCellSet g m ctorInfo.InstanceCtorThisVal.Type (exprForVal m v) (exprForVal m ctorInfo.InstanceCtorThisVal)
                         let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
-                        let binder = (fun e -> mkSequential SequencePointsAtSeq setExpr.Range setExpr e)
+                        let binder = (fun e -> mkSequential SequencePointInfoForSequential.Both setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder) ]
 
@@ -13623,7 +13623,7 @@ module IncrClassChecking =
                       | SafeInitField (rfref, _) ->  
                         let setExpr = mkRecdFieldSetViaExprAddr (exprForVal m thisVal, rfref, thisTyInst, mkOne g m, m)
                         let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
-                        let binder = (fun e -> mkSequential SequencePointsAtSeq setExpr.Range setExpr e)
+                        let binder = (fun e -> mkSequential SequencePointInfoForSequential.Both setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder)  
                       | NoSafeInitInfo ->  
@@ -13710,7 +13710,7 @@ module IncrClassChecking =
                     | _ -> 
                         inheritsExpr
 
-                let spAtSuperInit = (if inheritsIsVisible then SequencePointsAtSeq else SuppressSequencePointOnExprOfSequential)
+                let spAtSuperInit = (if inheritsIsVisible then SequencePointInfoForSequential.Both else SequencePointInfoForSequential.StmtOnly)
                 mkSequential spAtSuperInit m inheritsExpr ctorBody
 
             // Add the normal <let/do bindings> 
@@ -16091,7 +16091,7 @@ module EstablishTypeDefinitionCores =
                     writeFakeUnionCtorsToSink [ unionCase ]
                     MakeUnionRepr [ unionCase ], None, NoSafeInitInfo
 
-                | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.ThereWereSignificantParseErrorsSoDoNotTypecheckThisNode, _rhsType, _) ->
+                | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.ErrorRecovery, _rhsType, _) ->
                     TNoRepr, None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, _) ->
@@ -16865,7 +16865,7 @@ module TcDeclarations =
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> true | _ -> false)
                         let mLetPortion = synExpr.Range
                         let fldId = ident (CompilerGeneratedName id.idText, mLetPortion)
-                        let headPat = SynPat.LongIdent (LongIdentWithDots([fldId], []), None, Some noInferredTypars, SynConstructorArgs.Pats [], None, mLetPortion)
+                        let headPat = SynPat.LongIdent (LongIdentWithDots([fldId], []), None, Some noInferredTypars, SynArgPats.Pats [], None, mLetPortion)
                         let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                         let isMutable = 
                             match propKind with 
@@ -16893,7 +16893,7 @@ module TcDeclarations =
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
                         let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion)
                         let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion);id]
-                        let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, Some noInferredTypars, SynConstructorArgs.Pats [], None, mMemberPortion)
+                        let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
 
                         match propKind, mGetSetOpt with 
                         | MemberKind.PropertySet, Some m -> errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSetNotJustSet(), m))
@@ -16918,7 +16918,7 @@ module TcDeclarations =
                             | MemberKind.PropertyGetSet -> 
                                 let setter = 
                                     let vId = ident("v", mMemberPortion)
-                                    let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, Some noInferredTypars, SynConstructorArgs.Pats [mkSynPatVar None vId], None, mMemberPortion)
+                                    let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                                     let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                                     //let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, NoSequencePointAtInvisibleBinding, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags MemberKind.PropertySet))

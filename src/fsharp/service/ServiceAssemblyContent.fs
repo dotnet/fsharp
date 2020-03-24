@@ -501,8 +501,8 @@ module ParsedInput =
         | _ -> None
 
     let (|ConstructorPats|) = function
-        | SynConstructorArgs.Pats ps -> ps
-        | SynConstructorArgs.NamePatPairs(xs, _) -> List.map snd xs
+        | SynArgPats.Pats ps -> ps
+        | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
     let getLongIdents (input: ParsedInput option) : IDictionary<Range.pos, LongIdent> =
@@ -897,7 +897,7 @@ module ParsedInput =
                                   false)
                     | _ -> ()
 
-        let getMinColumn (decls: SynModuleDecls) =
+        let getMinColumn decls =
             match decls with
             | [] -> None
             | firstDecl :: _ -> 

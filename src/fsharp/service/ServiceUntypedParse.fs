@@ -137,7 +137,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                   let isFunction = 
                       Option.isSome memFlagsOpt ||
                       match synPat with 
-                      | SynPat.LongIdent (_, _, _, SynConstructorArgs.Pats args, _, _) when not (List.isEmpty args) -> true
+                      | SynPat.LongIdent (_, _, _, SynArgPats.Pats args, _, _) when not (List.isEmpty args) -> true
                       | _ -> false
                   if not isFunction then 
                       yield! walkBindSeqPt spInfo
@@ -299,8 +299,8 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
 
                   | SynExpr.SequentialOrImplicitYield (spSeq, e1, e2, _, _)
                   | SynExpr.Sequential (spSeq, _, e1, e2, _) -> 
-                      yield! walkExpr (match spSeq with SuppressSequencePointOnStmtOfSequential -> false | _ -> true) e1
-                      yield! walkExpr (match spSeq with SuppressSequencePointOnExprOfSequential -> false | _ -> true) e2
+                      yield! walkExpr (match spSeq with SequencePointInfoForSequential.ExprOnly -> false | _ -> true) e1
+                      yield! walkExpr (match spSeq with SequencePointInfoForSequential.StmtOnly -> false | _ -> true) e2
 
                   | SynExpr.IfThenElse (e1, e2, e3opt, spBind, _, _, _) ->
                       yield! walkBindSeqPt spBind
@@ -1272,7 +1272,7 @@ module UntypedParseImpl =
                             Some CompletionContext.Invalid
                         | SynPat.LongIdent(_, _, _, ctorArgs, _, _) ->
                             match ctorArgs with
-                            | SynConstructorArgs.Pats pats ->
+                            | SynArgPats.Pats pats ->
                                 pats |> List.tryPick (fun pat ->
                                     match pat with
                                     | SynPat.Paren(pat, _) -> 
