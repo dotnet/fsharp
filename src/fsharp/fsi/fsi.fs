@@ -911,6 +911,7 @@ type internal FsiInteractionStepStatus =
     | CtrlC 
     | EndOfFile 
     | Completed of option<FsiValue>
+    | CompletedWithAlreadyReportedError 
     | CompletedWithReportedError of exn 
 
 [<AutoSerializable(false)>]
@@ -1884,14 +1885,18 @@ type internal FsiInteractionProcessor
 
                 let dm = tcConfigB.dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, tcConfigB.outputDir |> Option.defaultValue "", reportError, path)
                 match dm with
-                | dllpath, null when String.IsNullOrEmpty(dllpath) ->
+                | null, null ->
                     // error already reported
-                    istate,Completed None
+                    istate, CompletedWithAlreadyReportedError
+
+                | dllpath, null when String.IsNullOrEmpty(dllpath) ->
+                    // allows #r "" to succeed in scripting
+                    istate, Completed None
 
                 | _, dependencyManager when not(isNull dependencyManager) ->
                    if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                        fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, m, path)
-                       istate,Completed None
+                       istate, Completed None
                    else
                        errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
                        istate, Completed None
@@ -2036,6 +2041,7 @@ type internal FsiInteractionProcessor
               match cont with
                 | Completed _                  -> execParsedInteractions (ctok, tcConfig, istate, nextAction, errorLogger, Some cont, cancellationToken)
                 | CompletedWithReportedError e -> istate,CompletedWithReportedError e             (* drop nextAction on error *)
+                | CompletedWithAlreadyReportedError -> istate,CompletedWithAlreadyReportedError   (* drop nextAction on error *)
                 | EndOfFile                    -> istate,defaultArg lastResult (Completed None)   (* drop nextAction on EOF *)
                 | CtrlC                        -> istate,CtrlC                                    (* drop nextAction on CtrlC *)
 
@@ -2083,7 +2089,8 @@ type internal FsiInteractionProcessor
             Choice1Of2 res
         | FsiInteractionStepStatus.CompletedWithReportedError (StopProcessingExn userExnOpt) -> 
             Choice2Of2 userExnOpt
-        | FsiInteractionStepStatus.CompletedWithReportedError _ -> 
+        | FsiInteractionStepStatus.CompletedWithReportedError _
+        | FsiInteractionStepStatus.CompletedWithAlreadyReportedError -> 
             Choice2Of2 None
 
     /// Parse then process one parsed interaction.  
@@ -2148,6 +2155,7 @@ type internal FsiInteractionProcessor
 
                 match cont with
                 | Completed _ -> failwith "EvalIncludedScript: Completed expected to have relooped"
+                | CompletedWithAlreadyReportedError -> istate,CompletedWithAlreadyReportedError
                 | CompletedWithReportedError e -> istate,CompletedWithReportedError e
                 | EndOfFile -> istate,Completed None// here file-EOF is normal, continue required 
                 | CtrlC     -> istate,CtrlC
@@ -2163,7 +2171,8 @@ type internal FsiInteractionProcessor
             let istate,cont = InteractiveCatch errorLogger (fun istate -> processor.EvalIncludedScript (ctok, istate, sourceFile, rangeStdin, errorLogger)) istate
             match cont with
               | Completed _                -> processor.EvalIncludedScripts (ctok, istate, moreSourceFiles, errorLogger)
-              | CompletedWithReportedError _ -> istate // do not process any more files              
+              | CompletedWithAlreadyReportedError -> istate // do not process any more files
+              | CompletedWithReportedError _ -> istate // do not process any more files
               | CtrlC                      -> istate // do not process any more files 
               | EndOfFile                  -> assert false; istate // This is unexpected. EndOfFile is replaced by Completed in the called function 
 
@@ -2267,6 +2276,7 @@ type internal FsiInteractionProcessor
                       match contNew with 
                       | EndOfFile -> ()
                       | CtrlC -> loop (fsiStdinLexerProvider.CreateStdinLexer(errorLogger))   // After each interrupt, restart to a brand new tokenizer
+                      | CompletedWithAlreadyReportedError
                       | CompletedWithReportedError _ 
                       | Completed _ -> loop currTokenizer
 
