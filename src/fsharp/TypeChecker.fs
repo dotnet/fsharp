@@ -1869,7 +1869,7 @@ let MakeAndPublishSimpleValsForMergedScope cenv env m (names: NameMap<_>) =
                         member this.NotifyNameResolution(pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing) = 
                             if not m.IsSynthetic then
                                 nameResolutions.Add(pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing)
-                        member this.NotifyExprHasType(_, _, _, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
+                        member this.NotifyExprHasType(_, _, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
                         member this.NotifyFormatSpecifierLocation(_, _) = ()
                         member this.NotifyOpenDeclaration(_) = ()
                         member this.CurrentSourceText = None 
@@ -5877,7 +5877,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.Paren (expr2, _, _, mWholeExprIncludingParentheses) -> 
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the 
         // construct is a dot-lookup for the result of the construct. 
-        CallExprHasTypeSink cenv.tcSink (mWholeExprIncludingParentheses, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (mWholeExprIncludingParentheses, env.NameEnv, overallTy, env.AccessRights)
         let env = ShrinkContext env mWholeExprIncludingParentheses expr2.Range
         TcExpr cenv overallTy env tpenv expr2
 
@@ -5885,11 +5885,11 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.TypeApp _ | SynExpr.Ident _ | SynExpr.LongIdent _ | SynExpr.App _ | SynExpr.DotGet _ -> error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
     | SynExpr.Const (SynConst.String (s, m), _) -> 
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
         TcConstStringExpr cenv overallTy env m tpenv s
 
     | SynExpr.Const (synConst, m) -> 
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
         TcConstExpr cenv overallTy env m tpenv synConst
 
     | SynExpr.Lambda _ -> 
@@ -6005,7 +6005,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr)
 
     | SynExpr.ArrayOrList (isArray, args, m) -> 
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
 
         let argty = NewInferenceType ()
         UnifyTypes cenv env m overallTy (if isArray then mkArrayType cenv.g argty else Tastops.mkListTy cenv.g argty)
@@ -6033,11 +6033,11 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
 
     | SynExpr.ObjExpr (objTy, argopt, binds, extraImpls, mNewExpr, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.eAccessRights)
         TcObjectExpr cenv overallTy env tpenv (objTy, argopt, binds, extraImpls, mNewExpr, m)
             
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) -> 
-        CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy, env.AccessRights)
         TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr)
 
     | SynExpr.While (spWhile, synGuardExpr, synBodyExpr, m) ->
@@ -6081,7 +6081,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         TcSequenceExpression cenv env tpenv comp overallTy m
         
     | SynExpr.ArrayOrListOfSeqExpr (isArray, comp, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.eAccessRights)
         match comp with 
         | SynExpr.CompExpr (_, _, (SimpleSemicolonSequence cenv acceptDeprecatedIfThenExpression elems as body), _) -> 
             match body with
@@ -6308,7 +6308,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         mkAsmExpr (Array.toList s, tyargs', args', rtys', m), tpenv
 
     | SynExpr.Quote (oper, raw, ast, isFromQueryExpression, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
         TcQuotationExpr cenv overallTy env tpenv (oper, raw, ast, isFromQueryExpression, m) 
 
     | SynExpr.YieldOrReturn ((isTrueYield, _), _, m)
@@ -9196,7 +9196,7 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag: ExprAtomic
     // OK, we've typechecked the thing on the left of the delayed lookup chain. 
     // We can now record for posterity the type of this expression and the location of the expression. 
     if (atomicFlag = ExprAtomicFlag.Atomic) then
-        CallExprHasTypeSink cenv.tcSink (mExpr, env.NameEnv, exprty, env.DisplayEnv, env.eAccessRights)
+        CallExprHasTypeSink cenv.tcSink (mExpr, env.NameEnv, exprty, env.eAccessRights)
 
     match delayed with 
     | []  
@@ -9590,13 +9590,13 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         match delayed with 
         | ((DelayedApp (_, arg, mExprAndArg)) :: otherDelayed) ->
 
-            CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTy, env.DisplayEnv, env.eAccessRights)
+            CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTy, env.eAccessRights)
             TcCtorCall true cenv env tpenv overallTy objTy (Some mItem) item false [arg] mExprAndArg otherDelayed (Some afterResolution)
 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: (DelayedApp (_, arg, mExprAndArg)) :: otherDelayed) ->
 
             let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tyargs
-            CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTyAfterTyArgs, env.DisplayEnv, env.eAccessRights)
+            CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTyAfterTyArgs, env.eAccessRights)
             let itemAfterTyArgs, minfosAfterTyArgs = 
 #if !NO_EXTENSIONTYPING
                 // If the type is provided and took static arguments then the constructor will have changed

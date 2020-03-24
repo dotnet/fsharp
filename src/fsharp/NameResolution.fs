@@ -1441,7 +1441,7 @@ type FormatStringCheckContext =
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
     abstract NotifyEnvWithScope: range * NameResolutionEnv * AccessorDomain -> unit
-    abstract NotifyExprHasType: pos * TType * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
+    abstract NotifyExprHasType: pos * TType * NameResolutionEnv * AccessorDomain * range -> unit
     abstract NotifyNameResolution: pos * item: Item * itemMethodGroup: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
     abstract NotifyFormatSpecifierLocation: range * int -> unit
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
@@ -1659,7 +1659,7 @@ type CapturedNameResolution(i: Item, tpinst, io: ItemOccurence, nre: NameResolut
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcResolutions
     (capturedEnvs: ResizeArray<range * NameResolutionEnv * AccessorDomain>,
-     capturedExprTypes: ResizeArray<pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range>,
+     capturedExprTypes: ResizeArray<pos * TType * NameResolutionEnv * AccessorDomain * range>,
      capturedNameResolutions: ResizeArray<CapturedNameResolution>,
      capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>) =
 
@@ -1765,9 +1765,9 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
             if allowedRange m then
                 capturedEnvs.Add((m, nenv, ad))
 
-        member sink.NotifyExprHasType(endPos, ty, denv, nenv, ad, m) =
+        member sink.NotifyExprHasType(endPos, ty, nenv, ad, m) =
             if allowedRange m then
-                capturedExprTypings.Add((endPos, ty, denv, nenv, ad, m))
+                capturedExprTypings.Add((endPos, ty, nenv, ad, m))
 
         member sink.NotifyNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
             // Desugaring some F# constructs (notably computation expressions with custom operators)
@@ -1845,10 +1845,10 @@ let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item,
     | Some sink -> sink.NotifyNameResolution(m.End, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, true)
 
 /// Report a specific expression typing at a source range
-let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, denv, ad) =
+let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyExprHasType(m.End, ty, denv, nenv, ad, m)
+    | Some sink -> sink.NotifyExprHasType(m.End, ty, nenv, ad, m)
 
 let CallOpenDeclarationSink (sink: TcResultsSink) (openDeclaration: OpenDeclaration) =
     match sink.CurrentSink with

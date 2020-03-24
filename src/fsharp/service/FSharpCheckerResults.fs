@@ -360,13 +360,13 @@ type internal TypeCheckInfo
     let GetExprTypingForPosition(endOfExprPos) = 
         let quals = 
             sResolutions.CapturedExpressionTypings 
-            |> Seq.filter (fun (pos,ty,denv,_,_,_) -> 
+            |> Seq.filter (fun (pos,ty,nenv,_,_) -> 
                     // We only want expression types that end at the particular position in the file we are looking at.
                     let isLocationWeCareAbout = posEq pos endOfExprPos
                     // Get rid of function types.  True, given a 2-arg curried function "f x y", it is legal to do "(f x).GetType()",
                     // but you almost never want to do this in practice, and we choose not to offer up any intellisense for 
                     // F# function types.
-                    let isFunction = isFunTy denv.g ty
+                    let isFunction = isFunTy nenv.DisplayEnv.g ty
                     isLocationWeCareAbout && not isFunction)
             |> Seq.toArray
 
@@ -374,7 +374,9 @@ type internal TypeCheckInfo
         // filter out errors
 
         let quals = quals 
-                    |> Array.filter (fun (_,ty,denv,_,_,_) -> not (isTyparTy denv.g ty && (destTyparTy denv.g ty).IsFromError))
+                    |> Array.filter (fun (_,ty,nenv,_,_) ->
+                        let denv = nenv.DisplayEnv
+                        not (isTyparTy denv.g ty && (destTyparTy denv.g ty).IsFromError))
         thereWereSomeQuals, quals
     
     /// obtains captured typing for the given position
@@ -385,13 +387,13 @@ type internal TypeCheckInfo
             match quals with
             | [||] -> None
             | quals ->  
-                quals |> Array.tryFind (fun (_,_,_,_,_,rq) -> 
+                quals |> Array.tryFind (fun (_,_,_,_,rq) -> 
                                             ignore(r)  // for breakpoint
                                             posEq r.Start rq.Start)
         match bestQual with
-        | Some (_,ty,denv,_nenv,ad,m) when isRecdTy denv.g ty ->
+        | Some (_,ty,nenv,ad,m) when isRecdTy nenv.DisplayEnv.g ty ->
             let items = NameResolution.ResolveRecordOrClassFieldsOfType ncenv m ad ty false
-            Some (items, denv, m)
+            Some (items, nenv.DisplayEnv, m)
         | _ -> None
 
     /// Looks at the exact expression types at the position to the left of the 
@@ -420,7 +422,7 @@ type internal TypeCheckInfo
                             // If not, then the stale typecheck info does not have a capturedExpressionTyping for this exact expression, and the
                             // user can wait for typechecking to catch up and second-chance intellisense to give the right result.
                             let qual = 
-                                quals |> Array.tryFind (fun (_,_,_,_,_,r) -> 
+                                quals |> Array.tryFind (fun (_,_,_,_,r) -> 
                                                             ignore(r)  // for breakpoint
                                                             posEq exprRange.Start r.Start)
                             qual, false
@@ -433,13 +435,13 @@ type internal TypeCheckInfo
 
             match bestQual with
             | Some bestQual ->
-                let (_,ty,denv,nenv,ad,m) = bestQual 
+                let (_,ty,nenv,ad,m) = bestQual 
                 let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false ty 
                 let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g
                 let items = items |> RemoveExplicitlySuppressed g
                 let items = items |> FilterItemsForCtors filterCtors 
-                GetPreciseCompletionListFromExprTypingsResult.Some((items,denv,m), ty)
+                GetPreciseCompletionListFromExprTypingsResult.Some((items,nenv.DisplayEnv,m), ty)
             | None -> 
                 if textChanged then GetPreciseCompletionListFromExprTypingsResult.NoneBecauseTypecheckIsStaleAndTextChanged
                 else GetPreciseCompletionListFromExprTypingsResult.None
