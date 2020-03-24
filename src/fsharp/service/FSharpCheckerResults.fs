@@ -147,7 +147,7 @@ type internal TypeCheckInfo
     
     let amap = tcImports.GetImportMap()
     let infoReader = new InfoReader(g,amap)
-    let ncenv = new NameResolver(g, amap, infoReader, NameResolution.FakeInstantiationGenerator)
+    let ncenv = new NameResolver(g,amap,infoReader,NameResolution.FakeInstantiationGenerator)
     let cenv = SymbolEnv(g, thisCcu, Some ccuSigForFile, tcImports, amap, infoReader)
     
     /// Find the most precise naming environment for the given line and column

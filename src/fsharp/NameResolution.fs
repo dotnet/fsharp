@@ -38,11 +38,6 @@ type NameResolver(g: TcGlobals,
                   infoReader: InfoReader,
                   instantiationGenerator: range -> Typars -> ITraitContext option -> TypeInst) =
 
-    member nr.g = g
-    member nr.amap = amap
-    member nr.InfoReader = infoReader
-    member nr.languageSupportsNameOf = g.langVersion.SupportsFeature LanguageFeature.NameOf
-
     /// Used to transform typars into new inference typars
     /// instantiationGenerator is a function to help us create the
     /// type parameters by copying them from type parameter specifications read
@@ -56,6 +51,10 @@ type NameResolver(g: TcGlobals,
     /// without further freshening. However it does mean we end up plumbing 'instantiationGenerator'
     /// around a bit more than we would like to, which is a bit annoying.
     member nr.InstantiationGenerator = instantiationGenerator
+    member nr.g = g
+    member nr.amap = amap
+    member nr.InfoReader = infoReader
+    member nr.languageSupportsNameOf = g.langVersion.SupportsFeature LanguageFeature.NameOf
 
 //-------------------------------------------------------------------------
 // Helpers for unionconstrs and recdfields

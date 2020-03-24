@@ -2315,8 +2315,8 @@ type internal FsiInteractionProcessor
 
         let tcState = istate.tcState
         let amap = istate.tcImports.GetImportMap()
-        let infoReader = new InfoReader(istate.tcGlobals, amap)
-        let ncenv = new NameResolver(istate.tcGlobals, amap, infoReader, FakeInstantiationGenerator)
+        let infoReader = new InfoReader(istate.tcGlobals,amap)
+        let ncenv = new NameResolver(istate.tcGlobals,amap,infoReader,FakeInstantiationGenerator)
         let ad = tcState.TcEnvFromImpls.AccessRights
         let nenv = tcState.TcEnvFromImpls.NameEnv
 
