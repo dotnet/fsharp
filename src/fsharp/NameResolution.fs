@@ -127,10 +127,8 @@ let (|AbbrevOrAppTy|_|) (ty: TType) =
 type ArgumentContainer =
     /// The named argument is an argument of a method
     | Method of MethInfo
-    /// The named argument is a static parameter to a provided type or a parameter to an F# exception constructor
+    /// The named argument is a static parameter to a provided type.
     | Type of TyconRef
-    /// The named argument is a static parameter to a union case constructor
-    | UnionCase of UnionCaseInfo
 
 // Note: Active patterns are encoded like this:
 //   let (|A|B|) x = if x < 0 then A else B    // A and B are reported as results using 'Item.ActivePatternResult'
@@ -144,7 +142,7 @@ type Item =
     | Value of  ValRef
 
     /// Represents the resolution of a name to an F# union case.
-    | UnionCase of UnionCaseInfo * bool
+    | UnionCase of UnionCaseInfo * hasRequireQualifiedAccessAttr: bool
 
     /// Represents the resolution of a name to an F# active pattern result.
     | ActivePatternResult of ActivePatternInfo * TType * int  * range
@@ -155,8 +153,11 @@ type Item =
     /// Represents the resolution of a name to an F# exception definition.
     | ExnCase of TyconRef
 
-    /// Represents the resolution of a name to an F# record field.
+    /// Represents the resolution of a name to an F# record or exception field.
     | RecdField of RecdFieldInfo
+
+    /// Represents the resolution of a name to a union case field.
+    | UnionCaseField of UnionCaseInfo * fieldIndex: int
 
     /// Represents the resolution of a name to a field of an anonymous record type.
     | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range
@@ -232,6 +233,7 @@ type Item =
         | Item.UnionCase(uinfo, _) -> DecompileOpName uinfo.UnionCase.DisplayName
         | Item.ExnCase tcref -> tcref.LogicalName
         | Item.RecdField rfinfo -> DecompileOpName rfinfo.RecdField.Name
+        | Item.UnionCaseField (uci, fieldIndex) -> uci.UnionCase.GetFieldByIndex(fieldIndex).Name
         | Item.AnonRecdField (anonInfo, _tys, i, _m) -> anonInfo.SortedNames.[i]
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> finfo.FieldName
@@ -1458,6 +1460,11 @@ let rec (|RecordFieldUse|_|) (item: Item) =
     | Item.SetterArg(_, RecordFieldUse f) -> Some f
     | _ -> None
 
+let (|UnionCaseFieldUse|_|) (item: Item) =
+    match item with
+    | Item.UnionCaseField (uci, fieldIndex) -> Some (fieldIndex, uci.UnionCaseRef)
+    | _ -> None
+
 let rec (|ILFieldUse|_|) (item: Item) =
     match item with
     | Item.ILField finfo -> Some finfo
@@ -1614,6 +1621,9 @@ let ItemsAreEffectivelyEqual g orig other =
     | RecordFieldUse(name1, tcref1), RecordFieldUse(name2, tcref2) ->
         name1 = name2 && tyconRefDefnEq g tcref1 tcref2
 
+    | UnionCaseFieldUse(fieldIndex1, ucref1), UnionCaseFieldUse(fieldIndex2, ucref2) ->
+        unionCaseRefDefnEq g ucref1 ucref2 && fieldIndex1 = fieldIndex2 
+
     | EventUse evt1, EventUse evt2 ->
         EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2  ||
         // Allow for equality up to signature matching
@@ -1639,6 +1649,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | ILFieldUse ilfinfo -> ilfinfo.ComputeHashCode()
     | UnionCaseUse ucase ->  hash ucase.CaseName
     | RecordFieldUse (name, _) -> hash name
+    | UnionCaseFieldUse (fieldIndex, case) -> hash (case.CaseName, fieldIndex)
     | EventUse einfo -> einfo.ComputeHashCode()
     | Item.ModuleOrNamespaces (mref :: _) -> hash mref.DefinitionRange
     | _ -> 389329
@@ -1903,6 +1914,7 @@ let CheckAllTyparsInferrable amap m item =
     | Item.UnionCase _
     | Item.ExnCase _
     | Item.RecdField _
+    | Item.UnionCaseField _
     | Item.AnonRecdField _
     | Item.NewDef _
     | Item.ILField _

@@ -119,6 +119,9 @@ module UnusedOpens =
                 // Record fields are used in name resolution
                 true
 
+             | :? FSharpField as field when field.IsUnionCaseField ->
+                 false
+
              | _ ->
                 // For the rest of symbols we pick only those which are the first part of a long ident, because it's they which are
                 // contained in opened namespaces / modules. For example, we pick `IO` from long ident `IO.File.OpenWrite` because

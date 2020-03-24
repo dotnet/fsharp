@@ -408,6 +408,7 @@ module internal DescriptionListsImpl =
             | Item.ExnCase _ -> FSharpGlyph.Exception   
             | Item.AnonRecdField _ -> FSharpGlyph.Field
             | Item.RecdField _ -> FSharpGlyph.Field
+            | Item.UnionCaseField _ -> FSharpGlyph.Field
             | Item.ILField _ -> FSharpGlyph.Field
             | Item.Event _ -> FSharpGlyph.Event   
             | Item.Property _ -> FSharpGlyph.Property   

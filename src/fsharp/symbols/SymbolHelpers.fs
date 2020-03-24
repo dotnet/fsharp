@@ -352,11 +352,14 @@ module internal SymbolHelpers =
         | Some false -> ucinfo.UnionCase.DefinitionRange 
         | Some true -> ucinfo.UnionCase.SigRange
 
-    let rangeOfRecdFieldInfo preferFlag (rfinfo: RecdFieldInfo) =      
-        match preferFlag with 
-        | None -> rfinfo.RecdField.Range 
-        | Some false -> rfinfo.RecdField.DefinitionRange 
-        | Some true -> rfinfo.RecdField.SigRange
+    let rangeOfRecdField preferFlag (rField: RecdField) =
+        match preferFlag with
+        | None -> rField.Range
+        | Some false -> rField.DefinitionRange
+        | Some true -> rField.SigRange
+
+    let rangeOfRecdFieldInfo preferFlag (rfinfo: RecdFieldInfo) =
+        rangeOfRecdField preferFlag rfinfo.RecdField
 
     let rec rangeOfItem (g: TcGlobals) preferFlag d = 
         match d with
@@ -366,6 +369,7 @@ module internal SymbolHelpers =
         | Item.ExnCase tcref           -> Some tcref.Range
         | Item.AnonRecdField (_,_,_,m) -> Some m
         | Item.RecdField rfinfo        -> Some (rangeOfRecdFieldInfo preferFlag rfinfo)
+        | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> Some (rangeOfRecdField preferFlag (ucref.FieldByIndex(fieldIndex)))
         | Item.Event einfo             -> rangeOfEventInfo preferFlag einfo
         | Item.ILField _               -> None
         | Item.Property(_, pinfos)      -> rangeOfPropInfo preferFlag pinfos.Head 
@@ -409,6 +413,7 @@ module internal SymbolHelpers =
         | Item.ActivePatternCase apref         -> ccuOfValRef apref.ActivePatternVal
         | Item.ExnCase tcref                   -> computeCcuOfTyconRef tcref
         | Item.RecdField rfinfo                -> computeCcuOfTyconRef rfinfo.RecdFieldRef.TyconRef
+        | Item.UnionCaseField (ucinfo, _)      -> computeCcuOfTyconRef ucinfo.TyconRef
         | Item.Event einfo                     -> einfo.DeclaringTyconRef |> computeCcuOfTyconRef
         | Item.ILField finfo                   -> finfo.DeclaringTyconRef |> computeCcuOfTyconRef
         | Item.Property(_, pinfos)              -> 
@@ -630,7 +635,7 @@ module internal SymbolHelpers =
             match argContainer with 
             | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
             | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-            | ArgumentContainer.UnionCase ucinfo -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
+        | Item.UnionCaseField (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseInfo ucinfo)
         |  _ -> FSharpXmlDoc.None
 
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
@@ -909,6 +914,7 @@ module internal SymbolHelpers =
         | Item.ArgName (id, _, _) -> id.idText
         | Item.SetterArg (_, item) -> FullNameOfItem g item
         | Item.ImplicitOp(id, _) -> id.idText
+        | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).Name
         // unreachable 
         | Item.UnqualifiedType([]) 
         | Item.Types(_, []) 
@@ -937,7 +943,16 @@ module internal SymbolHelpers =
             GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib ecref || ecref.XmlDoc.NonEmpty then Some ecref.XmlDoc else None) infoReader m item 
 
         | Item.RecdField rfinfo ->
-            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib rfinfo.TyconRef || rfinfo.TyconRef.XmlDoc.NonEmpty then Some rfinfo.RecdField.XmlDoc else None) infoReader m item 
+            let tcref = rfinfo.TyconRef
+            let xmldoc =
+                if tyconRefUsesLocalXmlDoc g.compilingFslib tcref || tcref.XmlDoc.NonEmpty then
+                    if tcref.IsExceptionDecl then
+                        Some tcref.XmlDoc
+                    else
+                        Some rfinfo.RecdField.XmlDoc
+                else
+                    None
+            GetXmlCommentForItemAux xmldoc infoReader m item 
 
         | Item.Event einfo ->
             GetXmlCommentForItemAux (if einfo.HasDirectXmlComment || einfo.XmlDoc.NonEmpty then Some einfo.XmlDoc else None) infoReader m item 
@@ -968,9 +983,12 @@ module internal SymbolHelpers =
                     if minfo.HasDirectXmlComment || minfo.XmlDoc.NonEmpty  then Some minfo.XmlDoc else None 
                 | Some(ArgumentContainer.Type tcref) ->
                     if tyconRefUsesLocalXmlDoc g.compilingFslib tcref || tcref.XmlDoc.NonEmpty  then Some tcref.XmlDoc else None
-                | Some(ArgumentContainer.UnionCase ucinfo) ->
-                    if tyconRefUsesLocalXmlDoc g.compilingFslib ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then Some ucinfo.UnionCase.XmlDoc else None
                 | _ -> None
+            GetXmlCommentForItemAux xmldoc infoReader m item
+
+        | Item.UnionCaseField (ucinfo, _) ->
+            let xmldoc =
+                if tyconRefUsesLocalXmlDoc g.compilingFslib ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then Some ucinfo.UnionCase.XmlDoc else None
             GetXmlCommentForItemAux xmldoc infoReader m item
 
         | Item.SetterArg (_, item) -> 
@@ -1063,6 +1081,16 @@ module internal SymbolHelpers =
             let remarks= OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
             FSharpStructuredToolTipElement.Single (layout, xml, remarks=remarks)
 
+        | Item.RecdField rfinfo when rfinfo.TyconRef.IsExceptionDecl ->
+            let ty, _ = PrettyTypes.PrettifyType g rfinfo.FieldType
+            let id = rfinfo.RecdField.Id
+            let layout =
+                wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
+                wordL (tagParameter id.idText) ^^
+                RightL.colon ^^
+                NicePrint.layoutType denv ty
+            FSharpStructuredToolTipElement.Single (layout, xml, paramName = id.idText)
+
         // F# record field names
         | Item.RecdField rfinfo ->
             let rfield = rfinfo.RecdField
@@ -1079,6 +1107,17 @@ module internal SymbolHelpers =
                     | Some lit -> try WordL.equals ^^  NicePrint.layoutConst denv.g ty lit with _ -> emptyL
                 )
             FSharpStructuredToolTipElement.Single (layout, xml)
+
+        | Item.UnionCaseField (ucinfo, fieldIndex) ->
+            let rfield = ucinfo.UnionCase.GetFieldByIndex(fieldIndex)
+            let fieldTy, _ = PrettyTypes.PrettifyType g rfield.rfield_type
+            let id = rfield.Id
+            let layout =
+                wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
+                wordL (tagParameter id.idText) ^^
+                RightL.colon ^^
+                NicePrint.layoutType denv fieldTy
+            FSharpStructuredToolTipElement.Single (layout, xml, paramName = id.idText)
 
         // Not used
         | Item.NewDef id -> 
@@ -1455,6 +1494,7 @@ module internal SymbolHelpers =
         | Item.CustomOperation (_, _, None)   // "into"
         | Item.NewDef _ // "let x$yz = ..." - no keyword
         | Item.ArgName _ // no keyword on named parameters 
+        | Item.UnionCaseField _ 
         | Item.TypeVar _ 
         | Item.ImplicitOp _
         | Item.ActivePatternResult _ // "let (|Foo|Bar|) = .. Fo$o ..." - no keyword
