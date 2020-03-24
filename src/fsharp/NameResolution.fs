@@ -1644,8 +1644,8 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | _ -> 389329
 
 [<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
-type CapturedNameResolution(p: pos, i: Item, tpinst, io: ItemOccurence, de: DisplayEnv, nre: NameResolutionEnv, ad: AccessorDomain, m: range) =
-    member this.Pos = p
+type CapturedNameResolution(i: Item, tpinst, io: ItemOccurence, de: DisplayEnv, nre: NameResolutionEnv, ad: AccessorDomain, m: range) =
+    member this.Pos = m.End
     member this.Item = i
     member this.ItemWithInst = ({ Item = i; TyparInst = tpinst } : ItemWithInst)
     member this.ItemOccurence = io
@@ -1654,7 +1654,7 @@ type CapturedNameResolution(p: pos, i: Item, tpinst, io: ItemOccurence, de: Disp
     member this.AccessorDomain = ad
     member this.Range = m
     member this.DebugToString() =
-        sprintf "%A: %+A" (p.Line, p.Column) i
+        sprintf "%A: %+A" (this.Pos.Line, this.Pos.Column) i
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcResolutions
@@ -1794,8 +1794,8 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
                             | _ -> false
 
                     if not alreadyDone then
-                        capturedNameResolutions.Add(CapturedNameResolution(endPos, item, tpinst, occurenceType, denv, nenv, ad, m))
-                        capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos, itemMethodGroup, [], occurenceType, denv, nenv, ad, m))
+                        capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, denv, nenv, ad, m))
+                        capturedMethodGroupResolutions.Add(CapturedNameResolution(itemMethodGroup, [], occurenceType, denv, nenv, ad, m))
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) =
             capturedFormatSpecifierLocations.Add((m, numArgs))
