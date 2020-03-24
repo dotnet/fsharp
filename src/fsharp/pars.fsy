@@ -57,10 +57,10 @@ let mkSynDoBinding (vis, strict, expr, m) =
     match vis with
     | Some vis -> errorR(Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis.ToString()), m))
     | None -> ()
-    Binding (None, 
-             (if strict then DoBinding else StandaloneExpression), 
-             false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, 
-             (if strict then SynPat.Const(SynConst.Unit, m) else SynPat.Wild m), 
+    Binding (None,
+             (if strict then DoBinding else StandaloneExpression),
+             false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData,
+             (if strict then SynPat.Const(SynConst.Unit, m) else SynPat.Wild m),
              None, expr, m, NoSequencePointAtDoBinding)
 
 let mkSynDoDecl (e: SynExpr) = 
@@ -311,7 +311,7 @@ let rangeOfLongIdent(lid:LongIdent) =
  *   'Conflicts resolved by precedence are not counted in the number of S/R and R/R
  *    conflicts reported by Yacc. This means that mistakes in the moduleSpfn of
  *    precedences may disguise errors in the input grammar; it is a good idea to be
- *    sparing with precedences, and use them in an essentially ``cookbook'' fashion, 
+ *    sparing with precedences, and use them in an essentially ``cookbook'' fashion,
  *    until some experience has been gained'
  *
  * Observation:
@@ -326,7 +326,7 @@ let rangeOfLongIdent(lid:LongIdent) =
  *       | TokA TokB TokC@precLong TokD {action2}     -- assign prec to TokC at this point.
  *
  * Observation: reduce/reduce
- *   If there is a common prefix with a reduce/reduce conflict, 
+ *   If there is a common prefix with a reduce/reduce conflict,
  *   e.g "OPEN path" for topopens and moduleDefns then can factor
  *   opendef = "OPEN path" which can be on both paths.
  *
@@ -335,7 +335,7 @@ let rangeOfLongIdent(lid:LongIdent) =
  *
  * Dummy terminals (like prec_type_prefix) can assign precedence to a rule.
  * Doc says rule and (shift) token precedence resolves shift/reduce conflict.
- * It seems like dummy terminals can not assign precedence to the shift, 
+ * It seems like dummy terminals can not assign precedence to the shift,
  * but including the tokens in the precedences below will order them.
  * e.g. prec_type_prefix lower precedence than RARROW, LBRACK, IDENT, STAR (all extend types).
  */
@@ -1686,7 +1686,7 @@ memberCore:
                    | None -> None
                    | Some memberKind ->
 
-                   // REVIEW: It's hard not to ignore the optPropertyType type annotation for 'set' properties. To apply it, 
+                   // REVIEW: It's hard not to ignore the optPropertyType type annotation for 'set' properties. To apply it,
                    // we should apply it to the last argument, but at this point we've already pushed the patterns that 
                    // make up the arguments onto the RHS. So we just always give a warning. 
 
@@ -1756,7 +1756,7 @@ memberCore:
                    let valSynData = SynValData(Some(memFlags), valSynInfo, None) 
 
                    // Fold together the information from the first lambda pattern and the get/set binding
-                   // This uses the 'this' variable from the first and the patterns for the get/set binding, 
+                   // This uses the 'this' variable from the first and the patterns for the get/set binding,
                    // replacing the get/set identifier. A little gross. 
 
                    let bindingPatAdjusted, xmlDocAdjusted = 
@@ -2110,11 +2110,11 @@ tyconDefnOrSpfnSimpleRepr:
                                               | Choice1Of2 data ->  
                                                 Some(data) 
                                               | Choice2Of2(UnionCase(_, _, _, _, _, m)) -> 
-                                                errorR(Error(FSComp.SR.parsAllEnumFieldsRequireValues(), m)); None), 
+                                                errorR(Error(FSComp.SR.parsAllEnumFieldsRequireValues(), m)); None),
                            mWhole)
        ) else 
-           SynTypeDefnSimpleRepr.Union ($2, 
-                            $3 |> List.choose (function Choice2Of2 data -> Some(data) | Choice1Of2 _ -> failwith "huh?"), 
+           SynTypeDefnSimpleRepr.Union ($2,
+                            $3 |> List.choose (function Choice2Of2 data -> Some(data) | Choice1Of2 _ -> failwith "huh?"),
                             mWhole) }
 
   /* A record type definition */
@@ -2478,13 +2478,13 @@ defnBindings:
             | Some lastRange -> unionRanges mLetKwd lastRange
 
         // The first binding swallows any attributes prior to the 'let'
-        BindingSetPreAttrs(mLetKwd, isRec, isUse, 
+        BindingSetPreAttrs(mLetKwd, isRec, isUse,
             (fun attrs vis -> 
                 // apply the builder
                 let binds = localBindingsBuilder attrs vis mLetKwd
                 if not isRec && not (isNilOrSingleton binds) then 
                       reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
-                [], binds), 
+                [], binds),
             bindingSetRange) }
 
   | cPrototype
@@ -2519,12 +2519,12 @@ hardwhiteLetBindings:
             | Some lastRange -> unionRanges mLetKwd lastRange
 
         // the first binding swallow any attributes prior to the 'let' 
-        BindingSetPreAttrs(mLetKwd, isRec, isUse, 
+        BindingSetPreAttrs(mLetKwd, isRec, isUse,
           (fun attrs vis ->
             let binds = localBindingsBuilder attrs vis mLetKwd
             if not isRec && not (isNilOrSingleton binds) then
                 reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
-            [], binds), 
+            [], binds),
           bindingSetRange), (unionRanges mLetKwd bindingSetRange) }
 
 
@@ -2579,10 +2579,10 @@ cPrototype:
         let mBindLhs = lhs parseState
         let mWhole = lhs parseState
         let mRhs = lhs parseState 
-        let rhsExpr = SynExpr.App (ExprAtomicFlag.NonAtomic, 
-                                  false, 
-                                  SynExpr.Ident (ident("failwith", rhs parseState 6)), 
-                                  SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", rhs parseState 8), rhs parseState 8), 
+        let rhsExpr = SynExpr.App (ExprAtomicFlag.NonAtomic,
+                                  false,
+                                  SynExpr.Ident (ident("failwith", rhs parseState 6)),
+                                  SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", rhs parseState 8), rhs parseState 8),
                                   mRhs)
         (fun attrs vis -> 
             let bindingId = SynPat.LongIdent (LongIdentWithDots([nm], []), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
@@ -4090,38 +4090,38 @@ optRangeSeqExpr:
 optRange:
   | rangeDeclExpr DOT_DOT rangeDeclExpr 
       { SynIndexerArg.Two(
-          mkSynOptionalExpr (rhs parseState 1) (Some (fst $1)), 
-          (snd $1), 
-          mkSynOptionalExpr (rhs parseState 3) (Some (fst $3)), 
-          (snd $3), 
-          (rhs parseState 1), 
+          mkSynOptionalExpr (rhs parseState 1) (Some (fst $1)),
+          (snd $1),
+          mkSynOptionalExpr (rhs parseState 3) (Some (fst $3)),
+          (snd $3),
+          (rhs parseState 1),
           (rhs parseState 3)) }
 
    | rangeDeclExpr DOT_DOT 
       { SynIndexerArg.Two(
-          mkSynOptionalExpr (rhs parseState 1) (Some (fst $1)), 
-          (snd $1), 
-          mkSynOptionalExpr (rhs parseState 2) None, 
-          false, 
-          (rhs parseState 1), 
+          mkSynOptionalExpr (rhs parseState 1) (Some (fst $1)),
+          (snd $1),
+          mkSynOptionalExpr (rhs parseState 2) None,
+          false,
+          (rhs parseState 1),
           (rhs parseState 2)) }
 
   | DOT_DOT rangeDeclExpr 
       { SynIndexerArg.Two(
-          mkSynOptionalExpr (rhs parseState 1) None, 
-          false, 
-          mkSynOptionalExpr (rhs parseState 2) (Some (fst $2)), 
-          (snd $2), 
-          (rhs parseState 2), 
+          mkSynOptionalExpr (rhs parseState 1) None,
+          false,
+          mkSynOptionalExpr (rhs parseState 2) (Some (fst $2)),
+          (snd $2),
+          (rhs parseState 2),
           (rhs parseState 1)) }
       
   | STAR 
       { SynIndexerArg.Two(
-          mkSynOptionalExpr (rhs parseState 1) None, 
-          false, 
-          (mkSynOptionalExpr (rhs parseState 1) None), 
-          false, 
-          (rhs parseState 1), 
+          mkSynOptionalExpr (rhs parseState 1) None,
+          false,
+          (mkSynOptionalExpr (rhs parseState 1) None),
+          false,
+          (rhs parseState 1),
           (rhs parseState 1)) }
 
   | rangeDeclExpr
@@ -4338,7 +4338,7 @@ rangeSequenceExpr:
   | declExpr DOT_DOT  declExpr  
      { let opm = (rhs parseState 2)
        (unionRanges $1.Range $3.Range), (fun _isArray wholem -> 
-                                                // in the case of "{ 1 .. 10 }", we want the range of the expression to include the curlies, that comes from a higher level rule in the grammar, 
+                                                // in the case of "{ 1 .. 10 }", we want the range of the expression to include the curlies, that comes from a higher level rule in the grammar,
                                                 // passed down as 'wholem', so patch up that range here
                                                 match (mkSynInfix opm $1 ".." $3) with
                                                 | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, wholem)
@@ -4352,7 +4352,7 @@ rangeSequenceExpr:
        let opm = (rhs parseState 2)
        let e = arbExpr("rangeSeqError1", (rhs parseState 3).StartRange)
        (unionRanges $1.Range e.Range), (fun _isArray wholem -> 
-                                                // in the case of "{ 1 .. 10 }", we want the range of the expression to include the curlies, that comes from a higher level rule in the grammar, 
+                                                // in the case of "{ 1 .. 10 }", we want the range of the expression to include the curlies, that comes from a higher level rule in the grammar,
                                                 // passed down as 'wholem', so patch up that range here
                                                 match (mkSynInfix opm $1 ".." e) with
                                                 | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, wholem)
