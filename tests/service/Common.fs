@@ -200,7 +200,7 @@ let parseSourceCode (name: string, code: string) =
     let parseResults = checker.ParseFile(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
     parseResults.ParseTree
 
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 
 let parseSourceCodeAndGetModule (source: string) =
     match parseSourceCode ("test", source) with

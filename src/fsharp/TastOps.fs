@@ -5,24 +5,27 @@ module internal FSharp.Compiler.Tastops
 
 open System.Collections.Generic 
 open Internal.Utilities
+
+open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.Extensions.ILX 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler 
-open FSharp.Compiler.Range
-open FSharp.Compiler.Rational
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Lib
-open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Features
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Features
+open FSharp.Compiler.Range
+open FSharp.Compiler.Rational
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.XmlDoc
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
@@ -1237,13 +1240,13 @@ let mkLetsFromBindings m binds body = List.foldBack (mkLetBind m) binds body
 let mkLet seqPtOpt m v x body = mkLetBind m (mkBind seqPtOpt v x) body
 
 /// Make sticky bindings that are compiler generated (though the variables may not be - e.g. they may be lambda arguments in a beta reduction)
-let mkCompGenBind v e = TBind(v, e, NoSequencePointAtStickyBinding)
+let mkCompGenBind v e = TBind(v, e, NoDebugPointAtStickyBinding)
 let mkCompGenBinds (vs: Val list) (es: Expr list) = List.map2 mkCompGenBind vs es
 let mkCompGenLet m v x body = mkLetBind m (mkCompGenBind v x) body
 let mkCompGenLets m vs xs body = mkLetsBind m (mkCompGenBinds vs xs) body
 let mkCompGenLetsFromBindings m vs xs body = mkLetsFromBindings m (mkCompGenBinds vs xs) body
 
-let mkInvisibleBind v e = TBind(v, e, NoSequencePointAtInvisibleBinding)
+let mkInvisibleBind v e = TBind(v, e, NoDebugPointAtInvisibleBinding)
 let mkInvisibleBinds (vs: Val list) (es: Expr list) = List.map2 mkInvisibleBind vs es
 let mkInvisibleLet m v x body = mkLetBind m (mkInvisibleBind v x) body
 let mkInvisibleLets m vs xs body = mkLetsBind m (mkInvisibleBinds vs xs) body
@@ -1298,8 +1301,8 @@ let isBeingGeneralized tp typeScheme =
 // Build conditional expressions...
 //------------------------------------------------------------------------- 
 
-let mkLazyAnd (g: TcGlobals) m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty e1 e2 (Expr.Const (Const.Bool false, m, g.bool_ty))
-let mkLazyOr (g: TcGlobals) m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty e1 (Expr.Const (Const.Bool true, m, g.bool_ty)) e2
+let mkLazyAnd (g: TcGlobals) m e1 e2 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.bool_ty e1 e2 (Expr.Const (Const.Bool false, m, g.bool_ty))
+let mkLazyOr (g: TcGlobals) m e1 e2 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.bool_ty e1 (Expr.Const (Const.Bool true, m, g.bool_ty)) e2
 
 let mkCoerceExpr(e, to_ty, m, from_ty) = Expr.Op (TOp.Coerce, [to_ty;from_ty], [e], m)
 
@@ -5548,8 +5551,8 @@ let rec remarkExpr m x =
         Expr.Let (remarkBind m bind, remarkExpr m e, m, fvs)
 
     | Expr.Match (_, _, pt, targets, _, ty) ->
-        let targetsR = targets |> Array.map (fun (TTarget(vs, e, _)) -> TTarget(vs, remarkExpr m e, SuppressSequencePointAtTarget))
-        primMkMatch (NoSequencePointAtInvisibleBinding, m, remarkDecisionTree m pt, targetsR, m, ty)
+        let targetsR = targets |> Array.map (fun (TTarget(vs, e, _)) -> TTarget(vs, remarkExpr m e, DebugPointForTarget.No))
+        primMkMatch (NoDebugPointAtInvisibleBinding, m, remarkDecisionTree m pt, targetsR, m, ty)
 
     | Expr.Val (x, valUseFlags, _) ->
         Expr.Val (x, valUseFlags, m)
@@ -5565,8 +5568,8 @@ let rec remarkExpr m x =
     | Expr.Op (op, tinst, args, _) -> 
         let op = 
             match op with 
-            | TOp.TryFinally (_, _) -> TOp.TryFinally (NoSequencePointAtTry, NoSequencePointAtFinally)
-            | TOp.TryCatch (_, _) -> TOp.TryCatch (NoSequencePointAtTry, NoSequencePointAtWith)
+            | TOp.TryFinally (_, _) -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
+            | TOp.TryCatch (_, _) -> TOp.TryCatch (DebugPointAtTry.No, DebugPointAtWith.No)
             | _ -> op
         Expr.Op (op, tinst, remarkExprs m args, m)
 
@@ -5579,7 +5582,7 @@ let rec remarkExpr m x =
         Expr.App (remarkExpr m e1, e1ty, tyargs, remarkExprs m args, m)
 
     | Expr.Sequential (e1, e2, dir, _, _) ->
-        Expr.Sequential (remarkExpr m e1, remarkExpr m e2, dir, SuppressSequencePointOnExprOfSequential, m)
+        Expr.Sequential (remarkExpr m e1, remarkExpr m e2, dir, DebugPointAtSequential.StmtOnly, m)
 
     | Expr.StaticOptimization (eqns, e2, e3, _) ->
         Expr.StaticOptimization (eqns, remarkExpr m e2, remarkExpr m e3, m)
@@ -5610,7 +5613,7 @@ and remarkBinds m binds = List.map (remarkBind m) binds
 
 // This very deliberately drops the sequence points since this is used when adjusting the marks for inlined expressions 
 and remarkBind m (TBind(v, repr, _)) = 
-    TBind(v, remarkExpr m repr, NoSequencePointAtStickyBinding)
+    TBind(v, remarkExpr m repr, NoDebugPointAtStickyBinding)
 
 //--------------------------------------------------------------------------
 // Mutability analysis
@@ -6569,7 +6572,7 @@ let mkRefCellContentsRef (g: TcGlobals) = mkRecdFieldRef g.refcell_tcr_canon "co
 
 let mkSequential spSeq m e1 e2 = Expr.Sequential (e1, e2, NormalSeq, spSeq, m)
 
-let mkCompGenSequential m e1 e2 = mkSequential SuppressSequencePointOnExprOfSequential m e1 e2
+let mkCompGenSequential m e1 e2 = mkSequential DebugPointAtSequential.StmtOnly m e1 e2
 
 let rec mkSequentials spSeq g m es = 
     match es with 
@@ -8072,17 +8075,17 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
     
     if canUseTypeTestFast g tgty then 
 
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m)
-        let tg2 = mbuilder.AddResultTarget(e2, SuppressSequencePointAtTarget)
-        let tg3 = mbuilder.AddResultTarget(e3, SuppressSequencePointAtTarget)
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
+        let tg2 = mbuilder.AddResultTarget(e2, DebugPointForTarget.No)
+        let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)
         let dtree = TDSwitch(exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         mkCompGenLet m v (mkIsInst tgty vinpe m) expr
 
     else
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m)
-        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, SuppressSequencePointAtTarget)))
-        let tg3 = mbuilder.AddResultTarget(e3, SuppressSequencePointAtTarget)
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
+        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, DebugPointForTarget.No)))
+        let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)
         let dtree = TDSwitch(vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         expr
@@ -8093,15 +8096,15 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
 //    1. The compilation of array patterns in the pattern match compiler
 //    2. The compilation of string patterns in the pattern match compiler
 let mkNullTest g m e1 e2 e3 =
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m)
-        let tg2 = mbuilder.AddResultTarget(e2, SuppressSequencePointAtTarget)
-        let tg3 = mbuilder.AddResultTarget(e3, SuppressSequencePointAtTarget)            
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
+        let tg2 = mbuilder.AddResultTarget(e2, DebugPointForTarget.No)
+        let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)            
         let dtree = TDSwitch(e1, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         expr         
 let mkNonNullTest (g: TcGlobals) m e = mkAsmExpr ([ IL.AI_ldnull ; IL.AI_cgt_un ], [], [e], [g.bool_ty], m)
-let mkNonNullCond g m ty e1 e2 e3 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m ty (mkNonNullTest g m e1) e2 e3
-let mkIfThen (g: TcGlobals) m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.unit_ty e1 e2 (mkUnit g m)
+let mkNonNullCond g m ty e1 e2 e3 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m ty (mkNonNullTest g m e1) e2 e3
+let mkIfThen (g: TcGlobals) m e1 e2 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.unit_ty e1 e2 (mkUnit g m)
 
 
 let ModuleNameIsMangled g attrs =
@@ -8894,8 +8897,8 @@ let (|CompiledForEachExpr|_|) g expr =
         let mBody = bodyExpr.Range
         let mWholeExpr = expr.Range
 
-        let spForLoop, mForLoop = match enumeratorBind with SequencePointAtBinding spStart -> SequencePointAtForLoop spStart, spStart | _ -> NoSequencePointAtForLoop, mEnumExpr
-        let spWhileLoop = match enumeratorBind with SequencePointAtBinding spStart -> SequencePointAtWhileLoop spStart| _ -> NoSequencePointAtWhileLoop
+        let spForLoop, mForLoop = match enumeratorBind with DebugPointAtBinding spStart -> DebugPointAtFor.Yes spStart, spStart | _ -> DebugPointAtFor.No, mEnumExpr
+        let spWhileLoop = match enumeratorBind with DebugPointAtBinding spStart -> DebugPointAtWhile.Yes spStart| _ -> DebugPointAtWhile.No
         let enumerableTy = tyOfExpr g enumerableExpr
 
         Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (mEnumExpr, mBody, spForLoop, mForLoop, spWhileLoop, mWholeExpr))
@@ -8976,7 +8979,7 @@ let DetectAndOptimizeForExpression g option expr =
 
             let expr =
                 // let mutable current = enumerableExpr
-                let spBind = (match spForLoop with SequencePointAtForLoop spStart -> SequencePointAtBinding spStart | NoSequencePointAtForLoop -> NoSequencePointAtStickyBinding)
+                let spBind = (match spForLoop with DebugPointAtFor.Yes spStart -> DebugPointAtBinding spStart | DebugPointAtFor.No -> NoDebugPointAtStickyBinding)
                 mkLet spBind mEnumExpr currentVar enumerableExpr
                     // let mutable next = current.TailOrNull
                     (mkCompGenLet mForLoop nextVar tailOrNullExpr 
@@ -9001,7 +9004,7 @@ let BindUnitVars g (mvs: Val list, paramInfos: ArgReprInfo list, body) =
     match mvs, paramInfos with 
     | [v], [] -> 
         assert isUnitTy g v.Type
-        [], mkLet NoSequencePointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
+        [], mkLet NoDebugPointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
     | _ -> mvs, body
 
 let isThreadOrContextStatic g attrs = 

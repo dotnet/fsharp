@@ -134,95 +134,118 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Ten dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Eleven dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Twelve dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Thirteen dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Fourteen dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Fifteen dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Sixteen dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Seventeen dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Eighteen dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Nineteen dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Twenty dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Twenty-one dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Twenty-two dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Twenty-three dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Twenty-four dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Twenty-five dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Twenty-six dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Twenty-seven dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Twenty-eight dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Twenty-nine dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Thirty dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Thirty-one dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Thirty-two dimensional arrays, typically zero-based. Non-zero-based arrays
     /// can be created using methods on the System.Array type.</summary>
-    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` = (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
+    type 'T ``[,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]`` =
+        (# "!0[0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...,0 ...]" #)
 
     /// <summary>Single dimensional, zero-based arrays, written <c>int[]</c>, <c>string[]</c> etc.</summary>
     /// 

@@ -295,7 +295,7 @@ type VersionHelper() =
     /// </param>
     /// <returns>True when parsing succeeds completely (i.e. every character in the string was consumed), false otherwise.</returns>
 
-    static member TryParseAssemblyVersion (s: string, allowWildcard: System.Boolean, [<System.Runtime.InteropServices.Out>] version: byref<Version>) = 
+    static member TryParseAssemblyVersion (s: string, allowWildcard: bool, [<System.Runtime.InteropServices.Out>] version: byref<Version>) = 
         VersionHelper.TryParse (s, allowWildcard, (UInt16.MaxValue - 1us), false, ref version)
 
     static member private NullVersion = new Version (0, 0, 0, 0)
@@ -313,14 +313,14 @@ type VersionHelper() =
     /// If <paramref name="s"/> contains * and wildcard is allowed the version build and/or revision numbers are set to <see cref="ushort.MaxValue"/>.
     /// </param>
     /// <returns>True when parsing succeeds completely (i.e. every character in the string was consumed), false otherwise.</returns>
-    static member private TryParse(s: string, allowWildcard: System.Boolean, maxValue: System.UInt16, allowPartialParse: System.Boolean, [<System.Runtime.InteropServices.Out>] version: byref<Version>) = 
+    static member private TryParse(s: string, allowWildcard: bool, maxValue: System.UInt16, allowPartialParse: bool, [<System.Runtime.InteropServices.Out>] version: byref<Version>) = 
         Debug.Assert (not allowWildcard || maxValue < UInt16.MaxValue)
         if String.IsNullOrWhiteSpace (s) then
             version <- VersionHelper.NullVersion
             false
         else
             let mutable (elements: string[]) = s.Split ('.')
-            let mutable (hasWildcard: System.Boolean) = allowWildcard && elements.[(int (elements.Length - 1))] = "*"
+            let mutable (hasWildcard: bool) = allowWildcard && elements.[(int (elements.Length - 1))] = "*"
             if hasWildcard && elements.Length < 3 || elements.Length > 4 then
                 version <- VersionHelper.NullVersion
                 false
@@ -330,7 +330,7 @@ type VersionHelper() =
                     if hasWildcard then
                         elements.Length - 1
                     else elements.Length
-                let mutable (parseError: System.Boolean) = false
+                let mutable (parseError: bool) = false
                 let mutable earlyReturn = None
                 do 
                     let mutable (i: int) = 0
@@ -351,7 +351,7 @@ type VersionHelper() =
                                         values.[i] <- 0us
                                         breakLoop <- true
                                     else
-                                        let mutable (invalidFormat: System.Boolean) = false
+                                        let mutable (invalidFormat: bool) = false
                                         //let mutable (number: System.Numerics.BigInteger) = 0I
                                         do 
                                             let mutable idx = 0
@@ -430,10 +430,22 @@ type VersionResourceSerializer () =
     static member val private CP_WINUNICODE = 1200u
     static member val private sizeVS_FIXEDFILEINFO = uint16 (sizeof<DWORD> * 13)
 
-    member val private _isDll = Unchecked.defaultof<System.Boolean> with get, set
+    member val private _isDll = Unchecked.defaultof<bool> with get, set
 
-    new(isDll: System.Boolean, comments: string, companyName: string, fileDescription: string, fileVersion: string, internalName: string, legalCopyright: string, legalTrademark: string, originalFileName: string, productName: string, productVersion: string, assemblyVersion: Version) as this = 
-        (VersionResourceSerializer ())
+    new(isDll: bool,
+        comments: string,
+        companyName: string,
+        fileDescription: string,
+        fileVersion: string,
+        internalName: string,
+        legalCopyright: string,
+        legalTrademark: string,
+        originalFileName: string,
+        productName: string,
+        productVersion: string,
+        assemblyVersion: Version) as this = 
+
+        VersionResourceSerializer ()
         then
             this._isDll <- isDll
             this._commentsContents <- comments
@@ -689,7 +701,19 @@ type Win32ResourceConversions () =
                 i <- i + 1us
         ()
 
-    static member AppendVersionToResourceStream (resStream: Stream, isDll: System.Boolean, fileVersion: string, originalFileName: string, internalName: string, productVersion: string, assemblyVersion: Version, ?fileDescription: string, ?legalCopyright: string, ?legalTrademarks: string, ?productName: string, ?comments: string, ?companyName: string) = 
+    static member AppendVersionToResourceStream (resStream: Stream, 
+            isDll: bool,
+            fileVersion: string,
+            originalFileName: string,
+            internalName: string,
+            productVersion: string,
+            assemblyVersion: Version,
+            ?fileDescription: string,
+            ?legalCopyright: string,
+            ?legalTrademarks: string,
+            ?productName: string,
+            ?comments: string,
+            ?companyName: string) = 
         let fileDescription = (defaultArg fileDescription) " "
         let legalCopyright = (defaultArg legalCopyright) " "
         let legalTrademarks = (defaultArg legalTrademarks) Unchecked.defaultof<_>
@@ -699,7 +723,11 @@ type Win32ResourceConversions () =
         let mutable resWriter = new BinaryWriter(resStream, Encoding.Unicode)
         resStream.Position <- resStream.Position + 3L &&& ~~~3L
         let mutable (RT_VERSION: DWORD) = 16u
-        let mutable ver = new VersionResourceSerializer(isDll, comments, companyName, fileDescription, fileVersion, internalName, legalCopyright, legalTrademarks, originalFileName, productName, productVersion, assemblyVersion)
+        let mutable ver =
+            new VersionResourceSerializer(isDll, comments, companyName,
+                fileDescription, fileVersion, internalName, legalCopyright,
+                legalTrademarks, originalFileName, productName, productVersion,
+                assemblyVersion)
         let mutable startPos = resStream.Position
         let mutable dataSize = ver.GetDataSize ()
         let mutable (headerSize: int) = 0x20
@@ -717,7 +745,7 @@ type Win32ResourceConversions () =
         ver.WriteVerResource (resWriter)
         Debug.Assert (resStream.Position - startPos = int64 dataSize + int64 headerSize)
 
-    static member AppendManifestToResourceStream(resStream: Stream, manifestStream: Stream, isDll: System.Boolean) = 
+    static member AppendManifestToResourceStream(resStream: Stream, manifestStream: Stream, isDll: bool) = 
         resStream.Position <- resStream.Position + 3L &&& ~~~3L (* ERROR UnknownPrefixOperator "~" *)
         let mutable (RT_MANIFEST: WORD) = 24us
         let mutable resWriter = new BinaryWriter(resStream)
@@ -784,7 +812,7 @@ type NativeResourceWriter () =
         let mutable (lastName: string) = Unchecked.defaultof<_>
         let mutable (sizeOfDirectoryTree: System.UInt32) = 16u
         for (r: Win32Resource) in theResources do
-            let mutable (typeDifferent: System.Boolean) = r.TypeId < 0 && r.TypeName <> lastTypeName || r.TypeId > lastTypeID
+            let mutable (typeDifferent: bool) = r.TypeId < 0 && r.TypeName <> lastTypeName || r.TypeId > lastTypeID
             if typeDifferent then 
                 lastTypeID <- r.TypeId
                 lastTypeName <- r.TypeName

@@ -332,8 +332,17 @@
     <Compile Include="..\layout.fs">
       <Link>ParserAndUntypedAST\layout.fs</Link>
     </Compile>
-    <Compile Include="..\ast.fs">
-      <Link>ParserAndUntypedAST\ast.fs</Link>
+    <Compile Include="..\XmlDoc.fs">
+      <Link>ParserAndUntypedAST\XmlDoc.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractSyntax.fs">
+      <Link>ParserAndUntypedAST\AbstractSyntax.fs</Link>
+    </Compile>
+    <Compile Include="..\AbstractSyntaxOps.fs">
+      <Link>ParserAndUntypedAST\AbstractSyntaxOps.fs</Link>
+    </Compile>
+    <Compile Include="..\ParseHelpers.fs">
+      <Link>ParserAndUntypedAST\ParseHelpers.fs</Link>
     </Compile>
     <Compile Include="pppars.fs">
       <Link>ParserAndUntypedAST\pppars.fs</Link>

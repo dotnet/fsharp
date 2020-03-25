@@ -7,6 +7,7 @@ open System
 open System.Collections.Generic
 
 open FSharp.Compiler 
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Range
 
 /// Assembly content type.
@@ -142,15 +143,15 @@ module public ParsedInput =
     /// Returns `InsertContext` based on current position and symbol idents.
     val tryFindInsertionContext : 
         currentLine: int -> 
-        ast: Ast.ParsedInput -> MaybeUnresolvedIdents -> 
+        ast: ParsedInput -> MaybeUnresolvedIdents -> 
         insertionPoint: OpenStatementInsertionPoint ->
         (( (* requiresQualifiedAccessParent: *) Idents option * (* autoOpenParent: *) Idents option * (*  entityNamespace *) Idents option * (* entity: *) Idents) -> (Entity * InsertContext)[])
     
     /// Returns `InsertContext` based on current position and symbol idents.
-    val findNearestPointToInsertOpenDeclaration : currentLine: int -> ast: Ast.ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext
+    val findNearestPointToInsertOpenDeclaration : currentLine: int -> ast: ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext
 
     /// Returns long identifier at position.
-    val getLongIdentAt : ast: Ast.ParsedInput -> pos: Range.pos -> Ast.LongIdent option
+    val getLongIdentAt : ast: ParsedInput -> pos: pos -> LongIdent option
 
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
     val adjustInsertionPoint : getLineStr: (int -> string) -> ctx: InsertContext -> pos
