@@ -6,8 +6,9 @@ module internal FSharp.Compiler.PPLexer
 
 open System
 
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Lexhelp
 
 open Internal.Utilities.Text.Lexing

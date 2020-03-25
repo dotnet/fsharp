@@ -3,11 +3,11 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Tast
-open FSharp.Compiler.Range
-open FSharp.Compiler.CompileOps
-
 
 /// Represents the definitional contents of an assembly, as seen by the F# language
 type public FSharpAssemblyContents = 
@@ -217,5 +217,5 @@ module public BasicPatterns =
     val (|ObjectExpr|_|) : FSharpExpr -> (FSharpType * FSharpExpr * FSharpObjectExprOverride list * (FSharpType * FSharpObjectExprOverride list) list) option
 
     /// Matches expressions for an unresolved call to a trait 
-    val (|TraitCall|_|) : FSharpExpr -> (FSharpType list * string * Ast.MemberFlags * FSharpType list * FSharpType list * FSharpExpr list) option 
+    val (|TraitCall|_|) : FSharpExpr -> (FSharpType list * string * MemberFlags * FSharpType list * FSharpType list * FSharpExpr list) option 
 

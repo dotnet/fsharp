@@ -5,7 +5,7 @@ module internal FSharp.Compiler.ConstraintSolver
 
 open FSharp.Compiler 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Range

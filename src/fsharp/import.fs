@@ -6,15 +6,17 @@ module internal FSharp.Compiler.Import
 open System.Collections.Concurrent
 open System.Collections.Generic
 
+open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler 
+open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Ast
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.XmlDoc
+
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif

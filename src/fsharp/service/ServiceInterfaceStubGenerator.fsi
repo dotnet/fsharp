@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
         

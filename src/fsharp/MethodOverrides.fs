@@ -5,19 +5,20 @@ module internal FSharp.Compiler.MethodOverrides
 
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
-open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
-open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
-open FSharp.Compiler.Features
 
 //-------------------------------------------------------------------------
 // Completeness of classes

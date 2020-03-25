@@ -6,15 +6,13 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Range
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
 open FSharp.Compiler.TcGlobals
-
-open System.Collections.Generic
 
 [<Sealed>]
 type TcEnv =
@@ -60,7 +58,7 @@ exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
 exception NotAFunction of DisplayEnv * TType * range * range
 exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
-exception Recursion of DisplayEnv * Ast.Ident * TType * TType * range
+exception Recursion of DisplayEnv * Ident * TType * TType * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
 exception LetRecCheckedAtRuntime of range
@@ -77,7 +75,7 @@ exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * str
 exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
 exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnionPatternsBindDifferentNames of range
-exception VarBoundTwice of Ast.Ident
+exception VarBoundTwice of Ident
 exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
 exception ValNotMutable of DisplayEnv * ValRef * range
 exception ValNotLocal of DisplayEnv * ValRef * range
