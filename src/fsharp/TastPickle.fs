@@ -2543,12 +2543,12 @@ and u_op st =
             let d = u_tys st
             TOp.ILCall (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d)
     | 19 -> TOp.Array
-    | 20 -> TOp.While (DebugPointForWhileLoop.No, NoSpecialWhileLoopMarker)
+    | 20 -> TOp.While (DebugPointAtWhile.No, NoSpecialWhileLoopMarker)
     | 21 -> let dir = match u_int st with 0 -> FSharpForLoopUp | 1 -> CSharpForLoopUp | 2 -> FSharpForLoopDown | _ -> failwith "unknown for loop"
-            TOp.For (DebugPointForForLoop.No, dir)
+            TOp.For (DebugPointAtFor.No, dir)
     | 22 -> TOp.Bytes (u_bytes st)
-    | 23 -> TOp.TryCatch (DebugPointForTry.No, DebugPointForWith.No)
-    | 24 -> TOp.TryFinally (DebugPointForTry.No, DebugPointForFinally.No)
+    | 23 -> TOp.TryCatch (DebugPointAtTry.No, DebugPointAtWith.No)
+    | 24 -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
     | 25 -> let a = u_rfref st
             TOp.ValFieldGetAddr (a, false)
     | 26 -> TOp.UInt16s (u_array u_uint16 st)
@@ -2604,7 +2604,7 @@ and u_expr st =
            let b = u_expr st
            let c = u_int st
            let d = u_dummy_range  st
-           Expr.Sequential (a, b, (match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"), DebugPointForSequential.StmtOnly, d)
+           Expr.Sequential (a, b, (match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"), DebugPointAtSequential.StmtOnly, d)
     | 4 -> let a0 = u_option u_Val st
            let b0 = u_option u_Val st
            let b1 = u_Vals st

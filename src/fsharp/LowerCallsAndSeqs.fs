@@ -204,8 +204,8 @@ let LowerSeqExpr g amap overallExpr =
         let (TBind(v, e, sp)) = bind
         let sp, spm =
             match sp with
-            | DebugPointAtBinding m -> DebugPointForSequential.Both, m
-            | _ -> DebugPointForSequential.StmtOnly, e.Range
+            | DebugPointAtBinding m -> DebugPointAtSequential.Both, m
+            | _ -> DebugPointAtSequential.StmtOnly, e.Range
         let vref = mkLocalValRef v
         { res2 with
             phase2 = (fun ctxt ->
@@ -251,7 +251,7 @@ let LowerSeqExpr g amap overallExpr =
                         let generate =
                             mkCompGenSequential m
                                 (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
-                                (mkSequential DebugPointForSequential.Both m
+                                (mkSequential DebugPointAtSequential.Both m
                                     (mkValSet m currVar e)
                                     (mkCompGenSequential m
                                         (Expr.Op (TOp.Return, [], [mkOne g m], m))
@@ -319,7 +319,7 @@ let LowerSeqExpr g amap overallExpr =
 
                 Some { phase2 = (fun ctxt ->
                             let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = mkWhile g (DebugPointForWhileLoop.Yes guardExpr.Range, NoSpecialWhileLoopMarker, guardExpr, generate2, m)
+                            let generate = mkWhile g (DebugPointAtWhile.Yes guardExpr.Range, NoSpecialWhileLoopMarker, guardExpr, generate2, m)
                             let dispose = dispose2
                             let checkDispose = checkDispose2
                             generate, dispose, checkDispose)
@@ -553,7 +553,7 @@ let LowerSeqExpr g amap overallExpr =
                                     let generate =
                                         mkCompGenSequential m
                                             (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
-                                            (mkSequential DebugPointForSequential.Both m
+                                            (mkSequential DebugPointAtSequential.Both m
                                                 (mkAddrSet m nextVar arbitrarySeqExpr)
                                                 (mkCompGenSequential m
                                                     (Expr.Op (TOp.Return, [], [mkTwo g m], m))
@@ -691,7 +691,7 @@ let LowerSeqExpr g amap overallExpr =
                             efV, Expr.Const ((Const.Bool true), m, g.bool_ty),
                             eV, assignToExn,
                             m, g.unit_ty,
-                            DebugPointForTry.No, DebugPointForWith.No)
+                            DebugPointAtTry.No, DebugPointAtWith.No)
 
                 // Make the loop
                 //

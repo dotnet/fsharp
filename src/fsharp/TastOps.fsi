@@ -156,16 +156,16 @@ val mkMultiLambdas : range -> Typars -> Val list list -> Expr * TType -> Expr
 val mkMemberLambdas : range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
 
 /// Build a 'while' loop expression
-val mkWhile      : TcGlobals -> DebugPointForWhileLoop * SpecialWhileLoopMarker * Expr * Expr * range                          -> Expr
+val mkWhile      : TcGlobals -> DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range                          -> Expr
 
 /// Build a 'for' loop expression
-val mkFor        : TcGlobals -> DebugPointForForLoop * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
+val mkFor        : TcGlobals -> DebugPointAtFor * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
 
 /// Build a 'try/with' expression
-val mkTryWith  : TcGlobals -> Expr * (* filter val *) Val * (* filter expr *) Expr * (* handler val *) Val * (* handler expr *) Expr * range * TType * DebugPointForTry * DebugPointForWith -> Expr
+val mkTryWith  : TcGlobals -> Expr * (* filter val *) Val * (* filter expr *) Expr * (* handler val *) Val * (* handler expr *) Expr * range * TType * DebugPointAtTry * DebugPointAtWith -> Expr
 
 /// Build a 'try/finally' expression
-val mkTryFinally: TcGlobals -> Expr * Expr * range * TType * DebugPointForTry * DebugPointForFinally -> Expr
+val mkTryFinally: TcGlobals -> Expr * Expr * range * TType * DebugPointAtTry * DebugPointAtFinally -> Expr
 
 /// Build a user-level value binding
 val mkBind : DebugPointForBinding -> Val -> Expr -> Binding
@@ -1699,11 +1699,11 @@ val mkOptionDefaultValue: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 // Make a few more expressions
 //------------------------------------------------------------------------- 
 
-val mkSequential  : DebugPointForSequential -> range -> Expr -> Expr -> Expr
+val mkSequential  : DebugPointAtSequential -> range -> Expr -> Expr -> Expr
 
 val mkCompGenSequential  : range -> Expr -> Expr -> Expr
 
-val mkSequentials : DebugPointForSequential -> TcGlobals -> range -> Exprs -> Expr   
+val mkSequentials : DebugPointAtSequential -> TcGlobals -> range -> Exprs -> Expr   
 
 val mkRecordExpr : TcGlobals -> RecordConstructionInfo * TyconRef * TypeInst * RecdFieldRef list * Exprs * range -> Expr
 
@@ -2211,7 +2211,7 @@ val DecideStaticOptimizations : TcGlobals -> StaticOptimization list -> StaticOp
 val mkStaticOptimizationExpr     : TcGlobals -> StaticOptimization list * Expr * Expr * range -> Expr
 
 /// Build for loops
-val mkFastForLoop : TcGlobals -> DebugPointForForLoop * range * Val * Expr * bool * Expr * Expr -> Expr
+val mkFastForLoop : TcGlobals -> DebugPointAtFor * range * Val * Expr * bool * Expr * Expr -> Expr
 
 //---------------------------------------------------------------------------
 // Active pattern helpers

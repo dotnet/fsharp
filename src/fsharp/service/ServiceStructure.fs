@@ -319,7 +319,7 @@ module Structure =
                 parseExprInterfaces extraImpls
             | SynExpr.TryWith (e, _, matchClauses, _, wholeRange, tryPoint, withPoint) ->
                 match tryPoint, withPoint with
-                | DebugPointForTry.Yes tryRange,  DebugPointForWith.Yes withRange ->
+                | DebugPointAtTry.Yes tryRange,  DebugPointAtWith.Yes withRange ->
                     let fullrange = Range.startToEnd tryRange wholeRange
                     let collapse = Range.endToEnd tryRange wholeRange
                     let collapseTry = Range.endToStart tryRange withRange
@@ -334,7 +334,7 @@ module Structure =
                 List.iter parseMatchClause matchClauses
             | SynExpr.TryFinally (tryExpr, finallyExpr, r, tryPoint, finallyPoint) ->
                 match tryPoint, finallyPoint with
-                | DebugPointForTry.Yes tryRange, DebugPointForFinally.Yes finallyRange ->
+                | DebugPointAtTry.Yes tryRange, DebugPointAtFinally.Yes finallyRange ->
                     let collapse = Range.endToEnd tryRange finallyExpr.Range
                     let fullrange = Range.startToEnd tryRange finallyExpr.Range
                     let collapseFinally = Range.endToEnd finallyRange r

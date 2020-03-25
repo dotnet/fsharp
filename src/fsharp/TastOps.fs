@@ -5568,8 +5568,8 @@ let rec remarkExpr m x =
     | Expr.Op (op, tinst, args, _) -> 
         let op = 
             match op with 
-            | TOp.TryFinally (_, _) -> TOp.TryFinally (DebugPointForTry.No, DebugPointForFinally.No)
-            | TOp.TryCatch (_, _) -> TOp.TryCatch (DebugPointForTry.No, DebugPointForWith.No)
+            | TOp.TryFinally (_, _) -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
+            | TOp.TryCatch (_, _) -> TOp.TryCatch (DebugPointAtTry.No, DebugPointAtWith.No)
             | _ -> op
         Expr.Op (op, tinst, remarkExprs m args, m)
 
@@ -5582,7 +5582,7 @@ let rec remarkExpr m x =
         Expr.App (remarkExpr m e1, e1ty, tyargs, remarkExprs m args, m)
 
     | Expr.Sequential (e1, e2, dir, _, _) ->
-        Expr.Sequential (remarkExpr m e1, remarkExpr m e2, dir, DebugPointForSequential.StmtOnly, m)
+        Expr.Sequential (remarkExpr m e1, remarkExpr m e2, dir, DebugPointAtSequential.StmtOnly, m)
 
     | Expr.StaticOptimization (eqns, e2, e3, _) ->
         Expr.StaticOptimization (eqns, remarkExpr m e2, remarkExpr m e3, m)
@@ -6572,7 +6572,7 @@ let mkRefCellContentsRef (g: TcGlobals) = mkRecdFieldRef g.refcell_tcr_canon "co
 
 let mkSequential spSeq m e1 e2 = Expr.Sequential (e1, e2, NormalSeq, spSeq, m)
 
-let mkCompGenSequential m e1 e2 = mkSequential DebugPointForSequential.StmtOnly m e1 e2
+let mkCompGenSequential m e1 e2 = mkSequential DebugPointAtSequential.StmtOnly m e1 e2
 
 let rec mkSequentials spSeq g m es = 
     match es with 
@@ -8897,8 +8897,8 @@ let (|CompiledForEachExpr|_|) g expr =
         let mBody = bodyExpr.Range
         let mWholeExpr = expr.Range
 
-        let spForLoop, mForLoop = match enumeratorBind with DebugPointAtBinding spStart -> DebugPointForForLoop.Yes spStart, spStart | _ -> DebugPointForForLoop.No, mEnumExpr
-        let spWhileLoop = match enumeratorBind with DebugPointAtBinding spStart -> DebugPointForWhileLoop.Yes spStart| _ -> DebugPointForWhileLoop.No
+        let spForLoop, mForLoop = match enumeratorBind with DebugPointAtBinding spStart -> DebugPointAtFor.Yes spStart, spStart | _ -> DebugPointAtFor.No, mEnumExpr
+        let spWhileLoop = match enumeratorBind with DebugPointAtBinding spStart -> DebugPointAtWhile.Yes spStart| _ -> DebugPointAtWhile.No
         let enumerableTy = tyOfExpr g enumerableExpr
 
         Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (mEnumExpr, mBody, spForLoop, mForLoop, spWhileLoop, mWholeExpr))
@@ -8979,7 +8979,7 @@ let DetectAndOptimizeForExpression g option expr =
 
             let expr =
                 // let mutable current = enumerableExpr
-                let spBind = (match spForLoop with DebugPointForForLoop.Yes spStart -> DebugPointAtBinding spStart | DebugPointForForLoop.No -> NoDebugPointAtStickyBinding)
+                let spBind = (match spForLoop with DebugPointAtFor.Yes spStart -> DebugPointAtBinding spStart | DebugPointAtFor.No -> NoDebugPointAtStickyBinding)
                 mkLet spBind mEnumExpr currentVar enumerableExpr
                     // let mutable next = current.TailOrNull
                     (mkCompGenLet mForLoop nextVar tailOrNullExpr 

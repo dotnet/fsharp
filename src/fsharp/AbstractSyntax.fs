@@ -198,7 +198,7 @@ type DebugPointForTarget =
 /// first or second part of a sequential execution, that is whether the
 /// construct corresponds to a debug point in the original source.
 [<RequireQualifiedAccess>]
-type DebugPointForSequential =
+type DebugPointAtSequential =
     | Both
 
     // This means "suppress a in 'a;b'" and "suppress b in 'a before b'"
@@ -210,7 +210,7 @@ type DebugPointForSequential =
 /// Represents whether a debug point should be present for a 'try', that is whether
 /// the construct corresponds to a debug point in the original source.
 [<RequireQualifiedAccess>]
-type DebugPointForTry =
+type DebugPointAtTry =
     | Yes of range: range
     // Used for "use" and "for"
     | Body
@@ -219,28 +219,28 @@ type DebugPointForTry =
 /// Represents whether a debug point should be present for the 'with' in a 'try .. with',
 /// that is whether the construct corresponds to a debug point in the original source.
 [<RequireQualifiedAccess>]
-type DebugPointForWith =
+type DebugPointAtWith =
     | Yes of range: range
     | No
 
 /// Represents whether a debug point should be present for the 'finally' in a 'try .. finally',
 /// that is whether the construct corresponds to a debug point in the original source.
 [<RequireQualifiedAccess>]
-type DebugPointForFinally =
+type DebugPointAtFinally =
     | Yes of range: range
     | No
 
 /// Represents whether a debug point should be present for the 'for' in a 'for...' loop,
 /// that is whether the construct corresponds to a debug point in the original source.
 [<RequireQualifiedAccess>]
-type DebugPointForForLoop =
+type DebugPointAtFor =
     | Yes of range: range
     | No
 
 /// Represents whether a debug point should be present for the 'while' in a 'while...' loop,
 /// that is whether the construct corresponds to a debug point in the original source.
 [<RequireQualifiedAccess>]
-type DebugPointForWhileLoop =
+type DebugPointAtWhile =
     | Yes of range: range
     | No
 
@@ -590,14 +590,14 @@ type SynExpr =
 
     /// F# syntax: 'while ... do ...'
     | While of
-        whileSeqPoint: DebugPointForWhileLoop *
+        whileSeqPoint: DebugPointAtWhile *
         whileExpr: SynExpr *
         doExpr: SynExpr *
         range: range
 
     /// F# syntax: 'for i = ... to ... do ...'
     | For of
-        forSeqPoint: DebugPointForForLoop *
+        forSeqPoint: DebugPointAtFor *
         ident: Ident *
         identBody: SynExpr *
         direction: bool *
@@ -607,7 +607,7 @@ type SynExpr =
 
     /// F# syntax: 'for ... in ... do ...'
     | ForEach of
-        forSeqPoint: DebugPointForForLoop *
+        forSeqPoint: DebugPointAtFor *
         seqExprOnly: SeqExprOnly *
         isFromSource: bool *
         pat: SynPat *
@@ -704,16 +704,16 @@ type SynExpr =
         withCases: SynMatchClause list *
         withRange: range *
         range: range *
-        trySeqPoint: DebugPointForTry *
-        withSeqPoint: DebugPointForWith
+        trySeqPoint: DebugPointAtTry *
+        withSeqPoint: DebugPointAtWith
 
     /// F# syntax: try expr finally expr
     | TryFinally of
         tryExpr: SynExpr *
         finallyExpr: SynExpr *
         range: range *
-        trySeqPoint: DebugPointForTry *
-        finallySeqPoint: DebugPointForFinally
+        trySeqPoint: DebugPointAtTry *
+        finallySeqPoint: DebugPointAtFinally
 
     /// F# syntax: lazy expr
     | Lazy of
@@ -724,7 +724,7 @@ type SynExpr =
     ///
     ///  isTrueSeq: false indicates "let v = a in b; v"
     | Sequential of
-        seqPoint: DebugPointForSequential *
+        seqPoint: DebugPointAtSequential *
         isTrueSeq: bool *
         expr1: SynExpr *
         expr2: SynExpr *
@@ -874,7 +874,7 @@ type SynExpr =
 
     /// Used internally during type checking for translating computation expressions.
     | SequentialOrImplicitYield of
-        seqPoint:DebugPointForSequential *
+        seqPoint:DebugPointAtSequential *
         expr1:SynExpr *
         expr2:SynExpr *
         ifNotStmt:SynExpr *

@@ -4718,7 +4718,7 @@ and
     | Val of ValRef * ValUseFlag * range
 
     /// Sequence expressions, used for "a;b", "let a = e in b;a" and "a then b" (the last an OO constructor). 
-    | Sequential of Expr * Expr * SequentialOpKind * DebugPointForSequential * range
+    | Sequential of Expr * Expr * SequentialOpKind * DebugPointAtSequential * range
 
     /// Lambda expressions. 
     
@@ -4823,16 +4823,16 @@ and
     | UInt16s of uint16[] 
 
     /// An operation representing a lambda-encoded while loop. The special while loop marker is used to mark compilations of 'foreach' expressions
-    | While of DebugPointForWhileLoop * SpecialWhileLoopMarker
+    | While of DebugPointAtWhile * SpecialWhileLoopMarker
 
     /// An operation representing a lambda-encoded for loop
-    | For of DebugPointForForLoop * ForLoopStyle (* count up or down? *)
+    | For of DebugPointAtFor * ForLoopStyle (* count up or down? *)
 
     /// An operation representing a lambda-encoded try/catch
-    | TryCatch of DebugPointForTry * DebugPointForWith
+    | TryCatch of DebugPointAtTry * DebugPointAtWith
 
     /// An operation representing a lambda-encoded try/finally
-    | TryFinally of DebugPointForTry * DebugPointForFinally
+    | TryFinally of DebugPointAtTry * DebugPointAtFinally
 
     /// Construct a record or object-model value. The ValRef is for self-referential class constructors, otherwise 
     /// it indicates that we're in a constructor and the purpose of the expression is to 

@@ -127,11 +127,11 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
         let findBreakPoints () = 
             let checkRange m = [ if isMatchRange m then yield m ]
             let walkBindSeqPt sp = [ match sp with DebugPointAtBinding m -> yield! checkRange m | _ -> () ]
-            let walkForSeqPt sp = [ match sp with DebugPointForForLoop.Yes m -> yield! checkRange m | _ -> () ]
-            let walkWhileSeqPt sp = [ match sp with DebugPointForWhileLoop.Yes m -> yield! checkRange m | _ -> () ]
-            let walkTrySeqPt sp = [ match sp with DebugPointForTry.Yes m -> yield! checkRange m | _ -> () ]
-            let walkWithSeqPt sp = [ match sp with DebugPointForWith.Yes m -> yield! checkRange m | _ -> () ]
-            let walkFinallySeqPt sp = [ match sp with DebugPointForFinally.Yes m -> yield! checkRange m | _ -> () ]
+            let walkForSeqPt sp = [ match sp with DebugPointAtFor.Yes m -> yield! checkRange m | _ -> () ]
+            let walkWhileSeqPt sp = [ match sp with DebugPointAtWhile.Yes m -> yield! checkRange m | _ -> () ]
+            let walkTrySeqPt sp = [ match sp with DebugPointAtTry.Yes m -> yield! checkRange m | _ -> () ]
+            let walkWithSeqPt sp = [ match sp with DebugPointAtWith.Yes m -> yield! checkRange m | _ -> () ]
+            let walkFinallySeqPt sp = [ match sp with DebugPointAtFinally.Yes m -> yield! checkRange m | _ -> () ]
 
             let rec walkBind (Binding(_, _, _, _, _, _, SynValData(memFlagsOpt, _, _), synPat, _, synExpr, _, spInfo)) =
                 [ // Don't yield the binding sequence point if there are any arguments, i.e. we're defining a function or a method
@@ -300,8 +300,8 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
 
                   | SynExpr.SequentialOrImplicitYield (spSeq, e1, e2, _, _)
                   | SynExpr.Sequential (spSeq, _, e1, e2, _) -> 
-                      yield! walkExpr (match spSeq with DebugPointForSequential.ExprOnly -> false | _ -> true) e1
-                      yield! walkExpr (match spSeq with DebugPointForSequential.StmtOnly -> false | _ -> true) e2
+                      yield! walkExpr (match spSeq with DebugPointAtSequential.ExprOnly -> false | _ -> true) e1
+                      yield! walkExpr (match spSeq with DebugPointAtSequential.StmtOnly -> false | _ -> true) e2
 
                   | SynExpr.IfThenElse (e1, e2, e3opt, spBind, _, _, _) ->
                       yield! walkBindSeqPt spBind

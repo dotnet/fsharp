@@ -2055,14 +2055,14 @@ let rec FirstEmittedCodeWillBeDebugPoint g sp expr =
             (binds |> List.forall (BindingEmitsNoCode g) && FirstEmittedCodeWillBeDebugPoint g sp body)
         | Expr.Sequential (_, _, NormalSeq, spSeq, _) ->
             match spSeq with
-            | DebugPointForSequential.Both -> true
-            | DebugPointForSequential.StmtOnly -> true
-            | DebugPointForSequential.ExprOnly -> false
+            | DebugPointAtSequential.Both -> true
+            | DebugPointAtSequential.StmtOnly -> true
+            | DebugPointAtSequential.ExprOnly -> false
         | Expr.Match (DebugPointAtBinding _, _, _, _, _, _) -> true
-        | Expr.Op ((TOp.TryCatch (DebugPointForTry.Yes _, _)
-                  | TOp.TryFinally (DebugPointForTry.Yes _, _)
-                  | TOp.For (DebugPointForForLoop.Yes _, _)
-                  | TOp.While (DebugPointForWhileLoop.Yes _, _)), _, _, _) -> true
+        | Expr.Op ((TOp.TryCatch (DebugPointAtTry.Yes _, _)
+                  | TOp.TryFinally (DebugPointAtTry.Yes _, _)
+                  | TOp.For (DebugPointAtFor.Yes _, _)
+                  | TOp.While (DebugPointAtWhile.Yes _, _)), _, _, _) -> true
         | _ -> false
 
      | SPSuppress ->
@@ -2566,9 +2566,9 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel canProcessDebugPoint (contf: Fa
         // left and right of the sequence
         let spAction, spExpr =
             (match spSeq with
-             | DebugPointForSequential.Both -> SPAlways, SPAlways
-             | DebugPointForSequential.StmtOnly -> SPSuppress, sp
-             | DebugPointForSequential.ExprOnly -> sp, SPSuppress)
+             | DebugPointAtSequential.Both -> SPAlways, SPAlways
+             | DebugPointAtSequential.StmtOnly -> SPSuppress, sp
+             | DebugPointAtSequential.ExprOnly -> sp, SPSuppress)
         match specialSeqFlag with
         | NormalSeq ->
             GenExpr cenv cgbuf eenv spAction e1 discard
@@ -3361,9 +3361,9 @@ and GenIndirectCall cenv cgbuf eenv (functy, tyargs, args, m) sequel =
 and GenTry cenv cgbuf eenv scopeMarks (e1, m, resty, spTry) =
     let sp =
         match spTry with
-        | DebugPointForTry.Yes m -> CG.EmitSeqPoint cgbuf m; SPAlways
-        | DebugPointForTry.Body -> SPAlways
-        | DebugPointForTry.No -> SPSuppress
+        | DebugPointAtTry.Yes m -> CG.EmitSeqPoint cgbuf m; SPAlways
+        | DebugPointAtTry.Body -> SPAlways
+        | DebugPointAtTry.No -> SPSuppress
 
     let stack, eenvinner = EmitSaveStack cenv cgbuf eenv m scopeMarks
     let startTryMark = CG.GenerateMark cgbuf "startTryMark"
@@ -3377,9 +3377,9 @@ and GenTry cenv cgbuf eenv scopeMarks (e1, m, resty, spTry) =
         assert(cenv.g.CompilerGlobalState |> Option.isSome)
         AllocLocal cenv cgbuf eenvinner true (cenv.g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("tryres", m), ilResultTy, false) (startTryMark, endTryMark)
 
-    // Generate the body of the try. In the normal case (DebugPointForTry.Yes) we generate a sequence point
+    // Generate the body of the try. In the normal case (DebugPointAtTry.Yes) we generate a sequence point
     // both on the 'try' keyword and on the start of the expression in the 'try'. For inlined code and
-    // compiler generated 'try' blocks (i.e. DebugPointForTry.No, used for the try/finally implicit
+    // compiler generated 'try' blocks (i.e. DebugPointAtTry.No, used for the try/finally implicit
     // in a 'use' or 'foreach'), we suppress the sequence point
     GenExpr cenv cgbuf eenvinner sp e1 (LeaveHandler (false, whereToSave, afterHandler))
     CG.SetMarkToHere cgbuf endTryMark
@@ -3411,8 +3411,8 @@ and GenTryCatch cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, 
                // and then jump to the handler for the successful catch (or continue with exception handling
                // if the filter fails)
                match spWith with
-               | DebugPointForWith.Yes m -> CG.EmitSeqPoint cgbuf m
-               | DebugPointForWith.No -> ()
+               | DebugPointAtWith.Yes m -> CG.EmitSeqPoint cgbuf m
+               | DebugPointAtWith.No -> ()
 
 
                CG.SetStack cgbuf [g.ilg.typ_Object]
@@ -3447,8 +3447,8 @@ and GenTryCatch cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, 
                let startOfHandler = CG.GenerateMark cgbuf "startOfHandler"
                
                match spWith with
-               | DebugPointForWith.Yes m -> CG.EmitSeqPoint cgbuf m
-               | DebugPointForWith.No -> ()
+               | DebugPointAtWith.Yes m -> CG.EmitSeqPoint cgbuf m
+               | DebugPointAtWith.No -> ()
 
                CG.SetStack cgbuf [g.ilg.typ_Object]
                let _, eenvinner = AllocLocalVal cenv cgbuf vh eenvinner None (startOfHandler, afterHandler)
@@ -3492,8 +3492,8 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resty, spTry, spFin
    
        let sp =
            match spFinally with
-           | DebugPointForFinally.Yes m -> CG.EmitSeqPoint cgbuf m; SPAlways
-           | DebugPointForFinally.No -> SPSuppress
+           | DebugPointAtFinally.Yes m -> CG.EmitSeqPoint cgbuf m; SPAlways
+           | DebugPointAtFinally.No -> SPSuppress
 
        GenExpr cenv cgbuf eenvinner sp handlerExpr (LeaveHandler (true, whereToSave, afterHandler))
        let endOfHandler = CG.GenerateMark cgbuf "endOfHandler"
@@ -3547,8 +3547,8 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
 
     let _, eenvinner = AllocLocalVal cenv cgbuf v eenvinner None (start, finish) (* note: eenvStack noted stack spill vars are live *)
     match spFor with
-    | DebugPointForForLoop.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
-    | DebugPointForForLoop.No -> ()
+    | DebugPointAtFor.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
+    | DebugPointAtFor.No -> ()
 
     GenExpr cenv cgbuf eenv SPSuppress e1 Continue
     GenStoreVal cenv cgbuf eenvinner m v
@@ -3580,8 +3580,8 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
     // FSharpForLoopDown: if v <> e2 - 1 then goto .inner
     // CSharpStyle: if v < e2 then goto .inner
     match spFor with
-    | DebugPointForForLoop.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
-    | DebugPointForForLoop.No -> () //CG.EmitSeqPoint cgbuf e2.Range
+    | DebugPointAtFor.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
+    | DebugPointAtFor.No -> () //CG.EmitSeqPoint cgbuf e2.Range
 
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
@@ -3613,8 +3613,8 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, e1, e2, m) sequel =
     let startTest = CG.GenerateMark cgbuf "startTest"
 
     match spWhile with
-    | DebugPointForWhileLoop.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
-    | DebugPointForWhileLoop.No -> ()
+    | DebugPointAtWhile.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
+    | DebugPointAtWhile.No -> ()
 
     // SEQUENCE POINTS: Emit a sequence point to cover all of 'while e do'
     GenExpr cenv cgbuf eenv SPSuppress e1 (CmpThenBrOrContinue (pop 1, [ I_brcmp(BI_brfalse, finish.CodeLabel) ]))
