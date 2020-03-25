@@ -5292,15 +5292,23 @@ module ValReprInfo =
 //---------------------------------------------------------------------------
 
 let typeOfVal (v: Val) = v.Type
+
 let typesOfVals (v: Val list) = v |> List.map (fun v -> v.Type)
+
 let nameOfVal (v: Val) = v.LogicalName
+
 let arityOfVal (v: Val) = (match v.ValReprInfo with None -> ValReprInfo.emptyValData | Some arities -> arities)
 
 let tupInfoRef = TupInfo.Const false
+
 let tupInfoStruct = TupInfo.Const true
+
 let mkTupInfo b = if b then tupInfoStruct else tupInfoRef
+
 let structnessDefault = false
+
 let mkRawRefTupleTy tys = TType_tuple (tupInfoRef, tys)
+
 let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 
 //---------------------------------------------------------------------------
@@ -5308,8 +5316,13 @@ let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 // make up the entire compilation unit
 //---------------------------------------------------------------------------
 
-let mapTImplFile f (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = TImplFile (fragName, pragmas, f moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)
-let mapAccImplFile f z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = let moduleExpr, z = f z moduleExpr in TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes), z
+let mapTImplFile f (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
+    TImplFile (fragName, pragmas, f moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)
+
+let mapAccImplFile f z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
+    let moduleExpr, z = f z moduleExpr
+    TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes), z
+
 let foldTImplFile f z (TImplFile (_, _, moduleExpr, _, _, _)) = f z moduleExpr
 
 //---------------------------------------------------------------------------
@@ -5336,14 +5349,13 @@ let ccuEq (mv1: CcuThunk) (mv2: CcuThunk) =
 /// For dereferencing in the middle of a pattern
 let (|ValDeref|) (vr: ValRef) = vr.Deref
 
-
 //--------------------------------------------------------------------------
 // Make references to TAST items
 //--------------------------------------------------------------------------
 
 let mkRecdFieldRef tcref f = RFRef(tcref, f)
-let mkUnionCaseRef tcref c = UCRef(tcref, c)
 
+let mkUnionCaseRef tcref c = UCRef(tcref, c)
 
 let ERefLocal x: EntityRef = { binding=x; nlr=Unchecked.defaultof<_> }      
 let ERefNonLocal x: EntityRef = { binding=Unchecked.defaultof<_>; nlr=x }      
@@ -5357,12 +5369,17 @@ let (|ERefLocal|ERefNonLocal|) (x: EntityRef) =
 // Construct local references
 //-------------------------------------------------------------------------- 
 
-
 let mkLocalTyconRef x = ERefLocal x
+
 let mkNonLocalEntityRef ccu mp = NonLocalEntityRef(ccu, mp)
-let mkNestedNonLocalEntityRef (nleref: NonLocalEntityRef) id = mkNonLocalEntityRef nleref.Ccu (Array.append nleref.Path [| id |])
+
+let mkNestedNonLocalEntityRef (nleref: NonLocalEntityRef) id =
+    mkNonLocalEntityRef nleref.Ccu (Array.append nleref.Path [| id |])
+
 let mkNonLocalTyconRef nleref id = ERefNonLocal (mkNestedNonLocalEntityRef nleref id)
-let mkNonLocalTyconRefPreResolved x nleref id = ERefNonLocalPreResolved x (mkNestedNonLocalEntityRef nleref id)
+
+let mkNonLocalTyconRefPreResolved x nleref id =
+    ERefNonLocalPreResolved x (mkNestedNonLocalEntityRef nleref id)
 
 type EntityRef with 
 
@@ -5472,6 +5489,7 @@ let rec stripTyparEqnsAux canShortcut ty =
     | _ -> ty
 
 let stripTyparEqns ty = stripTyparEqnsAux false ty
+
 let stripUnitEqns unt = stripUnitEqnsAux false unt
 
 //---------------------------------------------------------------------------

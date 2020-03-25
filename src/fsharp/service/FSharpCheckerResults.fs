@@ -867,7 +867,9 @@ type internal TypeCheckInfo
                     None
                 | _ ->
                     let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
-                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols)
+                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue,
+                        residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads,
+                        hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols)
         
         res |> Option.map (fun (items, denv, m) -> items, denv, completionContext, m)
 
@@ -1992,7 +1994,9 @@ type FSharpCheckProjectResults
           tcConfigOption: TcConfig option, 
           keepAssemblyContents: bool, 
           errors: FSharpErrorInfo[], 
-          details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list * TopAttribs option * CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef * AccessorDomain * TypedImplFile list option * string[]) option) =
+          details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
+                   TopAttribs option * CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef *
+                   AccessorDomain * TypedImplFile list option * string[]) option) =
 
     let getDetails() = 
         match details with 

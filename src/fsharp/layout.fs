@@ -18,6 +18,7 @@ type NavigableTaggedText(taggedText: TaggedText, range: Range.range) =
     interface TaggedText with
         member x.Tag = taggedText.Tag
         member x.Text = taggedText.Text
+
 let mkNav r t = NavigableTaggedText(t, r) :> TaggedText
 
 let spaces n = new String(' ', n)
