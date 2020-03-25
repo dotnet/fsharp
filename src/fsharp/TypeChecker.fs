@@ -1869,7 +1869,7 @@ let MakeAndPublishSimpleValsForMergedScope cenv env m (names: NameMap<_>) =
                         member this.NotifyNameResolution(pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing) = 
                             if not m.IsSynthetic then
                                 nameResolutions.Add(pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing)
-                        member this.NotifyExprHasType(_, _, _, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
+                        member this.NotifyExprHasType(_, _, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
                         member this.NotifyFormatSpecifierLocation(_, _) = ()
                         member this.NotifyOpenDeclaration(_) = ()
                         member this.CurrentSourceText = None 
@@ -5476,13 +5476,12 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                                 errorR (Error (FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName (id.idText), id.idRange))
 
                         | Some idx ->
-                            let argContainerOpt =
+                            let argItem =
                                 match item with
-                                | Item.UnionCase (uci, _) -> Some (ArgumentContainer.UnionCase uci)
-                                | Item.ExnCase tref -> Some (ArgumentContainer.Type tref)
-                                | _ -> None
+                                | Item.UnionCase (uci, _) -> Item.UnionCaseField (uci, idx)
+                                | Item.ExnCase tref -> Item.RecdField (RecdFieldInfo ([], RFRef (tref, id.idText)))
+                                | _ -> failwithf "Expecting union case or exception item, got: %O" item
 
-                            let argItem = Item.ArgName (argNames.[idx], argTys.[idx], argContainerOpt)   
                             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, argItem, argItem, emptyTyparInst, ItemOccurence.Pattern, ad)
 
                             match box result.[idx] with
@@ -5877,7 +5876,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.Paren (expr2, _, _, mWholeExprIncludingParentheses) -> 
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the 
         // construct is a dot-lookup for the result of the construct. 
-        CallExprHasTypeSink cenv.tcSink (mWholeExprIncludingParentheses, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (mWholeExprIncludingParentheses, env.NameEnv, overallTy, env.AccessRights)
         let env = ShrinkContext env mWholeExprIncludingParentheses expr2.Range
         TcExpr cenv overallTy env tpenv expr2
 
@@ -5885,11 +5884,11 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.TypeApp _ | SynExpr.Ident _ | SynExpr.LongIdent _ | SynExpr.App _ | SynExpr.DotGet _ -> error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
     | SynExpr.Const (SynConst.String (s, m), _) -> 
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
         TcConstStringExpr cenv overallTy env m tpenv s
 
     | SynExpr.Const (synConst, m) -> 
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
         TcConstExpr cenv overallTy env m tpenv synConst
 
     | SynExpr.Lambda _ -> 
@@ -6005,7 +6004,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr)
 
     | SynExpr.ArrayOrList (isArray, args, m) -> 
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
 
         let argty = NewInferenceType ()
         UnifyTypes cenv env m overallTy (if isArray then mkArrayType cenv.g argty else Tastops.mkListTy cenv.g argty)
@@ -6033,11 +6032,11 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         TcNewExpr cenv env tpenv objTy (Some synObjTy.Range) superInit arg mNewExpr
 
     | SynExpr.ObjExpr (objTy, argopt, binds, extraImpls, mNewExpr, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.eAccessRights)
         TcObjectExpr cenv overallTy env tpenv (objTy, argopt, binds, extraImpls, mNewExpr, m)
             
     | SynExpr.Record (inherits, optOrigExpr, flds, mWholeExpr) -> 
-        CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy, env.AccessRights)
         TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr)
 
     | SynExpr.While (spWhile, synGuardExpr, synBodyExpr, m) ->
@@ -6081,7 +6080,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         TcSequenceExpression cenv env tpenv comp overallTy m
         
     | SynExpr.ArrayOrListOfSeqExpr (isArray, comp, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.eAccessRights)
         match comp with 
         | SynExpr.CompExpr (_, _, (SimpleSemicolonSequence cenv acceptDeprecatedIfThenExpression elems as body), _) -> 
             match body with
@@ -6308,7 +6307,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         mkAsmExpr (Array.toList s, tyargs', args', rtys', m), tpenv
 
     | SynExpr.Quote (oper, raw, ast, isFromQueryExpression, m) ->
-        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.AccessRights)
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
         TcQuotationExpr cenv overallTy env tpenv (oper, raw, ast, isFromQueryExpression, m) 
 
     | SynExpr.YieldOrReturn ((isTrueYield, _), _, m)
@@ -9196,7 +9195,7 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag: ExprAtomic
     // OK, we've typechecked the thing on the left of the delayed lookup chain. 
     // We can now record for posterity the type of this expression and the location of the expression. 
     if (atomicFlag = ExprAtomicFlag.Atomic) then
-        CallExprHasTypeSink cenv.tcSink (mExpr, env.NameEnv, exprty, env.DisplayEnv, env.eAccessRights)
+        CallExprHasTypeSink cenv.tcSink (mExpr, env.NameEnv, exprty, env.eAccessRights)
 
     match delayed with 
     | []  
@@ -9431,11 +9430,11 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                         | Some i -> 
                             if isNull(box fittedArgs.[i]) then
                                 fittedArgs.[i] <- arg
-                                let argContainerOpt = match item with
-                                                      | Item.UnionCase(uci, _) -> Some(ArgumentContainer.UnionCase uci)
-                                                      | Item.ExnCase tref -> Some(ArgumentContainer.Type tref)
-                                                      | _ -> None
-                                let argItem = Item.ArgName (argNames.[i], argTys.[i], argContainerOpt)   
+                                let argItem =
+                                    match item with
+                                    | Item.UnionCase (uci, _) -> Item.UnionCaseField (uci, i)
+                                    | Item.ExnCase tref -> Item.RecdField (RecdFieldInfo ([], RFRef (tref, id.idText)))
+                                    | _ -> failwithf "Expecting union case or exception item, got: %O" item   
                                 CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, argItem, argItem, emptyTyparInst, ItemOccurence.Use, ad)
                             else error(Error(FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce(id.idText), id.idRange))
                             currentIndex <- SEEN_NAMED_ARGUMENT
@@ -9590,13 +9589,13 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         match delayed with 
         | ((DelayedApp (_, arg, mExprAndArg)) :: otherDelayed) ->
 
-            CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTy, env.DisplayEnv, env.eAccessRights)
+            CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTy, env.eAccessRights)
             TcCtorCall true cenv env tpenv overallTy objTy (Some mItem) item false [arg] mExprAndArg otherDelayed (Some afterResolution)
 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: (DelayedApp (_, arg, mExprAndArg)) :: otherDelayed) ->
 
             let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tyargs
-            CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTyAfterTyArgs, env.DisplayEnv, env.eAccessRights)
+            CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTyAfterTyArgs, env.eAccessRights)
             let itemAfterTyArgs, minfosAfterTyArgs = 
 #if !NO_EXTENSIONTYPING
                 // If the type is provided and took static arguments then the constructor will have changed
@@ -12731,14 +12730,7 @@ module TcRecdUnionAndEnumDeclarations = begin
 
     let TcAnonFieldDecl cenv env parent tpenv nm (Field(Attributes attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m)) =
         let id = (match idOpt with None -> mkSynId m nm | Some id -> id)
-        let f = TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmldoc.ToXmlDoc(), vis, m) 
-        match idOpt with 
-        | None -> ()
-        | Some id -> 
-            let item = Item.ArgName(id, f.FormalType, None)
-            CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
-        f
-
+        TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmldoc.ToXmlDoc(), vis, m)
 
     let TcNamedFieldDecl cenv env parent isIncrClass tpenv (Field(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m)) =
         match id with 
@@ -12777,7 +12769,7 @@ module TcRecdUnionAndEnumDeclarations = begin
             | _ ->
                 seen.Add(f.Name, sf)
                 
-    let TcUnionCaseDecl cenv env parent thisTy tpenv (UnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
+    let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (UnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
@@ -12788,7 +12780,14 @@ module TcRecdUnionAndEnumDeclarations = begin
             match args with
             | UnionCaseFields flds -> 
                 let nFields = flds.Length
-                let rfields = flds |> List.mapi (fun i fld -> TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
+                let rfields = flds |> List.mapi (fun i (Field (idOpt = idOpt) as fld) ->
+                    match idOpt, parent with
+                    | Some fieldId, Parent tcref ->
+                        let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UCRef (tcref, id.idText)), i)
+                        CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+                    | _ -> ()
+
+                    TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
                 ValidateFieldNames(flds, rfields)
                 
                 rfields, thisTy
@@ -12809,8 +12808,8 @@ module TcRecdUnionAndEnumDeclarations = begin
         NewUnionCase id rfields recordTy attrs (xmldoc.ToXmlDoc()) vis
 
 
-    let TcUnionCaseDecls cenv env parent (thisTy: TType) tpenv unionCases =
-        let unionCases' = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy tpenv) 
+    let TcUnionCaseDecls cenv env parent (thisTy: TType) thisTyInst tpenv unionCases =
+        let unionCases' = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv) 
         unionCases' |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
     let TcEnumDecl cenv env parent thisTy fieldTy (EnumCase(Attributes synAttrs, id, v, xmldoc, m)) =
@@ -15165,7 +15164,17 @@ module TcExceptionDeclarations =
         let ad = env.eAccessRights
         let id = exnc.Id
         
-        let args' = List.mapi (fun i fdef -> TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkExceptionFieldName i) fdef) args
+        let args' =
+            args |> List.mapi (fun i (Field (idOpt = idOpt) as fdef) ->
+                match idOpt with
+                | Some fieldId ->
+                    let tcref = mkLocalTyconRef exnc
+                    let thisTypInst, _ = generalizeTyconRef tcref
+                    let item = Item.RecdField (RecdFieldInfo (thisTypInst, RFRef (tcref, fieldId.idText)))
+                    CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
+                | _ -> ()
+
+                TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent emptyUnscopedTyparEnv (mkExceptionFieldName i) fdef)
         TcRecdUnionAndEnumDeclarations.ValidateFieldNames(args, args')
         let repr = 
           match reprIdOpt with 
@@ -16117,7 +16126,7 @@ module EstablishTypeDefinitionCores =
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
                     structLayoutAttributeCheck false
-                    let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy tpenv unionCases
+                    let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst tpenv unionCases
                         
                     if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
                       let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft.Name ]

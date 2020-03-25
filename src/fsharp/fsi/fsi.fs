@@ -1884,10 +1884,6 @@ type internal FsiInteractionProcessor
 
                 let dm = tcConfigB.dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, tcConfigB.outputDir |> Option.defaultValue "", reportError, path)
                 match dm with
-                | dllpath, null when String.IsNullOrEmpty(dllpath) ->
-                    // error already reported
-                    istate,Completed None
-
                 | _, dependencyManager when not(isNull dependencyManager) ->
                    if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                        fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, m, path)
@@ -1896,7 +1892,10 @@ type internal FsiInteractionProcessor
                        errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
                        istate, Completed None
 
-                | path, _ ->
+                | p, _ ->
+                    let path =
+                        if String.IsNullOrWhiteSpace(p) then ""
+                        else p
                     let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
                     resolutions |> List.iter (fun ar -> 
                         let format =

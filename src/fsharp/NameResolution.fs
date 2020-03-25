@@ -127,10 +127,8 @@ let (|AbbrevOrAppTy|_|) (ty: TType) =
 type ArgumentContainer =
     /// The named argument is an argument of a method
     | Method of MethInfo
-    /// The named argument is a static parameter to a provided type or a parameter to an F# exception constructor
+    /// The named argument is a static parameter to a provided type.
     | Type of TyconRef
-    /// The named argument is a static parameter to a union case constructor
-    | UnionCase of UnionCaseInfo
 
 // Note: Active patterns are encoded like this:
 //   let (|A|B|) x = if x < 0 then A else B    // A and B are reported as results using 'Item.ActivePatternResult'
@@ -144,7 +142,7 @@ type Item =
     | Value of  ValRef
 
     /// Represents the resolution of a name to an F# union case.
-    | UnionCase of UnionCaseInfo * bool
+    | UnionCase of UnionCaseInfo * hasRequireQualifiedAccessAttr: bool
 
     /// Represents the resolution of a name to an F# active pattern result.
     | ActivePatternResult of ActivePatternInfo * TType * int  * range
@@ -155,8 +153,11 @@ type Item =
     /// Represents the resolution of a name to an F# exception definition.
     | ExnCase of TyconRef
 
-    /// Represents the resolution of a name to an F# record field.
+    /// Represents the resolution of a name to an F# record or exception field.
     | RecdField of RecdFieldInfo
+
+    /// Represents the resolution of a name to a union case field.
+    | UnionCaseField of UnionCaseInfo * fieldIndex: int
 
     /// Represents the resolution of a name to a field of an anonymous record type.
     | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range
@@ -232,6 +233,7 @@ type Item =
         | Item.UnionCase(uinfo, _) -> DecompileOpName uinfo.UnionCase.DisplayName
         | Item.ExnCase tcref -> tcref.LogicalName
         | Item.RecdField rfinfo -> DecompileOpName rfinfo.RecdField.Name
+        | Item.UnionCaseField (uci, fieldIndex) -> uci.UnionCase.GetFieldByIndex(fieldIndex).Name
         | Item.AnonRecdField (anonInfo, _tys, i, _m) -> anonInfo.SortedNames.[i]
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> finfo.FieldName
@@ -1441,7 +1443,7 @@ type FormatStringCheckContext =
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
     abstract NotifyEnvWithScope: range * NameResolutionEnv * AccessorDomain -> unit
-    abstract NotifyExprHasType: pos * TType * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
+    abstract NotifyExprHasType: pos * TType * NameResolutionEnv * AccessorDomain * range -> unit
     abstract NotifyNameResolution: pos * item: Item * itemMethodGroup: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
     abstract NotifyFormatSpecifierLocation: range * int -> unit
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
@@ -1456,6 +1458,11 @@ let rec (|RecordFieldUse|_|) (item: Item) =
     match item with
     | Item.RecdField(RecdFieldInfo(_, RFRef(tcref, name))) -> Some (name, tcref)
     | Item.SetterArg(_, RecordFieldUse f) -> Some f
+    | _ -> None
+
+let (|UnionCaseFieldUse|_|) (item: Item) =
+    match item with
+    | Item.UnionCaseField (uci, fieldIndex) -> Some (fieldIndex, uci.UnionCaseRef)
     | _ -> None
 
 let rec (|ILFieldUse|_|) (item: Item) =
@@ -1614,6 +1621,9 @@ let ItemsAreEffectivelyEqual g orig other =
     | RecordFieldUse(name1, tcref1), RecordFieldUse(name2, tcref2) ->
         name1 = name2 && tyconRefDefnEq g tcref1 tcref2
 
+    | UnionCaseFieldUse(fieldIndex1, ucref1), UnionCaseFieldUse(fieldIndex2, ucref2) ->
+        unionCaseRefDefnEq g ucref1 ucref2 && fieldIndex1 = fieldIndex2 
+
     | EventUse evt1, EventUse evt2 ->
         EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2  ||
         // Allow for equality up to signature matching
@@ -1639,6 +1649,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | ILFieldUse ilfinfo -> ilfinfo.ComputeHashCode()
     | UnionCaseUse ucase ->  hash ucase.CaseName
     | RecordFieldUse (name, _) -> hash name
+    | UnionCaseFieldUse (fieldIndex, case) -> hash (case.CaseName, fieldIndex)
     | EventUse einfo -> einfo.ComputeHashCode()
     | Item.ModuleOrNamespaces (mref :: _) -> hash mref.DefinitionRange
     | _ -> 389329
@@ -1659,7 +1670,7 @@ type CapturedNameResolution(i: Item, tpinst, io: ItemOccurence, nre: NameResolut
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcResolutions
     (capturedEnvs: ResizeArray<range * NameResolutionEnv * AccessorDomain>,
-     capturedExprTypes: ResizeArray<pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range>,
+     capturedExprTypes: ResizeArray<pos * TType * NameResolutionEnv * AccessorDomain * range>,
      capturedNameResolutions: ResizeArray<CapturedNameResolution>,
      capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>) =
 
@@ -1765,9 +1776,9 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
             if allowedRange m then
                 capturedEnvs.Add((m, nenv, ad))
 
-        member sink.NotifyExprHasType(endPos, ty, denv, nenv, ad, m) =
+        member sink.NotifyExprHasType(endPos, ty, nenv, ad, m) =
             if allowedRange m then
-                capturedExprTypings.Add((endPos, ty, denv, nenv, ad, m))
+                capturedExprTypings.Add((endPos, ty, nenv, ad, m))
 
         member sink.NotifyNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
             // Desugaring some F# constructs (notably computation expressions with custom operators)
@@ -1845,10 +1856,10 @@ let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item,
     | Some sink -> sink.NotifyNameResolution(m.End, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, true)
 
 /// Report a specific expression typing at a source range
-let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, denv, ad) =
+let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyExprHasType(m.End, ty, denv, nenv, ad, m)
+    | Some sink -> sink.NotifyExprHasType(m.End, ty, nenv, ad, m)
 
 let CallOpenDeclarationSink (sink: TcResultsSink) (openDeclaration: OpenDeclaration) =
     match sink.CurrentSink with
@@ -1903,6 +1914,7 @@ let CheckAllTyparsInferrable amap m item =
     | Item.UnionCase _
     | Item.ExnCase _
     | Item.RecdField _
+    | Item.UnionCaseField _
     | Item.AnonRecdField _
     | Item.NewDef _
     | Item.ILField _
