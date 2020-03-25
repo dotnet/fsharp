@@ -10,7 +10,11 @@
 	// However, .NET Core scripting is not the default yet. Set that to true.
 	"settings": {
 		"terminal.integrated.shell.linux": "/bin/bash",
-		"FSharp.useSdkScripts":true
+		"FSharp.useSdkScripts":true,
+		"editor.trimAutoWhitespace": false,
+		"files.trimTrailingWhitespace": false,
+		"FSharp.suggestGitignore": false,
+		"FSharp.workspacePath": "FSharp.sln"
 	},
 
 	// Add the IDs of extensions you want installed when the container is created.
