@@ -1754,7 +1754,7 @@ and
     | Field of
         attributes: SynAttributes *
         isStatic: bool *
-        fieldId: Ident option *
+        idOpt: Ident option *
         fieldType: SynType *
         isMutable: bool *
         xmlDoc: PreXmlDoc *
