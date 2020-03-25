@@ -105,7 +105,7 @@ stacktype.Name = "Stack"
         Assert.IsNotEmpty(errors)
         match result with
         | Ok(_) -> Assert.Fail("expected a failure")
-        | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
+        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
 
     [<Test>]
     member _.``Script with #r "    " errors``() =
@@ -114,7 +114,7 @@ stacktype.Name = "Stack"
         Assert.IsNotEmpty(errors)
         match result with
         | Ok(_) -> Assert.Fail("expected a failure")
-        | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
+        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
 
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
