@@ -42,33 +42,47 @@ type FSharpErrorSeverity =
     | Warning 
     | Error
 
-type FSharpErrorInfo(fileName, s: pos, e: pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
-    member __.Start = s
-    member __.End = e
+type FSharpErrorInfo(m: range, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
+    member _.Start = m.Start
+    member _.End = m.End
 
-    member __.StartLine = Line.toZ s.Line
-    member __.StartLineAlternate = s.Line
-    member __.EndLine = Line.toZ e.Line
-    member __.EndLineAlternate = e.Line
-    member __.StartColumn = s.Column
-    member __.EndColumn = e.Column
+    member _.StartLine = Line.toZ m.Start.Line
+    member _.StartLineAlternate = m.Start.Line
+    member _.EndLine = Line.toZ m.End.Line
+    member _.EndLineAlternate = m.End.Line
+    member _.StartColumn = m.Start.Column
+    member _.EndColumn = m.End.Column
+    member _.FileName = m.FileName
 
-    member __.Severity = severity
-    member __.Message = message
-    member __.Subcategory = subcategory
-    member __.FileName = fileName
-    member __.ErrorNumber = errorNum
-    member __.WithStart newStart = FSharpErrorInfo(fileName, newStart, e, severity, message, subcategory, errorNum)
-    member __.WithEnd newEnd = FSharpErrorInfo(fileName, s, newEnd, severity, message, subcategory, errorNum)
-    override __.ToString()= sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName (int s.Line) (s.Column + 1) (int e.Line) (e.Column + 1) subcategory (if severity=FSharpErrorSeverity.Warning then "warning" else "error")  message
-            
+    member _.Range = m
+    member _.Severity = severity
+    member _.Message = message
+    member _.Subcategory = subcategory
+    member _.ErrorNumber = errorNum
+
+    member _.WithStart newStart =
+        let m = mkFileIndexRange m.FileIndex newStart m.End
+        FSharpErrorInfo(m, severity, message, subcategory, errorNum)
+
+    member _.WithEnd newEnd =
+        let m = mkFileIndexRange m.FileIndex m.Start newEnd
+        FSharpErrorInfo(m, severity, message, subcategory, errorNum)
+
+    override _.ToString() =
+        let fileName = m.FileName
+        let s = m.Start
+        let e = m.End
+        let severity = if severity=FSharpErrorSeverity.Warning then "warning" else "error"
+        sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
+
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member CreateFromException(exn, isError, fallbackRange: range, suggestNames: bool) =
         let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
+        let severity = if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning
         let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false suggestNames)
         let errorNum = GetDiagnosticNumber exn
-        FSharpErrorInfo(m.FileName, m.Start, m.End, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning), msg, exn.Subcategory(), errorNum)
-        
+        FSharpErrorInfo(m, severity, msg, exn.Subcategory(), errorNum)
+
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
         let r = FSharpErrorInfo.CreateFromException(exn, isError, fallbackRange, suggestNames)
