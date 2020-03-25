@@ -1306,7 +1306,7 @@ and
     [<NoEquality; NoComparison>]
     /// The untyped, unchecked syntax tree for a field declaration in a record or class
     SynField =
-    | Field of attrs: SynAttributes * isStatic: bool * Ident option * SynType * isMutable: bool * xmlDoc: PreXmlDoc * accessibility: SynAccess option * range: range
+    | Field of attrs: SynAttributes * isStatic: bool * idOpt: Ident option * SynType * isMutable: bool * xmlDoc: PreXmlDoc * accessibility: SynAccess option * range: range
 
 and
     [<NoEquality; NoComparison>]

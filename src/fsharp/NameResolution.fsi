@@ -32,10 +32,8 @@ val ActivePatternElemsOfModuleOrNamespace : ModuleOrNamespaceRef -> NameMap<Acti
 type ArgumentContainer =
     /// The named argument is an argument of a method
     | Method of MethInfo
-    /// The named argument is a static parameter to a provided type or a parameter to an F# exception constructor
+    /// The named argument is a static parameter to a provided type.
     | Type of TyconRef
-    /// The named argument is a static parameter to a union case constructor
-    | UnionCase of UnionCaseInfo
 
 //---------------------------------------------------------------------------
 // 
@@ -52,7 +50,7 @@ type Item =
     | Value of  ValRef
 
     /// Represents the resolution of a name to an F# union case.
-    | UnionCase of UnionCaseInfo * bool
+    | UnionCase of UnionCaseInfo * hasRequireQualifiedAccessAttr: bool
 
     /// Represents the resolution of a name to an F# active pattern result.
     | ActivePatternResult of ActivePatternInfo * TType * int  * range
@@ -63,8 +61,11 @@ type Item =
     /// Represents the resolution of a name to an F# exception definition.
     | ExnCase of TyconRef 
 
-    /// Represents the resolution of a name to an F# record field.
+    /// Represents the resolution of a name to an F# record or exception field.
     | RecdField of RecdFieldInfo
+
+    /// Represents the resolution of a name to a union case field.
+    | UnionCaseField of UnionCaseInfo * fieldIndex: int
 
     /// Represents the resolution of a name to a field of an anonymous record type.
     | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range
@@ -337,7 +338,7 @@ type internal TcResolutions =
 
     /// Information of exact types found for expressions, that can be to the left of a dot.
     /// typ - the inferred type for an expression
-    member CapturedExpressionTypings : ResizeArray<pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range>
+    member CapturedExpressionTypings : ResizeArray<pos * TType * NameResolutionEnv * AccessorDomain * range>
 
     /// Exact name resolutions
     member CapturedNameResolutions : ResizeArray<CapturedNameResolution>
@@ -406,7 +407,7 @@ type ITypecheckResultsSink =
     abstract NotifyEnvWithScope   : range * NameResolutionEnv * AccessorDomain -> unit
 
     /// Record that an expression has a specific type at the given range.
-    abstract NotifyExprHasType    : pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
+    abstract NotifyExprHasType    : pos * TType * NameResolutionEnv * AccessorDomain * range -> unit
 
     /// Record that a name resolution occurred at a specific location in the source
     abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool -> unit
@@ -473,7 +474,7 @@ val internal CallNameResolutionSink     : TcResultsSink -> range * NameResolutio
 val internal CallNameResolutionSinkReplacing     : TcResultsSink -> range * NameResolutionEnv * Item * Item * TyparInst * ItemOccurence * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range
-val internal CallExprHasTypeSink        : TcResultsSink -> range * NameResolutionEnv * TType * DisplayEnv * AccessorDomain -> unit
+val internal CallExprHasTypeSink        : TcResultsSink -> range * NameResolutionEnv * TType * AccessorDomain -> unit
 
 /// Report an open declaration
 val internal CallOpenDeclarationSink    : TcResultsSink -> OpenDeclaration -> unit

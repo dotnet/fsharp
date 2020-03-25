@@ -440,6 +440,12 @@ and [<Class>] public FSharpField =
     /// If the field is from an anonymous record type then get the details of the field including the index in the sorted array of fields
     member AnonRecordFieldDetails: FSharpAnonRecordTypeDetails * FSharpType[] * int
 
+    /// Indicates if the field is declared in a union case
+    member IsUnionCaseField: bool
+
+    /// Returns the declaring union case symbol  
+    member DeclaringUnionCase: FSharpUnionCase option
+
     /// Indicates if the field is declared 'static'
     member IsMutable: bool
 
