@@ -236,8 +236,8 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 true, None, id, item
         SynSimplePat.Id (id, altNameRefCell, isCompGen, false, false, id.idRange),
         Some (fun e ->
-                let clause = Clause(p, None, e, m, SuppressSequencePointAtTarget)
-                SynExpr.Match (NoSequencePointAtInvisibleBinding, item, [clause], clause.Range))
+                let clause = Clause(p, None, e, m, DebugPointForTarget.No)
+                SynExpr.Match (NoDebugPointAtInvisibleBinding, item, [clause], clause.Range))
 
 let appFunOpt funOpt x = match funOpt with None -> x | Some f -> f x
 

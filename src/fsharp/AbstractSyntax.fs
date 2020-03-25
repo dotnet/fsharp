@@ -186,12 +186,19 @@ type SynAccess =
         | Internal -> "Internal"
         | Private -> "Private"
 
-type SequencePointInfoForTarget =
-    | SequencePointAtTarget
-    | SuppressSequencePointAtTarget
-
+/// Represents whether a debug point should be present for the target
+/// of a decision tree, that is whether the construct corresponds to a debug
+/// point in the original source.
 [<RequireQualifiedAccess>]
-type SequencePointInfoForSequential =
+type DebugPointForTarget =
+    | Yes
+    | No
+
+/// Represents whether a debug point should be present for either the
+/// first or second part of a sequential execution, that is whether the
+/// construct corresponds to a debug point in the original source.
+[<RequireQualifiedAccess>]
+type DebugPointForSequential =
     | Both
 
     // This means "suppress a in 'a;b'" and "suppress b in 'a before b'"
@@ -200,57 +207,74 @@ type SequencePointInfoForSequential =
     // This means "suppress b in 'a;b'" and "suppress a in 'a before b'"
     | ExprOnly
 
-type SequencePointInfoForTry =
-    | SequencePointAtTry of range: range
+/// Represents whether a debug point should be present for a 'try', that is whether
+/// the construct corresponds to a debug point in the original source.
+[<RequireQualifiedAccess>]
+type DebugPointForTry =
+    | Yes of range: range
     // Used for "use" and "for"
-    | SequencePointInBodyOfTry
-    | NoSequencePointAtTry
+    | Body
+    | No
 
-type SequencePointInfoForWith =
-    | SequencePointAtWith of range: range
-    | NoSequencePointAtWith
+/// Represents whether a debug point should be present for the 'with' in a 'try .. with',
+/// that is whether the construct corresponds to a debug point in the original source.
+[<RequireQualifiedAccess>]
+type DebugPointForWith =
+    | Yes of range: range
+    | No
 
-type SequencePointInfoForFinally =
-    | SequencePointAtFinally of range: range
-    | NoSequencePointAtFinally
+/// Represents whether a debug point should be present for the 'finally' in a 'try .. finally',
+/// that is whether the construct corresponds to a debug point in the original source.
+[<RequireQualifiedAccess>]
+type DebugPointForFinally =
+    | Yes of range: range
+    | No
 
-type SequencePointInfoForForLoop =
-    | SequencePointAtForLoop of range: range
-    | NoSequencePointAtForLoop
+/// Represents whether a debug point should be present for the 'for' in a 'for...' loop,
+/// that is whether the construct corresponds to a debug point in the original source.
+[<RequireQualifiedAccess>]
+type DebugPointForForLoop =
+    | Yes of range: range
+    | No
 
-type SequencePointInfoForWhileLoop =
-    | SequencePointAtWhileLoop of range: range
-    | NoSequencePointAtWhileLoop
+/// Represents whether a debug point should be present for the 'while' in a 'while...' loop,
+/// that is whether the construct corresponds to a debug point in the original source.
+[<RequireQualifiedAccess>]
+type DebugPointForWhileLoop =
+    | Yes of range: range
+    | No
 
-type SequencePointInfoForBinding =
-    | SequencePointAtBinding of range: range
+/// Represents whether a debug point should be present for a 'let' binding,
+/// that is whether the construct corresponds to a debug point in the original source.
+type DebugPointForBinding =
+    | DebugPointAtBinding of range: range
 
     // Indicates the omission of a sequence point for a binding for a 'do expr'
-    | NoSequencePointAtDoBinding
+    | NoDebugPointAtDoBinding
 
     // Indicates the omission of a sequence point for a binding for a 'let e = expr' where
     // 'expr' has immediate control flow
-    | NoSequencePointAtLetBinding
+    | NoDebugPointAtLetBinding
 
     // Indicates the omission of a sequence point for a compiler generated binding
     // where we've done a local expansion of some construct into something that involves
     // a 'let'. e.g. we've inlined a function and bound its arguments using 'let'
     // The let bindings are 'sticky' in that the inversion of the inlining would involve
     // replacing the entire expression with the original and not just the let bindings alone.
-    | NoSequencePointAtStickyBinding
+    | NoDebugPointAtStickyBinding
 
     // Given 'let v = e1 in e2', where this is a compiler generated binding,
     // we are sometimes forced to generate a sequence point for the expression anyway based on its
     // overall range. If the let binding is given the flag below then it is asserting that
     // the binding has no interesting side effects and can be totally ignored and the range
     // of the inner expression is used instead
-    | NoSequencePointAtInvisibleBinding
+    | NoDebugPointAtInvisibleBinding
 
     // Don't drop sequence points when combining sequence points
-    member x.Combine(y: SequencePointInfoForBinding) =
+    member x.Combine(y: DebugPointForBinding) =
         match x, y with
-        | SequencePointAtBinding _ as g, _  -> g
-        | _, (SequencePointAtBinding _ as g)  -> g
+        | DebugPointAtBinding _ as g, _  -> g
+        | _, (DebugPointAtBinding _ as g)  -> g
         | _ -> x
 
 /// Indicates if a for loop is 'for x in e1 -> e2', only valid in sequence expressions
@@ -258,21 +282,22 @@ type SeqExprOnly =
     /// Indicates if a for loop is 'for x in e1 -> e2', only valid in sequence expressions
     | SeqExprOnly of bool
 
-/// denotes location of the separator block + optional position of the semicolon (used for tooling support)
+/// Represents the location of the separator block + optional position
+/// of the semicolon (used for tooling support)
 type BlockSeparator = range * pos option
 
-/// Stores pair: record field name + (true if given record field name is syntactically correct and can be used in name resolution)
+/// Represents a record field name plus a flag indicating if given record field name is syntactically
+/// correct and can be used in name resolution.
 type RecordFieldName = LongIdentWithDots * bool
 
 /// Indicates if an expression is an atomic expression.
 ///
-/// This means it is of a form that has no whitespace unless
-/// enclosed in parentheses, e.g. 1, "3", ident, ident.[expr] and (expr). If an atomic expression has
-/// type T, then the largest expression ending at the same range as the atomic expression also has type T.
+/// An atomic expression has no whitespace unlessenclosed in parentheses, e.g.
+/// 1, "3", ident, ident.[expr] and (expr). If an atomic expression has type T,
+/// then the largest expression ending at the same range as the atomic expression
+/// also has type T.
 type ExprAtomicFlag =
-
     | Atomic = 0
-
     | NonAtomic = 1
 
 /// The kind associated with a binding - "let", "do" or a standalone expression
@@ -565,14 +590,14 @@ type SynExpr =
 
     /// F# syntax: 'while ... do ...'
     | While of
-        whileSeqPoint: SequencePointInfoForWhileLoop *
+        whileSeqPoint: DebugPointForWhileLoop *
         whileExpr: SynExpr *
         doExpr: SynExpr *
         range: range
 
     /// F# syntax: 'for i = ... to ... do ...'
     | For of
-        forSeqPoint: SequencePointInfoForForLoop *
+        forSeqPoint: DebugPointForForLoop *
         ident: Ident *
         identBody: SynExpr *
         direction: bool *
@@ -582,7 +607,7 @@ type SynExpr =
 
     /// F# syntax: 'for ... in ... do ...'
     | ForEach of
-        forSeqPoint: SequencePointInfoForForLoop *
+        forSeqPoint: DebugPointForForLoop *
         seqExprOnly: SeqExprOnly *
         isFromSource: bool *
         pat: SynPat *
@@ -619,12 +644,12 @@ type SynExpr =
         isExnMatch: bool *
         keywordRange: range *
         matchClauses: SynMatchClause list *
-        matchSeqPoint: SequencePointInfoForBinding *
+        matchSeqPoint: DebugPointForBinding *
         range: range
 
     /// F# syntax: match expr with pat1 -> expr | ... | patN -> exprN
     | Match of
-        matchSeqPoint: SequencePointInfoForBinding *
+        matchSeqPoint: DebugPointForBinding *
         expr: SynExpr *
         clauses: SynMatchClause list *
         range: range 
@@ -679,16 +704,16 @@ type SynExpr =
         withCases: SynMatchClause list *
         withRange: range *
         range: range *
-        trySeqPoint: SequencePointInfoForTry *
-        withSeqPoint: SequencePointInfoForWith
+        trySeqPoint: DebugPointForTry *
+        withSeqPoint: DebugPointForWith
 
     /// F# syntax: try expr finally expr
     | TryFinally of
         tryExpr: SynExpr *
         finallyExpr: SynExpr *
         range: range *
-        trySeqPoint: SequencePointInfoForTry *
-        finallySeqPoint: SequencePointInfoForFinally
+        trySeqPoint: DebugPointForTry *
+        finallySeqPoint: DebugPointForFinally
 
     /// F# syntax: lazy expr
     | Lazy of
@@ -699,7 +724,7 @@ type SynExpr =
     ///
     ///  isTrueSeq: false indicates "let v = a in b; v"
     | Sequential of
-        seqPoint: SequencePointInfoForSequential *
+        seqPoint: DebugPointForSequential *
         isTrueSeq: bool *
         expr1: SynExpr *
         expr2: SynExpr *
@@ -711,7 +736,7 @@ type SynExpr =
         ifExpr: SynExpr *
         thenExpr: SynExpr *
         elseExpr: SynExpr option *
-        spIfToThen: SequencePointInfoForBinding *
+        spIfToThen: DebugPointForBinding *
         isFromErrorRecovery: bool *
         ifToThenRange: range *
         range: range
@@ -849,7 +874,7 @@ type SynExpr =
 
     /// Used internally during type checking for translating computation expressions.
     | SequentialOrImplicitYield of
-        seqPoint:SequencePointInfoForSequential *
+        seqPoint:DebugPointForSequential *
         expr1:SynExpr *
         expr2:SynExpr *
         ifNotStmt:SynExpr *
@@ -876,18 +901,18 @@ type SynExpr =
     /// F# syntax: let! pat = expr and! ... and! ... and! pat = expr in expr
     /// Computation expressions only
     | LetOrUseBang of
-        bindSeqPoint: SequencePointInfoForBinding *
+        bindSeqPoint: DebugPointForBinding *
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
         rhs: SynExpr *
-        andBangs:(SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list *
+        andBangs:(DebugPointForBinding * bool * bool * SynPat * SynExpr * range) list *
         body:SynExpr *
         range: range 
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of
-        matchSeqPoint: SequencePointInfoForBinding *
+        matchSeqPoint: DebugPointForBinding *
         expr: SynExpr *
         clauses: SynMatchClause list *
         range: range
@@ -1283,7 +1308,7 @@ type SynMatchClause =
         whenExpr: SynExpr option *
         resultExpr: SynExpr *
         range: range *
-        spInfo: SequencePointInfoForTarget
+        spInfo: DebugPointForTarget
 
     member this.RangeOfGuardAndRhs =
         match this with
@@ -1339,7 +1364,7 @@ type SynBinding =
         returnInfo: SynBindingReturnInfo option *
         expr: SynExpr  *
         range: range *
-        seqPoint: SequencePointInfoForBinding
+        seqPoint: DebugPointForBinding
 
     // no member just named "Range", as that would be confusing:
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
@@ -1817,7 +1842,7 @@ type SynModuleDecl =
         range: range
 
     | DoExpr of
-       spInfo: SequencePointInfoForBinding *
+       spInfo: DebugPointForBinding *
        expr: SynExpr *
        range: range
 

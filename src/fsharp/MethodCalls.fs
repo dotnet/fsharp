@@ -1486,7 +1486,7 @@ module ProvidedMethodCalls =
                 let testExpr = exprToExpr test
                 let ifTrueExpr = exprToExpr thenBranch
                 let ifFalseExpr = exprToExpr elseBranch
-                let te = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
+                let te = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
                 None, (te, tyOfExpr g te)
             | None -> 
             match ea.PApplyOption((function ProvidedVarExpr x -> Some x | _ -> None), m) with
@@ -1563,7 +1563,7 @@ module ProvidedMethodCalls =
                 let guardExpr, bodyExpr = info.PApply2(id, m)
                 let guardExprT = exprToExpr guardExpr
                 let bodyExprT = exprToExpr bodyExpr
-                let exprT = mkWhile g (SequencePointInfoForWhileLoop.NoSequencePointAtWhileLoop, SpecialWhileLoopMarker.NoSpecialWhileLoopMarker, guardExprT, bodyExprT, m)
+                let exprT = mkWhile g (DebugPointForWhileLoop.DebugPointForWhileLoop.No, SpecialWhileLoopMarker.NoSpecialWhileLoopMarker, guardExprT, bodyExprT, m)
                 None, (exprT, tyOfExpr g exprT)
             | None -> 
             match ea.PApplyOption((function ProvidedForIntegerRangeLoopExpr x -> Some x | _ -> None), m) with
@@ -1574,7 +1574,7 @@ module ProvidedMethodCalls =
                 let vT = addVar v
                 let e3T = exprToExpr  e3
                 removeVar v
-                let exprT = mkFastForLoop g (SequencePointInfoForForLoop.NoSequencePointAtForLoop, m, vT, e1T, true, e2T, e3T)
+                let exprT = mkFastForLoop g (DebugPointForForLoop.DebugPointForForLoop.No, m, vT, e1T, true, e2T, e3T)
                 None, (exprT, tyOfExpr g exprT)
             | None -> 
             match ea.PApplyOption((function ProvidedNewDelegateExpr x -> Some x | _ -> None), m) with
@@ -1623,7 +1623,7 @@ module ProvidedMethodCalls =
                 let e1, e2 = info.PApply2(id, m)
                 let e1T = exprToExpr e1
                 let e2T = exprToExpr e2
-                let ce = mkTryFinally g (e1T, e2T, m, tyOfExpr g e1T, SequencePointInfoForTry.NoSequencePointAtTry, SequencePointInfoForFinally.NoSequencePointAtFinally)
+                let ce = mkTryFinally g (e1T, e2T, m, tyOfExpr g e1T, DebugPointForTry.DebugPointForTry.No, DebugPointForFinally.DebugPointForFinally.No)
                 None, (ce, tyOfExpr g ce)
             | None -> 
             match ea.PApplyOption((function ProvidedTryWithExpr c -> Some c | _ -> None), m) with 
@@ -1637,7 +1637,7 @@ module ProvidedMethodCalls =
                 let v2T = addVar v2
                 let e2T = exprToExpr (info.PApply((fun (_, _, _, _, x) -> x), m))
                 removeVar v2
-                let ce = mkTryWith g (bT, v1T, e1T, v2T, e2T, m, tyOfExpr g bT, SequencePointInfoForTry.NoSequencePointAtTry, SequencePointInfoForWith.NoSequencePointAtWith)
+                let ce = mkTryWith g (bT, v1T, e1T, v2T, e2T, m, tyOfExpr g bT, DebugPointForTry.DebugPointForTry.No, DebugPointForWith.DebugPointForWith.No)
                 None, (ce, tyOfExpr g ce)
             | None -> 
             match ea.PApplyOption((function ProvidedNewObjectExpr c -> Some c | _ -> None), m) with 

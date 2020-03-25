@@ -271,7 +271,7 @@ module Structure =
             | SynExpr.Match (seqPointAtBinding, _expr, clauses, r)
             | SynExpr.MatchBang (seqPointAtBinding, _expr, clauses, r) ->
                 match seqPointAtBinding with
-                | SequencePointAtBinding sr ->
+                | DebugPointAtBinding sr ->
                     let collapse = Range.endToEnd sr r
                     rcheck Scope.Match Collapse.Same r collapse
                 | _ -> ()
@@ -279,7 +279,7 @@ module Structure =
             | SynExpr.MatchLambda (_, caseRange, clauses, matchSeqPoint, r) ->
                 let caseRange =
                     match matchSeqPoint with
-                    | SequencePointAtBinding r -> r
+                    | DebugPointAtBinding r -> r
                     | _ -> caseRange
                 let collapse = Range.endToEnd caseRange r
                 rcheck Scope.MatchLambda Collapse.Same r collapse
@@ -319,7 +319,7 @@ module Structure =
                 parseExprInterfaces extraImpls
             | SynExpr.TryWith (e, _, matchClauses, _, wholeRange, tryPoint, withPoint) ->
                 match tryPoint, withPoint with
-                | SequencePointAtTry tryRange,  SequencePointAtWith withRange ->
+                | DebugPointForTry.Yes tryRange,  DebugPointForWith.Yes withRange ->
                     let fullrange = Range.startToEnd tryRange wholeRange
                     let collapse = Range.endToEnd tryRange wholeRange
                     let collapseTry = Range.endToStart tryRange withRange
@@ -334,7 +334,7 @@ module Structure =
                 List.iter parseMatchClause matchClauses
             | SynExpr.TryFinally (tryExpr, finallyExpr, r, tryPoint, finallyPoint) ->
                 match tryPoint, finallyPoint with
-                | SequencePointAtTry tryRange, SequencePointAtFinally finallyRange ->
+                | DebugPointForTry.Yes tryRange, DebugPointForFinally.Yes finallyRange ->
                     let collapse = Range.endToEnd tryRange finallyExpr.Range
                     let fullrange = Range.startToEnd tryRange finallyExpr.Range
                     let collapseFinally = Range.endToEnd finallyRange r
@@ -346,7 +346,7 @@ module Structure =
                 parseExpr finallyExpr
             | SynExpr.IfThenElse (ifExpr, thenExpr, elseExprOpt, spIfToThen, _, ifToThenRange, r) ->
                 match spIfToThen with
-                | SequencePointAtBinding rt ->
+                | DebugPointAtBinding rt ->
                     // Outline the entire IfThenElse
                     let fullrange = Range.startToEnd rt r
                     let collapse = Range.endToEnd  ifExpr.Range r

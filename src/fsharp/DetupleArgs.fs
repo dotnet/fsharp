@@ -683,7 +683,7 @@ let buildProjections env bindings x xtys =
         xtys 
         |> List.mapi (fun i xty ->
             let vi, vix = newLocalN env i xty
-            let bind = mkBind NoSequencePointAtInvisibleBinding vi (mkTupleFieldGet env.eg (tupInfoRef, x, xtys, i, env.m))
+            let bind = mkBind NoDebugPointAtInvisibleBinding vi (mkTupleFieldGet env.eg (tupInfoRef, x, xtys, i, env.m))
             bind, vix)
         |> List.unzip
 

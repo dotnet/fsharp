@@ -1230,7 +1230,7 @@ type internal FsiDynamicCompiler
 
         let itID  = mkSynId m itName
         //let itExp = SynExpr.Ident itID
-        let mkBind pat expr = Binding (None, DoBinding, false, (*mutable*)false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, pat, None, expr, m, NoSequencePointAtInvisibleBinding)
+        let mkBind pat expr = Binding (None, DoBinding, false, (*mutable*)false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, pat, None, expr, m, NoDebugPointAtInvisibleBinding)
         let bindingA = mkBind (mkSynPatVar None itID) expr (* let it = <expr> *)  // NOTE: the generalizability of 'expr' must not be damaged, e.g. this can't be an application 
         //let saverPath  = ["Microsoft";"FSharp";"Compiler";"Interactive";"RuntimeHelpers";"SaveIt"]
         //let dots = List.replicate (saverPath.Length - 1) m
@@ -1247,7 +1247,7 @@ type internal FsiDynamicCompiler
         let methCall = SynExpr.LongIdent (false, LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)
         let args = SynExpr.Const (SynConst.Unit, m)
         let breakStatement = SynExpr.App (ExprAtomicFlag.Atomic, false, methCall, args, m)
-        SynModuleDecl.DoExpr(SequencePointInfoForBinding.NoSequencePointAtDoBinding, breakStatement, m)
+        SynModuleDecl.DoExpr(DebugPointForBinding.NoDebugPointAtDoBinding, breakStatement, m)
 
     member __.EvalRequireReference (ctok, istate, m, path) = 
         if FileSystem.IsInvalidPathShim(path) then
@@ -2003,8 +2003,8 @@ type internal FsiInteractionProcessor
                 let isBreakable def = 
                     // only add automatic debugger breaks before 'let' or 'do' expressions with sequence points
                     match def with
-                    | SynModuleDecl.DoExpr (SequencePointInfoForBinding.SequencePointAtBinding _, _, _)
-                    | SynModuleDecl.Let (_, SynBinding.Binding(_, _, _, _, _, _, _, _,_,_,_, SequencePointInfoForBinding.SequencePointAtBinding _) :: _, _) -> true
+                    | SynModuleDecl.DoExpr (DebugPointForBinding.DebugPointAtBinding _, _, _)
+                    | SynModuleDecl.Let (_, SynBinding.Binding(_, _, _, _, _, _, _, _,_,_,_, DebugPointForBinding.DebugPointAtBinding _) :: _, _) -> true
                     | _ -> false
                 let defsA = Seq.takeWhile (isDefHash >> not) defs |> Seq.toList
                 let defsB = Seq.skipWhile (isDefHash >> not) defs |> Seq.toList
@@ -2224,7 +2224,7 @@ type internal FsiInteractionProcessor
             let expr = parseExpression tokenizer 
             let m = expr.Range
             // Make this into "(); expr" to suppress generalization and compilation-as-function
-            let exprWithSeq = SynExpr.Sequential (SequencePointInfoForSequential.ExprOnly, true, SynExpr.Const (SynConst.Unit,m.StartRange), expr, m)
+            let exprWithSeq = SynExpr.Sequential (DebugPointForSequential.ExprOnly, true, SynExpr.Const (SynConst.Unit,m.StartRange), expr, m)
             mainThreadProcessParsedExpression ctok errorLogger (exprWithSeq, istate))
         |> commitResult
 

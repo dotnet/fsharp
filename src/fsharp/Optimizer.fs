@@ -2378,9 +2378,9 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
     if cenv.settings.EliminateTryCatchAndTryFinally () && not e1info.HasEffect then 
         let sp = 
             match spTry with 
-            | SequencePointAtTry _ -> SequencePointInfoForSequential.Both 
-            | SequencePointInBodyOfTry -> SequencePointInfoForSequential.Both 
-            | NoSequencePointAtTry -> SequencePointInfoForSequential.StmtOnly
+            | DebugPointForTry.Yes _ -> DebugPointForSequential.Both 
+            | DebugPointForTry.Body -> DebugPointForSequential.Both 
+            | DebugPointForTry.No -> DebugPointForSequential.StmtOnly
         Expr.Sequential (e1R, e2R, ThenDoSeq, sp, m), info 
     else
         mkTryFinally cenv.g (e1R, e2R, m, ty, spTry, spFinally), 
