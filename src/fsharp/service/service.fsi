@@ -11,7 +11,7 @@ open System.IO
 
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Range
 open FSharp.Compiler.Text
 

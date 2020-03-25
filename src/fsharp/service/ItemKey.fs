@@ -340,6 +340,12 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString info.Name
             writeType info.FieldType
 
+        | Item.UnionCaseField(info, fieldIndex) ->
+            writeString ItemKeyTags.typeUnionCase
+            writeEntityRef info.TyconRef
+            writeString info.Name
+            writeInt32 fieldIndex
+        
         | Item.AnonRecdField(info, tys, i, _) ->
             writeString ItemKeyTags.itemAnonymousRecordField
             writeString info.ILTypeRef.BasicQualifiedName

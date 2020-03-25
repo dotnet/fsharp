@@ -20,7 +20,9 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | Some path -> path
         | None ->
 #if DEBUG
-            Debug.Print(sprintf "FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171" location)
+            Debug.Print(sprintf """FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location
+                customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171"""
+                location)
 #endif
             // Use the location of this dll
             location

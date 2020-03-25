@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.Structure
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Structure
 
 open FSharp.Compiler
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.Structure
 
@@ -118,7 +119,7 @@ module internal BlockStructure =
         | Scope.While
         | Scope.For -> false
 
-    let createBlockSpans isBlockStructureEnabled (sourceText:SourceText) (parsedInput:Ast.ParsedInput) =
+    let createBlockSpans isBlockStructureEnabled (sourceText:SourceText) (parsedInput:ParsedInput) =
         let linetext = sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray
         
         Structure.getOutliningRanges linetext parsedInput

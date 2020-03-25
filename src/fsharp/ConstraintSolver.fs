@@ -47,25 +47,25 @@ open Internal.Utilities.Collections
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Ast
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Infos
-open FSharp.Compiler.Features
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.NameResolution
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Import
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Infos
 open FSharp.Compiler.Lib
 open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
-open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
-open FSharp.Compiler.Features
 
 //-------------------------------------------------------------------------
 // Generate type variables and record them in within the scope of the
@@ -128,7 +128,6 @@ let FreshenTypars traitCtxt m tpsorig =
 let FreshenMethInfo traitCtxt m (minfo: MethInfo) =
     let _, _, tptys = FreshenMethInst traitCtxt m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tptys
-
 
 //-------------------------------------------------------------------------
 // Unification of types: solve/record equality constraints

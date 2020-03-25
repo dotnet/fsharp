@@ -8,7 +8,7 @@ open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Infos
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Tast
@@ -204,8 +204,8 @@ let LowerSeqExpr g amap overallExpr =
         let (TBind(v, e, sp)) = bind
         let sp, spm =
             match sp with
-            | SequencePointAtBinding m -> SequencePointsAtSeq, m
-            | _ -> SuppressSequencePointOnExprOfSequential, e.Range
+            | DebugPointAtBinding m -> DebugPointAtSequential.Both, m
+            | _ -> DebugPointAtSequential.StmtOnly, e.Range
         let vref = mkLocalValRef v
         { res2 with
             phase2 = (fun ctxt ->
@@ -251,7 +251,7 @@ let LowerSeqExpr g amap overallExpr =
                         let generate =
                             mkCompGenSequential m
                                 (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
-                                (mkSequential SequencePointsAtSeq m
+                                (mkSequential DebugPointAtSequential.Both m
                                     (mkValSet m currVar e)
                                     (mkCompGenSequential m
                                         (Expr.Op (TOp.Return, [], [mkOne g m], m))
@@ -319,7 +319,7 @@ let LowerSeqExpr g amap overallExpr =
 
                 Some { phase2 = (fun ctxt ->
                             let generate2, dispose2, checkDispose2 = res2.phase2 ctxt
-                            let generate = mkWhile g (SequencePointAtWhileLoop guardExpr.Range, NoSpecialWhileLoopMarker, guardExpr, generate2, m)
+                            let generate = mkWhile g (DebugPointAtWhile.Yes guardExpr.Range, NoSpecialWhileLoopMarker, guardExpr, generate2, m)
                             let dispose = dispose2
                             let checkDispose = checkDispose2
                             generate, dispose, checkDispose)
@@ -333,7 +333,7 @@ let LowerSeqExpr g amap overallExpr =
         | SeqUsing(resource, v, body, elemTy, m) ->
             // printfn "found Seq.using"
             let reduction =
-                mkLet (SequencePointAtBinding body.Range) m v resource
+                mkLet (DebugPointAtBinding body.Range) m v resource
                     (mkCallSeqFinally g m elemTy body
                         (mkUnitDelayLambda g m
                             (mkCallDispose g m v.Type (exprForVal m v))))
@@ -553,7 +553,7 @@ let LowerSeqExpr g amap overallExpr =
                                     let generate =
                                         mkCompGenSequential m
                                             (mkValSet m pcVar (mkInt32 g m pcMap.[label]))
-                                            (mkSequential SequencePointsAtSeq m
+                                            (mkSequential DebugPointAtSequential.Both m
                                                 (mkAddrSet m nextVar arbitrarySeqExpr)
                                                 (mkCompGenSequential m
                                                     (Expr.Op (TOp.Return, [], [mkTwo g m], m))
@@ -639,8 +639,8 @@ let LowerSeqExpr g amap overallExpr =
 
             // A utility to add a jump table to the three generated methods
             let addJumpTable isDisposal expr =
-                let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m )
-                let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), SuppressSequencePointAtTarget)
+                let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m )
+                let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m), DebugPointForTarget.No)
                 let dtree =
                   TDSwitch(pcExpr,
                            [
@@ -691,7 +691,7 @@ let LowerSeqExpr g amap overallExpr =
                             efV, Expr.Const ((Const.Bool true), m, g.bool_ty),
                             eV, assignToExn,
                             m, g.unit_ty,
-                            NoSequencePointAtTry, NoSequencePointAtWith)
+                            DebugPointAtTry.No, DebugPointAtWith.No)
 
                 // Make the loop
                 //
@@ -706,8 +706,8 @@ let LowerSeqExpr g amap overallExpr =
                 //  goto startLabel
                 // DONE_DISPOSE:
                 let whileLoop =
-                    let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m)
-                    let addResultTarget e = mbuilder.AddResultTarget(e, SuppressSequencePointAtTarget)
+                    let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
+                    let addResultTarget e = mbuilder.AddResultTarget(e, DebugPointForTarget.No)
                     let dtree =
                         TDSwitch(pcExpr,
                                     [  mkCase((DecisionTreeTest.Const(Const.Int32 pcDone)), addResultTarget (Expr.Op (TOp.Goto doneDisposeLabel, [], [], m)) ) ],
@@ -734,7 +734,7 @@ let LowerSeqExpr g amap overallExpr =
                 // --loop--
                 // if exn != null then raise exn
                 mkLet
-                    NoSequencePointAtLetBinding m exnV  (Expr.Const (Const.Zero, m, g.exn_ty))
+                    NoDebugPointAtLetBinding m exnV  (Expr.Const (Const.Zero, m, g.exn_ty))
                         (mkCompGenSequential m whileLoop doRaise)
 
             // Add the jump table to the GenerateNext method

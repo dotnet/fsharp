@@ -4,17 +4,20 @@
 module internal FSharp.Compiler.Tastops 
 
 open System.Collections.Generic
+
 open Internal.Utilities
+
+open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler 
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.Layout
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
-open FSharp.Compiler.Ast
 open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Layout
+open FSharp.Compiler.XmlDoc
 
 //-------------------------------------------------------------------------
 // Type equivalence
@@ -73,13 +76,13 @@ val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType lis
 type MatchBuilder =
 
     /// Create a new builder
-    new : SequencePointInfoForBinding * range -> MatchBuilder
+    new : DebugPointForBinding * range -> MatchBuilder
 
     /// Add a new destination target
     member AddTarget : DecisionTreeTarget -> int
 
     /// Add a new destination target that is an expression result
-    member AddResultTarget : Expr * SequencePointInfoForTarget -> DecisionTree
+    member AddResultTarget : Expr * DebugPointForTarget -> DecisionTree
 
     /// Finish the targets
     member CloseTargets : unit -> DecisionTreeTarget list
@@ -91,10 +94,10 @@ type MatchBuilder =
 val mkBoolSwitch : range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
 
 /// Build a conditional expression
-val primMkCond : SequencePointInfoForBinding -> SequencePointInfoForTarget -> SequencePointInfoForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val primMkCond : DebugPointForBinding -> DebugPointForTarget -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression
-val mkCond : SequencePointInfoForBinding -> SequencePointInfoForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCond : DebugPointForBinding -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression that checks for non-nullness
 val mkNonNullCond : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
@@ -153,19 +156,19 @@ val mkMultiLambdas : range -> Typars -> Val list list -> Expr * TType -> Expr
 val mkMemberLambdas : range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
 
 /// Build a 'while' loop expression
-val mkWhile      : TcGlobals -> SequencePointInfoForWhileLoop * SpecialWhileLoopMarker * Expr * Expr * range                          -> Expr
+val mkWhile      : TcGlobals -> DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range                          -> Expr
 
 /// Build a 'for' loop expression
-val mkFor        : TcGlobals -> SequencePointInfoForForLoop * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
+val mkFor        : TcGlobals -> DebugPointAtFor * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
 
 /// Build a 'try/with' expression
-val mkTryWith  : TcGlobals -> Expr * (* filter val *) Val * (* filter expr *) Expr * (* handler val *) Val * (* handler expr *) Expr * range * TType * SequencePointInfoForTry * SequencePointInfoForWith -> Expr
+val mkTryWith  : TcGlobals -> Expr * (* filter val *) Val * (* filter expr *) Expr * (* handler val *) Val * (* handler expr *) Expr * range * TType * DebugPointAtTry * DebugPointAtWith -> Expr
 
 /// Build a 'try/finally' expression
-val mkTryFinally: TcGlobals -> Expr * Expr * range * TType * SequencePointInfoForTry * SequencePointInfoForFinally -> Expr
+val mkTryFinally: TcGlobals -> Expr * Expr * range * TType * DebugPointAtTry * DebugPointAtFinally -> Expr
 
 /// Build a user-level value binding
-val mkBind : SequencePointInfoForBinding -> Val -> Expr -> Binding
+val mkBind : DebugPointForBinding -> Val -> Expr -> Binding
 
 /// Build a user-level let-binding
 val mkLetBind : range -> Binding -> Expr -> Expr
@@ -177,10 +180,10 @@ val mkLetsBind : range -> Binding list -> Expr -> Expr
 val mkLetsFromBindings : range -> Bindings -> Expr -> Expr
 
 /// Build a user-level let expression
-val mkLet : SequencePointInfoForBinding -> range -> Val -> Expr -> Expr -> Expr
+val mkLet : DebugPointForBinding -> range -> Val -> Expr -> Expr -> Expr
 
 /// Make a binding that binds a function value to a lambda taking multiple arguments
-val mkMultiLambdaBind : Val -> SequencePointInfoForBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
+val mkMultiLambdaBind : Val -> DebugPointForBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
 
 // Compiler generated bindings may involve a user variable.
 // Compiler generated bindings may give rise to a sequence point if they are part of
@@ -1273,10 +1276,10 @@ val accTargetsOfDecisionTree : DecisionTree -> int list -> int list
 
 /// Make a 'match' expression applying some peep-hole optimizations along the way, e.g to 
 /// pre-decide the branch taken at compile-time.
-val mkAndSimplifyMatch : SequencePointInfoForBinding  -> range -> range -> TType -> DecisionTree -> DecisionTreeTarget list -> Expr
+val mkAndSimplifyMatch : DebugPointForBinding  -> range -> range -> TType -> DecisionTree -> DecisionTreeTarget list -> Expr
 
 /// Make a 'match' expression without applying any peep-hole optimizations.
-val primMkMatch : SequencePointInfoForBinding * range * DecisionTree * DecisionTreeTarget array * range * TType -> Expr
+val primMkMatch : DebugPointForBinding * range * DecisionTree * DecisionTreeTarget array * range * TType -> Expr
 
 ///  Work out what things on the right-han-side of a 'let rec' recursive binding need to be fixed up
 val IterateRecursiveFixups : 
@@ -1712,11 +1715,11 @@ val mkOptionDefaultValue: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 // Make a few more expressions
 //------------------------------------------------------------------------- 
 
-val mkSequential  : SequencePointInfoForSeq -> range -> Expr -> Expr -> Expr
+val mkSequential  : DebugPointAtSequential -> range -> Expr -> Expr -> Expr
 
 val mkCompGenSequential  : range -> Expr -> Expr -> Expr
 
-val mkSequentials : SequencePointInfoForSeq -> TcGlobals -> range -> Exprs -> Expr   
+val mkSequentials : DebugPointAtSequential -> TcGlobals -> range -> Exprs -> Expr   
 
 val mkRecordExpr : TcGlobals -> RecordConstructionInfo * TyconRef * TypeInst * RecdFieldRef list * Exprs * range -> Expr
 
@@ -2224,7 +2227,7 @@ val DecideStaticOptimizations : TcGlobals -> StaticOptimization list -> StaticOp
 val mkStaticOptimizationExpr     : TcGlobals -> StaticOptimization list * Expr * Expr * range -> Expr
 
 /// Build for loops
-val mkFastForLoop : TcGlobals -> SequencePointInfoForForLoop * range * Val * Expr * bool * Expr * Expr -> Expr
+val mkFastForLoop : TcGlobals -> DebugPointAtFor * range * Val * Expr * bool * Expr * Expr -> Expr
 
 //---------------------------------------------------------------------------
 // Active pattern helpers
@@ -2331,9 +2334,9 @@ val ValIsExplicitImpl : TcGlobals -> Val -> bool
 
 val ValRefIsExplicitImpl : TcGlobals -> ValRef -> bool
 
-val (|LinearMatchExpr|_|) : Expr -> (SequencePointInfoForBinding * range * DecisionTree * DecisionTreeTarget * Expr * SequencePointInfoForTarget * range * TType) option
+val (|LinearMatchExpr|_|) : Expr -> (DebugPointForBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) option
 
-val rebuildLinearMatchExpr : (SequencePointInfoForBinding * range * DecisionTree * DecisionTreeTarget * Expr * SequencePointInfoForTarget * range * TType) -> Expr
+val rebuildLinearMatchExpr : (DebugPointForBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) -> Expr
 
 val (|LinearOpExpr|_|) : Expr -> (TOp * TypeInst * Expr list * Expr * range) option
 

@@ -4,21 +4,25 @@ module internal FSharp.Compiler.TastPickle
 
 open System.Collections.Generic
 open System.Text
+
 open Internal.Utilities
+
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Lib.Bits
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
-open FSharp.Compiler.Ast
 open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.XmlDoc
 
 
 let verbose = false
@@ -27,7 +31,6 @@ let ffailwith fileName str =
     let msg = FSComp.SR.pickleErrorReadingWritingMetadata(fileName, str)
     System.Diagnostics.Debug.Assert(false, msg)
     failwith msg
-
 
 // Fixup pickled data w.r.t. a set of CCU thunks indexed by name
 [<NoEquality; NoComparison>]
@@ -49,7 +52,6 @@ type PickledDataWithReferences<'rawData> =
             | Some loaded -> reqd.Fixup loaded
             | None -> reqd.FixupOrphaned() )
         x.RawData
-
 
 //---------------------------------------------------------------------------
 // Basic pickle/unpickle state
@@ -166,7 +168,9 @@ let ufailwith st str = ffailwith st.ifile str
 type 'T pickler = 'T -> WriterState -> unit
 
 let p_byte b st = st.os.EmitIntAsByte b
+
 let p_bool b st = p_byte (if b then 1 else 0) st
+
 let prim_p_int32 i st =
     p_byte (b0 i) st
     p_byte (b1 i) st
@@ -1347,7 +1351,6 @@ let u_dummy_range : range unpickler = fun _st -> range0
 let u_ident st = let a = u_string st in let b = u_range st in ident(a, b)
 let u_xmldoc st = XmlDoc (u_array u_string st)
 
-
 let p_local_item_ref ctxt tab st = p_osgn_ref ctxt tab st
 
 let p_tcref ctxt (x: EntityRef) st =
@@ -2440,9 +2443,9 @@ and u_dtree_discrim st =
     | 4 -> u_tup2 u_int u_ty st    |> DecisionTreeTest.ArrayLength
     | _ -> ufailwith st "u_dtree_discrim"
 
-and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, SuppressSequencePointAtTarget))
+and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, DebugPointForTarget.No))
 
-and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, NoSequencePointAtStickyBinding)
+and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, NoDebugPointAtStickyBinding)
 
 and u_lval_op_kind st =
     match u_byte st with
@@ -2549,12 +2552,12 @@ and u_op st =
             let d = u_tys st
             TOp.ILCall (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d)
     | 19 -> TOp.Array
-    | 20 -> TOp.While (NoSequencePointAtWhileLoop, NoSpecialWhileLoopMarker)
+    | 20 -> TOp.While (DebugPointAtWhile.No, NoSpecialWhileLoopMarker)
     | 21 -> let dir = match u_int st with 0 -> FSharpForLoopUp | 1 -> CSharpForLoopUp | 2 -> FSharpForLoopDown | _ -> failwith "unknown for loop"
-            TOp.For (NoSequencePointAtForLoop, dir)
+            TOp.For (DebugPointAtFor.No, dir)
     | 22 -> TOp.Bytes (u_bytes st)
-    | 23 -> TOp.TryCatch (NoSequencePointAtTry, NoSequencePointAtWith)
-    | 24 -> TOp.TryFinally (NoSequencePointAtTry, NoSequencePointAtFinally)
+    | 23 -> TOp.TryCatch (DebugPointAtTry.No, DebugPointAtWith.No)
+    | 24 -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
     | 25 -> let a = u_rfref st
             TOp.ValFieldGetAddr (a, false)
     | 26 -> TOp.UInt16s (u_array u_uint16 st)
@@ -2610,7 +2613,7 @@ and u_expr st =
            let b = u_expr st
            let c = u_int st
            let d = u_dummy_range  st
-           Expr.Sequential (a, b, (match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"), SuppressSequencePointOnExprOfSequential, d)
+           Expr.Sequential (a, b, (match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"), DebugPointAtSequential.StmtOnly, d)
     | 4 -> let a0 = u_option u_Val st
            let b0 = u_option u_Val st
            let b1 = u_Vals st
@@ -2642,7 +2645,7 @@ and u_expr st =
             let c = u_targets st
             let d = u_dummy_range st
             let e = u_ty st
-            Expr.Match (NoSequencePointAtStickyBinding, a, b, c, d, e)
+            Expr.Match (NoDebugPointAtStickyBinding, a, b, c, d, e)
     | 10 -> let b = u_ty st
             let c = (u_option u_Val) st
             let d = u_expr st

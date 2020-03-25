@@ -11,16 +11,16 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Infos
+open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Infos
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.TypeRelations

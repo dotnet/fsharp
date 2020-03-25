@@ -19,7 +19,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Features

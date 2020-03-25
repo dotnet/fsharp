@@ -8,6 +8,7 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.NameResolution
@@ -165,7 +166,7 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
+      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
 
       static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 * tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot * suggestNamesForErrors: bool * keepAllBackgroundSymbolUses: bool * enableBackgroundItemKeyStoreAndSemanticClassification: bool -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
 

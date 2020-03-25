@@ -5,7 +5,7 @@ namespace FSharp.Compiler.SourceCodeServices
 open System
 open System.Diagnostics
 open FSharp.Compiler
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.AbstractIL.Internal.Library 
