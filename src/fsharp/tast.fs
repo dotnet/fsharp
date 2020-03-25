@@ -10,26 +10,29 @@ open System
 open System.Collections.Generic 
 open System.Diagnostics
 open System.Reflection
+
 open Internal.Utilities
+
+open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
-
-open FSharp.Compiler 
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.QuotationPickler
-open Microsoft.FSharp.Core.Printf
+open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
+open FSharp.Compiler.XmlDoc
+open FSharp.Core.Printf
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
-open Microsoft.FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices
 #endif
 
 /// Unique name generator for stamps attached to lambdas and object expressions

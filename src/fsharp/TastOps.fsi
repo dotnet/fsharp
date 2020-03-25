@@ -4,17 +4,20 @@
 module internal FSharp.Compiler.Tastops 
 
 open System.Collections.Generic
+
 open Internal.Utilities
+
+open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler 
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.Layout
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
-open FSharp.Compiler.Ast
 open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Layout
+open FSharp.Compiler.XmlDoc
 
 //-------------------------------------------------------------------------
 // Type equivalence

@@ -9,7 +9,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
 open FSharp.Compiler.Text
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.SourceCodeServices
 
 type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph

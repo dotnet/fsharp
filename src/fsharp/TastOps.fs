@@ -5,24 +5,27 @@ module internal FSharp.Compiler.Tastops
 
 open System.Collections.Generic 
 open Internal.Utilities
+
+open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.Extensions.ILX 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler 
-open FSharp.Compiler.Range
-open FSharp.Compiler.Rational
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Lib
-open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Features
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Features
+open FSharp.Compiler.Range
+open FSharp.Compiler.Rational
+open FSharp.Compiler.Tast
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.XmlDoc
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif

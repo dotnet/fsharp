@@ -17,26 +17,28 @@ open FSharp.Compiler.AbstractIL.Internal.Library.ResultOrException
 open FSharp.Compiler.AbstractIL.Diagnostics 
 
 open FSharp.Compiler 
-open FSharp.Compiler.Range
-open FSharp.Compiler.Rational
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
-open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.MethodOverrides
-open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Features
+open FSharp.Compiler.Range
+open FSharp.Compiler.Rational
+open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
+open FSharp.Compiler.XmlDoc
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -991,7 +993,7 @@ let TranslateTopArgSynInfo isArg m tcAttributes (SynArgInfo(Attributes attrs, is
 
 /// Members have an arity inferred from their syntax. This "valSynData" is not quite the same as the arities 
 /// used in the middle and backends of the compiler ("topValInfo"). 
-/// "0" in a valSynData (see Ast.arity_of_pat) means a "unit" arg in a topValInfo 
+/// "0" in a valSynData (see arity_of_pat) means a "unit" arg in a topValInfo 
 /// Hence remove all "zeros" from arity and replace them with 1 here. 
 /// Note we currently use the compiled form for choosing unique names, to distinguish overloads because this must match up 
 /// between signature and implementation, and the signature just has "unit". 
@@ -4138,21 +4140,21 @@ type DelayedItem =
   /// DelayedTypeApp (typeArgs, mTypeArgs, mExprAndTypeArgs)
   ///
   /// Represents the <tyargs> in "item<tyargs>"
-  | DelayedTypeApp of Ast.SynType list * range * range
+  | DelayedTypeApp of SynType list * range * range
 
   /// DelayedApp (isAtomic, argExpr, mFuncAndArg) 
   ///
   /// Represents the args in "item args", or "item.[args]".
-  | DelayedApp of ExprAtomicFlag * Ast.SynExpr * range
+  | DelayedApp of ExprAtomicFlag * SynExpr * range
 
   /// Represents the long identifiers in "item.Ident1", or "item.Ident1.Ident2" etc.
-  | DelayedDotLookup of Ast.Ident list * range
+  | DelayedDotLookup of Ident list * range
 
   /// Represents an incomplete "item."
   | DelayedDot
  
   /// Represents the valueExpr in "item <- valueExpr", also "item.[indexerArgs] <- valueExpr" etc.
-  | DelayedSet of Ast.SynExpr * range
+  | DelayedSet of SynExpr * range
 
 let MakeDelayedSet(e: SynExpr, m) = 
     // We have longId <- e. Wrap 'e' in another pair of parentheses to ensure it's never interpreted as 
@@ -13760,7 +13762,7 @@ module MutRecBindingChecking =
       /// A set of value or function definitions in an incremental class
       ///
       /// Phase2AIncrClassBindings (tcref, letBinds, isStatic, isRec, m)
-      | Phase2AIncrClassBindings of TyconRef * Ast.SynBinding list * bool * bool * range
+      | Phase2AIncrClassBindings of TyconRef * SynBinding list * bool * bool * range
       /// A 'member' definition in a class
       | Phase2AMember of PreCheckingRecursiveBinding
 #if OPEN_IN_TYPE_DECLARATIONS

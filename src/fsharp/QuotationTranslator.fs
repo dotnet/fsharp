@@ -10,7 +10,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.Lib
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.TcGlobals

@@ -11,7 +11,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos

@@ -6,15 +6,16 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Detuple.GlobalUsageAnalysis
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Lib
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.Tastops.DebugPrint
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Detuple.GlobalUsageAnalysis
-open FSharp.Compiler.Lib
+open FSharp.Compiler.XmlDoc
 
 let verboseTLR = false
 

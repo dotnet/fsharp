@@ -4,21 +4,25 @@ module internal FSharp.Compiler.TastPickle
 
 open System.Collections.Generic
 open System.Text
+
 open Internal.Utilities
+
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Lib.Bits
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
-open FSharp.Compiler.Ast
 open FSharp.Compiler.Tast
+open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.XmlDoc
 
 
 let verbose = false
@@ -27,7 +31,6 @@ let ffailwith fileName str =
     let msg = FSComp.SR.pickleErrorReadingWritingMetadata(fileName, str)
     System.Diagnostics.Debug.Assert(false, msg)
     failwith msg
-
 
 // Fixup pickled data w.r.t. a set of CCU thunks indexed by name
 [<NoEquality; NoComparison>]
@@ -49,7 +52,6 @@ type PickledDataWithReferences<'rawData> =
             | Some loaded -> reqd.Fixup loaded
             | None -> reqd.FixupOrphaned() )
         x.RawData
-
 
 //---------------------------------------------------------------------------
 // Basic pickle/unpickle state
@@ -166,7 +168,9 @@ let ufailwith st str = ffailwith st.ifile str
 type 'T pickler = 'T -> WriterState -> unit
 
 let p_byte b st = st.os.EmitIntAsByte b
+
 let p_bool b st = p_byte (if b then 1 else 0) st
+
 let prim_p_int32 i st =
     p_byte (b0 i) st
     p_byte (b1 i) st
@@ -1346,7 +1350,6 @@ let u_range st = let a = u_string st in let b = u_pos st in let c = u_pos st in 
 let u_dummy_range : range unpickler = fun _st -> range0
 let u_ident st = let a = u_string st in let b = u_range st in ident(a, b)
 let u_xmldoc st = XmlDoc (u_array u_string st)
-
 
 let p_local_item_ref ctxt tab st = p_osgn_ref ctxt tab st
 

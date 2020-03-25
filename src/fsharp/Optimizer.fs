@@ -10,25 +10,26 @@
 module internal FSharp.Compiler.Optimizer
 
 open Internal.Utilities
+
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-
-open FSharp.Compiler
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Range
 open FSharp.Compiler.Tast 
 open FSharp.Compiler.TastPickle
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.Tastops.DebugPrint
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic

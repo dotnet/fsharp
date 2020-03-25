@@ -5,13 +5,13 @@ module internal FSharp.Compiler.Detuple
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.Lib
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Lib
+open FSharp.Compiler.XmlDoc
 
-//
 // This pass has one aim.
 // - to eliminate tuples allocated at call sites (due to uncurried style)
 //

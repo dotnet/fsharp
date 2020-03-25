@@ -4,38 +4,42 @@
 
 #nowarn "1182"  // generated code has lots of unused "parseState"
 
-open Internal.Utilities
+open System
 
+open Internal.Utilities
+open Internal.Utilities.Text.Parsing
+
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler
-open Internal.Utilities.Text.Parsing
-
-open System
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
-open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Lib
+open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.XmlDoc
 
 #if DEBUG
-let debugPrint(s) =
+let debugPrint s =
     if Internal.Utilities.Text.Parsing.Flags.debug then 
         printfn "\n%s" s
 #else
-let debugPrint(s) = ignore s
+let debugPrint s = ignore s
 #endif
 
 let exprFromParseError (e:SynExpr) = SynExpr.FromParseError (e, e.Range)
+
 let patFromParseError (e:SynPat) = SynPat.FromParseError(e, e.Range)
 
 let mkSynOptionalExpr (m: range) xopt = 
     let m = m.MakeSynthetic()
     match xopt with 
-    | None -> mkSynLidGet m Ast.FSharpLib.CorePath "None"
-    | Some x  -> SynExpr.App (ExprAtomicFlag.NonAtomic, false, mkSynLidGet m Ast.FSharpLib.CorePath "Some", x, m)
+    | None -> mkSynLidGet m FSharpLib.CorePath "None"
+    | Some x  -> SynExpr.App (ExprAtomicFlag.NonAtomic, false, mkSynLidGet m FSharpLib.CorePath "Some", x, m)
 
 // record bindings returned by the recdExprBindings rule has shape:
 // (binding, separator-before-this-binding)
@@ -51,6 +55,7 @@ let rebindRanges first fields lastSep =
     run first fields []
 
 let mkUnderscoreRecdField m = LongIdentWithDots([ident("_", m)], []), false
+
 let mkRecdField lidwd = lidwd, true
 
 let mkSynDoBinding (vis, strict, expr, m) = 
@@ -105,7 +110,6 @@ let checkEndOfFileError t =
       | [] -> ()
       | (_, m) :: _  -> reportParseErrorAt m (FSComp.SR.parsNoHashEndIfFound())
 
-//                BindingSetPreAttrs(letRange, isRec, isUse, builderFunction, wholeRange)
 type BindingSet = BindingSetPreAttrs of range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * range
 
 let mkClassMemberLocalBindings(isStatic, initialRangeOpt, attrs, vis, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, bindingSetRange)) = 
@@ -257,41 +261,41 @@ let rangeOfLongIdent(lid:LongIdent) =
 
 /* These are artificial */
 %token <string> LEX_FAILURE
-%token <Ast.LexerWhitespaceContinuation> COMMENT WHITESPACE HASH_LINE HASH_LIGHT INACTIVECODE LINE_COMMENT STRING_TEXT EOF
-%token <range * string * Ast.LexerWhitespaceContinuation> HASH_IF HASH_ELSE HASH_ENDIF 
+%token <ParseHelpers.LexerWhitespaceContinuation> COMMENT WHITESPACE HASH_LINE HASH_LIGHT INACTIVECODE LINE_COMMENT STRING_TEXT EOF
+%token <range * string * ParseHelpers.LexerWhitespaceContinuation> HASH_IF HASH_ELSE HASH_ENDIF 
 
 %start signatureFile implementationFile interaction typedSeqExprEOF typEOF
-%type <Ast.SynExpr> typedSeqExprEOF
-%type <Ast.ParsedImplFile> implementationFile
-%type <Ast.ParsedSigFile> signatureFile
-%type <Ast.ParsedFsiInteraction> interaction
-%type <Ast.Ident> ident
-%type <Ast.SynType> typ typEOF
-%type <Ast.SynTypeDefnSig list> tyconSpfns
-%type <Ast.SynExpr> patternResult
-%type <Ast.SynExpr> declExpr
-%type <Ast.SynExpr> minusExpr
-%type <Ast.SynExpr> appExpr
-%type <Ast.SynExpr> argExpr
-%type <Ast.SynExpr> declExprBlock
-%type <Ast.SynPat> headBindingPattern
-%type <Ast.SynExpr> atomicExprAfterType
-%type <Ast.SynExpr> typedSeqExprBlock
-%type <Ast.SynExpr * bool> atomicExpr
-%type <Ast.SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
-%type <(Ast.SynEnumCase, Ast.SynUnionCase) Choice list> unionTypeRepr
-%type <Ast.SynMemberDefns> tyconDefnAugmentation
-%type <Ast.SynExceptionDefn> exconDefn
-%type <Ast.SynExceptionDefnRepr> exconCore
-%type <Ast.SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
-%type <Ast.LongIdentWithDots> openDecl
-%type <Ast.LongIdentWithDots> path
-%type <Ast.LongIdentWithDots> pathOp
+%type <AbstractSyntax.SynExpr> typedSeqExprEOF
+%type <AbstractSyntax.ParsedImplFile> implementationFile
+%type <AbstractSyntax.ParsedSigFile> signatureFile
+%type <AbstractSyntax.ParsedFsiInteraction> interaction
+%type <AbstractSyntax.Ident> ident
+%type <AbstractSyntax.SynType> typ typEOF
+%type <AbstractSyntax.SynTypeDefnSig list> tyconSpfns
+%type <AbstractSyntax.SynExpr> patternResult
+%type <AbstractSyntax.SynExpr> declExpr
+%type <AbstractSyntax.SynExpr> minusExpr
+%type <AbstractSyntax.SynExpr> appExpr
+%type <AbstractSyntax.SynExpr> argExpr
+%type <AbstractSyntax.SynExpr> declExprBlock
+%type <AbstractSyntax.SynPat> headBindingPattern
+%type <AbstractSyntax.SynExpr> atomicExprAfterType
+%type <AbstractSyntax.SynExpr> typedSeqExprBlock
+%type <AbstractSyntax.SynExpr * bool> atomicExpr
+%type <AbstractSyntax.SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
+%type <(AbstractSyntax.SynEnumCase, AbstractSyntax.SynUnionCase) Choice list> unionTypeRepr
+%type <AbstractSyntax.SynMemberDefns> tyconDefnAugmentation
+%type <AbstractSyntax.SynExceptionDefn> exconDefn
+%type <AbstractSyntax.SynExceptionDefnRepr> exconCore
+%type <AbstractSyntax.SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
+%type <AbstractSyntax.LongIdentWithDots> openDecl
+%type <AbstractSyntax.LongIdentWithDots> path
+%type <AbstractSyntax.LongIdentWithDots> pathOp
 /*     LESS    GREATER        parsedOk   typeArgs           m for each   mWhole  */
-%type <range * range option * bool     * Ast.SynType list * range list * range> typeArgsActual
+%type <range * range option * bool     * AbstractSyntax.SynType list * range list * range> typeArgsActual
 /*     LESS    GREATER        typeArgs           m for each   mWhole  */
-%type <range * range option * Ast.SynType list * range list * range> typeArgsNoHpaDeprecated
-%type <Ast.SynTypar> typar
+%type <range * range option * AbstractSyntax.SynType list * range list * range> typeArgsNoHpaDeprecated
+%type <AbstractSyntax.SynTypar> typar
 
 /* About precedence rules: 
  * 

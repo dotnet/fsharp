@@ -2,9 +2,10 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Ast
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.Range
 
 module Structure =
@@ -718,7 +719,7 @@ module Structure =
                 let (TypeDefnSig(_, _, memberSigs, r)) = List.last ls
                 lastMemberSigRangeElse r memberSigs
 
-        let lastModuleSigDeclRangeElse range (sigDecls:SynModuleSigDecls) =
+        let lastModuleSigDeclRangeElse range (sigDecls:SynModuleSigDecl list) =
             match sigDecls with
             | [] -> range
             | ls -> 
@@ -778,7 +779,7 @@ module Structure =
                 parseSimpleRepr simpleRepr
             | SynTypeDefnSigRepr.Exception _ -> ()
 
-        let getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> range option) (scope:Scope) (decls: SynModuleSigDecls) =
+        let getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> range option) (scope:Scope) (decls: SynModuleSigDecl list) =
             let groupConsecutiveSigDecls input =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with
@@ -808,7 +809,7 @@ module Structure =
             |> List.choose selectSigRanges
             |> acc.AddRange
 
-        let collectSigHashDirectives (decls: SynModuleSigDecls) =
+        let collectSigHashDirectives (decls: SynModuleSigDecl list) =
             decls
             |> getConsecutiveSigModuleDecls(
                 function

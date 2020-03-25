@@ -23,7 +23,8 @@ open FSharp.Compiler.AbstractIL.Internal.BinaryConstants
 
 open FSharp.Compiler
 open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
@@ -36,6 +37,7 @@ open FSharp.Compiler.Tastops
 open FSharp.Compiler.Tastops.DebugPrint
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
+open FSharp.Compiler.XmlDoc
 
 let IsNonErasedTypar (tp: Typar) = 
     not tp.IsErased

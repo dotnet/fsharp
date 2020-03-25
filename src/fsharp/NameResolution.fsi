@@ -4,7 +4,7 @@ module internal FSharp.Compiler.NameResolution
 
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Range
 open FSharp.Compiler.Import

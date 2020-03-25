@@ -8,9 +8,10 @@ open Internal.Utilities.Text.Lexing
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
 open FSharp.Compiler.Lexhelp
 let debug = false
