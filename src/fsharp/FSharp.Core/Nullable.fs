@@ -2,6 +2,8 @@
 
 #nowarn "1204"
 
+open System
+open Microsoft.FSharp.Core
 namespace Microsoft.FSharp.Linq
 
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators

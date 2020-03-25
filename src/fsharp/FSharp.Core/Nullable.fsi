@@ -3,6 +3,7 @@
 namespace Microsoft.FSharp.Linq
 
 open System
+open Microsoft.FSharp.Core
 
 /// Operators for working with nullable values
 [<AutoOpen>]
