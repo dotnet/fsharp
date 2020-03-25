@@ -8,18 +8,27 @@ open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
 
 val CheckAugmentationAttribs : bool -> TcGlobals -> Import.ImportMap -> Tycon -> unit
+
 val TyconIsCandidateForAugmentationWithCompare  : TcGlobals -> Tycon -> bool
+
 val TyconIsCandidateForAugmentationWithEquals   : TcGlobals -> Tycon -> bool
+
 val TyconIsCandidateForAugmentationWithHash     : TcGlobals -> Tycon -> bool
 
 val MakeValsForCompareAugmentation                : TcGlobals -> TyconRef -> Val * Val
+
 val MakeValsForCompareWithComparerAugmentation    : TcGlobals -> TyconRef -> Val
+
 val MakeValsForEqualsAugmentation                 : TcGlobals -> TyconRef -> Val * Val
+
 val MakeValsForEqualityWithComparerAugmentation   : TcGlobals -> TyconRef -> Val * Val * Val
 
 val MakeBindingsForCompareAugmentation               : TcGlobals -> Tycon -> Binding list
+
 val MakeBindingsForCompareWithComparerAugmentation   : TcGlobals -> Tycon -> Binding list
+
 val MakeBindingsForEqualsAugmentation                : TcGlobals -> Tycon -> Binding list
+
 val MakeBindingsForEqualityWithComparerAugmentation  : TcGlobals -> Tycon -> Binding list
 
 /// This predicate can be used once type inference is complete, before then it is an approximation

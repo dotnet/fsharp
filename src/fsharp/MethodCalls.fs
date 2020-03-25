@@ -29,7 +29,6 @@ open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.ExtensionTyping
 #endif
 
-
 //-------------------------------------------------------------------------
 // Sets of methods involved in overload resolution and trait constraint
 // satisfaction.
@@ -49,9 +48,13 @@ open FSharp.Compiler.ExtensionTyping
 type CallerArg<'T> = 
     /// CallerArg(ty, range, isOpt, exprInfo)
     | CallerArg of ty: TType * range: range * isOpt: bool * exprInfo: 'T  
+
     member x.CallerArgumentType = (let (CallerArg(ty, _, _, _)) = x in ty)
+
     member x.Range = (let (CallerArg(_, m, _, _)) = x in m)
+
     member x.IsExplicitOptional = (let (CallerArg(_, _, isOpt, _)) = x in isOpt)
+
     member x.Expr = (let (CallerArg(_, _, _, expr)) = x in expr)
     
 /// Represents the information about an argument in the method being called
@@ -1751,8 +1754,6 @@ module ProvidedMethodCalls =
                 raise( tpe.WithContext(typeName, methName) )  // loses original stack trace
 #endif
 
-
-
 let RecdFieldInstanceChecks g amap ad m (rfinfo: RecdFieldInfo) = 
     if rfinfo.IsStatic then error (Error (FSComp.SR.tcStaticFieldUsedWhenInstanceFieldExpected(), m))
     CheckRecdFieldInfoAttributes g rfinfo m |> CommitOperationResult        
@@ -1813,7 +1814,6 @@ exception FieldNotMutable of DisplayEnv * Tast.RecdFieldRef * range
 let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) = 
     if not rfinfo.RecdField.IsMutable then
         errorR (FieldNotMutable (denv, rfinfo.RecdFieldRef, m))
-
 
 /// Generate a witness for the given (solved) constraint.  Five possiblilities are taken
 /// into account.

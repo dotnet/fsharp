@@ -8,22 +8,22 @@ open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals 
 
 type OptimizationSettings = 
-    { abstractBigTargets : bool
-      jitOptUser : bool option
-      localOptUser : bool option
-      crossModuleOptUser : bool option
-      bigTargetSize : int
-      veryBigExprSize : int 
-      lambdaInlineThreshold : int
-      reportingPhase : bool;
+    { abstractBigTargets: bool
+      jitOptUser: bool option
+      localOptUser: bool option
+      crossModuleOptUser: bool option
+      bigTargetSize: int
+      veryBigExprSize: int 
+      lambdaInlineThreshold: int
+      reportingPhase: bool;
       reportNoNeedToTailcall: bool
-      reportFunctionSizes : bool
-      reportHasEffect : bool
-      reportTotalSizes : bool }
+      reportFunctionSizes: bool
+      reportHasEffect: bool
+      reportTotalSizes: bool }
 
-    member jitOpt : unit -> bool 
-    member localOpt : unit -> bool 
-    static member Defaults : OptimizationSettings
+    member jitOpt: unit -> bool 
+    member localOpt: unit -> bool 
+    static member Defaults: OptimizationSettings
 
 /// Optimization information 
 type ModuleInfo
@@ -33,27 +33,27 @@ type CcuOptimizationInfo = LazyModuleInfo
 
 [<Sealed>]
 type IncrementalOptimizationEnv =
-    static member Empty : IncrementalOptimizationEnv
+    static member Empty: IncrementalOptimizationEnv
 
 /// For building optimization environments incrementally 
-val internal BindCcu : CcuThunk -> CcuOptimizationInfo -> IncrementalOptimizationEnv -> TcGlobals -> IncrementalOptimizationEnv
+val internal BindCcu: CcuThunk -> CcuOptimizationInfo -> IncrementalOptimizationEnv -> TcGlobals -> IncrementalOptimizationEnv
 
 /// Optimize one implementation file in the given environment
-val internal OptimizeImplFile : OptimizationSettings *  CcuThunk * TcGlobals * ConstraintSolver.TcValF * Import.ImportMap * IncrementalOptimizationEnv * isIncrementalFragment: bool * emitTaicalls: bool * SignatureHidingInfo * TypedImplFile -> (IncrementalOptimizationEnv * TypedImplFile * ImplFileOptimizationInfo * SignatureHidingInfo) * (Expr -> Expr)
+val internal OptimizeImplFile: OptimizationSettings *  CcuThunk * TcGlobals * ConstraintSolver.TcValF * Import.ImportMap * IncrementalOptimizationEnv * isIncrementalFragment: bool * emitTaicalls: bool * SignatureHidingInfo * TypedImplFile -> (IncrementalOptimizationEnv * TypedImplFile * ImplFileOptimizationInfo * SignatureHidingInfo) * (Expr -> Expr)
 
 #if DEBUG
 /// Displaying optimization data
-val internal moduleInfoL : TcGlobals -> LazyModuleInfo -> Layout.layout
+val internal moduleInfoL: TcGlobals -> LazyModuleInfo -> Layout.layout
 #endif
 
 /// Saving and re-reading optimization information 
-val p_CcuOptimizationInfo : CcuOptimizationInfo -> TastPickle.WriterState -> unit 
+val p_CcuOptimizationInfo: CcuOptimizationInfo -> TastPickle.WriterState -> unit 
 
 /// Rewrite the module info using the export remapping 
-val RemapOptimizationInfo : TcGlobals -> Tastops.Remap -> (CcuOptimizationInfo -> CcuOptimizationInfo)
+val RemapOptimizationInfo: TcGlobals -> Tastops.Remap -> (CcuOptimizationInfo -> CcuOptimizationInfo)
 
 /// Ensure that 'internal' items are not exported in the optimization info
-val AbstractOptimizationInfoToEssentials : (CcuOptimizationInfo -> CcuOptimizationInfo)
+val AbstractOptimizationInfoToEssentials: (CcuOptimizationInfo -> CcuOptimizationInfo)
 
 /// Combine optimization infos
 val UnionOptimizationInfos: seq<ImplFileOptimizationInfo> -> CcuOptimizationInfo
@@ -61,4 +61,4 @@ val UnionOptimizationInfos: seq<ImplFileOptimizationInfo> -> CcuOptimizationInfo
 /// Check if an expression has an effect
 val ExprHasEffect: TcGlobals -> Expr -> bool
 
-val internal u_CcuOptimizationInfo : TastPickle.ReaderState -> CcuOptimizationInfo
+val internal u_CcuOptimizationInfo: TastPickle.ReaderState -> CcuOptimizationInfo

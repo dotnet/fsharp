@@ -7,7 +7,6 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler 
 open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Range
 
