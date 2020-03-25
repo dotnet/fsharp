@@ -231,17 +231,21 @@ type internal TypeCheckInfo
         else NameResResult.Empty
 
     let GetCapturedNameResolutions (endOfNamesPos: pos) resolveOverloads =
+        let filter (endPos: pos) items =
+            items |> ResizeArray.filter (fun (cnr: CapturedNameResolution) ->
+                let range = cnr.Range
+                range.EndLine = endPos.Line && range.EndColumn = endPos.Column)
 
-        let quals = 
-            match resolveOverloads with 
-            | ResolveOverloads.Yes -> sResolutions.CapturedNameResolutions 
-            | ResolveOverloads.No -> sResolutions.CapturedMethodGroupResolutions
+        match resolveOverloads with 
+        | ResolveOverloads.Yes ->
+            filter endOfNamesPos sResolutions.CapturedNameResolutions 
 
-        let quals = quals |> ResizeArray.filter (fun cnr ->
-            let range = cnr.Range
-            range.EndLine = endOfNamesPos.Line && range.EndColumn = endOfNamesPos.Column)
-
-        quals
+        | ResolveOverloads.No ->
+            let items = filter endOfNamesPos sResolutions.CapturedMethodGroupResolutions
+            if items.Count <> 0 then
+                items
+            else
+                filter endOfNamesPos sResolutions.CapturedNameResolutions
 
     /// Looks at the exact name resolutions that occurred during type checking
     /// If 'membersByResidue' is specified, we look for members of the item obtained 
