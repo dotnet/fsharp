@@ -366,12 +366,14 @@ type internal TypeCheckInfo
             sResolutions.CapturedExpressionTypings 
             |> Seq.filter (fun (pos,ty,nenv,_,_) -> 
                     // We only want expression types that end at the particular position in the file we are looking at.
-                    let isLocationWeCareAbout = posEq pos endOfExprPos
-                    // Get rid of function types.  True, given a 2-arg curried function "f x y", it is legal to do "(f x).GetType()",
-                    // but you almost never want to do this in practice, and we choose not to offer up any intellisense for 
-                    // F# function types.
-                    let isFunction = isFunTy nenv.DisplayEnv.g ty
-                    isLocationWeCareAbout && not isFunction)
+                    if not (posEq pos endOfExprPos) then
+                        false
+                    else
+                        // Get rid of function types.  True, given a 2-arg curried function "f x y", it is legal to do "(f x).GetType()",
+                        // but you almost never want to do this in practice, and we choose not to offer up any intellisense for 
+                        // F# function types.
+                        let isFunction = isFunTy nenv.DisplayEnv.g ty
+                        not isFunction)
             |> Seq.toArray
 
         let thereWereSomeQuals = not (Array.isEmpty quals)
