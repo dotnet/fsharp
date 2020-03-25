@@ -435,10 +435,8 @@ type internal TypeCheckInfo
 
             match bestQual with
             | Some bestQual ->
-                let (_,ty,denv,nenv,ad,m) = bestQual 
-                let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m traitCtxtNone)) m ad false ty 
                 let (_,ty,nenv,ad,m) = bestQual 
-                let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false ty 
+                let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m traitCtxtNone)) m ad false ty 
                 let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g
                 let items = items |> RemoveExplicitlySuppressed g
