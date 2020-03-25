@@ -45,24 +45,6 @@
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
   <PropertyGroup>
-    <!-- default package sources -->
-    <RestoreSources Condition="'$(DotNetBuildOffline)' != 'true'">
-      $(RestoreSources);
-      https://www.myget.org/F/fsharp-daily/api/v3/index.json;
-      https://dotnet.myget.org/F/roslyn-master-nightly/api/v3/index.json;
-      https://dotnet.myget.org/F/dotnet-core/api/v3/index.json;
-      https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json;
-      https://dotnet.myget.org/F/roslyn-tools/api/v3/index.json;
-      https://api.nuget.org/v3/index.json;
-      https://dotnet.myget.org/F/roslyn/api/v3/index.json;
-      https://dotnet.myget.org/F/symreader-converter/api/v3/index.json;
-      https://dotnet.myget.org/F/interactive-window/api/v3/index.json;
-      https://myget.org/F/vs-devcore/api/v3/index.json;
-      https://myget.org/F/vs-editor/api/v3/index.json;
-      https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/nuget/v3/index.json;
-      https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json;
-      https://myget.org/F/roslyn_concord/api/v3/index.json;
-    </RestoreSources>
     <!-- version numbers from files -->
     <RoslynVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\RoslynPackageVersion.txt').Trim())</RoslynVersion>
     <!-- System.* packages -->
