@@ -16833,10 +16833,11 @@ module TcDeclarations =
             CheckMembersForm cspec
             let fields = cspec |> List.choose (function SynMemberDefn.ValField (f, _) -> Some f | _ -> None)
             let implements2 = cspec |> List.choose (function SynMemberDefn.Interface (ty, _, _) -> Some(ty, ty.Range) | _ -> None)
-            let inherits = cspec |> List.choose (function 
-                                                          | SynMemberDefn.Inherit (ty, idOpt, m) -> Some(ty, m, idOpt)
-                                                          | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m) -> Some(ty, m, idOpt)
-                                                          | _ -> None)
+            let inherits =
+                cspec |> List.choose (function 
+                    | SynMemberDefn.Inherit (ty, idOpt, m) -> Some(ty, m, idOpt)
+                    | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m) -> Some(ty, m, idOpt)
+                    | _ -> None)
             //let nestedTycons = cspec |> List.choose (function SynMemberDefn.NestedType (x, _, _) -> Some x | _ -> None)
             let slotsigs = cspec |> List.choose (function SynMemberDefn.AbstractSlot (x, y, _) -> Some(x, y) | _ -> None)
            
