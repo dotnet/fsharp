@@ -343,7 +343,9 @@ type internal TcResolutions =
     /// Exact name resolutions
     member CapturedNameResolutions : ResizeArray<CapturedNameResolution>
 
-    /// Represents all the resolutions of names to groups of methods.
+    /// Represents additional resolutions of names to groups of methods.
+    /// CapturedNameResolutions should be checked when no captured method group is found.
+    /// See TypeCheckInfo.GetCapturedNameResolutions for example.
     member CapturedMethodGroupResolutions : ResizeArray<CapturedNameResolution>
 
     /// Represents the empty set of resolutions 
@@ -412,6 +414,7 @@ type ITypecheckResultsSink =
     /// Record that a name resolution occurred at a specific location in the source
     abstract NotifyNameResolution : pos * Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool -> unit
 
+    /// Record that a method group name resolution occurred at a specific location in the source
     abstract NotifyMethodGroupNameResolution : pos * Item * Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool -> unit
 
     /// Record that a printf format specifier occurred at a specific location in the source
@@ -472,6 +475,7 @@ val internal CallEnvSink                : TcResultsSink -> range * NameResolutio
 /// Report a specific name resolution at a source range
 val internal CallNameResolutionSink     : TcResultsSink -> range * NameResolutionEnv * Item * TyparInst * ItemOccurence * AccessorDomain -> unit
 
+/// Report a specific method group name resolution at a source range
 val internal CallMethodGroupNameResolutionSink     : TcResultsSink -> range * NameResolutionEnv * Item * Item * TyparInst * ItemOccurence * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range, replacing any previous resolutions

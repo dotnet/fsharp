@@ -1725,7 +1725,9 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
 type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
     let capturedEnvs = ResizeArray<_>()
     let capturedExprTypings = ResizeArray<_>()
-    let capturedNameResolutions = ResizeArray<_>()
+    let capturedNameResolutions = ResizeArray<CapturedNameResolution>()
+    let capturedMethodGroupResolutions = ResizeArray<CapturedNameResolution>()
+    let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
 
     let capturedNameResolutionIdentifiers =
@@ -1739,6 +1741,9 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
             ( { new IEqualityComparer<range * Item> with
                     member __.GetHashCode ((m, _)) = hash m
                     member __.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual g item1 item2 } )
+
+    let allowedRange (m: range) =
+        not m.IsSynthetic
 
     let isAlreadyDone endPos item m =
         // Desugaring some F# constructs (notably computation expressions with custom operators)
@@ -1760,9 +1765,9 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
         | Some key -> not (capturedNameResolutionIdentifiers.Add key)
         | _ -> false
 
-    let capturedMethodGroupResolutions = ResizeArray<_>()
-    let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
-    let allowedRange (m: range) = not m.IsSynthetic
+    let remove m =
+        capturedNameResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
+        capturedMethodGroupResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
 
     let formatStringCheckContext =
         lazy
@@ -1804,21 +1809,17 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
         member sink.NotifyNameResolution(endPos, item, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
                 if replace then
-                    capturedNameResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
-                    capturedMethodGroupResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
-                else
-                    if not (isAlreadyDone endPos item m) then
-                        capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
+                    remove m
+                elif not (isAlreadyDone endPos item m) then
+                    capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
 
         member sink.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
                 if replace then
-                    capturedNameResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
-                    capturedMethodGroupResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
-                else
-                    if not (isAlreadyDone endPos item m) then
-                        capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
-                        capturedMethodGroupResolutions.Add(CapturedNameResolution(itemMethodGroup, [], occurenceType, nenv, ad, m))
+                    remove m
+                elif not (isAlreadyDone endPos item m) then
+                    capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
+                    capturedMethodGroupResolutions.Add(CapturedNameResolution(itemMethodGroup, [], occurenceType, nenv, ad, m))
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) =
             capturedFormatSpecifierLocations.Add((m, numArgs))

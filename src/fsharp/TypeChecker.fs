@@ -4573,8 +4573,6 @@ and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk tpenv (Typar(id, _, _) a
         | _, _ -> 
             let item = Item.TypeVar(id.idText, res)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.UseInType, env.AccessRights)
-            // record the ' as well for tokenization
-            // CallNameResolutionSink cenv.tcSink (tp.Range.StartRange, env.NameEnv, item, ItemOccurence.UseInType, env.DisplayEnv, env.eAccessRights)
             res, tpenv
     let key = id.idText
     match env.eNameResEnv.eTypars.TryGetValue key with
