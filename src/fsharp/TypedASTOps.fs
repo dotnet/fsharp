@@ -2019,7 +2019,7 @@ let accFreeLocalTycon opts x acc =
 
 let accFreeTycon opts (tcref: TyconRef) acc = 
     if not opts.includeLocalTycons then acc
-    elif tcref.IsLocalRef then accFreeLocalTycon opts tcref.PrivateTarget acc
+    elif tcref.IsLocalRef then accFreeLocalTycon opts tcref.ResolvedTarget acc
     else acc
 
 let rec boundTypars opts tps acc = 
@@ -2075,7 +2075,7 @@ and accFreeLocalValInTraitSln _opts v fvs =
 
 and accFreeValRefInTraitSln opts (vref: ValRef) fvs = 
     if vref.IsLocalRef then
-        accFreeLocalValInTraitSln opts vref.PrivateTarget fvs
+        accFreeLocalValInTraitSln opts vref.ResolvedTarget fvs
     else
         // non-local values do not contain free variables 
         fvs
@@ -4490,7 +4490,7 @@ and accFreeRecdFieldRef opts rfref fvs =
 and accFreeExnRef _exnc fvs = fvs // Note: this exnc (TyconRef) should be collected the surround types, e.g. tinst of Expr.Op 
 and accFreeValRef opts (vref: ValRef) fvs = 
     match vref.IsLocalRef with 
-    | true -> accFreeLocalVal opts vref.PrivateTarget fvs
+    | true -> accFreeLocalVal opts vref.ResolvedTarget fvs
     // non-local values do not contain free variables 
     | _ -> fvs
 

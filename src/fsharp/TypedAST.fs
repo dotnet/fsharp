@@ -1412,11 +1412,9 @@ type TyconRepresentation =
 
     override x.ToString() = sprintf "%+A" x 
 
-type
-   [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-    /// TILObjectReprData(scope, nesting, definition)
-   TILObjectReprData = 
-    | TILObjectReprData of ILScopeRef * ILTypeDef list * ILTypeDef 
+[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+type TILObjectReprData = 
+    | TILObjectReprData of scope: ILScopeRef * nesting: ILTypeDef list * definition: ILTypeDef 
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -1472,10 +1470,13 @@ type TProvidedTypeInfo =
       IsErased: bool 
 
       /// Indicates the type is generated, but type-relocation is suppressed
-      IsSuppressRelocate: bool }
+      IsSuppressRelocate: bool
+    }
 
+    /// Indicates if the provided type is generated, i.e. not erased
     member info.IsGenerated = not info.IsErased
 
+    /// Gets the base type of an erased provided type
     member info.BaseTypeForErased (m, objTy) = 
        if info.IsErased then info.LazyBaseType.Force (m, objTy) 
        else failwith "expect erased type"
@@ -1483,7 +1484,7 @@ type TProvidedTypeInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TProvidedTypeInfo(...)"
+    override _.ToString() = "TProvidedTypeInfo(...)"
 
 #endif
 
@@ -1503,6 +1504,7 @@ type TyconObjModelKind =
     /// Indicates the type is an enumeration 
     | TTyconEnum
     
+    /// Indicates if the type definition is a value type
     member x.IsValueType =
         match x with 
         | TTyconClass | TTyconInterface | TTyconDelegate _ -> false
@@ -1538,16 +1540,21 @@ type TyconRecdFields =
       FieldsByName: NameMap<RecdField>
     }
 
+    /// Get a field by index
     member x.FieldByIndex n = 
         if n >= 0 && n < x.FieldsByIndex.Length then x.FieldsByIndex.[n] 
         else failwith "FieldByIndex"
 
-    member x.FieldByName n = x.FieldsByName.TryFind n
+    /// Get a field by name
+    member x.FieldByName nm = x.FieldsByName.TryFind nm
 
+    /// Get all the fields as a list
     member x.AllFieldsAsList = x.FieldsByIndex |> Array.toList
 
+    /// Get all non-compiler-generated fields as a list
     member x.TrueFieldsAsList = x.AllFieldsAsList |> List.filter (fun f -> not f.IsCompilerGenerated)   
 
+    /// Get all non-compiler-generated instance fields as a list
     member x.TrueInstanceFieldsAsList = x.AllFieldsAsList |> List.filter (fun f -> not f.IsStatic && not f.IsCompilerGenerated)   
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -1565,10 +1572,13 @@ type TyconUnionCases =
       /// The cases of the discriminated union, indexed by name. 
       CasesByName: NameMap<UnionCase>
     }
+
+    /// Get a union case by index
     member x.GetUnionCaseByIndex n = 
         if n >= 0 && n < x.CasesByIndex.Length then x.CasesByIndex.[n] 
         else invalidArg "n" "GetUnionCaseByIndex"
 
+    /// Get the union cases as a list
     member x.UnionCasesAsList = x.CasesByIndex |> Array.toList
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -1587,6 +1597,7 @@ type TyconUnionData =
       CompiledRepresentation: IlxUnionRef cache 
     }
 
+    /// Get the union cases as a list
     member x.UnionCasesAsList = x.CasesTable.CasesByIndex |> Array.toList
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -1626,34 +1637,44 @@ type UnionCase =
       mutable Attribs: Attribs
     }
 
+    /// Get the declaration location of the union case
     member uc.Range = uc.Id.idRange
 
+    /// Get the definition location of the union case
     member uc.DefinitionRange = 
         match uc.OtherRangeOpt with 
         | Some (m, true) -> m
         | _ -> uc.Range 
 
+    /// Get the signature location of the union case
     member uc.SigRange = 
         match uc.OtherRangeOpt with 
         | Some (m, false) -> m
         | _ -> uc.Range 
 
+    /// Get the display name of the union case
     member uc.DisplayName = uc.Id.idText
 
-    /// Name of the case in generated IL code.
+    /// Get the name of the case in generated IL code.
     member uc.CompiledName =
         let idText = uc.Id.idText
         if idText = opNameCons then "Cons" 
         elif idText = opNameNil then "Empty"
         else idText
 
+    /// Get the full array of fields of the union case
     member uc.RecdFieldsArray = uc.FieldTable.FieldsByIndex 
 
+    /// Get the full list of fields of the union case
     member uc.RecdFields = uc.FieldTable.FieldsByIndex |> Array.toList
 
+    /// Get a field of the union case by name
     member uc.GetFieldByName nm = uc.FieldTable.FieldByName nm
-    member uc.GetFieldByIndex nm = uc.FieldTable.FieldByIndex nm
 
+    /// Get a field of the union case by position
+    member uc.GetFieldByIndex n = uc.FieldTable.FieldByIndex n
+
+    /// Indicates if the union case has no fields
     member uc.IsNullary = (uc.FieldTable.FieldsByIndex.Length = 0)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -1720,14 +1741,16 @@ type RecdField =
     /// Attributes attached to generated field 
     member v.FieldAttribs = v.rfield_fattribs
 
-    /// Declaration-location of the field 
+    /// Get the declaration location of the field 
     member v.Range = v.rfield_id.idRange
 
+    /// Get the definition location of the field 
     member v.DefinitionRange = 
         match v.rfield_other_range with 
         | Some (m, true) -> m
         | _ -> v.Range 
 
+    /// Get the signature location of the field 
     member v.SigRange = 
         match v.rfield_other_range with 
         | Some (m, false) -> m
@@ -1984,10 +2007,13 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
 
     override _.ToString() = "ModuleOrNamespaceType(...)"
 
+/// Represents a module or namespace definition in the typed AST
 type ModuleOrNamespace = Entity 
 
+/// Represents a type or exception definition in the typed AST
 type Tycon = Entity 
 
+/// Represents the constraint on access for a construct
 [<StructuralEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Accessibility = 
 
@@ -2004,13 +2030,14 @@ type Accessibility =
 type TyparOptionalData =
     {
       /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation 
+      /// The storage for the IL name for the type parameter.
       mutable typar_il_name: string option 
 
-      /// The documentation for the type parameter. Empty for type inference variables.
+      /// The documentation for the type parameter. Empty for inference variables.
       /// MUTABILITY: for linking when unpickling
       mutable typar_xmldoc: XmlDoc
 
-      /// The inferred constraints for the type inference variable 
+      /// The inferred constraints for the type parameter or inference variable.
       mutable typar_constraints: TyparConstraint list 
 
       /// The declared attributes of the type parameter. Empty for type inference variables. 
@@ -2029,11 +2056,13 @@ type TyparData = Typar
 type Typar = 
     {
       /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation 
+      /// The identifier for the type parameter
       mutable typar_id: Ident 
        
+      /// The flag data for the type parameter
       mutable typar_flags: TyparFlags
        
-      /// The unique stamp of the typar blob. 
+      /// The unique stamp of the type parameter
       /// MUTABILITY: for linking when unpickling
       mutable typar_stamp: Stamp       
        
@@ -2043,7 +2072,9 @@ type Typar =
       /// A cached TAST type used when this type variable is used as type.
       mutable typar_astype: TType
       
-      mutable typar_opt_data: TyparOptionalData option }
+      /// The optional data for the type parameter
+      mutable typar_opt_data: TyparOptionalData option
+    }
 
     /// The name of the type parameter 
     member x.Name = x.typar_id.idText
@@ -2100,12 +2131,13 @@ type Typar =
     /// Indicates whether a type variable is erased in compiled .NET IL code, i.e. whether it is a unit-of-measure variable
     member x.IsErased = match x.Kind with TyparKind.Type -> false | _ -> true
 
-    /// The declared attributes of the type parameter. Empty for type inference variables and parameters from .NET 
+    /// The declared attributes of the type parameter. Empty for type inference variables and parameters from .NET.
     member x.Attribs = 
         match x.typar_opt_data with
         | Some optData -> optData.typar_attribs
         | _ -> []
 
+    /// Set the attributes on the type parameter
     member x.SetAttribs attribs = 
         match attribs, x.typar_opt_data with
         | [], None -> ()
@@ -2114,16 +2146,19 @@ type Typar =
         | _, Some optData -> optData.typar_attribs <- attribs
         | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
 
+    /// Get the XML documetnation for the type parameter
     member x.XmlDoc =
         match x.typar_opt_data with
         | Some optData -> optData.typar_xmldoc
         | _ -> XmlDoc.Empty
 
+    /// Get the IL name of the type parameter
     member x.ILName =
         match x.typar_opt_data with
         | Some optData -> optData.typar_il_name
         | _ -> None
 
+    /// Set the IL name of the type parameter
     member x.SetILName il_name =
         match x.typar_opt_data with
         | Some optData -> optData.typar_il_name <- il_name
@@ -2972,6 +3007,8 @@ type NonLocalValOrMemberRef =
     /// For debugging
     override x.ToString() = x.EnclosingEntity.nlr.ToString() + "::" + x.ItemKey.PartialKey.LogicalName
       
+/// Represents the path information for a reference to a value or member in another assembly, disassociated
+/// from any particular reference.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ValPublicPath = 
     | ValPubPath of PublicPath * ValLinkageFullKey
@@ -2981,7 +3018,7 @@ type ValPublicPath =
 
     override __.ToString() = sprintf "ValPubPath(...)"
 
-/// Index into the namespace/module structure of a particular CCU 
+/// Represents an index into the namespace/module structure of an assembly
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type NonLocalEntityRef = 
     | NonLocalEntityRef of CcuThunk * string[]
@@ -3165,14 +3202,16 @@ type EntityRef =
       nlr: NonLocalEntityRef
     }
 
+    /// Indicates if the reference is a local reference
     member x.IsLocalRef = match box x.nlr with null -> true | _ -> false
 
+    /// Indicates if the reference has been resolved
     member x.IsResolved = match box x.binding with null -> false | _ -> true
 
-    member x.PrivateTarget = x.binding
-
+    /// The resolved target of the reference
     member x.ResolvedTarget = x.binding
 
+    /// Resolve the reference
     member private tcr.Resolve canError = 
         let res = tcr.nlr.TryDeref canError
         match res with 
@@ -3367,7 +3406,6 @@ type EntityRef =
 
     /// Get a list of all instance fields for F#-defined record, struct and class fields in this type definition.
     /// including hidden fields from the compilation of implicit class constructions.
-    // NOTE: This method doesn't perform particularly well, and is over-used, but doesn't seem to appear on performance traces
     member x.AllInstanceFieldsAsList = x.Deref.AllInstanceFieldsAsList
 
     /// Get a field by index in definition order
@@ -3518,10 +3556,10 @@ type EntityRef =
        else 
            x.nlr.DisplayName 
 
-
-/// note: ModuleOrNamespaceRef and TyconRef are type equivalent 
+/// Represents a module-or-namespace reference in the typed abstract syntax.
 type ModuleOrNamespaceRef = EntityRef
 
+/// Represents a type definition reference in the typed abstract syntax.
 type TyconRef = EntityRef
 
 /// References are either local or nonlocal
@@ -3538,8 +3576,6 @@ type ValRef =
     member x.IsLocalRef = obj.ReferenceEquals(x.nlr, null)
 
     member x.IsResolved = not (obj.ReferenceEquals(x.binding, null))
-
-    member x.PrivateTarget = x.binding
 
     member x.ResolvedTarget = x.binding
 
@@ -3856,7 +3892,7 @@ type RecdFieldRef =
 
     override x.ToString() = x.FieldName
 
-/// The algebra of types
+/// Represents a type in the typed abstract syntax
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TType =
 
@@ -3942,6 +3978,7 @@ type TypeInst = TType list
 
 type TTypes = TType list 
 
+/// Represents the information identifying an anonymous record 
 [<RequireQualifiedAccess>] 
 type AnonRecdTypeInfo = 
     {
@@ -4295,9 +4332,11 @@ type ValReprInfo =
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type ArgReprInfo = 
     { 
+      /// The attributes for the argument
       // MUTABILITY: used when propagating signature attributes into the implementation.
       mutable Attribs: Attribs 
 
+      /// The name for the argument at this position, if any
       // MUTABILITY: used when propagating names of parameters from signature into the implementation.
       mutable Name: Ident option
     }
@@ -4319,82 +4358,139 @@ type Exprs = Expr list
 
 type Vals = Val list
 
-/// The big type of expressions.  
+/// Represents an expression in the typed abstract syntax
 [<NoEquality; NoComparison; RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type Expr =
     /// A constant expression. 
-    | Const of Const * range * TType
+    | Const of
+        value: Const *
+        range: range *
+        constType: TType
 
     /// Reference a value. The flag is only relevant if the value is an object model member 
     /// and indicates base calls and special uses of object constructors. 
-    | Val of ValRef * ValUseFlag * range
+    | Val of
+        valRef: ValRef *
+        flags: ValUseFlag *
+        range: range
 
     /// Sequence expressions, used for "a;b", "let a = e in b;a" and "a then b" (the last an OO constructor). 
-    | Sequential of Expr * Expr * SequentialOpKind * DebugPointAtSequential * range
+    | Sequential of
+        expr1: Expr *
+        expr2: Expr *
+        kind: SequentialOpKind *
+        debugPoint: DebugPointAtSequential *
+        range: range
 
     /// Lambda expressions. 
     
     /// Why multiple vspecs? A Expr.Lambda taking multiple arguments really accepts a tuple. 
     /// But it is in a convenient form to be compile accepting multiple 
     /// arguments, e.g. if compiled as a toplevel static method. 
-    | Lambda of Unique * Val option * Val option * Val list * Expr * range * TType
+    | Lambda of
+        unique: Unique *
+        ctorThisValOpt: Val option *
+        baseValOpt: Val option *
+        valParams: Val list *
+        bodyExpr: Expr * 
+        range: range *
+        overallType: TType
 
     /// Type lambdas. These are used for the r.h.s. of polymorphic 'let' bindings and 
     /// for expressions that implement first-class polymorphic values. 
-    | TyLambda of Unique * Typars * Expr * range * TType
+    | TyLambda of
+        unique: Unique *
+        typeParams: Typars *
+        bodyExpr: Expr *
+        range: range *
+        overallType: TType
 
     /// Applications.
     /// Applications combine type and term applications, and are normalized so 
     /// that sequential applications are combined, so "(f x y)" becomes "f [[x];[y]]". 
     /// The type attached to the function is the formal function type, used to ensure we don't build application 
     /// nodes that over-apply when instantiating at function types. 
-    | App of Expr * TType * TypeInst * Exprs * range 
+    | App of
+        funcExpr: Expr *
+        formalType: TType *
+        typeArgs: TypeInst *
+        args: Exprs *
+        range: range 
 
     /// Bind a recursive set of values. 
-    | LetRec of Bindings * Expr * range * FreeVarsCache
+    | LetRec of
+        bindings: Bindings *
+        bodyExpr: Expr *
+        range: range *
+        frees: FreeVarsCache
 
     /// Bind a value. 
-    | Let of Binding * Expr * range * FreeVarsCache
+    | Let of
+        binding: Binding *
+        bodyExpr: Expr *
+        range: range *
+        frees: FreeVarsCache
 
     // Object expressions: A closure that implements an interface or a base type. 
     // The base object type might be a delegate type. 
     | Obj of 
-         unique: Unique * 
-         objTy: TType * (* <-- NOTE: specifies type parameters for base type *)
-         baseVal: Val option * 
-         ctorCall:  Expr * 
-         overrides: ObjExprMethod list * 
-         interfaceImpls: (TType * ObjExprMethod list) list *                   
-         range: range
+        unique: Unique * 
+        objTy: TType * (* <-- NOTE: specifies type parameters for base type *)
+        baseVal: Val option * 
+        ctorCall:  Expr * 
+        overrides: ObjExprMethod list * 
+        interfaceImpls: (TType * ObjExprMethod list) list *                   
+        range: range
 
     /// Matches are a more complicated form of "let" with multiple possible destinations 
     /// and possibly multiple ways to get to each destination.  
-    /// The first mark is that of the expression being matched, which is used 
-    /// as the mark for all the decision making and binding that happens during the match. 
-    | Match of DebugPointForBinding * range * DecisionTree * DecisionTreeTarget array * range * TType
+    /// The first range is that of the expression being matched, which is used 
+    /// as the range for all the decision making and binding that happens during the decision tree
+    /// execution.
+    | Match of
+        debugPoint: DebugPointForBinding *
+        inputRange: range *
+        decision: DecisionTree *
+        targets: DecisionTreeTarget array *
+        fullRange: range *
+        exprType: TType
 
     /// If we statically know some information then in many cases we can use a more optimized expression 
     /// This is primarily used by terms in the standard library, particularly those implementing overloaded 
     /// operators. 
-    | StaticOptimization of StaticOptimization list * Expr * Expr * range
+    | StaticOptimization of
+        conditions: StaticOptimization list *
+        expr: Expr *
+        alternativeExpr: Expr *
+        range: range
 
     /// An intrinsic applied to some (strictly evaluated) arguments 
     /// A few of intrinsics (TOp_try, TOp.While, TOp.For) expect arguments kept in a normal form involving lambdas 
-    | Op of TOp * TypeInst * Exprs * range
+    | Op of
+        op: TOp *
+        typeArgs: TypeInst *
+        args: Exprs *
+        range: range
 
-    /// Expr.Quote (quotedExpr, (referencedTypes, spliceTypes, spliceExprs, data) option ref, isFromQueryExpression, fullRange, quotedType)
-    ///
     /// Indicates the expression is a quoted expression tree. 
     ///
     // MUTABILITY: this use of mutability is awkward and perhaps should be removed
-    | Quote of Expr * (ILTypeRef list * TTypes * Exprs * ExprData) option ref * bool * range * TType  
+    | Quote of
+        quotedExpr: Expr *
+        quotationInfo: (ILTypeRef list * TTypes * Exprs * ExprData) option ref *
+        isFromQueryExpression: bool *
+        range: range *
+        quotedType: TType  
     
-    /// Typechecking residue: Indicates a free choice of typars that arises due to 
+    /// Indicates a free choice of typars that arises due to 
     /// minimization of polymorphism at let-rec bindings. These are 
     /// resolved to a concrete instantiation on subsequent rewrites. 
-    | TyChoose of Typars * Expr * range
+    | TyChoose of
+        typeParams: Typars *
+        bodyExpr: Expr *
+        range: range
 
-    /// Typechecking residue: A Expr.Link occurs for every use of a recursively bound variable. While type-checking 
+    /// An instance of a link node occurs for every use of a recursively bound variable. When type-checking 
     /// the recursive bindings a dummy expression is stored in the mutable reference cell. 
     /// After type checking the bindings this is replaced by a use of the variable, perhaps at an 
     /// appropriate type instantiation. These are immediately eliminated on subsequent rewrites. 
@@ -5093,10 +5189,13 @@ type Construct() =
 
     static let taccessPublic = TAccess [] 
     
+    /// Key a Tycon or TyconRef by demangled name and arity
     static member KeyTyconByDemangledNameAndArity<'T> (nm: string) (typars: Typar list) (x: 'T) : KeyValuePair<NameArityPair, 'T> = 
         KeyValuePair(NameArityPair(DemangleGenericTypeName nm, typars.Length), x)
 
-    /// Generic types can be accessed either by 'List' or 'List`1'. This lists both keys. The second form should really be deprecated.
+    /// Key a Tycon or TyconRef by both mangled and demangled name.
+    /// Generic types can be accessed either by 'List' or 'List`1'.
+    /// This lists both keys.
     static member KeyTyconByAccessNames<'T> (nm: string) (x: 'T) : KeyValuePair<string, 'T>[] = 
         match TryDemangleGenericNameAndPos nm with
         | ValueSome pos ->
@@ -5105,14 +5204,17 @@ type Construct() =
         | _ ->
             [| KeyValuePair(nm, x) |]
 
+    /// Create a new node for the contents of a module or namespace
     static member NewModuleOrNamespaceType mkind tycons vals = 
         ModuleOrNamespaceType(mkind, QueueList.ofList vals, QueueList.ofList tycons)
 
+    /// Create a new node for an empty module or namespace contents
     static member NewEmptyModuleOrNamespaceType mkind = 
         Construct.NewModuleOrNamespaceType mkind [] []
 
 #if !NO_EXTENSIONTYPING
 
+    /// Create a new node for the representation information for a provided type definition
     static member NewProvidedTyconRepr(resolutionEnvironment, st: Tainted<ProvidedType>, importProvidedType, isSuppressRelocate, m) = 
 
         let isErased = st.PUntaint((fun st -> st.IsErased), m)
@@ -5147,6 +5249,7 @@ type Construct() =
               IsErased = isErased
               IsSuppressRelocate = isSuppressRelocate }
 
+    /// Create a new entity node for a provided type definition
     static member NewProvidedTycon(resolutionEnvironment, st: Tainted<ProvidedType>, importProvidedType, isSuppressRelocate, m, ?access, ?cpath) = 
         let stamp = newStamp() 
         let name = st.PUntaint((fun st -> st.Name), m)
@@ -5191,9 +5294,12 @@ type Construct() =
             entity_opt_data =
                 match kind, access with
                 | TyparKind.Type, TAccess [] -> None
-                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_accessibility = access } } 
+                | _ -> Some { Entity.NewEmptyEntityOptData() with
+                                 entity_kind = kind
+                                 entity_accessibility = access } } 
 #endif
 
+    /// Create a new entity node for a module or namespace
     static member NewModuleOrNamespace cpath access (id: Ident) xml attribs mtype = 
         let stamp = newStamp() 
         // Put the module suffix on if needed 
@@ -5213,22 +5319,30 @@ type Construct() =
             entity_opt_data =
                 match xml, access with
                 | XmlDoc [||], TAccess [] -> None
-                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml; entity_tycon_repr_accessibility = access; entity_accessibility = access } } 
+                | _ -> Some { Entity.NewEmptyEntityOptData() with
+                                 entity_xmldoc = xml
+                                 entity_tycon_repr_accessibility = access
+                                 entity_accessibility = access } } 
 
+    /// Create a new unfilled cache for free variable calculations
     static member NewFreeVarsCache() = newCache ()
 
+    /// Create the field tables for a record or class type
     static member MakeRecdFieldsTable ucs: TyconRecdFields = 
         { FieldsByIndex = Array.ofList ucs 
           FieldsByName = ucs |> NameMap.ofKeyedList (fun rfld -> rfld.Name) }
 
+    /// Create the union case tables for a union type
     static member MakeUnionCases ucs: TyconUnionData = 
         { CasesTable = 
             { CasesByIndex = Array.ofList ucs 
               CasesByName = NameMap.ofKeyedList (fun uc -> uc.DisplayName) ucs }
           CompiledRepresentation=newCache() }
 
+    /// Create a node for a union type
     static member MakeUnionRepr ucs = TUnionRepr (Construct.MakeUnionCases ucs)
 
+    /// Create a new type parameter node
     static member NewTypar (kind, rigid, Typar(id, staticReq, isCompGen), isFromError, dynamicReq, attribs, eqDep, compDep) = 
         Typar.New
           { typar_id = id 
@@ -5241,9 +5355,11 @@ type Construct() =
                 | [] -> None
                 | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs } } 
 
+    /// Create a new type parameter node for a declared type parameter
     static member NewRigidTypar nm m =
         Construct.NewTypar (TyparKind.Type, TyparRigidity.Rigid, Typar(mkSynId m nm, NoStaticReq, true), false, TyparDynamicReq.Yes, [], false, false)
 
+    /// Create a new union case node
     static member NewUnionCase id tys rty attribs docOption access: UnionCase = 
         { Id=id
           XmlDoc=docOption
@@ -5292,6 +5408,7 @@ type Construct() =
           rfield_other_range = None }
 
     
+    /// Create a new type definition node
     static member NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, mtyp) =
         let stamp = newStamp() 
         Tycon.New "tycon"
@@ -5312,6 +5429,7 @@ type Construct() =
                 | TyparKind.Type, XmlDoc [||], TAccess [], TAccess [] -> None
                 | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessibility=access } } 
 
+    /// Create a new type definition node for a .NET type definition
     static member NewILTycon nlpath (nm, m) tps (scoref: ILScopeRef, enc, tdef: ILTypeDef) mtyp =
         let tycon = Construct.NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, false, mtyp)
 
@@ -5319,7 +5437,7 @@ type Construct() =
         tycon.TypeContents.tcaug_closed <- true
         tycon
 
-    /// Create a new Val object
+    /// Create a new Val node
     static member NewVal 
            (logicalName: string, m: range, compiledName, ty, isMutable, isCompGen, arity, access,
             recValInfo, specialRepr, baseOrThis, attribs, inlineInfo, doc, isModuleOrMemberBinding,
@@ -5375,11 +5493,16 @@ type Construct() =
         let data' = f { orig with val_stamp=stamp }
         Val.New data'
 
-    static member NewClonedModuleOrNamespace orig = Construct.NewModifiedModuleOrNamespace (fun mty -> mty) orig
+    /// Create a new module or namespace node by cloning an existing one
+    static member NewClonedModuleOrNamespace orig =
+        Construct.NewModifiedModuleOrNamespace (fun mty -> mty) orig
 
-    static member NewClonedTycon orig = Construct.NewModifiedTycon (fun d -> d) orig
+    /// Create a new type definition node by cloning an existing one
+    static member NewClonedTycon orig =
+        Construct.NewModifiedTycon (fun d -> d) orig
 
 #if !NO_EXTENSIONTYPING
+    /// Compute the definition location of a provided item
     static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> (p: Tainted<'T>) : range option =
         let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure id))
         match attrs with
