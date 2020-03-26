@@ -3052,7 +3052,8 @@ module ContraintTest = begin
     do check "d3oc003k" (LanguagePrimitives.GenericZero<sbyte> = 0y)
     do check "d3oc003l" (LanguagePrimitives.GenericZero<decimal> = 0M)
 
-    do check "d3oc001q" (LanguagePrimitives.GenericOne<BigInteger> = 1I)
+    do check "d3oc113q" (LanguagePrimitives.GenericOne<BigInteger> = 1I)
+    do check "d3oc113w" (LanguagePrimitives.GenericOne<char> = '\001')
     do check "d3oc113e" (LanguagePrimitives.GenericOne<int> = 1)
     do check "d3oc113r" (LanguagePrimitives.GenericOne<unativeint> = 1un)
     do check "d3oc113t" (LanguagePrimitives.GenericOne<uint64> = 1UL)
