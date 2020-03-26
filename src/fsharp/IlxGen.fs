@@ -962,7 +962,10 @@ let GetMethodSpecForMemberVal amap g (memberInfo: ValMemberInfo) (vref: ValRef) 
         let thisTy = if isByrefTy g thisTy then destByrefTy g thisTy else thisTy
         let thisArgTys = argsOfAppTy g thisTy
         if numParentTypars <> thisArgTys.Length then
-           let msg = sprintf "CodeGen check: type checking did not quantify the correct number of type variables for this method, #parentTypars = %d, #mtps = %d, #thisArgTys = %d" numParentTypars mtps.Length thisArgTys.Length
+           let msg = 
+               sprintf 
+                   "CodeGen check: type checking did not quantify the correct number of type variables for this method, #parentTypars = %d, #mtps = %d, #thisArgTys = %d"
+                   numParentTypars mtps.Length thisArgTys.Length
            warning(InternalError(msg, m))
         else
            List.iter2
@@ -3540,12 +3543,14 @@ and GenForLoop cenv cgbuf eenv (spFor, v, e1, dir, e2, loopBody, m) sequel =
         if isFSharpStyle then
             // Ensure that we have an g.CompilerGlobalState
             assert(g.CompilerGlobalState |> Option.isSome)
-            let v, _realloc, eenvinner = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("endLoop", m), g.ilg.typ_Int32, false) (start, finish)
+            let vName = g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("endLoop", m)
+            let v, _realloc, eenvinner = AllocLocal cenv cgbuf eenvinner true (vName, g.ilg.typ_Int32, false) (start, finish)
             v, eenvinner
         else
             -1, eenvinner
 
-    let _, eenvinner = AllocLocalVal cenv cgbuf v eenvinner None (start, finish) (* note: eenvStack noted stack spill vars are live *)
+    let _, eenvinner = AllocLocalVal cenv cgbuf v eenvinner None (start, finish)
+
     match spFor with
     | DebugPointAtFor.Yes spStart -> CG.EmitSeqPoint cgbuf spStart
     | DebugPointAtFor.No -> ()
@@ -4306,7 +4311,8 @@ and GenSequenceExpr
         mkILSimpleStorageCtor(None, Some ilCloBaseTy.TypeSpec, ilCloTyInner, [], [], ILMemberAccess.Assembly).MethodBody
 
     let attrs = GenAttrs cenv eenvinner cloAttribs
-    let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, ilCloGenericParams, attrs, ilCloFreeVars, ilCloLambdas, ilCtorBody, [generateNextMethod;closeMethod;checkCloseMethod;lastGeneratedMethod;getFreshMethod], [], ilCloBaseTy, [])
+    let cloMethods = [generateNextMethod; closeMethod; checkCloseMethod; lastGeneratedMethod; getFreshMethod]
+    let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, ilCloGenericParams, attrs, ilCloFreeVars, ilCloLambdas, ilCtorBody, cloMethods, [], ilCloBaseTy, [])
 
     for cloTypeDef in cloTypeDefs do
         cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
@@ -7008,7 +7014,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                   let ilFieldMarshal, fattribs = GenMarshal cenv fattribs
 
-                  // The IL field is hidden if the property/field is hidden OR we're using a property AND the field is not mutable (because we can take the address of a mutable field).
+                  // The IL field is hidden if the property/field is hidden OR we're using a property
+                  // AND the field is not mutable (because we can take the address of a mutable field).
                   // Otherwise fields are always accessed via their property getters/setters
                   let isFieldHidden = isPropHidden || (not useGenuineField && not isFSharpMutable)
               
@@ -7239,8 +7246,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                // Set some the extra entries in the definition
                let isTheSealedAttribute = tyconRefEq g tcref g.attrib_SealedAttribute.TyconRef
 
-               let tdef = tdef.WithSealed(isSealedTy g thisTy || isTheSealedAttribute).WithSerializable(isSerializable).WithAbstract(isAbstract).WithImport(isComInteropTy g thisTy)
-               let tdef = tdef.With(methodImpls=mkILMethodImpls methodImpls)
+               let tdef =
+                   tdef.WithSealed(isSealedTy g thisTy || isTheSealedAttribute)
+                       .WithSerializable(isSerializable)
+                       .WithAbstract(isAbstract)
+                       .WithImport(isComInteropTy g thisTy)
+                       .With(methodImpls=mkILMethodImpls methodImpls)
 
                let tdLayout, tdEncoding =
                     match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with

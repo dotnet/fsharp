@@ -53,7 +53,7 @@ module Helpers =
     let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
     let publicOrPrivateBindingFlags = BindingFlags.Public ||| BindingFlags.NonPublic
 
-    let isDelegateType (typ:Type) =
+    let isDelegateType (typ: Type) =
         if typ.IsSubclassOf(typeof<Delegate>) then
             match typ.GetMethod("Invoke", instanceBindingFlags) with
             | null -> false
@@ -79,7 +79,7 @@ open Helpers
 [<Sealed>]
 [<CompiledName("FSharpVar")>]
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2218:OverrideGetHashCodeOnOverridingEquals", Justification="Equals override does not equate further objects, so default GetHashCode is still valid")>]
-type Var(name: string, typ:Type, ?isMutable: bool) =
+type Var(name: string, typ: Type, ?isMutable: bool) =
     inherit obj()
 
     static let getStamp =
@@ -183,7 +183,7 @@ and
     | DefaultValueOp of Type
 
 and [<CompiledName("FSharpExpr")>]
-    Expr(term:Tree, attribs:Expr list) =
+    Expr(term:Tree, attribs: Expr list) =
     member x.Tree = term
     member x.CustomAttributes = attribs
 
@@ -211,8 +211,8 @@ and [<CompiledName("FSharpExpr")>]
         Microsoft.FSharp.Text.StructuredPrintfImpl.Display.layout_to_string Microsoft.FSharp.Text.StructuredPrintfImpl.FormatOptions.Default (x.GetLayout full)
 
     member x.GetLayout long =
-        let expr (e:Expr ) = e.GetLayout long
-        let exprs (es:Expr list) = es |> List.map expr
+        let expr (e: Expr ) = e.GetLayout long
+        let exprs (es: Expr list) = es |> List.map expr
         let parens ls = bracketL (commaListL ls)
         let pairL l1 l2 = bracketL (l1 ^^ sepL Literals.comma ^^ l2)
         let listL ls = squareBracketL (commaListL ls)
@@ -222,7 +222,7 @@ and [<CompiledName("FSharpExpr")>]
         let someL e = combTaggedL (tagMethod "Some") [expr e]
         let typeL (o: Type) = wordL (tagClass (if long then o.FullName else o.Name))
         let objL (o: 'T) = wordL (tagText (sprintf "%A" o))
-        let varL (v:Var) = wordL (tagLocal v.Name)
+        let varL (v: Var) = wordL (tagLocal v.Name)
         let (|E|) (e: Expr) = e.Tree
         let (|Lambda|_|) (E x) = match x with LambdaTerm(a, b) -> Some (a, b) | _ -> None
         let (|IteratedLambda|_|) (e: Expr) = qOneOrMoreRLinear (|Lambda|_|) e
@@ -231,7 +231,7 @@ and [<CompiledName("FSharpExpr")>]
         let cinfoL (cinfo: ConstructorInfo) = if long then objL cinfo else wordL (tagMethod cinfo.DeclaringType.Name)
         let pinfoL (pinfo: PropertyInfo) = if long then objL pinfo else wordL (tagProperty pinfo.Name)
         let finfoL (finfo: FieldInfo) = if long then objL finfo else wordL (tagField finfo.Name)
-        let rec (|NLambdas|_|) n (e:Expr) =
+        let rec (|NLambdas|_|) n (e: Expr) =
             match e with
             | _ when n <= 0 -> Some([], e)
             | Lambda(v, NLambdas ((-) n 1) (vs, b)) -> Some(v :: vs, b)
@@ -305,7 +305,7 @@ module Patterns =
     /// as a computation.
     type Instantiable<'T> = (int -> Type) -> 'T
 
-    type ByteStream(bytes:byte[], initial:int, len:int) =
+    type ByteStream(bytes:byte[], initial: int, len: int) =
 
         let mutable pos = initial
         let lim = initial + len
@@ -350,8 +350,8 @@ module Patterns =
         let (a, b) = removeVoid a, removeVoid b
         funTyC.MakeGenericType([| a;b |])
 
-    let mkArrayTy (t:Type) = t.MakeArrayType()
-    let mkExprTy (t:Type) = exprTyC.MakeGenericType([| t |])
+    let mkArrayTy (t: Type) = t.MakeArrayType()
+    let mkExprTy (t: Type) = exprTyC.MakeGenericType([| t |])
     let rawExprTy = typeof<Expr>
 
 
@@ -531,7 +531,7 @@ module Patterns =
 
     let (|IteratedLambda|_|) (e: Expr) = qOneOrMoreRLinear (|Lambda|_|) e
 
-    let rec (|NLambdas|_|) n (e:Expr) =
+    let rec (|NLambdas|_|) n (e: Expr) =
         match e with
         | _ when n <= 0 -> Some([], e)
         | Lambda(v, NLambdas ((-) n 1) (vs, b)) -> Some(v :: vs, b)
@@ -583,14 +583,14 @@ module Patterns =
 
     /// Returns type of lambda application - something like "(fun a -> ..) b"
     let rec typeOfAppliedLambda f =
-        let fty = ((typeOf f):Type)
+        let fty = ((typeOf f): Type)
         match fty.GetGenericArguments() with
         | [| _; b|] -> b
         | _ -> raise <| System.InvalidOperationException (SR.GetString(SR.QillFormedAppOrLet))
 
     /// Returns type of the Raw quotation or fails if the quotation is ill formed
     /// if 'verify' is true, verifies all branches, otherwise ignores some of them when not needed
-    and typeOf<'T when 'T :> Expr> (e : 'T) : Type =
+    and typeOf<'T when 'T :> Expr> (e : 'T): Type =
         let (E t) = e
         match t with
         | VarTerm    v -> v.Type
@@ -655,14 +655,14 @@ module Patterns =
     //--------------------------------------------------------------------------
 
     // t2 is inherited from t1 / t2 implements interface t1 or t2 == t1
-    let assignableFrom (t1:Type) (t2:Type) =
+    let assignableFrom (t1: Type) (t2: Type) =
         t1.IsAssignableFrom t2
 
-    let checkTypesSR (expectedType: Type) (receivedType : Type) name (threeHoleSR : string) =
+    let checkTypesSR (expectedType: Type) (receivedType: Type) name (threeHoleSR : string) =
         if (expectedType <> receivedType) then
           invalidArg "receivedType" (String.Format(threeHoleSR, name, expectedType, receivedType))
 
-    let checkTypesWeakSR (expectedType: Type) (receivedType : Type) name (threeHoleSR : string) =
+    let checkTypesWeakSR (expectedType: Type) (receivedType: Type) name (threeHoleSR : string) =
         if (not (assignableFrom expectedType receivedType)) then
           invalidArg "receivedType" (String.Format(threeHoleSR, name, expectedType, receivedType))
 
@@ -680,7 +680,7 @@ module Patterns =
     let checkObj  (membInfo: MemberInfo) (obj: Expr) =
         // The MemberInfo may be a property associated with a union
         // find the actual related union type
-        let rec loop (ty:Type) = if FSharpType.IsUnion ty && FSharpType.IsUnion ty.BaseType then loop ty.BaseType else ty
+        let rec loop (ty: Type) = if FSharpType.IsUnion ty && FSharpType.IsUnion ty.BaseType then loop ty.BaseType else ty
         let declType = loop membInfo.DeclaringType
         if not (assignableFrom declType (typeOf obj)) then invalidArg "obj" (SR.GetString(SR.QincorrectInstanceType))
 
@@ -702,7 +702,7 @@ module Patterns =
         | Some case -> case.GetFields()
         | _ -> invalidArg  "ty" (String.Format(SR.GetString(SR.notAUnionType), ty.FullName))
 
-    let checkBind(v:Var, e) =
+    let checkBind(v: Var, e) =
         let ety = typeOf e
         checkTypesSR v.Type ety "let" (SR.GetString(SR.QtmmVarTypeNotMatchRHS))
 
@@ -713,7 +713,7 @@ module Patterns =
     let mkValue (v, ty) = mkFE0 (ValueOp(v, ty, None))
     let mkValueWithName (v, ty, nm) = mkFE0 (ValueOp(v, ty, Some nm))
     let mkValueWithDefn (v, ty, defn) = mkFE1 (WithValueOp(v, ty)) defn
-    let mkValueG (v:'T) = mkValue(box v, typeof<'T>)
+    let mkValueG (v: 'T) = mkValue(box v, typeof<'T>)
     let mkLiftedValueOpG (v, ty: System.Type) =
         let obj = if ty.IsEnum then System.Enum.ToObject(ty, box v) else box v
         ValueOp(obj, ty, None)
@@ -740,7 +740,7 @@ module Patterns =
         mkLetRaw v
 
     // Tuples
-    let mkNewTupleWithType    (ty, args:Expr list) =
+    let mkNewTupleWithType    (ty, args: Expr list) =
         let mems = FSharpType.GetTupleElements ty |> Array.toList
         if (args.Length <> mems.Length) then invalidArg  "args" (SR.GetString(SR.QtupleLengthsDiffer))
         List.iter2(fun mt a -> checkTypesSR mt (typeOf a) "args" (SR.GetString(SR.QtmmTuple)) ) mems args
@@ -764,7 +764,7 @@ module Patterns =
     let mkNewRecord (ty, args:list<Expr>) =
         let mems = FSharpType.GetRecordFields(ty, publicOrPrivateBindingFlags)
         if (args.Length <> mems.Length) then invalidArg  "args" (SR.GetString(SR.QincompatibleRecordLength))
-        List.iter2 (fun (minfo:PropertyInfo) a -> checkTypesSR minfo.PropertyType (typeOf a) "recd" (SR.GetString(SR.QtmmIncorrectArgForRecord))) (Array.toList mems) args
+        List.iter2 (fun (minfo: PropertyInfo) a -> checkTypesSR minfo.PropertyType (typeOf a) "recd" (SR.GetString(SR.QtmmIncorrectArgForRecord))) (Array.toList mems) args
         mkFEN (NewRecordOp ty) args
 
 
@@ -773,7 +773,7 @@ module Patterns =
         if Unchecked.defaultof<UnionCaseInfo> = unionCase then raise (new ArgumentNullException())
         let sargs = unionCase.GetFields()
         if (args.Length <> sargs.Length) then invalidArg  "args" (SR.GetString(SR.QunionNeedsDiffNumArgs))
-        List.iter2 (fun (minfo:PropertyInfo) a -> checkTypesSR minfo.PropertyType (typeOf a) "sum" (SR.GetString(SR.QtmmIncorrectArgForUnion))) (Array.toList sargs) args
+        List.iter2 (fun (minfo: PropertyInfo) a -> checkTypesSR minfo.PropertyType (typeOf a) "sum" (SR.GetString(SR.QtmmIncorrectArgForUnion))) (Array.toList sargs) args
         mkFEN (NewUnionCaseOp unionCase) args
 
     let mkUnionCaseTest (unionCase:UnionCaseInfo, expr) =
@@ -805,14 +805,14 @@ module Patterns =
         | true -> mkFE0 (StaticFieldGetOp finfo)
         | false -> invalidArg  "finfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkStaticFieldSet (finfo:FieldInfo, value:Expr) =
+    let mkStaticFieldSet (finfo:FieldInfo, value: Expr) =
         if Unchecked.defaultof<FieldInfo> = finfo then raise (new ArgumentNullException())
         checkTypesSR (typeOf value) finfo.FieldType "value" (SR.GetString(SR.QtmmBadFieldType))
         match finfo.IsStatic with
         | true -> mkFE1 (StaticFieldSetOp finfo) value
         | false -> invalidArg  "finfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkInstanceFieldSet (obj, finfo:FieldInfo, value:Expr) =
+    let mkInstanceFieldSet (obj, finfo:FieldInfo, value: Expr) =
         if Unchecked.defaultof<FieldInfo> = finfo then raise (new ArgumentNullException())
         checkTypesSR (typeOf value) finfo.FieldType "value" (SR.GetString(SR.QtmmBadFieldType))
         match finfo.IsStatic with
@@ -826,10 +826,10 @@ module Patterns =
         checkArgs (ci.GetParameters()) args
         mkFEN (NewObjectOp ci) args
 
-    let mkDefaultValue (ty:Type) =
+    let mkDefaultValue (ty: Type) =
         mkFE0 (DefaultValueOp ty)
 
-    let mkStaticPropGet (pinfo:PropertyInfo, args:list<Expr>) =
+    let mkStaticPropGet (pinfo: PropertyInfo, args:list<Expr>) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanRead) then invalidArg  "pinfo" (SR.GetString(SR.QreadingSetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -837,7 +837,7 @@ module Patterns =
         | true -> mkFEN (StaticPropGetOp  pinfo) args
         | false -> invalidArg  "pinfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkInstancePropGet (obj, pinfo:PropertyInfo, args:list<Expr>) =
+    let mkInstancePropGet (obj, pinfo: PropertyInfo, args:list<Expr>) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanRead) then invalidArg  "pinfo" (SR.GetString(SR.QreadingSetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -847,7 +847,7 @@ module Patterns =
             mkFEN (InstancePropGetOp pinfo) (obj :: args)
         | true -> invalidArg  "pinfo" (SR.GetString(SR.QstaticWithReceiverObject))
 
-    let mkStaticPropSet (pinfo:PropertyInfo, args:list<Expr>, value:Expr) =
+    let mkStaticPropSet (pinfo: PropertyInfo, args:list<Expr>, value: Expr) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanWrite) then invalidArg  "pinfo" (SR.GetString(SR.QwritingGetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -855,7 +855,7 @@ module Patterns =
         | true -> mkFEN (StaticPropSetOp pinfo) (args@[value])
         | false -> invalidArg  "pinfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkInstancePropSet (obj, pinfo:PropertyInfo, args:list<Expr>, value:Expr) =
+    let mkInstancePropSet (obj, pinfo: PropertyInfo, args:list<Expr>, value: Expr) =
         if Unchecked.defaultof<PropertyInfo> = pinfo then raise (new ArgumentNullException())
         if (not pinfo.CanWrite) then invalidArg  "pinfo" (SR.GetString(SR.QwritingGetOnly))
         checkArgs (pinfo.GetIndexParameters()) args
@@ -881,7 +881,7 @@ module Patterns =
         | true -> mkFEN (StaticMethodCallOp minfo) args
         | false -> invalidArg  "minfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkForLoop (v:Var, lowerBound, upperBound, body) =
+    let mkForLoop (v: Var, lowerBound, upperBound, body) =
         checkTypesSR (typeof<int>) (typeOf lowerBound) "lowerBound" (SR.GetString(SR.QtmmLowerUpperBoundMustBeInt))
         checkTypesSR (typeof<int>) (typeOf upperBound) "upperBound" (SR.GetString(SR.QtmmLowerUpperBoundMustBeInt))
         checkTypesSR (typeof<int>) (v.Type) "for" (SR.GetString(SR.QtmmLoopBodyMustBeLambdaTakingInteger))
@@ -934,20 +934,20 @@ module Patterns =
         | Unique of 'T
         | Ambiguous of 'R
 
-    let typeEquals (s:Type) (t:Type) = s.Equals t
+    let typeEquals (s: Type) (t: Type) = s.Equals t
 
-    let typesEqual (ss:Type list) (tt:Type list) =
+    let typesEqual (ss: Type list) (tt: Type list) =
       (ss.Length = tt.Length) && List.forall2 typeEquals ss tt
 
     let instFormal (typarEnv: Type[]) (ty:Instantiable<'T>) = ty (fun i -> typarEnv.[i])
 
-    let getGenericArguments(tc:Type) =
+    let getGenericArguments(tc: Type) =
         if tc.IsGenericType then tc.GetGenericArguments() else [| |]
 
-    let getNumGenericArguments(tc:Type) =
+    let getNumGenericArguments(tc: Type) =
         if tc.IsGenericType then tc.GetGenericArguments().Length else 0
 
-    let bindMethodBySearch (parentT:Type, nm, marity, argtys, rty) =
+    let bindMethodBySearch (parentT: Type, nm, marity, argtys, rty) =
         let methInfos = parentT.GetMethods staticOrInstanceBindingFlags |> Array.toList
         // First, filter on name, if unique, then binding "done"
         let tyargTs = getGenericArguments parentT
@@ -997,20 +997,20 @@ module Patterns =
       else
           bindMethodBySearch(parentT, nm, marity, argtys, rty)
 
-    let bindModuleProperty (ty:Type, nm) =
+    let bindModuleProperty (ty: Type, nm) =
         match ty.GetProperty(nm, staticBindingFlags) with
         | null -> raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindProperty), nm, ty.ToString()))
         | res -> res
 
     // tries to locate unique function in a given type
     // in case of multiple candidates returns None so bindModuleFunctionWithCallSiteArgs will be used for more precise resolution
-    let bindModuleFunction (ty:Type, nm) =
+    let bindModuleFunction (ty: Type, nm) =
         match ty.GetMethods staticBindingFlags |> Array.filter (fun mi -> mi.Name = nm) with
         | [||] -> raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindFunction), nm, ty.ToString()))
         | [| res |] -> Some res
         | _ -> None
 
-    let bindModuleFunctionWithCallSiteArgs (ty:Type, nm, argTypes : Type list, tyArgs : Type list) =
+    let bindModuleFunctionWithCallSiteArgs (ty: Type, nm, argTypes: Type list, tyArgs: Type list) =
         let argTypes = List.toArray argTypes
         let tyArgs = List.toArray tyArgs
         let methInfo =
@@ -1084,7 +1084,7 @@ module Patterns =
                 | Some mi -> mi
                 | None -> fail()
 
-    let mkNamedType (tc:Type, tyargs) =
+    let mkNamedType (tc: Type, tyargs) =
         match  tyargs with
         | [] -> tc
         | _ -> tc.MakeGenericType(Array.ofList tyargs)
@@ -1094,9 +1094,9 @@ module Patterns =
         | null -> raise (new ArgumentNullException(arg, err))
         | _ -> y
 
-    let inst (tyargs:Type list) (i: Instantiable<'T>) = i (fun idx -> tyargs.[idx]) // Note, O n looks, but #tyargs is always small
+    let inst (tyargs: Type list) (i: Instantiable<'T>) = i (fun idx -> tyargs.[idx]) // Note, O n looks, but #tyargs is always small
 
-    let bindPropBySearchIfCandidateIsNull (ty : Type) propName retType argTypes candidate =
+    let bindPropBySearchIfCandidateIsNull (ty: Type) propName retType argTypes candidate =
         match candidate with
         | null ->
             let props =
@@ -1113,7 +1113,7 @@ module Patterns =
             | _ -> null
         | pi -> pi
 
-    let bindCtorBySearchIfCandidateIsNull (ty : Type) argTypes candidate =
+    let bindCtorBySearchIfCandidateIsNull (ty: Type) argTypes candidate =
         match candidate with
         | null ->
             let ctors =
@@ -1133,24 +1133,29 @@ module Patterns =
         let typ = mkNamedType (tc, tyargs)
         let argtyps : Type list = argTypes |> inst tyargs
         let retType : Type = retType |> inst tyargs |> removeVoid
-        typ.GetProperty(propName, staticOrInstanceBindingFlags, null, retType, Array.ofList argtyps, null) |> checkNonNullResult ("propName", String.Format(SR.GetString(SR.QfailedToBindProperty), propName)) // fxcop may not see "propName" as an arg
+        // fxcop may not see "propName" as an arg
+        typ.GetProperty(propName, staticOrInstanceBindingFlags, null, retType, Array.ofList argtyps, null)
+        |> checkNonNullResult ("propName", String.Format(SR.GetString(SR.QfailedToBindProperty), propName))
 
     let bindField (tc, fldName, tyargs) =
         let typ = mkNamedType (tc, tyargs)
-        typ.GetField(fldName, staticOrInstanceBindingFlags) |> checkNonNullResult ("fldName", String.Format(SR.GetString(SR.QfailedToBindField), fldName)) // fxcop may not see "fldName" as an arg
+        typ.GetField(fldName, staticOrInstanceBindingFlags)
+        |> checkNonNullResult ("fldName", String.Format(SR.GetString(SR.QfailedToBindField), fldName)) // fxcop may not see "fldName" as an arg
 
-    let bindGenericCctor (tc:Type) =
+    let bindGenericCctor (tc: Type) =
         tc.GetConstructor(staticBindingFlags, null, [| |], null)
         |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
 
-    let bindGenericCtor (tc:Type, argTypes:Instantiable<Type list>) =
+    let bindGenericCtor (tc: Type, argTypes: Instantiable<Type list>) =
         let argtyps = instFormal (getGenericArguments tc) argTypes
-        tc.GetConstructor(instanceBindingFlags, null, Array.ofList argtyps, null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
+        tc.GetConstructor(instanceBindingFlags, null, Array.ofList argtyps, null)
+        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
 
-    let bindCtor (tc, argTypes:Instantiable<Type list>, tyargs) =
+    let bindCtor (tc, argTypes: Instantiable<Type list>, tyargs) =
         let typ = mkNamedType (tc, tyargs)
         let argtyps = argTypes |> inst tyargs
-        typ.GetConstructor(instanceBindingFlags, null, Array.ofList argtyps, null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
+        typ.GetConstructor(instanceBindingFlags, null, Array.ofList argtyps, null)
+        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))
 
     let chop n xs =
         if n < 0 then invalidArg "n" (SR.GetString(SR.inputMustBeNonNegative))
@@ -1167,17 +1172,17 @@ module Patterns =
         if ngmeth.GetGenericArguments().Length = 0 then ngmeth(* non generic *)
         else ngmeth.MakeGenericMethod(Array.ofList methTypeArgs)
 
-    let bindGenericMeth (tc:Type, argTypes : list<Instantiable<Type>>, retType, methName, numMethTyargs) =
+    let bindGenericMeth (tc: Type, argTypes, retType, methName, numMethTyargs) =
         bindMethodHelper(tc, methName, numMethTyargs, argTypes, retType)
 
-    let bindMeth ((tc:Type, argTypes : list<Instantiable<Type>>, retType, methName, numMethTyargs), tyargs) =
+    let bindMeth ((tc: Type, argTypes, retType, methName, numMethTyargs), tyargs) =
         let ntyargs = tc.GetGenericArguments().Length
         let enclTypeArgs, methTypeArgs = chop ntyargs tyargs
         let ty = mkNamedType (tc, enclTypeArgs)
         let ngmeth = bindMethodHelper(ty, methName, numMethTyargs, argTypes, retType)
         instMeth(ngmeth, methTypeArgs)
 
-    let pinfoIsStatic (pinfo:PropertyInfo) =
+    let pinfoIsStatic (pinfo: PropertyInfo) =
         if pinfo.CanRead then pinfo.GetGetMethod(true).IsStatic
         elif pinfo.CanWrite then pinfo.GetSetMethod(true).IsStatic
         else false
@@ -1375,18 +1380,18 @@ module Patterns =
           /// The number of indexes in the mapping
           varn: int
           /// The active type instantiation for generic type parameters
-          typeInst : int -> Type }
+          typeInst: int -> Type }
 
     let addVar env v =
         { env with vars = env.vars.Add(env.varn, v); varn=env.varn+1 }
 
-    let mkTyparSubst (tyargs:Type[]) =
+    let mkTyparSubst (tyargs: Type[]) =
         let n = tyargs.Length
         fun idx ->
           if idx < n then tyargs.[idx]
           else raise <| System.InvalidOperationException (SR.GetString(SR.QtypeArgumentOutOfRange))
 
-    let envClosed (spliceTypes:Type[]) =
+    let envClosed (spliceTypes: Type[]) =
         { vars = Map.empty
           varn = 0
           typeInst = mkTyparSubst spliceTypes }
@@ -1400,7 +1405,7 @@ module Patterns =
             let a = u_constSpec st
             let b = u_dtypes st
             let args = u_list u_Expr st
-            (fun (env:BindingEnv) ->
+            (fun (env: BindingEnv) ->
                 let args = List.map (fun e -> e env) args
                 let a =
                     match a with
@@ -1578,7 +1583,7 @@ module Patterns =
     //--------------------------------------------------------------------------
 
     /// Fill the holes in an Expr
-    let rec fillHolesInRawExpr (l:Expr[]) (E t as e) =
+    let rec fillHolesInRawExpr (l: Expr[]) (E t as e) =
         match t with
         | VarTerm _ -> e
         | LambdaTerm (v, b) -> EA(LambdaTerm(v, fillHolesInRawExpr l b ), e.CustomAttributes)
@@ -1648,11 +1653,10 @@ module Patterns =
 
     let decodedTopResources = new Dictionary<Assembly * string, int>(10, HashIdentity.Structural)
 
-
     [<StructuralEquality; NoComparison>]
     type ReflectedDefinitionTableKey =
         | Key of ModuleHandle * int
-        static member GetKey(methodBase:MethodBase) =
+        static member GetKey(methodBase: MethodBase) =
             Key(methodBase.Module.ModuleHandle, methodBase.MetadataToken)
 
     [<NoEquality; NoComparison>]
@@ -1732,7 +1736,7 @@ module Patterns =
             Some(exprBuilder (envClosed tyargs))
         | None -> None
 
-    let tryGetReflectedDefinitionInstantiated (methodBase:MethodBase) =
+    let tryGetReflectedDefinitionInstantiated (methodBase: MethodBase) =
         checkNonNull "methodBase" methodBase
         match methodBase with
         | :? MethodInfo as minfo ->
@@ -1764,63 +1768,63 @@ type Expr with
     member x.GetFreeVars () = (freeInExpr x :> seq<_>)
     member x.Type = typeOf x
 
-    static member AddressOf (target:Expr) =
+    static member AddressOf (target: Expr) =
         mkAddressOf target
 
-    static member AddressSet (target:Expr, value:Expr) =
+    static member AddressSet (target: Expr, value: Expr) =
         mkAddressSet (target, value)
 
-    static member Application (functionExpr:Expr, argument:Expr) =
+    static member Application (functionExpr: Expr, argument: Expr) =
         mkApplication (functionExpr, argument)
 
-    static member Applications (functionExpr:Expr, arguments) =
+    static member Applications (functionExpr: Expr, arguments) =
         mkApplications (functionExpr, arguments)
 
     static member Call (methodInfo:MethodInfo, arguments) =
         checkNonNull "methodInfo" methodInfo
         mkStaticMethodCall (methodInfo, arguments)
 
-    static member Call (obj:Expr, methodInfo:MethodInfo, arguments) =
+    static member Call (obj: Expr, methodInfo:MethodInfo, arguments) =
         checkNonNull "methodInfo" methodInfo
         mkInstanceMethodCall (obj, methodInfo, arguments)
 
-    static member Coerce (source:Expr, target:Type) =
+    static member Coerce (source: Expr, target: Type) =
         checkNonNull "target" target
         mkCoerce (target, source)
 
-    static member IfThenElse (guard:Expr, thenExpr:Expr, elseExpr:Expr) =
+    static member IfThenElse (guard: Expr, thenExpr: Expr, elseExpr: Expr) =
         mkIfThenElse (guard, thenExpr, elseExpr)
 
-    static member ForIntegerRangeLoop (loopVariable, start:Expr, endExpr:Expr, body:Expr) =
+    static member ForIntegerRangeLoop (loopVariable, start: Expr, endExpr: Expr, body: Expr) =
         mkForLoop(loopVariable, start, endExpr, body)
 
     static member FieldGet (fieldInfo:FieldInfo) =
         checkNonNull "fieldInfo" fieldInfo
         mkStaticFieldGet fieldInfo
 
-    static member FieldGet (obj:Expr, fieldInfo:FieldInfo) =
+    static member FieldGet (obj: Expr, fieldInfo:FieldInfo) =
         checkNonNull "fieldInfo" fieldInfo
         mkInstanceFieldGet (obj, fieldInfo)
 
-    static member FieldSet (fieldInfo:FieldInfo, value:Expr) =
+    static member FieldSet (fieldInfo:FieldInfo, value: Expr) =
         checkNonNull "fieldInfo" fieldInfo
         mkStaticFieldSet (fieldInfo, value)
 
-    static member FieldSet (obj:Expr, fieldInfo:FieldInfo, value:Expr) =
+    static member FieldSet (obj: Expr, fieldInfo:FieldInfo, value: Expr) =
         checkNonNull "fieldInfo" fieldInfo
         mkInstanceFieldSet (obj, fieldInfo, value)
 
-    static member Lambda (parameter:Var, body:Expr) = mkLambda (parameter, body)
+    static member Lambda (parameter: Var, body: Expr) = mkLambda (parameter, body)
 
-    static member Let (letVariable:Var, letExpr:Expr, body:Expr) = mkLet (letVariable, letExpr, body)
+    static member Let (letVariable: Var, letExpr: Expr, body: Expr) = mkLet (letVariable, letExpr, body)
 
-    static member LetRecursive (bindings, body:Expr) = mkLetRec (bindings, body)
+    static member LetRecursive (bindings, body: Expr) = mkLetRec (bindings, body)
 
     static member NewObject (constructorInfo:ConstructorInfo, arguments) =
         checkNonNull "constructorInfo" constructorInfo
         mkCtorCall (constructorInfo, arguments)
 
-    static member DefaultValue (expressionType:Type) =
+    static member DefaultValue (expressionType: Type) =
         checkNonNull "expressionType" expressionType
         mkDefaultValue expressionType
 
@@ -1830,22 +1834,22 @@ type Expr with
     static member NewStructTuple (asm:Assembly, elements) =
         mkNewStructTuple (asm, elements)
 
-    static member NewRecord (recordType:Type, elements) =
+    static member NewRecord (recordType: Type, elements) =
         checkNonNull "recordType" recordType
         mkNewRecord (recordType, elements)
 
-    static member NewArray (elementType:Type, elements) =
+    static member NewArray (elementType: Type, elements) =
         checkNonNull "elementType" elementType
         mkNewArray(elementType, elements)
 
-    static member NewDelegate (delegateType:Type, parameters: Var list, body: Expr) =
+    static member NewDelegate (delegateType: Type, parameters: Var list, body: Expr) =
         checkNonNull "delegateType" delegateType
         mkNewDelegate(delegateType, mkIteratedLambdas (parameters, body))
 
     static member NewUnionCase (unionCase, arguments) =
         mkNewUnionCase (unionCase, arguments)
 
-    static member PropertyGet (obj:Expr, property: PropertyInfo, ?indexerArgs) =
+    static member PropertyGet (obj: Expr, property: PropertyInfo, ?indexerArgs) =
         checkNonNull "property" property
         mkInstancePropGet (obj, property, defaultArg indexerArgs [])
 
@@ -1853,46 +1857,46 @@ type Expr with
         checkNonNull "property" property
         mkStaticPropGet (property, defaultArg indexerArgs [])
 
-    static member PropertySet (obj:Expr, property:PropertyInfo, value:Expr, ?indexerArgs) =
+    static member PropertySet (obj: Expr, property: PropertyInfo, value: Expr, ?indexerArgs) =
         checkNonNull "property" property
         mkInstancePropSet(obj, property, defaultArg indexerArgs [], value)
 
-    static member PropertySet (property:PropertyInfo, value:Expr, ?indexerArgs) =
+    static member PropertySet (property: PropertyInfo, value: Expr, ?indexerArgs) =
         mkStaticPropSet(property, defaultArg indexerArgs [], value)
 
-    static member Quote (inner:Expr) = mkQuote (inner, true)
+    static member Quote (inner: Expr) = mkQuote (inner, true)
 
-    static member QuoteRaw (inner:Expr) = mkQuote (inner, false)
+    static member QuoteRaw (inner: Expr) = mkQuote (inner, false)
 
-    static member QuoteTyped (inner:Expr) = mkQuote (inner, true)
+    static member QuoteTyped (inner: Expr) = mkQuote (inner, true)
 
-    static member Sequential (first:Expr, second:Expr) =
+    static member Sequential (first: Expr, second: Expr) =
         mkSequential (first, second)
 
-    static member TryWith (body:Expr, filterVar:Var, filterBody:Expr, catchVar:Var, catchBody:Expr) =
+    static member TryWith (body: Expr, filterVar: Var, filterBody: Expr, catchVar: Var, catchBody: Expr) =
         mkTryWith (body, filterVar, filterBody, catchVar, catchBody)
 
-    static member TryFinally (body:Expr, compensation:Expr) =
+    static member TryFinally (body: Expr, compensation: Expr) =
         mkTryFinally (body, compensation)
 
-    static member TupleGet (tuple:Expr, index:int) =
+    static member TupleGet (tuple: Expr, index: int) =
         mkTupleGet (typeOf tuple, index, tuple)
 
     static member TypeTest (source: Expr, target: Type) =
         checkNonNull "target" target
         mkTypeTest (source, target)
 
-    static member UnionCaseTest (source:Expr, unionCase: UnionCaseInfo) =
+    static member UnionCaseTest (source: Expr, unionCase: UnionCaseInfo) =
         mkUnionCaseTest (unionCase, source)
 
-    static member Value (value:'T) =
+    static member Value (value: 'T) =
         mkValue (box value, typeof<'T>)
 
     static member Value(value: obj, expressionType: Type) =
         checkNonNull "expressionType" expressionType
         mkValue(value, expressionType)
 
-    static member ValueWithName (value:'T, name:string) =
+    static member ValueWithName (value: 'T, name:string) =
         checkNonNull "name" name
         mkValueWithName (box value, typeof<'T>, name)
 
@@ -1901,7 +1905,7 @@ type Expr with
         checkNonNull "name" name
         mkValueWithName(value, expressionType, name)
 
-    static member WithValue (value:'T, definition: Expr<'T>) =
+    static member WithValue (value: 'T, definition: Expr<'T>) =
         let raw = mkValueWithDefn(box value, typeof<'T>, definition)
         new Expr<'T>(raw.Tree, raw.CustomAttributes)
 
@@ -1913,24 +1917,24 @@ type Expr with
     static member Var variable =
         mkVar variable
 
-    static member VarSet (variable, value:Expr) =
+    static member VarSet (variable, value: Expr) =
         mkVarSet (variable, value)
 
-    static member WhileLoop (guard:Expr, body:Expr) =
+    static member WhileLoop (guard: Expr, body: Expr) =
         mkWhileLoop (guard, body)
 
-    static member TryGetReflectedDefinition(methodBase:MethodBase) =
+    static member TryGetReflectedDefinition(methodBase: MethodBase) =
         checkNonNull "methodBase" methodBase
         tryGetReflectedDefinitionInstantiated methodBase
 
-    static member Cast(source:Expr) = cast source
+    static member Cast(source: Expr) = cast source
 
-    static member Deserialize(qualifyingType:Type, spliceTypes, spliceExprs, bytes: byte[]) =
+    static member Deserialize(qualifyingType: Type, spliceTypes, spliceExprs, bytes: byte[]) =
         checkNonNull "qualifyingType" qualifyingType
         checkNonNull "bytes" bytes
         deserialize (qualifyingType, [| |], Array.ofList spliceTypes, Array.ofList spliceExprs, bytes)
 
-    static member Deserialize40(qualifyingType:Type, referencedTypes, spliceTypes, spliceExprs, bytes: byte[]) =
+    static member Deserialize40(qualifyingType: Type, referencedTypes, spliceTypes, spliceExprs, bytes: byte[]) =
         checkNonNull "spliceExprs" spliceExprs
         checkNonNull "spliceTypes" spliceTypes
         checkNonNull "referencedTypeDefs" referencedTypes
@@ -1955,30 +1959,43 @@ module DerivedPatterns =
 
     [<CompiledName("BoolPattern")>]
     let (|Bool|_|) input = match input with ValueObj(:? bool   as v) -> Some v | _ -> None
+
     [<CompiledName("StringPattern")>]
     let (|String|_|) input = match input with ValueObj(:? string as v) -> Some v | _ -> None
+
     [<CompiledName("SinglePattern")>]
     let (|Single|_|) input = match input with ValueObj(:? single as v) -> Some v | _ -> None
+
     [<CompiledName("DoublePattern")>]
     let (|Double|_|) input = match input with ValueObj(:? double as v) -> Some v | _ -> None
+
     [<CompiledName("CharPattern")>]
     let (|Char|_|) input = match input with ValueObj(:? char   as v) -> Some v | _ -> None
+
     [<CompiledName("SBytePattern")>]
     let (|SByte|_|) input = match input with ValueObj(:? sbyte  as v) -> Some v | _ -> None
+
     [<CompiledName("BytePattern")>]
     let (|Byte|_|) input = match input with ValueObj(:? byte   as v) -> Some v | _ -> None
+
     [<CompiledName("Int16Pattern")>]
     let (|Int16|_|) input = match input with ValueObj(:? int16  as v) -> Some v | _ -> None
+
     [<CompiledName("UInt16Pattern")>]
     let (|UInt16|_|) input = match input with ValueObj(:? uint16 as v) -> Some v | _ -> None
+
     [<CompiledName("Int32Pattern")>]
     let (|Int32|_|) input = match input with ValueObj(:? int32  as v) -> Some v | _ -> None
+
     [<CompiledName("UInt32Pattern")>]
     let (|UInt32|_|) input = match input with ValueObj(:? uint32 as v) -> Some v | _ -> None
+
     [<CompiledName("Int64Pattern")>]
     let (|Int64|_|) input = match input with ValueObj(:? int64  as v) -> Some v | _ -> None
+
     [<CompiledName("UInt64Pattern")>]
     let (|UInt64|_|) input = match input with ValueObj(:? uint64 as v) -> Some v | _ -> None
+
     [<CompiledName("UnitPattern")>]
     let (|Unit|_|) input = match input with Comb0(ValueOp(_, ty, None)) when ty = typeof<unit> -> Some() | _ -> None
 
@@ -1986,7 +2003,7 @@ module DerivedPatterns =
     /// This reverses this encoding.
     let (|TupledLambda|_|) (lam: Expr) =
         /// Strip off the 'let' bindings for an TupledLambda
-        let rec stripSuccessiveProjLets (p:Var) n expr =
+        let rec stripSuccessiveProjLets (p: Var) n expr =
             match expr with
             | Let(v1, TupleGet(Var pA, m), rest)
                   when p = pA && m = n->
@@ -2011,8 +2028,10 @@ module DerivedPatterns =
 
     [<CompiledName("LambdasPattern")>]
     let (|Lambdas|_|) (input: Expr) = qOneOrMoreRLinear (|TupledLambda|_|) input
+
     [<CompiledName("ApplicationsPattern")>]
     let (|Applications|_|) (input: Expr) = qOneOrMoreLLinear (|TupledApplication|_|) input
+
     /// Reverse the compilation of And and Or
     [<CompiledName("AndAlsoPattern")>]
     let (|AndAlso|_|) input =

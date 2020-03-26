@@ -166,6 +166,14 @@ printfn ""%A"" result
 #endif
 
     [<Test>]
+    member __.``Eval script with package manager invalid key``() =
+        use script = new FSharpScript()
+        let result, _errors = script.Eval(@"#r ""nugt:FSharp.Data""")
+        match result with
+        | Ok(_) -> Assert.Fail("expected a failure")
+        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+
+    [<Test>]
     member __.``ML - use assembly with ref dependencies``() =
         let code = @"
 #r ""nuget:Microsoft.ML.OnnxTransformer,1.4.0""

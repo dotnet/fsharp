@@ -11,4 +11,15 @@ open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 
 /// Perform the checks on the TAST for a file after type inference is complete.
-val CheckTopImpl : TcGlobals * ImportMap * bool * InfoReader * CompilationPath list * CcuThunk * DisplayEnv * ModuleOrNamespaceExprWithSig * Attribs * (bool * bool) * isInternalTestSpanStackReferring: bool -> bool * StampMap<AnonRecdTypeInfo>
+val CheckTopImpl:
+    g: TcGlobals *
+    amap: ImportMap *
+    reportErrors: bool * 
+    infoReader: InfoReader *
+    internalsVisibleToPaths: CompilationPath list *
+    viewCcu: CcuThunk *
+    denv: DisplayEnv *
+    mexpr: ModuleOrNamespaceExprWithSig *
+    extraAttribs: Attribs * (bool * bool) *
+    isInternalTestSpanStackReferring: bool 
+       -> bool * StampMap<AnonRecdTypeInfo>

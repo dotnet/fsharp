@@ -7,9 +7,8 @@ open System.Collections.Generic
 open System.Collections.Immutable
 
 open FSharp.Core.Printf
-open FSharp.Compiler.AbstractIL.Internal.Library  
-
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.Range
 open FSharp.Compiler.Tast
 open FSharp.Compiler.Infos

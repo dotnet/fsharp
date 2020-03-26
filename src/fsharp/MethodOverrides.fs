@@ -278,7 +278,6 @@ module DispatchSlotChecking =
             |> NameMultiMap.find  dispatchSlot.LogicalName  
             |> List.exists (OverrideImplementsDispatchSlot g amap m dispatchSlot)
 
-
     /// Check all dispatch slots are implemented by some override.
     let CheckDispatchSlotsAreImplemented (denv, infoReader: InfoReader, m,
                                           nenv, sink: TcResultsSink,
@@ -822,13 +821,6 @@ module DispatchSlotChecking =
                 
             overrideBy.MemberInfo.Value.ImplementedSlotSigs <- overriden)
 
-
-
-//-------------------------------------------------------------------------
-// "Type Completion" inference and a few other checks at the end of the inference scope
-//------------------------------------------------------------------------- 
-
-
 /// "Type Completion" inference and a few other checks at the end of the inference scope
 let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv, sink, isImplementation, denv) (tycon: Tycon) =
 
@@ -875,7 +867,6 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
 
         if hasExplicitObjectEqualsOverride && not hasExplicitObjectGetHashCode then 
             warning(Error(FSComp.SR.typrelExplicitImplementationOfEquals(tycon.DisplayName), m)) 
-
 
         // remember these values to ensure we don't generate these methods during codegen 
         tcaug.SetHasObjectGetHashCode hasExplicitObjectGetHashCode
