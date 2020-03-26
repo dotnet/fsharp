@@ -1,7 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#nowarn "1204"
-
 namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
 open System
@@ -18,6 +16,8 @@ open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open Microsoft.FSharp.Quotations.DerivedPatterns
+
+#nowarn "1204"
 
 module LeafExpressionConverter =
 

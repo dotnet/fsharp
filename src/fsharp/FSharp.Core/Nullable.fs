@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+namespace Microsoft.FSharp.Linq
+
 #nowarn "1204"
 
 open System
 open Microsoft.FSharp.Core
-namespace Microsoft.FSharp.Linq
 
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
