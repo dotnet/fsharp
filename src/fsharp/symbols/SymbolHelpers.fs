@@ -42,6 +42,9 @@ type FSharpErrorSeverity =
     | Warning 
     | Error
 
+module FSharpErrorInfo =
+    let [<Literal>] ObsoleteMessage = "Use FSharpErrorInfo.Range. This API will be removed in a future update."
+
 type FSharpErrorInfo(m: range, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
     member _.Start = m.Start
     member _.End = m.End
@@ -88,8 +91,8 @@ type FSharpErrorInfo(m: range, severity: FSharpErrorSeverity, message: string, s
         let r = FSharpErrorInfo.CreateFromException(exn, isError, fallbackRange, suggestNames)
 
         // Adjust to make sure that errors reported at Eof are shown at the linesCount
-        let startline, schange = min (r.StartLineAlternate, false) (linesCount, true)
-        let endline, echange = min (r.EndLineAlternate, false)   (linesCount, true)
+        let startline, schange = min (r.Range.StartLine, false) (linesCount, true)
+        let endline, echange = min (r.Range.EndLine, false)   (linesCount, true)
         
         if not (schange || echange) then r
         else
@@ -198,7 +201,8 @@ module ErrorHelpers =
                   // Not ideal, but it's hard to see what else to do.
                   let fallbackRange = rangeN mainInputFileName 1
                   let ei = FSharpErrorInfo.CreateFromExceptionAndAdjustEof (exn, isError, fallbackRange, fileInfo, suggestNames)
-                  if allErrors || (ei.FileName = mainInputFileName) || (ei.FileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation) then
+                  let fileName = ei.Range.FileName
+                  if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
                       yield ei ]
 
             let mainError, relatedErrors = SplitRelatedDiagnostics exn 
