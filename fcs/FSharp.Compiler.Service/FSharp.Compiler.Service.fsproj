@@ -387,23 +387,26 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CompilerGlobalState.fs">
       <Link>TypedAST/CompilerGlobalState.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/tast.fs">
-      <Link>TypedAST/tast.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedAST.fs">
+      <Link>TypedAST/TypedAST.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedASTBasics.fs">
+      <Link>TypedAST/TypedASTBasics.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/TcGlobals.fs">
       <Link>TypedAST/TcGlobals.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastOps.fsi">
-      <Link>TypedAST/TastOps.fsi</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedASTOps.fsi">
+      <Link>TypedAST/TypedASTOps.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastOps.fs">
-      <Link>TypedAST/TastOps.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedASTOps.fs">
+      <Link>TypedAST/TypedASTOps.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastPickle.fsi">
-      <Link>TypedAST/TastPickle.fsi</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedASTPickle.fsi">
+      <Link>TypedAST/.TypedASTPickle.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastPickle.fs">
-      <Link>TypedAST/TastPickle.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedASTPickle.fs">
+      <Link>TypedAST/.TypedASTPickle.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/import.fsi">
       <Link>Logic/import.fsi</Link>

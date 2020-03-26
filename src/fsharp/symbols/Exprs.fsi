@@ -2,12 +2,11 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler
 open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Tast
+open FSharp.Compiler.TypedAST
 
 /// Represents the definitional contents of an assembly, as seen by the F# language
 type public FSharpAssemblyContents = 

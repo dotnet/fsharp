@@ -16,8 +16,8 @@ open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Features
 open FSharp.Compiler.TypeRelations

@@ -15,17 +15,18 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTBasics
+open FSharp.Compiler.TypedASTOps
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
 
 
-exception RequiredButNotSpecified of DisplayEnv * Tast.ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
+exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
 
-exception ValueNotContained of DisplayEnv * Tast.ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
+exception ValueNotContained of DisplayEnv * ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
 
 exception ConstrNotContained of DisplayEnv * UnionCase * UnionCase * (string * string -> string)
 

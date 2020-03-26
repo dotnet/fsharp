@@ -15,16 +15,18 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast 
-open FSharp.Compiler.TastPickle
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Tastops.DebugPrint
+open FSharp.Compiler.TypedAST 
+open FSharp.Compiler.TypedASTBasics
+open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.TypedASTOps.DebugPrint
+open FSharp.Compiler.TypedASTPickle
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
@@ -395,7 +397,7 @@ type IncrementalOptimizationEnv =
       inLoop: bool
 
       /// The Val for the function binding being generated, if any. 
-      functionVal: (Val * Tast.ValReprInfo) option
+      functionVal: (Val * ValReprInfo) option
 
       typarInfos: (Typar * TypeValueInfo) list 
 
@@ -567,7 +569,7 @@ let BindTypeVarsToUnknown (tps: Typar list) env =
                 tp.typar_id <- ident (nm, tp.Range))      
     List.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
 
-let BindCcu (ccu: Tast.CcuThunk) mval env (_g: TcGlobals) = 
+let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
 
 /// Lookup information about values 
@@ -2203,7 +2205,7 @@ and OptimizeConst cenv env expr (c, m, ty) =
                 Info=MakeValueInfoForConst c ty}
 
 /// Optimize/analyze a record lookup. 
-and TryOptimizeRecordFieldGet cenv _env (e1info, (RFRef (rtcref, _) as r), _tinst, m) =
+and TryOptimizeRecordFieldGet cenv _env (e1info, (RecdFieldRef (rtcref, _) as r), _tinst, m) =
     match destRecdValue e1info.Info with
     | Some finfos when cenv.settings.EliminateRecdFieldGet() && not e1info.HasEffect ->
         match TryFindFSharpAttribute cenv.g cenv.g.attrib_CLIMutableAttribute rtcref.Attribs with
@@ -2283,7 +2285,7 @@ and OptimizeLetRec cenv env (binds, bodyExpr, m) =
     // Trim out any optimization info that involves escaping values 
     let evalueR = AbstractExprInfoByVars (vs, []) einfo.Info 
     // REVIEW: size of constructing new closures - should probably add #freevars + #recfixups here 
-    let bodyExprR = Expr.LetRec (bindsRR, bodyExprR, m, NewFreeVarsCache()) 
+    let bodyExprR = Expr.LetRec (bindsRR, bodyExprR, m, Construct.NewFreeVarsCache()) 
     let info = CombineValueInfos (einfo :: bindinfos) evalueR 
     bodyExprR, info
 

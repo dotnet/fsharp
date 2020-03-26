@@ -10,10 +10,13 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTBasics
+open FSharp.Compiler.TypedASTOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
 
@@ -407,7 +410,7 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
     | [] -> []
     | _ -> 
         let amap = amap()
-        let tps = gps |> List.map (fun gp -> NewRigidTypar gp.Name m) 
+        let tps = gps |> List.map (fun gp -> Construct.NewRigidTypar gp.Name m) 
 
         let tptys = tps |> List.map mkTyparTy
         let importInst = tinst@tptys
@@ -455,7 +458,7 @@ let rec ImportILTypeDef amap m scoref (cpath: CompilationPath) enc nm (tdef: ILT
             let cpath = cpath.NestedCompPath nm ModuleOrType
             ImportILTypeDefs amap m scoref cpath (enc@[tdef]) tdef.NestedTypes
     // Add the type itself. 
-    NewILTycon 
+    Construct.NewILTycon 
         (Some cpath) 
         (nm, m) 
         // The read of the type parameters may fail to resolve types. We pick up a new range from the point where that read is forced
@@ -481,13 +484,13 @@ and ImportILTypeDefList amap m (cpath: CompilationPath) enc items =
         |> multisetDiscriminateAndMap 
             (fun n tgs ->
                 let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n Namespace) enc tgs)
-                NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] (MaybeLazy.Lazy modty))
+                Construct.NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] (MaybeLazy.Lazy modty))
             (fun (n, info: Lazy<_>) -> 
                 let (scoref2, lazyTypeDef: ILPreTypeDef) = info.Force()
                 ImportILTypeDef amap m scoref2 cpath enc n (lazyTypeDef.GetTypeDef()))
 
     let kind = match enc with [] -> Namespace | _ -> ModuleOrType
-    NewModuleOrNamespaceType kind entities []
+    Construct.NewModuleOrNamespaceType kind entities []
       
 /// Import a table of IL types as a ModuleOrNamespaceType.
 ///
@@ -584,12 +587,12 @@ let ImportILAssembly(amap: (unit -> ImportMap), m, auxModuleLoader, ilScopeRef, 
           ImportProvidedType = (fun ty -> ImportProvidedType (amap()) m ty)
 #endif
           QualifiedName= Some ilScopeRef.QualifiedName
-          Contents = NewCcuContents ilScopeRef m nm mty 
+          Contents = Construct.NewCcuContents ilScopeRef m nm mty 
           ILScopeRef = ilScopeRef
           Stamp = newStamp()
           SourceCodeDirectory = sourceDir  // note: not an accurate value, but IL assemblies don't give us this information in any attributes. 
           FileName = filename
-          MemberSignatureEquality= (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll (amap()).g ty1 ty2)
+          MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (amap()).g ty1 ty2)
           TryGetILModuleDef = (fun () -> Some ilModule)
           TypeForwarders = forwarders }
                 

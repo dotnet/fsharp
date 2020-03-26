@@ -3,8 +3,8 @@
 
 module internal FSharp.Compiler.FindUnsolved
 
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Import
 

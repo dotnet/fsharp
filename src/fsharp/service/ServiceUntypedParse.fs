@@ -13,10 +13,10 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.Text.RegularExpressions
  
-open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
@@ -25,10 +25,10 @@ open FSharp.Compiler.Range
 module SourceFile =
 
     /// Source file extensions
-    let private compilableExtensions = CompileOps.FSharpSigFileSuffixes @ CompileOps.FSharpImplFileSuffixes @ CompileOps.FSharpScriptFileSuffixes
+    let private compilableExtensions = FSharpSigFileSuffixes @ FSharpImplFileSuffixes @ FSharpScriptFileSuffixes
 
     /// Single file projects extensions
-    let private singleFileProjectExtensions = CompileOps.FSharpScriptFileSuffixes
+    let private singleFileProjectExtensions = FSharpScriptFileSuffixes
 
     /// Whether or not this file is compilable
     let IsCompilable file =
@@ -107,7 +107,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
     
     /// Get declared items and the selected item at the specified location
     member private scope.GetNavigationItemsImpl() =
-       ErrorScope.Protect Range.range0 
+       ErrorScope.Protect range0 
             (fun () -> 
                 match input with
                 | Some (ParsedInput.ImplFile _ as p) ->
@@ -398,7 +398,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
             | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = modules))) -> walkImplFile modules 
             | _ -> []
  
-        ErrorScope.Protect Range.range0 
+        ErrorScope.Protect range0 
             (fun () -> 
                 let locations = findBreakPoints()
                 
@@ -717,7 +717,7 @@ module UntypedParseImpl =
             | SynExpr.Sequential (_, _, e1, e2, _) -> Some [e1; e2]
             | _ -> None
 
-        let inline isPosInRange range = Range.rangeContainsPos range pos
+        let inline isPosInRange range = rangeContainsPos range pos
 
         let inline ifPosInRange range f =
             if isPosInRange range then f()
@@ -823,7 +823,7 @@ module UntypedParseImpl =
                 | [] when isPosInRange r -> parentKind |> Option.orElse (Some (EntityKind.FunctionOrValue false)) 
                 | firstDotRange :: _  ->
                     let firstPartRange = 
-                        Range.mkRange "" r.Start (Range.mkPos firstDotRange.StartLine (firstDotRange.StartColumn - 1))
+                        mkRange "" r.Start (mkPos firstDotRange.StartLine (firstDotRange.StartColumn - 1))
                     if isPosInRange firstPartRange then
                         parentKind |> Option.orElse (Some (EntityKind.FunctionOrValue false))
                     else None

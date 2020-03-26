@@ -5,8 +5,9 @@ module internal FSharp.Compiler.AutoBox
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler 
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTBasics
+open FSharp.Compiler.TypedASTOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations

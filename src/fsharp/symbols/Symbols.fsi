@@ -3,16 +3,18 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
+
 open FSharp.Compiler
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Range
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.Tast
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Range
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.TcGlobals
 
 // Implementation details used by other code in the compiler    
 type internal SymbolEnv = 
@@ -47,7 +49,7 @@ type public FSharpAccessibility =
 /// Acquired via GetDisplayEnvAtLocationAlternate and similar methods. May be passed 
 /// to the Format method on FSharpType and other methods.
 type [<Class>] public FSharpDisplayContext = 
-    internal new : denv: (TcGlobals -> Tastops.DisplayEnv) -> FSharpDisplayContext
+    internal new : denv: (TcGlobals -> DisplayEnv) -> FSharpDisplayContext
     static member Empty: FSharpDisplayContext
 
     member WithShortTypeNames: bool -> FSharpDisplayContext
@@ -1071,7 +1073,7 @@ type public FSharpOpenDeclaration =
 type public FSharpSymbolUse = 
 
     // For internal use only
-    internal new : g:TcGlobals * denv: Tastops.DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
+    internal new : g:TcGlobals * denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
     /// The symbol referenced
     member Symbol : FSharpSymbol 

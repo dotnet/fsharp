@@ -3,10 +3,10 @@
 /// API for declaration lists and method overload lists
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Range
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.Range
+open FSharp.Compiler.TypedASTOps
 
 [<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.

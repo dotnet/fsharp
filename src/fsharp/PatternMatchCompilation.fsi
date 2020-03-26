@@ -4,8 +4,8 @@ module internal FSharp.Compiler.PatternMatchCompilation
 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Range
 
@@ -44,7 +44,7 @@ and PatternValBinding =
 and TypedMatchClause =  
     | TClause of Pattern * Expr option * DecisionTreeTarget * range
 
-val ilFieldToTastConst: ILFieldInit -> Tast.Const
+val ilFieldToTastConst: ILFieldInit -> Const
 
 /// Compile a pattern into a decision tree and a set of targets.
 val internal CompilePattern: 

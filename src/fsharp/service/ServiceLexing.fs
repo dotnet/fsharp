@@ -8,9 +8,10 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open System.Collections.Generic
+
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
@@ -18,6 +19,7 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Range
+
 open Internal.Utilities
 
 type Position = int * int

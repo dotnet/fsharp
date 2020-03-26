@@ -17,9 +17,13 @@ open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.Range
 
 type ShortIdent = string
+
 type Idents = ShortIdent[]
+
 type MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
+
 type MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
+
 type IsAutoOpen = bool
 
 [<AutoOpen>]
@@ -114,6 +118,7 @@ type AssemblySymbol =
       Symbol: FSharpSymbol
       Kind: LookupType -> EntityKind
       UnresolvedSymbol: UnresolvedSymbol }
+
     override x.ToString() = sprintf "%A" x  
 
 type AssemblyPath = string

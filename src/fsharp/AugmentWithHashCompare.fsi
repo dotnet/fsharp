@@ -4,7 +4,7 @@
 module internal FSharp.Compiler.AugmentWithHashCompare 
 
 open FSharp.Compiler 
-open FSharp.Compiler.Tast
+open FSharp.Compiler.TypedAST
 open FSharp.Compiler.TcGlobals
 
 val CheckAugmentationAttribs : bool -> TcGlobals -> Import.ImportMap -> Tycon -> unit

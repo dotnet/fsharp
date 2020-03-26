@@ -386,23 +386,26 @@
     <Compile Include="..\CompilerGlobalState.fs">
       <Link>TypedAST\CompilerGlobalState.fs</Link>
     </Compile>
-    <Compile Include="..\tast.fs">
-      <Link>TypedAST\tast.fs</Link>
+    <Compile Include="..\TypedAST.fs">
+      <Link>TypedAST\TypedAST.fs</Link>
+    </Compile>
+    <Compile Include="..\TypedASTBasics.fs">
+      <Link>TypedAST\TypedASTBasics.fs</Link>
     </Compile>
     <Compile Include="..\TcGlobals.fs">
       <Link>TypedAST\TcGlobals.fs</Link>
     </Compile>
-    <Compile Include="..\TastOps.fsi">
-      <Link>TypedAST\TastOps.fsi</Link>
+    <Compile Include="..\TypedASTOps.fsi">
+      <Link>TypedAST\TypedASTOps.fsi</Link>
     </Compile>
-    <Compile Include="..\TastOps.fs">
-      <Link>TypedAST\TastOps.fs</Link>
+    <Compile Include="..\TypedASTOps.fs">
+      <Link>TypedAST\TypedASTOps.fs</Link>
     </Compile>
-    <Compile Include="..\TastPickle.fsi">
-      <Link>TypedAST\TastPickle.fsi</Link>
+    <Compile Include="..\TypedASTPickle.fsi">
+      <Link>TypedAST\.TypedASTPickle.fsi</Link>
     </Compile>
-    <Compile Include="..\TastPickle.fs">
-      <Link>TypedAST\TastPickle.fs</Link>
+    <Compile Include="..\TypedASTPickle.fs">
+      <Link>TypedAST\.TypedASTPickle.fs</Link>
     </Compile>
     <Compile Include="..\import.fsi">
       <Link>Logic\import.fsi</Link>
@@ -654,9 +657,6 @@
     </Compile>
     <Compile Include="..\service\ServiceXmlDocParser.fs">
       <Link>Service/ServiceXmlDocParser.fs</Link>
-    </Compile>
-    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
-      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
     <Compile Include="..\service\ExternalSymbol.fsi">
       <Link>Service/ExternalSymbol.fsi</Link>

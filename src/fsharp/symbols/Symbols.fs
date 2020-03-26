@@ -17,9 +17,10 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTBasics
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedASTOps
 open FSharp.Compiler.XmlDoc
 
 open Internal.Utilities

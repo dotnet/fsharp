@@ -3,11 +3,12 @@
 /// Functions to import .NET binary metadata as TAST objects
 module internal FSharp.Compiler.Import
 
-open FSharp.Compiler.Tast
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Range
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Range
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedAST
+
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif

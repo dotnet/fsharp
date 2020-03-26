@@ -9,8 +9,9 @@ open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTBasics
+open FSharp.Compiler.TypedASTOps
 open FSharp.Compiler.QuotationTranslator
 open FSharp.Compiler.TypeRelations
 
@@ -960,7 +961,7 @@ module FSharpExprConvert =
                 elif enclosingEntity.IsRecordTycon then
                     if isProp then
                         let name = PrettyNaming.ChopPropertyName vName                                    
-                        let projR = ConvRecdFieldRef cenv (RFRef(tcref, name))
+                        let projR = ConvRecdFieldRef cenv (RecdFieldRef(tcref, name))
                         let objR = ConvLValueExpr cenv env callArgs.Head
                         if isPropGet then
                             E.FSharpFieldGet(Some objR, typR, projR)
@@ -978,18 +979,18 @@ module FSharpExprConvert =
                         E.UnionCaseTag(objR, typR) 
                     elif vName.StartsWithOrdinal("New") then
                         let name = vName.Substring 3
-                        let mkR = ConvUnionCaseRef cenv (UCRef(tcref, name))
+                        let mkR = ConvUnionCaseRef cenv (UnionCaseRef(tcref, name))
                         let argsR = ConvExprs cenv env callArgs
                         E.NewUnionCase(typR, mkR, argsR)
                     elif vName.StartsWithOrdinal("Is") then
                         let name = vName.Substring 2
-                        let mkR = ConvUnionCaseRef cenv (UCRef(tcref, name))
+                        let mkR = ConvUnionCaseRef cenv (UnionCaseRef(tcref, name))
                         let objR = ConvExpr cenv env callArgs.Head
                         E.UnionCaseTest(objR, typR, mkR)
                     else 
                         match subClass with
                         | Some name ->
-                            let ucref = UCRef(tcref, name)
+                            let ucref = UnionCaseRef(tcref, name)
                             let mkR = ConvUnionCaseRef cenv ucref
                             let objR = ConvLValueExpr cenv env callArgs.Head
                             let projR = FSharpField(cenv, ucref, ucref.Index)
@@ -1045,7 +1046,7 @@ module FSharpExprConvert =
                 let isStatic = isCtor || ilMethRef.CallingConv.IsStatic
                 let scoref = ilMethRef.DeclaringTypeRef.Scope
                 let typars1 = tcref.Typars m
-                let typars2 = [ 1 .. ilMethRef.GenericArity ] |> List.map (fun _ -> NewRigidTypar "T" m)
+                let typars2 = [ 1 .. ilMethRef.GenericArity ] |> List.map (fun _ -> Construct.NewRigidTypar "T" m)
                 let tinst1 = typars1 |> generalizeTypars
                 let tinst2 = typars2 |> generalizeTypars
                 // TODO: this will not work for curried methods in F# classes.

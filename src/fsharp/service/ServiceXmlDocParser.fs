@@ -3,6 +3,8 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.Range
 open FSharp.Compiler.Text
 open FSharp.Compiler.XmlDoc
 
@@ -11,8 +13,6 @@ type XmlDocable =
     | XmlDocable of line:int * indent:int * paramNames:string list
 
 module XmlDocParsing =
-    open FSharp.Compiler.Range
-    open FSharp.Compiler.AbstractSyntax
         
     let (|ConstructorPats|) = function
         | Pats ps -> ps

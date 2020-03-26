@@ -11,8 +11,9 @@ open FSharp.Compiler
 open FSharp.Compiler.Rational
 open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTBasics
+open FSharp.Compiler.TypedASTOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
@@ -734,8 +735,8 @@ module private PrintTypes =
             | _ -> 
                 squareAngleL (sepListL (rightL (tagPunctuation ";")) (List.map (layoutAttrib denv) attrs)) @@ 
                 restL
-        elif Tastops.isStructRecordOrUnionTyconTy denv.g ty || 
-            ((Tastops.isUnionTy denv.g ty || Tastops.isRecdTy denv.g ty) && HasFSharpAttribute denv.g denv.g.attrib_StructAttribute attrs) then
+        elif isStructRecordOrUnionTyconTy denv.g ty || 
+            ((isUnionTy denv.g ty || isRecdTy denv.g ty) && HasFSharpAttribute denv.g denv.g.attrib_StructAttribute attrs) then
             squareAngleL (wordL (tagClass "Struct")) @@ restL
         else
             match kind with 
@@ -949,7 +950,7 @@ module private PrintTypes =
         | TType_app (tc, args) -> 
           layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
 
-        | TType_ucase (UCRef(tc, _), args) -> 
+        | TType_ucase (UnionCaseRef(tc, _), args) -> 
           layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
 
         // Layout a tuple type 
@@ -2124,7 +2125,7 @@ module private PrintData =
             let lay fs x = (wordL (tagRecordField fs.rfield_id.idText) ^^ sepL (tagPunctuation "=")) --- (dataExprL denv x)
             leftL (tagPunctuation "{") ^^ semiListL (List.map2 lay fields xs) ^^ rightL (tagPunctuation "}")
 
-        | Expr.Op (TOp.ValFieldGet (RecdFieldRef.RFRef (tcref, name)), _, _, _) ->
+        | Expr.Op (TOp.ValFieldGet (RecdFieldRef.RecdFieldRef (tcref, name)), _, _, _) ->
             (layoutTyconRef denv tcref) ^^ sepL (tagPunctuation ".") ^^ wordL (tagField name)
 
         | Expr.Op (TOp.Array, [_], xs, _) -> leftL (tagPunctuation "[|") ^^ semiListL (dataExprsL denv xs) ^^ RightL.rightBracketBar

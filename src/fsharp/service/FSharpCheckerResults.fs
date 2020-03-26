@@ -19,6 +19,7 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Layout
@@ -28,8 +29,8 @@ open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTOps
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
 open FSharp.Compiler.Infos
@@ -1658,7 +1659,8 @@ module internal ParseAndCheckFile =
                     return result
                 with e ->
                     errorR e
-                    return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [NewEmptyModuleOrNamespaceType Namespace]), tcState)
+                    let mty = Construct.NewEmptyModuleOrNamespaceType Namespace
+                    return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
             }
                 
         let errors = errHandler.CollectedDiagnostics

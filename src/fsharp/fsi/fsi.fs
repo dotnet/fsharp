@@ -33,6 +33,7 @@ open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
@@ -47,8 +48,8 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.ReferenceResolver
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TypeChecker
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedASTOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.XmlDoc
