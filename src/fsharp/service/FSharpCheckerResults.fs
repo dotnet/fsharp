@@ -364,21 +364,21 @@ type internal TypeCheckInfo
     let GetExprTypingForPosition(endOfExprPos) = 
         let quals = 
             sResolutions.CapturedExpressionTypings 
-            |> Seq.filter (fun (pos,ty,nenv,_,_) -> 
+            |> Seq.filter (fun (ty,nenv,_,m) -> 
                     // We only want expression types that end at the particular position in the file we are looking at.
-                    let isLocationWeCareAbout = posEq pos endOfExprPos
+                    posEq m.End endOfExprPos &&
+
                     // Get rid of function types.  True, given a 2-arg curried function "f x y", it is legal to do "(f x).GetType()",
                     // but you almost never want to do this in practice, and we choose not to offer up any intellisense for 
                     // F# function types.
-                    let isFunction = isFunTy nenv.DisplayEnv.g ty
-                    isLocationWeCareAbout && not isFunction)
+                    not (isFunTy nenv.DisplayEnv.g ty))
             |> Seq.toArray
 
         let thereWereSomeQuals = not (Array.isEmpty quals)
         // filter out errors
 
         let quals = quals 
-                    |> Array.filter (fun (_,ty,nenv,_,_) ->
+                    |> Array.filter (fun (ty,nenv,_,_) ->
                         let denv = nenv.DisplayEnv
                         not (isTyparTy denv.g ty && (destTyparTy denv.g ty).IsFromError))
         thereWereSomeQuals, quals
@@ -391,11 +391,11 @@ type internal TypeCheckInfo
             match quals with
             | [||] -> None
             | quals ->  
-                quals |> Array.tryFind (fun (_,_,_,_,rq) -> 
+                quals |> Array.tryFind (fun (_,_,_,rq) -> 
                                             ignore(r)  // for breakpoint
                                             posEq r.Start rq.Start)
         match bestQual with
-        | Some (_,ty,nenv,ad,m) when isRecdTy nenv.DisplayEnv.g ty ->
+        | Some (ty,nenv,ad,m) when isRecdTy nenv.DisplayEnv.g ty ->
             let items = NameResolution.ResolveRecordOrClassFieldsOfType ncenv m ad ty false
             Some (items, nenv.DisplayEnv, m)
         | _ -> None
@@ -426,7 +426,7 @@ type internal TypeCheckInfo
                             // If not, then the stale typecheck info does not have a capturedExpressionTyping for this exact expression, and the
                             // user can wait for typechecking to catch up and second-chance intellisense to give the right result.
                             let qual = 
-                                quals |> Array.tryFind (fun (_,_,_,_,r) -> 
+                                quals |> Array.tryFind (fun (_,_,_,r) -> 
                                                             ignore(r)  // for breakpoint
                                                             posEq exprRange.Start r.Start)
                             qual, false
@@ -439,7 +439,7 @@ type internal TypeCheckInfo
 
             match bestQual with
             | Some bestQual ->
-                let (_,ty,nenv,ad,m) = bestQual 
+                let (ty,nenv,ad,m) = bestQual 
                 let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m traitCtxtNone)) m ad false ty 
                 let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g
@@ -871,7 +871,9 @@ type internal TypeCheckInfo
                     None
                 | _ ->
                     let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
-                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols)
+                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue,
+                        residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads,
+                        hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols)
         
         res |> Option.map (fun (items, denv, m) -> items, denv, completionContext, m)
 
@@ -1996,7 +1998,9 @@ type FSharpCheckProjectResults
           tcConfigOption: TcConfig option, 
           keepAssemblyContents: bool, 
           errors: FSharpErrorInfo[], 
-          details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list * TopAttribs option * CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef * AccessorDomain * TypedImplFile list option * string[]) option) =
+          details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
+                   TopAttribs option * CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef *
+                   AccessorDomain * TypedImplFile list option * string[]) option) =
 
     let getDetails() = 
         match details with 

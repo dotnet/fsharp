@@ -1482,7 +1482,7 @@ type FormatStringCheckContext =
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
     abstract NotifyEnvWithScope: range * NameResolutionEnv * AccessorDomain -> unit
-    abstract NotifyExprHasType: pos * TType * NameResolutionEnv * AccessorDomain * range -> unit
+    abstract NotifyExprHasType: TType * NameResolutionEnv * AccessorDomain * range -> unit
     abstract NotifyNameResolution: pos * item: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
     abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
     abstract NotifyFormatSpecifierLocation: range * int -> unit
@@ -1710,7 +1710,7 @@ type CapturedNameResolution(i: Item, tpinst, io: ItemOccurence, nre: NameResolut
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcResolutions
     (capturedEnvs: ResizeArray<range * NameResolutionEnv * AccessorDomain>,
-     capturedExprTypes: ResizeArray<pos * TType * NameResolutionEnv * AccessorDomain * range>,
+     capturedExprTypes: ResizeArray<TType * NameResolutionEnv * AccessorDomain * range>,
      capturedNameResolutions: ResizeArray<CapturedNameResolution>,
      capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>) =
 
@@ -1841,9 +1841,9 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
             if allowedRange m then
                 capturedEnvs.Add((m, nenv, ad))
 
-        member sink.NotifyExprHasType(endPos, ty, nenv, ad, m) =
+        member sink.NotifyExprHasType(ty, nenv, ad, m) =
             if allowedRange m then
-                capturedExprTypings.Add((endPos, ty, nenv, ad, m))
+                capturedExprTypings.Add((ty, nenv, ad, m))
 
         member sink.NotifyNameResolution(endPos, item, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
@@ -1916,7 +1916,7 @@ let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item,
 let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyExprHasType(m.End, ty, nenv, ad, m)
+    | Some sink -> sink.NotifyExprHasType(ty, nenv, ad, m)
 
 let CallOpenDeclarationSink (sink: TcResultsSink) (openDeclaration: OpenDeclaration) =
     match sink.CurrentSink with

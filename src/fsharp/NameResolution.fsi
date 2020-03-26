@@ -35,10 +35,6 @@ type ArgumentContainer =
     /// The named argument is a static parameter to a provided type.
     | Type of TyconRef
 
-//---------------------------------------------------------------------------
-// 
-//------------------------------------------------------------------------- 
-
 /// Detect a use of a nominal type, including type abbreviations.
 /// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols.
 val (|AbbrevOrAppTy|_|) : TType -> TyconRef option
@@ -346,7 +342,7 @@ type internal TcResolutions =
 
     /// Information of exact types found for expressions, that can be to the left of a dot.
     /// typ - the inferred type for an expression
-    member CapturedExpressionTypings : ResizeArray<pos * TType * NameResolutionEnv * AccessorDomain * range>
+    member CapturedExpressionTypings : ResizeArray<TType * NameResolutionEnv * AccessorDomain * range>
 
     /// Exact name resolutions
     member CapturedNameResolutions : ResizeArray<CapturedNameResolution>
@@ -417,7 +413,7 @@ type ITypecheckResultsSink =
     abstract NotifyEnvWithScope   : range * NameResolutionEnv * AccessorDomain -> unit
 
     /// Record that an expression has a specific type at the given range.
-    abstract NotifyExprHasType    : pos * TType * NameResolutionEnv * AccessorDomain * range -> unit
+    abstract NotifyExprHasType    : TType * NameResolutionEnv * AccessorDomain * range -> unit
 
     /// Record that a name resolution occurred at a specific location in the source
     abstract NotifyNameResolution : pos * Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool -> unit

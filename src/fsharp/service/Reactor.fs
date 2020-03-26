@@ -5,7 +5,7 @@ open System
 open System.Diagnostics
 open System.Globalization
 open System.Threading
-open Microsoft.FSharp.Control
+open FSharp.Control
 open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL.Internal.Library
 
@@ -18,10 +18,13 @@ type internal IReactorOperations =
 type internal ReactorCommands = 
     /// Kick off a build.
     | SetBackgroundOp of ( (* userOpName: *) string * (* opName: *) string * (* opArg: *) string * (CompilationThreadToken -> CancellationToken -> bool)) option
+
     /// Do some work not synchronized in the mailbox.
     | Op of userOpName: string * opName: string * opArg: string * CancellationToken * (CompilationThreadToken -> unit) * (unit -> unit)
+
     /// Finish the background building
     | WaitForBackgroundOpCompletion of AsyncReplyChannel<unit>            
+
     /// Finish all the queued ops
     | CompleteAllQueuedOps of AsyncReplyChannel<unit>            
         

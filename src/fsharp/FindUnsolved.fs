@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-
 /// Find unsolved, uninstantiated type variables
 module internal FSharp.Compiler.FindUnsolved
 

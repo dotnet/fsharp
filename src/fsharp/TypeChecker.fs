@@ -1897,7 +1897,7 @@ let MakeAndPublishSimpleValsForMergedScope cenv env m (names: NameMap<_>) =
                         member this.NotifyMethodGroupNameResolution(pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing) =
                             notifyNameResolution (pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing)
 
-                        member this.NotifyExprHasType(_, _, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
+                        member this.NotifyExprHasType(_, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
                         member this.NotifyFormatSpecifierLocation(_, _) = ()
                         member this.NotifyOpenDeclaration(_) = ()
                         member this.CurrentSourceText = None 
@@ -8641,7 +8641,11 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 match compClausesExpr with 
                 
                 // Detect one custom operation... This clause will always match at least once...
-                | OptionalSequential (CustomOperationClause (nm, (opName, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _, methInfo), opExpr, mClause, optionalIntoPat), optionalCont) ->
+                | OptionalSequential
+                      (CustomOperationClause
+                          (nm, (opName, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _, methInfo),
+                           opExpr, mClause, optionalIntoPat),
+                       optionalCont) ->
 
                     // Record the resolution of the custom operation for posterity
                     let item = Item.CustomOperation (opName, (fun () -> customOpUsageText nm), Some methInfo)
@@ -11989,7 +11993,11 @@ and AnalyzeRecursiveInstanceMemberDecl
      | _ -> 
          error(Error(FSComp.SR.tcRecursiveBindingsWithMembersMustBeDirectAugmentation(), mBinding)) 
 
-and AnalyzeRecursiveDecl (cenv, envinner, tpenv, declKind, synTyparDecls, declaredTypars, thisIdOpt, valSynInfo, flex, newslotsOK, overridesOK, vis1, declPattern, bindingAttribs, tcrefContainerInfo, memberFlagsOpt, ty, bindingRhs, mBinding) =
+and AnalyzeRecursiveDecl (cenv, envinner, tpenv, declKind, synTyparDecls, declaredTypars,
+                          thisIdOpt, valSynInfo, flex, newslotsOK, overridesOK, vis1,
+                          declPattern, bindingAttribs, tcrefContainerInfo,
+                          memberFlagsOpt, ty, bindingRhs, mBinding) =
+
     let rec analyzeRecursiveDeclPat tpenv p = 
         match p with  
         | SynPat.FromParseError(pat', _) -> analyzeRecursiveDeclPat tpenv pat'
@@ -12676,7 +12684,10 @@ let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memF
 
             let flex = ExplicitTyparInfo(declaredTypars, declaredTypars, synCanInferTypars)
             
-            let generalizedTypars = GeneralizationHelpers.ComputeAndGeneralizeGenericTypars(cenv, denv, id.idRange, emptyFreeTypars, canInferTypars, CanGeneralizeConstrainedTypars, inlineFlag, None, allDeclaredTypars, freeInType, ty, false)
+            let generalizedTypars =
+                GeneralizationHelpers.ComputeAndGeneralizeGenericTypars(cenv, denv, id.idRange,
+                    emptyFreeTypars, canInferTypars, CanGeneralizeConstrainedTypars, inlineFlag,
+                    None, allDeclaredTypars, freeInType, ty, false)
             
             let valscheme1 = PrelimValScheme1(id, flex, ty, Some partialValReprInfo, memberInfoOpt, mutableFlag, inlineFlag, NormalVal, noArgOrRetAttribs, vis, false)
 
@@ -17204,7 +17215,10 @@ module TcDeclarations =
     /// Bind a collection of mutually recursive declarations in a signature file
     let TcMutRecSignatureDecls cenv envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecSigs: MutRecSigsInitialData) =
         let mutRecSigsAfterSplit = mutRecSigs |> MutRecShapes.mapTycons SplitTyconSignature
-        let _tycons, envMutRec, mutRecDefnsAfterCore = EstablishTypeDefinitionCores.TcMutRecDefns_Phase1 (fun containerInfo valDecl -> (containerInfo, valDecl)) cenv envInitial parent typeNames true tpenv m scopem mutRecNSInfo mutRecSigsAfterSplit
+        let _tycons, envMutRec, mutRecDefnsAfterCore =
+            EstablishTypeDefinitionCores.TcMutRecDefns_Phase1
+                (fun containerInfo valDecl -> (containerInfo, valDecl))
+                cenv envInitial parent typeNames true tpenv m scopem mutRecNSInfo mutRecSigsAfterSplit
 
         // Updates the types of the modules to contain the contents so far, which now includes values and members
         MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecNSInfo mutRecDefnsAfterCore

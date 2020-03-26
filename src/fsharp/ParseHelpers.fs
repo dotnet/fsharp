@@ -2,7 +2,10 @@
 
 module public FSharp.Compiler.ParseHelpers
 
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Range
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.XmlDoc
@@ -181,3 +184,51 @@ type LexerWhitespaceContinuation =
 
 and LexCont = LexerWhitespaceContinuation
 
+//------------------------------------------------------------------------
+// Parse IL assembly code
+//------------------------------------------------------------------------
+
+let internal internalParseAssemblyCodeInstructions s isFeatureSupported m =
+#if NO_INLINE_IL_PARSER
+    ignore s
+    ignore isFeatureSupported
+
+    errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
+    [| |]
+#else
+    try
+        FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilInstrs
+           FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
+           (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
+    with _ ->
+      errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
+#endif
+
+let ParseAssemblyCodeInstructions s m =
+    // Public API can not answer the isFeatureSupported questions, so here we support everything
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+    internalParseAssemblyCodeInstructions s isFeatureSupported m
+
+let internal internalParseAssemblyCodeType s isFeatureSupported m =
+    ignore s
+    ignore isFeatureSupported
+
+#if NO_INLINE_IL_PARSER
+    errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
+    IL.EcmaMscorlibILGlobals.typ_Object
+#else
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+    try
+        FSharp.Compiler.AbstractIL.Internal.AsciiParser.ilType
+           FSharp.Compiler.AbstractIL.Internal.AsciiLexer.token
+           (UnicodeLexing.StringAsLexbuf(isFeatureSupported, s))
+    with RecoverableParseError ->
+      errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));
+      IL.EcmaMscorlibILGlobals.typ_Object
+#endif
+
+/// Helper for parsing the inline IL fragments.
+let ParseAssemblyCodeType s m =
+    // Public API can not answer the isFeatureSupported questions, so here we support everything
+    let isFeatureSupported (_featureId:LanguageFeature) = true
+    internalParseAssemblyCodeType s isFeatureSupported m

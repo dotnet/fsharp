@@ -24,12 +24,16 @@ open FSharp.Compiler.ExtensionTyping
 
 
 exception RequiredButNotSpecified of DisplayEnv * Tast.ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
-exception ValueNotContained       of DisplayEnv * Tast.ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
-exception ConstrNotContained      of DisplayEnv * UnionCase * UnionCase * (string * string -> string)
-exception ExnconstrNotContained   of DisplayEnv * Tycon * Tycon * (string * string -> string)
-exception FieldNotContained       of DisplayEnv * RecdField * RecdField * (string * string -> string)
-exception InterfaceNotRevealed    of DisplayEnv * TType * range
 
+exception ValueNotContained of DisplayEnv * Tast.ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
+
+exception ConstrNotContained of DisplayEnv * UnionCase * UnionCase * (string * string -> string)
+
+exception ExnconstrNotContained of DisplayEnv * Tycon * Tycon * (string * string -> string)
+
+exception FieldNotContained of DisplayEnv * RecdField * RecdField * (string * string -> string)
+
+exception InterfaceNotRevealed of DisplayEnv * TType * range
 
 // Use a type to capture the constant, common parameters 
 type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) = 
@@ -400,14 +404,6 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                    else true
 
             | _ -> false
-
-        // -------------------------------------------------------------------------------
-        // WARNING!!!!
-        // checkRecordFields and checkRecordFieldsForExn are the EXACT SAME FUNCTION.
-        // The only difference is the signature for err - this is because err is a function
-        // that reports errors, and checkRecordFields is called with a different
-        // sig for err then checkRecordFieldsForExn.
-        // -------------------------------------------------------------------------------
 
         and checkRecordFields m aenv (implTycon: Tycon) (implFields: TyconRecdFields) (sigFields: TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList
