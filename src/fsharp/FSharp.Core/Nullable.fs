@@ -75,6 +75,7 @@ module NullableOperators =
 
     let inline ( ?/? ) (x : Nullable<_>) (y: Nullable<_>) = if x.HasValue && y.HasValue then Nullable(x.Value / y.Value) else Nullable()
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module Nullable =
     [<CompiledName("ToUInt8")>]

@@ -109,6 +109,7 @@ module NullableOperators =
     val inline ( ?/? ) : Nullable< ^T1 > -> Nullable< ^T2 >  -> Nullable< ^T3 > when (^T1 or ^T2) : (static member ( / ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
 /// Functions for converting nullable values
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module Nullable =
 
