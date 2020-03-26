@@ -20,10 +20,9 @@ open FSharp.Compiler.ErrorLogger
 //----------------------------------------------------------------------------
 // Object model for diagnostics
 
-
 [<RequireQualifiedAccess>]
 type public FSharpErrorSeverity = 
-| Warning 
+    | Warning 
     | Error
 
 [<Class>]
@@ -90,7 +89,6 @@ type public FSharpToolTipElement<'T> =
 /// A single data tip display element with where text is expressed as string
 type public FSharpToolTipElement = FSharpToolTipElement<string>
 
-
 /// A single data tip display element with where text is expressed as <see cref="Layout"/>
 type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
 
@@ -106,7 +104,6 @@ type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
 
 //----------------------------------------------------------------------------
 // Object model for completion list entries (one of several in the API...)
-
 
 [<RequireQualifiedAccess>]
 type public CompletionItemKind =

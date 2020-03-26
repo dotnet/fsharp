@@ -218,7 +218,6 @@ let mkRecdCompare g tcref (tycon: Tycon) =
     let thatv, expr = mkThatVarBind g m ty thataddrv expr
     thisv, thatv, expr
 
-
 /// Build the comparison implementation for a record type when parameterized by a comparer
 let mkRecdCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_, thate) compe = 
     let m = tycon.Range 
@@ -243,7 +242,6 @@ let mkRecdCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_, thate) 
     // will be optimized away if not necessary
     let expr = mkCompGenLet m tcv thate expr
     expr    
-
 
 /// Build the .Equals(that) equality implementation wrapper for a record type 
 let mkRecdEquality g tcref (tycon: Tycon) = 
@@ -312,7 +310,6 @@ let mkExnEquality (g: TcGlobals) exnref (exnc: Tycon) =
 
     let expr = mkBindThatNullEquals g m thise thate expr
     thisv, thatv, expr
-    
     
 /// Build the equality implementation for an exception definition when parameterized by a comparer
 let mkExnEqualityWithComparer g exnref (exnc: Tycon) (_thisv, thise) thatobje (thatv, thate) compe = 
@@ -745,10 +742,9 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
 
     // [<NoEquality; NoComparison>] on anything
     | _, _, Some true, None, None, None, Some true, None, None ->
-
         () 
 
-    (* THESE ARE THE ERROR CASES *)
+    // THESE ARE THE ERROR CASES
 
     // [<NoEquality; ...>] 
     | _, _, Some true, _, _, _, None, _, _ ->

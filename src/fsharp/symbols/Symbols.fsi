@@ -16,8 +16,8 @@ open FSharp.Compiler.NameResolution
 
 // Implementation details used by other code in the compiler    
 type internal SymbolEnv = 
-    new: TcGlobals * thisCcu:CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports -> SymbolEnv
-    new: TcGlobals * thisCcu:CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports * amap: ImportMap * infoReader: InfoReader -> SymbolEnv
+    new: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports -> SymbolEnv
+    new: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports * amap: ImportMap * infoReader: InfoReader -> SymbolEnv
     member amap: ImportMap
     member g: TcGlobals
 
@@ -1108,4 +1108,4 @@ type public FSharpSymbolUse =
     member RangeAlternate: range
 
     /// Indicates if the FSharpSymbolUse is declared as private
-    member IsPrivateToFile : bool 
+    member IsPrivateToFile: bool 

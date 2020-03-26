@@ -4,9 +4,10 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Range
+open FSharp.Compiler.Import
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Range
+open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
 
 /// A kind that determines what range in a source's text is semantically classified as after type-checking.
@@ -36,4 +37,4 @@ module internal TcResolutionsExtensions =
 
     type TcResolutions with
 
-        member GetSemanticClassification: g: TcGlobals * amap: Import.ImportMap * formatSpecifierLocations: (range * int) [] * range: range option -> struct(range * SemanticClassificationType) []
+        member GetSemanticClassification: g: TcGlobals * amap: ImportMap * formatSpecifierLocations: (range * int) [] * range: range option -> struct(range * SemanticClassificationType) []

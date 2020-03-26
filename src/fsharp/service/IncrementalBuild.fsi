@@ -18,8 +18,11 @@ open FSharp.Compiler.SourceCodeServices
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
+
     member Get : CompilationThreadToken * TcConfig -> Cancellable<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
+
     member Clear: CompilationThreadToken -> unit
+
     member Downsize: CompilationThreadToken -> unit
   
 /// Used for unit testing
@@ -35,10 +38,14 @@ module internal IncrementalBuilderEventTesting =
 
 /// Represents the state in the incremental graph associated with checking a file
 type internal PartialCheckResults = 
-    { /// This field is None if a major unrecovered error occurred when preparing the initial state
+    {
+      /// This field is None if a major unrecovered error occurred when preparing the initial state
       TcState : TcState
+
       TcImports: TcImports 
+
       TcGlobals: TcGlobals 
+
       TcConfig: TcConfig 
 
       /// This field is None if a major unrecovered error occurred when preparing the initial state
@@ -77,7 +84,8 @@ type internal PartialCheckResults =
       ItemKeyStore: ItemKeyStore option
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      SemanticClassification: struct (range * SemanticClassificationType) [] }
+      SemanticClassification: struct (range * SemanticClassificationType) []
+    }
 
     member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
 
@@ -252,10 +260,13 @@ module internal IncrementalBuild =
     /// Only required for unit testing.
     type BuildDescriptionScope = 
         new : unit -> BuildDescriptionScope
+
         /// Declare a named scalar output.
         member DeclareScalarOutput : output:Scalar<'T> -> unit
+
         /// Declare a named vector output.
         member DeclareVectorOutput : output:Vector<'T> -> unit
+
         /// Set the concrete inputs for this build. 
         member GetInitialPartialBuild : vectorinputs: BuildInput list -> PartialBuild
 

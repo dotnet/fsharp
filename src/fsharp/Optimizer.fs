@@ -1,12 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-//-------------------------------------------------------------------------
-// The F# expression simplifier. The main aim is to inline simple, known functions
-// and constant values, and to eliminate non-side-affecting bindings that 
-// are never used.
-//------------------------------------------------------------------------- 
-
-
+/// The F# expression simplifier. The main aim is to inline simple, known functions
+/// and constant values, and to eliminate non-side-affecting bindings that 
+/// are never used.
 module internal FSharp.Compiler.Optimizer
 
 open Internal.Utilities
