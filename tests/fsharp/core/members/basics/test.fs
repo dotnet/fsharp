@@ -3038,6 +3038,7 @@ module ContraintTest = begin
     open System.Numerics
     let check s p = printf "Test %s: %s\n" s (if p then "pass" else "fail")
     do check "d3oc001" (LanguagePrimitives.GenericZero<BigInteger> = 0I)
+    do check "d3oc002" (LanguagePrimitives.GenericZero<char> = '\000')
     do check "d3oc003a" (LanguagePrimitives.GenericZero<int> = 0)
     do check "d3oc003b" (LanguagePrimitives.GenericZero<unativeint> = 0un)
     do check "d3oc003c" (LanguagePrimitives.GenericZero<uint64> = 0UL)
