@@ -26,18 +26,15 @@ type public FSharpErrorSeverity =
 | Warning 
     | Error
 
-module FSharpErrorInfo =
-    [<Literal>] val ObsoleteMessage: string = "Use FSharpErrorInfo.Range. This API will be removed in a future update."
-
 [<Class>]
 type public FSharpErrorInfo = 
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member FileName: string
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member Start: pos
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member End: pos
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member StartLineAlternate: int
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member EndLineAlternate: int
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member StartColumn: int
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member EndColumn: int
+    member FileName: string
+    member Start: pos
+    member End: pos
+    member StartLineAlternate: int
+    member EndLineAlternate: int
+    member StartColumn: int
+    member EndColumn: int
 
     member Range: range
     member Severity: FSharpErrorSeverity
