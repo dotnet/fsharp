@@ -4958,11 +4958,13 @@ type CcuThunk =
       name: CcuReference
     }
 
+    /// Dereference the asssembly reference 
     member ccu.Deref = 
         if isNull (ccu.target :> obj) || ccu.orphanfixup then 
             raise(UnresolvedReferenceNoRange ccu.name)
         ccu.target
    
+    /// Indicates if this assembly reference is unresolved
     member ccu.IsUnresolvedReference = isNull (ccu.target :> obj) || ccu.orphanfixup
 
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.
@@ -4976,22 +4978,24 @@ type CcuThunk =
         with get() = ccu.Deref.UsesFSharp20PlusQuotations 
         and set v = ccu.Deref.UsesFSharp20PlusQuotations <- v
 
+    /// The short name of the asssembly being referenced
     member ccu.AssemblyName = ccu.name
 
     /// Holds the data indicating how this assembly/module is referenced from the code being compiled. 
     member ccu.ILScopeRef = ccu.Deref.ILScopeRef
 
-    /// A unique stamp for this DLL 
+    /// A unique stamp for this assembly
     member ccu.Stamp = ccu.Deref.Stamp
 
-    /// Holds the filename for the DLL, if any 
+    /// Holds the filename for the assembly, if any 
     member ccu.FileName = ccu.Deref.FileName
 
-    /// Try to get the .NET Assembly, if known. May not be present for `IsFSharp` for in-memory cross-project references
+    /// Try to get the .NET Assembly, if known. May not be present for `IsFSharp` for
+    /// in-memory cross-project references
     member ccu.TryGetILModuleDef() = ccu.Deref.TryGetILModuleDef()
 
 #if !NO_EXTENSIONTYPING
-    /// Is the CCu an EST injected assembly
+    /// Is this a provider-injected assembly
     member ccu.IsProviderGenerated = ccu.Deref.IsProviderGenerated
 
     /// Used to make 'forward' calls into the loader during linking
@@ -5061,7 +5065,6 @@ type CcuThunk =
         match ccu.TypeForwarders.TryGetValue key with
         | true, entity -> Some(entity.Force())
         | _ -> None
-        //printfn "trying to forward %A :: %s from ccu '%s', res = '%A'" p n ccu.AssemblyName res.IsSome
 
     /// Used to make forward calls into the type/assembly loader when comparing member signatures during linking
     member ccu.MemberSignatureEquality(ty1: TType, ty2: TType) = 
