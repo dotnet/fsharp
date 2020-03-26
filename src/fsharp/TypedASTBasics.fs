@@ -414,7 +414,7 @@ let primUnionCaseRefEq compilingFslib fslibCcu (UnionCaseRef(tcr1, c1) as uc1) (
 let primValRefEq compilingFslib fslibCcu (x: ValRef) (y: ValRef) =
     x === y ||
     if (x.IsResolved && y.IsResolved && x.ResolvedTarget === y.ResolvedTarget) ||
-       (x.IsLocalRef && y.IsLocalRef && valEq x.PrivateTarget y.PrivateTarget) then
+       (x.IsLocalRef && y.IsLocalRef && valEq x.ResolvedTarget y.ResolvedTarget) then
         true
     else
            (// Use TryDeref to guard against the platforms/times when certain F# language features aren't available,
