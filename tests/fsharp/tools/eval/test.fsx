@@ -1193,36 +1193,35 @@ module EvaluationTests =
 
     module InlinedOperationsStillDynamicallyAvailableTests = 
 
-        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<chat> @>)  '\000'
-        checkEval "vroievr093" (<@ LanguagePrimitives.GenericZero<sbyte> @>)  0y
-        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<int16> @>)  0s
-        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<int32> @>)  0
-        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<int64> @>)  0L
-        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<nativeint> @>)  0n
-        checkEval "vroievr093" (<@ LanguagePrimitives.GenericZero<byte> @>)  0uy
-        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<uint16> @>)  0us
-        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<uint32> @>)  0u
-        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<uint64> @>)  0UL
-        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<unativeint> @>)  0un
-        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<float> @>)  0.0
-        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<float32> @>)  0.0f
-        checkEval "vroievr092" (<@ LanguagePrimitives.GenericZero<decimal> @>)  0M
+        checkEval "vroievr091a" (<@ LanguagePrimitives.GenericZero<char> @>)  '\000'
+        checkEval "vroievr091b" (<@ LanguagePrimitives.GenericZero<sbyte> @>)  0y
+        checkEval "vroievr091c" (<@ LanguagePrimitives.GenericZero<int16> @>)  0s
+        checkEval "vroievr091d" (<@ LanguagePrimitives.GenericZero<int32> @>)  0
+        checkEval "vroievr091e" (<@ LanguagePrimitives.GenericZero<int64> @>)  0L
+        checkEval "vroievr091f" (<@ LanguagePrimitives.GenericZero<nativeint> @>)  0n
+        checkEval "vroievr091g" (<@ LanguagePrimitives.GenericZero<byte> @>)  0uy
+        checkEval "vroievr091h" (<@ LanguagePrimitives.GenericZero<uint16> @>)  0us
+        checkEval "vroievr091i" (<@ LanguagePrimitives.GenericZero<uint32> @>)  0u
+        checkEval "vroievr091j" (<@ LanguagePrimitives.GenericZero<uint64> @>)  0UL
+        checkEval "vroievr091k" (<@ LanguagePrimitives.GenericZero<unativeint> @>)  0un
+        checkEval "vroievr091l" (<@ LanguagePrimitives.GenericZero<float> @>)  0.0
+        checkEval "vroievr091m" (<@ LanguagePrimitives.GenericZero<float32> @>)  0.0f
+        checkEval "vroievr091n" (<@ LanguagePrimitives.GenericZero<decimal> @>)  0M
 
-
-
-        checkEval "vroievr093" (<@ LanguagePrimitives.GenericOne<sbyte> @>)  1y
-        checkEval "vroievr191" (<@ LanguagePrimitives.GenericOne<int16> @>)  1s
-        checkEval "vroievr191" (<@ LanguagePrimitives.GenericOne<int32> @>)  1
-        checkEval "vroievr191" (<@ LanguagePrimitives.GenericOne<int64> @>)  1L
-        checkEval "vroievr191" (<@ LanguagePrimitives.GenericOne<nativeint> @>)  1n
-        checkEval "vroievr193" (<@ LanguagePrimitives.GenericOne<byte> @>)  1uy
-        checkEval "vroievr191" (<@ LanguagePrimitives.GenericOne<uint16> @>)  1us
-        checkEval "vroievr191" (<@ LanguagePrimitives.GenericOne<uint32> @>)  1u
-        checkEval "vroievr191" (<@ LanguagePrimitives.GenericOne<uint64> @>)  1UL
-        checkEval "vroievr191" (<@ LanguagePrimitives.GenericOne<unativeint> @>)  1un
-        checkEval "vroievr191" (<@ LanguagePrimitives.GenericOne<float> @>)  1.0
-        checkEval "vroievr191" (<@ LanguagePrimitives.GenericOne<float32> @>)  1.0f
-        checkEval "vroievr192" (<@ LanguagePrimitives.GenericOne<decimal> @>)  1M
+        checkEval "vroievr092a" (<@ LanguagePrimitives.GenericOne<char> @>)  '\001'
+        checkEval "vroievr092b" (<@ LanguagePrimitives.GenericOne<sbyte> @>)  1y
+        checkEval "vroievr092c" (<@ LanguagePrimitives.GenericOne<int16> @>)  1s
+        checkEval "vroievr092d" (<@ LanguagePrimitives.GenericOne<int32> @>)  1
+        checkEval "vroievr092e" (<@ LanguagePrimitives.GenericOne<int64> @>)  1L
+        checkEval "vroievr092f" (<@ LanguagePrimitives.GenericOne<nativeint> @>)  1n
+        checkEval "vroievr092g" (<@ LanguagePrimitives.GenericOne<byte> @>)  1uy
+        checkEval "vroievr092h" (<@ LanguagePrimitives.GenericOne<uint16> @>)  1us
+        checkEval "vroievr092i" (<@ LanguagePrimitives.GenericOne<uint32> @>)  1u
+        checkEval "vroievr092j" (<@ LanguagePrimitives.GenericOne<uint64> @>)  1UL
+        checkEval "vroievr092k" (<@ LanguagePrimitives.GenericOne<unativeint> @>)  1un
+        checkEval "vroievr092l" (<@ LanguagePrimitives.GenericOne<float> @>)  1.0
+        checkEval "vroievr092m" (<@ LanguagePrimitives.GenericOne<float32> @>)  1.0f
+        checkEval "vroievr092n" (<@ LanguagePrimitives.GenericOne<decimal> @>)  1M
 
         check "vroievr0971" (LanguagePrimitives.AdditionDynamic 3y 4y) 7y
         check "vroievr0972" (LanguagePrimitives.AdditionDynamic 3s 4s) 7s
