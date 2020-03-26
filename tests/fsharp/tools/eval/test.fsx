@@ -1193,6 +1193,7 @@ module EvaluationTests =
 
     module InlinedOperationsStillDynamicallyAvailableTests = 
 
+        checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<chat> @>)  '\000'
         checkEval "vroievr093" (<@ LanguagePrimitives.GenericZero<sbyte> @>)  0y
         checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<int16> @>)  0s
         checkEval "vroievr091" (<@ LanguagePrimitives.GenericZero<int32> @>)  0
