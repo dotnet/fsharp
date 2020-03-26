@@ -4,6 +4,7 @@ namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
 open System
 open System.Linq.Expressions
+open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Quotations
 

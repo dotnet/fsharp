@@ -6,7 +6,6 @@ namespace Microsoft.FSharp.Linq
 
 open System
 open Microsoft.FSharp.Core
-
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
 module NullableOperators =

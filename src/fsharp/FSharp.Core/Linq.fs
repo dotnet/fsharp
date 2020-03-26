@@ -9,8 +9,6 @@ open System.Reflection
 open Microsoft.FSharp
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Linq
-open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Quotations
