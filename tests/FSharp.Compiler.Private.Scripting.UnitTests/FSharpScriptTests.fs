@@ -98,6 +98,24 @@ stacktype.Name = "Stack"
         | Ok(_) -> Assert.Fail("expected a failure")
         | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
 
+    [<Test>]
+    member _.``Script with #r "" errors``() =
+        use script = new FSharpScript()
+        let result, errors = script.Eval("#r \"\"")
+        Assert.IsNotEmpty(errors)
+        match result with
+        | Ok(_) -> Assert.Fail("expected a failure")
+        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+
+    [<Test>]
+    member _.``Script with #r "    " errors``() =
+        use script = new FSharpScript()
+        let result, errors = script.Eval("#r \"    \"")
+        Assert.IsNotEmpty(errors)
+        match result with
+        | Ok(_) -> Assert.Fail("expected a failure")
+        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
     [<Test>]
