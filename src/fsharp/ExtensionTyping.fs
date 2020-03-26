@@ -693,7 +693,6 @@ module internal ExtensionTyping =
                 Some (ProvidedTryFinallyExpr (ProvidedExpr.Create ctxt b1, ProvidedExpr.Create ctxt b2))
             | Quotations.Patterns.TryWith(b, v1, e1, v2, e2) ->
                 Some (ProvidedTryWithExpr (ProvidedExpr.Create ctxt b, ProvidedVar.Create ctxt v1, ProvidedExpr.Create ctxt e1, ProvidedVar.Create ctxt v2, ProvidedExpr.Create ctxt e2))
-            | _ -> None
 #if PROVIDED_ADDRESS_OF
             | Quotations.Patterns.AddressOf e -> Some (ProvidedAddressOfExpr (ProvidedExpr.Create ctxt e))
 #endif
