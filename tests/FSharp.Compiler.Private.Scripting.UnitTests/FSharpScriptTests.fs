@@ -204,7 +204,7 @@ typeof<System.Device.Gpio.GpioController>.Assembly.Location
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             Assert.IsTrue( (value.ReflectionValue :?> string).EndsWith(@"runtimes\win\lib\netstandard2.0\System.Device.Gpio.dll") )
         else if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then
-            Assert.IsTrue( (value.ReflectionValue :?> string).EndsWith(@"runtimes\linux\lib\netstandard2.0\System.Device.Gpio.dll") )
+            Assert.IsTrue( (value.ReflectionValue :?> string).EndsWith(@"runtimes/linux/lib/netstandard2.0/System.Device.Gpio.dll") )
         else
             // Only Windows/Linux supported.
             ()
