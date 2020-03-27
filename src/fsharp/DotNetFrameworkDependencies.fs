@@ -180,7 +180,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             | Architecture.X64 ->  baseRid + "-x64"
             | Architecture.X86 -> baseRid + "-x86"
             | Architecture.Arm64 -> baseRid + "-arm64"
-            | _ -> baseRid + "arm"
+            | _ -> baseRid + "-arm"
         platformRid
 
     let isInReferenceAssemblyPackDirectory filename =
