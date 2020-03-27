@@ -30,16 +30,19 @@ type public FSharpErrorInfo =
     member FileName: string
     member Start: pos
     member End: pos
-    member StartLineAlternate:int
-    member EndLineAlternate:int
-    member StartColumn:int
-    member EndColumn:int
-    member Severity:FSharpErrorSeverity
-    member Message:string
-    member Subcategory:string
-    member ErrorNumber:int
-    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * range * lastPosInFile:(int*int) * suggestNames: bool -> FSharpErrorInfo
-    static member internal CreateFromException : PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpErrorInfo
+    member StartLineAlternate: int
+    member EndLineAlternate: int
+    member StartColumn: int
+    member EndColumn: int
+
+    member Range: range
+    member Severity: FSharpErrorSeverity
+    member Message: string
+    member Subcategory: string
+    member ErrorNumber: int
+
+    static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpErrorInfo
+    static member internal CreateFromException: PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpErrorInfo
 
 //----------------------------------------------------------------------------
 // Object model for quick info

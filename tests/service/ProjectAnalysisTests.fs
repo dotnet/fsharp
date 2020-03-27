@@ -99,10 +99,10 @@ let ``Test project1 whole project errors`` () =
     wholeProjectResults.Errors.[1].Message.Contains("Incomplete pattern matches on this expression") |> shouldEqual true // yes it does
     wholeProjectResults.Errors.[1].ErrorNumber |> shouldEqual 25
 
-    wholeProjectResults.Errors.[0].StartLineAlternate |> shouldEqual 10
-    wholeProjectResults.Errors.[0].EndLineAlternate |> shouldEqual 10
-    wholeProjectResults.Errors.[0].StartColumn |> shouldEqual 43
-    wholeProjectResults.Errors.[0].EndColumn |> shouldEqual 44
+    wholeProjectResults.Errors.[0].Range.StartLine |> shouldEqual 10
+    wholeProjectResults.Errors.[0].Range.EndLine |> shouldEqual 10
+    wholeProjectResults.Errors.[0].Range.StartColumn |> shouldEqual 43
+    wholeProjectResults.Errors.[0].Range.EndColumn |> shouldEqual 44
 
 [<Test;NonParallelizable>]
 let ``Test project1 and make sure TcImports gets cleaned up`` () = 
@@ -5222,9 +5222,9 @@ let ``Test line directives in foreground analysis`` () = // see https://github.c
     // In background analysis and normal compiler checking, the errors are reported w.r.t. the line directives
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunSynchronously
     for e in wholeProjectResults.Errors do 
-        printfn "ProjectLineDirectives wholeProjectResults error file: <<<%s>>>" e.FileName
+        printfn "ProjectLineDirectives wholeProjectResults error file: <<<%s>>>" e.Range.FileName
 
-    [ for e in wholeProjectResults.Errors -> e.StartLineAlternate, e.EndLineAlternate, e.FileName ] |> shouldEqual [(10, 10, "Test.fsy")]
+    [ for e in wholeProjectResults.Errors -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(10, 10, "Test.fsy")]
 
     // In foreground analysis routines, used by visual editing tools, the errors are reported w.r.t. the source
     // file, which is assumed to be in the editor, not the other files referred to by line directives.
@@ -5234,9 +5234,9 @@ let ``Test line directives in foreground analysis`` () = // see https://github.c
         |> function (_,FSharpCheckFileAnswer.Succeeded x) ->  x | _ -> failwith "unexpected aborted"
 
     for e in checkResults1.Errors do 
-        printfn "ProjectLineDirectives checkResults1 error file: <<<%s>>>" e.FileName
+        printfn "ProjectLineDirectives checkResults1 error file: <<<%s>>>" e.Range.FileName
 
-    [ for e in checkResults1.Errors -> e.StartLineAlternate, e.EndLineAlternate, e.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
+    [ for e in checkResults1.Errors -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
 //------------------------------------------------------
 
