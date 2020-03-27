@@ -348,16 +348,17 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
                        packageManagerTextLines: string seq,
                        reportError: ResolvingErrorReport,
                        executionTfm: string,
-                       ?executionRid: string,
-                       ?implicitIncludeDir: string,
-                       ?mainScriptName: string,
-                       ?fileName: string): IResolveDependenciesResult =
+                       [<Optional;DefaultParameterValue(null:string)>]executionRid: string,
+                       [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string,
+                       [<Optional;DefaultParameterValue("")>]mainScriptName: string,
+                       [<Optional;DefaultParameterValue("")>]fileName: string): IResolveDependenciesResult =
 
         try
-            let executionRid = defaultArg executionRid RidHelpers.platformRid
-            let implicitIncludeDir = defaultArg implicitIncludeDir ""
-            let mainScriptName = defaultArg mainScriptName ""
-            let fileName = defaultArg fileName ""
+            let executionRid =
+                if isNull executionRid then
+                    RidHelpers.platformRid
+                else
+                    executionRid
             packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid)
 
         with e ->
