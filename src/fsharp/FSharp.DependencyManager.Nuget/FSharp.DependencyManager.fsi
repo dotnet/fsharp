@@ -34,4 +34,4 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager =
     new: outputDir:string option -> FSharpDependencyManager
     member Name: string
     member Key:string
-    member ResolveDependencies: scriptExt:string * packageManagerTextLines:string seq * tfm: string -> obj
+    member ResolveDependencies: scriptExt:string * packageManagerTextLines:string seq * tfm: string * rid: string -> obj

@@ -162,7 +162,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
     member __.Key = key
 
-    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string) : obj =
+    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string, rid: string) : obj =
 
         let scriptExt, poundRprefix  =
             match scriptExt with
@@ -191,6 +191,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
 
             let generateProjBody =
                 generateProjectBody.Replace("$(TARGETFRAMEWORK)", tfm)
+                                   .Replace("$(RUNTIMEIDENTIFIER)", rid)
                                    .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
                                    .Replace("$(SCRIPTEXTENSION)", scriptExt)
 
@@ -203,7 +204,7 @@ type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string op
                 let references = (findReferencesFromResolutions resolutions) |> Array.toSeq
                 let scripts =
                     let scriptPath = projectPath + scriptExt
-                    let scriptBody =  makeScriptFromResolutions resolutions poundRprefix
+                    let scriptBody =  makeScriptFromReferences references poundRprefix
                     emitFile scriptPath scriptBody
                     let loads = (findLoadsFromResolutions resolutions) |> Array.toList
                     List.concat [ [scriptPath]; loads] |> List.toSeq

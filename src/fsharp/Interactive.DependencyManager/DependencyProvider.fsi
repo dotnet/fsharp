@@ -43,7 +43,7 @@ type IDependencyManagerProvider =
     abstract Key: string
 
     /// Resolve the dependencies, for the given set of arguments, go find the .dll references, scripts and additional include values.
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> IResolveDependenciesResult
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string * rid: string -> IResolveDependenciesResult
 
 
 /// Todo describe this API
@@ -72,7 +72,7 @@ type DependencyProvider =
     member RemoveDependencyManagerKey: packageManagerKey: string * path: string -> string
 
     /// Resolve reference for a list of package manager lines
-    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: string seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string -> IResolveDependenciesResult
+    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: string seq * reportError: ResolvingErrorReport * executionTfm: string * ?executionRid: string * ?implicitIncludeDir: string * ?mainScriptName: string * ?fileName: string -> IResolveDependenciesResult
 
     /// Fetch a dependencymanager that supports a specific key
     member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string -> IDependencyManagerProvider
