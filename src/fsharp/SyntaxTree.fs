@@ -54,6 +54,7 @@ type LongIdentWithDots =
            unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
 
 /// Indicates if the construct arises from error recovery
+[<RequireQualifiedAccess>]
 type ParserDetail =
     /// The construct arises normally
     | Ok
