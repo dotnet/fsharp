@@ -20,8 +20,8 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.Features
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTBasics
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
 
 open Internal.Utilities
 

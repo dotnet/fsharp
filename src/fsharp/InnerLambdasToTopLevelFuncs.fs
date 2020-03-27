@@ -6,16 +6,16 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Detuple.GlobalUsageAnalysis
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Lib
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTBasics
-open FSharp.Compiler.TypedASTOps
-open FSharp.Compiler.TypedASTOps.DebugPrint
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
 

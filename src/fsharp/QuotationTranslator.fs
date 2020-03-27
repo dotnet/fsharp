@@ -7,15 +7,15 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTBasics
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open System.Collections.Generic
 

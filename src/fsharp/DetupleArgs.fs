@@ -5,12 +5,12 @@ module internal FSharp.Compiler.Detuple
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Lib
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTBasics
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDoc
 
 // This pass has one aim.

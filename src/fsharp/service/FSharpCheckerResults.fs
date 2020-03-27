@@ -16,7 +16,6 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.CompilerGlobalState
@@ -29,8 +28,9 @@ open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
 open FSharp.Compiler.Infos

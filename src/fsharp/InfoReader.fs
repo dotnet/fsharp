@@ -7,17 +7,17 @@ module internal FSharp.Compiler.InfoReader
 open System
 open System.Collections.Generic
 
+open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Features
 open FSharp.Compiler.TypeRelations

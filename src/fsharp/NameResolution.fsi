@@ -4,13 +4,13 @@ module internal FSharp.Compiler.NameResolution
 
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Range
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.PrettyNaming

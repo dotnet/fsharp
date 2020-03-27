@@ -8,7 +8,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Import
 open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedTree
 
 exception InvalidQuotedTerm of exn
 exception IgnoringPartOfQuotedTermWarning of string * Range.range

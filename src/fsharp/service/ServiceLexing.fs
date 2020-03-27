@@ -801,13 +801,13 @@ module Keywords =
 module Lexer =
 
     open System.Threading
-    open FSharp.Compiler.UnicodeLexing
-    open FSharp.Compiler.Range
-    open FSharp.Compiler.AbstractSyntax
-    open FSharp.Compiler.Text
     open FSharp.Compiler.Features
-    open FSharp.Compiler.Parser
     open FSharp.Compiler.Lexhelp
+    open FSharp.Compiler.Parser
+    open FSharp.Compiler.Range
+    open FSharp.Compiler.SyntaxTree
+    open FSharp.Compiler.Text
+    open FSharp.Compiler.UnicodeLexing
     open Internal.Utilities
 
     [<Flags>]

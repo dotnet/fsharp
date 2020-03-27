@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Defines the framework for serializing and de-serializing TAST data structures as binary blobs for the F# metadata format.
-module internal FSharp.Compiler.TypedASTPickle 
+module internal FSharp.Compiler.TypedTreePickle 
 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
 /// Represents deserialized data with a dangling set of CCU fixup thunks indexed by name

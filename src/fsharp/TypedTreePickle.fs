@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.TypedASTPickle
+module internal FSharp.Compiler.TypedTreePickle
 
 open System.Collections.Generic
 open System.Text
@@ -12,17 +12,17 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Lib.Bits
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTBasics
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
 

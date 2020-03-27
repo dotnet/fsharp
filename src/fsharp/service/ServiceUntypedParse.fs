@@ -14,12 +14,12 @@ open System.Diagnostics
 open System.Text.RegularExpressions
  
 open FSharp.Compiler.AbstractIL.Internal.Library  
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 
 /// Methods for dealing with F# sources files.
 module SourceFile =
@@ -798,7 +798,7 @@ module UntypedParseImpl =
         and walkType = function
             | SynType.LongIdent ident -> 
                 // we protect it with try..with because System.Exception : rangeOfLidwd may raise
-                // at FSharp.Compiler.AbstractSyntax.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs: line 156
+                // at FSharp.Compiler.SyntaxTree.LongIdentWithDots.get_Range() in D:\j\workspace\release_ci_pa---3f142ccc\src\fsharp\ast.fs: line 156
                 try ifPosInRange ident.Range (fun _ -> Some EntityKind.Type) with _ -> None
             | SynType.App(ty, _, types, _, _, _, _) -> 
                 walkType ty |> Option.orElse (List.tryPick walkType types)

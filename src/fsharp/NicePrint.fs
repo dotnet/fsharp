@@ -3,25 +3,25 @@
 /// Print Signatures/Types, for signatures, intellisense, quick info, FSI responses
 module internal FSharp.Compiler.NicePrint
 
+open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler 
-open FSharp.Compiler.Rational
-open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTBasics
-open FSharp.Compiler.TypedASTOps
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Rational
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 
 open FSharp.Core.Printf
 

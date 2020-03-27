@@ -5,14 +5,14 @@ namespace FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTBasics
-open FSharp.Compiler.TypedASTOps
 open FSharp.Compiler.QuotationTranslator
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
 [<AutoOpen>]

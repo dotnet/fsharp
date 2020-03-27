@@ -6,8 +6,8 @@ namespace FSharp.Compiler.SourceCodeServices
 open System
 open System.Collections.Generic
 
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 
 /// Assembly content type.
 type public AssemblyContentType = 

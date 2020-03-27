@@ -6,7 +6,7 @@ namespace FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.TypedTreeOps
 
 [<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.

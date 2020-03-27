@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Text
 open FSharp.Compiler.XmlDoc
 

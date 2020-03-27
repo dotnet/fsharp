@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
   
 /// Defines the typed abstract syntax intermediate representation used throughout the F# compiler.
-module internal rec FSharp.Compiler.TypedAST 
+module internal rec FSharp.Compiler.TypedTree 
 
 open System
 open System.Collections.Generic 
@@ -16,8 +16,6 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
@@ -25,6 +23,8 @@ open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.QuotationPickler
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.XmlDoc
 open FSharp.Core.Printf
 

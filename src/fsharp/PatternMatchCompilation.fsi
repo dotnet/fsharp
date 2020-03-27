@@ -4,8 +4,8 @@ module internal FSharp.Compiler.PatternMatchCompilation
 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Range
 

@@ -2,7 +2,7 @@
 
 module internal FSharp.Compiler.AutoBox 
 
-open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Import
 

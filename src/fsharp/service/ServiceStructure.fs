@@ -4,9 +4,9 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 
 module Structure =
 

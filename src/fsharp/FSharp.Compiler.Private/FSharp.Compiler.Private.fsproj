@@ -335,11 +335,11 @@
     <Compile Include="..\XmlDoc.fs">
       <Link>ParserAndUntypedAST\XmlDoc.fs</Link>
     </Compile>
-    <Compile Include="..\AbstractSyntax.fs">
-      <Link>ParserAndUntypedAST\AbstractSyntax.fs</Link>
+    <Compile Include="..\SyntaxTree.fs">
+      <Link>ParserAndUntypedAST\SyntaxTree.fs</Link>
     </Compile>
-    <Compile Include="..\AbstractSyntaxOps.fs">
-      <Link>ParserAndUntypedAST\AbstractSyntaxOps.fs</Link>
+    <Compile Include="..\SyntaxTreeOps.fs">
+      <Link>ParserAndUntypedAST\SyntaxTreeOps.fs</Link>
     </Compile>
     <Compile Include="..\ParseHelpers.fs">
       <Link>ParserAndUntypedAST\ParseHelpers.fs</Link>
@@ -366,46 +366,46 @@
       <Link>ParserAndUntypedAST\lexfilter.fs</Link>
     </Compile>
     <Compile Include="..\tainted.fsi">
-      <Link>TypedAST\tainted.fsi</Link>
+      <Link>TypedTree\tainted.fsi</Link>
     </Compile>
     <Compile Include="..\tainted.fs">
-      <Link>TypedAST\tainted.fs</Link>
+      <Link>TypedTree\tainted.fs</Link>
     </Compile>
     <Compile Include="..\ExtensionTyping.fsi">
-      <Link>TypedAST\ExtensionTyping.fsi</Link>
+      <Link>TypedTree\ExtensionTyping.fsi</Link>
     </Compile>
     <Compile Include="..\ExtensionTyping.fs">
-      <Link>TypedAST\ExtensionTyping.fs</Link>
+      <Link>TypedTree\ExtensionTyping.fs</Link>
     </Compile>
     <Compile Include="..\QuotationPickler.fsi">
-      <Link>TypedAST\QuotationPickler.fsi</Link>
+      <Link>TypedTree\QuotationPickler.fsi</Link>
     </Compile>
     <Compile Include="..\QuotationPickler.fs">
-      <Link>TypedAST\QuotationPickler.fs</Link>
+      <Link>TypedTree\QuotationPickler.fs</Link>
     </Compile>
     <Compile Include="..\CompilerGlobalState.fs">
-      <Link>TypedAST\CompilerGlobalState.fs</Link>
+      <Link>TypedTree\CompilerGlobalState.fs</Link>
     </Compile>
-    <Compile Include="..\TypedAST.fs">
-      <Link>TypedAST\TypedAST.fs</Link>
+    <Compile Include="..\TypedTree.fs">
+      <Link>TypedTree\TypedTree.fs</Link>
     </Compile>
-    <Compile Include="..\TypedASTBasics.fs">
-      <Link>TypedAST\TypedASTBasics.fs</Link>
+    <Compile Include="..\TypedTreeBasics.fs">
+      <Link>TypedTree\TypedTreeBasics.fs</Link>
     </Compile>
     <Compile Include="..\TcGlobals.fs">
-      <Link>TypedAST\TcGlobals.fs</Link>
+      <Link>TypedTree\TcGlobals.fs</Link>
     </Compile>
-    <Compile Include="..\TypedASTOps.fsi">
-      <Link>TypedAST\TypedASTOps.fsi</Link>
+    <Compile Include="..\TypedTreeOps.fsi">
+      <Link>TypedTree\TypedTreeOps.fsi</Link>
     </Compile>
-    <Compile Include="..\TypedASTOps.fs">
-      <Link>TypedAST\TypedASTOps.fs</Link>
+    <Compile Include="..\TypedTreeOps.fs">
+      <Link>TypedTree\TypedTreeOps.fs</Link>
     </Compile>
-    <Compile Include="..\TypedASTPickle.fsi">
-      <Link>TypedAST\.TypedASTPickle.fsi</Link>
+    <Compile Include="..\TypedTreePickle.fsi">
+      <Link>TypedTree\.TypedTreePickle.fsi</Link>
     </Compile>
-    <Compile Include="..\TypedASTPickle.fs">
-      <Link>TypedAST\.TypedASTPickle.fs</Link>
+    <Compile Include="..\TypedTreePickle.fs">
+      <Link>TypedTree\.TypedTreePickle.fs</Link>
     </Compile>
     <Compile Include="..\import.fsi">
       <Link>Logic\import.fsi</Link>

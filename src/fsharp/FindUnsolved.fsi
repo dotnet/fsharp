@@ -3,8 +3,8 @@
 
 module internal FSharp.Compiler.FindUnsolved
 
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Import
 

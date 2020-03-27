@@ -6,8 +6,8 @@ module internal FSharp.Compiler.PostTypeCheckSemanticChecks
 
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
 /// Perform the checks on the TAST for a file after type inference is complete.

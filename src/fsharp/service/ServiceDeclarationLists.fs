@@ -20,8 +20,8 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 
 [<AutoOpen>]
 module EnvMisc3 =

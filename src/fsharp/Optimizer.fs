@@ -12,8 +12,6 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
@@ -22,11 +20,13 @@ open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST 
-open FSharp.Compiler.TypedASTBasics
-open FSharp.Compiler.TypedASTOps
-open FSharp.Compiler.TypedASTOps.DebugPrint
-open FSharp.Compiler.TypedASTPickle
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree 
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeOps.DebugPrint
+open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 

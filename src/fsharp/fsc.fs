@@ -33,8 +33,6 @@ open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics
-
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
@@ -44,10 +42,11 @@ open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTBasics
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.XmlDoc
@@ -467,7 +466,7 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
         if useDataFiles then 
             let ccu, modulInfo = data
-            let bytes = TypedASTPickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
+            let bytes = TypedTreePickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
             let optDataFileName = (Filename.chopExtension outfile)+".optdata"
             File.WriteAllBytes(optDataFileName, bytes)
         let (ccu, optData) = 

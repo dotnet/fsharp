@@ -7,14 +7,14 @@ open System
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedTree
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 

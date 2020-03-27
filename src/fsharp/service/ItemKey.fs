@@ -14,7 +14,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
+open FSharp.Compiler.TypedTree
 
 #nowarn "9"
 

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public rec FSharp.Compiler.AbstractSyntax
+module public rec FSharp.Compiler.SyntaxTree
 
 open System.Diagnostics
 

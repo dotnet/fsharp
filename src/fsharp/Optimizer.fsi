@@ -4,9 +4,9 @@ module internal FSharp.Compiler.Optimizer
 
 open FSharp.Compiler 
 open FSharp.Compiler.TcGlobals 
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTOps
-open FSharp.Compiler.TypedASTPickle
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreePickle
 
 type OptimizationSettings = 
     { abstractBigTargets: bool

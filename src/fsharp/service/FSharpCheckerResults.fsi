@@ -6,12 +6,12 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypeChecker

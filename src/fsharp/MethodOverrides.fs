@@ -5,8 +5,6 @@ module internal FSharp.Compiler.MethodOverrides
 
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
@@ -15,10 +13,12 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTBasics
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
 //-------------------------------------------------------------------------

@@ -2,8 +2,8 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Range
 
 [<Sealed>]

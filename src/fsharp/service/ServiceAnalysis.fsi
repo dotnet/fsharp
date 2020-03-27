@@ -2,9 +2,9 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 
 module public UnusedOpens =
 

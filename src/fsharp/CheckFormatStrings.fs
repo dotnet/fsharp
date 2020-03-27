@@ -4,14 +4,14 @@ module internal FSharp.Compiler.CheckFormatStrings
 
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
-open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTOps
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TcGlobals
 
 type FormatItem = Simple of TType | FuncAndVal 
 

@@ -4,15 +4,15 @@
 // Defines the typed abstract syntax trees used throughout the F# compiler.
 //------------------------------------------------------------------------- 
 
-module internal FSharp.Compiler.TypedASTBasics
+module internal FSharp.Compiler.TypedTreeBasics
 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
 
 #if DEBUG
 assert (sizeof<ValFlags> = 8)

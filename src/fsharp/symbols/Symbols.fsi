@@ -5,15 +5,15 @@ namespace FSharp.Compiler.SourceCodeServices
 open System.Collections.Generic
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTOps
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
 // Implementation details used by other code in the compiler    

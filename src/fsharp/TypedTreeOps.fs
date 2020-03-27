@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 /// Defines derived expression manipulation and construction functions.
-module internal FSharp.Compiler.TypedASTOps
+module internal FSharp.Compiler.TypedTreeOps
 
 open System.Collections.Generic 
 open Internal.Utilities
@@ -13,8 +13,6 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.Extensions.ILX 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
@@ -24,8 +22,10 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTBasics
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
 #if !NO_EXTENSIONTYPING

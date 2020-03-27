@@ -7,9 +7,9 @@ open System.Diagnostics
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
         
 #if !FX_NO_INDENTED_TEXT_WRITER
 [<AutoOpen>]

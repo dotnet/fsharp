@@ -5,16 +5,16 @@ module internal FSharp.Compiler.ConstraintSolver
 
 open FSharp.Compiler 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.Range
 open FSharp.Compiler.Import
-open FSharp.Compiler.TypedASTOps
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Infos
-open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 
 /// Create a type variable representing the use of a "_" in F# code
 val NewAnonTypar: TyparKind * range * TyparRigidity * TyparStaticReq * TyparDynamicReq -> Typar

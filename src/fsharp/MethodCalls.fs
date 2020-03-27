@@ -8,8 +8,6 @@ open Internal.Utilities
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
@@ -20,11 +18,13 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTBasics
-open FSharp.Compiler.TypedASTOps
-open FSharp.Compiler.TypedASTOps.DebugPrint
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
 
 #if !NO_EXTENSIONTYPING

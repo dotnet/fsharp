@@ -21,8 +21,8 @@ open FSharp.Compiler.IlxGen
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypedAST
-open FSharp.Compiler.TypedASTOps 
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps 
 open FSharp.Compiler.ErrorLogger
 
 module Attributes = 
