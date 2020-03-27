@@ -30,6 +30,9 @@ type IResolveDependenciesResult =
 
 
 /// Wraps access to a DependencyManager implementation
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+[<AllowNullLiteral>]
+#endif
 type IDependencyManagerProvider =
 
     /// Name of the dependency manager

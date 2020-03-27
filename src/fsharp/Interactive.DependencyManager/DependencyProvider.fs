@@ -94,6 +94,9 @@ type IResolveDependenciesResult =
     abstract Roots: string seq
 
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+[<AllowNullLiteral>]
+#endif
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
