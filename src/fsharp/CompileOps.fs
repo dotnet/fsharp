@@ -5011,9 +5011,6 @@ let ProcessMetaCommandsFromInput
                     let output = tcConfig.outputDir |> Option.defaultValue ""
                     let dm = tcConfig.dependencyProvider.TryFindDependencyManagerInPath(tcConfig.compilerToolPaths, output , reportError, path)
                     match dm with
-                    | dllpath, null when String.IsNullOrWhiteSpace(dllpath) ->
-                        state           // error already reported
-
                     | _, dependencyManager when not(isNull dependencyManager) ->
                         if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                             packageRequireF state (dependencyManager, m, path)
@@ -5023,7 +5020,11 @@ let ProcessMetaCommandsFromInput
 
                     // #r "Assembly"
                     | path, _ ->
-                        dllRequireF state (m, path)
+                        let p =
+                            if String.IsNullOrWhiteSpace(path) then ""
+                            else path
+
+                        dllRequireF state (m, p)
 
                 | _ ->
                    errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
