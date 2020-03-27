@@ -42,17 +42,15 @@ module internal ProjectFile =
 
     let findReferencesFromResolutions (resolutions:Resolution array) =
 
-        let equals (s1:string, s2:string) =
-            let s1 = if String.IsNullOrEmpty(s1) then "" else s1
-            let s2 = if String.IsNullOrEmpty(s2) then "" else s2
+        let equals (s1:string) (s2:string) =
             String.Compare(s1, s2, StringComparison.InvariantCultureIgnoreCase) = 0
 
         resolutions
         |> Array.filter(fun r -> not(String.IsNullOrEmpty(r.NugetPackageId) ||
                                      String.IsNullOrEmpty(r.FullPath)) &&
-                                     String.Compare(r.IsNotImplementationReference, "true", StringComparison.InvariantCultureIgnoreCase) <> 0 &&
+                                     not (equals r.IsNotImplementationReference "true") &&
                                      File.Exists(r.FullPath) &&
-                                     equals(r.AssetType, "runtime"))
+                                     equals r.AssetType "runtime")
         |> Array.map(fun r -> r.FullPath)
         |> Array.distinct
 
@@ -88,16 +86,17 @@ module internal ProjectFile =
         [| for line in lines do
             let fields = line.Split(',')
             if fields.Length < 8 then raise (new System.InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
-            else {
-                NugetPackageId = fields.[0]
-                NugetPackageVersion = fields.[1]
-                PackageRoot = fields.[2]
-                FullPath = fields.[3]
-                AssetType = fields.[4]
-                IsNotImplementationReference = fields.[5]
-                InitializeSourcePath = fields.[6]
-                NativePath = fields.[7]
-            }
+            else
+                {
+                    NugetPackageId = fields.[0]
+                    NugetPackageVersion = fields.[1]
+                    PackageRoot = fields.[2]
+                    FullPath = fields.[3]
+                    AssetType = fields.[4]
+                    IsNotImplementationReference = fields.[5]
+                    InitializeSourcePath = fields.[6]
+                    NativePath = fields.[7]
+                }
         |]
 
     let makeScriptFromReferences (references:string seq) poundRprefix =
