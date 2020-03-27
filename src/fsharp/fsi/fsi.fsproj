@@ -36,7 +36,7 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
-    <ProjectReference Include="..\FSharp.DependencyManager\FSharp.DependencyManager.fsproj" />
+    <ProjectReference Include="..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
 
     <!-- only used when '$(TargetFramework)' == 'net472' -->

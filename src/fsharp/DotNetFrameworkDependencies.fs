@@ -10,6 +10,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     open System.IO
     open System.Reflection
     open Internal.Utilities
+    open Internal.Utilities.FSharpEnvironment
 
     type private TypeInThisAssembly = class end
 
@@ -19,7 +20,9 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | Some path -> path
         | None ->
 #if DEBUG
-            Debug.Print(sprintf "FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171" location)
+            Debug.Print(sprintf """FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location
+                customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171"""
+                location)
 #endif
             // Use the location of this dll
             location
@@ -29,7 +32,6 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     let getDefaultFSharpCoreLocation = Path.Combine(fSharpCompilerLocation, getFSharpCoreLibraryName + ".dll")
     let getDefaultFsiLibraryLocation = Path.Combine(fSharpCompilerLocation, getFsiLibraryName + ".dll")
     let implementationAssemblyDir = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
-    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
@@ -100,7 +102,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | _, -1 ->
             if isRunningOnCoreClr then
                 // Running on coreclr but no deps.json was deployed with the host so default to 3.0
-                Some "netcoreapp3.0"
+                Some "netcoreapp3.1"
             else
                 // Running on desktop
                 None

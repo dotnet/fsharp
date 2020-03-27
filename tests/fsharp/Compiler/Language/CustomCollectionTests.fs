@@ -101,8 +101,7 @@ if a.[^2] <> 12 then failwith "expected 12"
             FSharpErrorSeverity.Error
             39
             (9,7,9,9)
-            "The field, constructor or member 'GetReverseIndex' is not defined."
-
+            "The type 'foo' does not define the field, constructor or member 'GetReverseIndex'."
 
     [<Test>]
     let ``Custom collection with GetSlice and GetReverseIndex should support reverse index slicing``() =
@@ -142,4 +141,4 @@ if a.[^2..1] <> 13 then failwith "expected 13"
             FSharpErrorSeverity.Error
             39
             (12,7,12,9)
-            "The field, constructor or member 'GetReverseIndex' is not defined."
+            "The type 'foo' does not define the field, constructor or member 'GetReverseIndex'."

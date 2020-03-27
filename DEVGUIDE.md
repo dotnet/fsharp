@@ -45,7 +45,7 @@ Building is simple:
 
 Desktop tests can be run with:
 
-    build.cmd -test
+    build.cmd -test -c Release
 
 After you build the first time you can open and use this solution in Visual Studio:
 

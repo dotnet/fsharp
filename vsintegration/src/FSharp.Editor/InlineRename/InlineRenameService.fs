@@ -125,7 +125,7 @@ type internal InlineRenameInfo
                             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             return 
                                 [| for symbolUse in symbolUses do
-                                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with
+                                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
                                      | Some span ->
                                          let textSpan = Tokenizer.fixupSpan(sourceText, span)
                                          yield FSharpInlineRenameLocation(document, textSpan) 

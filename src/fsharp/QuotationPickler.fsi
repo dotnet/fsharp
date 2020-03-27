@@ -51,8 +51,6 @@ type MethodBaseData =
     | Method     of MethodData
     | Ctor       of CtorData
 
-type FieldData     = NamedTypeData * string
-type RecdFieldData = NamedTypeData * string
 type PropInfoData  = NamedTypeData * string * TypeData * TypeData list
 
 val mkVar    : int -> ExprData 
@@ -67,11 +65,11 @@ val mkModuleValueApp : NamedTypeData * string * bool * TypeData list * ExprData 
 val mkLetRec : (VarData * ExprData) list * ExprData -> ExprData 
 val mkLet : (VarData * ExprData) * ExprData -> ExprData
 val mkRecdMk : NamedTypeData  * TypeData list * ExprData list -> ExprData
-val mkRecdGet : RecdFieldData   * TypeData list * ExprData list -> ExprData 
-val mkRecdSet :  RecdFieldData * TypeData list * ExprData list -> ExprData 
-val mkUnion : (NamedTypeData * string) * TypeData list * ExprData list -> ExprData 
-val mkUnionFieldGet : (NamedTypeData * string * int) * TypeData list * ExprData -> ExprData  
-val mkUnionCaseTagTest : (NamedTypeData * string)   * TypeData list * ExprData -> ExprData  
+val mkRecdGet : NamedTypeData * string * TypeData list * ExprData list -> ExprData 
+val mkRecdSet :  NamedTypeData * string * TypeData list * ExprData list -> ExprData 
+val mkUnion : NamedTypeData * string * TypeData list * ExprData list -> ExprData 
+val mkUnionFieldGet : NamedTypeData * string * int * TypeData list * ExprData -> ExprData  
+val mkUnionCaseTagTest : NamedTypeData * string * TypeData list * ExprData -> ExprData  
 val mkTuple : TypeData * ExprData list -> ExprData 
 val mkTupleGet : TypeData * int * ExprData -> ExprData
 val mkCoerce : TypeData * ExprData -> ExprData 
@@ -104,8 +102,8 @@ val mkTryWith : ExprData * VarData * ExprData * VarData * ExprData -> ExprData
 val mkDelegate : TypeData * ExprData -> ExprData 
 val mkPropGet : PropInfoData   * TypeData list * ExprData list -> ExprData   
 val mkPropSet : PropInfoData   * TypeData list * ExprData list -> ExprData   
-val mkFieldGet : FieldData   * TypeData list * ExprData list -> ExprData  
-val mkFieldSet : FieldData   * TypeData list * ExprData list -> ExprData  
+val mkFieldGet : NamedTypeData * string * TypeData list * ExprData list -> ExprData  
+val mkFieldSet : NamedTypeData * string * TypeData list * ExprData list -> ExprData  
 val mkCtorCall : CtorData * TypeData list * ExprData list -> ExprData 
 val mkMethodCall : MethodData * TypeData list * ExprData list -> ExprData 
 val mkAttributedExpression : ExprData * ExprData -> ExprData 

@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
-        <target state="new">symbol '..^'</target>
+        <target state="translated">符号 "..^"</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
@@ -75,11 +75,6 @@
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">可区分的联合用例和异常标签必须是大写的标识符</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">可能的重载:“{0}”。{1}。</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">

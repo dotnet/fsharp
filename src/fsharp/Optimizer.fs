@@ -1,34 +1,31 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-//-------------------------------------------------------------------------
-// The F# expression simplifier. The main aim is to inline simple, known functions
-// and constant values, and to eliminate non-side-affecting bindings that 
-// are never used.
-//------------------------------------------------------------------------- 
-
-
+/// The F# expression simplifier. The main aim is to inline simple, known functions
+/// and constant values, and to eliminate non-side-affecting bindings that 
+/// are never used.
 module internal FSharp.Compiler.Optimizer
 
 open Internal.Utilities
+
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-
-open FSharp.Compiler
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Range
 open FSharp.Compiler.Tast 
 open FSharp.Compiler.TastPickle
 open FSharp.Compiler.Tastops
 open FSharp.Compiler.Tastops.DebugPrint
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
@@ -2378,9 +2375,9 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
     if cenv.settings.EliminateTryCatchAndTryFinally () && not e1info.HasEffect then 
         let sp = 
             match spTry with 
-            | SequencePointAtTry _ -> SequencePointsAtSeq 
-            | SequencePointInBodyOfTry -> SequencePointsAtSeq 
-            | NoSequencePointAtTry -> SuppressSequencePointOnExprOfSequential
+            | DebugPointAtTry.Yes _ -> DebugPointAtSequential.Both 
+            | DebugPointAtTry.Body -> DebugPointAtSequential.Both 
+            | DebugPointAtTry.No -> DebugPointAtSequential.StmtOnly
         Expr.Sequential (e1R, e2R, ThenDoSeq, sp, m), info 
     else
         mkTryFinally cenv.g (e1R, e2R, m, ty, spTry, spFinally), 

@@ -10,26 +10,29 @@ open System
 open System.Collections.Generic 
 open System.Diagnostics
 open System.Reflection
+
 open Internal.Utilities
+
+open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
-
-open FSharp.Compiler 
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.QuotationPickler
-open Microsoft.FSharp.Core.Printf
+open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
+open FSharp.Compiler.XmlDoc
+open FSharp.Core.Printf
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
-open Microsoft.FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices
 #endif
 
 /// Unique name generator for stamps attached to lambdas and object expressions
@@ -702,13 +705,16 @@ and /// Represents a type definition, exception definition, module definition or
         | _ -> x.entity_opt_data <- Some { Entity.NewEmptyEntityOptData() with entity_compiled_name = name }
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters
-    member x.DisplayName = x.GetDisplayName(false, false)
+    member x.DisplayName = x.GetDisplayName()
+
+    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, plus static parameters if any
+    member x.DisplayNameWithStaticParametersAndTypars = x.GetDisplayName(withStaticParameters=true, withTypars=true, withUnderscoreTypars=false)
 
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, plus static parameters if any
-    member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.GetDisplayName(true, true)
+    member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=true)
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters if any
-    member x.DisplayNameWithStaticParameters = x.GetDisplayName(true, false)
+    member x.DisplayNameWithStaticParameters = x.GetDisplayName(withStaticParameters=true, withTypars=false, withUnderscoreTypars=false)
 
 #if !NO_EXTENSIONTYPING
     member x.IsStaticInstantiationTycon = 
@@ -717,15 +723,20 @@ and /// Represents a type definition, exception definition, module definition or
             args.Length > 0 
 #endif
 
-    member x.GetDisplayName(withStaticParameters, withUnderscoreTypars) = 
+    member x.GetDisplayName(?withStaticParameters, ?withTypars, ?withUnderscoreTypars) =
+        let withStaticParameters = defaultArg withStaticParameters false
+        let withTypars = defaultArg withTypars false
+        let withUnderscoreTypars = defaultArg withUnderscoreTypars false
         let nm = x.LogicalName
+
         let getName () =
             match x.TyparsNoRange with 
             | [] -> nm
             | tps -> 
                 let nm = DemangleGenericTypeName nm
-                if withUnderscoreTypars && not (List.isEmpty tps) then 
-                    nm + "<" + String.concat "," (Array.create tps.Length "_") + ">"
+                if (withUnderscoreTypars || withTypars) && not (List.isEmpty tps) then
+                    let typearNames = tps |> List.map (fun typar -> if withUnderscoreTypars then "_" else typar.Name)
+                    nm + "<" + String.concat "," typearNames + ">"
                 else
                     nm
 
@@ -854,7 +865,7 @@ and /// Represents a type definition, exception definition, module definition or
     member x.Typars m = x.entity_typars.Force m
 
     /// Get the type parameters for an entity that is a type declaration, otherwise return the empty list.
-    member x.TyparsNoRange = x.Typars x.Range
+    member x.TyparsNoRange: Typars = x.Typars x.Range
 
     /// Get the type abbreviated by this type definition, if it is an F# type abbreviation definition
     member x.TypeAbbrev = 
@@ -1667,6 +1678,7 @@ and
     member uc.RecdFields = uc.FieldTable.FieldsByIndex |> Array.toList
 
     member uc.GetFieldByName nm = uc.FieldTable.FieldByName nm
+    member uc.GetFieldByIndex nm = uc.FieldTable.FieldByIndex nm
 
     member uc.IsNullary = (uc.FieldTable.FieldsByIndex.Length = 0)
 
@@ -2052,12 +2064,9 @@ and Construct =
         let id = ident (name, m)
         let kind = 
             let isMeasure = 
-                st.PApplyWithProvider((fun (st, provider) -> 
-                    let findAttrib (ty: System.Type) (a: CustomAttributeData) = (a.Constructor.DeclaringType.FullName = ty.FullName)  
-                    let ty = st.RawSystemType
+                st.PApplyWithProvider((fun (st, provider) ->
                     ignore provider
-                    ty.CustomAttributes
-                        |> Seq.exists (findAttrib typeof<Microsoft.FSharp.Core.MeasureAttribute>)), m)
+                    st.IsMeasure), m)
                   .PUntaintNoFailure(fun x -> x)
             if isMeasure then TyparKind.Measure else TyparKind.Type
 
@@ -2408,11 +2417,9 @@ and
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TraitConstraintInfo = 
 
-    /// TTrait(tys, nm, memFlags, argtys, rty, solution)
-    ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of TTypes * string * MemberFlags * TTypes * TType option * TraitConstraintSln option ref 
+    | TTrait of tys: TTypes * memberName: string * _memFlags: MemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
 
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
@@ -3373,6 +3380,9 @@ and
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, not including static parameters
     member x.DisplayName = x.Deref.DisplayName
+
+    /// The display name of the namespace, module or type with <'T, 'U, 'V> added for generic types, including static parameters
+    member x.DisplayNameWithStaticParametersAndTypars = x.Deref.DisplayNameWithStaticParametersAndTypars
 
     /// The display name of the namespace, module or type with <_, _, _> added for generic types, including static parameters
     member x.DisplayNameWithStaticParametersAndUnderscoreTypars = x.Deref.DisplayNameWithStaticParametersAndUnderscoreTypars
@@ -4644,6 +4654,9 @@ and
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
 
+    /// Used in error recovery
+    | Error of range
+
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText = x.ToString()
@@ -4654,7 +4667,7 @@ and
 and 
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     DecisionTreeTarget = 
-    | TTarget of Vals * Expr * SequencePointInfoForTarget
+    | TTarget of Vals * Expr * DebugPointForTarget
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4668,7 +4681,7 @@ and Bindings = Binding list
 and 
     [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     Binding = 
-    | TBind of Val * Expr * SequencePointInfoForBinding
+    | TBind of Val * Expr * DebugPointForBinding
 
     /// The value being bound
     member x.Var = (let (TBind(v, _, _)) = x in v)
@@ -4677,7 +4690,7 @@ and
     member x.Expr = (let (TBind(_, e, _)) = x in e)
 
     /// The information about whether to emit a sequence point for the binding
-    member x.SequencePointInfo = (let (TBind(_, _, sp)) = x in sp)
+    member x.DebugPoint = (let (TBind(_, _, sp)) = x in sp)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4790,7 +4803,7 @@ and
     | Val of ValRef * ValUseFlag * range
 
     /// Sequence expressions, used for "a;b", "let a = e in b;a" and "a then b" (the last an OO constructor). 
-    | Sequential of Expr * Expr * SequentialOpKind * SequencePointInfoForSeq * range
+    | Sequential of Expr * Expr * SequentialOpKind * DebugPointAtSequential * range
 
     /// Lambda expressions. 
     
@@ -4831,7 +4844,7 @@ and
     /// and possibly multiple ways to get to each destination.  
     /// The first mark is that of the expression being matched, which is used 
     /// as the mark for all the decision making and binding that happens during the match. 
-    | Match of SequencePointInfoForBinding * range * DecisionTree * DecisionTreeTarget array * range * TType
+    | Match of DebugPointForBinding * range * DecisionTree * DecisionTreeTarget array * range * TType
 
     /// If we statically know some information then in many cases we can use a more optimized expression 
     /// This is primarily used by terms in the standard library, particularly those implementing overloaded 
@@ -4895,16 +4908,16 @@ and
     | UInt16s of uint16[] 
 
     /// An operation representing a lambda-encoded while loop. The special while loop marker is used to mark compilations of 'foreach' expressions
-    | While of SequencePointInfoForWhileLoop * SpecialWhileLoopMarker
+    | While of DebugPointAtWhile * SpecialWhileLoopMarker
 
     /// An operation representing a lambda-encoded for loop
-    | For of SequencePointInfoForForLoop * ForLoopStyle (* count up or down? *)
+    | For of DebugPointAtFor * ForLoopStyle (* count up or down? *)
 
     /// An operation representing a lambda-encoded try/catch
-    | TryCatch of SequencePointInfoForTry * SequencePointInfoForWith
+    | TryCatch of DebugPointAtTry * DebugPointAtWith
 
     /// An operation representing a lambda-encoded try/finally
-    | TryFinally of SequencePointInfoForTry * SequencePointInfoForFinally
+    | TryFinally of DebugPointAtTry * DebugPointAtFinally
 
     /// Construct a record or object-model value. The ValRef is for self-referential class constructors, otherwise 
     /// it indicates that we're in a constructor and the purpose of the expression is to 
@@ -5364,15 +5377,23 @@ module ValReprInfo =
 //---------------------------------------------------------------------------
 
 let typeOfVal (v: Val) = v.Type
+
 let typesOfVals (v: Val list) = v |> List.map (fun v -> v.Type)
+
 let nameOfVal (v: Val) = v.LogicalName
+
 let arityOfVal (v: Val) = (match v.ValReprInfo with None -> ValReprInfo.emptyValData | Some arities -> arities)
 
 let tupInfoRef = TupInfo.Const false
+
 let tupInfoStruct = TupInfo.Const true
+
 let mkTupInfo b = if b then tupInfoStruct else tupInfoRef
+
 let structnessDefault = false
+
 let mkRawRefTupleTy tys = TType_tuple (tupInfoRef, tys)
+
 let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 
 //---------------------------------------------------------------------------
@@ -5380,8 +5401,13 @@ let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 // make up the entire compilation unit
 //---------------------------------------------------------------------------
 
-let mapTImplFile f (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = TImplFile (fragName, pragmas, f moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)
-let mapAccImplFile f z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = let moduleExpr, z = f z moduleExpr in TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes), z
+let mapTImplFile f (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
+    TImplFile (fragName, pragmas, f moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)
+
+let mapAccImplFile f z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
+    let moduleExpr, z = f z moduleExpr
+    TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes), z
+
 let foldTImplFile f z (TImplFile (_, _, moduleExpr, _, _, _)) = f z moduleExpr
 
 //---------------------------------------------------------------------------
@@ -5408,14 +5434,13 @@ let ccuEq (mv1: CcuThunk) (mv2: CcuThunk) =
 /// For dereferencing in the middle of a pattern
 let (|ValDeref|) (vr: ValRef) = vr.Deref
 
-
 //--------------------------------------------------------------------------
 // Make references to TAST items
 //--------------------------------------------------------------------------
 
 let mkRecdFieldRef tcref f = RFRef(tcref, f)
-let mkUnionCaseRef tcref c = UCRef(tcref, c)
 
+let mkUnionCaseRef tcref c = UCRef(tcref, c)
 
 let ERefLocal x: EntityRef = { binding=x; nlr=Unchecked.defaultof<_> }      
 let ERefNonLocal x: EntityRef = { binding=Unchecked.defaultof<_>; nlr=x }      
@@ -5429,12 +5454,17 @@ let (|ERefLocal|ERefNonLocal|) (x: EntityRef) =
 // Construct local references
 //-------------------------------------------------------------------------- 
 
-
 let mkLocalTyconRef x = ERefLocal x
+
 let mkNonLocalEntityRef ccu mp = NonLocalEntityRef(ccu, mp)
-let mkNestedNonLocalEntityRef (nleref: NonLocalEntityRef) id = mkNonLocalEntityRef nleref.Ccu (Array.append nleref.Path [| id |])
+
+let mkNestedNonLocalEntityRef (nleref: NonLocalEntityRef) id =
+    mkNonLocalEntityRef nleref.Ccu (Array.append nleref.Path [| id |])
+
 let mkNonLocalTyconRef nleref id = ERefNonLocal (mkNestedNonLocalEntityRef nleref id)
-let mkNonLocalTyconRefPreResolved x nleref id = ERefNonLocalPreResolved x (mkNestedNonLocalEntityRef nleref id)
+
+let mkNonLocalTyconRefPreResolved x nleref id =
+    ERefNonLocalPreResolved x (mkNestedNonLocalEntityRef nleref id)
 
 type EntityRef with 
 
@@ -5594,6 +5624,7 @@ let rec stripTyparEqnsAux nullness0 canShortcut ty =
     | _ -> ty
 
 let stripTyparEqns ty = stripTyparEqnsAux KnownWithoutNull false ty
+
 let stripUnitEqns unt = stripUnitEqnsAux false unt
 
 let replaceNullnessOfTy nullness (ty:TType) =

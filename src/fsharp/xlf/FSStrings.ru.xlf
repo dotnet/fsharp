@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
-        <target state="new">symbol '..^'</target>
+        <target state="translated">символ "..^"</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
@@ -75,11 +75,6 @@
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">Дискриминированные случаи объединения и метки исключений должны являться идентификаторами верхнего регистра</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Возможная перегрузка: "{0}". {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">

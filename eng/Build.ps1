@@ -256,6 +256,10 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
         $args += " --no-build"
     }
 
+    if ($env:RunningAsPullRequest -ne "true") {
+        $args += " --filter TestCategory!=PullRequest"
+    }
+
     Exec-Console $dotnetExe $args
 }
 
@@ -359,16 +363,17 @@ try {
 
     if ($testFSharpQA -and -not $noVisualStudio) {
         Push-Location "$RepoRoot\tests\fsharpqa\source"
+        $nugetPackages = Get-PackagesDir
         $resultsRoot = "$ArtifactsDir\TestResults\$configuration"
         $resultsLog = "test-net40-fsharpqa-results.log"
         $errorLog = "test-net40-fsharpqa-errors.log"
         $failLog = "test-net40-fsharpqa-errors"
-        $perlPackageRoot = "$env:USERPROFILE\.nuget\packages\StrawberryPerl\5.28.0.1";
+        $perlPackageRoot = "$nugetPackages\StrawberryPerl\5.28.0.1";
         $perlExe = "$perlPackageRoot\bin\perl.exe"
         Create-Directory $resultsRoot
         UpdatePath
         $env:HOSTED_COMPILER = 1
-        $env:CSC_PIPE = "$env:USERPROFILE\.nuget\packages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe"
+        $env:CSC_PIPE = "$nugetPackages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe"
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE

@@ -126,7 +126,6 @@ let DecideImplFile g amap implFile =
 
     z
 
-
 //----------------------------------------------------------------------------
 // Apply the transform
 
@@ -153,7 +152,6 @@ let TransformExpr g (nvs: ValMap<_>) exprF expr =
        Some (mkRecdFieldGetAddrViaExprAddr (readonly, nve, mkRefCellContentsRef g, [v.Type], m))
 
     | _ -> None
-
 
 /// Rewrite bindings for mutable locals which we are transforming
 let TransformBinding g (nvs: ValMap<_>) exprF (TBind(v, expr, m)) = 

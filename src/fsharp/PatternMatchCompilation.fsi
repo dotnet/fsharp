@@ -17,8 +17,8 @@ type ActionOnFailure =
     | Rethrow 
     | FailFilter
 
-[<NoEquality; NoComparison>]
 /// Represents the typechecked, elaborated form of a pattern, prior to pattern-match compilation.
+[<NoEquality; NoComparison>]
 type Pattern =
     | TPat_const of Const * range
     | TPat_wild of range
@@ -34,6 +34,7 @@ type Pattern =
     | TPat_range of char * char * range
     | TPat_null of range
     | TPat_isinst of TType * TType * PatternValBinding option * range
+    | TPat_error of range
 
     member Range: range
 
@@ -70,5 +71,7 @@ val internal CompilePattern:
         DecisionTree * DecisionTreeTarget list
 
 exception internal MatchIncomplete of bool * (string * bool) option * range
+
 exception internal RuleNeverMatched of range
+
 exception internal EnumMatchIncomplete of bool * (string * bool) option * range

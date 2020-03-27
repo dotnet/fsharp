@@ -17,6 +17,8 @@ type LanguageFeature =
     | FromEndSlicing
     | FixedIndexSlice3d4d
     | AndBang
+    | NullableOptionalInterop
+    | DefaultInterfaceMemberConsumption
     | NullnessChecking
 
 /// LanguageVersion management
@@ -42,3 +44,12 @@ type LanguageVersion =
 
     /// Get the specified LanguageVersion
     member SpecifiedVersion: decimal
+
+    /// Get the specified LanguageVersion as a string
+    member SpecifiedVersionString: string
+
+    /// Get a string name for the given feature.
+    member GetFeatureString: feature: LanguageFeature -> string
+
+    /// Get a version string associated with the given feature.
+    member GetFeatureVersionString: feature: LanguageFeature -> string

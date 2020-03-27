@@ -5,6 +5,7 @@ namespace FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Range
@@ -94,7 +95,7 @@ type E =
     | UnionCaseSet of FSharpExpr * FSharpType * FSharpUnionCase * FSharpField  * FSharpExpr
     | UnionCaseTag of FSharpExpr * FSharpType 
     | UnionCaseTest of FSharpExpr  * FSharpType * FSharpUnionCase 
-    | TraitCall of FSharpType list * string * Ast.MemberFlags * FSharpType list * FSharpType list * FSharpExpr list
+    | TraitCall of FSharpType list * string * MemberFlags * FSharpType list * FSharpType list * FSharpExpr list
     | NewTuple of FSharpType * FSharpExpr list  
     | TupleGet of FSharpType * int * FSharpExpr 
     | Coerce of FSharpType * FSharpExpr  
@@ -1208,7 +1209,8 @@ module FSharpExprConvert =
                         let e1R = ConvExpr cenv env e1
                         E.IfThenElse (E.TypeTest (ConvType cenv tgty, e1R)  |> Mk cenv m cenv.g.bool_ty, ConvDecisionTree cenv env dtreeRetTy dtree m, acc) 
                     | DecisionTreeTest.ActivePatternCase _ -> wfail("unexpected Test.ActivePatternCase test in quoted expression", m)
-                    | DecisionTreeTest.ArrayLength _ -> wfail("FSharp.Compiler.Service cannot yet return array pattern matching", m))
+                    | DecisionTreeTest.ArrayLength _ -> wfail("FSharp.Compiler.Service cannot yet return array pattern matching", m)
+                    | DecisionTreeTest.Error m -> wfail("error recovery", m))
 
         | TDSuccess (args, n) -> 
                 // TAST stores pattern bindings in reverse order for some reason

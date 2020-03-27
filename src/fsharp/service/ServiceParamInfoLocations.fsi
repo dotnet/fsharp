@@ -7,7 +7,7 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler 
+open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Range
 
 /// Represents the locations relevant to activating parameter info in an IDE
@@ -36,5 +36,5 @@ type public FSharpNoteworthyParamInfoLocations =
     member NamedParamNames : string option []  
 
     /// Find the information about parameter info locations at a particular source location
-    static member Find : pos * Ast.ParsedInput -> FSharpNoteworthyParamInfoLocations option
+    static member Find : pos * ParsedInput -> FSharpNoteworthyParamInfoLocations option
 

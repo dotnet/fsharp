@@ -1328,18 +1328,18 @@ let ``FSharpField.IsNameGenerated`` () =
 
 [<Test>]
 let ``ValNoMutable recovery`` () =
-    let source = """
+    let _, checkResults = getParseAndCheckResults """
 let x = 1
 x <-
     let y = 1
     y
 """
-    assertContainsSymbolWithName "y" source
+    assertHasSymbolUsages ["y"] checkResults
 
 
 [<Test>]
 let ``PropertyCannotBeSet recovery`` () =
-    let source = """
+    let _, checkResults = getParseAndCheckResults """
 type T =
     static member P = 1
 
@@ -1347,12 +1347,12 @@ T.P <-
     let y = 1
     y
 """
-    assertContainsSymbolWithName "y" source
+    assertHasSymbolUsages ["y"] checkResults
 
 
 [<Test>]
 let ``FieldNotMutable recovery`` () =
-    let source = """
+    let _, checkResults = getParseAndCheckResults """
 type R =
     { F: int }
 
@@ -1360,4 +1360,15 @@ type R =
     let y = 1
     y
 """
-    assertContainsSymbolWithName "y" source
+    assertHasSymbolUsages ["y"] checkResults
+
+
+[<Test>]
+let ``Inherit ctor arg recovery`` () =
+    let _, checkResults = getParseAndCheckResults """
+    type T() as this =
+        inherit System.Exception('a', 'a')
+
+        let x = this
+    """
+    assertHasSymbolUsages ["x"] checkResults

@@ -53,11 +53,11 @@ let fsdiff actualFile expectedFile =
 
 let directories =
     [
-      "../fsharp/typecheck/sigs"
-      "../fsharp/typeProviders/negTests"
-      "../fsharpqa/Source"
+      "fsharp/typecheck/sigs"
+      "fsharp/typecheck/overloads"
+      "fsharpqa/Source"
     ]
-    |> List.map (fun d -> Path.Combine(__SOURCE_DIRECTORY__, d) |> DirectoryInfo)
+    |> List.map (fun d -> Path.Combine(__SOURCE_DIRECTORY__, ".." , d) |> DirectoryInfo)
 
 let extensionPatterns = ["*.bsl"; "*.vsbsl"; "*.il.bsl"]
 for d in directories do

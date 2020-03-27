@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
-        <target state="new">symbol '..^'</target>
+        <target state="translated">シンボル '..^'</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
@@ -75,11 +75,6 @@
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">判別された共用体ケースと例外のラベルは、大文字の識別子にする必要があります</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">使用できるオーバーロードは '{0}' です。{1}。</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
