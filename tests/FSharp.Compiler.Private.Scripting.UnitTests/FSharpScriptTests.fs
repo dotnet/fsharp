@@ -200,11 +200,14 @@ typeof<System.Device.Gpio.GpioController>.Assembly.Location
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
-        
+
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             Assert.IsTrue( (value.ReflectionValue :?> string).EndsWith(@"runtimes\win\lib\netstandard2.0\System.Device.Gpio.dll") )
-        else
+        else if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then
             Assert.IsTrue( (value.ReflectionValue :?> string).EndsWith(@"runtimes\linux\lib\netstandard2.0\System.Device.Gpio.dll") )
+        else
+            // Only Windows/Linux supported.
+            ()
 
     [<Test>]
     member __.``Simple pinvoke should not be impacted by native resolver``() =
