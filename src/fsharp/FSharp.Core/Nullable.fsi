@@ -169,6 +169,14 @@ module Nullable =
     [<CompiledName("ToInt")>]
     val inline int : value:Nullable< ^T > -> Nullable<int> when ^T : (static member op_Explicit : ^T -> int) and default ^T : int
     
+    /// <summary>Converts the argument to an unsigned 32-bit integer. This is a direct conversion for all 
+    /// primitive numeric types. The operation requires an appropriate
+    /// static conversion method on the input type.</summary>
+    /// <param name="value">The input value.</param>
+    /// <returns>The converted unsigned integer</returns>
+    [<CompiledName("ToUInt")>]
+    val inline uint: value: Nullable< ^T > -> Nullable<uint> when ^T :(static member op_Explicit: ^T -> uint) and default ^T : uint
+
     /// <summary>Converts the argument to a particular enum type.</summary>
     /// <param name="value">The input value.</param>
     /// <returns>The converted enum type.</returns>

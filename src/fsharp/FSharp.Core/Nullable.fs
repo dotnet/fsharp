@@ -99,6 +99,9 @@ module Nullable =
     [<CompiledName("ToInt")>]
     let inline int (value:Nullable<_>) = if value.HasValue then Nullable(Operators.int value.Value) else Nullable()
 
+    [<CompiledName("ToUInt")>]
+    let inline uint (value: Nullable<_>) = if value.HasValue then Nullable(Operators.uint value.Value) else Nullable()
+    
     [<CompiledName("ToEnum")>]
     let inline enum (value:Nullable< int32 >) = if value.HasValue then Nullable(Operators.enum value.Value) else Nullable()
 
