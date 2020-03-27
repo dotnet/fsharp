@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.NameResolution
 
+open System
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AbstractSyntax
@@ -325,6 +326,14 @@ type internal CapturedNameResolution =
     /// The starting and ending position
     member Range : range
 
+    interface IRangeOwner
+
+
+type CapturedExpressionType =
+    | CET of ty: TType * nenv: NameResolutionEnv * ad: AccessorDomain * m: range
+    interface IRangeOwner
+
+
 [<Class>]
 type internal TcResolutions = 
 
@@ -334,7 +343,7 @@ type internal TcResolutions =
 
     /// Information of exact types found for expressions, that can be to the left of a dot.
     /// typ - the inferred type for an expression
-    member CapturedExpressionTypings : ResizeArray<TType * NameResolutionEnv * AccessorDomain * range>
+    member CapturedExpressionTypings : RangeScopedCollection<CapturedExpressionType>
 
     /// Exact name resolutions
     member CapturedNameResolutions : ResizeArray<CapturedNameResolution>
@@ -418,6 +427,8 @@ type ITypecheckResultsSink =
 
     /// Record that an open declaration occured in a given scope range
     abstract NotifyOpenDeclaration : OpenDeclaration -> unit
+
+    abstract CreateScope: range -> IDisposable
 
     /// Get the current source
     abstract CurrentSourceText : ISourceText option

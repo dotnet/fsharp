@@ -330,6 +330,9 @@ let rangeContainsPos (m1:range) p =
 let rangeBeforePos (m1:range) p =
     posGeq p m1.End
 
+let rangeEndsAtPos (pos: pos) (m: range) =
+    m.EndLine = pos.Line && m.EndColumn = pos.Column
+
 let rangeN filename line = mkRange filename (mkPos line 0) (mkPos line 0)
 
 let pos0 = mkPos 1 0

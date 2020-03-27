@@ -359,26 +359,24 @@ type internal TypeCheckInfo
         | Some (denv, m, items) -> 
             let items = List.map ItemWithNoInst items
             ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs hasTextChangedSinceLastTypecheck
-    
-    /// finds captured typing for the given position
-    let GetExprTypingForPosition(endOfExprPos) = 
-        let quals = 
-            sResolutions.CapturedExpressionTypings 
-            |> Seq.filter (fun (ty,nenv,_,m) -> 
-                    // We only want expression types that end at the particular position in the file we are looking at.
-                    posEq m.End endOfExprPos &&
 
-                    // Get rid of function types.  True, given a 2-arg curried function "f x y", it is legal to do "(f x).GetType()",
-                    // but you almost never want to do this in practice, and we choose not to offer up any intellisense for 
-                    // F# function types.
-                    not (isFunTy nenv.DisplayEnv.g ty))
+    /// Get captured expression types ending at the particular position.
+    let GetExprTypingForPosition (endOfExprPos: pos) = 
+        let quals =
+            sResolutions.CapturedExpressionTypings
+            |> RangeScopedCollection.itemsByEndPos endOfExprPos
+            |> Seq.filter (fun (CET(ty,nenv,_,_)) -> 
+                // Get rid of function types.  True, given a 2-arg curried function "f x y", it is legal to do "(f x).GetType()",
+                // but you almost never want to do this in practice, and we choose not to offer up any intellisense for 
+                // F# function types.
+                not (isFunTy nenv.DisplayEnv.g ty))
             |> Seq.toArray
 
         let thereWereSomeQuals = not (Array.isEmpty quals)
         // filter out errors
 
         let quals = quals 
-                    |> Array.filter (fun (ty,nenv,_,_) ->
+                    |> Array.filter (fun (CET(ty,nenv,_,_)) ->
                         let denv = nenv.DisplayEnv
                         not (isTyparTy denv.g ty && (destTyparTy denv.g ty).IsFromError))
         thereWereSomeQuals, quals
@@ -391,11 +389,11 @@ type internal TypeCheckInfo
             match quals with
             | [||] -> None
             | quals ->  
-                quals |> Array.tryFind (fun (_,_,_,rq) -> 
+                quals |> Array.tryFind (fun (CET(_,_,_,rq)) -> 
                                             ignore(r)  // for breakpoint
                                             posEq r.Start rq.Start)
         match bestQual with
-        | Some (ty,nenv,ad,m) when isRecdTy nenv.DisplayEnv.g ty ->
+        | Some (CET(ty,nenv,ad,m)) when isRecdTy nenv.DisplayEnv.g ty ->
             let items = NameResolution.ResolveRecordOrClassFieldsOfType ncenv m ad ty false
             Some (items, nenv.DisplayEnv, m)
         | _ -> None
@@ -426,7 +424,7 @@ type internal TypeCheckInfo
                             // If not, then the stale typecheck info does not have a capturedExpressionTyping for this exact expression, and the
                             // user can wait for typechecking to catch up and second-chance intellisense to give the right result.
                             let qual = 
-                                quals |> Array.tryFind (fun (_,_,_,r) -> 
+                                quals |> Array.tryFind (fun (CET(_,_,_,r)) -> 
                                                             ignore(r)  // for breakpoint
                                                             posEq exprRange.Start r.Start)
                             qual, false
@@ -439,7 +437,7 @@ type internal TypeCheckInfo
 
             match bestQual with
             | Some bestQual ->
-                let (ty,nenv,ad,m) = bestQual 
+                let (CET(ty,nenv,ad,m)) = bestQual 
                 let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false ty 
                 let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g

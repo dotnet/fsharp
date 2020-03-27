@@ -187,6 +187,9 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/range.fs">
       <Link>ErrorLogging/range.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/RangeScopedCollection.fs">
+      <Link>ErrorLogging/RangeScopedCollection.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ErrorLogger.fs">
       <Link>ErrorLogging/ErrorLogger.fs</Link>
     </Compile>

@@ -4,6 +4,7 @@
 /// Name environment and name resolution
 module internal FSharp.Compiler.NameResolution
 
+open System
 open System.Collections.Generic
 
 open Internal.Utilities
@@ -1451,6 +1452,7 @@ type ITypecheckResultsSink =
     abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
     abstract NotifyFormatSpecifierLocation: range * int -> unit
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
+    abstract CreateScope: range -> IDisposable
     abstract CurrentSourceText: ISourceText option
     abstract FormatStringCheckContext: FormatStringCheckContext option
 
@@ -1671,14 +1673,26 @@ type CapturedNameResolution(i: Item, tpinst, io: ItemOccurence, nre: NameResolut
     member this.DebugToString() =
         sprintf "%A: %+A" (this.Pos.Line, this.Pos.Column) i
 
+    interface IRangeOwner with
+        member this.Range = m
+
+
+type CapturedExpressionType =
+    | CET of ty: TType * nenv: NameResolutionEnv * ad: AccessorDomain * m: range
+
+    interface IRangeOwner with
+        member this.Range =
+            let (CET (m = range)) = this in range 
+
+
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcResolutions
     (capturedEnvs: ResizeArray<range * NameResolutionEnv * AccessorDomain>,
-     capturedExprTypes: ResizeArray<TType * NameResolutionEnv * AccessorDomain * range>,
+     capturedExprTypes: RangeScopedCollection<CapturedExpressionType>,
      capturedNameResolutions: ResizeArray<CapturedNameResolution>,
      capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>) =
 
-    static let empty = TcResolutions(ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0)
+    static let empty = TcResolutions(ResizeArray 0, RangeScopedCollection (), ResizeArray 0, ResizeArray 0)
 
     member this.CapturedEnvs = capturedEnvs
     member this.CapturedExpressionTypings = capturedExprTypes
@@ -1727,7 +1741,7 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
 /// An accumulator for the results being emitted into the tcSink.
 type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
     let capturedEnvs = ResizeArray<_>()
-    let capturedExprTypings = ResizeArray<_>()
+    let capturedExprTypings = RangeScopedCollection<CapturedExpressionType>()
     let capturedNameResolutions = ResizeArray<CapturedNameResolution>()
     let capturedMethodGroupResolutions = ResizeArray<CapturedNameResolution>()
     let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
@@ -1807,7 +1821,7 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
 
         member sink.NotifyExprHasType(ty, nenv, ad, m) =
             if allowedRange m then
-                capturedExprTypings.Add((ty, nenv, ad, m))
+                capturedExprTypings.AddItem(CET(ty, nenv, ad, m))
 
         member sink.NotifyNameResolution(endPos, item, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
@@ -1829,6 +1843,9 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
 
         member sink.NotifyOpenDeclaration openDeclaration =
             capturedOpenDeclarations.Add openDeclaration
+
+        member sink.CreateScope m =
+            capturedExprTypings.CreateScope(m)
 
         member sink.CurrentSourceText = sourceText
 

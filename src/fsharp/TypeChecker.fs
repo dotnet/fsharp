@@ -1883,6 +1883,7 @@ let MakeAndPublishSimpleValsForMergedScope cenv env m (names: NameMap<_>) =
                         member this.NotifyExprHasType(_, _, _, _) = assert false // no expr typings in MakeAndPublishSimpleVals
                         member this.NotifyFormatSpecifierLocation(_, _) = ()
                         member this.NotifyOpenDeclaration(_) = ()
+                        member this.CreateScope _ = Disposable.Empty
                         member this.CurrentSourceText = None 
                         member this.FormatStringCheckContext = None } 
 
