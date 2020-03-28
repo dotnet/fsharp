@@ -58,8 +58,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
-        <source>and bang</source>
-        <target state="new">and bang</target>
+        <source>applicative computation expressions</source>
+        <target state="new">applicative computation expressions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
