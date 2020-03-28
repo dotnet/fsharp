@@ -1904,6 +1904,11 @@ let CallOpenDeclarationSink (sink: TcResultsSink) (openDeclaration: OpenDeclarat
     | None -> ()
     | Some sink -> sink.NotifyOpenDeclaration openDeclaration
 
+let CreateScope (sink: TcResultsSink) (m: range) =
+    match sink.CurrentSink with
+    | None -> Disposable.Empty
+    | Some sink -> sink.CreateScope(m)
+
 //-------------------------------------------------------------------------
 // Check inferability of type parameters in resolved items.
 //-------------------------------------------------------------------------

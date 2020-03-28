@@ -935,6 +935,8 @@ type EventuallyBuilder() =
 
     member x.TryWith(e, handler) = Eventually.tryWith e handler
 
+    member x.Using(resource, e) = Eventually.tryFinally (e resource) (fun () -> (resource :> IDisposable).Dispose())
+
     member x.TryFinally(e, compensation) = Eventually.tryFinally e compensation
 
     member x.Delay f = Eventually.delay f

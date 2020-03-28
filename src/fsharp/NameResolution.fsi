@@ -494,6 +494,8 @@ val internal CallExprHasTypeSink        : TcResultsSink -> range * NameResolutio
 /// Report an open declaration
 val internal CallOpenDeclarationSink    : TcResultsSink -> OpenDeclaration -> unit
 
+val internal CreateScope: TcResultsSink -> range -> IDisposable
+
 /// Get all the available properties of a type (both intrinsic and extension)
 val internal AllPropInfosOfTypeInScope : ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> AccessorDomain -> FindMemberFlag -> range -> TType -> PropInfo list
 

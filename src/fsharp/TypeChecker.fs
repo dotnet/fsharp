@@ -17510,8 +17510,10 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
     //printfn "----------\nCHECKING, e = %+A\n------------------\n" e
     try 
-      match ElimModuleDoBinding synDecl with 
+      let synDecl = ElimModuleDoBinding synDecl
+      use _ = CreateScope cenv.tcSink synDecl.Range
 
+      match synDecl with
       | SynModuleDecl.ModuleAbbrev (id, p, m) -> 
           let env = MutRecBindingChecking.TcModuleAbbrevDecl cenv scopem env (id, p, m)
           return ((fun e -> e), []), env, env

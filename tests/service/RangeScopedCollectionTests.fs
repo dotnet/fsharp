@@ -91,16 +91,21 @@ let ``Filter - End pos 01`` () =
 let dumpCollection (rsc: RangeScopedCollection<_>) =
     let writer = new StringWriter()
 
-    let rec loop indent (rsc: RangeScopedCollection<_>) =
-        for item in rsc.Items do
+    let rec loop indent (scope: RangedScope<_>) =
+        for item in scope.Items do
             writer.WriteLine(indent + item.ToString())
 
-        for range, rsc in rsc.NestedScopes do
-            writer.WriteLine()
-            writer.WriteLine(indent + "Nested scope: " + range.ToShortString())
-            loop (indent + "  ") rsc
+        for nestedScope in scope.NestedScopes do
+            let scopeRangeString =
+                nestedScope.Range
+                |> Option.map (fun m -> m.ToShortString())
+                |> Option.defaultWith (fun _ -> failwithf "Expecting nested scope")
 
-    loop "" rsc
+            writer.WriteLine()
+            writer.WriteLine(indent + "Nested scope: " + scopeRangeString)
+            loop (indent + "  ") nestedScope
+
+    loop "" rsc.GlobalScope
     writer.ToString()
 
 let (|Trim|) (s: string) =
