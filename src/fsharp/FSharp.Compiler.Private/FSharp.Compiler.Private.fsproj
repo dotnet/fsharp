@@ -174,6 +174,9 @@
     <Compile Include="..\range.fs">
       <Link>ErrorLogging\range.fs</Link>
     </Compile>
+    <Compile Include="..\RangeScopedCollection.fs">
+      <Link>ErrorLogging\RangeScopedCollection.fs</Link>
+    </Compile>
     <Compile Include="..\ErrorLogger.fs">
       <Link>ErrorLogging\ErrorLogger.fs</Link>
     </Compile>
