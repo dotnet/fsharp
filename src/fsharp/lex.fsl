@@ -159,6 +159,12 @@ let evalIfDefExpression startPos isFeatureSupported args (lookup:string->bool) (
     let expr            = FSharp.Compiler.PPParser.start tokenStream lexbuf
     LexerIfdefEval lookup expr
 
+let evalFloat args lexbuf =
+    try
+        float32(removeUnderscores (lexemeTrimRight lexbuf 1))
+    with _ ->
+        fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0f
+
 }
 
 let letter = '\Lu' | '\Ll' | '\Lt' | '\Lm' | '\Lo' | '\Nl'
@@ -234,7 +240,9 @@ let bignum =  integer ('I'  | 'N' | 'Z' | 'Q' | 'R' | 'G')
 
 let ieee64 = float
 
-let ieee32 = (float | integer) ('f' | 'F')
+let ieee32 = float ('f' | 'F') 
+
+let ieee32_dotless_no_exponent = integer ('f' | 'F')
 
 let decimal = (float | integer) ('m' | 'M')
 
@@ -407,16 +415,16 @@ rule token args skip = parse
        with _ ->  fail args lexbuf (FSComp.SR.lexOutsideNativeUnsigned())  (UNATIVEINT(0UL)) }
 
  | ieee32
-     { let s = lexemeTrimRight lexbuf 1
-       if lexbuf.SupportsFeature LanguageFeature.DotlessFloat32Literal || s.Contains "." then
-          try
-             IEEE32 (float32 (removeUnderscores s))
-          with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) (IEEE32 0.0f)
+     { IEEE32 (evalFloat args lexbuf) }
+
+ | ieee32_dotless_no_exponent
+     { if lexbuf.SupportsFeature LanguageFeature.DotlessFloat32Literal then
+          IEEE32 (evalFloat args lexbuf)
        else
           fail args lexbuf (FSComp.SR.lexInvalidFloat()) (IEEE32 0.0f)
      }
 
- | ieee64     
+ | ieee64
      { IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
 
  | decimal    
