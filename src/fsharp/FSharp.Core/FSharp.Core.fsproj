@@ -183,6 +183,12 @@
     <Compile Include="mailbox.fs">
       <Link>MailboxProcessor/mailbox.fs</Link>
     </Compile>
+    <Compile Include="Nullable.fsi">
+      <Link>Queries/Nullable.fsi</Link>
+    </Compile>
+    <Compile Include="Nullable.fs">
+      <Link>Queries/Nullable.fs</Link>
+    </Compile>
     <Compile Include="Linq.fsi">
       <Link>Queries/Linq.fsi</Link>
     </Compile>
