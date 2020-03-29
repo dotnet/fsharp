@@ -7,7 +7,7 @@ open System.IO
 open System.Reflection
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.Tast
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
 /// Indicates how the generated IL code is ultimately emitted 

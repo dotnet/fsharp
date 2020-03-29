@@ -232,10 +232,11 @@ module UnusedOpens =
         }
  
 module SimplifyNames = 
-    type SimplifiableRange = {
-        Range: range
-        RelativeName: string
-    }
+    type SimplifiableRange =
+        {
+          Range: range
+          RelativeName: string
+        }
 
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length    
 
@@ -296,15 +297,19 @@ module SimplifyNames =
 
 module UnusedDeclarations = 
     let isPotentiallyUnusedDeclaration (symbol: FSharpSymbol) : bool =
+
         match symbol with
+
         // Determining that a record, DU or module is used anywhere requires inspecting all their enclosed entities (fields, cases and func / vals)
         // for usages, which is too expensive to do. Hence we never gray them out.
         | :? FSharpEntity as e when e.IsFSharpRecord || e.IsFSharpUnion || e.IsInterface || e.IsFSharpModule || e.IsClass || e.IsNamespace -> false
+
         // FCS returns inconsistent results for override members; we're skipping these symbols.
         | :? FSharpMemberOrFunctionOrValue as f when 
                 f.IsOverrideOrExplicitInterfaceImplementation ||
                 f.IsBaseValue ||
                 f.IsConstructor -> false
+
         // Usage of DU case parameters does not give any meaningful feedback; we never gray them out.
         | :? FSharpParameter -> false
         | _ -> true

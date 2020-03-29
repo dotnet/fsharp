@@ -7,23 +7,25 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Threading
+
 open FSharp.Compiler
-open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypeChecker
-open FSharp.Compiler.Tast 
+open FSharp.Compiler.Lib
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.TypedTree 
+open FSharp.Compiler.TypedTreeOps
+
 open Internal.Utilities.Collections
 
 [<AutoOpen>]

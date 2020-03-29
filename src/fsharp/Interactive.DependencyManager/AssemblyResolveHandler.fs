@@ -10,7 +10,7 @@ open Internal.Utilities.FSharpEnvironment
 
 /// Signature for ResolutionProbe callback
 /// host implements this, it's job is to return a list of assembly paths to probe.
-type AssemblyResolutionProbe = delegate of Unit -> IEnumerable<string>
+type AssemblyResolutionProbe = delegate of Unit -> seq<string>
 
 #if NETSTANDARD
 

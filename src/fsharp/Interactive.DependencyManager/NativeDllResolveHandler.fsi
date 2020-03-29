@@ -7,8 +7,7 @@ open System.Collections.Generic
 
 /// Signature for Native library resolution probe callback
 /// host implements this, it's job is to return a list of package roots to probe.
-type NativeResolutionProbe = delegate of Unit -> IEnumerable<string>
-
+type NativeResolutionProbe = delegate of Unit -> seq<string>
 
 // Cut down AssemblyLoadContext, for loading native libraries
 type NativeDllResolveHandler =

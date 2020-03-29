@@ -4,15 +4,17 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 
 module Structure =
+
     /// Set of visitor utilities, designed for the express purpose of fetching ranges
     /// from an untyped AST for the purposes of block structure.
     [<RequireQualifiedAccess>]
     module Range =
+
         /// Create a range starting at the end of r1 and finishing at the end of r2
         let endToEnd (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.End r2.End
 
@@ -34,7 +36,6 @@ module Structure =
         let modEnd (m:int) (r: range) =
             let modend = mkPos r.EndLine (r.EndColumn+m)
             mkFileIndexRange r.FileIndex r.Start modend
-
 
         /// Produce a new range by adding modStart to the StartColumn of `r`
         /// and subtracting modEnd from the EndColumn of `r`
@@ -128,6 +129,7 @@ module Structure =
         | UnionDefn
         | Comment
         | XmlDocComment
+
         override self.ToString() = 
             match self with
             | Open                -> "Open"

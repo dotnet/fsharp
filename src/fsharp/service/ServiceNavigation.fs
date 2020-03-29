@@ -8,8 +8,8 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Range
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 
 /// Represents the different kinds of items that can appear in the navigation bar
 type FSharpNavigationDeclarationItemKind =

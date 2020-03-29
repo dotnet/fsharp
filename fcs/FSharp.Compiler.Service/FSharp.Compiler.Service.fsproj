@@ -336,11 +336,11 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/XmlDoc.fs">
       <Link>ParserAndUntypedAST/XmlDoc.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/AbstractSyntax.fs">
-      <Link>ParserAndUntypedAST/AbstractSyntax.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/SyntaxTree.fs">
+      <Link>ParserAndUntypedAST/SyntaxTree.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/AbstractSyntaxOps.fs">
-      <Link>ParserAndUntypedAST/AbstractSyntaxOps.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/SyntaxTreeOps.fs">
+      <Link>ParserAndUntypedAST/SyntaxTreeOps.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ParseHelpers.fs">
       <Link>ParserAndUntypedAST/ParseHelpers.fs</Link>
@@ -367,43 +367,46 @@
       <Link>ParserAndUntypedAST/LexFilter.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/tainted.fsi">
-      <Link>TypedAST/tainted.fsi</Link>
+      <Link>TypedTree/tainted.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/tainted.fs">
-      <Link>TypedAST/tainted.fs</Link>
+      <Link>TypedTree/tainted.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ExtensionTyping.fsi">
-      <Link>TypedAST/ExtensionTyping.fsi</Link>
+      <Link>TypedTree/ExtensionTyping.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ExtensionTyping.fs">
-      <Link>TypedAST/ExtensionTyping.fs</Link>
+      <Link>TypedTree/ExtensionTyping.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QuotationPickler.fsi">
-      <Link>TypedAST/QuotationPickler.fsi</Link>
+      <Link>TypedTree/QuotationPickler.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QuotationPickler.fs">
-      <Link>TypedAST/QuotationPickler.fs</Link>
+      <Link>TypedTree/QuotationPickler.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CompilerGlobalState.fs">
-      <Link>TypedAST/CompilerGlobalState.fs</Link>
+      <Link>TypedTree/CompilerGlobalState.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/tast.fs">
-      <Link>TypedAST/tast.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTree.fs">
+      <Link>TypedTree/TypedTree.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreeBasics.fs">
+      <Link>TypedTree/TypedTreeBasics.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/TcGlobals.fs">
-      <Link>TypedAST/TcGlobals.fs</Link>
+      <Link>TypedTree/TcGlobals.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastOps.fsi">
-      <Link>TypedAST/TastOps.fsi</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreeOps.fsi">
+      <Link>TypedTree/TypedTreeOps.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastOps.fs">
-      <Link>TypedAST/TastOps.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreeOps.fs">
+      <Link>TypedTree/TypedTreeOps.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastPickle.fsi">
-      <Link>TypedAST/TastPickle.fsi</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreePickle.fsi">
+      <Link>TypedTree/.TypedTreePickle.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastPickle.fs">
-      <Link>TypedAST/TastPickle.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreePickle.fs">
+      <Link>TypedTree/.TypedTreePickle.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/import.fsi">
       <Link>Logic/import.fsi</Link>
