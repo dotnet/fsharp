@@ -4,13 +4,13 @@ module internal FSharp.Compiler.NameResolution
 
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Range
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.PrettyNaming
@@ -108,7 +108,7 @@ type Item =
     | TypeVar of string * Typar
 
     /// Represents the resolution of a name to a module or namespace
-    | ModuleOrNamespaces of Tast.ModuleOrNamespaceRef list
+    | ModuleOrNamespaces of ModuleOrNamespaceRef list
 
     /// Represents the resolution of a name to an operator
     | ImplicitOp of Ident * TraitConstraintSln option ref
@@ -166,15 +166,15 @@ type NameResolutionEnv =
       /// Modules accessible via "." notation. Note this is a multi-map. 
       /// Adding a module abbreviation adds it a local entry to this List.map. 
       /// Likewise adding a ccu or opening a path adds entries to this List.map. 
-      eModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
+      eModulesAndNamespaces:  NameMultiMap<ModuleOrNamespaceRef>
 
       /// Fully qualified modules and namespaces. 'open' does not change this. 
-      eFullyQualifiedModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
+      eFullyQualifiedModulesAndNamespaces:  NameMultiMap<ModuleOrNamespaceRef>
 
       /// RecdField labels in scope.  RecdField labels are those where type are inferred 
       /// by label rather than by known type annotation. 
       /// Bools indicate if from a record, where no warning is given on indeterminate lookup 
-      eFieldLabels: NameMultiMap<Tast.RecdFieldRef>
+      eFieldLabels: NameMultiMap<RecdFieldRef>
 
       /// Tycons indexed by the various names that may be used to access them, e.g. 
       ///     "List" --> multiple TyconRef's for the various tycons accessible by this name. 
@@ -499,7 +499,7 @@ exception internal IndeterminateType of range
 exception internal UpperCaseIdentifierInPattern of range
 
 /// Generate a new reference to a record field with a fresh type instantiation
-val FreshenRecdFieldRef :NameResolver -> Range.range -> Tast.RecdFieldRef -> Item
+val FreshenRecdFieldRef :NameResolver -> Range.range -> RecdFieldRef -> Item
 
 /// Indicates the kind of lookup being performed. Note, this type should be made private to nameres.fs.
 [<RequireQualifiedAccess>]

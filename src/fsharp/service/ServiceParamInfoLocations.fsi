@@ -7,8 +7,8 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 
 /// Represents the locations relevant to activating parameter info in an IDE
 [<Sealed>]

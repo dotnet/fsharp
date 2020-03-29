@@ -4,6 +4,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 /// Exposes the string distance algorithm used to suggest names for mistyped identifiers.
 module ErrorResolutionHints =
+
     /// Given a set of names, uses and a string representing an unresolved identifier,
     /// returns a list of suggested names if there are any feasible candidates.
     val getSuggestedNames: suggestionsF: ((string -> unit) -> unit) -> unresolvedIdentifier: string -> seq<string>

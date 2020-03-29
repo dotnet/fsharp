@@ -1,6 +1,6 @@
 // Regression test for DevDiv:20718
 // The following code was triggering a Watson error
-// Watson Clr20r3 across buckets with: Application fsc.exe from Dev10 RTM; Exception system.exception; UNKNOWN!FSharp.Compiler.Tastops.dest_fun_typ
+// Watson Clr20r3 across buckets with: Application fsc.exe from Dev10 RTM; Exception system.exception; UNKNOWN!FSharp.Compiler.TypedTreeOps.dest_fun_typ
 
 let main() =
     let (@@) = id

@@ -553,3 +553,19 @@ module StackGuard =
     let EnsureSufficientExecutionStack recursionDepth =
         if recursionDepth > MaxUncheckedRecursionDepth then
             RuntimeHelpers.EnsureSufficientExecutionStack ()
+
+[<RequireQualifiedAccess>] 
+type MaybeLazy<'T> =
+    | Strict of 'T
+    | Lazy of Lazy<'T>
+
+    member this.Value: 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Value
+
+    member this.Force() : 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Force()
+

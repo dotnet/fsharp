@@ -10,13 +10,12 @@ namespace FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
 
-open Microsoft.FSharp.Core.Printf
+open FSharp.Core.Printf
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.AbstractIL.Diagnostics 
 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
@@ -27,8 +26,10 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.XmlDoc
 
@@ -43,40 +44,57 @@ type FSharpErrorSeverity =
     | Warning 
     | Error
 
-type FSharpErrorInfo(fileName, s: pos, e: pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
-    member __.Start = s
-    member __.End = e
+module FSharpErrorInfo =
+    let [<Literal>] ObsoleteMessage = "Use FSharpErrorInfo.Range. This API will be removed in a future update."
 
-    member __.StartLine = Line.toZ s.Line
-    member __.StartLineAlternate = s.Line
-    member __.EndLine = Line.toZ e.Line
-    member __.EndLineAlternate = e.Line
-    member __.StartColumn = s.Column
-    member __.EndColumn = e.Column
+type FSharpErrorInfo(m: range, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
+    member _.Range = m
+    member _.Severity = severity
+    member _.Message = message
+    member _.Subcategory = subcategory
+    member _.ErrorNumber = errorNum
 
-    member __.Severity = severity
-    member __.Message = message
-    member __.Subcategory = subcategory
-    member __.FileName = fileName
-    member __.ErrorNumber = errorNum
-    member __.WithStart newStart = FSharpErrorInfo(fileName, newStart, e, severity, message, subcategory, errorNum)
-    member __.WithEnd newEnd = FSharpErrorInfo(fileName, s, newEnd, severity, message, subcategory, errorNum)
-    override __.ToString()= sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName (int s.Line) (s.Column + 1) (int e.Line) (e.Column + 1) subcategory (if severity=FSharpErrorSeverity.Warning then "warning" else "error")  message
-            
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.Start = m.Start
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.End = m.End
+
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLine = Line.toZ m.Start.Line
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLineAlternate = m.Start.Line
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLine = Line.toZ m.End.Line
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLineAlternate = m.End.Line
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartColumn = m.Start.Column
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndColumn = m.End.Column
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.FileName = m.FileName
+
+    member _.WithStart newStart =
+        let m = mkFileIndexRange m.FileIndex newStart m.End
+        FSharpErrorInfo(m, severity, message, subcategory, errorNum)
+
+    member _.WithEnd newEnd =
+        let m = mkFileIndexRange m.FileIndex m.Start newEnd
+        FSharpErrorInfo(m, severity, message, subcategory, errorNum)
+
+    override _.ToString() =
+        let fileName = m.FileName
+        let s = m.Start
+        let e = m.End
+        let severity = if severity=FSharpErrorSeverity.Warning then "warning" else "error"
+        sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
+
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member CreateFromException(exn, isError, fallbackRange: range, suggestNames: bool) =
         let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
+        let severity = if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning
         let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false suggestNames)
         let errorNum = GetDiagnosticNumber exn
-        FSharpErrorInfo(m.FileName, m.Start, m.End, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning), msg, exn.Subcategory(), errorNum)
-        
+        FSharpErrorInfo(m, severity, msg, exn.Subcategory(), errorNum)
+
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
         let r = FSharpErrorInfo.CreateFromException(exn, isError, fallbackRange, suggestNames)
 
         // Adjust to make sure that errors reported at Eof are shown at the linesCount
-        let startline, schange = min (r.StartLineAlternate, false) (linesCount, true)
-        let endline, echange = min (r.EndLineAlternate, false)   (linesCount, true)
+        let startline, schange = min (r.Range.StartLine, false) (linesCount, true)
+        let endline, echange = min (r.Range.EndLine, false)   (linesCount, true)
         
         if not (schange || echange) then r
         else
@@ -185,7 +203,8 @@ module ErrorHelpers =
                   // Not ideal, but it's hard to see what else to do.
                   let fallbackRange = rangeN mainInputFileName 1
                   let ei = FSharpErrorInfo.CreateFromExceptionAndAdjustEof (exn, isError, fallbackRange, fileInfo, suggestNames)
-                  if allErrors || (ei.FileName = mainInputFileName) || (ei.FileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation) then
+                  let fileName = ei.Range.FileName
+                  if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
                       yield ei ]
 
             let mainError, relatedErrors = SplitRelatedDiagnostics exn 
@@ -328,14 +347,14 @@ module internal SymbolHelpers =
     let rangeOfPropInfo preferFlag (pinfo: PropInfo) =
         match pinfo with
 #if !NO_EXTENSIONTYPING 
-        |   ProvidedProp(_, pi, _) -> ComputeDefinitionLocationOfProvidedItem pi
+        |   ProvidedProp(_, pi, _) -> Construct.ComputeDefinitionLocationOfProvidedItem pi
 #endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfMethInfo (g: TcGlobals) preferFlag (minfo: MethInfo) = 
         match minfo with
 #if !NO_EXTENSIONTYPING 
-        |   ProvidedMeth(_, mi, _, _) -> ComputeDefinitionLocationOfProvidedItem mi
+        |   ProvidedMeth(_, mi, _, _) -> Construct.ComputeDefinitionLocationOfProvidedItem mi
 #endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
         |   _ -> minfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
@@ -343,7 +362,7 @@ module internal SymbolHelpers =
     let rangeOfEventInfo preferFlag (einfo: EventInfo) = 
         match einfo with
 #if !NO_EXTENSIONTYPING 
-        | ProvidedEvent (_, ei, _) -> ComputeDefinitionLocationOfProvidedItem ei
+        | ProvidedEvent (_, ei, _) -> Construct.ComputeDefinitionLocationOfProvidedItem ei
 #endif
         | _ -> einfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
       
@@ -766,14 +785,14 @@ module internal SymbolHelpers =
                   idx1 = idx2 && valRefEq g vref1 vref2
               | Item.UnionCase(UnionCaseInfo(_, ur1), _), Item.UnionCase(UnionCaseInfo(_, ur2), _) -> 
                   g.unionCaseRefEq ur1 ur2
-              | Item.RecdField(RecdFieldInfo(_, RFRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RFRef(tcref2, n2))) -> 
+              | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref2, n2))) -> 
                   (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
               | Item.Property(_, pi1s), Item.Property(_, pi2s) -> 
                   List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Item.Event evt1, Item.Event evt2 -> 
                   EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
               | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
-                 Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
+                 anonInfoEquiv anon1 anon2 && i1 = i2
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
                   List.zip meths1 meths2 
                   |> List.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
@@ -805,8 +824,8 @@ module internal SymbolHelpers =
               | (Item.Value vref | Item.CustomBuilder (_, vref)) -> hash vref.LogicalName
               | Item.ActivePatternCase(APElemRef(_apinfo, vref, idx)) -> hash (vref.LogicalName, idx)
               | Item.ExnCase tcref -> hash tcref.LogicalName
-              | Item.UnionCase(UnionCaseInfo(_, UCRef(tcref, n)), _) -> hash(tcref.Stamp, n)
-              | Item.RecdField(RecdFieldInfo(_, RFRef(tcref, n))) -> hash(tcref.Stamp, n)
+              | Item.UnionCase(UnionCaseInfo(_, UnionCaseRef(tcref, n)), _) -> hash(tcref.Stamp, n)
+              | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, n))) -> hash(tcref.Stamp, n)
               | Item.AnonRecdField(anon, _, i, _) -> hash anon.SortedNames.[i]
               | Item.Event evt -> evt.ComputeHashCode()
               | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))

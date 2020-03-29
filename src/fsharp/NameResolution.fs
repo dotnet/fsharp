@@ -14,20 +14,22 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Library.ResultOrException
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.Text
 
 #if !NO_EXTENSIONTYPING
@@ -207,7 +209,7 @@ type Item =
     | TypeVar of string * Typar
 
     /// Represents the resolution of a name to a module or namespace
-    | ModuleOrNamespaces of Tast.ModuleOrNamespaceRef list
+    | ModuleOrNamespaces of ModuleOrNamespaceRef list
 
     /// Represents the resolution of a name to an operator
     | ImplicitOp of Ident * TraitConstraintSln option ref
@@ -348,15 +350,15 @@ type NameResolutionEnv =
       ///    open Collections                            <--- give a warning
       ///    let v = new Collections.Generic.List<int>() <--- give a warning"
 
-      eModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
+      eModulesAndNamespaces:  NameMultiMap<ModuleOrNamespaceRef>
 
       /// Fully qualified modules and namespaces. 'open' does not change this.
-      eFullyQualifiedModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
+      eFullyQualifiedModulesAndNamespaces:  NameMultiMap<ModuleOrNamespaceRef>
 
       /// RecdField labels in scope.  RecdField labels are those where type are inferred
       /// by label rather than by known type annotation.
       /// Bools indicate if from a record, where no warning is given on indeterminate lookup
-      eFieldLabels: NameMultiMap<Tast.RecdFieldRef>
+      eFieldLabels: NameMultiMap<RecdFieldRef>
 
       /// Tycons indexed by the various names that may be used to access them, e.g.
       ///     "List" --> multiple TyconRef's for the various tycons accessible by this name.
@@ -727,7 +729,7 @@ let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[])
     if tcrefs.Length = 0 then tab else
     let entries =
         tcrefs
-        |> Array.map (fun tcref -> KeyTyconByDemangledNameAndArity tcref.LogicalName tcref.TyparsNoRange tcref)
+        |> Array.map (fun tcref -> Construct.KeyTyconByDemangledNameAndArity tcref.LogicalName tcref.TyparsNoRange tcref)
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
@@ -738,7 +740,7 @@ let AddTyconByAccessNames bulkAddMode (tcrefs: TyconRef[]) (tab: LayeredMultiMap
     if tcrefs.Length = 0 then tab else
     let entries =
         tcrefs
-        |> Array.collect (fun tcref -> KeyTyconByAccessNames tcref.LogicalName tcref)
+        |> Array.collect (fun tcref -> Construct.KeyTyconByAccessNames tcref.LogicalName tcref)
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
@@ -1460,7 +1462,7 @@ let (|ValRefOfEvent|_|) (evt: EventInfo) = evt.ArbitraryValRef
 
 let rec (|RecordFieldUse|_|) (item: Item) =
     match item with
-    | Item.RecdField(RecdFieldInfo(_, RFRef(tcref, name))) -> Some (name, tcref)
+    | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, name))) -> Some (name, tcref)
     | Item.SetterArg(_, RecordFieldUse f) -> Some f
     | _ -> None
 
@@ -1614,7 +1616,7 @@ let ItemsAreEffectivelyEqual g orig other =
     | (Item.ArgName (id, _, _), ValUse vref) | (ValUse vref, Item.ArgName (id, _, _)) ->
         ((Range.equals id.idRange vref.DefinitionRange || Range.equals id.idRange vref.SigRange) && id.idText = vref.DisplayName)
 
-    | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) -> Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
+    | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) -> anonInfoEquiv anon1 anon2 && i1 = i2
 
     | ILFieldUse f1, ILFieldUse f2 ->
         ILFieldInfo.ILFieldInfosUseIdenticalDefinitions f1 f2

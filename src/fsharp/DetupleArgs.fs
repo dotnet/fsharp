@@ -5,11 +5,12 @@ module internal FSharp.Compiler.Detuple
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Lib
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDoc
 
 // This pass has one aim.
@@ -313,8 +314,8 @@ module GlobalUsageAnalysis =
 let internalError str = raise(Failure(str))
 
 let mkLocalVal m name ty topValInfo =
-    let compgen    = false in (* REVIEW: review: should this be true? *)
-    NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
+    let compgen    = false
+    Construct.NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
 
 /// Represents inferred information about a tuple value
 type TupleStructure = 

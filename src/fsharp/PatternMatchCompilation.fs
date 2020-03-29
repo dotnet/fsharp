@@ -7,16 +7,18 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Range
-open FSharp.Compiler.AbstractSyntax
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Tastops.DebugPrint
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.TypeRelations
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Lib
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeOps.DebugPrint
+open FSharp.Compiler.TypeRelations
 
 exception MatchIncomplete of bool * (string * bool) option * range
 exception RuleNeverMatched of range
@@ -281,7 +283,7 @@ let RefuteDiscrimSet g m path discrims =
                     match nonCoveredEnumValues with
                     | None -> Expr.Const (c, m, ty), true
                     | Some (fldName, _) ->
-                        let v = RecdFieldRef.RFRef(tcref, fldName)
+                        let v = RecdFieldRef.RecdFieldRef(tcref, fldName)
                         Expr.Op (TOp.ValFieldGet v, [ty], [], m), false
                 | _ -> Expr.Const (c, m, ty), false
 

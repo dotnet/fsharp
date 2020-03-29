@@ -11,32 +11,34 @@ open System.Runtime.CompilerServices
 open System.Runtime.Versioning
 
 // Package reference information
-type PackageReference = {
-    Include:string
-    Version:string
-    RestoreSources:string
-    Script:string }
-
+type PackageReference =
+    { Include:string
+      Version:string
+      RestoreSources:string
+      Script:string
+    }
 
 // Resolved assembly information
-type internal Resolution = {
-    NugetPackageId : string
-    NugetPackageVersion : string
-    PackageRoot : string
-    FullPath : string
-    AssetType: string
-    IsNotImplementationReference: string
-    NativePath : string
-    InitializeSourcePath : string }
+type internal Resolution =
+    { NugetPackageId : string
+      NugetPackageVersion : string
+      PackageRoot : string
+      FullPath : string
+      AssetType: string
+      IsNotImplementationReference: string
+      NativePath : string
+      InitializeSourcePath : string
+    }
 
 
 module internal ProjectFile =
 
-    let findLoadsFromResolutions (resolutions:Resolution array) =
+    let findLoadsFromResolutions (resolutions:Resolution[]) =
         resolutions
-        |> Array.filter(fun r -> not(String.IsNullOrEmpty(r.NugetPackageId) ||
-                                     String.IsNullOrEmpty(r.InitializeSourcePath)) &&
-                                 File.Exists(r.InitializeSourcePath))
+        |> Array.filter(fun r ->
+            not(String.IsNullOrEmpty(r.NugetPackageId) ||
+                String.IsNullOrEmpty(r.InitializeSourcePath)) &&
+            File.Exists(r.InitializeSourcePath))
         |> Array.map(fun r -> r.InitializeSourcePath)
         |> Array.distinct
 
@@ -55,20 +57,22 @@ module internal ProjectFile =
         |> Array.distinct
 
 
-    let findIncludesFromResolutions (resolutions:Resolution array) =
+    let findIncludesFromResolutions (resolutions:Resolution[]) =
         let managedRoots =
             resolutions
-            |> Array.filter(fun r -> not(String.IsNullOrEmpty(r.NugetPackageId) ||
-                                         String.IsNullOrEmpty(r.PackageRoot)) &&
-                                     Directory.Exists(r.PackageRoot))
+            |> Array.filter(fun r -> 
+                not(String.IsNullOrEmpty(r.NugetPackageId) ||
+                    String.IsNullOrEmpty(r.PackageRoot)) &&
+                Directory.Exists(r.PackageRoot))
             |> Array.map(fun r -> r.PackageRoot)
             |> Array.distinct
 
         let nativeRoots =
             resolutions
-            |> Array.filter(fun r -> not(String.IsNullOrEmpty(r.NugetPackageId) ||
-                                         String.IsNullOrEmpty(r.NativePath)) &&
-                                     Directory.Exists(r.NativePath))
+            |> Array.filter(fun r ->
+                not(String.IsNullOrEmpty(r.NugetPackageId) ||
+                    String.IsNullOrEmpty(r.NativePath)) &&
+                Directory.Exists(r.NativePath))
             |> Array.map(fun r -> r.NativePath)
             |> Array.distinct
 
@@ -79,7 +83,7 @@ module internal ProjectFile =
         let lines =
             try
                 File.ReadAllText(resolutionsFile).Split([| '\r'; '\n'|], StringSplitOptions.None)
-                     |> Array.filter(fun line -> not(String.IsNullOrEmpty(line)))
+                |> Array.filter(fun line -> not(String.IsNullOrEmpty(line)))
             with
             | _ -> [||]
 
@@ -87,15 +91,14 @@ module internal ProjectFile =
             let fields = line.Split(',')
             if fields.Length < 8 then raise (new System.InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
             else
-                {
-                    NugetPackageId = fields.[0]
-                    NugetPackageVersion = fields.[1]
-                    PackageRoot = fields.[2]
-                    FullPath = fields.[3]
-                    AssetType = fields.[4]
-                    IsNotImplementationReference = fields.[5]
-                    InitializeSourcePath = fields.[6]
-                    NativePath = fields.[7]
+                { NugetPackageId = fields.[0]
+                  NugetPackageVersion = fields.[1]
+                  PackageRoot = fields.[2]
+                  FullPath = fields.[3]
+                  AssetType = fields.[4]
+                  IsNotImplementationReference = fields.[5]
+                  InitializeSourcePath = fields.[6]
+                  NativePath = fields.[7]
                 }
         |]
 

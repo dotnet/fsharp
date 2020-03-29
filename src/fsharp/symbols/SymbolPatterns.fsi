@@ -2,8 +2,8 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-[<RequireQualifiedAccess>]
 /// Patterns over FSharpSymbol and derivatives.
+[<RequireQualifiedAccess>]
 module public Symbol =
 
     val isAttribute<'T> : FSharpAttribute -> bool
