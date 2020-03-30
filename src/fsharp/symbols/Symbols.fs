@@ -7,8 +7,6 @@ open System.Collections.Generic
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompileOps
@@ -17,9 +15,12 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDoc
 
 open Internal.Utilities

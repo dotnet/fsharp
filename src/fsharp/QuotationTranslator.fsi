@@ -4,11 +4,11 @@
 module internal FSharp.Compiler.QuotationTranslator
 
 open FSharp.Compiler 
-open FSharp.Compiler.Range
-open FSharp.Compiler.Import
-open FSharp.Compiler.Tast
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Import
+open FSharp.Compiler.Range
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 
 exception InvalidQuotedTerm of exn
 exception IgnoringPartOfQuotedTermWarning of string * Range.range

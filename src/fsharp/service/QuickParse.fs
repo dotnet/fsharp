@@ -8,7 +8,8 @@ open FSharp.Compiler.SourceCodeServices
 
 /// Qualified long name.
 type PartialLongName =
-    { /// Qualifying idents, prior to the last dot, not including the last part.
+    {
+      /// Qualifying idents, prior to the last dot, not including the last part.
       QualifyingIdents: string list
       
       /// Last part of long ident.
