@@ -2356,6 +2356,7 @@ Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Single] ToFloat32
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Single] ToSingle[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt16] ToUInt16[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt32] ToUInt32[T](System.Nullable`1[T])
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt32] ToUInt[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt64] ToUInt64[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UIntPtr] ToUIntPtr[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[TResult] ToEnum[TResult](System.Nullable`1[System.Int32])

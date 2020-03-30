@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Defines derived expression manipulation and construction functions.
-module internal FSharp.Compiler.Tastops 
+module internal FSharp.Compiler.TypedTreeOps 
 
 open System.Collections.Generic
 
@@ -11,17 +11,13 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
-open FSharp.Compiler.Tast
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
-
-//-------------------------------------------------------------------------
-// Type equivalence
-//------------------------------------------------------------------------- 
 
 type Erasure = EraseAll | EraseMeasures | EraseNone
 
@@ -336,10 +332,6 @@ val mkExnCaseFieldSet              : Expr * TyconRef               * int  * Expr
 /// Make an expression that gets the address of an element in an array
 val mkArrayElemAddress : TcGlobals -> readonly: bool * ILReadonly * bool * ILArrayShape * TType * Expr list * range -> Expr
 
-//-------------------------------------------------------------------------
-// Compiled view of tuples
-//------------------------------------------------------------------------- 
- 
 /// The largest tuple before we start encoding, i.e. 7
 val maxTuple : int
 
@@ -561,11 +553,9 @@ val instTyparConstraints  : TyparInst -> TyparConstraint list -> TyparConstraint
 
 val instTrait              : TyparInst -> TraitConstraintInfo -> TraitConstraintInfo 
 
-//-------------------------------------------------------------------------
-// From typars to types 
-//------------------------------------------------------------------------- 
-
 val generalTyconRefInst : TyconRef -> TypeInst
+
+/// From typars to types 
 val generalizeTypars : Typars -> TypeInst
 
 val generalizeTyconRef : TcGlobals -> TyconRef -> TTypes * TType
@@ -592,10 +582,6 @@ val stripTyEqns : TcGlobals -> TType -> TType
 val stripTyEqnsAndMeasureEqns : TcGlobals -> TType -> TType
 
 val tryNormalizeMeasureInType : TcGlobals -> TType -> TType
-
-//-------------------------------------------------------------------------
-// 
-//------------------------------------------------------------------------- 
 
 /// See through F# exception abbreviations
 val stripExnEqns : TyconRef -> Tycon
@@ -2352,3 +2338,5 @@ val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 
 val isStaticClass: g: TcGlobals -> tcref: TyconRef -> bool
+
+val CombineCcuContentFragments: range -> ModuleOrNamespaceType list -> ModuleOrNamespaceType

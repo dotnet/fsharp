@@ -8,8 +8,6 @@ open Internal.Utilities
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
@@ -18,11 +16,15 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Tastops.DebugPrint
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
 
 #if !NO_EXTENSIONTYPING
@@ -207,7 +209,7 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                 // If at the beginning of inference then use a type variable
                 else 
                     let compgenId = mkSynId range0 unassignedTyparName
-                    let NewInferenceType () = mkTyparTy (NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+                    let NewInferenceType () = mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
                     NewInferenceType()
             else
                 calledArgTy
@@ -634,7 +636,7 @@ let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) (arg: AssignedC
     let adjustedCalledArgTy = AdjustCalledArgType infoReader false false arg.CalledArg arg.CallerArg
     if countOfCallerLambdaArg > 0 then 
         // Decompose the explicit function type of the target
-        let calledLambdaArgTys, _calledLambdaRetTy = Tastops.stripFunTy g adjustedCalledArgTy
+        let calledLambdaArgTys, _calledLambdaRetTy = stripFunTy g adjustedCalledArgTy
         if calledLambdaArgTys.Length >= countOfCallerLambdaArg then 
             // success 
             CallerLambdaHasArgTypes calledLambdaArgTys
@@ -1818,7 +1820,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
 
     CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult
 
-exception FieldNotMutable of DisplayEnv * Tast.RecdFieldRef * range
+exception FieldNotMutable of DisplayEnv * RecdFieldRef * range
 
 let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) = 
     if not rfinfo.RecdField.IsMutable then

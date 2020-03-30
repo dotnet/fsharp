@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-//--------------------------------------------------------------------------
-// The ILX generator.
-//--------------------------------------------------------------------------
-
+/// The ILX generator.
 module internal FSharp.Compiler.IlxGen
 
 open System.IO
@@ -13,6 +10,7 @@ open System.Collections.Generic
 open Internal.Utilities
 open Internal.Utilities.Collections
 
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
@@ -20,11 +18,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open FSharp.Compiler.AbstractIL.Internal.BinaryConstants
-
-open FSharp.Compiler
 open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
@@ -32,9 +27,12 @@ open FSharp.Compiler.Layout
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Tastops.DebugPrint
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 open FSharp.Compiler.XmlDoc
@@ -190,7 +188,7 @@ type IlxGenOptions =
       emitConstantArraysUsingStaticDataBlobs: bool
       
       /// If this is set, then the last module becomes the "main" module and its toplevel bindings are executed at startup
-      mainMethodInfo: Tast.Attribs option
+      mainMethodInfo: Attribs option
       
       /// Indicates if local optimizations are on
       localOptimizationsAreOn: bool
@@ -803,7 +801,7 @@ and BranchCallItem =
         // Arg infos for compiled form of F# method or value
         (TType * ArgReprInfo) list list *
         // Typars for F# method or value
-        Tast.Typars *
+        Typars *
         // Typars for F# method or value
         int *
         // num obj args
@@ -1371,7 +1369,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
     let gtdefs= new TypeDefsBuilder()
 
     // The definitions of top level values, as quotations.
-    let mutable reflectedDefinitions: Dictionary<Tast.Val, (string * int * Expr)> = Dictionary(HashIdentity.Reference)
+    let mutable reflectedDefinitions: Dictionary<Val, (string * int * Expr)> = Dictionary(HashIdentity.Reference)
     let mutable extraBindingsToGenerate = []
 
     // A memoization table for generating value types for big constant arrays
@@ -1454,20 +1452,21 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let tps =
                 [ for nm in nms ->
                     let stp = Typar(mkSynId m ("T"+nm), TyparStaticReq.NoStaticReq, true)
-                    NewTypar (TyparKind.Type, TyparRigidity.WarnIfNotRigid, stp, false, TyparDynamicReq.Yes, [], true, true) ]
+                    Construct.NewTypar (TyparKind.Type, TyparRigidity.WarnIfNotRigid, stp, false, TyparDynamicReq.Yes, [], true, true) ]
 
             let tycon =
-                let lmtyp = MaybeLazy.Strict (NewEmptyModuleOrNamespaceType ModuleOrType)
+                let lmtyp = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
                 let cpath = CompPath(ilTypeRef.Scope, [])
-                NewTycon(Some cpath, ilTypeRef.Name, m, taccessPublic, taccessPublic, TyparKind.Type, LazyWithContext.NotLazy tps, XmlDoc.Empty, false, false, false, lmtyp)             
+                Construct.NewTycon(Some cpath, ilTypeRef.Name, m, taccessPublic, taccessPublic, TyparKind.Type, LazyWithContext.NotLazy tps, XmlDoc.Empty, false, false, false, lmtyp)             
 
             if isStruct then
                 tycon.SetIsStructRecordOrUnion true
 
             tycon.entity_tycon_repr <-
-                TRecdRepr (MakeRecdFieldsTable
+                TRecdRepr
+                  (Construct.MakeRecdFieldsTable
                     [ for (tp, (propName, _fldName, _fldTy)) in (List.zip tps flds) ->
-                            NewRecdField false None (mkSynId m propName) false (mkTyparTy tp) true false [] [] XmlDoc.Empty taccessPublic false ])
+                            Construct.NewRecdField false None (mkSynId m propName) false (mkTyparTy tp) true false [] [] XmlDoc.Empty taccessPublic false ])
 
             let tcref = mkLocalTyconRef tycon
             let _, typ = generalizeTyconRef cenv.g tcref
@@ -1567,7 +1566,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
     member __.GetCurrentFields (tref: ILTypeRef) =
         gtdefs.FindNestedTypeDefBuilder(tref).GetCurrentFields()
 
-    member __.AddReflectedDefinition (vspec: Tast.Val, expr) =
+    member __.AddReflectedDefinition (vspec: Val, expr) =
         // preserve order by storing index of item
         let n = reflectedDefinitions.Count
         reflectedDefinitions.Add(vspec, (vspec.CompiledName cenv.g.CompilerGlobalState, n, expr))
@@ -7727,7 +7726,7 @@ let ClearGeneratedValue (ctxt: ExecutionContext) (g: TcGlobals) eenv (v: Val) =
       ()
 
 /// The published API from the ILX code generator
-type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: ConstraintSolver.TcValF, ccu: Tast.CcuThunk) =
+type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: ConstraintSolver.TcValF, ccu: CcuThunk) =
 
     // The incremental state held by the ILX code generator
     let mutable ilxGenEnv = GetEmptyIlxGenEnv tcGlobals.ilg ccu

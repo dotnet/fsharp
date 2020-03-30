@@ -749,3 +749,21 @@ module CustomOperations =
     [<Literal>]
     let Into = "into"
 
+let unassignedTyparName = "?"
+
+//--------------------------------------------------------------------------
+// Resource format for pickled data
+//--------------------------------------------------------------------------
+
+let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
+let FSharpSignatureDataResourceName = "FSharpSignatureData."
+
+let FSharpOptimizationDataResourceNameB = "FSharpOptimizationDataB."
+let FSharpSignatureDataResourceNameB = "FSharpSignatureDataB."
+
+// For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
+// don't complain when they see the resource. The prefix of these names must not be 'FSharpOptimizationData'
+// or 'FSharpSignatureData'
+let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo." 
+let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
+

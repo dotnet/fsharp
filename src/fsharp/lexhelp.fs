@@ -11,13 +11,13 @@ open Internal.Utilities.Text.Lexing
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
 open FSharp.Compiler.Parser
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.XmlDoc
 
 /// The "mock" filename used by fsi.exe when reading from stdin.

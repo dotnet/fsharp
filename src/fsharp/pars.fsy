@@ -13,14 +13,14 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.XmlDoc
 
 #if DEBUG
@@ -266,37 +266,37 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <range * string * ParseHelpers.LexerWhitespaceContinuation> HASH_IF HASH_ELSE HASH_ENDIF 
 
 %start signatureFile implementationFile interaction typedSeqExprEOF typEOF
-%type <AbstractSyntax.SynExpr> typedSeqExprEOF
-%type <AbstractSyntax.ParsedImplFile> implementationFile
-%type <AbstractSyntax.ParsedSigFile> signatureFile
-%type <AbstractSyntax.ParsedFsiInteraction> interaction
-%type <AbstractSyntax.Ident> ident
-%type <AbstractSyntax.SynType> typ typEOF
-%type <AbstractSyntax.SynTypeDefnSig list> tyconSpfns
-%type <AbstractSyntax.SynExpr> patternResult
-%type <AbstractSyntax.SynExpr> declExpr
-%type <AbstractSyntax.SynExpr> minusExpr
-%type <AbstractSyntax.SynExpr> appExpr
-%type <AbstractSyntax.SynExpr> argExpr
-%type <AbstractSyntax.SynExpr> declExprBlock
-%type <AbstractSyntax.SynPat> headBindingPattern
-%type <AbstractSyntax.SynExpr> atomicExprAfterType
-%type <AbstractSyntax.SynExpr> typedSeqExprBlock
-%type <AbstractSyntax.SynExpr * bool> atomicExpr
-%type <AbstractSyntax.SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
-%type <(AbstractSyntax.SynEnumCase, AbstractSyntax.SynUnionCase) Choice list> unionTypeRepr
-%type <AbstractSyntax.SynMemberDefns> tyconDefnAugmentation
-%type <AbstractSyntax.SynExceptionDefn> exconDefn
-%type <AbstractSyntax.SynExceptionDefnRepr> exconCore
-%type <AbstractSyntax.SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
-%type <AbstractSyntax.LongIdentWithDots> openDecl
-%type <AbstractSyntax.LongIdentWithDots> path
-%type <AbstractSyntax.LongIdentWithDots> pathOp
+%type <SyntaxTree.SynExpr> typedSeqExprEOF
+%type <SyntaxTree.ParsedImplFile> implementationFile
+%type <SyntaxTree.ParsedSigFile> signatureFile
+%type <SyntaxTree.ParsedFsiInteraction> interaction
+%type <SyntaxTree.Ident> ident
+%type <SyntaxTree.SynType> typ typEOF
+%type <SyntaxTree.SynTypeDefnSig list> tyconSpfns
+%type <SyntaxTree.SynExpr> patternResult
+%type <SyntaxTree.SynExpr> declExpr
+%type <SyntaxTree.SynExpr> minusExpr
+%type <SyntaxTree.SynExpr> appExpr
+%type <SyntaxTree.SynExpr> argExpr
+%type <SyntaxTree.SynExpr> declExprBlock
+%type <SyntaxTree.SynPat> headBindingPattern
+%type <SyntaxTree.SynExpr> atomicExprAfterType
+%type <SyntaxTree.SynExpr> typedSeqExprBlock
+%type <SyntaxTree.SynExpr * bool> atomicExpr
+%type <SyntaxTree.SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
+%type <(SyntaxTree.SynEnumCase, SyntaxTree.SynUnionCase) Choice list> unionTypeRepr
+%type <SyntaxTree.SynMemberDefns> tyconDefnAugmentation
+%type <SyntaxTree.SynExceptionDefn> exconDefn
+%type <SyntaxTree.SynExceptionDefnRepr> exconCore
+%type <SyntaxTree.SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
+%type <SyntaxTree.LongIdentWithDots> openDecl
+%type <SyntaxTree.LongIdentWithDots> path
+%type <SyntaxTree.LongIdentWithDots> pathOp
 /*     LESS    GREATER        parsedOk   typeArgs           m for each   mWhole  */
-%type <range * range option * bool     * AbstractSyntax.SynType list * range list * range> typeArgsActual
+%type <range * range option * bool     * SyntaxTree.SynType list * range list * range> typeArgsActual
 /*     LESS    GREATER        typeArgs           m for each   mWhole  */
-%type <range * range option * AbstractSyntax.SynType list * range list * range> typeArgsNoHpaDeprecated
-%type <AbstractSyntax.SynTypar> typar
+%type <range * range option * SyntaxTree.SynType list * range list * range> typeArgsNoHpaDeprecated
+%type <SyntaxTree.SynTypar> typar
 
 /* About precedence rules: 
  * 

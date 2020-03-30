@@ -8,12 +8,12 @@ open Internal.Utilities.Text.Lexing
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
-open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.SyntaxTree
 let debug = false
 
 let stringOfPos (p: Position) = sprintf "(%d:%d)" p.OriginalLine p.Column

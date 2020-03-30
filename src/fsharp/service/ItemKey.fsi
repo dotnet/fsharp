@@ -3,8 +3,9 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System
-open FSharp.Compiler.Range
+
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Range
 
 /// Stores a list of item key strings and their ranges in a memory mapped file.
 [<Sealed>]

@@ -3,10 +3,10 @@
 module public FSharp.Compiler.ParseHelpers
 
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractSyntaxOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.UnicodeLexing
 open FSharp.Compiler.XmlDoc
 open Internal.Utilities.Text.Lexing

@@ -6,18 +6,17 @@ open System.Diagnostics
 open System.Collections.Generic
 open System.Collections.Immutable
 
-open FSharp.Core.Printf
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library  
-open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
 open FSharp.Compiler.Infos
-open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals 
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 
 [<RequireQualifiedAccess>]
@@ -98,12 +97,12 @@ module TcResolutionsExtensions =
                 let isValRefMutable (vref: ValRef) =
                     // Mutable values, ref cells, and non-inref byrefs are mutable.
                     vref.IsMutable
-                    || Tastops.isRefCellTy g vref.Type
-                    || (Tastops.isByrefTy g vref.Type && not (Tastops.isInByrefTy g vref.Type))
+                    || isRefCellTy g vref.Type
+                    || (isByrefTy g vref.Type && not (isInByrefTy g vref.Type))
 
                 let isRecdFieldMutable (rfinfo: RecdFieldInfo) =
                     (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
-                    || Tastops.isRefCellTy g rfinfo.RecdField.FormalType
+                    || isRefCellTy g rfinfo.RecdField.FormalType
 
                 let duplicates = HashSet<range>(Range.comparer)
 

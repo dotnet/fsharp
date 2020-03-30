@@ -10,13 +10,12 @@ namespace FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
 
-open Microsoft.FSharp.Core.Printf
+open FSharp.Core.Printf
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.AbstractIL.Diagnostics 
 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AbstractSyntax
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.InfoReader
@@ -27,8 +26,10 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.XmlDoc
 
@@ -346,14 +347,14 @@ module internal SymbolHelpers =
     let rangeOfPropInfo preferFlag (pinfo: PropInfo) =
         match pinfo with
 #if !NO_EXTENSIONTYPING 
-        |   ProvidedProp(_, pi, _) -> ComputeDefinitionLocationOfProvidedItem pi
+        |   ProvidedProp(_, pi, _) -> Construct.ComputeDefinitionLocationOfProvidedItem pi
 #endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfMethInfo (g: TcGlobals) preferFlag (minfo: MethInfo) = 
         match minfo with
 #if !NO_EXTENSIONTYPING 
-        |   ProvidedMeth(_, mi, _, _) -> ComputeDefinitionLocationOfProvidedItem mi
+        |   ProvidedMeth(_, mi, _, _) -> Construct.ComputeDefinitionLocationOfProvidedItem mi
 #endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
         |   _ -> minfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
@@ -361,7 +362,7 @@ module internal SymbolHelpers =
     let rangeOfEventInfo preferFlag (einfo: EventInfo) = 
         match einfo with
 #if !NO_EXTENSIONTYPING 
-        | ProvidedEvent (_, ei, _) -> ComputeDefinitionLocationOfProvidedItem ei
+        | ProvidedEvent (_, ei, _) -> Construct.ComputeDefinitionLocationOfProvidedItem ei
 #endif
         | _ -> einfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
       
@@ -784,14 +785,14 @@ module internal SymbolHelpers =
                   idx1 = idx2 && valRefEq g vref1 vref2
               | Item.UnionCase(UnionCaseInfo(_, ur1), _), Item.UnionCase(UnionCaseInfo(_, ur2), _) -> 
                   g.unionCaseRefEq ur1 ur2
-              | Item.RecdField(RecdFieldInfo(_, RFRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RFRef(tcref2, n2))) -> 
+              | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref2, n2))) -> 
                   (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
               | Item.Property(_, pi1s), Item.Property(_, pi2s) -> 
                   List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Item.Event evt1, Item.Event evt2 -> 
                   EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2
               | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) ->
-                 Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
+                 anonInfoEquiv anon1 anon2 && i1 = i2
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
                   List.zip meths1 meths2 
                   |> List.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
@@ -823,8 +824,8 @@ module internal SymbolHelpers =
               | (Item.Value vref | Item.CustomBuilder (_, vref)) -> hash vref.LogicalName
               | Item.ActivePatternCase(APElemRef(_apinfo, vref, idx)) -> hash (vref.LogicalName, idx)
               | Item.ExnCase tcref -> hash tcref.LogicalName
-              | Item.UnionCase(UnionCaseInfo(_, UCRef(tcref, n)), _) -> hash(tcref.Stamp, n)
-              | Item.RecdField(RecdFieldInfo(_, RFRef(tcref, n))) -> hash(tcref.Stamp, n)
+              | Item.UnionCase(UnionCaseInfo(_, UnionCaseRef(tcref, n)), _) -> hash(tcref.Stamp, n)
+              | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, n))) -> hash(tcref.Stamp, n)
               | Item.AnonRecdField(anon, _, i, _) -> hash anon.SortedNames.[i]
               | Item.Event evt -> evt.ComputeHashCode()
               | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))

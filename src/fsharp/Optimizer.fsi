@@ -3,9 +3,10 @@
 module internal FSharp.Compiler.Optimizer
 
 open FSharp.Compiler 
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
 open FSharp.Compiler.TcGlobals 
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreePickle
 
 type OptimizationSettings = 
     { abstractBigTargets: bool
@@ -27,8 +28,11 @@ type OptimizationSettings =
 
 /// Optimization information 
 type ModuleInfo
+
 type LazyModuleInfo = Lazy<ModuleInfo>
+
 type ImplFileOptimizationInfo = LazyModuleInfo
+
 type CcuOptimizationInfo = LazyModuleInfo
 
 [<Sealed>]
@@ -47,10 +51,10 @@ val internal moduleInfoL: TcGlobals -> LazyModuleInfo -> Layout.layout
 #endif
 
 /// Saving and re-reading optimization information 
-val p_CcuOptimizationInfo: CcuOptimizationInfo -> TastPickle.WriterState -> unit 
+val p_CcuOptimizationInfo: CcuOptimizationInfo -> WriterState -> unit 
 
 /// Rewrite the module info using the export remapping 
-val RemapOptimizationInfo: TcGlobals -> Tastops.Remap -> (CcuOptimizationInfo -> CcuOptimizationInfo)
+val RemapOptimizationInfo: TcGlobals -> Remap -> (CcuOptimizationInfo -> CcuOptimizationInfo)
 
 /// Ensure that 'internal' items are not exported in the optimization info
 val AbstractOptimizationInfoToEssentials: (CcuOptimizationInfo -> CcuOptimizationInfo)
@@ -61,4 +65,4 @@ val UnionOptimizationInfos: seq<ImplFileOptimizationInfo> -> CcuOptimizationInfo
 /// Check if an expression has an effect
 val ExprHasEffect: TcGlobals -> Expr -> bool
 
-val internal u_CcuOptimizationInfo: TastPickle.ReaderState -> CcuOptimizationInfo
+val internal u_CcuOptimizationInfo: ReaderState -> CcuOptimizationInfo
