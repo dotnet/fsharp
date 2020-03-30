@@ -5036,6 +5036,8 @@ type CcuThunk =
         if isNull (box ccu.target) || ccu.orphanfixup then 
             raise(UnresolvedReferenceNoRange ccu.name)
         ccu.target
+
+    member ccu.IsUnresolvedReference = isNull (box ccu.target) || ccu.orphanfixup
 #else
     member ccu.Deref = 
         match ccu.target with 
