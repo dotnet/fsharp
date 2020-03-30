@@ -6,13 +6,14 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 
 [<Sealed>]
 type TcEnv =
@@ -41,9 +42,9 @@ val CombineTopAttrs : TopAttribs -> TopAttribs -> TopAttribs
 val TypeCheckOneImplFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines option * NameResolution.TcResultsSink * bool
       -> TcEnv 
-      -> Tast.ModuleOrNamespaceType option
+      -> ModuleOrNamespaceType option
       -> ParsedImplFileInput
-      -> Eventually<TopAttribs * Tast.TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
+      -> Eventually<TopAttribs * TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
 
 val TypeCheckOneSigFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines option * NameResolution.TcResultsSink * bool
@@ -104,6 +105,6 @@ exception StandardOperatorRedefinitionWarning of string * range
 exception ParameterlessStructCtor of range
 exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileName option*) string option
 
-val TcFieldInit : range -> ILFieldInit -> Tast.Const
+val TcFieldInit : range -> ILFieldInit -> Const
 
 val LightweightTcValForUsingInBuildMethodCall : g: TcGlobals -> traitCtxt: ITraitContext option -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType

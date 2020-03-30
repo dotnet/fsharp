@@ -2,7 +2,7 @@
 
 module internal FSharp.Compiler.LowerCallsAndSeqs
 
-open FSharp.Compiler.Tast
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Import
 open FSharp.Compiler.Range

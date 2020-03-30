@@ -2,15 +2,9 @@
 namespace FSharp.DependencyManager.Nuget
 
 open System
-open System.Collections
-open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Reflection
-open System.Runtime.CompilerServices
-open System.Runtime.Versioning
-
-open FSharp.DependencyManager.Nuget.ProjectFile
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
 type DependencyManagerAttribute() = inherit System.Attribute()

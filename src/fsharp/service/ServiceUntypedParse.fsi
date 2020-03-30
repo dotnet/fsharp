@@ -8,8 +8,9 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
-open FSharp.Compiler.AbstractSyntax
+
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 
 [<Sealed>]
 /// Represents the results of parsing an F# file

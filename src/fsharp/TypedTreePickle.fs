@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.TastPickle
+module internal FSharp.Compiler.TypedTreePickle
 
 open System.Collections.Generic
 open System.Text
@@ -12,15 +12,17 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.AbstractSyntax
-open FSharp.Compiler.AbstractSyntaxOps
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Lib.Bits
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
 
@@ -1358,8 +1360,8 @@ let p_tcref ctxt (x: EntityRef) st =
     | ERefLocal x -> p_byte 0 st; p_local_item_ref ctxt st.oentities x st
     | ERefNonLocal x -> p_byte 1 st; p_nleref x st
 
-let p_ucref (UCRef(a, b)) st = p_tup2 (p_tcref "ucref") p_string (a, b) st
-let p_rfref (RFRef(a, b)) st = p_tup2 (p_tcref "rfref") p_string (a, b) st
+let p_ucref (UnionCaseRef(a, b)) st = p_tup2 (p_tcref "ucref") p_string (a, b) st
+let p_rfref (RecdFieldRef(a, b)) st = p_tup2 (p_tcref "rfref") p_string (a, b) st
 let p_tpref x st = p_local_item_ref "typar" st.otypars  x st
 
 let u_local_item_ref tab st = u_osgn_ref tab st
@@ -1371,9 +1373,9 @@ let u_tcref st =
     | 1 -> u_nleref                     st |> ERefNonLocal
     | _ -> ufailwith st "u_item_ref"
 
-let u_ucref st  = let a, b = u_tup2 u_tcref u_string st in UCRef(a, b)
+let u_ucref st  = let a, b = u_tup2 u_tcref u_string st in UnionCaseRef(a, b)
 
-let u_rfref st = let a, b = u_tup2 u_tcref u_string st in RFRef(a, b)
+let u_rfref st = let a, b = u_tup2 u_tcref u_string st in RecdFieldRef(a, b)
 
 let u_tpref st = u_local_item_ref st.itypars st
 
@@ -2035,7 +2037,7 @@ and u_tycon_repr st =
             (fun _flagBit -> TRecdRepr v)
         | 1 ->
             let v = u_list u_unioncase_spec  st
-            (fun _flagBit -> MakeUnionRepr v)
+            (fun _flagBit -> Construct.MakeUnionRepr v)
         | 2 ->
             let v = u_ILType st
             // This is the F# 3.0 extension to the format used for F# provider-generated types, which record an ILTypeRef in the format
@@ -2141,7 +2143,7 @@ and u_recdfield_spec st =
       rfield_name_generated = false
       rfield_other_range = None }
 
-and u_rfield_table st = MakeRecdFieldsTable (u_list u_recdfield_spec st)
+and u_rfield_table st = Construct.MakeRecdFieldsTable (u_list u_recdfield_spec st)
 
 and u_entity_spec_data st : Entity =
     let x1, x2a, x2b, x2c, x3, (x4a, x4b), x6, x7f, x8, x9, _x10, x10b, x11, x12, x13, x14, x15 =
@@ -2635,11 +2637,11 @@ and u_expr st =
     | 7 ->  let a = u_binds st
             let b = u_expr st
             let c = u_dummy_range st
-            Expr.LetRec (a, b, c, NewFreeVarsCache())
+            Expr.LetRec (a, b, c, Construct.NewFreeVarsCache())
     | 8 ->  let a = u_bind st
             let b = u_expr st
             let c = u_dummy_range st
-            Expr.Let (a, b, c, NewFreeVarsCache())
+            Expr.Let (a, b, c, Construct.NewFreeVarsCache())
     | 9 ->  let a = u_dummy_range st
             let b = u_dtree st
             let c = u_targets st

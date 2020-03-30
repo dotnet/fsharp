@@ -3,7 +3,6 @@
 
 module public FSharp.Compiler.Interactive.Shell
 
-open System.Collections.Generic
 open System.IO
 open System.Threading
 open FSharp.Compiler
@@ -12,10 +11,13 @@ open FSharp.Compiler.SourceCodeServices
 [<Class>]
 /// Represents an evaluated F# value
 type FsiValue = 
+
     /// The value, as an object
     member ReflectionValue : obj
+
     /// The type of the value, from the point of view of the .NET type system
     member ReflectionType : System.Type
+
 #if COMPILER_API
     /// The type of the value, from the point of view of the F# type system
     member FSharpType : FSharpType
@@ -43,33 +45,43 @@ type EvaluationEventArgs =
 [<AbstractClass>]
 type public FsiEvaluationSessionHostConfig = 
     new : unit -> FsiEvaluationSessionHostConfig
+
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract FormatProvider: System.IFormatProvider  
+
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract FloatingPointFormat: string 
+
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract AddedPrinters : Choice<(System.Type * (obj -> string)), (System.Type * (obj -> obj))>  list
+
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract ShowDeclarationValues: bool  
+
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract ShowIEnumerable: bool  
+
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract ShowProperties : bool  
+
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract PrintSize : int  
+
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract PrintDepth : int  
+
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract PrintWidth : int
+
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract PrintLength : int
+
     /// The evaluation session calls this to report the preferred view of the command line arguments after 
     /// stripping things like "/use:file.fsx", "-r:Foo.dll" etc.
     abstract ReportUserCommandLineArgs : string [] -> unit
 
     /// Hook for listening for evaluation bindings
     member OnEvaluation : IEvent<EvaluationEventArgs>
-
 
     ///<summary>
     /// <para>Indicate a special console "readline" reader for the evaluation session, if any.</para><para> </para>
@@ -264,7 +276,6 @@ type FsiEvaluationSession =
     /// implicitly reference FSharp.Compiler.Interactive.Settings.dll. 
     static member GetDefaultConfiguration: unit -> FsiEvaluationSessionHostConfig
 
-
 /// A default implementation of the 'fsi' object, used by GetDefaultConfiguration()
 module Settings = 
     /// <summary>An event loop used by the currently executing F# Interactive session to execute code
@@ -284,24 +295,34 @@ module Settings =
     type InteractiveSettings =
         /// <summary>Get or set the floating point format used in the output of the interactive session.</summary>
         member FloatingPointFormat: string with get,set
+
         /// <summary>Get or set the format provider used in the output of the interactive session.</summary>
         member FormatProvider: System.IFormatProvider  with get,set
+
         /// <summary>Get or set the print width of the interactive session.</summary>
         member PrintWidth : int  with get,set
+
         /// <summary>Get or set the print depth of the interactive session.</summary>
         member PrintDepth : int  with get,set
+
         /// <summary>Get or set the total print length of the interactive session.</summary>
         member PrintLength : int  with get,set
+
         /// <summary>Get or set the total print size of the interactive session.</summary>
         member PrintSize : int  with get,set      
+
         /// <summary>When set to 'false', disables the display of properties of evaluated objects in the output of the interactive session.</summary>
         member ShowProperties : bool  with get,set
+
         /// <summary>When set to 'false', disables the display of sequences in the output of the interactive session.</summary>
         member ShowIEnumerable: bool  with get,set
+
         /// <summary>When set to 'false', disables the display of declaration values in the output of the interactive session.</summary>
         member ShowDeclarationValues: bool  with get,set      
+
         /// <summary>Register a printer that controls the output of the interactive session.</summary>
         member AddPrinter: ('T -> string) -> unit
+
         /// <summary>Register a print transformer that controls the output of the interactive session.</summary>
         member AddPrintTransformer: ('T -> obj) -> unit
 

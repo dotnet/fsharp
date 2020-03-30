@@ -7,14 +7,22 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open Internal.Utilities.FSharpEnvironment
+open Microsoft.FSharp.Reflection
 
+[<AutoOpen>]
 module ReflectionHelper =
     let dependencyManagerPattern = "*DependencyManager*.dll"
+
     let dependencyManagerAttributeName= "DependencyManagerAttribute"
+
     let resolveDependenciesMethodName = "ResolveDependencies"
+
     let namePropertyName = "Name"
+
     let keyPropertyName = "Key"
+
     let arrEmpty = Array.empty<string>
+
     let seqEmpty = Seq.empty<string>
 
     let assemblyHasAttribute (theAssembly: Assembly) attributeName =
@@ -56,10 +64,6 @@ module ReflectionHelper =
         | :? TargetInvocationException as e->
             e.InnerException
         | _ -> e
-
-open ReflectionHelper
-open Microsoft.FSharp.Reflection
-
 
 /// Indicate the type of error to report
 [<RequireQualifiedAccess>]
@@ -188,7 +192,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         member __.Key = instance |> keyProperty
 
         /// Resolve the dependencies for the given arguments
-        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm): IResolveDependenciesResult =
+        member __.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm) =
 
             // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resoveDepsEx
             // The resolve method can return values in two different tuples:

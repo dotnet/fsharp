@@ -6,7 +6,6 @@ module internal FSharpDependencyManager =
     val formatPackageReference: PackageReference -> seq<string>
     val parsePackageReference: string list -> PackageReference list * string option option
 
-
 /// The results of ResolveDependencies
 [<Class>]
 type ResolveDependenciesResult =
@@ -15,23 +14,26 @@ type ResolveDependenciesResult =
     member Success: bool
 
     /// The resolution output log
-    member StdOut: string array
+    member StdOut: string[]
 
-    /// The resolution error log (* process stderror *)
-    member StdError: string array
+    /// The resolution error log (process stderr)
+    member StdError: string[]
 
     /// The resolution paths
-    member Resolutions: string seq
+    member Resolutions: seq<string>
 
     /// The source code file paths
-    member SourceFiles: string seq
+    member SourceFiles: seq<string>
 
     /// The roots to package directories
-    member Roots: string seq
+    member Roots: seq<string>
 
-
-type [<DependencyManagerAttribute>] FSharpDependencyManager =
+[<DependencyManagerAttribute>] 
+type FSharpDependencyManager =
     new: outputDir:string option -> FSharpDependencyManager
+
     member Name: string
+
     member Key:string
+
     member ResolveDependencies: scriptExt:string * packageManagerTextLines:string seq * tfm: string -> obj

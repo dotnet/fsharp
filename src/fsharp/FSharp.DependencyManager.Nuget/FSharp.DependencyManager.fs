@@ -4,7 +4,6 @@ namespace FSharp.DependencyManager.Nuget
 
 open System
 open System.Collections.Concurrent
-open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open FSharp.DependencyManager.Nuget
@@ -120,7 +119,8 @@ type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: s
     /// The roots to package directories
     member __.Roots = roots
 
-type [<DependencyManagerAttribute>] FSharpDependencyManager (outputDir:string option) =
+[<DependencyManagerAttribute>] 
+type FSharpDependencyManager (outputDir:string option) =
 
     let key = "nuget"
     let name = "MsBuild Nuget DependencyManager"
