@@ -244,32 +244,37 @@ type ByteMemory with
 
     member x.AsReadOnly() = ReadOnlyByteMemory x
 
+    static member Empty = ByteArrayMemory([||], 0, 0) :> ByteMemory
+
     static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
         let length = int64 bytes.Length
-        let mmf = 
-            let mmf =
-                MemoryMappedFile.CreateNew(
-                    null, 
-                    length, 
-                    MemoryMappedFileAccess.ReadWrite, 
-                    MemoryMappedFileOptions.None, 
-                    HandleInheritability.None)
-            use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
-            bytes.CopyTo stream
-            mmf
+        if length = 0L then
+            ByteMemory.Empty
+        else
+            let mmf = 
+                let mmf =
+                    MemoryMappedFile.CreateNew(
+                        null, 
+                        length, 
+                        MemoryMappedFileAccess.ReadWrite, 
+                        MemoryMappedFileOptions.None, 
+                        HandleInheritability.None)
+                use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
+                bytes.CopyTo stream
+                mmf
 
-        let accessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.ReadWrite)
+            let accessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.ReadWrite)
 
-        let safeHolder =
-            { new obj() with
-                override x.Finalize() =
-                    (x :?> IDisposable).Dispose()
-              interface IDisposable with
-                member x.Dispose() =
-                    GC.SuppressFinalize x
-                    accessor.Dispose()
-                    mmf.Dispose() }
-        RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, safeHolder)
+            let safeHolder =
+                { new obj() with
+                    override x.Finalize() =
+                        (x :?> IDisposable).Dispose()
+                  interface IDisposable with
+                    member x.Dispose() =
+                        GC.SuppressFinalize x
+                        accessor.Dispose()
+                        mmf.Dispose() }
+            RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, safeHolder)
 
     static member FromFile(path, access, ?canShadowCopy: bool) =
         let canShadowCopy = defaultArg canShadowCopy false
