@@ -12,8 +12,7 @@ open System.Runtime.Versioning
 
 // Package reference information
 type PackageReference =
-    {
-      Include:string
+    { Include:string
       Version:string
       RestoreSources:string
       Script:string
@@ -21,14 +20,14 @@ type PackageReference =
 
 // Resolved assembly information
 type internal Resolution =
-    {
-      NugetPackageId: string
-      NugetPackageVersion: string
-      PackageRoot: string
-      FullPath: string
+    { NugetPackageId : string
+      NugetPackageVersion : string
+      PackageRoot : string
+      FullPath : string
+      AssetType: string
       IsNotImplementationReference: string
-      NativePath: string
-      InitializeSourcePath: string
+      NativePath : string
+      InitializeSourcePath : string
     }
 
 
@@ -43,11 +42,17 @@ module internal ProjectFile =
         |> Array.map(fun r -> r.InitializeSourcePath)
         |> Array.distinct
 
-    let findReferencesFromResolutions (resolutions:Resolution[]) =
+    let findReferencesFromResolutions (resolutions:Resolution array) =
+
+        let equals (s1:string) (s2:string) =
+            String.Compare(s1, s2, StringComparison.InvariantCultureIgnoreCase) = 0
+
         resolutions
-        |> Array.filter(fun r ->
-            not(String.IsNullOrEmpty(r.NugetPackageId)) &&
-            File.Exists(r.FullPath))
+        |> Array.filter(fun r -> not(String.IsNullOrEmpty(r.NugetPackageId) ||
+                                     String.IsNullOrEmpty(r.FullPath)) &&
+                                     not (equals r.IsNotImplementationReference "true") &&
+                                     File.Exists(r.FullPath) &&
+                                     equals r.AssetType "runtime")
         |> Array.map(fun r -> r.FullPath)
         |> Array.distinct
 
@@ -84,27 +89,23 @@ module internal ProjectFile =
 
         [| for line in lines do
             let fields = line.Split(',')
-            if fields.Length < 7 then raise (new System.InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
+            if fields.Length < 8 then raise (new System.InvalidOperationException(sprintf "Internal error - Invalid resolutions file format '%s'" line))
             else
                 { NugetPackageId = fields.[0]
                   NugetPackageVersion = fields.[1]
                   PackageRoot = fields.[2]
                   FullPath = fields.[3]
-                  IsNotImplementationReference = fields.[4]
-                  InitializeSourcePath = fields.[5]
-                  NativePath = fields.[6]
+                  AssetType = fields.[4]
+                  IsNotImplementationReference = fields.[5]
+                  InitializeSourcePath = fields.[6]
+                  NativePath = fields.[7]
                 }
         |]
 
-    let makeScriptFromResolutions (resolutions:Resolution[]) poundRprefix =
+    let makeScriptFromReferences (references:string seq) poundRprefix =
         let expandReferences =
-            resolutions
-            |> Array.filter(fun r ->
-                not(String.IsNullOrEmpty(r.NugetPackageId) ||
-                    String.IsNullOrEmpty(r.FullPath)) &&
-                String.Compare(r.IsNotImplementationReference, "true", StringComparison.InvariantCultureIgnoreCase) <> 0 &&
-                File.Exists(r.FullPath)) 
-            |> Array.fold(fun acc r -> acc + poundRprefix + r.FullPath + "\"" + Environment.NewLine) ""
+            references
+            |> Seq.fold(fun acc r -> acc + poundRprefix + r + "\"" + Environment.NewLine) ""
 
         let projectTemplate ="""
 // Generated from #r "nuget:Package References"
@@ -126,6 +127,7 @@ $(POUND_R)
 
   <PropertyGroup>
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
+    <RuntimeIdentifier>$(RUNTIMEIDENTIFIER)</RuntimeIdentifier>
     <IsPackable>false</IsPackable>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
@@ -194,7 +196,7 @@ $(PACKAGEREFERENCES)
       <ResolvedReferenceLines Remove='*' />
       <ResolvedReferenceLines
           Condition="'$(SCRIPTEXTENSION)'=='.csx' or '%(InteractiveResolvedFile.NugetPackageId)'!='FSharp.Core'"
-          Include='%(InteractiveResolvedFile.NugetPackageId),%(InteractiveResolvedFile.NugetPackageVersion),%(InteractiveResolvedFile.PackageRoot),%(InteractiveResolvedFile.FullPath),%(InteractiveResolvedFile.IsNotImplementationReference),%(InteractiveResolvedFile.InitializeSourcePath),%(NativeIncludeRoots.Path)'
+          Include='%(InteractiveResolvedFile.NugetPackageId),%(InteractiveResolvedFile.NugetPackageVersion),%(InteractiveResolvedFile.PackageRoot),%(InteractiveResolvedFile.FullPath),%(InteractiveResolvedFile.AssetType),%(InteractiveResolvedFile.IsNotImplementationReference),%(InteractiveResolvedFile.InitializeSourcePath),%(NativeIncludeRoots.Path)'
           KeepDuplicates="false" />
     </ItemGroup>
 

@@ -5448,7 +5448,7 @@ module ScriptPreprocessClosure =
                             | NonNull dependencyManager ->
                                 let inline snd3 (_, b, _) = b
                                 let packageManagerTextLines = packageManagerLines |> List.map snd3
-                                let result = tcConfig.dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, tcConfig.implicitIncludeDir, mainFile, scriptName)
+                                let result = tcConfig.dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, executionRid, tcConfig.implicitIncludeDir, mainFile, scriptName)
                                 match result.Success with
                                 | true ->
                                     // Resolution produced no errors
