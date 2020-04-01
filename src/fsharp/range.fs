@@ -5,6 +5,7 @@ module FSharp.Compiler.Range
 
 open System
 open System.IO
+open System.Collections.Generic
 open System.Collections.Concurrent
 open Microsoft.FSharp.Core.Printf
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -295,9 +296,12 @@ let outputPos   (os:TextWriter) (m:pos)   = fprintf os "(%d,%d)" m.Line m.Column
 
 let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End
     
-let posGt (p1:pos) (p2:pos) = (p1.Line > p2.Line || (p1.Line = p2.Line && p1.Column > p2.Column))
+let posGt (p1: pos) (p2: pos) =
+    let p1Line = p1.Line
+    let p2Line = p2.Line
+    p1Line > p2Line || p1Line = p2Line && p1.Column > p2.Column
 
-let posEq (p1:pos) (p2:pos) = (p1.Line = p2.Line &&  p1.Column = p2.Column)
+let posEq (p1: pos) (p2: pos) = p1.Encoding = p2.Encoding
 
 let posGeq p1 p2 = posEq p1 p2 || posGt p1 p2
 
@@ -379,5 +383,10 @@ module Range =
     let toZ (m:range) = Pos.toZ m.Start, Pos.toZ m.End
 
     let toFileZ (m:range) = m.FileName, toZ m
+
+    let comparer = 
+        { new IEqualityComparer<range> with 
+            member _.Equals(x1, x2) = equals x1 x2 
+            member _.GetHashCode o = o.GetHashCode() }
 
 

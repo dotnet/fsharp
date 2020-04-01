@@ -48,7 +48,6 @@ param (
     [switch]$testCoreClr,
     [switch]$testCambridge,
     [switch]$testCompiler,
-    [switch]$testDependencyManager,
     [switch]$testFSharpCore,
     [switch]$testFSharpQA,
     [switch]$testScripting,
@@ -61,6 +60,8 @@ param (
 
 Set-StrictMode -version 2.0
 $ErrorActionPreference = "Stop"
+$BuildCategory = ""
+$BuildMessage = ""
 
 function Print-Usage() {
     Write-Host "Common settings:"
@@ -84,7 +85,6 @@ function Print-Usage() {
     Write-Host "  -testAll                  Run all tests"
     Write-Host "  -testCambridge            Run Cambridge tests"
     Write-Host "  -testCompiler             Run FSharpCompiler unit tests"
-    Write-Host "  -testDependencyManager    Run FSharp.DependencyManager.UnitTests"
     Write-Host "  -testDesktop              Run tests against full .NET Framework"
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
     Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
@@ -126,7 +126,6 @@ function Process-Arguments() {
         $script:testAll = $False
         $script:testCambridge = $False
         $script:testCompiler = $False
-        $script:testDependencyManager = $False
         $script:testDesktop = $False
         $script:testCoreClr = $False
         $script:testFSharpCore = $False
@@ -257,6 +256,10 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
         $args += " --no-build"
     }
 
+    if ($env:RunningAsPullRequest -ne "true") {
+        $args += " --filter TestCategory!=PullRequest"
+    }
+
     Exec-Console $dotnetExe $args
 }
 
@@ -303,6 +306,9 @@ function EnablePreviewSdks() {
 }
 
 try {
+    $script:BuildCategory = "Build"
+    $script:BuildMessage = "Failure preparing build"
+
     Process-Arguments
 
     . (Join-Path $PSScriptRoot "build-utils.ps1")
@@ -317,9 +323,11 @@ try {
     }
 
     if ($bootstrap) {
+        $script:BuildMessage = "Failure building bootstrap compiler"
         $bootstrapDir = Make-BootstrapBuild
     }
 
+    $script:BuildMessage = "Failure building product"
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
         if ($noVisualStudio) {
             BuildCompiler
@@ -332,14 +340,14 @@ try {
         VerifyAssemblyVersionsAndSymbols
     }
 
+    $script:BuildCategory = "Test"
+    $script:BuildMessage = "Failure running tests"
     $desktopTargetFramework = "net472"
     $coreclrTargetFramework = "netcoreapp3.0"
 
     if ($testDesktop -and -not $noVisualStudio) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework
@@ -347,9 +355,7 @@ try {
 
     if ($testCoreClr) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.LanguageServer.UnitTests\FSharp.Compiler.LanguageServer.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework
@@ -357,16 +363,17 @@ try {
 
     if ($testFSharpQA -and -not $noVisualStudio) {
         Push-Location "$RepoRoot\tests\fsharpqa\source"
+        $nugetPackages = Get-PackagesDir
         $resultsRoot = "$ArtifactsDir\TestResults\$configuration"
         $resultsLog = "test-net40-fsharpqa-results.log"
         $errorLog = "test-net40-fsharpqa-errors.log"
         $failLog = "test-net40-fsharpqa-errors"
-        $perlPackageRoot = "$env:USERPROFILE\.nuget\packages\StrawberryPerl\5.28.0.1";
+        $perlPackageRoot = "$nugetPackages\StrawberryPerl\5.28.0.1";
         $perlExe = "$perlPackageRoot\bin\perl.exe"
         Create-Directory $resultsRoot
         UpdatePath
         $env:HOSTED_COMPILER = 1
-        $env:CSC_PIPE = "$env:USERPROFILE\.nuget\packages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe"
+        $env:CSC_PIPE = "$nugetPackages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe"
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
@@ -387,13 +394,6 @@ try {
             TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         }
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
-    }
-
-    if ($testDependencyManager) {
-        if (-not $noVisualStudio) {
-            TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $desktopTargetFramework
-        }
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.DependencyManager.UnitTests\FSharp.DependencyManager.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
     if ($testCambridge) {
@@ -421,6 +421,7 @@ catch {
     Write-Host $_
     Write-Host $_.Exception
     Write-Host $_.ScriptStackTrace
+    Write-PipelineTelemetryError -Category $script:BuildCategory -Message $script:BuildMessage
     ExitWithExitCode 1
 }
 finally {

@@ -313,19 +313,12 @@ let bufs f =
     f buf 
     buf.ToString()
 
-let buff (os: TextWriter) f x = 
+// writing to output stream via a string buffer.
+let writeViaBuffer (os: TextWriter) f x = 
     let buf = System.Text.StringBuilder 100 
     f buf x 
     os.Write(buf.ToString())
 
-// Converts "\n" into System.Environment.NewLine before writing to os. See lib.fs:buff
-let writeViaBufferWithEnvironmentNewLines (os: TextWriter) f x = 
-    let buf = System.Text.StringBuilder 100 
-    f buf x
-    let text = buf.ToString()
-    let text = text.Replace("\n", System.Environment.NewLine)
-    os.Write text
-        
 //---------------------------------------------------------------------------
 // Imperative Graphs 
 //---------------------------------------------------------------------------
@@ -560,3 +553,19 @@ module StackGuard =
     let EnsureSufficientExecutionStack recursionDepth =
         if recursionDepth > MaxUncheckedRecursionDepth then
             RuntimeHelpers.EnsureSufficientExecutionStack ()
+
+[<RequireQualifiedAccess>] 
+type MaybeLazy<'T> =
+    | Strict of 'T
+    | Lazy of Lazy<'T>
+
+    member this.Value: 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Value
+
+    member this.Force() : 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Force()
+

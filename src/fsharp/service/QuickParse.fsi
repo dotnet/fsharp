@@ -2,12 +2,12 @@
 
 namespace FSharp.Compiler
 
-open System
 open FSharp.Compiler.SourceCodeServices
 
 /// Qualified long name.
 type public PartialLongName =
-    { /// Qualifying idents, prior to the last dot, not including the last part.
+    {
+      /// Qualifying idents, prior to the last dot, not including the last part.
       QualifyingIdents: string list
 
       /// Last part of long ident.
@@ -17,7 +17,8 @@ type public PartialLongName =
       EndColumn: int
 
       /// Position of the last dot.
-      LastDotPos: int option }
+      LastDotPos: int option
+    }
     
     /// Empty partial long name.
     static member Empty: endColumn: int -> PartialLongName
@@ -39,6 +40,7 @@ type public PartialLongName =
 /// below is inaccurate for long identifier chains involving ``...`` identifiers.  And there are special cases
 /// for active pattern names and so on.
 module public QuickParse =
+
     /// Puts us after the last character.
     val MagicalAdjustmentConstant : int
 

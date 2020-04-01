@@ -25,24 +25,6 @@ open Internal.Utilities
 
 let logging = false
 
-let runningOnMono =
-#if ENABLE_MONO_SUPPORT
-// Officially supported way to detect if we are running on Mono.
-// See http://www.mono-project.com/FAQ:_Technical
-// "How can I detect if am running in Mono?" section
-    try
-        System.Type.GetType ("Mono.Runtime") <> null
-    with e->
-        // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
-        // that is not reliable.
-        // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
-        // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
-        // their issue fixed but we need to be robust here anyway.
-        false
-#else
-    false
-#endif
-
 let _ = if logging then dprintn "* warning: Il.logging is on"
 
 let int_order = LanguagePrimitives.FastGenericComparer<int>
@@ -66,10 +48,6 @@ type PrimaryAssembly =
         | Mscorlib -> "mscorlib"
         | System_Runtime -> "System.Runtime"
         | NetStandard -> "netstandard"
-    static member IsSomePrimaryAssembly n =
-      n = PrimaryAssembly.Mscorlib.Name
-      || n = PrimaryAssembly.System_Runtime.Name
-      || n = PrimaryAssembly.NetStandard.Name
 
 // --------------------------------------------------------------------
 // Utilities: type names
@@ -331,6 +309,10 @@ type ILVersionInfo =
     new (major, minor, build, revision) =
         { Major = major; Minor = minor; Build = build; Revision = revision }
 
+    /// For debugging
+    override x.ToString() = sprintf "ILVersionInfo: %u %u %u %u" (x.Major) (x.Minor) (x.Build) (x.Revision)
+
+
 type Locale = string
 
 [<StructuralEquality; StructuralComparison>]
@@ -373,6 +355,7 @@ let isMscorlib data =
 [<Sealed>]
 type ILAssemblyRef(data) =
     let uniqueStamp = AssemblyRefUniqueStampGenerator.Encode data
+    let uniqueIgnoringVersionStamp = AssemblyRefUniqueStampGenerator.Encode { data with assemRefVersion = None }
 
     member x.Name=data.assemRefName
 
@@ -387,6 +370,11 @@ type ILAssemblyRef(data) =
     member x.Locale=data.assemRefLocale
 
     member x.UniqueStamp=uniqueStamp
+
+    member x.UniqueIgnoringVersionStamp=uniqueIgnoringVersionStamp
+
+    member x.EqualsIgnoringVersion (aref: ILAssemblyRef) =
+        aref.UniqueIgnoringVersionStamp = uniqueIgnoringVersionStamp
 
     override x.GetHashCode() = uniqueStamp
 
@@ -490,6 +478,7 @@ type ILScopeRef =
     | Local
     | Module of ILModuleRef
     | Assembly of ILAssemblyRef
+    | PrimaryAssembly
 
     member x.IsLocalRef = match x with ILScopeRef.Local -> true | _ -> false
 
@@ -498,6 +487,7 @@ type ILScopeRef =
         | ILScopeRef.Local -> ""
         | ILScopeRef.Module mref -> "module "+mref.Name
         | ILScopeRef.Assembly aref -> aref.QualifiedName
+        | ILScopeRef.PrimaryAssembly -> ""
 
 type ILArrayBound = int32 option
 
@@ -1735,6 +1725,10 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
 
     member x.FindByNameAndArity (nm, arity) = x.FindByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
 
+    member x.TryFindInstanceByNameAndCallingSignature (nm, callingSig) = 
+        x.FindByName nm 
+        |> List.tryFind (fun x -> not x.IsStatic && x.CallingSignature = callingSig)
+
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILEventDef(eventType: ILType option, name: string, attributes: EventAttributes,
                 addMethod: ILMethodRef, removeMethod: ILMethodRef, fireMethod: ILMethodRef option,
@@ -2193,6 +2187,11 @@ and ILExportedTypesAndForwarders =
 
     member x.AsList = let (ILExportedTypesAndForwarders ltab) = x in Map.foldBack (fun _x y r -> y :: r) (ltab.Force()) []
 
+    member x.TryFindByName nm =
+        match x with
+        | ILExportedTypesAndForwarders ltab ->
+            ltab.Value.TryFind nm
+
 [<RequireQualifiedAccess>]
 type ILResourceAccess =
     | Public
@@ -2593,54 +2592,47 @@ let tname_IntPtr = "System.IntPtr"
 [<Literal>]
 let tname_UIntPtr = "System.UIntPtr"
 
+[<Literal>]
+let tname_TypedReference = "System.TypedReference"
+
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-// This data structure needs an entirely delayed implementation
-type ILGlobals(primaryScopeRef) =
+type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list) =
 
-    let m_mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
+    let assembliesThatForwardToPrimaryAssembly = Array.ofList assembliesThatForwardToPrimaryAssembly
 
-    let m_typ_Object = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Object))
-    let m_typ_String = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_String))
-    let m_typ_Array = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Array))
-    let m_typ_Type = mkILBoxedType (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Type))
-    let m_typ_SByte = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_SByte))
-    let m_typ_Int16 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int16))
-    let m_typ_Int32 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int32))
-    let m_typ_Int64 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Int64))
-    let m_typ_Byte = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Byte))
-    let m_typ_UInt16 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt16))
-    let m_typ_UInt32 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt32))
-    let m_typ_UInt64 = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UInt64))
-    let m_typ_Single = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Single))
-    let m_typ_Double = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Double))
-    let m_typ_Bool = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Bool))
-    let m_typ_Char = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_Char))
-    let m_typ_IntPtr = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_IntPtr))
-    let m_typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (m_mkSysILTypeRef tname_UIntPtr))
+    let mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
 
-    member x.primaryAssemblyScopeRef = m_typ_Object.TypeRef.Scope
-    member x.primaryAssemblyName = 
-        match m_typ_Object.TypeRef.Scope with 
-        | ILScopeRef.Assembly aref -> aref.Name 
+    member _.primaryAssemblyScopeRef = primaryScopeRef
+    member x.primaryAssemblyRef = 
+        match primaryScopeRef with 
+        | ILScopeRef.Assembly aref -> aref
         | _ -> failwith "Invalid primary assembly"
-    member x.typ_Object = m_typ_Object
-    member x.typ_String = m_typ_String
-    member x.typ_Array = m_typ_Array
-    member x.typ_Type = m_typ_Type
-    member x.typ_IntPtr = m_typ_IntPtr
-    member x.typ_UIntPtr = m_typ_UIntPtr
-    member x.typ_Byte = m_typ_Byte
-    member x.typ_Int16 = m_typ_Int16
-    member x.typ_Int32 = m_typ_Int32
-    member x.typ_Int64 = m_typ_Int64
-    member x.typ_SByte = m_typ_SByte
-    member x.typ_UInt16 = m_typ_UInt16
-    member x.typ_UInt32 = m_typ_UInt32
-    member x.typ_UInt64 = m_typ_UInt64
-    member x.typ_Single = m_typ_Single
-    member x.typ_Double = m_typ_Double
-    member x.typ_Bool = m_typ_Bool
-    member x.typ_Char = m_typ_Char
+    member x.primaryAssemblyName = x.primaryAssemblyRef.Name
+
+    member val typ_Object = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Object))
+    member val typ_String = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_String))
+    member val typ_Array = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Array))
+    member val typ_Type = mkILBoxedType (mkILNonGenericTySpec (mkSysILTypeRef tname_Type))
+    member val typ_SByte = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_SByte))
+    member val typ_Int16 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Int16))
+    member val typ_Int32 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Int32))
+    member val typ_Int64 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Int64))
+    member val typ_Byte = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Byte))
+    member val typ_UInt16 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UInt16))
+    member val typ_UInt32 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UInt32))
+    member val typ_UInt64 = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UInt64))
+    member val typ_Single = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Single))
+    member val typ_Double = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Double))
+    member val typ_Bool = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Bool))
+    member val typ_Char = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_Char))
+    member val typ_IntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_IntPtr))
+    member val typ_UIntPtr = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_UIntPtr))
+    member val typ_TypedReference = ILType.Value (mkILNonGenericTySpec (mkSysILTypeRef tname_TypedReference))
+
+    member x.IsPossiblePrimaryAssemblyRef(aref: ILAssemblyRef) =
+        aref.EqualsIgnoringVersion x.primaryAssemblyRef ||
+        assembliesThatForwardToPrimaryAssembly
+        |> Array.exists aref.EqualsIgnoringVersion
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2648,7 +2640,7 @@ type ILGlobals(primaryScopeRef) =
 
     override x.ToString() = "<ILGlobals>"
 
-let mkILGlobals primaryScopeRef = ILGlobals primaryScopeRef
+let mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly) = ILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly)
 
 let mkNormalCall mspec = I_call (Normalcall, mspec, None)
 
@@ -2693,54 +2685,55 @@ let isILBoxedTy = function ILType.Boxed _ -> true | _ -> false
 
 let isILValueTy = function ILType.Value _ -> true | _ -> false
 
-let isPrimaryAssemblyTySpec (tspec: ILTypeSpec) n =
+let isBuiltInTySpec (ilg: ILGlobals) (tspec: ILTypeSpec) n =
     let tref = tspec.TypeRef
     let scoref = tref.Scope
-    (tref.Name = n) &&
-    match scoref with
-    | ILScopeRef.Assembly n -> PrimaryAssembly.IsSomePrimaryAssembly n.Name
-    | ILScopeRef.Module _ -> false
-    | ILScopeRef.Local -> true
+    tref.Name = n && 
+    (match scoref with
+     | ILScopeRef.Local
+     | ILScopeRef.Module _ -> false
+     | ILScopeRef.Assembly aref -> ilg.IsPossiblePrimaryAssemblyRef aref
+     | ILScopeRef.PrimaryAssembly -> true)
 
-let isILBoxedPrimaryAssemblyTy (ty: ILType) n =
-  isILBoxedTy ty && isPrimaryAssemblyTySpec ty.TypeSpec n
+let isILBoxedBuiltInTy ilg (ty: ILType) n =
+    isILBoxedTy ty && isBuiltInTySpec ilg ty.TypeSpec n
 
-let isILValuePrimaryAssemblyTy (ty: ILType) n =
-  isILValueTy ty && isPrimaryAssemblyTySpec ty.TypeSpec n
+let isILValueBuiltInTy ilg (ty: ILType) n =
+    isILValueTy ty && isBuiltInTySpec ilg ty.TypeSpec n
 
-let isILObjectTy ty = isILBoxedPrimaryAssemblyTy ty tname_Object
+let isILObjectTy ilg ty = isILBoxedBuiltInTy ilg ty tname_Object
 
-let isILStringTy ty = isILBoxedPrimaryAssemblyTy ty tname_String
+let isILStringTy ilg ty = isILBoxedBuiltInTy ilg ty tname_String
 
-let isILTypedReferenceTy ty = isILValuePrimaryAssemblyTy ty "System.TypedReference"
+let isILTypedReferenceTy ilg ty = isILValueBuiltInTy ilg ty tname_TypedReference
 
-let isILSByteTy ty = isILValuePrimaryAssemblyTy ty tname_SByte
+let isILSByteTy ilg ty = isILValueBuiltInTy ilg ty tname_SByte
 
-let isILByteTy ty = isILValuePrimaryAssemblyTy ty tname_Byte
+let isILByteTy ilg ty = isILValueBuiltInTy ilg ty tname_Byte
 
-let isILInt16Ty ty = isILValuePrimaryAssemblyTy ty tname_Int16
+let isILInt16Ty ilg ty = isILValueBuiltInTy ilg ty tname_Int16
 
-let isILUInt16Ty ty = isILValuePrimaryAssemblyTy ty tname_UInt16
+let isILUInt16Ty ilg ty = isILValueBuiltInTy ilg ty tname_UInt16
 
-let isILInt32Ty ty = isILValuePrimaryAssemblyTy ty tname_Int32
+let isILInt32Ty ilg ty = isILValueBuiltInTy ilg ty tname_Int32
 
-let isILUInt32Ty ty = isILValuePrimaryAssemblyTy ty tname_UInt32
+let isILUInt32Ty ilg ty = isILValueBuiltInTy ilg ty tname_UInt32
 
-let isILInt64Ty ty = isILValuePrimaryAssemblyTy ty tname_Int64
+let isILInt64Ty ilg ty = isILValueBuiltInTy ilg ty tname_Int64
 
-let isILUInt64Ty ty = isILValuePrimaryAssemblyTy ty tname_UInt64
+let isILUInt64Ty ilg ty = isILValueBuiltInTy ilg ty tname_UInt64
 
-let isILIntPtrTy ty = isILValuePrimaryAssemblyTy ty tname_IntPtr
+let isILIntPtrTy ilg ty = isILValueBuiltInTy ilg ty tname_IntPtr
 
-let isILUIntPtrTy ty = isILValuePrimaryAssemblyTy ty tname_UIntPtr
+let isILUIntPtrTy ilg ty = isILValueBuiltInTy ilg ty tname_UIntPtr
 
-let isILBoolTy ty = isILValuePrimaryAssemblyTy ty tname_Bool
+let isILBoolTy ilg ty = isILValueBuiltInTy ilg ty tname_Bool
 
-let isILCharTy ty = isILValuePrimaryAssemblyTy ty tname_Char
+let isILCharTy ilg ty = isILValueBuiltInTy ilg ty tname_Char
 
-let isILSingleTy ty = isILValuePrimaryAssemblyTy ty tname_Single
+let isILSingleTy ilg ty = isILValueBuiltInTy ilg ty tname_Single
 
-let isILDoubleTy ty = isILValuePrimaryAssemblyTy ty tname_Double
+let isILDoubleTy ilg ty = isILValueBuiltInTy ilg ty tname_Double
 
 // --------------------------------------------------------------------
 // Rescoping
@@ -3710,7 +3703,7 @@ let getCustomAttrData (ilg: ILGlobals) cattr =
 
 let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", None, Some ecmaPublicKey, true, None, None))
 
-let EcmaMscorlibILGlobals = mkILGlobals MscorlibScopeRef
+let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [])
 
 // ILSecurityDecl is a 'blob' having the following format:
 // - A byte containing a period (.).
@@ -4006,7 +3999,8 @@ type ILReferences =
       ModuleReferences: ILModuleRef list }
 
 type ILReferencesAccumulator =
-    { refsA: HashSet<ILAssemblyRef>
+    { ilg: ILGlobals
+      refsA: HashSet<ILAssemblyRef>
       refsM: HashSet<ILModuleRef> }
 
 let emptyILRefs =
@@ -4023,6 +4017,7 @@ let refs_of_scoref s x =
     | ILScopeRef.Local -> ()
     | ILScopeRef.Assembly assemblyRef -> refs_of_assemblyRef s assemblyRef
     | ILScopeRef.Module modref -> refs_of_modref s modref
+    | ILScopeRef.PrimaryAssembly -> refs_of_assemblyRef s s.ilg.primaryAssemblyRef
 
 let refs_of_tref s (x: ILTypeRef) = refs_of_scoref s x.Scope
 
@@ -4219,9 +4214,10 @@ and refs_of_manifest s (m: ILAssemblyManifest) =
     refs_of_custom_attrs s m.CustomAttrs
     refs_of_exported_types s m.ExportedTypes
 
-let computeILRefs modul =
+let computeILRefs ilg modul =
     let s =
-      { refsA = HashSet<_>(HashIdentity.Structural)
+      { ilg = ilg
+        refsA = HashSet<_>(HashIdentity.Structural)
         refsM = HashSet<_>(HashIdentity.Structural) }
 
     refs_of_modul s modul

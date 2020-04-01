@@ -41,6 +41,9 @@ module internal FSharpEnvironment =
     // WARNING: Do not change this revision number unless you absolutely know what you're doing.
     let FSharpBinaryMetadataFormatRevision = "2.0.0.0"
 
+    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
+
+
 #if FX_NO_WIN_REGISTRY
 #else
     [<DllImport("Advapi32.dll", CharSet = CharSet.Unicode, BestFitMapping = false)>]
@@ -62,6 +65,7 @@ module internal FSharpEnvironment =
     // See: ndp\clr\src\BCL\System\IO\Path.cs
     let maxPath = 260;
     let maxDataLength = (new System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
+
 #if FX_NO_WIN_REGISTRY
 #else
     let KEY_WOW64_DEFAULT = 0x0000
@@ -182,10 +186,6 @@ module internal FSharpEnvironment =
     //     - default location of fsi.exe in FSharp.VS.FSI.dll (REVIEW: check this)
     //     - default F# binaries directory in (project system) Project.fs
     let BinFolderOfDefaultFSharpCompiler(probePoint:string option) =
-#if FX_NO_WIN_REGISTRY
-        ignore probePoint
-        Some AppDomain.CurrentDomain.BaseDirectory
-#else
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
         try
@@ -200,18 +200,17 @@ module internal FSharpEnvironment =
             // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
             match probePoint with 
             | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p 
-            | _ -> 
-
-            // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
-            let result = Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
-            if not (String.IsNullOrEmpty(result)) then
-                Some result
-            else
-                // For the prototype compiler, we can just use the current domain
-                tryCurrentDomain()
+            | _ ->
+                // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
+                let result = Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
+                if not (String.IsNullOrEmpty(result)) then
+                    Some result
+                else
+                    // For the prototype compiler, we can just use the current domain
+                    tryCurrentDomain()
         with e -> None
 
-
+#if !FX_NO_WIN_REGISTRY
     // Apply the given function to the registry entry corresponding to the subKey.
     // The reg key is disposed at the end of the scope.
     let useKey subKey f =
@@ -236,7 +235,7 @@ module internal FSharpEnvironment =
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Client" ||
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" ||
         runningOnMono
-
+    
     // Check if the running framework version is 4.5 or above.
     // Use the presence of v4.5.x in the registry to distinguish between 4.0 and 4.5
     let IsRunningOnNetFx45OrAbove =
@@ -261,7 +260,7 @@ module internal FSharpEnvironment =
         if typeof<obj>.Assembly.GetName().Name = "mscorlib" then
             [| "net48"; "net472"; "net471";"net47";"net462";"net461"; "net452"; "net451"; "net45"; "netstandard2.0" |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
-            [| "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netstandard2.0" |]
+            [| "netcoreapp3.1"; "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netcoreapp2.0"; "netstandard2.0" |]
         else
             System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
             [| "netstandard2.0" |]
@@ -297,7 +296,6 @@ module internal FSharpEnvironment =
         // We look in the directories stepping up from the location of the runtime assembly.
         let loadFromLocation designTimeAssemblyPath =
             try
-                printfn "Using: %s" designTimeAssemblyPath
                 Some (Assembly.UnsafeLoadFrom designTimeAssemblyPath)
             with e ->
                 raiseError e
@@ -320,8 +318,6 @@ module internal FSharpEnvironment =
             let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
             let paths = searchParentDirChain (Some runTimeAssemblyPath) designTimeAssemblyName
             paths
-            |> Seq.iter(function res -> printfn ">>>> %s" res)
-            paths
             |> Seq.tryHead
             |> function
                | Some res -> loadFromLocation res
@@ -330,7 +326,6 @@ module internal FSharpEnvironment =
                     let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
                     loadFromLocation (Path.Combine (runTimeAssemblyPath, designTimeAssemblyName))
 
-        printfn "=============== S T A R T =========================================="
         if designTimeAssemblyName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
             loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName
         else

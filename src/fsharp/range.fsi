@@ -200,3 +200,6 @@ module Range =
 
     /// Convert a range from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
     val toFileZ : range -> string * Range01
+
+    /// Equality comparer for range.
+    val comparer : IEqualityComparer<range>

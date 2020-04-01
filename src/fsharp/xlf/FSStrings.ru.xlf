@@ -77,11 +77,6 @@
         <target state="translated">Дискриминированные случаи объединения и метки исключений должны являться идентификаторами верхнего регистра</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Возможная перегрузка: "{0}". {1}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">Эта функция принимает слишком много аргументов либо используется в контексте, где функции не допускаются</target>
@@ -1625,6 +1620,11 @@
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
         <target state="translated">Обозначение '|}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="new">keyword 'and!'</target>
         <note />
       </trans-unit>
     </body>

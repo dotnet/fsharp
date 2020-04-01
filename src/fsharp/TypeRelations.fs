@@ -7,8 +7,9 @@ module internal FSharp.Compiler.TypeRelations
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Infos
 
@@ -133,7 +134,7 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              match tpc with 
              | TyparConstraint.CoercesTo(x, m) -> 
                  join m x, m
-             | TyparConstraint.MayResolveMember(TTrait(_, _, _, _, _, _), m) ->
+             | TyparConstraint.MayResolveMember(_traitInfo, m) -> 
                  maxSoFar, m
              | TyparConstraint.SimpleChoice(_, m) -> 
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInPrintf(), m))

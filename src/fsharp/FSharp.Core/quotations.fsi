@@ -181,6 +181,12 @@ type Expr =
     /// <returns>The resulting expression.</returns>
     static member NewTuple: elements:Expr list -> Expr 
 
+    /// <summary>Builds an expression that represents the creation of an F# tuple value</summary>
+    /// <param name="asm">Runtime assembly containing System.ValueTuple definitions.</param>
+    /// <param name="elements">The list of elements of the tuple.</param>
+    /// <returns>The resulting expression.</returns>
+    static member NewStructTuple: asm:Assembly * elements:Expr list -> Expr 
+
     /// <summary>Builds record-construction expressions </summary>
     /// <param name="recordType">The type of record.</param>
     /// <param name="elements">The list of elements of the record.</param>
@@ -544,6 +550,12 @@ module Patterns =
     /// <returns>(Expr list) option</returns>
     [<CompiledName("NewTuplePattern")>]
     val (|NewTuple|_|)        : input:Expr -> (Expr list) option
+
+    /// <summary>An active pattern to recognize expressions that represent construction of struct tuple values</summary>
+    /// <param name="input">The input expression to match against.</param>
+    /// <returns>(Expr list) option</returns>
+    [<CompiledName("NewStructTuplePattern")>]
+    val (|NewStructTuple|_|)        : input:Expr -> (Expr list) option
 
     /// <summary>An active pattern to recognize expressions that represent the read of a static or instance property, or a non-function value declared in a module</summary>
     /// <param name="input">The input expression to match against.</param>

@@ -4,28 +4,33 @@
 /// Name environment and name resolution
 module internal FSharp.Compiler.NameResolution
 
+open System.Collections.Generic
+
 open Internal.Utilities
+
 open FSharp.Compiler
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Library.ResultOrException
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.Infos
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Text
+open FSharp.Compiler.Infos
 open FSharp.Compiler.Features
-open System.Collections.Generic
+open FSharp.Compiler.Lib
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.Text
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -127,10 +132,8 @@ let (|AbbrevOrAppTy|_|) (ty: TType) =
 type ArgumentContainer =
     /// The named argument is an argument of a method
     | Method of MethInfo
-    /// The named argument is a static parameter to a provided type or a parameter to an F# exception constructor
+    /// The named argument is a static parameter to a provided type.
     | Type of TyconRef
-    /// The named argument is a static parameter to a union case constructor
-    | UnionCase of UnionCaseInfo
 
 // Note: Active patterns are encoded like this:
 //   let (|A|B|) x = if x < 0 then A else B    // A and B are reported as results using 'Item.ActivePatternResult'
@@ -144,7 +147,7 @@ type Item =
     | Value of  ValRef
 
     /// Represents the resolution of a name to an F# union case.
-    | UnionCase of UnionCaseInfo * bool
+    | UnionCase of UnionCaseInfo * hasRequireQualifiedAccessAttr: bool
 
     /// Represents the resolution of a name to an F# active pattern result.
     | ActivePatternResult of ActivePatternInfo * TType * int  * range
@@ -155,8 +158,11 @@ type Item =
     /// Represents the resolution of a name to an F# exception definition.
     | ExnCase of TyconRef
 
-    /// Represents the resolution of a name to an F# record field.
+    /// Represents the resolution of a name to an F# record or exception field.
     | RecdField of RecdFieldInfo
+
+    /// Represents the resolution of a name to a union case field.
+    | UnionCaseField of UnionCaseInfo * fieldIndex: int
 
     /// Represents the resolution of a name to a field of an anonymous record type.
     | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range
@@ -203,7 +209,7 @@ type Item =
     | TypeVar of string * Typar
 
     /// Represents the resolution of a name to a module or namespace
-    | ModuleOrNamespaces of Tast.ModuleOrNamespaceRef list
+    | ModuleOrNamespaces of ModuleOrNamespaceRef list
 
     /// Represents the resolution of a name to an operator
     | ImplicitOp of Ident * TraitConstraintSln option ref
@@ -232,6 +238,7 @@ type Item =
         | Item.UnionCase(uinfo, _) -> DecompileOpName uinfo.UnionCase.DisplayName
         | Item.ExnCase tcref -> tcref.LogicalName
         | Item.RecdField rfinfo -> DecompileOpName rfinfo.RecdField.Name
+        | Item.UnionCaseField (uci, fieldIndex) -> uci.UnionCase.GetFieldByIndex(fieldIndex).Name
         | Item.AnonRecdField (anonInfo, _tys, i, _m) -> anonInfo.SortedNames.[i]
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> finfo.FieldName
@@ -343,15 +350,15 @@ type NameResolutionEnv =
       ///    open Collections                            <--- give a warning
       ///    let v = new Collections.Generic.List<int>() <--- give a warning"
 
-      eModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
+      eModulesAndNamespaces:  NameMultiMap<ModuleOrNamespaceRef>
 
       /// Fully qualified modules and namespaces. 'open' does not change this.
-      eFullyQualifiedModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
+      eFullyQualifiedModulesAndNamespaces:  NameMultiMap<ModuleOrNamespaceRef>
 
       /// RecdField labels in scope.  RecdField labels are those where type are inferred
       /// by label rather than by known type annotation.
       /// Bools indicate if from a record, where no warning is given on indeterminate lookup
-      eFieldLabels: NameMultiMap<Tast.RecdFieldRef>
+      eFieldLabels: NameMultiMap<RecdFieldRef>
 
       /// Tycons indexed by the various names that may be used to access them, e.g.
       ///     "List" --> multiple TyconRef's for the various tycons accessible by this name.
@@ -536,11 +543,11 @@ let ExtensionPropInfosOfTypeInScope collectionSettings (infoReader:InfoReader) (
         let extMemsFromHierarchy =
             infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
             |> List.collect (fun ty ->
-                 if isAppTy g ty then
-                    let tcref = tcrefOfAppTy g ty
+                 match tryTcrefOfAppTy g ty with
+                 | ValueSome tcref ->
                     let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
                     SelectPropInfosFromExtMembers infoReader ad optFilter ty m extMemInfos
-                 else [])
+                 | _ -> [])
 
         extMemsDangling @ extMemsFromHierarchy
 
@@ -550,15 +557,30 @@ let AllPropInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad fi
     @ ExtensionPropInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad m ty
 
 /// Get the available methods of a type (both declared and inherited)
-let IntrinsicMethInfosOfType (infoReader:InfoReader) optFilter ad allowMultiIntfInst findFlag m ty =
+let IntrinsicMethInfosOfType (infoReader: InfoReader) optFilter ad allowMultiIntfInst findFlag m ty =
     let g = infoReader.g
     let amap = infoReader.amap
     let minfos = GetIntrinsicMethInfoSetsOfType infoReader optFilter ad allowMultiIntfInst findFlag m ty
     let minfos = minfos |> ExcludeHiddenOfMethInfos g amap m
     minfos
 
+let TrySelectExtensionMethInfoOfILExtMem m amap apparentTy (actualParent, minfo, pri) = 
+    match minfo with 
+    | ILMeth(_,ilminfo,_) -> 
+        MethInfo.CreateILExtensionMeth (amap, m, apparentTy, actualParent, Some pri, ilminfo.RawMetadata) |> Some
+    // F#-defined IL-style extension methods are not seen as extension methods in F# code
+    | FSMeth(g,_,vref,_) -> 
+        FSMeth(g, apparentTy, vref, Some pri) |> Some
+#if !NO_EXTENSIONTYPING
+    // // Provided extension methods are not yet supported
+    | ProvidedMeth(amap,providedMeth,_,m) -> 
+        ProvidedMeth(amap, providedMeth, Some pri,m) |> Some
+#endif
+    | DefaultStructCtor _ -> 
+        None
+
 /// Select from a list of extension methods
-let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m extMemInfos =
+let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy m extMemInfos =
     let g = infoReader.g
     // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers
     let seen = HashSet(ExtensionMember.Comparer g)
@@ -575,24 +597,14 @@ let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m
                         | _ -> ()
                 | ILExtMem (actualParent, minfo, pri) when (match optFilter with None -> true | Some nm -> nm = minfo.LogicalName) ->
                     // Make a reference to the type containing the extension members
-                    match minfo with
-                    | ILMeth(_, ilminfo, _) ->
-                         yield (MethInfo.CreateILExtensionMeth (infoReader.amap, m, apparentTy, actualParent, Some pri, ilminfo.RawMetadata))
-                    // F#-defined IL-style extension methods are not seen as extension methods in F# code
-                    | FSMeth(g, _, vref, _) ->
-                         yield (FSMeth(g, apparentTy, vref, Some pri))
-#if !NO_EXTENSIONTYPING
-                    // // Provided extension methods are not yet supported
-                    | ProvidedMeth(amap, providedMeth, _, m) ->
-                         yield (ProvidedMeth(amap, providedMeth, Some pri, m))
-#endif
-                    | DefaultStructCtor _ ->
-                         ()
+                    match TrySelectExtensionMethInfoOfILExtMem m infoReader.amap apparentTy (actualParent, minfo, pri) with 
+                    | Some minfo -> yield minfo
+                    | None -> ()
                 | _ -> ()
     ]
 
 /// Query the available extension properties of a methods (including extension methods for inherited types)
-let ExtensionMethInfosOfTypeInScope (collectionSettings:ResultCollectionSettings) (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
+let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
     let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
     if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
         extMemsDangling
@@ -601,11 +613,11 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings:ResultCollectionSettings
             infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
             |> List.collect (fun ty ->
                 let g = infoReader.g
-                if isAppTy g ty then
-                    let tcref = tcrefOfAppTy g ty
+                match tryTcrefOfAppTy g ty with
+                | ValueSome tcref ->
                     let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
                     SelectMethInfosFromExtMembers infoReader optFilter ty  m extValRefs
-                else [])
+                | _ -> [])
         extMemsDangling @ extMemsFromHierarchy
 
 /// Get all the available methods of a type (both intrinsic and extension)
@@ -717,7 +729,7 @@ let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[])
     if tcrefs.Length = 0 then tab else
     let entries =
         tcrefs
-        |> Array.map (fun tcref -> KeyTyconByDemangledNameAndArity tcref.LogicalName tcref.TyparsNoRange tcref)
+        |> Array.map (fun tcref -> Construct.KeyTyconByDemangledNameAndArity tcref.LogicalName tcref.TyparsNoRange tcref)
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
@@ -728,7 +740,7 @@ let AddTyconByAccessNames bulkAddMode (tcrefs: TyconRef[]) (tab: LayeredMultiMap
     if tcrefs.Length = 0 then tab else
     let entries =
         tcrefs
-        |> Array.collect (fun tcref -> KeyTyconByAccessNames tcref.LogicalName tcref)
+        |> Array.collect (fun tcref -> Construct.KeyTyconByAccessNames tcref.LogicalName tcref)
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
@@ -1436,8 +1448,9 @@ type FormatStringCheckContext =
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
     abstract NotifyEnvWithScope: range * NameResolutionEnv * AccessorDomain -> unit
-    abstract NotifyExprHasType: pos * TType * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
-    abstract NotifyNameResolution: pos * item: Item * itemMethodGroup: Item * TyparInst * ItemOccurence * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
+    abstract NotifyExprHasType: TType * NameResolutionEnv * AccessorDomain * range -> unit
+    abstract NotifyNameResolution: pos * item: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
+    abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
     abstract NotifyFormatSpecifierLocation: range * int -> unit
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
     abstract CurrentSourceText: ISourceText option
@@ -1449,8 +1462,13 @@ let (|ValRefOfEvent|_|) (evt: EventInfo) = evt.ArbitraryValRef
 
 let rec (|RecordFieldUse|_|) (item: Item) =
     match item with
-    | Item.RecdField(RecdFieldInfo(_, RFRef(tcref, name))) -> Some (name, tcref)
+    | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, name))) -> Some (name, tcref)
     | Item.SetterArg(_, RecordFieldUse f) -> Some f
+    | _ -> None
+
+let (|UnionCaseFieldUse|_|) (item: Item) =
+    match item with
+    | Item.UnionCaseField (uci, fieldIndex) -> Some (fieldIndex, uci.UnionCaseRef)
     | _ -> None
 
 let rec (|ILFieldUse|_|) (item: Item) =
@@ -1598,7 +1616,7 @@ let ItemsAreEffectivelyEqual g orig other =
     | (Item.ArgName (id, _, _), ValUse vref) | (ValUse vref, Item.ArgName (id, _, _)) ->
         ((Range.equals id.idRange vref.DefinitionRange || Range.equals id.idRange vref.SigRange) && id.idText = vref.DisplayName)
 
-    | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) -> Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
+    | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) -> anonInfoEquiv anon1 anon2 && i1 = i2
 
     | ILFieldUse f1, ILFieldUse f2 ->
         ILFieldInfo.ILFieldInfosUseIdenticalDefinitions f1 f2
@@ -1608,6 +1626,9 @@ let ItemsAreEffectivelyEqual g orig other =
 
     | RecordFieldUse(name1, tcref1), RecordFieldUse(name2, tcref2) ->
         name1 = name2 && tyconRefDefnEq g tcref1 tcref2
+
+    | UnionCaseFieldUse(fieldIndex1, ucref1), UnionCaseFieldUse(fieldIndex2, ucref2) ->
+        unionCaseRefDefnEq g ucref1 ucref2 && fieldIndex1 = fieldIndex2 
 
     | EventUse evt1, EventUse evt2 ->
         EventInfo.EventInfosUseIdenticalDefinitions evt1 evt2  ||
@@ -1634,27 +1655,28 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | ILFieldUse ilfinfo -> ilfinfo.ComputeHashCode()
     | UnionCaseUse ucase ->  hash ucase.CaseName
     | RecordFieldUse (name, _) -> hash name
+    | UnionCaseFieldUse (fieldIndex, case) -> hash (case.CaseName, fieldIndex)
     | EventUse einfo -> einfo.ComputeHashCode()
     | Item.ModuleOrNamespaces (mref :: _) -> hash mref.DefinitionRange
     | _ -> 389329
 
 [<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
-type CapturedNameResolution(p: pos, i: Item, tpinst, io: ItemOccurence, de: DisplayEnv, nre: NameResolutionEnv, ad: AccessorDomain, m: range) =
-    member this.Pos = p
+type CapturedNameResolution(i: Item, tpinst, io: ItemOccurence, nre: NameResolutionEnv, ad: AccessorDomain, m: range) =
+    member this.Pos = m.End
     member this.Item = i
     member this.ItemWithInst = ({ Item = i; TyparInst = tpinst } : ItemWithInst)
     member this.ItemOccurence = io
-    member this.DisplayEnv = de
+    member this.DisplayEnv = nre.DisplayEnv
     member this.NameResolutionEnv = nre
     member this.AccessorDomain = ad
     member this.Range = m
     member this.DebugToString() =
-        sprintf "%A: %+A" (p.Line, p.Column) i
+        sprintf "%A: %+A" (this.Pos.Line, this.Pos.Column) i
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcResolutions
     (capturedEnvs: ResizeArray<range * NameResolutionEnv * AccessorDomain>,
-     capturedExprTypes: ResizeArray<pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range>,
+     capturedExprTypes: ResizeArray<TType * NameResolutionEnv * AccessorDomain * range>,
      capturedNameResolutions: ResizeArray<CapturedNameResolution>,
      capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>) =
 
@@ -1702,11 +1724,15 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
 
     member this.GetFormatSpecifierLocationsAndArity() = formatSpecifierLocations
 
+    static member Empty = TcSymbolUses(Unchecked.defaultof<_>, ResizeArray(), Array.empty)
+
 /// An accumulator for the results being emitted into the tcSink.
 type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
     let capturedEnvs = ResizeArray<_>()
     let capturedExprTypings = ResizeArray<_>()
-    let capturedNameResolutions = ResizeArray<_>()
+    let capturedNameResolutions = ResizeArray<CapturedNameResolution>()
+    let capturedMethodGroupResolutions = ResizeArray<CapturedNameResolution>()
+    let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
 
     let capturedNameResolutionIdentifiers =
@@ -1721,9 +1747,32 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
                     member __.GetHashCode ((m, _)) = hash m
                     member __.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual g item1 item2 } )
 
-    let capturedMethodGroupResolutions = ResizeArray<_>()
-    let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
-    let allowedRange (m: range) = not m.IsSynthetic
+    let allowedRange (m: range) =
+        not m.IsSynthetic
+
+    let isAlreadyDone endPos item m =
+        // Desugaring some F# constructs (notably computation expressions with custom operators)
+        // results in duplication of textual variables. So we ensure we never record two name resolutions
+        // for the same identifier at the same location.
+
+        match item with
+        | Item.ModuleOrNamespaces _ ->
+            not (capturedModulesAndNamespaces.Add (m, item))
+        | _ ->
+
+        let keyOpt =
+            match item with
+            | Item.Value vref -> Some (endPos, vref.DisplayName)
+            | Item.ArgName (id, _, _) -> Some (endPos, id.idText)
+            | _ -> None
+
+        match keyOpt with
+        | Some key -> not (capturedNameResolutionIdentifiers.Add key)
+        | _ -> false
+
+    let remove m =
+        capturedNameResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
+        capturedMethodGroupResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
 
     let formatStringCheckContext =
         lazy
@@ -1750,42 +1799,32 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
     member this.GetOpenDeclarations() =
         capturedOpenDeclarations |> Seq.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) |> Seq.toArray
 
+    member this.GetFormatSpecifierLocations() =
+        capturedFormatSpecifierLocations.ToArray()
+
     interface ITypecheckResultsSink with
         member sink.NotifyEnvWithScope(m, nenv, ad) =
             if allowedRange m then
                 capturedEnvs.Add((m, nenv, ad))
 
-        member sink.NotifyExprHasType(endPos, ty, denv, nenv, ad, m) =
+        member sink.NotifyExprHasType(ty, nenv, ad, m) =
             if allowedRange m then
-                capturedExprTypings.Add((endPos, ty, denv, nenv, ad, m))
+                capturedExprTypings.Add((ty, nenv, ad, m))
 
-        member sink.NotifyNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, denv, nenv, ad, m, replace) =
-            // Desugaring some F# constructs (notably computation expressions with custom operators)
-            // results in duplication of textual variables. So we ensure we never record two name resolutions
-            // for the same identifier at the same location.
+        member sink.NotifyNameResolution(endPos, item, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
                 if replace then
-                    capturedNameResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
-                    capturedMethodGroupResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
-                else
-                    let alreadyDone =
-                        match item with
-                        | Item.ModuleOrNamespaces _ ->
-                            not (capturedModulesAndNamespaces.Add (m, item))
-                        | _ ->
-                            let keyOpt =
-                                match item with
-                                | Item.Value vref -> Some (endPos, vref.DisplayName)
-                                | Item.ArgName (id, _, _) -> Some (endPos, id.idText)
-                                | _ -> None
+                    remove m
+                elif not (isAlreadyDone endPos item m) then
+                    capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
 
-                            match keyOpt with
-                            | Some key -> not (capturedNameResolutionIdentifiers.Add key)
-                            | _ -> false
-
-                    if not alreadyDone then
-                        capturedNameResolutions.Add(CapturedNameResolution(endPos, item, tpinst, occurenceType, denv, nenv, ad, m))
-                        capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos, itemMethodGroup, [], occurenceType, denv, nenv, ad, m))
+        member sink.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
+            if allowedRange m then
+                if replace then
+                    remove m
+                elif not (isAlreadyDone endPos item m) then
+                    capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
+                    capturedMethodGroupResolutions.Add(CapturedNameResolution(itemMethodGroup, [], occurenceType, nenv, ad, m))
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) =
             capturedFormatSpecifierLocations.Add((m, numArgs))
@@ -1824,21 +1863,26 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
     | Some sink -> sink.NotifyEnvWithScope(scopem, nenv, ad)
 
 /// Report a specific name resolution at a source range
-let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurenceType, denv, ad) =
+let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, itemMethodGroup, tpinst, occurenceType, denv, nenv, ad, m, false)
+    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, false)
 
-let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurenceType, denv, ad) =
+let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyNameResolution(m.End, item, itemMethodGroup, tpinst, occurenceType, denv, nenv, ad, m, true)
+    | Some sink -> sink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, false)
+
+let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurenceType, ad) =
+    match sink.CurrentSink with
+    | None -> ()
+    | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, true)
 
 /// Report a specific expression typing at a source range
-let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, denv, ad) =
+let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
     match sink.CurrentSink with
     | None -> ()
-    | Some sink -> sink.NotifyExprHasType(m.End, ty, denv, nenv, ad, m)
+    | Some sink -> sink.NotifyExprHasType(ty, nenv, ad, m)
 
 let CallOpenDeclarationSink (sink: TcResultsSink) (openDeclaration: OpenDeclaration) =
     match sink.CurrentSink with
@@ -1893,6 +1937,7 @@ let CheckAllTyparsInferrable amap m item =
     | Item.UnionCase _
     | Item.ExnCase _
     | Item.RecdField _
+    | Item.UnionCaseField _
     | Item.AnonRecdField _
     | Item.NewDef _
     | Item.ILField _
@@ -1927,7 +1972,7 @@ type ResolutionInfo =
                     Item.ModuleOrNamespaces [eref]
                 else
                     Item.Types(eref.DisplayName, [FreshenTycon ncenv m eref])
-            CallNameResolutionSink sink (m, nenv, item, item, emptyTyparInst, occ, nenv.eDisplayEnv, ad))
+            CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occ, ad))
         warnings typarChecker
 
     static member Empty =
@@ -2050,7 +2095,7 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
         let notifyNameResolution (modref: ModuleOrNamespaceRef) m =
             let item = Item.ModuleOrNamespaces [modref]
             let occurence = if isOpenDecl then ItemOccurence.Open else ItemOccurence.Use
-            CallNameResolutionSink sink (m, nenv, item, item, emptyTyparInst, occurence, nenv.DisplayEnv, ad)
+            CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occurence, ad)
 
         let erefs = 
             let modrefs = 
@@ -2345,18 +2390,31 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
             match lookupKind with
             | LookupKind.Expr | LookupKind.Pattern ->
-                if isAppTy g ty then
-                    let tcref = tcrefOfAppTy g ty
+                match tryTcrefOfAppTy g ty with
+                | ValueSome tcref ->
                     for uc in tcref.UnionCasesArray do
                         addToBuffer uc.DisplayName
+                | _ -> ()
             | _ -> ()
 
-        raze (UndefinedName (depth, FSComp.SR.undefinedNameFieldConstructorOrMember, id, suggestMembers))
+        let errorTextF s =
+            if isAppTy g ty then
+                let tcref = tcrefOfAppTy g ty
+                FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndTypars, s)
+            else
+                FSComp.SR.undefinedNameFieldConstructorOrMember(s)
+
+        raze (UndefinedName (depth, errorTextF, id, suggestMembers))
 
 and ResolveLongIdentInNestedTypes (ncenv: NameResolver) nenv lookupKind resInfo depth id m ad (id2: Ident) (rest: Ident list) findFlag typeNameResInfo tys =
     tys
     |> CollectAtMostOneResult (fun ty ->
-        let resInfo = if isAppTy ncenv.g ty then resInfo.AddEntity(id.idRange, tcrefOfAppTy ncenv.g ty) else resInfo
+        let resInfo = 
+             match tryTcrefOfAppTy ncenv.g ty with
+             | ValueSome tcref ->
+                resInfo.AddEntity(id.idRange, tcref) 
+             | _ ->
+                resInfo
         ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad id2 rest findFlag typeNameResInfo ty
         |> AtMostOneResult m)
 
@@ -2871,8 +2929,10 @@ let ResolvePatternLongIdent sink (ncenv: NameResolver) warnOnUpper newDef m ad n
 // X.ListEnumerator // does not resolve
 //
 let ResolveNestedTypeThroughAbbreviation (ncenv: NameResolver) (tcref: TyconRef) m =
-    if tcref.IsTypeAbbrev && tcref.Typars(m).IsEmpty && isAppTy ncenv.g tcref.TypeAbbrev.Value && isNil (argsOfAppTy ncenv.g tcref.TypeAbbrev.Value) then
-        tcrefOfAppTy ncenv.g tcref.TypeAbbrev.Value
+    if tcref.IsTypeAbbrev && tcref.Typars(m).IsEmpty then 
+        match tryAppTy ncenv.g tcref.TypeAbbrev.Value with
+        | ValueSome (abbrevTcref, []) -> abbrevTcref
+        | _ -> tcref
     else
         tcref
 
@@ -2930,7 +2990,7 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv: NameResolver) nenv typeNameResIn
             ForceRaise (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty PermitDirectReferenceToGeneratedType.No 0 m tcref id rest)
     ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> true))
     let item = Item.Types(tcref.DisplayName, [FreshenTycon ncenv m tcref])
-    CallNameResolutionSink sink (rangeOfLid lid, nenv, item, item, emptyTyparInst, ItemOccurence.UseInType, nenv.eDisplayEnv, ad)
+    CallNameResolutionSink sink (rangeOfLid lid, nenv, item, emptyTyparInst, ItemOccurence.UseInType, ad)
     tcref
 
 /// Create an UndefinedName error with details
@@ -2959,7 +3019,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace sink nenv (ncenv: NameRe
             match modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with
             | true, AccessibleEntityRef ncenv.amap m ad modref submodref ->
                 let item = Item.ModuleOrNamespaces [submodref]
-                CallNameResolutionSink sink (id.idRange, nenv, item, item, emptyTyparInst, ItemOccurence.Use, nenv.DisplayEnv, ad)
+                CallNameResolutionSink sink (id.idRange, nenv, item, emptyTyparInst, ItemOccurence.Use, ad)
                 let resInfo = resInfo.AddEntity(id.idRange, submodref)
                 ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo ad genOk resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType id2 rest2
             | _ ->
@@ -3082,7 +3142,7 @@ let ResolveTypeLongIdent sink (ncenv: NameResolver) occurence fullyQualified nen
     | Result (resInfo, tcref) ->
         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> true))
         let item = Item.Types(tcref.DisplayName, [FreshenTycon ncenv m tcref])
-        CallNameResolutionSink sink (m, nenv, item, item, emptyTyparInst, occurence, nenv.eDisplayEnv, ad)
+        CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occurence, ad)
     | _ -> ()
     res |?> snd
 
@@ -3207,11 +3267,12 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
             |> List.map (fun x -> ResolutionInfo.Empty, FieldResolution(x, false))
 
-        if isAppTy g ty then
+        match tryTcrefOfAppTy g ty with
+        | ValueSome tcref ->
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText, m, ty) with
             | ValueSome (RecdFieldInfo(_, rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref, false)]
             | _ ->
-                if isRecdTy g ty then
+                if tcref.IsRecordTycon then
                     // record label doesn't belong to record type -> suggest other labels of same record
                     let suggestLabels (addToBuffer: string -> unit) = 
                         for label in SuggestOtherLabelsOfSameRecordType g nenv ty id allFields do
@@ -3222,7 +3283,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
                     error(ErrorWithSuggestions(errorText, m, id.idText, suggestLabels))
                 else
                     lookup()
-        else
+        | _ ->
             lookup()
     | _ ->
         let lid = (mp@[id])
@@ -3380,7 +3441,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
                 | Item.ActivePatternResult _ -> ItemOccurence.Binding
                 | _ -> ItemOccurence.Use
 
-            CallNameResolutionSink sink (itemRange, nenv, refinedItem, item, tpinst, occurence, nenv.DisplayEnv, ad)
+            CallMethodGroupNameResolutionSink sink (itemRange, nenv, refinedItem, item, tpinst, occurence, ad)
 
     let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
         let refinedItem =
@@ -3444,7 +3505,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 let staticOnly = thisIsActuallyATyAppNotAnExpr
                 let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly
                 let unrefinedItem = FilterMethodGroups ncenv itemRange unrefinedItem staticOnly
-                CallNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, tpinst, ItemOccurence.Use, nenv.DisplayEnv, ad)
+                CallMethodGroupNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, tpinst, ItemOccurence.Use, ad)
 
             let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
                 let refinedItem =
@@ -3519,7 +3580,10 @@ let ItemOfTyconRef ncenv m (x: TyconRef) =
     Item.Types (x.DisplayName, [FreshenTycon ncenv m x])
 
 let ItemOfTy g x =
-    let nm = if isAppTy g x then (tcrefOfAppTy g x).DisplayName else "?"
+    let nm = 
+        match tryTcrefOfAppTy g x with
+        | ValueSome tcref -> tcref.DisplayName 
+        | _ -> "?"
     Item.Types (nm, [x])
 
 // Filter out 'PrivateImplementationDetail' classes

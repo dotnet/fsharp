@@ -13,8 +13,8 @@ open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
@@ -265,9 +265,10 @@ let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     | _ -> 
         CompleteD
 
+let langVersionPrefix = "--langversion:preview"
+
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
-let langVersionPrefix = "--langversion:preview"
 let CheckFSharpAttributes (g:TcGlobals) attribs m =
     let isExperimentalAttributeDisabled (s:string) =
         if g.compilingFslib then

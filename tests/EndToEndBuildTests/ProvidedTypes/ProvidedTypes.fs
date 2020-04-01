@@ -12373,7 +12373,7 @@ namespace ProviderImplementation.ProvidedTypes
 
         let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk, 0, chunk.Length)  
 
-        let writeBinaryAndReportMappings (outfile, 
+        let writeBinaryAndReportMappings (outfile: string,
                                           ilg: ILGlobals, pdbfile: string option, (* signer: ILStrongNameSigner option, *) portablePDB, embeddedPDB, 
                                           embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo ) modul =
             let isDll = modul.IsDLL

@@ -1,34 +1,33 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-//-------------------------------------------------------------------------
-// The F# expression simplifier. The main aim is to inline simple, known functions
-// and constant values, and to eliminate non-side-affecting bindings that 
-// are never used.
-//------------------------------------------------------------------------- 
-
-
+/// The F# expression simplifier. The main aim is to inline simple, known functions
+/// and constant values, and to eliminate non-side-affecting bindings that 
+/// are never used.
 module internal FSharp.Compiler.Optimizer
 
 open Internal.Utilities
+
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-
-open FSharp.Compiler
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
 open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Tast 
-open FSharp.Compiler.TastPickle
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Tastops.DebugPrint
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree 
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeOps.DebugPrint
+open FSharp.Compiler.TypedTreePickle
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
@@ -398,7 +397,7 @@ type IncrementalOptimizationEnv =
       inLoop: bool
 
       /// The Val for the function binding being generated, if any. 
-      functionVal: (Val * Tast.ValReprInfo) option
+      functionVal: (Val * ValReprInfo) option
 
       typarInfos: (Typar * TypeValueInfo) list 
 
@@ -570,7 +569,7 @@ let BindTypeVarsToUnknown (tps: Typar list) env =
                 tp.typar_id <- ident (nm, tp.Range))      
     List.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
 
-let BindCcu (ccu: Tast.CcuThunk) mval env (_g: TcGlobals) = 
+let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
 
 /// Lookup information about values 
@@ -2206,7 +2205,7 @@ and OptimizeConst cenv env expr (c, m, ty) =
                 Info=MakeValueInfoForConst c ty}
 
 /// Optimize/analyze a record lookup. 
-and TryOptimizeRecordFieldGet cenv _env (e1info, (RFRef (rtcref, _) as r), _tinst, m) =
+and TryOptimizeRecordFieldGet cenv _env (e1info, (RecdFieldRef (rtcref, _) as r), _tinst, m) =
     match destRecdValue e1info.Info with
     | Some finfos when cenv.settings.EliminateRecdFieldGet() && not e1info.HasEffect ->
         match TryFindFSharpAttribute cenv.g cenv.g.attrib_CLIMutableAttribute rtcref.Attribs with
@@ -2286,7 +2285,7 @@ and OptimizeLetRec cenv env (binds, bodyExpr, m) =
     // Trim out any optimization info that involves escaping values 
     let evalueR = AbstractExprInfoByVars (vs, []) einfo.Info 
     // REVIEW: size of constructing new closures - should probably add #freevars + #recfixups here 
-    let bodyExprR = Expr.LetRec (bindsRR, bodyExprR, m, NewFreeVarsCache()) 
+    let bodyExprR = Expr.LetRec (bindsRR, bodyExprR, m, Construct.NewFreeVarsCache()) 
     let info = CombineValueInfos (einfo :: bindinfos) evalueR 
     bodyExprR, info
 
@@ -2377,9 +2376,9 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
     if cenv.settings.EliminateTryCatchAndTryFinally () && not e1info.HasEffect then 
         let sp = 
             match spTry with 
-            | SequencePointAtTry _ -> SequencePointsAtSeq 
-            | SequencePointInBodyOfTry -> SequencePointsAtSeq 
-            | NoSequencePointAtTry -> SuppressSequencePointOnExprOfSequential
+            | DebugPointAtTry.Yes _ -> DebugPointAtSequential.Both 
+            | DebugPointAtTry.Body -> DebugPointAtSequential.Both 
+            | DebugPointAtTry.No -> DebugPointAtSequential.StmtOnly
         Expr.Sequential (e1R, e2R, ThenDoSeq, sp, m), info 
     else
         mkTryFinally cenv.g (e1R, e2R, m, ty, spTry, spFinally), 

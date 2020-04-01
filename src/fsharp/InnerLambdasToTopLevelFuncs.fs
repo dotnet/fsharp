@@ -6,15 +6,18 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Ast
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Tastops.DebugPrint
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Layout
 open FSharp.Compiler.Detuple.GlobalUsageAnalysis
+open FSharp.Compiler.Layout
 open FSharp.Compiler.Lib
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeOps.DebugPrint
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.XmlDoc
 
 let verboseTLR = false
 
@@ -81,7 +84,7 @@ let isDelayedRepr (f: Val) e =
 // REVIEW: these should just be replaced by direct calls to mkLocal, mkCompGenLocal etc.
 // REVIEW: However these set an arity whereas the others don't
 let mkLocalNameTypeArity compgen m name ty topValInfo =
-    NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
+    Construct.NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
 
 //-------------------------------------------------------------------------
 // definitions: TLR, arity, arity-met, arity-short
@@ -762,7 +765,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
            let unpackSubenv f =
                let subCMap  = carrierMapFor f
                let vaenvs   = Zmap.toList subCMap
-               vaenvs |> List.map (fun (subv, subaenv) -> mkBind NoSequencePointAtInvisibleBinding subaenv (aenvExprFor subv))
+               vaenvs |> List.map (fun (subv, subaenv) -> mkBind NoDebugPointAtInvisibleBinding subaenv (aenvExprFor subv))
            List.map unpackCarrier (Zmap.toList cmap) @
            List.collect unpackSubenv env.ReqdSubEnvs
 
@@ -1210,7 +1213,7 @@ module Pass4_RewriteAssembly =
              // tailcall
              TransLinearExpr penv z e (contf << (fun (e, z) ->
                  let e = mkLetsFromBindings m rebinds e
-                 MakePreDecs m pds (Expr.LetRec (binds, e, m, NewFreeVarsCache())), z))
+                 MakePreDecs m pds (Expr.LetRec (binds, e, m, Construct.NewFreeVarsCache())), z))
 
          // let - can consider the mu-let bindings as mu-letrec bindings - so like as above
          | Expr.Let    (bind, e, m, _) ->

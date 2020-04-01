@@ -12,16 +12,16 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Infos
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.Lib
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Infos
-open FSharp.Compiler.NameResolution
-open FSharp.Compiler.InfoReader
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 
 [<AutoOpen>]
 module EnvMisc3 =
@@ -384,7 +384,7 @@ module internal DescriptionListsImpl =
          
          /// Find the glyph for the given type representation.
          let typeToGlyph ty = 
-            match tryDestAppTy denv.g ty with
+            match tryTcrefOfAppTy denv.g ty with
             | ValueSome tcref -> tcref.TypeReprInfo |> reprToGlyph
             | _ ->
                 if isStructTupleTy denv.g ty then FSharpGlyph.Struct
@@ -408,6 +408,7 @@ module internal DescriptionListsImpl =
             | Item.ExnCase _ -> FSharpGlyph.Exception   
             | Item.AnonRecdField _ -> FSharpGlyph.Field
             | Item.RecdField _ -> FSharpGlyph.Field
+            | Item.UnionCaseField _ -> FSharpGlyph.Field
             | Item.ILField _ -> FSharpGlyph.Field
             | Item.Event _ -> FSharpGlyph.Event   
             | Item.Property _ -> FSharpGlyph.Property   
@@ -615,21 +616,27 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
         // Filter out operators, active patterns (as values) and the empty list
         let items = 
             // Check whether this item looks like an operator.
-            let isOperatorItem(name, items: CompletionItem list) = 
-                match items |> List.map (fun x -> x.Item) with
-                | [Item.Value _ | Item.MethodGroup _ | Item.UnionCase _] -> IsOperatorName name
+            let isOperatorItem name (items: CompletionItem list) =
+                match items with
+                | [item] ->
+                    match item.Item with
+                    | Item.Value _ | Item.MethodGroup _ | Item.UnionCase _ -> IsOperatorName name
+                    | _ -> false
                 | _ -> false              
-            
+
             let isActivePatternItem (items: CompletionItem list) =
-                match items |> List.map (fun x -> x.Item) with
-                | [Item.Value vref] -> IsActivePatternName (vref.CompiledName infoReader.g.CompilerGlobalState)
+                match items with
+                | [item] ->
+                    match item.Item with
+                    | Item.Value vref -> IsActivePatternName vref.CoreDisplayName
+                    | _ -> false
                 | _ -> false
-            
+
             items |> List.filter (fun (displayName, items) -> 
-                not (isOperatorItem(displayName, items)) && 
+                not (isOperatorItem displayName items) && 
                 not (displayName = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
                 not (isActivePatternItem items))
-                    
+
         let decls = 
             items 
             |> List.map (fun (displayName, itemsWithSameFullName) -> 

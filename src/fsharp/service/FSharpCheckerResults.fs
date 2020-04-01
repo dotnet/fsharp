@@ -15,21 +15,22 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library  
-
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Parser
+open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Range
-open FSharp.Compiler.Lexhelp
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
 open FSharp.Compiler.Infos
@@ -109,24 +110,6 @@ type GetPreciseCompletionListFromExprTypingsResult =
     | Some of (ItemWithInst list * DisplayEnv * range) * TType
 
 type Names = string list 
-
-[<RequireQualifiedAccess>]
-type SemanticClassificationType =
-    | ReferenceType
-    | ValueType
-    | UnionCase
-    | Function
-    | Property
-    | MutableVar
-    | Module
-    | Printf
-    | ComputationExpression
-    | IntrinsicFunction
-    | Enumeration
-    | Interface
-    | TypeArgument
-    | Operator
-    | Disposable
     
 /// A TypeCheckInfo represents everything we get back from the typecheck of a file.
 /// It acts like an in-memory database about the file.
@@ -155,8 +138,6 @@ type internal TypeCheckInfo
            openDeclarations: OpenDeclaration[]) = 
 
     let textSnapshotInfo = defaultArg textSnapshotInfo null
-    let (|CNR|) (cnr:CapturedNameResolution) =
-        (cnr.Pos, cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
 
     // These strings are potentially large and the editor may choose to hold them for a while.
     // Use this cache to fold together data tip text results that are the same. 
@@ -250,16 +231,22 @@ type internal TypeCheckInfo
                 NameResResult.Members (items, denv, m) 
         else NameResResult.Empty
 
-    let GetCapturedNameResolutions endOfNamesPos resolveOverloads =
+    let GetCapturedNameResolutions (endOfNamesPos: pos) resolveOverloads =
+        let filter (endPos: pos) items =
+            items |> ResizeArray.filter (fun (cnr: CapturedNameResolution) ->
+                let range = cnr.Range
+                range.EndLine = endPos.Line && range.EndColumn = endPos.Column)
 
-        let quals = 
-            match resolveOverloads with 
-            | ResolveOverloads.Yes -> sResolutions.CapturedNameResolutions 
-            | ResolveOverloads.No -> sResolutions.CapturedMethodGroupResolutions
+        match resolveOverloads with 
+        | ResolveOverloads.Yes ->
+            filter endOfNamesPos sResolutions.CapturedNameResolutions 
 
-        let quals = quals |> ResizeArray.filter (fun cnr ->  posEq cnr.Pos endOfNamesPos)
-        
-        quals
+        | ResolveOverloads.No ->
+            let items = filter endOfNamesPos sResolutions.CapturedMethodGroupResolutions
+            if items.Count <> 0 then
+                items
+            else
+                filter endOfNamesPos sResolutions.CapturedNameResolutions
 
     /// Looks at the exact name resolutions that occurred during type checking
     /// If 'membersByResidue' is specified, we look for members of the item obtained 
@@ -274,7 +261,7 @@ type internal TypeCheckInfo
         
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
-        | CNR(_,Item.Types(_,(ty::_)), _, denv, nenv, ad, m)::_, Some _ -> 
+        | CNR(Item.Types(_,(ty::_)), _, denv, nenv, ad, m)::_, Some _ -> 
             let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true ty 
             let items = List.map ItemWithNoInst items
             ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck 
@@ -286,7 +273,7 @@ type internal TypeCheckInfo
         //   let varA = if b then 0 else varA.
         // then the expression typings get confused (thinking 'varA:int'), so we use name resolution even for usual values.
         
-        | CNR(_, Item.Value(vref), occurence, denv, nenv, ad, m)::_, Some _ ->
+        | CNR(Item.Value(vref), occurence, denv, nenv, ad, m)::_, Some _ ->
             if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then 
               // Return empty list to stop further lookup - for value declarations
               NameResResult.Cancel(denv, m)
@@ -313,7 +300,7 @@ type internal TypeCheckInfo
               ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck
         
         // No residue, so the items are the full resolution of the name
-        | CNR(_, _, _, denv, _, _, m) :: _, None -> 
+        | CNR(_, _, denv, _, _, m) :: _, None -> 
             let items = 
                 cnrs 
                 |> List.map (fun cnr -> cnr.ItemWithInst)
@@ -328,8 +315,8 @@ type internal TypeCheckInfo
         let items = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
         
         match items, membersByResidue with 
-        | CNR(_,Item.Types(_,(ty::_)),_,_,_,_,_)::_, Some _ -> Some ty
-        | CNR(_, Item.Value(vref), occurence,_,_,_,_)::_, Some _ ->
+        | CNR(Item.Types(_,(ty::_)),_,_,_,_,_)::_, Some _ -> Some ty
+        | CNR(Item.Value(vref), occurence,_,_,_,_)::_, Some _ ->
             if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then None
             else Some (StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
         | _, _ -> None
@@ -350,12 +337,12 @@ type internal TypeCheckInfo
         let cnrs = GetCapturedNameResolutions endOfExprPos ResolveOverloads.No |> ResizeArray.toList |> List.rev
         let result =
             match cnrs with
-            | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
+            | CNR(Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
                 let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.ApparentEnclosingType
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
                 Some (denv, m, items)
-            | CNR(_, Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) ::_ ->
+            | CNR(Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) ::_ ->
                 let props = 
                     methods
                     |> List.collect (fun meth ->
@@ -378,21 +365,23 @@ type internal TypeCheckInfo
     let GetExprTypingForPosition(endOfExprPos) = 
         let quals = 
             sResolutions.CapturedExpressionTypings 
-            |> Seq.filter (fun (pos,ty,denv,_,_,_) -> 
+            |> Seq.filter (fun (ty,nenv,_,m) -> 
                     // We only want expression types that end at the particular position in the file we are looking at.
-                    let isLocationWeCareAbout = posEq pos endOfExprPos
+                    posEq m.End endOfExprPos &&
+
                     // Get rid of function types.  True, given a 2-arg curried function "f x y", it is legal to do "(f x).GetType()",
                     // but you almost never want to do this in practice, and we choose not to offer up any intellisense for 
                     // F# function types.
-                    let isFunction = isFunTy denv.g ty
-                    isLocationWeCareAbout && not isFunction)
+                    not (isFunTy nenv.DisplayEnv.g ty))
             |> Seq.toArray
 
         let thereWereSomeQuals = not (Array.isEmpty quals)
         // filter out errors
 
         let quals = quals 
-                    |> Array.filter (fun (_,ty,denv,_,_,_) -> not (isTyparTy denv.g ty && (destTyparTy denv.g ty).IsFromError))
+                    |> Array.filter (fun (ty,nenv,_,_) ->
+                        let denv = nenv.DisplayEnv
+                        not (isTyparTy denv.g ty && (destTyparTy denv.g ty).IsFromError))
         thereWereSomeQuals, quals
     
     /// obtains captured typing for the given position
@@ -403,13 +392,13 @@ type internal TypeCheckInfo
             match quals with
             | [||] -> None
             | quals ->  
-                quals |> Array.tryFind (fun (_,_,_,_,_,rq) -> 
+                quals |> Array.tryFind (fun (_,_,_,rq) -> 
                                             ignore(r)  // for breakpoint
                                             posEq r.Start rq.Start)
         match bestQual with
-        | Some (_,ty,denv,_nenv,ad,m) when isRecdTy denv.g ty ->
+        | Some (ty,nenv,ad,m) when isRecdTy nenv.DisplayEnv.g ty ->
             let items = NameResolution.ResolveRecordOrClassFieldsOfType ncenv m ad ty false
-            Some (items, denv, m)
+            Some (items, nenv.DisplayEnv, m)
         | _ -> None
 
     /// Looks at the exact expression types at the position to the left of the 
@@ -438,7 +427,7 @@ type internal TypeCheckInfo
                             // If not, then the stale typecheck info does not have a capturedExpressionTyping for this exact expression, and the
                             // user can wait for typechecking to catch up and second-chance intellisense to give the right result.
                             let qual = 
-                                quals |> Array.tryFind (fun (_,_,_,_,_,r) -> 
+                                quals |> Array.tryFind (fun (_,_,_,r) -> 
                                                             ignore(r)  // for breakpoint
                                                             posEq exprRange.Start r.Start)
                             qual, false
@@ -451,13 +440,13 @@ type internal TypeCheckInfo
 
             match bestQual with
             | Some bestQual ->
-                let (_,ty,denv,nenv,ad,m) = bestQual 
+                let (ty,nenv,ad,m) = bestQual 
                 let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false ty 
                 let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g
                 let items = items |> RemoveExplicitlySuppressed g
                 let items = items |> FilterItemsForCtors filterCtors 
-                GetPreciseCompletionListFromExprTypingsResult.Some((items,denv,m), ty)
+                GetPreciseCompletionListFromExprTypingsResult.Some((items,nenv.DisplayEnv,m), ty)
             | None -> 
                 if textChanged then GetPreciseCompletionListFromExprTypingsResult.NoneBecauseTypecheckIsStaleAndTextChanged
                 else GetPreciseCompletionListFromExprTypingsResult.None
@@ -622,7 +611,7 @@ type internal TypeCheckInfo
 
             let getType() =
                 match NameResolution.TryToResolveLongIdentAsType ncenv nenv m plid with
-                | Some x -> tryDestAppTy g x
+                | Some x -> tryTcrefOfAppTy g x
                 | None ->
                     match lastDotPos |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)) with
                     | Some p when lineStr.[p] = '.' ->
@@ -630,7 +619,7 @@ type internal TypeCheckInfo
                         | Some colAtEndOfNames ->                 
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
                             match TryGetTypeFromNameResolution(line, colAtEndOfNames, residueOpt, resolveOverloads) with
-                            | Some x -> tryDestAppTy g x
+                            | Some x -> tryTcrefOfAppTy g x
                             | _ -> ValueNone
                         | None -> ValueNone
                     | _ -> ValueNone
@@ -675,7 +664,7 @@ type internal TypeCheckInfo
                             // it appears we're getting some typings recorded for non-atomic expressions like "f x"
                             when isNil plid ->
                         // lookup based on expression typings successful
-                        Some (items |> List.map (CompletionItem (tryDestAppTy g ty) ValueNone), denv, m)
+                        Some (items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone), denv, m)
                     | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
                         // There was an error, e.g. we have "<expr>." and there is an error determining the type of <expr>  
                         // In this case, we don't want any of the fallback logic, rather, we want to produce zero results.
@@ -708,7 +697,7 @@ type internal TypeCheckInfo
                            
                            // Try again with the qualItems
                            | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty) ->
-                               ValueSome(items |> List.map (CompletionItem (tryDestAppTy g ty) ValueNone), denv, m)
+                               ValueSome(items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone), denv, m)
                            
                            | _ -> ValueNone
 
@@ -883,7 +872,9 @@ type internal TypeCheckInfo
                     None
                 | _ ->
                     let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
-                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols)
+                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue,
+                        residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads,
+                        hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols)
         
         res |> Option.map (fun (items, denv, m) -> items, denv, completionContext, m)
 
@@ -921,7 +912,14 @@ type internal TypeCheckInfo
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () ->
-                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllEntities, hasTextChangedSinceLastTypecheck) with
+
+                let declItemsOpt =
+                    GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents,
+                        Some partialName.PartialIdent, partialName.LastDotPos, line,
+                        lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes,
+                        getAllEntities, hasTextChangedSinceLastTypecheck)
+
+                match declItemsOpt with
                 | None -> FSharpDeclarationListInfo.Empty  
                 | Some (items, denv, ctx, m) ->
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
@@ -941,7 +939,14 @@ type internal TypeCheckInfo
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () -> 
-                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllEntities, hasTextChangedSinceLastTypecheck) with
+
+                let declItemsOpt =
+                    GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents,
+                        Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr,
+                        partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes,
+                        getAllEntities, hasTextChangedSinceLastTypecheck)
+
+                match declItemsOpt with
                 | None -> List.Empty  
                 | Some (items, denv, _, m) -> 
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
@@ -963,7 +968,7 @@ type internal TypeCheckInfo
                                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                                 | Item.CtorGroup (_, (cinfo :: _)) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length 
                                 | _ -> 0
-                            (d.Item.DisplayName,n))
+                            (d.Item.DisplayName, n))
 
                     // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
                     let items = items |> RemoveDuplicateCompletionItems g
@@ -1053,10 +1058,16 @@ type internal TypeCheckInfo
         let Compute() = 
             ErrorScope.Protect Range.range0 
                 (fun () -> 
-                    match GetDeclItemsForNamesAtPosition(ctok, None,Some(names),None,None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.Yes,(fun() -> []),fun _ -> false) with
+                    let declItemsOpt =
+                        GetDeclItemsForNamesAtPosition(ctok, None, Some names, None, None,
+                            line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
+                            ResolveOverloads.Yes, (fun() -> []), (fun _ -> false))
+
+                    match declItemsOpt with
                     | None -> FSharpToolTipText []
                     | Some(items, denv, _, m) ->
                          FSharpToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader m denv x.ItemWithInst)))
+
                 (fun err -> 
                     Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
                     FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
@@ -1071,9 +1082,15 @@ type internal TypeCheckInfo
              res
 
     member __.GetF1Keyword (ctok, line, lineStr, colAtEndOfNames, names) : string option =
-       ErrorScope.Protect Range.range0
+        ErrorScope.Protect Range.range0
             (fun () ->
-                match GetDeclItemsForNamesAtPosition(ctok, None, Some names, None, None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.No,(fun() -> []), fun _ -> false) with // F1 Keywords do not distinguish between overloads
+
+                let declItemsOpt =
+                    GetDeclItemsForNamesAtPosition(ctok, None, Some names, None, None,
+                        line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
+                        ResolveOverloads.No, (fun() -> []), (fun _ -> false))
+
+                match declItemsOpt with 
                 | None -> None
                 | Some (items: CompletionItem list, _,_, _) ->
                     match items with
@@ -1103,9 +1120,15 @@ type internal TypeCheckInfo
                 None)
 
     member __.GetMethods (ctok, line, lineStr, colAtEndOfNames, namesOpt) =
-        ErrorScope.Protect Range.range0 
+        ErrorScope.Protect Range.range0
             (fun () -> 
-                match GetDeclItemsForNamesAtPosition(ctok, None,namesOpt,None,None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.No,(fun() -> []),fun _ -> false) with
+
+                let declItemsOpt =
+                    GetDeclItemsForNamesAtPosition(ctok, None, namesOpt, None, None,
+                        line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
+                        ResolveOverloads.No, (fun() -> []), (fun _ -> false))
+
+                match declItemsOpt with
                 | None -> FSharpMethodGroup("",[| |])
                 | Some (items, denv, _, m) -> 
                     // GetDeclItemsForNamesAtPosition returns Items.Types and Item.CtorGroup for `new T(|)`, 
@@ -1121,134 +1144,151 @@ type internal TypeCheckInfo
                 FSharpMethodGroup(msg,[| |]))
 
     member __.GetMethodsAsSymbols (ctok, line, lineStr, colAtEndOfNames, names) =
-      ErrorScope.Protect Range.range0 
-       (fun () -> 
-        match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, None,line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.No,(fun() -> []),fun _ -> false) with
-        | None | Some ([],_,_,_) -> None
-        | Some (items, denv, _, m) ->
-            let allItems = items |> List.collect (fun item -> SymbolHelpers.FlattenItems g m item.Item)
-            let symbols = allItems |> List.map (fun item -> FSharpSymbol.Create(cenv, item))
-            Some (symbols, denv, m)
-       )
-       (fun msg -> 
-           Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethodsAsSymbols: '%s'" msg)
-           None)
+        ErrorScope.Protect Range.range0
+            (fun () -> 
+                let declItemsOpt =
+                    GetDeclItemsForNamesAtPosition (ctok, None, Some names, None,
+                        None, line, lineStr, colAtEndOfNames,
+                        ResolveTypeNamesToCtors, ResolveOverloads.No,
+                        (fun() -> []), (fun _ -> false))
+
+                match declItemsOpt with
+                | None | Some ([],_,_,_) -> None
+                | Some (items, denv, _, m) ->
+                    let allItems = items |> List.collect (fun item -> SymbolHelpers.FlattenItems g m item.Item)
+                    let symbols = allItems |> List.map (fun item -> FSharpSymbol.Create(cenv, item))
+                    Some (symbols, denv, m)
+            )
+            (fun msg -> 
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethodsAsSymbols: '%s'" msg)
+                None)
            
     member __.GetDeclarationLocation (ctok, line, lineStr, colAtEndOfNames, names, preferFlag) =
-      ErrorScope.Protect Range.range0 
-       (fun () -> 
-          match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,ResolveOverloads.Yes,(fun() -> []), fun _ -> false) with
-          | None
-          | Some ([], _, _, _) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
-          | Some (item :: _, _, _, _) ->
-              let getTypeVarNames (ilinfo: ILMethInfo) =
-                  let classTypeParams = ilinfo.DeclaringTyconRef.ILTyconRawMetadata.GenericParams |> List.map (fun paramDef -> paramDef.Name)
-                  let methodTypeParams = ilinfo.FormalMethodTypars |> List.map (fun ty -> ty.Name)
-                  classTypeParams @ methodTypeParams |> Array.ofList
+        ErrorScope.Protect Range.range0 
+            (fun () -> 
+                
+                let declItemsOpt =
+                    GetDeclItemsForNamesAtPosition (ctok, None, Some names, None, None,
+                        line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
+                        ResolveOverloads.Yes, (fun() -> []), (fun _ -> false))
 
-              let result =
-                  match item.Item with
-                  | Item.CtorGroup (_, (ILMeth (_,ilinfo,_)) :: _) ->
-                      match ilinfo.MetadataScope with
-                      | ILScopeRef.Assembly assemblyRef ->
-                          let typeVarNames = getTypeVarNames ilinfo
-                          ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
-                          |> Option.map (fun args ->
-                              let externalSym = ExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
-                              FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
-                      | _ -> None
+                match declItemsOpt with
+                | None
+                | Some ([], _, _, _) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
+                | Some (item :: _, _, _, _) ->
+                let getTypeVarNames (ilinfo: ILMethInfo) =
+                    let classTypeParams = ilinfo.DeclaringTyconRef.ILTyconRawMetadata.GenericParams |> List.map (fun paramDef -> paramDef.Name)
+                    let methodTypeParams = ilinfo.FormalMethodTypars |> List.map (fun ty -> ty.Name)
+                    classTypeParams @ methodTypeParams |> Array.ofList
 
-                  | Item.MethodGroup (name, (ILMeth (_,ilinfo,_)) :: _, _) ->
-                      match ilinfo.MetadataScope with
-                      | ILScopeRef.Assembly assemblyRef ->
-                          let typeVarNames = getTypeVarNames ilinfo
-                          ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
-                          |> Option.map (fun args ->
-                              let externalSym = ExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
-                              FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
-                      | _ -> None
+                let result =
+                    match item.Item with
+                    | Item.CtorGroup (_, (ILMeth (_,ilinfo,_)) :: _) ->
+                        match ilinfo.MetadataScope with
+                        | ILScopeRef.Assembly assemblyRef ->
+                            let typeVarNames = getTypeVarNames ilinfo
+                            ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
+                            |> Option.map (fun args ->
+                                let externalSym = ExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
+                                FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
+                        | _ -> None
 
-                  | Item.Property (name, ILProp propInfo :: _) ->
-                      let methInfo = 
-                          if propInfo.HasGetter then Some propInfo.GetterMethod
-                          elif propInfo.HasSetter then Some propInfo.SetterMethod
-                          else None
+                    | Item.MethodGroup (name, (ILMeth (_,ilinfo,_)) :: _, _) ->
+                        match ilinfo.MetadataScope with
+                        | ILScopeRef.Assembly assemblyRef ->
+                            let typeVarNames = getTypeVarNames ilinfo
+                            ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
+                            |> Option.map (fun args ->
+                                let externalSym = ExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
+                                FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
+                        | _ -> None
+
+                    | Item.Property (name, ILProp propInfo :: _) ->
+                        let methInfo = 
+                            if propInfo.HasGetter then Some propInfo.GetterMethod
+                            elif propInfo.HasSetter then Some propInfo.SetterMethod
+                            else None
                       
-                      match methInfo with
-                      | Some methInfo ->
-                          match methInfo.MetadataScope with
-                          | ILScopeRef.Assembly assemblyRef ->
-                              let externalSym = ExternalSymbol.Property (methInfo.ILMethodRef.DeclaringTypeRef.FullName, name)
-                              Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
-                          | _ -> None
-                      | None -> None
+                        match methInfo with
+                        | Some methInfo ->
+                            match methInfo.MetadataScope with
+                            | ILScopeRef.Assembly assemblyRef ->
+                                let externalSym = ExternalSymbol.Property (methInfo.ILMethodRef.DeclaringTypeRef.FullName, name)
+                                Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
+                            | _ -> None
+                        | None -> None
                   
-                  | Item.ILField (ILFieldInfo (typeInfo, fieldDef)) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
-                      match typeInfo.ILScopeRef with
-                      | ILScopeRef.Assembly assemblyRef ->
-                          let externalSym = ExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
-                          Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
-                      | _ -> None
+                    | Item.ILField (ILFieldInfo (typeInfo, fieldDef)) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
+                        match typeInfo.ILScopeRef with
+                        | ILScopeRef.Assembly assemblyRef ->
+                            let externalSym = ExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
+                            Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
+                        | _ -> None
                   
-                  | Item.Event (ILEvent (ILEventInfo (typeInfo, eventDef))) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
-                      match typeInfo.ILScopeRef with
-                      | ILScopeRef.Assembly assemblyRef ->
-                          let externalSym = ExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
-                          Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
-                      | _ -> None
+                    | Item.Event (ILEvent (ILEventInfo (typeInfo, eventDef))) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
+                        match typeInfo.ILScopeRef with
+                        | ILScopeRef.Assembly assemblyRef ->
+                            let externalSym = ExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
+                            Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
+                        | _ -> None
 
-                  | Item.ImplicitOp(_, {contents = Some(TraitConstraintSln.FSMethSln(_, _vref, _))}) ->
-                      //Item.Value(vref)
-                      None
+                    | Item.ImplicitOp(_, {contents = Some(TraitConstraintSln.FSMethSln(_, _vref, _))}) ->
+                        //Item.Value(vref)
+                        None
 
-                  | Item.Types (_, TType_app (tr, _) :: _) when tr.IsLocalRef && tr.IsTypeAbbrev -> None
+                    | Item.Types (_, TType_app (tr, _) :: _) when tr.IsLocalRef && tr.IsTypeAbbrev -> None
 
-                  | Item.Types (_, [ AppTy g (tr, _) ]) when not tr.IsLocalRef ->
-                      match tr.TypeReprInfo, tr.PublicPath with
-                      | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assemblyRef, _, _)), Some (PubPath parts) ->
-                          let fullName = parts |> String.concat "."
-                          Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, ExternalSymbol.Type fullName))
-                      | _ -> None
-                  | _ -> None
-              match result with
-              | Some x -> x
-              | None   ->
-              match rangeOfItem g preferFlag item.Item with
-              | Some itemRange -> 
-                  let projectDir = Filename.directoryName (if projectFileName = "" then mainInputFileName else projectFileName)
-                  let range = fileNameOfItem g (Some projectDir) itemRange item.Item
-                  mkRange range itemRange.Start itemRange.End              
-                  |> FSharpFindDeclResult.DeclFound
-              | None -> 
-                  match item.Item with 
+                    | Item.Types (_, [ AppTy g (tr, _) ]) when not tr.IsLocalRef ->
+                        match tr.TypeReprInfo, tr.PublicPath with
+                        | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assemblyRef, _, _)), Some (PubPath parts) ->
+                            let fullName = parts |> String.concat "."
+                            Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, ExternalSymbol.Type fullName))
+                        | _ -> None
+                    | _ -> None
+                match result with
+                | Some x -> x
+                | None   ->
+                match rangeOfItem g preferFlag item.Item with
+                | Some itemRange -> 
+                    let projectDir = Filename.directoryName (if projectFileName = "" then mainInputFileName else projectFileName)
+                    let range = fileNameOfItem g (Some projectDir) itemRange item.Item
+                    mkRange range itemRange.Start itemRange.End              
+                    |> FSharpFindDeclResult.DeclFound
+                | None -> 
+                    match item.Item with 
 #if !NO_EXTENSIONTYPING
 // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
-                  | Item.CtorGroup  (name, ProvidedMeth (_)::_   )
-                  | Item.MethodGroup(name, ProvidedMeth (_)::_, _)
-                  | Item.Property   (name, ProvidedProp (_)::_   ) -> FSharpFindDeclFailureReason.ProvidedMember name             
-                  | Item.Event      (      ProvidedEvent(_) as e ) -> FSharpFindDeclFailureReason.ProvidedMember e.EventName        
-                  | Item.ILField    (      ProvidedField(_) as f ) -> FSharpFindDeclFailureReason.ProvidedMember f.FieldName        
-                  | SymbolHelpers.ItemIsProvidedType g (tcref)     -> FSharpFindDeclFailureReason.ProvidedType   tcref.DisplayName
+                    | Item.CtorGroup  (name, ProvidedMeth (_)::_   )
+                    | Item.MethodGroup(name, ProvidedMeth (_)::_, _)
+                    | Item.Property   (name, ProvidedProp (_)::_   ) -> FSharpFindDeclFailureReason.ProvidedMember name             
+                    | Item.Event      (      ProvidedEvent(_) as e ) -> FSharpFindDeclFailureReason.ProvidedMember e.EventName        
+                    | Item.ILField    (      ProvidedField(_) as f ) -> FSharpFindDeclFailureReason.ProvidedMember f.FieldName        
+                    | SymbolHelpers.ItemIsProvidedType g (tcref)     -> FSharpFindDeclFailureReason.ProvidedType   tcref.DisplayName
 #endif
-                  | _                                              -> FSharpFindDeclFailureReason.Unknown ""                      
-                  |> FSharpFindDeclResult.DeclNotFound
-       )
-       (fun msg -> 
-           Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarationLocation: '%s'" msg)
-           FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown msg))
+                    | _                                              -> FSharpFindDeclFailureReason.Unknown ""                      
+                    |> FSharpFindDeclResult.DeclNotFound
+            )
+            (fun msg -> 
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarationLocation: '%s'" msg)
+                FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown msg))
 
     member __.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names) =
-      ErrorScope.Protect Range.range0 
-       (fun () -> 
-        match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.Yes,(fun() -> []), fun _ -> false) with
-        | None | Some ([], _, _, _) -> None
-        | Some (item :: _, denv, _, m) -> 
-            let symbol = FSharpSymbol.Create(cenv, item.Item)
-            Some (symbol, denv, m)
-       ) 
-       (fun msg -> 
-           Trace.TraceInformation(sprintf "FCS: recovering from error in GetSymbolUseAtLocation: '%s'" msg)
-           None)
+        ErrorScope.Protect Range.range0 
+            (fun () -> 
+                let declItemsOpt =
+                    GetDeclItemsForNamesAtPosition (ctok, None, Some names, None, None,
+                        line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
+                        ResolveOverloads.Yes, (fun() -> []), (fun _ -> false))
+
+                match declItemsOpt with
+                | None | Some ([], _, _, _) -> None
+                | Some (item :: _, denv, _, m) -> 
+                    let symbol = FSharpSymbol.Create(cenv, item.Item)
+                    Some (symbol, denv, m)
+            ) 
+            (fun msg -> 
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetSymbolUseAtLocation: '%s'" msg)
+                None)
 
     member __.PartialAssemblySignatureForFile = 
         FSharpAssemblySignature(g, thisCcu, ccuSigForFile, tcImports, None, ccuSigForFile)
@@ -1262,133 +1302,8 @@ type internal TypeCheckInfo
     member __.GetFormatSpecifierLocationsAndArity() = 
          sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
-    member __.GetSemanticClassification(range: range option) : (range * SemanticClassificationType) [] =
-      ErrorScope.Protect Range.range0 
-       (fun () -> 
-        let (|LegitTypeOccurence|_|) = function
-            | ItemOccurence.UseInType
-            | ItemOccurence.UseInAttribute
-            | ItemOccurence.Use _
-            | ItemOccurence.Binding _
-            | ItemOccurence.Pattern _ -> Some()
-            | _ -> None
-
-        let (|OptionalArgumentAttribute|_|) ttype =
-            match ttype with
-            | TType.TType_app(tref, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
-            | _ -> None
-
-        let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
-            if valRefEq g g.raise_vref vref ||
-               valRefEq g g.reraise_vref vref ||
-               valRefEq g g.typeof_vref vref ||
-               valRefEq g g.typedefof_vref vref ||
-               valRefEq g g.sizeof_vref vref ||
-               valRefEq g g.nameof_vref vref
-            then Some()
-            else None
-        
-        let (|EnumCaseFieldInfo|_|) (rfinfo : RecdFieldInfo) =
-            match rfinfo.TyconRef.TypeReprInfo with
-            | TFSharpObjectRepr x ->
-                match x.fsobjmodel_kind with
-                | TTyconEnum -> Some ()
-                | _ -> None
-            | _ -> None
-
-        let resolutions =
-            match range with
-            | Some range ->
-                sResolutions.CapturedNameResolutions
-                |> Seq.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
-            | None -> 
-                sResolutions.CapturedNameResolutions :> seq<_>
-
-        let isDisposableTy (ty: TType) =
-            protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
-
-        let isStructTyconRef (tyconRef: TyconRef) = 
-            let ty = generalizedTyconRef tyconRef
-            let underlyingTy = stripTyEqnsAndMeasureEqns g ty
-            isStructTy g underlyingTy
-
-        let isValRefMutable (vref: ValRef) =
-            // Mutable values, ref cells, and non-inref byrefs are mutable.
-            vref.IsMutable
-            || Tastops.isRefCellTy g vref.Type
-            || (Tastops.isByrefTy g vref.Type && not (Tastops.isInByrefTy g vref.Type))
-
-        let isRecdFieldMutable (rfinfo: RecdFieldInfo) =
-            (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
-            || Tastops.isRefCellTy g rfinfo.RecdField.FormalType
-
-        resolutions
-        |> Seq.choose (fun cnr ->
-            match cnr with
-            // 'seq' in 'seq { ... }' gets colored as keywords
-            | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
-                Some (m, SemanticClassificationType.ComputationExpression)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when isValRefMutable vref ->
-                Some (m, SemanticClassificationType.MutableVar)
-            | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
-                Some (m, SemanticClassificationType.IntrinsicFunction)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when isFunction g vref.Type ->
-                if valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then 
-                    None
-                elif vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
-                    Some (m, SemanticClassificationType.Property)
-                elif IsOperatorName vref.DisplayName then
-                    Some (m, SemanticClassificationType.Operator)
-                else
-                    Some (m, SemanticClassificationType.Function)
-            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isRecdFieldMutable rfinfo ->
-                Some (m, SemanticClassificationType.MutableVar)
-            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isFunction g rfinfo.FieldType ->
-               Some (m, SemanticClassificationType.Function)
-            | CNR(_, Item.RecdField EnumCaseFieldInfo, _, _, _, _, m) ->
-                Some (m, SemanticClassificationType.Enumeration)
-            | CNR(_, Item.MethodGroup _, _, _, _, _, m) ->
-                Some (m, SemanticClassificationType.Function)
-            // custom builders, custom operations get colored as keywords
-            | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
-                Some (m, SemanticClassificationType.ComputationExpression)
-            // types get colored as types when they occur in syntactic types or custom attributes
-            // type variables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
-            | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None
-            | CNR(_, Item.CtorGroup(_, [MethInfo.FSMeth(_, OptionalArgumentAttribute, _, _)]), LegitTypeOccurence, _, _, _, _) -> None
-            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isInterfaceTy g) -> 
-                Some (m, SemanticClassificationType.Interface)
-            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isStructTy g) -> 
-                Some (m, SemanticClassificationType.ValueType)
-            | CNR(_, Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m) when isStructTyconRef tyconRef ->
-                Some (m, SemanticClassificationType.ValueType)
-            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists isDisposableTy ->
-                Some (m, SemanticClassificationType.Disposable)
-            | CNR(_, Item.Types _, LegitTypeOccurence, _, _, _, m) -> 
-                Some (m, SemanticClassificationType.ReferenceType)
-            | CNR(_, (Item.TypeVar _ ), LegitTypeOccurence, _, _, _, m) ->
-                Some (m, SemanticClassificationType.TypeArgument)
-            | CNR(_, Item.UnqualifiedType tyconRefs, LegitTypeOccurence, _, _, _, m) ->
-                if tyconRefs |> List.exists (fun tyconRef -> tyconRef.Deref.IsStructOrEnumTycon) then
-                    Some (m, SemanticClassificationType.ValueType)
-                else Some (m, SemanticClassificationType.ReferenceType)
-            | CNR(_, Item.CtorGroup(_, minfos), LegitTypeOccurence, _, _, _, m) ->
-                if minfos |> List.exists (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
-                    Some (m, SemanticClassificationType.ValueType)
-                else Some (m, SemanticClassificationType.ReferenceType)
-            | CNR(_, Item.ExnCase _, LegitTypeOccurence, _, _, _, m) ->
-                Some (m, SemanticClassificationType.ReferenceType)
-            | CNR(_, Item.ModuleOrNamespaces refs, LegitTypeOccurence, _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
-                Some (m, SemanticClassificationType.Module)
-            | CNR(_, (Item.ActivePatternCase _ | Item.UnionCase _ | Item.ActivePatternResult _), _, _, _, _, m) ->
-                Some (m, SemanticClassificationType.UnionCase)
-            | _ -> None)
-        |> Seq.toArray
-        |> Array.append (sSymbolUses.GetFormatSpecifierLocationsAndArity() |> Array.map (fun m -> fst m, SemanticClassificationType.Printf))
-       ) 
-       (fun msg -> 
-           Trace.TraceInformation(sprintf "FCS: recovering from error in GetSemanticClassification: '%s'" msg)
-           Array.empty)
+    member __.GetSemanticClassification(range: range option) : struct (range * SemanticClassificationType) [] =
+        sResolutions.GetSemanticClassification(g, amap, sSymbolUses.GetFormatSpecifierLocationsAndArity(), range)
 
     /// The resolutions in the file
     member __.ScopeResolutions = sResolutions
@@ -1744,7 +1659,8 @@ module internal ParseAndCheckFile =
                     return result
                 with e ->
                     errorR e
-                    return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [NewEmptyModuleOrNamespaceType Namespace]), tcState)
+                    let mty = Construct.NewEmptyModuleOrNamespaceType Namespace
+                    return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
             }
                 
         let errors = errHandler.CollectedDiagnostics
@@ -2084,7 +2000,9 @@ type FSharpCheckProjectResults
           tcConfigOption: TcConfig option, 
           keepAssemblyContents: bool, 
           errors: FSharpErrorInfo[], 
-          details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list * TopAttribs option * CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef * AccessorDomain * TypedImplFile list option * string[]) option) =
+          details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
+                   TopAttribs option * CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef *
+                   AccessorDomain * TypedImplFile list option * string[]) option) =
 
     let getDetails() = 
         match details with 

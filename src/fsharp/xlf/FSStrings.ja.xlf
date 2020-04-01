@@ -77,11 +77,6 @@
         <target state="translated">判別された共用体ケースと例外のラベルは、大文字の識別子にする必要があります</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">使用できるオーバーロードは '{0}' です。{1}。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">この関数の引数が多すぎるか、関数を使用できない場所で関数が使用されています</target>
@@ -1625,6 +1620,11 @@
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
         <target state="translated">シンボル '|}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="new">keyword 'and!'</target>
         <note />
       </trans-unit>
     </body>

@@ -8,11 +8,12 @@ open Internal.Utilities.Text.Lexing
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Parser
 open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.Parser
+open FSharp.Compiler.SyntaxTree
 let debug = false
 
 let stringOfPos (p: Position) = sprintf "(%d:%d)" p.OriginalLine p.Column
@@ -1784,6 +1785,13 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             pushCtxt tokenTup (CtxtLetDecl(blockLet, tokenStartPos))
             returnToken tokenLexbufState (if blockLet then OBINDER b else token)
 
+        //  and!  ... ~~~> CtxtLetDecl 
+        | AND_BANG isUse, (ctxt :: _) -> 
+            let blockLet = match ctxt with CtxtSeqBlock _ -> true | _ -> false
+            if debug then dprintf "AND!: entering CtxtLetDecl(blockLet=%b), awaiting EQUALS to go to CtxtSeqBlock (%a)\n" blockLet outputPos tokenStartPos
+            pushCtxt tokenTup (CtxtLetDecl(blockLet,tokenStartPos))
+            returnToken tokenLexbufState (if blockLet then OAND_BANG isUse else token)
+
         | (VAL | STATIC | ABSTRACT | MEMBER | OVERRIDE | DEFAULT), ctxtStack when thereIsACtxtMemberBodyOnTheStackAndWeShouldPopStackForUpcomingMember ctxtStack -> 
             if debug then dprintf "STATIC/MEMBER/OVERRIDE/DEFAULT: already inside CtxtMemberBody, popping all that context before starting next member...\n"
             // save this token, we'll consume it again later...
@@ -2251,11 +2259,17 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                   | MINUS -> true 
                   | _ -> false
               let nextTokenTup = popNextTokenTup()
+
               /// Merge the location of the prefix token and the literal
               let delayMergedToken tok = 
-                  delayToken(let rented = pool.Rent() in rented.Token <- tok; rented.LexbufState <- new LexbufState(tokenTup.LexbufState.StartPos, nextTokenTup.LexbufState.EndPos, nextTokenTup.LexbufState.PastEOF); rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
+                  let rented = pool.Rent()
+                  rented.Token <- tok
+                  rented.LexbufState <- new LexbufState(tokenTup.LexbufState.StartPos, nextTokenTup.LexbufState.EndPos, nextTokenTup.LexbufState.PastEOF)
+                  rented.LastTokenPos <- tokenTup.LastTokenPos
+                  delayToken(rented)
                   pool.Return nextTokenTup
                   pool.Return tokenTup
+
               let noMerge() = 
                   let tokenName = 
                       match tokenTup.Token with 
