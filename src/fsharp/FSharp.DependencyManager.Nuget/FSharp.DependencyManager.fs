@@ -37,7 +37,7 @@ module FSharpDependencyManager =
             | _ -> ()
         }
 
-    let parsePackageReference (lines: string list) =
+    let parsePackageReference scriptExt (lines: string list) =
         let mutable binLogPath = None
         let parsePackageReferenceOption (line: string) =
             let validatePackageName package packageName =
@@ -53,7 +53,8 @@ module FSharpDependencyManager =
                 | opt :: rest ->
                     let addInclude v =
                         validatePackageName v "mscorlib"
-                        validatePackageName v "FSharp.Core"
+                        if scriptExt = fsxExt then
+                            validatePackageName v "FSharp.Core"
                         validatePackageName v "System.ValueTuple"
                         validatePackageName v "NETStandard.Library"
                         Some { current with Include = v }
@@ -166,13 +167,13 @@ type FSharpDependencyManager (outputDir:string option) =
 
         let scriptExt, poundRprefix  =
             match scriptExt with
-            | ".csx" -> ".csx", "#r \"" 
-            | _ -> ".fsx", "#r @\"" 
+            | ".csx" -> csxExt, "#r \"" 
+            | _ -> fsxExt, "#r @\"" 
 
         let packageReferences, binLogPath =
             packageManagerTextLines
             |> List.ofSeq
-            |> FSharpDependencyManager.parsePackageReference
+            |> FSharpDependencyManager.parsePackageReference scriptExt
 
         let packageReferenceLines =
             packageReferences

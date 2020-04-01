@@ -33,6 +33,10 @@ type internal Resolution =
 
 module internal ProjectFile =
 
+    let fsxExt = ".fsx"
+
+    let csxExt = ".csx"
+
     let findLoadsFromResolutions (resolutions:Resolution[]) =
         resolutions
         |> Array.filter(fun r ->
@@ -129,7 +133,9 @@ $(POUND_R)
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
     <RuntimeIdentifier>$(RUNTIMEIDENTIFIER)</RuntimeIdentifier>
     <IsPackable>false</IsPackable>
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+
+    <!-- Disable automagic FSharp.Core resolution when not using with FSharp scripts -->
+    <DisableImplicitFSharpCoreReference Condition="'$(SCRIPTEXTENSION)' != '.fsx'">true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
 
