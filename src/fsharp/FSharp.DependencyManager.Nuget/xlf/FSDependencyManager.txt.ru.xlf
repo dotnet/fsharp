@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="notUsed">
         <source>Not used.</source>
-        <target state="new">Not used.</target>
+        <target state="translated">Не используется.</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
