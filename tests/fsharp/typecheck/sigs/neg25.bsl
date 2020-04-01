@@ -10,11 +10,8 @@ neg25.fs(87,19,87,25): typecheck error FS0366: No implementation was given for '
 neg25.fs(104,19,104,27): typecheck error FS0366: No implementation was given for 'abstract member AnotherNegativeTest.ITestSub.Meth1 : int -> int'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.
 
 neg25.fs(126,27,126,35): typecheck error FS0366: No implementation was given for those members: 
-
 	'abstract member MissingInterfaceMemberTests.Test0.ITestSub.Meth2 : int -> int'
-
 	'abstract member MissingInterfaceMemberTests.Test0.ITest.Meth1 : string -> string'
-
 Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.
 
 neg25.fs(147,27,147,35): typecheck error FS0366: No implementation was given for 'abstract member MissingInterfaceMemberTests.Test1.ITest.Meth1 : string -> string'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.

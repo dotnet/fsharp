@@ -202,11 +202,6 @@
         <target state="translated">Sugeruj nazwy w przypadku nierozpoznanych identyfikatorów</target>
         <note />
       </trans-unit>
-      <trans-unit id="Use_out_of_process_language_server">
-        <source>(Preview) Use out of process language server</source>
-        <target state="translated">(Wersja zapoznawcza) Korzystanie z serwera języka poza procesem</target>
-        <note />
-      </trans-unit>
     </body>
   </file>
 </xliff>

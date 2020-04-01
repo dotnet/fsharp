@@ -8,6 +8,7 @@ open System.Diagnostics
 open System.IO
 open System.Text
 open System.Diagnostics
+open System.Collections.Generic
 open System.Reflection
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
@@ -17,6 +18,9 @@ open System.Runtime.Loader
 #endif
 open NUnit.Framework
 open System.Reflection.Emit
+open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CSharp
+open FSharp.Compiler.UnitTests.Utilities
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
@@ -52,11 +56,17 @@ type CompileOutput =
     | Library
     | Exe
 
-type CompilationReference = private CompilationReference of Compilation * staticLink: bool with
+type CompilationReference = 
+    private 
+    | CompilationReference of Compilation * staticLink: bool 
+    | TestCompilationReference of TestCompilation
 
     static member CreateFSharp(cmpl: Compilation, ?staticLink) =
         let staticLink = defaultArg staticLink false
         CompilationReference(cmpl, staticLink)
+
+    static member Create(cmpl: TestCompilation) =
+        TestCompilationReference cmpl
 
 and Compilation = private Compilation of string * SourceKind * CompileOutput * options: string[] * CompilationReference list with
 
@@ -257,7 +267,14 @@ let main argv = 0"""
                     |> List.map (fun cmpl ->
                             match cmpl with
                             | CompilationReference (cmpl, staticLink) ->
-                                compileCompilationAux disposals ignoreWarnings cmpl, staticLink)
+                                compileCompilationAux disposals ignoreWarnings cmpl, staticLink
+                            | TestCompilationReference (cmpl) -> 
+                                let tmp = Path.GetTempFileName()
+                                disposals.Add({ new IDisposable with 
+                                                    member _.Dispose() = 
+                                                        try File.Delete tmp with | _ -> () })
+                                cmpl.EmitAsFile tmp
+                                (([||], tmp), []), false)
 
                 let compilationRefs =
                     compiledRefs
@@ -398,14 +415,15 @@ let main argv = 0"""
 
             Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
 
-    static member TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
+    static member TypeCheckWithErrorsAndOptionsAgainstBaseLine options (sourceFile: string) =
         lock gate <| fun () ->
+            let absoluteSourceFile = System.IO.Path.Combine(__SOURCE_DIRECTORY__, "..", sourceFile)
             let parseResults, fileAnswer =
                 checker.ParseAndCheckFileInProject(
-                    "test.fs",
+                    sourceFile,
                     0,
-                    SourceText.ofString source,
-                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
+                    SourceText.ofString (File.ReadAllText absoluteSourceFile),
+                    { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions; SourceFiles = [|sourceFile|] })
                 |> Async.RunSynchronously
 
             Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
@@ -414,29 +432,72 @@ let main argv = 0"""
             | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
             | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
-            let errors =
+            let errorsExpectedBaseLine =
+                let bslFile = Path.ChangeExtension(absoluteSourceFile, "bsl")
+                if not (File.Exists bslFile) then
+                    // new test likely initialized, create empty baseline file
+                    File.WriteAllText(bslFile, "")
+                File.ReadAllText(Path.ChangeExtension(absoluteSourceFile, "bsl"))
+            let errorsActual =
                 typeCheckResults.Errors
-                |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+                |> Array.map (sprintf "%A")
+                |> String.concat "\n" 
+            File.WriteAllText(Path.ChangeExtension(absoluteSourceFile,"err"), errorsActual)
 
-            Assert.AreEqual(Array.length expectedTypeErrors, errors.Length, sprintf "Type check errors: %A" errors)
+            Assert.AreEqual(errorsExpectedBaseLine.Replace("\r\n","\n"), errorsActual.Replace("\r\n","\n"))
+
+    static member TypeCheckWithErrorsAndOptionsAndAdjust options libAdjust (source: string) expectedTypeErrors =
+        lock gate <| fun () ->
+            let errors =
+                let parseResults, fileAnswer =
+                    checker.ParseAndCheckFileInProject(
+                        "test.fs",
+                        0,
+                        SourceText.ofString source,
+                        { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
+                    |> Async.RunSynchronously
+
+                if parseResults.Errors.Length > 0 then 
+                    parseResults.Errors
+                else
+
+                    match fileAnswer with
+                    | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                    | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Errors
+
+            let errors =
+                errors
+                |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+                |> Array.map (fun info ->
+                    (info.Severity, info.ErrorNumber, (info.StartLineAlternate - libAdjust, info.StartColumn + 1, info.EndLineAlternate - libAdjust, info.EndColumn + 1), info.Message))
+
+            let checkEqual k a b = 
+                if a <> b then 
+                    Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
+
+            checkEqual "Type Check Errors"  (Array.length expectedTypeErrors) errors.Length 
 
             Array.zip errors expectedTypeErrors
-            |> Array.iter (fun (info, expectedError) ->
-                let (expectedServerity: FSharpErrorSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
-                Assert.AreEqual(expectedServerity, info.Severity)
-                Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
-                Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")
-                Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")
+            |> Array.iter (fun (actualError, expectedError) ->
+                let (expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg) = expectedError
+                let (actualSeverity, actualErrorNumber, actualErrorRange, actualErrorMsg) = actualError
+                checkEqual "Severity" expectedSeverity actualSeverity
+                checkEqual "ErrorNumber" expectedErrorNumber actualErrorNumber
+                checkEqual "ErrorRange" expectedErrorRange actualErrorRange
+                checkEqual "Message" expectedErrorMsg actualErrorMsg
             )
+
+    static member TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
+        CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust options 0 (source: string) expectedTypeErrors
 
     static member TypeCheckWithErrors (source: string) expectedTypeErrors =
         CompilerAssert.TypeCheckWithErrorsAndOptions [||] source expectedTypeErrors
 
-    static member TypeCheckSingleErrorWithOptions options (source: string) (expectedServerity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
-        CompilerAssert.TypeCheckWithErrorsAndOptions options source [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
+    static member TypeCheckSingleErrorWithOptions options (source: string) (expectedSeverity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
+        CompilerAssert.TypeCheckWithErrorsAndOptions options source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    static member TypeCheckSingleError (source: string) (expectedServerity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
-        CompilerAssert.TypeCheckWithErrors source [| expectedServerity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
+    static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
+        CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
     static member CompileExeWithOptions options (source: string) =
         compile true options source (fun (errors, _) ->
@@ -526,8 +587,8 @@ let main argv = 0"""
 
         Array.zip errors expectedParseErrors
         |> Array.iter (fun (info, expectedError) ->
-            let (expectedServerity: FSharpErrorSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
-            Assert.AreEqual(expectedServerity, info.Severity)
+            let (expectedSeverity: FSharpErrorSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
+            Assert.AreEqual(expectedSeverity, info.Severity)
             Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
             Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")
             Assert.AreEqual(expectedErrorMsg, info.Message, "expectedErrorMsg")

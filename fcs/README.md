@@ -17,8 +17,6 @@ There are subtle differences between FSharp.Compiler.Service and FSharp.Compiler
 
 - FCS has a .NET Standard 2.0 version in the nuget package
 
-- FCS testing also tests the "Project Cracker" (see below)
-
 - FCS doesn't add the System.ValueTuple.dll reference by default, see ``#if COMPILER_SERVICE_AS_DLL`` in compiler codebase
 
 ## Version Numbers
@@ -29,7 +27,6 @@ To update the version number a global replace through fcs\... is currently neede
    Directory.Build.props
    nuget/FSharp.Compiler.Service.nuspec
    nuget/FSharp.Compiler.Service.MSBuild.v12.nuspec
-   nuget/FSharp.Compiler.Service.ProjectCracker.nuspec
    RELEASE_NOTES.md
 
 ## Building, Testing, Packaging, Releases
@@ -64,7 +61,6 @@ You can push the packages if you have permissions, either automatically using ``
     set APIKEY=...
     ..\fsharp\.nuget\nuget.exe push %HOMEDRIVE%%HOMEPATH%\Downloads\FSharp.Compiler.Service.22.0.3.nupkg %APIKEY% -Source https://nuget.org
     ..\fsharp\.nuget\nuget.exe push %HOMEDRIVE%%HOMEPATH%\Downloads\FSharp.Compiler.Service.MSBuild.v12.22.0.3.nupkg %APIKEY%  -Source https://nuget.org
-    ..\fsharp\.nuget\nuget.exe push %HOMEDRIVE%%HOMEPATH%\Downloads\FSharp.Compiler.Service.ProjectCracker.22.0.3.nupkg %APIKEY%  -Source https://nuget.org
 
 ### Use of Paket and FAKE
 
@@ -82,15 +78,13 @@ Testing reuses the test files from ..\tests\service which were are also FCS test
 
 Output is in ``docs``.  In the ``FSharp.Compiler.Service`` repo this is checked in and hosted as <https://fsharp.github.io/FSharp.Compiler.Service>.
 
-## The two other NuGet packages
+## Other NuGet packages
 
 It also contains both the source, build, packaging and test logic for
 
 - ``FSharp.Compiler.Service.MSBuild.v12`` adds legacy MSBuild v12 support to an instance of FSharp.Compiler.Service, if exact compatibility for scripting references such as ``#r "Foo, Version=1.3.4"`` is required.
 
-- ``FSharp.Compiler.Service.ProjectCracker`` is part of ``FsAutoComplete`` and Ionide and is used to crack old-style project formats using MSBuild. It used to be part of the FCS API.
-
-Both of these components are gradually becoming obsolete
+These components are gradually becoming obsolete
 
 ## Engineering road map
 

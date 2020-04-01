@@ -77,11 +77,6 @@
         <target state="translated">Rozlišené případy typu union a popisky výjimek musí být identifikátory, které jsou psané velkými písmeny.</target>
         <note />
       </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Možné přetížení: {0}. {1}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FunctionExpected">
         <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
         <target state="translated">Tato funkce přebírá příliš mnoho argumentů, nebo se používá v kontextu, ve kterém se funkce neočekává.</target>
@@ -1625,6 +1620,11 @@
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
         <target state="translated">symbol |}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="new">keyword 'and!'</target>
         <note />
       </trans-unit>
     </body>

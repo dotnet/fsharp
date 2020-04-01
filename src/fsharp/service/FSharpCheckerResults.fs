@@ -109,24 +109,6 @@ type GetPreciseCompletionListFromExprTypingsResult =
     | Some of (ItemWithInst list * DisplayEnv * range) * TType
 
 type Names = string list 
-
-[<RequireQualifiedAccess>]
-type SemanticClassificationType =
-    | ReferenceType
-    | ValueType
-    | UnionCase
-    | Function
-    | Property
-    | MutableVar
-    | Module
-    | Printf
-    | ComputationExpression
-    | IntrinsicFunction
-    | Enumeration
-    | Interface
-    | TypeArgument
-    | Operator
-    | Disposable
     
 /// A TypeCheckInfo represents everything we get back from the typecheck of a file.
 /// It acts like an in-memory database about the file.
@@ -155,8 +137,6 @@ type internal TypeCheckInfo
            openDeclarations: OpenDeclaration[]) = 
 
     let textSnapshotInfo = defaultArg textSnapshotInfo null
-    let (|CNR|) (cnr:CapturedNameResolution) =
-        (cnr.Pos, cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
 
     // These strings are potentially large and the editor may choose to hold them for a while.
     // Use this cache to fold together data tip text results that are the same. 
@@ -622,7 +602,7 @@ type internal TypeCheckInfo
 
             let getType() =
                 match NameResolution.TryToResolveLongIdentAsType ncenv nenv m plid with
-                | Some x -> tryDestAppTy g x
+                | Some x -> tryTcrefOfAppTy g x
                 | None ->
                     match lastDotPos |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1)) with
                     | Some p when lineStr.[p] = '.' ->
@@ -630,7 +610,7 @@ type internal TypeCheckInfo
                         | Some colAtEndOfNames ->                 
                             let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
                             match TryGetTypeFromNameResolution(line, colAtEndOfNames, residueOpt, resolveOverloads) with
-                            | Some x -> tryDestAppTy g x
+                            | Some x -> tryTcrefOfAppTy g x
                             | _ -> ValueNone
                         | None -> ValueNone
                     | _ -> ValueNone
@@ -675,7 +655,7 @@ type internal TypeCheckInfo
                             // it appears we're getting some typings recorded for non-atomic expressions like "f x"
                             when isNil plid ->
                         // lookup based on expression typings successful
-                        Some (items |> List.map (CompletionItem (tryDestAppTy g ty) ValueNone), denv, m)
+                        Some (items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone), denv, m)
                     | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
                         // There was an error, e.g. we have "<expr>." and there is an error determining the type of <expr>  
                         // In this case, we don't want any of the fallback logic, rather, we want to produce zero results.
@@ -708,7 +688,7 @@ type internal TypeCheckInfo
                            
                            // Try again with the qualItems
                            | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty) ->
-                               ValueSome(items |> List.map (CompletionItem (tryDestAppTy g ty) ValueNone), denv, m)
+                               ValueSome(items |> List.map (CompletionItem (tryTcrefOfAppTy g ty) ValueNone), denv, m)
                            
                            | _ -> ValueNone
 
@@ -1262,133 +1242,8 @@ type internal TypeCheckInfo
     member __.GetFormatSpecifierLocationsAndArity() = 
          sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
-    member __.GetSemanticClassification(range: range option) : (range * SemanticClassificationType) [] =
-      ErrorScope.Protect Range.range0 
-       (fun () -> 
-        let (|LegitTypeOccurence|_|) = function
-            | ItemOccurence.UseInType
-            | ItemOccurence.UseInAttribute
-            | ItemOccurence.Use _
-            | ItemOccurence.Binding _
-            | ItemOccurence.Pattern _ -> Some()
-            | _ -> None
-
-        let (|OptionalArgumentAttribute|_|) ttype =
-            match ttype with
-            | TType.TType_app(tref, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
-            | _ -> None
-
-        let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
-            if valRefEq g g.raise_vref vref ||
-               valRefEq g g.reraise_vref vref ||
-               valRefEq g g.typeof_vref vref ||
-               valRefEq g g.typedefof_vref vref ||
-               valRefEq g g.sizeof_vref vref ||
-               valRefEq g g.nameof_vref vref
-            then Some()
-            else None
-        
-        let (|EnumCaseFieldInfo|_|) (rfinfo : RecdFieldInfo) =
-            match rfinfo.TyconRef.TypeReprInfo with
-            | TFSharpObjectRepr x ->
-                match x.fsobjmodel_kind with
-                | TTyconEnum -> Some ()
-                | _ -> None
-            | _ -> None
-
-        let resolutions =
-            match range with
-            | Some range ->
-                sResolutions.CapturedNameResolutions
-                |> Seq.filter (fun cnr -> rangeContainsPos range cnr.Range.Start || rangeContainsPos range cnr.Range.End)
-            | None -> 
-                sResolutions.CapturedNameResolutions :> seq<_>
-
-        let isDisposableTy (ty: TType) =
-            protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
-
-        let isStructTyconRef (tyconRef: TyconRef) = 
-            let ty = generalizedTyconRef tyconRef
-            let underlyingTy = stripTyEqnsAndMeasureEqns g ty
-            isStructTy g underlyingTy
-
-        let isValRefMutable (vref: ValRef) =
-            // Mutable values, ref cells, and non-inref byrefs are mutable.
-            vref.IsMutable
-            || Tastops.isRefCellTy g vref.Type
-            || (Tastops.isByrefTy g vref.Type && not (Tastops.isInByrefTy g vref.Type))
-
-        let isRecdFieldMutable (rfinfo: RecdFieldInfo) =
-            (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
-            || Tastops.isRefCellTy g rfinfo.RecdField.FormalType
-
-        resolutions
-        |> Seq.choose (fun cnr ->
-            match cnr with
-            // 'seq' in 'seq { ... }' gets colored as keywords
-            | CNR(_, (Item.Value vref), ItemOccurence.Use, _, _, _, m) when valRefEq g g.seq_vref vref ->
-                Some (m, SemanticClassificationType.ComputationExpression)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when isValRefMutable vref ->
-                Some (m, SemanticClassificationType.MutableVar)
-            | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
-                Some (m, SemanticClassificationType.IntrinsicFunction)
-            | CNR(_, (Item.Value vref), _, _, _, _, m) when isFunction g vref.Type ->
-                if valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then 
-                    None
-                elif vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
-                    Some (m, SemanticClassificationType.Property)
-                elif IsOperatorName vref.DisplayName then
-                    Some (m, SemanticClassificationType.Operator)
-                else
-                    Some (m, SemanticClassificationType.Function)
-            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isRecdFieldMutable rfinfo ->
-                Some (m, SemanticClassificationType.MutableVar)
-            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isFunction g rfinfo.FieldType ->
-               Some (m, SemanticClassificationType.Function)
-            | CNR(_, Item.RecdField EnumCaseFieldInfo, _, _, _, _, m) ->
-                Some (m, SemanticClassificationType.Enumeration)
-            | CNR(_, Item.MethodGroup _, _, _, _, _, m) ->
-                Some (m, SemanticClassificationType.Function)
-            // custom builders, custom operations get colored as keywords
-            | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
-                Some (m, SemanticClassificationType.ComputationExpression)
-            // types get colored as types when they occur in syntactic types or custom attributes
-            // type variables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
-            | CNR(_, Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _) -> None
-            | CNR(_, Item.CtorGroup(_, [MethInfo.FSMeth(_, OptionalArgumentAttribute, _, _)]), LegitTypeOccurence, _, _, _, _) -> None
-            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isInterfaceTy g) -> 
-                Some (m, SemanticClassificationType.Interface)
-            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isStructTy g) -> 
-                Some (m, SemanticClassificationType.ValueType)
-            | CNR(_, Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m) when isStructTyconRef tyconRef ->
-                Some (m, SemanticClassificationType.ValueType)
-            | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists isDisposableTy ->
-                Some (m, SemanticClassificationType.Disposable)
-            | CNR(_, Item.Types _, LegitTypeOccurence, _, _, _, m) -> 
-                Some (m, SemanticClassificationType.ReferenceType)
-            | CNR(_, (Item.TypeVar _ ), LegitTypeOccurence, _, _, _, m) ->
-                Some (m, SemanticClassificationType.TypeArgument)
-            | CNR(_, Item.UnqualifiedType tyconRefs, LegitTypeOccurence, _, _, _, m) ->
-                if tyconRefs |> List.exists (fun tyconRef -> tyconRef.Deref.IsStructOrEnumTycon) then
-                    Some (m, SemanticClassificationType.ValueType)
-                else Some (m, SemanticClassificationType.ReferenceType)
-            | CNR(_, Item.CtorGroup(_, minfos), LegitTypeOccurence, _, _, _, m) ->
-                if minfos |> List.exists (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
-                    Some (m, SemanticClassificationType.ValueType)
-                else Some (m, SemanticClassificationType.ReferenceType)
-            | CNR(_, Item.ExnCase _, LegitTypeOccurence, _, _, _, m) ->
-                Some (m, SemanticClassificationType.ReferenceType)
-            | CNR(_, Item.ModuleOrNamespaces refs, LegitTypeOccurence, _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
-                Some (m, SemanticClassificationType.Module)
-            | CNR(_, (Item.ActivePatternCase _ | Item.UnionCase _ | Item.ActivePatternResult _), _, _, _, _, m) ->
-                Some (m, SemanticClassificationType.UnionCase)
-            | _ -> None)
-        |> Seq.toArray
-        |> Array.append (sSymbolUses.GetFormatSpecifierLocationsAndArity() |> Array.map (fun m -> fst m, SemanticClassificationType.Printf))
-       ) 
-       (fun msg -> 
-           Trace.TraceInformation(sprintf "FCS: recovering from error in GetSemanticClassification: '%s'" msg)
-           Array.empty)
+    member __.GetSemanticClassification(range: range option) : struct (range * SemanticClassificationType) [] =
+        sResolutions.GetSemanticClassification(g, amap, sSymbolUses.GetFormatSpecifierLocationsAndArity(), range)
 
     /// The resolutions in the file
     member __.ScopeResolutions = sResolutions

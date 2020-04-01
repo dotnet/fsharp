@@ -20,6 +20,7 @@ open System.Threading
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices
+open Microsoft.VisualStudio.FSharp.Interactive.Session
 
 [<AutoOpen>]
 module private FSharpProjectOptionsHelpers =
@@ -97,7 +98,7 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
                 let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
-                let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText())
+                let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText(), SessionsProperties.fsiPreview)
                 let projectOptions =
                     if isScriptFile document.FilePath then
                         scriptProjectOptions

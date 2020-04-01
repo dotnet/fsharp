@@ -330,6 +330,12 @@ type SynAccess =
     | Internal
     | Private
 
+    override this.ToString () =
+        match this with
+        | Public -> "Public"
+        | Internal -> "Internal"
+        | Private -> "Private"
+
 type SequencePointInfoForTarget =
     | SequencePointAtTarget
     | SuppressSequencePointAtTarget
@@ -764,12 +770,13 @@ and
     /// Computation expressions only
     | YieldOrReturnFrom of (bool * bool) * expr: SynExpr * range: range
 
-    /// SynExpr.LetOrUseBang (spBind, isUse, isFromSource, pat, rhsExpr, bodyExpr, mWholeExpr).
+    /// SynExpr.LetOrUseAndBang (spBind, isUse, isFromSource, pat, rhsExpr, mLetBangExpr, [(andBangSpBind, andBangIsUse, andBangIsFromSource, andBangPat, andBangRhsExpr, mAndBangExpr)], bodyExpr).
     ///
     /// F# syntax: let! pat = expr in expr
     /// F# syntax: use! pat = expr in expr
+    /// F# syntax: let! pat = expr and! ... and! ... and! pat = expr in expr
     /// Computation expressions only
-    | LetOrUseBang of bindSeqPoint: SequencePointInfoForBinding * isUse: bool * isFromSource: bool * SynPat * SynExpr * SynExpr * range: range
+    | LetOrUseBang of bindSeqPoint: SequencePointInfoForBinding * isUse: bool * isFromSource: bool * SynPat * rhs: SynExpr * andBangs:(SequencePointInfoForBinding * bool * bool * SynPat * SynExpr * range) list * body:SynExpr * range: range 
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of  matchSeqPoint: SequencePointInfoForBinding * expr: SynExpr * clauses: SynMatchClause list * range: range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
@@ -2021,6 +2028,10 @@ type SynExpr with
 type SynReturnInfo = SynReturnInfo of (SynType * SynArgInfo) * range: range
 
 
+let unionRangeWithListBy projectRangeFromThing m listOfThing = 
+    (m, listOfThing) ||> List.fold (fun m thing -> unionRanges m (projectRangeFromThing thing))
+
+
 let mkAttributeList attrs range =
     [{ Attributes = attrs
        Range = range }]
@@ -2032,6 +2043,9 @@ let ConcatAttributesLists (attrsLists: SynAttributeList list) =
 
 let (|Attributes|) synAttributes =
     ConcatAttributesLists synAttributes
+
+let rangeOfNonNilAttrs (attrs: SynAttributes) =
+    (attrs.Head.Range, attrs.Tail) ||> unionRangeWithListBy (fun a -> a.Range)
 
 /// Operations related to the syntactic analysis of arguments of value, function and member definitions and signatures.
 ///
@@ -2475,6 +2489,6 @@ let rec synExprContainsError inpExpr =
 
           | SynExpr.MatchBang (_, e, cl, _) ->
               walkExpr e || walkMatchClauses cl
-          | SynExpr.LetOrUseBang  (_, _, _, _, e1, e2, _) ->
-              walkExpr e1 || walkExpr e2
+          | SynExpr.LetOrUseBang  (rhs=e1;body=e2;andBangs=es) ->
+              walkExpr e1 || walkExprs [ for (_,_,_,_,e,_) in es do yield e ] || walkExpr e2
     walkExpr inpExpr

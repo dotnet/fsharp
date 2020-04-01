@@ -15,7 +15,10 @@ let addToPath path =
     if not(Array.contains path splits) then
         setEnvVar "PATH" (path + (string Path.PathSeparator) + currentPath)
 
-let nugetCache = Path.Combine(System.Environment.GetEnvironmentVariable "USERPROFILE", ".nuget", "packages")
+let nugetCache = 
+    match System.Environment.GetEnvironmentVariable("NUGET_PACKAGES") with
+    | null -> Path.Combine(System.Environment.GetEnvironmentVariable "USERPROFILE", ".nuget", "packages")
+    | path -> path
 let rootFolder = Path.Combine(__SOURCE_DIRECTORY__, "..", "..")
 let compilerBinFolder = Path.Combine(rootFolder, "artifacts", "bin", "fsc", releaseOrDebug, "net472")
 setEnvVar "CSC_PIPE"      (Path.Combine(nugetCache, "Microsoft.Net.Compilers", "2.7.0", "tools", "csc.exe"))

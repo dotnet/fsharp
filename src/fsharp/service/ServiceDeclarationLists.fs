@@ -384,7 +384,7 @@ module internal DescriptionListsImpl =
          
          /// Find the glyph for the given type representation.
          let typeToGlyph ty = 
-            match tryDestAppTy denv.g ty with
+            match tryTcrefOfAppTy denv.g ty with
             | ValueSome tcref -> tcref.TypeReprInfo |> reprToGlyph
             | _ ->
                 if isStructTupleTy denv.g ty then FSharpGlyph.Struct
@@ -615,21 +615,27 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
         // Filter out operators, active patterns (as values) and the empty list
         let items = 
             // Check whether this item looks like an operator.
-            let isOperatorItem(name, items: CompletionItem list) = 
-                match items |> List.map (fun x -> x.Item) with
-                | [Item.Value _ | Item.MethodGroup _ | Item.UnionCase _] -> IsOperatorName name
+            let isOperatorItem name (items: CompletionItem list) =
+                match items with
+                | [item] ->
+                    match item.Item with
+                    | Item.Value _ | Item.MethodGroup _ | Item.UnionCase _ -> IsOperatorName name
+                    | _ -> false
                 | _ -> false              
-            
+
             let isActivePatternItem (items: CompletionItem list) =
-                match items |> List.map (fun x -> x.Item) with
-                | [Item.Value vref] -> IsActivePatternName (vref.CompiledName infoReader.g.CompilerGlobalState)
+                match items with
+                | [item] ->
+                    match item.Item with
+                    | Item.Value vref -> IsActivePatternName vref.CoreDisplayName
+                    | _ -> false
                 | _ -> false
-            
+
             items |> List.filter (fun (displayName, items) -> 
-                not (isOperatorItem(displayName, items)) && 
+                not (isOperatorItem displayName items) && 
                 not (displayName = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
                 not (isActivePatternItem items))
-                    
+
         let decls = 
             items 
             |> List.map (fun (displayName, itemsWithSameFullName) -> 

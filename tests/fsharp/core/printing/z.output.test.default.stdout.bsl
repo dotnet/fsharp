@@ -1963,129 +1963,134 @@ val tree_5_3 : tree =
 val generate : x:int -> X
 
 > val exps : X list =
-  [Bop (1,Var 0,Var 0); Var 2; Bop (3,Bop (1,Var 0,Var 0),Bop (1,Var 0,Var 0));
-   Var 4; Bop (5,Var 2,Bop (1,Var 0,Var 0)); Var 6;
-   Bop (7,Bop (3,Bop (1,Var 0,Var 0),Bop (1,Var 0,Var 0)),Var 2); Var 8;
-   Bop (9,Var 4,Bop (3,Bop (1,Var 0,Var 0),Bop (1,Var 0,Var 0))); Var 10;
+  [Bop (1, Var 0, Var 0); Var 2;
+   Bop (3, Bop (1, Var 0, Var 0), Bop (1, Var 0, Var 0)); Var 4;
+   Bop (5, Var 2, Bop (1, Var 0, Var 0)); Var 6;
+   Bop (7, Bop (3, Bop (1, Var 0, Var 0), Bop (1, Var 0, Var 0)), Var 2);
+   Var 8;
+   Bop (9, Var 4, Bop (3, Bop (1, Var 0, Var 0), Bop (1, Var 0, Var 0)));
+   Var 10;
    Bop
-     (213,Var 106,
+     (213, Var 106,
       Bop
         (71,
          Bop
-           (35,Bop (17,Var 8,Bop (5,Var 2,Bop (1,Var 0,Var 0))),
+           (35, Bop (17, Var 8, Bop (5, Var 2, Bop (1, Var 0, Var 0))),
             Bop
-              (11,Bop (5,Var 2,Bop (1,Var 0,Var 0)),
-               Bop (3,Bop (1,Var 0,Var 0),Bop (1,Var 0,Var 0)))),
+              (11, Bop (5, Var 2, Bop (1, Var 0, Var 0)),
+               Bop (3, Bop (1, Var 0, Var 0), Bop (1, Var 0, Var 0)))),
          Bop
            (23,
             Bop
-              (11,Bop (5,Var 2,Bop (1,Var 0,Var 0)),
-               Bop (3,Bop (1,Var 0,Var 0),Bop (1,Var 0,Var 0))),
-            Bop (7,Bop (3,Bop (1,Var 0,Var 0),Bop (1,Var 0,Var 0)),Var 2))));
-   Var 21342314; Var 3214; Bop (1231357,Var 615678,Var 410452);
+              (11, Bop (5, Var 2, Bop (1, Var 0, Var 0)),
+               Bop (3, Bop (1, Var 0, Var 0), Bop (1, Var 0, Var 0))),
+            Bop
+              (7, Bop (3, Bop (1, Var 0, Var 0), Bop (1, Var 0, Var 0)), Var 2))));
+   Var 21342314; Var 3214; Bop (1231357, Var 615678, Var 410452);
    Bop
-     (5234547,Bop (2617273,Var 1308636,Var 872424),
-      Bop (1744849,Var 872424,Var 581616));
-   Bop (923759825,Var 461879912,Bop (307919941,Var 153959970,Var 102639980));
+     (5234547, Bop (2617273, Var 1308636, Var 872424),
+      Bop (1744849, Var 872424, Var 581616));
+   Bop
+     (923759825, Var 461879912, Bop (307919941, Var 153959970, Var 102639980));
    Var 2435234;
    Bop
-     (12396777,Var 6198388,
+     (12396777, Var 6198388,
       Bop
         (4132259,
          Bop
-           (2066129,Var 1033064,
+           (2066129, Var 1033064,
             Bop
-              (688709,Var 344354,
+              (688709, Var 344354,
                Bop
-                 (229569,Var 114784,
+                 (229569, Var 114784,
                   Bop
                     (76523,
                      Bop
-                       (38261,Var 19130,
+                       (38261, Var 19130,
                         Bop
-                          (12753,Var 6376,
+                          (12753, Var 6376,
                            Bop
-                             (4251,Bop (2125,Var 1062,Var 708),
-                              Bop (1417,Var 708,Var 472)))),
+                             (4251, Bop (2125, Var 1062, Var 708),
+                              Bop (1417, Var 708, Var 472)))),
                      Bop
                        (25507,
                         Bop
-                          (12753,Var 6376,
+                          (12753, Var 6376,
                            Bop
-                             (4251,Bop (2125,Var 1062,Var 708),
-                              Bop (1417,Var 708,Var 472))),Var 8502))))),
+                             (4251, Bop (2125, Var 1062, Var 708),
+                              Bop (1417, Var 708, Var 472))), Var 8502))))),
          Bop
            (1377419,
             Bop
-              (688709,Var 344354,
+              (688709, Var 344354,
                Bop
-                 (229569,Var 114784,
+                 (229569, Var 114784,
                   Bop
                     (76523,
                      Bop
-                       (38261,Var 19130,
+                       (38261, Var 19130,
                         Bop
-                          (12753,Var 6376,
+                          (12753, Var 6376,
                            Bop
-                             (4251,Bop (2125,Var 1062,Var 708),
-                              Bop (1417,Var 708,Var 472)))),
+                             (4251, Bop (2125, Var 1062, Var 708),
+                              Bop (1417, Var 708, Var 472)))),
                      Bop
                        (25507,
                         Bop
-                          (12753,Var 6376,
+                          (12753, Var 6376,
                            Bop
-                             (4251,Bop (2125,Var 1062,Var 708),
-                              Bop (1417,Var 708,Var 472))),Var 8502)))),
+                             (4251, Bop (2125, Var 1062, Var 708),
+                              Bop (1417, Var 708, Var 472))), Var 8502)))),
             Bop
               (459139,
                Bop
-                 (229569,Var 114784,
+                 (229569, Var 114784,
                   Bop
                     (76523,
                      Bop
-                       (38261,Var 19130,
+                       (38261, Var 19130,
                         Bop
-                          (12753,Var 6376,
+                          (12753, Var 6376,
                            Bop
-                             (4251,Bop (2125,Var 1062,Var 708),
-                              Bop (1417,Var 708,Var 472)))),
+                             (4251, Bop (2125, Var 1062, Var 708),
+                              Bop (1417, Var 708, Var 472)))),
                      Bop
                        (25507,
                         Bop
-                          (12753,Var 6376,
+                          (12753, Var 6376,
                            Bop
-                             (4251,Bop (2125,Var 1062,Var 708),
-                              Bop (1417,Var 708,Var 472))),Var 8502))),
+                             (4251, Bop (2125, Var 1062, Var 708),
+                              Bop (1417, Var 708, Var 472))), Var 8502))),
                Var 153046))));
    Bop
-     (3333333,Var 1666666,
+     (3333333, Var 1666666,
       Bop
         (1111111,
          Bop
-           (555555,Bop (277777,Var 138888,Var 92592),
-            Bop (185185,Var 92592,Var 61728)),Var 370370));
+           (555555, Bop (277777, Var 138888, Var 92592),
+            Bop (185185, Var 92592, Var 61728)), Var 370370));
    Bop
-     (1312311237,Var 656155618,
+     (1312311237, Var 656155618,
       Bop
         (437437079,
          Bop
            (218718539,
             Bop
-              (109359269,Var 54679634,
+              (109359269, Var 54679634,
                Bop
-                 (36453089,Var 18226544,
+                 (36453089, Var 18226544,
                   Bop
-                    (12151029,Var 6075514,
+                    (12151029, Var 6075514,
                      Bop
                        (4050343,
                         Bop
-                          (2025171,Bop (1012585,Var 506292,Var 337528),
+                          (2025171, Bop (1012585, Var 506292, Var 337528),
                            Bop
-                             (675057,Var 337528,
+                             (675057, Var 337528,
                               Bop
                                 (225019,
                                  Bop
-                                   (112509,Var 56254,
+                                   (112509, Var 56254,
                                     Bop
                                       (37503,
                                        Bop
@@ -2099,16 +2104,16 @@ val generate : x:int -> X
                                                    Bop
                                                      (1171,
                                                       Bop
-                                                        (585,Var 292,
+                                                        (585, Var 292,
                                                          Bop
                                                            (195,
                                                             Bop
-                                                              (97,Var 48,
+                                                              (97, Var 48,
                                                                Var 32),
                                                             Bop
-                                                              (65,Var 32,
+                                                              (65, Var 32,
                                                                Bop
-                                                                 (21,Var 10,
+                                                                 (21, Var 10,
                                                                   Bop
                                                                     (7,
                                                                      Bop
@@ -2127,22 +2132,22 @@ val generate : x:int -> X
                                                                              0)),
                                                                      Var 2))))),
                                                       Var 390),
-                                                   Bop (781,Var 390,Var 260)),
+                                                   Bop (781, Var 390, Var 260)),
                                                 Var 1562),
                                              Bop
-                                               (3125,Var 1562,
+                                               (3125, Var 1562,
                                                 Bop
-                                                  (1041,Var 520,
+                                                  (1041, Var 520,
                                                    Bop
                                                      (347,
                                                       Bop
-                                                        (173,Var 86,
+                                                        (173, Var 86,
                                                          Bop
-                                                           (57,Var 28,
+                                                           (57, Var 28,
                                                             Bop
                                                               (19,
                                                                Bop
-                                                                 (9,Var 4,
+                                                                 (9, Var 4,
                                                                   Bop
                                                                     (3,
                                                                      Bop
@@ -2157,11 +2162,11 @@ val generate : x:int -> X
                                                       Bop
                                                         (115,
                                                          Bop
-                                                           (57,Var 28,
+                                                           (57, Var 28,
                                                             Bop
                                                               (19,
                                                                Bop
-                                                                 (9,Var 4,
+                                                                 (9, Var 4,
                                                                   Bop
                                                                     (3,
                                                                      Bop
@@ -2172,26 +2177,26 @@ val generate : x:int -> X
                                                                        (1,
                                                                         Var 0,
                                                                         Var 0))),
-                                                               Var 6)),Var 38))))),
+                                                               Var 6)), Var 38))))),
                                           Var 6250),
                                        Bop
-                                         (12501,Var 6250,
+                                         (12501, Var 6250,
                                           Bop
                                             (4167,
                                              Bop
                                                (2083,
                                                 Bop
-                                                  (1041,Var 520,
+                                                  (1041, Var 520,
                                                    Bop
                                                      (347,
                                                       Bop
-                                                        (173,Var 86,
+                                                        (173, Var 86,
                                                          Bop
-                                                           (57,Var 28,
+                                                           (57, Var 28,
                                                             Bop
                                                               (19,
                                                                Bop
-                                                                 (9,Var 4,
+                                                                 (9, Var 4,
                                                                   Bop
                                                                     (3,
                                                                      Bop
@@ -2206,11 +2211,11 @@ val generate : x:int -> X
                                                       Bop
                                                         (115,
                                                          Bop
-                                                           (57,Var 28,
+                                                           (57, Var 28,
                                                             Bop
                                                               (19,
                                                                Bop
-                                                                 (9,Var 4,
+                                                                 (9, Var 4,
                                                                   Bop
                                                                     (3,
                                                                      Bop
@@ -2221,10 +2226,10 @@ val generate : x:int -> X
                                                                        (1,
                                                                         Var 0,
                                                                         Var 0))),
-                                                               Var 6)),Var 38))),
+                                                               Var 6)), Var 38))),
                                                 Var 694),
                                              Bop
-                                               (1389,Var 694,
+                                               (1389, Var 694,
                                                 Bop
                                                   (463,
                                                    Bop
@@ -2232,11 +2237,11 @@ val generate : x:int -> X
                                                       Bop
                                                         (115,
                                                          Bop
-                                                           (57,Var 28,
+                                                           (57, Var 28,
                                                             Bop
                                                               (19,
                                                                Bop
-                                                                 (9,Var 4,
+                                                                 (9, Var 4,
                                                                   Bop
                                                                     (3,
                                                                      Bop
@@ -2247,28 +2252,29 @@ val generate : x:int -> X
                                                                        (1,
                                                                         Var 0,
                                                                         Var 0))),
-                                                               Var 6)),Var 38),
+                                                               Var 6)), Var 38),
                                                       Bop
-                                                        (77,Var 38,
-                                                         Bop (25,Var 12,Var 8))),
-                                                   Var 154)))))),Var 75006))),
+                                                        (77, Var 38,
+                                                         Bop
+                                                           (25, Var 12, Var 8))),
+                                                   Var 154)))))), Var 75006))),
                         Var 1350114)))),
             Bop
               (72906179,
                Bop
-                 (36453089,Var 18226544,
+                 (36453089, Var 18226544,
                   Bop
-                    (12151029,Var 6075514,
+                    (12151029, Var 6075514,
                      Bop
                        (4050343,
                         Bop
-                          (2025171,Bop (1012585,Var 506292,Var 337528),
+                          (2025171, Bop (1012585, Var 506292, Var 337528),
                            Bop
-                             (675057,Var 337528,
+                             (675057, Var 337528,
                               Bop
                                 (225019,
                                  Bop
-                                   (112509,Var 56254,
+                                   (112509, Var 56254,
                                     Bop
                                       (37503,
                                        Bop
@@ -2282,16 +2288,16 @@ val generate : x:int -> X
                                                    Bop
                                                      (1171,
                                                       Bop
-                                                        (585,Var 292,
+                                                        (585, Var 292,
                                                          Bop
                                                            (195,
                                                             Bop
-                                                              (97,Var 48,
+                                                              (97, Var 48,
                                                                Var 32),
                                                             Bop
-                                                              (65,Var 32,
+                                                              (65, Var 32,
                                                                Bop
-                                                                 (21,Var 10,
+                                                                 (21, Var 10,
                                                                   Bop
                                                                     (7,
                                                                      Bop
@@ -2310,22 +2316,22 @@ val generate : x:int -> X
                                                                              0)),
                                                                      Var 2))))),
                                                       Var 390),
-                                                   Bop (781,Var 390,Var 260)),
+                                                   Bop (781, Var 390, Var 260)),
                                                 Var 1562),
                                              Bop
-                                               (3125,Var 1562,
+                                               (3125, Var 1562,
                                                 Bop
-                                                  (1041,Var 520,
+                                                  (1041, Var 520,
                                                    Bop
                                                      (347,
                                                       Bop
-                                                        (173,Var 86,
+                                                        (173, Var 86,
                                                          Bop
-                                                           (57,Var 28,
+                                                           (57, Var 28,
                                                             Bop
                                                               (19,
                                                                Bop
-                                                                 (9,Var 4,
+                                                                 (9, Var 4,
                                                                   Bop
                                                                     (3,
                                                                      Bop
@@ -2340,11 +2346,11 @@ val generate : x:int -> X
                                                       Bop
                                                         (115,
                                                          Bop
-                                                           (57,Var 28,
+                                                           (57, Var 28,
                                                             Bop
                                                               (19,
                                                                Bop
-                                                                 (9,Var 4,
+                                                                 (9, Var 4,
                                                                   Bop
                                                                     (3,
                                                                      Bop
@@ -2355,26 +2361,26 @@ val generate : x:int -> X
                                                                        (1,
                                                                         Var 0,
                                                                         Var 0))),
-                                                               Var 6)),Var 38))))),
+                                                               Var 6)), Var 38))))),
                                           Var 6250),
                                        Bop
-                                         (12501,Var 6250,
+                                         (12501, Var 6250,
                                           Bop
                                             (4167,
                                              Bop
                                                (2083,
                                                 Bop
-                                                  (1041,Var 520,
+                                                  (1041, Var 520,
                                                    Bop
                                                      (347,
                                                       Bop
-                                                        (173,Var 86,
+                                                        (173, Var 86,
                                                          Bop
-                                                           (57,Var 28,
+                                                           (57, Var 28,
                                                             Bop
                                                               (19,
                                                                Bop
-                                                                 (9,Var 4,
+                                                                 (9, Var 4,
                                                                   Bop
                                                                     (3,
                                                                      Bop
@@ -2389,11 +2395,11 @@ val generate : x:int -> X
                                                       Bop
                                                         (115,
                                                          Bop
-                                                           (57,Var 28,
+                                                           (57, Var 28,
                                                             Bop
                                                               (19,
                                                                Bop
-                                                                 (9,Var 4,
+                                                                 (9, Var 4,
                                                                   Bop
                                                                     (3,
                                                                      Bop
@@ -2404,10 +2410,10 @@ val generate : x:int -> X
                                                                        (1,
                                                                         Var 0,
                                                                         Var 0))),
-                                                               Var 6)),Var 38))),
+                                                               Var 6)), Var 38))),
                                                 Var 694),
                                              Bop
-                                               (1389,Var 694,
+                                               (1389, Var 694,
                                                 Bop
                                                   (463,
                                                    Bop
@@ -2415,11 +2421,11 @@ val generate : x:int -> X
                                                       Bop
                                                         (115,
                                                          Bop
-                                                           (57,Var 28,
+                                                           (57, Var 28,
                                                             Bop
                                                               (19,
                                                                Bop
-                                                                 (9,Var 4,
+                                                                 (9, Var 4,
                                                                   Bop
                                                                     (3,
                                                                      Bop
@@ -2430,142 +2436,146 @@ val generate : x:int -> X
                                                                        (1,
                                                                         Var 0,
                                                                         Var 0))),
-                                                               Var 6)),Var 38),
+                                                               Var 6)), Var 38),
                                                       Bop
-                                                        (77,Var 38,
-                                                         Bop (25,Var 12,Var 8))),
-                                                   Var 154)))))),Var 75006))),
+                                                        (77, Var 38,
+                                                         Bop
+                                                           (25, Var 12, Var 8))),
+                                                   Var 154)))))), Var 75006))),
                         Var 1350114))),
-               Bop (24302059,Bop (12151029,...,...),...))),...)); ...]
+               Bop (24302059, Bop (12151029, ..., ...), ...))), ...)); ...]
 
 > module Exprs = begin
   val x1 : X =
     Bop
-      (213,Var 106,
+      (213, Var 106,
        Bop
          (71,
           Bop
-            (35,Bop (17,Var 8,Bop (5,Var 2,Bop (1,Var 0,Var 0))),
+            (35, Bop (17, Var 8, Bop (5, Var 2, Bop (1, Var 0, Var 0))),
              Bop
-               (11,Bop (5,Var 2,Bop (1,Var 0,Var 0)),
-                Bop (3,Bop (1,Var 0,Var 0),Bop (1,Var 0,Var 0)))),
+               (11, Bop (5, Var 2, Bop (1, Var 0, Var 0)),
+                Bop (3, Bop (1, Var 0, Var 0), Bop (1, Var 0, Var 0)))),
           Bop
             (23,
              Bop
-               (11,Bop (5,Var 2,Bop (1,Var 0,Var 0)),
-                Bop (3,Bop (1,Var 0,Var 0),Bop (1,Var 0,Var 0))),
-             Bop (7,Bop (3,Bop (1,Var 0,Var 0),Bop (1,Var 0,Var 0)),Var 2))))
+               (11, Bop (5, Var 2, Bop (1, Var 0, Var 0)),
+                Bop (3, Bop (1, Var 0, Var 0), Bop (1, Var 0, Var 0))),
+             Bop
+               (7, Bop (3, Bop (1, Var 0, Var 0), Bop (1, Var 0, Var 0)),
+                Var 2))))
   val x2 : X = Var 21342314
   val x3 : X = Var 3214
-  val x4 : X = Bop (1231357,Var 615678,Var 410452)
+  val x4 : X = Bop (1231357, Var 615678, Var 410452)
   val x5 : X =
     Bop
-      (5234547,Bop (2617273,Var 1308636,Var 872424),
-       Bop (1744849,Var 872424,Var 581616))
+      (5234547, Bop (2617273, Var 1308636, Var 872424),
+       Bop (1744849, Var 872424, Var 581616))
   val x6 : X =
-    Bop (923759825,Var 461879912,Bop (307919941,Var 153959970,Var 102639980))
+    Bop
+      (923759825, Var 461879912, Bop (307919941, Var 153959970, Var 102639980))
   val x7 : X = Var 2435234
   val x8 : X =
     Bop
-      (12396777,Var 6198388,
+      (12396777, Var 6198388,
        Bop
          (4132259,
           Bop
-            (2066129,Var 1033064,
+            (2066129, Var 1033064,
              Bop
-               (688709,Var 344354,
+               (688709, Var 344354,
                 Bop
-                  (229569,Var 114784,
+                  (229569, Var 114784,
                    Bop
                      (76523,
                       Bop
-                        (38261,Var 19130,
+                        (38261, Var 19130,
                          Bop
-                           (12753,Var 6376,
+                           (12753, Var 6376,
                             Bop
-                              (4251,Bop (2125,Var 1062,Var 708),
-                               Bop (1417,Var 708,Var 472)))),
+                              (4251, Bop (2125, Var 1062, Var 708),
+                               Bop (1417, Var 708, Var 472)))),
                       Bop
                         (25507,
                          Bop
-                           (12753,Var 6376,
+                           (12753, Var 6376,
                             Bop
-                              (4251,Bop (2125,Var 1062,Var 708),
-                               Bop (1417,Var 708,Var 472))),Var 8502))))),
+                              (4251, Bop (2125, Var 1062, Var 708),
+                               Bop (1417, Var 708, Var 472))), Var 8502))))),
           Bop
             (1377419,
              Bop
-               (688709,Var 344354,
+               (688709, Var 344354,
                 Bop
-                  (229569,Var 114784,
+                  (229569, Var 114784,
                    Bop
                      (76523,
                       Bop
-                        (38261,Var 19130,
+                        (38261, Var 19130,
                          Bop
-                           (12753,Var 6376,
+                           (12753, Var 6376,
                             Bop
-                              (4251,Bop (2125,Var 1062,Var 708),
-                               Bop (1417,Var 708,Var 472)))),
+                              (4251, Bop (2125, Var 1062, Var 708),
+                               Bop (1417, Var 708, Var 472)))),
                       Bop
                         (25507,
                          Bop
-                           (12753,Var 6376,
+                           (12753, Var 6376,
                             Bop
-                              (4251,Bop (2125,Var 1062,Var 708),
-                               Bop (1417,Var 708,Var 472))),Var 8502)))),
+                              (4251, Bop (2125, Var 1062, Var 708),
+                               Bop (1417, Var 708, Var 472))), Var 8502)))),
              Bop
                (459139,
                 Bop
-                  (229569,Var 114784,
+                  (229569, Var 114784,
                    Bop
                      (76523,
                       Bop
-                        (38261,Var 19130,
+                        (38261, Var 19130,
                          Bop
-                           (12753,Var 6376,
+                           (12753, Var 6376,
                             Bop
-                              (4251,Bop (2125,Var 1062,Var 708),
-                               Bop (1417,Var 708,Var 472)))),
+                              (4251, Bop (2125, Var 1062, Var 708),
+                               Bop (1417, Var 708, Var 472)))),
                       Bop
                         (25507,
                          Bop
-                           (12753,Var 6376,
+                           (12753, Var 6376,
                             Bop
-                              (4251,Bop (2125,Var 1062,Var 708),
-                               Bop (1417,Var 708,Var 472))),Var 8502))),
+                              (4251, Bop (2125, Var 1062, Var 708),
+                               Bop (1417, Var 708, Var 472))), Var 8502))),
                 Var 153046))))
   val x9 : X =
     Bop
-      (3333333,Var 1666666,
+      (3333333, Var 1666666,
        Bop
          (1111111,
           Bop
-            (555555,Bop (277777,Var 138888,Var 92592),
-             Bop (185185,Var 92592,Var 61728)),Var 370370))
+            (555555, Bop (277777, Var 138888, Var 92592),
+             Bop (185185, Var 92592, Var 61728)), Var 370370))
   val x10 : X =
     Bop
-      (1312311237,Var 656155618,
+      (1312311237, Var 656155618,
        Bop
          (437437079,
           Bop
             (218718539,
              Bop
-               (109359269,Var 54679634,
+               (109359269, Var 54679634,
                 Bop
-                  (36453089,Var 18226544,
+                  (36453089, Var 18226544,
                    Bop
-                     (12151029,Var 6075514,
+                     (12151029, Var 6075514,
                       Bop
                         (4050343,
                          Bop
-                           (2025171,Bop (1012585,Var 506292,Var 337528),
+                           (2025171, Bop (1012585, Var 506292, Var 337528),
                             Bop
-                              (675057,Var 337528,
+                              (675057, Var 337528,
                                Bop
                                  (225019,
                                   Bop
-                                    (112509,Var 56254,
+                                    (112509, Var 56254,
                                      Bop
                                        (37503,
                                         Bop
@@ -2579,16 +2589,16 @@ val generate : x:int -> X
                                                     Bop
                                                       (1171,
                                                        Bop
-                                                         (585,Var 292,
+                                                         (585, Var 292,
                                                           Bop
                                                             (195,
                                                              Bop
-                                                               (97,Var 48,
+                                                               (97, Var 48,
                                                                 Var 32),
                                                              Bop
-                                                               (65,Var 32,
+                                                               (65, Var 32,
                                                                 Bop
-                                                                  (21,Var 10,
+                                                                  (21, Var 10,
                                                                    Bop
                                                                      (7,
                                                                       Bop
@@ -2607,22 +2617,23 @@ val generate : x:int -> X
                                                                               0)),
                                                                       Var 2))))),
                                                        Var 390),
-                                                    Bop (781,Var 390,Var 260)),
+                                                    Bop
+                                                      (781, Var 390, Var 260)),
                                                  Var 1562),
                                               Bop
-                                                (3125,Var 1562,
+                                                (3125, Var 1562,
                                                  Bop
-                                                   (1041,Var 520,
+                                                   (1041, Var 520,
                                                     Bop
                                                       (347,
                                                        Bop
-                                                         (173,Var 86,
+                                                         (173, Var 86,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -2637,11 +2648,11 @@ val generate : x:int -> X
                                                        Bop
                                                          (115,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -2652,26 +2663,27 @@ val generate : x:int -> X
                                                                         (1,
                                                                          Var 0,
                                                                          Var 0))),
-                                                                Var 6)),Var 38))))),
+                                                                Var 6)),
+                                                          Var 38))))),
                                            Var 6250),
                                         Bop
-                                          (12501,Var 6250,
+                                          (12501, Var 6250,
                                            Bop
                                              (4167,
                                               Bop
                                                 (2083,
                                                  Bop
-                                                   (1041,Var 520,
+                                                   (1041, Var 520,
                                                     Bop
                                                       (347,
                                                        Bop
-                                                         (173,Var 86,
+                                                         (173, Var 86,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -2686,11 +2698,11 @@ val generate : x:int -> X
                                                        Bop
                                                          (115,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -2701,10 +2713,10 @@ val generate : x:int -> X
                                                                         (1,
                                                                          Var 0,
                                                                          Var 0))),
-                                                                Var 6)),Var 38))),
-                                                 Var 694),
+                                                                Var 6)),
+                                                          Var 38))), Var 694),
                                               Bop
-                                                (1389,Var 694,
+                                                (1389, Var 694,
                                                  Bop
                                                    (463,
                                                     Bop
@@ -2712,11 +2724,11 @@ val generate : x:int -> X
                                                        Bop
                                                          (115,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -2727,29 +2739,30 @@ val generate : x:int -> X
                                                                         (1,
                                                                          Var 0,
                                                                          Var 0))),
-                                                                Var 6)),Var 38),
+                                                                Var 6)),
+                                                          Var 38),
                                                        Bop
-                                                         (77,Var 38,
+                                                         (77, Var 38,
                                                           Bop
-                                                            (25,Var 12,Var 8))),
-                                                    Var 154)))))),Var 75006))),
+                                                            (25, Var 12, Var 8))),
+                                                    Var 154)))))), Var 75006))),
                          Var 1350114)))),
              Bop
                (72906179,
                 Bop
-                  (36453089,Var 18226544,
+                  (36453089, Var 18226544,
                    Bop
-                     (12151029,Var 6075514,
+                     (12151029, Var 6075514,
                       Bop
                         (4050343,
                          Bop
-                           (2025171,Bop (1012585,Var 506292,Var 337528),
+                           (2025171, Bop (1012585, Var 506292, Var 337528),
                             Bop
-                              (675057,Var 337528,
+                              (675057, Var 337528,
                                Bop
                                  (225019,
                                   Bop
-                                    (112509,Var 56254,
+                                    (112509, Var 56254,
                                      Bop
                                        (37503,
                                         Bop
@@ -2763,16 +2776,16 @@ val generate : x:int -> X
                                                     Bop
                                                       (1171,
                                                        Bop
-                                                         (585,Var 292,
+                                                         (585, Var 292,
                                                           Bop
                                                             (195,
                                                              Bop
-                                                               (97,Var 48,
+                                                               (97, Var 48,
                                                                 Var 32),
                                                              Bop
-                                                               (65,Var 32,
+                                                               (65, Var 32,
                                                                 Bop
-                                                                  (21,Var 10,
+                                                                  (21, Var 10,
                                                                    Bop
                                                                      (7,
                                                                       Bop
@@ -2791,22 +2804,23 @@ val generate : x:int -> X
                                                                               0)),
                                                                       Var 2))))),
                                                        Var 390),
-                                                    Bop (781,Var 390,Var 260)),
+                                                    Bop
+                                                      (781, Var 390, Var 260)),
                                                  Var 1562),
                                               Bop
-                                                (3125,Var 1562,
+                                                (3125, Var 1562,
                                                  Bop
-                                                   (1041,Var 520,
+                                                   (1041, Var 520,
                                                     Bop
                                                       (347,
                                                        Bop
-                                                         (173,Var 86,
+                                                         (173, Var 86,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -2821,11 +2835,11 @@ val generate : x:int -> X
                                                        Bop
                                                          (115,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -2836,26 +2850,27 @@ val generate : x:int -> X
                                                                         (1,
                                                                          Var 0,
                                                                          Var 0))),
-                                                                Var 6)),Var 38))))),
+                                                                Var 6)),
+                                                          Var 38))))),
                                            Var 6250),
                                         Bop
-                                          (12501,Var 6250,
+                                          (12501, Var 6250,
                                            Bop
                                              (4167,
                                               Bop
                                                 (2083,
                                                  Bop
-                                                   (1041,Var 520,
+                                                   (1041, Var 520,
                                                     Bop
                                                       (347,
                                                        Bop
-                                                         (173,Var 86,
+                                                         (173, Var 86,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -2870,11 +2885,11 @@ val generate : x:int -> X
                                                        Bop
                                                          (115,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -2885,10 +2900,10 @@ val generate : x:int -> X
                                                                         (1,
                                                                          Var 0,
                                                                          Var 0))),
-                                                                Var 6)),Var 38))),
-                                                 Var 694),
+                                                                Var 6)),
+                                                          Var 38))), Var 694),
                                               Bop
-                                                (1389,Var 694,
+                                                (1389, Var 694,
                                                  Bop
                                                    (463,
                                                     Bop
@@ -2896,11 +2911,11 @@ val generate : x:int -> X
                                                        Bop
                                                          (115,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -2911,27 +2926,28 @@ val generate : x:int -> X
                                                                         (1,
                                                                          Var 0,
                                                                          Var 0))),
-                                                                Var 6)),Var 38),
+                                                                Var 6)),
+                                                          Var 38),
                                                        Bop
-                                                         (77,Var 38,
+                                                         (77, Var 38,
                                                           Bop
-                                                            (25,Var 12,Var 8))),
-                                                    Var 154)))))),Var 75006))),
+                                                            (25, Var 12, Var 8))),
+                                                    Var 154)))))), Var 75006))),
                          Var 1350114))),
                 Bop
                   (24302059,
                    Bop
-                     (12151029,Var 6075514,
+                     (12151029, Var 6075514,
                       Bop
                         (4050343,
                          Bop
-                           (2025171,Bop (1012585,Var 506292,Var 337528),
+                           (2025171, Bop (1012585, Var 506292, Var 337528),
                             Bop
-                              (675057,Var 337528,
+                              (675057, Var 337528,
                                Bop
                                  (225019,
                                   Bop
-                                    (112509,Var 56254,
+                                    (112509, Var 56254,
                                      Bop
                                        (37503,
                                         Bop
@@ -2945,16 +2961,16 @@ val generate : x:int -> X
                                                     Bop
                                                       (1171,
                                                        Bop
-                                                         (585,Var 292,
+                                                         (585, Var 292,
                                                           Bop
                                                             (195,
                                                              Bop
-                                                               (97,Var 48,
+                                                               (97, Var 48,
                                                                 Var 32),
                                                              Bop
-                                                               (65,Var 32,
+                                                               (65, Var 32,
                                                                 Bop
-                                                                  (21,Var 10,
+                                                                  (21, Var 10,
                                                                    Bop
                                                                      (7,
                                                                       Bop
@@ -2973,22 +2989,23 @@ val generate : x:int -> X
                                                                               0)),
                                                                       Var 2))))),
                                                        Var 390),
-                                                    Bop (781,Var 390,Var 260)),
+                                                    Bop
+                                                      (781, Var 390, Var 260)),
                                                  Var 1562),
                                               Bop
-                                                (3125,Var 1562,
+                                                (3125, Var 1562,
                                                  Bop
-                                                   (1041,Var 520,
+                                                   (1041, Var 520,
                                                     Bop
                                                       (347,
                                                        Bop
-                                                         (173,Var 86,
+                                                         (173, Var 86,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -3003,11 +3020,11 @@ val generate : x:int -> X
                                                        Bop
                                                          (115,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -3018,26 +3035,27 @@ val generate : x:int -> X
                                                                         (1,
                                                                          Var 0,
                                                                          Var 0))),
-                                                                Var 6)),Var 38))))),
+                                                                Var 6)),
+                                                          Var 38))))),
                                            Var 6250),
                                         Bop
-                                          (12501,Var 6250,
+                                          (12501, Var 6250,
                                            Bop
                                              (4167,
                                               Bop
                                                 (2083,
                                                  Bop
-                                                   (1041,Var 520,
+                                                   (1041, Var 520,
                                                     Bop
                                                       (347,
                                                        Bop
-                                                         (173,Var 86,
+                                                         (173, Var 86,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -3052,11 +3070,11 @@ val generate : x:int -> X
                                                        Bop
                                                          (115,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -3067,10 +3085,10 @@ val generate : x:int -> X
                                                                         (1,
                                                                          Var 0,
                                                                          Var 0))),
-                                                                Var 6)),Var 38))),
-                                                 Var 694),
+                                                                Var 6)),
+                                                          Var 38))), Var 694),
                                               Bop
-                                                (1389,Var 694,
+                                                (1389, Var 694,
                                                  Bop
                                                    (463,
                                                     Bop
@@ -3078,11 +3096,11 @@ val generate : x:int -> X
                                                        Bop
                                                          (115,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,
+                                                                  (9, Var 4,
                                                                    Bop
                                                                      (3,
                                                                       Bop
@@ -3093,31 +3111,32 @@ val generate : x:int -> X
                                                                         (1,
                                                                          Var 0,
                                                                          Var 0))),
-                                                                Var 6)),Var 38),
+                                                                Var 6)),
+                                                          Var 38),
                                                        Bop
-                                                         (77,Var 38,
+                                                         (77, Var 38,
                                                           Bop
-                                                            (25,Var 12,Var 8))),
-                                                    Var 154)))))),Var 75006))),
-                         Var 1350114)),Var 8100686))),
+                                                            (25, Var 12, Var 8))),
+                                                    Var 154)))))), Var 75006))),
+                         Var 1350114)), Var 8100686))),
           Bop
             (145812359,
              Bop
                (72906179,
                 Bop
-                  (36453089,Var 18226544,
+                  (36453089, Var 18226544,
                    Bop
-                     (12151029,Var 6075514,
+                     (12151029, Var 6075514,
                       Bop
                         (4050343,
                          Bop
-                           (2025171,Bop (1012585,Var 506292,Var 337528),
+                           (2025171, Bop (1012585, Var 506292, Var 337528),
                             Bop
-                              (675057,Var 337528,
+                              (675057, Var 337528,
                                Bop
                                  (225019,
                                   Bop
-                                    (112509,Var 56254,
+                                    (112509, Var 56254,
                                      Bop
                                        (37503,
                                         Bop
@@ -3131,16 +3150,16 @@ val generate : x:int -> X
                                                     Bop
                                                       (1171,
                                                        Bop
-                                                         (585,Var 292,
+                                                         (585, Var 292,
                                                           Bop
                                                             (195,
                                                              Bop
-                                                               (97,Var 48,
+                                                               (97, Var 48,
                                                                 Var 32),
                                                              Bop
-                                                               (65,Var 32,
+                                                               (65, Var 32,
                                                                 Bop
-                                                                  (21,Var 10,
+                                                                  (21, Var 10,
                                                                    Bop
                                                                      (7,
                                                                       Bop
@@ -3159,24 +3178,26 @@ val generate : x:int -> X
                                                                               0)),
                                                                       Var 2))))),
                                                        Var 390),
-                                                    Bop (781,Var 390,Var 260)),
+                                                    Bop
+                                                      (781, Var 390, Var 260)),
                                                  Var 1562),
                                               Bop
-                                                (3125,Var 1562,
+                                                (3125, Var 1562,
                                                  Bop
-                                                   (1041,Var 520,
+                                                   (1041, Var 520,
                                                     Bop
                                                       (347,
                                                        Bop
-                                                         (173,Var 86,
+                                                         (173, Var 86,
                                                           Bop
-                                                            (57,Var 28,
+                                                            (57, Var 28,
                                                              Bop
                                                                (19,
                                                                 Bop
-                                                                  (9,Var 4,...),
-                                                                ...))),...)))),
-                                           ...),...)),...))),...))),...),...)))
+                                                                  (9, Var 4,
+                                                                   ...), ...))),
+                                                       ...)))), ...), ...)),
+                                  ...))), ...))), ...), ...)))
   val x11 : X =
     Bop
       (2147483647,
@@ -3362,22 +3383,23 @@ val generate : x:int -> X
                                                                            50)))),
                                                              Var 2730),
                                                           Bop
-                                                            (5461,Var 2730,
+                                                            (5461, Var 2730,
                                                              Var 1820)),
                                                        Var 10922),
                                                     Bop
-                                                      (21845,Var 10922,
+                                                      (21845, Var 10922,
                                                        Bop
-                                                         (7281,Var 3640,
+                                                         (7281, Var 3640,
                                                           Bop
                                                             (2427,
                                                              Bop
-                                                               (1213,Var 606,
+                                                               (1213, Var 606,
                                                                 Var 404),
                                                              Bop
-                                                               (809,Var 404,
+                                                               (809, Var 404,
                                                                 Bop
-                                                                  (269,Var 134,
+                                                                  (269,
+                                                                   Var 134,
                                                                    Bop
                                                                      (89,
                                                                       Var 44,
@@ -3405,22 +3427,23 @@ val generate : x:int -> X
                                                                                     0))))))))))),
                                                  Var 43690),
                                               Bop
-                                                (87381,Var 43690,
+                                                (87381, Var 43690,
                                                  Bop
                                                    (29127,
                                                     Bop
                                                       (14563,
                                                        Bop
-                                                         (7281,Var 3640,
+                                                         (7281, Var 3640,
                                                           Bop
                                                             (2427,
                                                              Bop
-                                                               (1213,Var 606,
+                                                               (1213, Var 606,
                                                                 Var 404),
                                                              Bop
-                                                               (809,Var 404,
+                                                               (809, Var 404,
                                                                 Bop
-                                                                  (269,Var 134,
+                                                                  (269,
+                                                                   Var 134,
                                                                    Bop
                                                                      (89,
                                                                       Var 44,
@@ -3448,33 +3471,35 @@ val generate : x:int -> X
                                                                                     0))))))))),
                                                        Var 4854),
                                                     Bop
-                                                      (9709,Var 4854,Var 3236)))),
+                                                      (9709, Var 4854,
+                                                       Var 3236)))),
                                            Var 174762),
-                                        Bop (349525,Var 174762,Var 116508)),
+                                        Bop (349525, Var 174762, Var 116508)),
                                      Var 699050),
                                   Bop
-                                    (1398101,Var 699050,
-                                     Bop (466033,Var 233016,Var 155344))),
+                                    (1398101, Var 699050,
+                                     Bop (466033, Var 233016, Var 155344))),
                                Var 2796202),
                             Bop
-                              (5592405,Var 2796202,
+                              (5592405, Var 2796202,
                                Bop
                                  (1864135,
                                   Bop
-                                    (932067,Bop (466033,Var 233016,Var 155344),
+                                    (932067,
+                                     Bop (466033, Var 233016, Var 155344),
                                      Bop
-                                       (310689,Var 155344,
+                                       (310689, Var 155344,
                                         Bop
                                           (103563,
-                                           Bop (51781,Var 25890,Var 17260),
+                                           Bop (51781, Var 25890, Var 17260),
                                            Bop
-                                             (34521,Var 17260,
+                                             (34521, Var 17260,
                                               Bop
                                                 (11507,
                                                  Bop
-                                                   (5753,Var 2876,
+                                                   (5753, Var 2876,
                                                     Bop
-                                                      (1917,Var 958,
+                                                      (1917, Var 958,
                                                        Bop
                                                          (639,
                                                           Bop
@@ -3512,9 +3537,10 @@ val generate : x:int -> X
                                                                          Var 4)),
                                                                    Var 26),
                                                                 Bop
-                                                                  (53,Var 26,
+                                                                  (53, Var 26,
                                                                    Bop
-                                                                     (17,Var 8,
+                                                                     (17,
+                                                                      Var 8,
                                                                       Bop
                                                                         (5,
                                                                          Var 2,
@@ -3526,13 +3552,14 @@ val generate : x:int -> X
                                                                               0))))),
                                                              Var 106),
                                                           Bop
-                                                            (213,Var 106,
+                                                            (213, Var 106,
                                                              Bop
                                                                (71,
                                                                 Bop
                                                                   (35,
                                                                    Bop
-                                                                     (17,Var 8,
+                                                                     (17,
+                                                                      Var 8,
                                                                       Bop
                                                                         (5,
                                                                          Var 2,
@@ -3614,7 +3641,7 @@ val generate : x:int -> X
                                                  Bop
                                                    (3835,
                                                     Bop
-                                                      (1917,Var 958,
+                                                      (1917, Var 958,
                                                        Bop
                                                          (639,
                                                           Bop
@@ -3652,9 +3679,10 @@ val generate : x:int -> X
                                                                          Var 4)),
                                                                    Var 26),
                                                                 Bop
-                                                                  (53,Var 26,
+                                                                  (53, Var 26,
                                                                    Bop
-                                                                     (17,Var 8,
+                                                                     (17,
+                                                                      Var 8,
                                                                       Bop
                                                                         (5,
                                                                          Var 2,
@@ -3666,13 +3694,14 @@ val generate : x:int -> X
                                                                               0))))),
                                                              Var 106),
                                                           Bop
-                                                            (213,Var 106,
+                                                            (213, Var 106,
                                                              Bop
                                                                (71,
                                                                 Bop
                                                                   (35,
                                                                    Bop
-                                                                     (17,Var 8,
+                                                                     (17,
+                                                                      Var 8,
                                                                       Bop
                                                                         (5,
                                                                          Var 2,
@@ -3751,51 +3780,51 @@ val generate : x:int -> X
                                                                             Var
                                                                               0)),
                                                                       Var 2)))))),
-                                                    Var 1278)))))),Var 621378))),
-                         Var 11184810),Bop (22369621,Var 11184810,Var 7456540)),
-                   Var 44739242),
+                                                    Var 1278)))))), Var 621378))),
+                         Var 11184810),
+                      Bop (22369621, Var 11184810, Var 7456540)), Var 44739242),
                 Bop
-                  (89478485,Var 44739242,
+                  (89478485, Var 44739242,
                    Bop
-                     (29826161,Var 14913080,
+                     (29826161, Var 14913080,
                       Bop
-                        (9942053,Var 4971026,
-                         Bop (3314017,Var 1657008,Var 1104672))))),
+                        (9942053, Var 4971026,
+                         Bop (3314017, Var 1657008, Var 1104672))))),
              Var 178956970),
           Bop
-            (357913941,Var 178956970,
+            (357913941, Var 178956970,
              Bop
                (119304647,
                 Bop
                   (59652323,
                    Bop
-                     (29826161,Var 14913080,
+                     (29826161, Var 14913080,
                       Bop
-                        (9942053,Var 4971026,
-                         Bop (3314017,Var 1657008,Var 1104672))),
+                        (9942053, Var 4971026,
+                         Bop (3314017, Var 1657008, Var 1104672))),
                    Bop
                      (19884107,
                       Bop
-                        (9942053,Var 4971026,
-                         Bop (3314017,Var 1657008,Var 1104672)),
+                        (9942053, Var 4971026,
+                         Bop (3314017, Var 1657008, Var 1104672)),
                       Bop
-                        (6628035,Bop (3314017,Var 1657008,Var 1104672),
-                         Bop (2209345,Var 1104672,Var 736448)))),
+                        (6628035, Bop (3314017, Var 1657008, Var 1104672),
+                         Bop (2209345, Var 1104672, Var 736448)))),
                 Bop
                   (39768215,
                    Bop
                      (19884107,
                       Bop
-                        (9942053,Var 4971026,
-                         Bop (3314017,Var 1657008,Var 1104672)),
+                        (9942053, Var 4971026,
+                         Bop (3314017, Var 1657008, Var 1104672)),
                       Bop
-                        (6628035,Bop (3314017,Var 1657008,Var 1104672),
-                         Bop (2209345,Var 1104672,Var 736448))),
+                        (6628035, Bop (3314017, Var 1657008, Var 1104672),
+                         Bop (2209345, Var 1104672, Var 736448))),
                    Bop
                      (13256071,
                       Bop
-                        (6628035,Bop (3314017,Var 1657008,Var 1104672),
-                         Bop (2209345,Var 1104672,Var 736448)),Var 4418690))))),
+                        (6628035, Bop (3314017, Var 1657008, Var 1104672),
+                         Bop (2209345, Var 1104672, Var 736448)), Var 4418690))))),
        Var 715827882)
 end
 
@@ -3980,7 +4009,7 @@ exception ExUnits of unit * unit
 exception ExUnitOption of unit option
 val ex0 : exn = Ex0
 val exU : exn = ExUnit ()
-val exUs : exn = ExUnits ((),())
+val exUs : exn = ExUnits ((), ())
 val exUSome : exn = ExUnitOption (Some ())
 val exUNone : exn = ExUnitOption None
 type 'a T4063 = | AT4063 of 'a
@@ -6244,7 +6273,7 @@ type T =
   | Case5 of bool * string
   | Case6 of Val1: int * bool * string
   | Case7 of Big Name: int
-val namedFieldVar1 : MyDU = Case1 (5,"")
+val namedFieldVar1 : MyDU = Case1 (5, "")
 val namedFieldVar2 : MyDU = Case7 25
 
 > exception MyNamedException1 of Val1: int * Val2: string
@@ -6254,7 +6283,7 @@ exception MyNamedException4 of bool
 exception MyNamedException5 of int * string
 exception MyNamedException6 of Val1: int * bool * string * Data8: float
 exception MyNamedException7 of Big Named Field: int
-val namedEx1 : exn = MyNamedException1 (5,"")
+val namedEx1 : exn = MyNamedException1 (5, "")
 val namedEx2 : exn = MyNamedException7 25
 
 > type optionRecord =

@@ -83,12 +83,10 @@ open System.Collections.Generic
 
 module internal List =
 
-    let arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
+    let inline arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
 
     [<SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")>]
     let nonempty x = match x with [] -> false | _ -> true
-
-    let rec iter f x = match x with [] -> () | h :: t -> f h; iter f t
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -498,15 +496,6 @@ module internal List =
                 cons
             else
                 filter predicate t
-
-    let iteri action x =
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
-        let rec loop n x =
-            match x with
-            | [] -> ()
-            | h :: t -> f.Invoke(n, h); loop (n+1) t
-
-        loop 0 x
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
