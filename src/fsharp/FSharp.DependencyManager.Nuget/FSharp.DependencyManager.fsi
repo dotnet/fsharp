@@ -4,7 +4,7 @@ namespace FSharp.DependencyManager.Nuget
 
 module internal FSharpDependencyManager =
     val formatPackageReference: PackageReference -> seq<string>
-    val parsePackageReference: string list -> PackageReference list * string option option
+    val parsePackageReference: scriptExt: string -> string list -> PackageReference list * string option option
 
 /// The results of ResolveDependencies
 [<Class>]
