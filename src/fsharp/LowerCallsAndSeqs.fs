@@ -59,8 +59,6 @@ let LowerImplFile g assembly =
 
 //----------------------------------------------------------------------------
 // General helpers
-let mkCompGenSequentials m exprs = 
-     List.reduceBack (mkCompGenSequential m) exprs
 
 let mkLambdaNoType g m uv e =
     mkLambda m uv (e, tyOfExpr g e)
