@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="sync.fs"  />
+<!--
+    <Compile Include="avalue.fs" />
+    <Compile Include="seq2.fs" />
+-->
+    <Compile Include="list.fs" />
+    <Compile Include="option.fs" />
+    <Compile Include="taskSeq.fs" />
+    <Compile Include="TaskBuilder.fs" />
+    <Compile Include="TaskPerf.fs" />
+    <ProjectReference Include="..\CS\TaskPerfCSharp.csproj" />
+    <ProjectReference Include="..\..\..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.5" />
+  </ItemGroup>
+
+</Project>
