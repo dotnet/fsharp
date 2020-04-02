@@ -19,4 +19,6 @@ val LowerImplFile: g: TcGlobals -> assembly: TypedImplFile -> TypedImplFile
 /// a program counter (pc) that records the current state, and a current generated value (current).
 /// All these variables are then represented as fields in a hosting closure object along with any additional
 /// free variables of the sequence expression.
-val LowerSeqExpr: g: TcGlobals -> amap: ImportMap -> overallExpr: Expr -> (ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range) option
+val ConvertSequenceExprToObject: g: TcGlobals -> amap: ImportMap -> overallExpr: Expr -> (ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range) option
+
+val IsPossibleSequenceExpr: g: TcGlobals -> overallExpr: Expr -> bool 
