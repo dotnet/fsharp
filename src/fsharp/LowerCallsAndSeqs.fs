@@ -264,12 +264,10 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                         (Expr.Op (TOp.Return, [], [mkOne g m], m))
                                         (Expr.Op (TOp.Label label, [], [], m))))
                         let dispose =
-                            mkCompGenSequential m
-                                (Expr.Op (TOp.Label label, [], [], m))
+                            mkLabelled m label 
                                 (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m))
                         let checkDispose =
-                            mkCompGenSequential m
-                                (Expr.Op (TOp.Label label, [], [], m))
+                            mkLabelled m label 
                                 (Expr.Op (TOp.Return, [], [mkBool g m (not (noDisposeContinuationLabel = currentDisposeContinuationLabel))], m))
                         generate, dispose, checkDispose)
                    entryPoints=[label]
