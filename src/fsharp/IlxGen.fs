@@ -25,6 +25,7 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Lib
+open FSharp.Compiler.LowerCallsAndSeqs
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
@@ -2214,7 +2215,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
 
     ProcessDebugPointForExpr cenv cgbuf sp expr
 
-    match (if compileSequenceExpressions then LowerCallsAndSeqs.ConvertSequenceExprToObject g cenv.amap expr else None) with
+    match (if compileSequenceExpressions then ConvertSequenceExprToObject g cenv.amap expr else None) with
     | Some info ->
         GenSequenceExpr cenv cgbuf eenv info sequel
         true

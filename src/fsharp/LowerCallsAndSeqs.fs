@@ -57,7 +57,6 @@ let LowerImplFile g assembly =
                       PostTransform= (fun _ -> None)
                       IsUnderQuotations=false } assembly
 
-
 //----------------------------------------------------------------------------
 // General helpers
 let mkCompGenSequentials m exprs = 
@@ -321,7 +320,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             | Some res2  ->
                 let asyncVars =
                     if res2.entryPoints.IsEmpty then
-                        res2.asyncVars  // the whole loopis synchronous, no labels
+                        res2.asyncVars  // the whole loop is synchronous, no labels
                     else
                         freeInExpr CollectLocals expr // everything is needed on subsequent iterations
 
@@ -571,12 +570,10 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                                     (Expr.Op (TOp.Return, [], [mkTwo g m], m))
                                                     (Expr.Op (TOp.Label label, [], [], m))))
                                     let dispose =
-                                        mkCompGenSequential m
-                                            (Expr.Op (TOp.Label label, [], [], m))
+                                        mkLabelled m label
                                             (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m))
                                     let checkDispose =
-                                        mkCompGenSequential m
-                                            (Expr.Op (TOp.Label label, [], [], m))
+                                        mkLabelled m label
                                             (Expr.Op (TOp.Return, [], [mkFalse g m], m))
                                     generate, dispose, checkDispose)
                                entryPoints=[label]
