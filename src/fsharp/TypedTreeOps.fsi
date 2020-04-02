@@ -2230,6 +2230,8 @@ type ExprRewritingEnv =
       PreInterceptBinding: ((Expr -> Expr) -> Binding -> Binding option) option
       IsUnderQuotations: bool }    
 
+val RewriteDecisionTree : ExprRewritingEnv -> DecisionTree -> DecisionTree
+
 val RewriteExpr : ExprRewritingEnv -> Expr -> Expr
 
 val RewriteImplFile : ExprRewritingEnv -> TypedImplFile -> TypedImplFile
@@ -2326,9 +2328,18 @@ val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 /// Match expressions that are an application of a particular F# function value
 val (|ValApp|_|) : TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) option
 
+/// Match expressions that represent the creation of an instance of an F# delegate value
+val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Val list list * Expr * range) option
+
+/// Match 'if __useResumableStateMachines then ... else ...' expressions
+val (|IfUseResumableStateMachinesExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option
+
 val isStaticClass: g: TcGlobals -> tcref: TyconRef -> bool
 
 val CombineCcuContentFragments: range -> ModuleOrNamespaceType list -> ModuleOrNamespaceType
+
+/// Recognise a 'match __resumableEntry() with ...' expression
+val (|ResumableEntryMatchExpr|_|): g: TcGlobals -> Expr -> (Expr * Val * Expr * (Expr * Expr -> Expr)) option
 
 /// Recognise a while expression
 val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range) option
@@ -2341,6 +2352,6 @@ val (|TryCatchExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Ex
 
 /// Recognise a try-finally expression
 val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * range) option
-
+        
 /// Add a label to use as the target for a goto
-val mkLabelled: range -> ILCodeLabel -> Expr -> Expr 
+val mkLabelled: range -> ILCodeLabel -> Expr -> Expr

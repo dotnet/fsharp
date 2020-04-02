@@ -159,6 +159,8 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\InnerLambdasToTopLevelFuncs.fs"
              @"src\fsharp\LowerCallsAndSeqs.fsi"
              @"src\fsharp\LowerCallsAndSeqs.fs"
+             @"src\fsharp\LowerStateMachines.fsi"
+             @"src\fsharp\LowerStateMachines.fs"
              @"src\fsharp\autobox.fsi"
              @"src\fsharp\autobox.fs"
              @"src\fsharp\IlxGen.fsi"

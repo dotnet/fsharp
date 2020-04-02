@@ -1,5 +1,5 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Core.DiscriminatedUnionTypes
+module FSharp.Core.UnitTests.DiscriminatedUnionTypes
 
 open System
 open System.Numerics

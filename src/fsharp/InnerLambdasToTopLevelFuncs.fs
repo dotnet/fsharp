@@ -156,7 +156,8 @@ let IsRefusedTLR g (f: Val) =
     // Special values are instance methods etc. on .NET types.  For now leave these alone
     let specialVal = f.MemberInfo.IsSome
     let alreadyChosen = f.ValReprInfo.IsSome
-    let refuseTest = alreadyChosen || mutableVal || byrefVal || specialVal || dllImportStubOrOtherNeverInline
+    let macroName = f.LogicalName.StartsWith(PrettyNaming.expansionFunctionPrefix)
+    let refuseTest = alreadyChosen || mutableVal || byrefVal || specialVal || dllImportStubOrOtherNeverInline || macroName
     refuseTest
 
 let IsMandatoryTopLevel (f: Val) =
@@ -1128,14 +1129,14 @@ module Pass4_RewriteAssembly =
             TransExpr penv z (!r)
 
         // ilobj - has implicit lambda exprs and recursive/base references
-        | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) ->
-            let basecall, z = TransExpr penv z basecall
+        | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, stateVars, m) ->
+            let basecall, z  = TransExpr penv z basecall
             let overrides, z = List.mapFold (TransMethod penv) z overrides
             let iimpls, z =
                 (z, iimpls) ||> List.mapFold (fun z (tType, objExprs) ->
                     let objExprs', z' = List.mapFold (TransMethod penv) z objExprs
                     (tType, objExprs'), z') 
-            let expr = Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, m)
+            let expr = Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, stateVars, m)
             let pds, z = ExtractPreDecs z
             MakePreDecs m pds expr, z (* if TopLevel, lift preDecs over the ilobj expr *)
 
@@ -1278,11 +1279,11 @@ module Pass4_RewriteAssembly =
            let dflt, z  = Option.mapFold (TransDecisionTree penv)      z dflt
            TDSwitch (e, cases, dflt, m), z
 
-    and TransDecisionTreeTarget penv z (TTarget(vs, e, spTarget)) =
+    and TransDecisionTreeTarget penv z (TTarget(vs, e, spTarget, flags)) =
         let z = EnterInner z
         let e, z = TransExpr penv z e
         let z = ExitInner z
-        TTarget(vs, e, spTarget), z
+        TTarget(vs, e, spTarget, flags), z
 
     and TransValBinding penv z bind = TransBindingRhs penv z bind
     and TransValBindings penv z binds = List.mapFold (TransValBinding penv) z  binds

@@ -1148,7 +1148,7 @@ let tryDestRefTupleExpr e = match e with Expr.Op (TOp.Tuple tupInfo, _, es, _) w
 let rec rangeOfExpr x = 
     match x with
     | Expr.Val (_, _, m) | Expr.Op (_, _, _, m) | Expr.Const (_, m, _) | Expr.Quote (_, _, _, m, _)
-    | Expr.Obj (_, _, _, _, _, _, m) | Expr.App (_, _, _, _, m) | Expr.Sequential (_, _, _, _, m) 
+    | Expr.Obj (_, _, _, _, _, _, _, m) | Expr.App (_, _, _, _, m) | Expr.Sequential (_, _, _, _, m) 
     | Expr.StaticOptimization (_, _, _, m) | Expr.Lambda (_, _, _, _, _, m, _) 
     | Expr.TyLambda (_, _, _, m, _)| Expr.TyChoose (_, _, m) | Expr.LetRec (_, _, m, _) | Expr.Let (_, _, m, _) | Expr.Match (_, _, _, _, m, _) -> m
     | Expr.Link eref -> rangeOfExpr (!eref)
@@ -1171,7 +1171,7 @@ type MatchBuilder(spBind, inpRange: Range.range) =
         targets.Add tg
         n
 
-    member x.AddResultTarget(e, spTarget) = TDSuccess([], x.AddTarget(TTarget([], e, spTarget)))
+    member x.AddResultTarget(e, spTarget) = TDSuccess([], x.AddTarget(TTarget([], e, spTarget, None)))
 
     member x.CloseTargets() = targets |> ResizeArray.toList
 
@@ -1210,7 +1210,7 @@ let mkTypeLambda m vs (b, tau_ty) = match vs with [] -> b | _ -> Expr.TyLambda (
 let mkTypeChoose m vs b = match vs with [] -> b | _ -> Expr.TyChoose (vs, b, m)
 
 let mkObjExpr (ty, basev, basecall, overrides, iimpls, m) = 
-    Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, m) 
+    Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, [], m) 
 
 let mkLambdas m tps (vs: Val list) (b, rty) = 
     mkTypeLambda m tps (List.foldBack (fun v (e, ty) -> mkLambda m v (e, ty), v.Type --> ty) vs (b, rty))
@@ -3861,7 +3861,7 @@ module DebugPrint =
             | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Quote (a, _, _, _, _) -> leftL(tagText "<@") ^^ atomL a ^^ rightL(tagText "@>")
-            | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _) -> 
+            | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _stateVars, _) -> 
                 (leftL (tagText "{") 
                  @@--
                   ((wordL(tagText "new ") ++ typeL ty) 
@@ -3953,7 +3953,7 @@ module DebugPrint =
         | (DecisionTreeTest.ActivePatternCase (exp, _, _, _, _)) -> wordL(tagText "query") ^^ exprL g exp
         | (DecisionTreeTest.Error _) -> wordL (tagText "error recovery")
  
-    and targetL g i (TTarget (argvs, body, _)) =
+    and targetL g i (TTarget (argvs, body, _, _)) =
         leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL g body
 
     and flatValsL vs = vs |> List.map valL
@@ -4321,11 +4321,11 @@ let freeTyvarsAllPublic tyvars =
 
 let (|LinearMatchExpr|_|) expr = 
     match expr with 
-    | Expr.Match (sp, m, dtree, [|tg1;(TTarget([], e2, sp2))|], m2, ty) -> Some(sp, m, dtree, tg1, e2, sp2, m2, ty)
+    | Expr.Match (sp, m, dtree, [|tg1;(TTarget([], e2, sp2, _))|], m2, ty) -> Some(sp, m, dtree, tg1, e2, sp2, m2, ty)
     | _ -> None
     
 let rebuildLinearMatchExpr (sp, m, dtree, tg1, e2, sp2, m2, ty) = 
-    primMkMatch (sp, m, dtree, [|tg1;(TTarget([], e2, sp2))|], m2, ty)
+    primMkMatch (sp, m, dtree, [|tg1;(TTarget([], e2, sp2, None))|], m2, ty)
 
 /// Detect a subset of 'Expr.Op' expressions we process in a linear way (i.e. using tailcalls, rather than
 /// unbounded stack). Only covers Cons(args,Cons(args,Cons(args,Cons(args,...._)))).
@@ -4541,7 +4541,7 @@ and accFreeInExprNonLinear opts x acc =
     | Expr.Let _ -> 
         failwith "unreachable - linear expr"
 
-    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _) ->  
+    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, _) ->  
         unionFreeVars 
            (boundProtect
               (Option.foldBack (boundLocalVal opts) basev
@@ -4679,8 +4679,10 @@ and accFreeInOp opts op acc =
 and accFreeInTargets opts targets acc = 
     Array.foldBack (accFreeInTarget opts) targets acc
 
-and accFreeInTarget opts (TTarget(vs, expr, _)) acc = 
-    List.foldBack (boundLocalVal opts) vs (accFreeInExpr opts expr acc)
+and accFreeInTarget opts (TTarget(vs, expr, _, flags)) acc = 
+    match flags with 
+    | None -> List.foldBack (boundLocalVal opts) vs (accFreeInExpr opts expr acc)
+    | Some xs -> List.foldBack2 (fun v isStateVar acc -> if isStateVar then acc else boundLocalVal opts v acc) vs xs (accFreeInExpr opts expr acc)
 
 and accFreeInFlatExprs opts (exprs: Exprs) acc = List.foldBack (accFreeInExpr opts) exprs acc
 
@@ -5083,7 +5085,7 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
     | Expr.Quote (a, {contents=None}, isFromQueryExpression, m, ty) ->  
         Expr.Quote (remapExpr g (fixValCopyFlagForQuotations compgen) tmenv a, {contents=None}, isFromQueryExpression, m, remapType tmenv ty)
 
-    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
+    | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, m) -> 
         let basev', tmenvinner = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv basev 
         mkObjExpr (remapType tmenv ty, basev', 
                    remapExpr g compgen tmenv basecall, 
@@ -5139,9 +5141,9 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
         let ty' = remapType tmenv ty 
         if ty === ty' then expr else Expr.Const (c, m, ty')
 
-and remapTarget g compgen tmenv (TTarget(vs, e, spTarget)) = 
+and remapTarget g compgen tmenv (TTarget(vs, e, spTarget, flags)) = 
     let vs', tmenvinner = copyAndRemapAndBindVals g compgen tmenv vs 
-    TTarget(vs', remapExpr g compgen tmenvinner e, spTarget)
+    TTarget(vs', remapExpr g compgen tmenvinner e, spTarget, flags)
 
 and remapLinearExpr g compgen tmenv expr contf =
 
@@ -5552,7 +5554,7 @@ let rec remarkExpr m x =
         Expr.Let (remarkBind m bind, remarkExpr m e, m, fvs)
 
     | Expr.Match (_, _, pt, targets, _, ty) ->
-        let targetsR = targets |> Array.map (fun (TTarget(vs, e, _)) -> TTarget(vs, remarkExpr m e, DebugPointForTarget.No))
+        let targetsR = targets |> Array.map (fun (TTarget(vs, e, _, flags)) -> TTarget(vs, remarkExpr m e, DebugPointForTarget.No, flags))
         primMkMatch (NoDebugPointAtInvisibleBinding, m, remarkDecisionTree m pt, targetsR, m, ty)
 
     | Expr.Val (x, valUseFlags, _) ->
@@ -5561,10 +5563,10 @@ let rec remarkExpr m x =
     | Expr.Quote (a, conv, isFromQueryExpression, _, ty) ->
         Expr.Quote (remarkExpr m a, conv, isFromQueryExpression, m, ty)
 
-    | Expr.Obj (n, ty, basev, basecall, overrides, iimpls, _) -> 
+    | Expr.Obj (n, ty, basev, basecall, overrides, iimpls, stateVars, _) -> 
         Expr.Obj (n, ty, basev, remarkExpr m basecall, 
                   List.map (remarkObjExprMethod m) overrides, 
-                  List.map (remarkInterfaceImpl m) iimpls, m)
+                  List.map (remarkInterfaceImpl m) iimpls, stateVars, m)
 
     | Expr.Op (op, tinst, args, _) -> 
         let op = 
@@ -5702,7 +5704,7 @@ let mkByteArrayTy (g: TcGlobals) = mkArrayType g g.byte_ty
 let rec tyOfExpr g e = 
     match e with 
     | Expr.App (_, fty, tyargs, args, _) -> applyTys g fty (tyargs, args)
-    | Expr.Obj (_, ty, _, _, _, _, _)  
+    | Expr.Obj (_, ty, _, _, _, _, _, _)  
     | Expr.Match (_, _, _, _, _, ty) 
     | Expr.Quote (_, _, _, _, ty) 
     | Expr.Const (_, _, ty) -> (ty)
@@ -5923,7 +5925,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
 
             /// rebuild the targets, replacing linear targets by ones that include all the 'let' bindings from the source
             let targets' = 
-                targets |> Array.mapi (fun i (TTarget(vs, exprTarget, spTarget) as tg) -> 
+                targets |> Array.mapi (fun i (TTarget(vs, exprTarget, spTarget, _) as tg) -> 
                     if isLinearTgtIdx i then
                         let (binds, es) = getLinearTgtIdx i
                         // The value bindings are moved to become part of the target.
@@ -5931,7 +5933,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
                         let mTarget = exprTarget.Range
                         let es = es |> List.map (remarkExpr mTarget)
                         // These are non-sticky - any sequence point for 'exprTarget' goes on 'exprTarget' _after_ the bindings have been evaluated
-                        TTarget(List.empty, mkLetsBind mTarget binds (mkInvisibleLetsFromBindings mTarget vs es exprTarget), spTarget)
+                        TTarget(List.empty, mkLetsBind mTarget binds (mkInvisibleLetsFromBindings mTarget vs es exprTarget), spTarget, None)
                     else tg )
      
             tree', targets'
@@ -5942,7 +5944,7 @@ let rec simplifyTrivialMatch spBind exprm matchm ty tree (targets : _[]) =
     | TDSuccess(es, n) -> 
         if n >= targets.Length then failwith "simplifyTrivialMatch: target out of range"
         // REVIEW: should we use _spTarget here?
-        let (TTarget(vs, rhs, _spTarget)) = targets.[n]
+        let (TTarget(vs, rhs, _spTarget, _)) = targets.[n]
         if vs.Length <> es.Length then failwith ("simplifyTrivialMatch: invalid argument, n = " + string n + ", List.length targets = " + string targets.Length)
         // These are non-sticky - any sequence point for 'rhs' goes on 'rhs' _after_ the bindings have been made
         mkInvisibleLetsFromBindings rhs.Range vs es rhs
@@ -6424,7 +6426,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
         | Expr.Quote (e, {contents=None}, _, _m, _) -> 
             exprF z e
 
-        | Expr.Obj (_n, _typ, _basev, basecall, overrides, iimpls, _m) -> 
+        | Expr.Obj (_n, _typ, _basev, basecall, overrides, iimpls, _stateVars, _m) -> 
             let z = exprF z basecall
             let z = List.fold tmethodF z overrides
             List.fold (foldOn snd (List.fold tmethodF)) z iimpls
@@ -6464,7 +6466,7 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
         match folders.targetIntercept exprFClosure z x with 
         | Some z -> z // intercepted 
         | None ->     // structurally recurse 
-            let (TTarget (_, body, _)) = x
+            let (TTarget (_, body, _, _)) = x
             exprF z body
               
     and tmethodF z x =
@@ -7742,10 +7744,10 @@ let LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty) =
         | [] -> failwith "itemsProj: no items?"
         | [_] -> x (* no projection needed *)
         | tys -> Expr.Op (TOp.TupleFieldGet (tupInfoRef, i), tys, [x], m)
-    let isThrowingTarget = function TTarget(_, x, _) -> isThrow x
+    let isThrowingTarget = function TTarget(_, x, _, _) -> isThrow x
     if 1 + List.count isThrowingTarget targetsL = targetsL.Length then
         // Have failing targets and ONE successful one, so linearize
-        let (TTarget (vs, rhs, spTarget)) = List.find (isThrowingTarget >> not) targetsL
+        let (TTarget (vs, rhs, spTarget, _)) = List.find (isThrowingTarget >> not) targetsL
         let fvs = vs |> List.map (fun v -> fst(mkLocal v.Range v.LogicalName v.Type)) (* fresh *)
         let vtys = vs |> List.map (fun v -> v.Type) 
         let tmpTy = mkRefTupledVarsTy g vs
@@ -7753,12 +7755,12 @@ let LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty) =
 
         AdjustValToTopVal tmp parent ValReprInfo.emptyValData
 
-        let newTg = TTarget (fvs, mkRefTupledVars g m fvs, spTarget)
-        let fixup (TTarget (tvs, tx, spTarget)) = 
+        let newTg = TTarget (fvs, mkRefTupledVars g m fvs, spTarget, None)
+        let fixup (TTarget (tvs, tx, spTarget, flags)) = 
            match destThrow tx with
            | Some (m, _, e) -> 
                let tx = mkThrow m tmpTy e
-               TTarget(tvs, tx, spTarget) (* Throwing targets, recast it's "return type" *)
+               TTarget(tvs, tx, spTarget, flags) (* Throwing targets, recast it's "return type" *)
            | None -> newTg (* Non-throwing target, replaced [new/old] *)
        
         let targets = Array.map fixup targets
@@ -8086,7 +8088,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
 
     else
         let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
-        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, DebugPointForTarget.No)))
+        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, DebugPointForTarget.No, None)))
         let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)
         let dtree = TDSwitch(vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
@@ -8333,7 +8335,7 @@ and rewriteExprStructure env expr =
   | Expr.Quote (ast, {contents=None}, isFromQueryExpression, m, ty) -> 
       Expr.Quote ((if env.IsUnderQuotations then RewriteExpr env ast else ast), {contents=None}, isFromQueryExpression, m, ty)
 
-  | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
+  | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, m) -> 
       mkObjExpr(ty, basev, RewriteExpr env basecall, List.map (rewriteObjExprOverride env) overrides, 
                   List.map (rewriteObjExprInterfaceImpl env) iimpls, m)
   | Expr.Link eref -> 
@@ -8433,8 +8435,8 @@ and RewriteDecisionTree env x =
       let body = RewriteDecisionTree env body
       TDBind (bind', body)
 
-and rewriteTarget env (TTarget(vs, e, spTarget)) =
-    TTarget(vs, RewriteExpr env e, spTarget)
+and rewriteTarget env (TTarget(vs, e, spTarget, flags)) =
+    TTarget(vs, RewriteExpr env e, spTarget, flags)
 
 and rewriteTargets env targets =
     List.map (rewriteTarget env) (Array.toList targets)
@@ -8660,7 +8662,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
     and checkDecisionTreeCase vrefs (TCase(discrim, dtree)) = 
        (match discrim with DecisionTreeTest.Const _c -> true | _ -> false) && checkDecisionTree vrefs dtree
 
-    and checkDecisionTreeTarget vrefs (TTarget(vs, e, _)) = 
+    and checkDecisionTreeTarget vrefs (TTarget(vs, e, _, _)) = 
        let vrefs = ((vrefs, vs) ||> List.fold (fun s v -> s.Add v.Stamp)) 
        checkExpr vrefs e
 
@@ -9022,10 +9024,35 @@ let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
 
+let (|NewDelegateExpr|_|) g expr =
+    match expr with
+    | Expr.Obj (_, ty, _, _, [TObjExprMethod(_, _attribs, _, tmvs, body, _)], [], [], m) when isDelegateTy g ty ->
+        Some (tmvs, body, m)
+    | _ -> None
+
 let (|ValApp|_|) g vref expr =
     match expr with
     // use 'seq { ... }' as an indicator
     | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 ->  Some (tyargs, args, m)
+    | _ -> None
+
+let (|UseResumableStateMachinesExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh__useResumableStateMachines_vref (_, _, _m) -> Some ()
+    | _ -> None
+
+/// Match 
+let (|IsThenElseExpr|_|) expr =
+    match expr with
+    | Expr.Match (_spBind, _exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.Const (Const.Bool true), TDSuccess ([], 0) )], Some (TDSuccess ([], 1)), _),
+                  [| TTarget([], thenExpr, _, _); TTarget([], elseExpr, _, _) |], _m, _ty) -> 
+        Some (cond, thenExpr,  elseExpr)
+    | _ -> None
+
+/// if __useResumableStateMachines then ... else ...
+let (|IfUseResumableStateMachinesExpr|_|) g expr =
+    match expr with
+    | IsThenElseExpr(UseResumableStateMachinesExpr g (), thenExpr, elseExpr) -> Some (thenExpr, elseExpr)
     | _ -> None
 
 let isStaticClass (g:TcGlobals) (x: EntityRef) =
@@ -9122,6 +9149,72 @@ let (|TryCatchExpr|_|) expr =
     match expr with 
     | Expr.Op (TOp.TryCatch (spTry, spWith), [resTy], [Expr.Lambda (_, _, _, [_], bodyExpr, _, _); Expr.Lambda (_, _, _, [filterVar], filterExpr, _, _); Expr.Lambda (_, _, _, [handlerVar], handlerExpr, _, _)], m) -> 
         Some (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m)
+    | _ -> None
+
+let (|MatchTwoCasesExpr|_|) expr =
+    match expr with 
+    | Expr.Match (spBind, exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty) -> 
+
+        // How to rebuild this construct
+        let rebuild (cond, ucref, tg1, tg2, tgs) = 
+            Expr.Match (spBind, exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty)
+
+        Some (cond, ucref, tg1, tg2, tgs, rebuild)
+
+    | _ -> None
+
+/// match e with None -> ... | Some v -> ... or other variations of the same
+let (|MatchOptionExpr|_|) expr =
+    match expr with
+    | MatchTwoCasesExpr(cond, ucref, tg1, tg2, tgs, rebuildTwoCases) -> 
+        let tgNone, tgSome = if ucref.CaseName = "None" then tg1, tg2 else tg2, tg1
+        match tgs.[tgNone], tgs.[tgSome] with 
+        | TTarget([], noneBranchExpr, b1, b2), 
+          TTarget([], Expr.Let(TBind(unionCaseVar, Expr.Op(TOp.UnionCaseProof a1, a2, a3, a4), a5), 
+                               Expr.Let(TBind(someVar, Expr.Op(TOp.UnionCaseFieldGet (a6a, a6b), a7, a8, a9), a10), someBranchExpr, a11, a12), a13, a14), a15, a16) 
+              when unionCaseVar.LogicalName = "unionCase" -> 
+
+            // How to rebuild this construct
+            let rebuild (cond, noneBranchExpr, someVar, someBranchExpr) =
+                let tgs = Array.zeroCreate 2
+                tgs.[tgNone] <- TTarget([], noneBranchExpr, b1, b2)
+                tgs.[tgSome] <- TTarget([], Expr.Let(TBind(unionCaseVar, Expr.Op(TOp.UnionCaseProof a1, a2, a3, a4), a5), 
+                                                    Expr.Let(TBind(someVar, Expr.Op(TOp.UnionCaseFieldGet (a6a, a6b), a7, a8, a9), a10), someBranchExpr, a11, a12), a13, a14), a15, a16)
+                rebuildTwoCases (cond, ucref, tg1, tg2, tgs)
+
+            Some (cond, noneBranchExpr, someVar, someBranchExpr, rebuild)
+  //      // This case is when the var matched by 'Some' has been optimized away
+  //      | TTarget([], noneBranchExpr, _, _), 
+  //        TTarget([], someBranchExpr, _, _)  -> 
+  //          Some (cond, noneBranchExpr, None, someBranchExpr)
+        | _ -> None
+    | _ -> None
+
+let (|ResumableEntryAppExpr|_|) g expr =
+    match expr with
+    | ValApp g g.cgh__resumableEntry_vref (_, _, _m) -> Some ()
+    | _ -> None
+
+/// Match an (unoptimized) __resumableEntry expression
+let (|ResumableEntryMatchExpr|_|) g expr =
+    match expr with
+    | Expr.Let(TBind(matchVar, matchExpr, sp1), MatchOptionExpr (Expr.Val(matchVar2, b, c), noneBranchExpr, someVar, someBranchExpr, rebuildMatch), d, e) ->
+        match matchExpr with 
+        | ResumableEntryAppExpr g () -> 
+            if valRefEq g (mkLocalValRef matchVar) matchVar2 then 
+
+                // How to rebuild this construct
+                let rebuild (noneBranchExpr, someBranchExpr) =
+                    Expr.Let(TBind(matchVar, matchExpr, sp1), rebuildMatch (Expr.Val(matchVar2, b, c), noneBranchExpr, someVar, someBranchExpr), d, e)
+
+                Some (noneBranchExpr, someVar, someBranchExpr, rebuild)
+
+            else None
+
+        | _ -> None
+//        // This case is when the 'let' binding for the matched expression has been optimized into the match
+//    | MatchOptionExpr (ResumableEntryAppExpr g (), noneBranchExpr, someVarOpt, someBranchExpr) ->
+//        Some (noneBranchExpr, someVarOpt, someBranchExpr)
     | _ -> None
 
 let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
