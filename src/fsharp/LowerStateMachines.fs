@@ -145,7 +145,7 @@ let RepresentBindingAsStateVar (bind: Binding) (res2: StateMachineConversionFirs
 
 let isExpandVar (v: Val) = 
     let nm = v.LogicalName
-    (nm.StartsWith "__expand_" 
+    (nm.StartsWith expansionFunctionPrefix
      || nm.StartsWith "builder@" 
      || (v.BaseOrThisInfo = MemberThisVal)) &&
     not v.IsCompiledAsTopLevel
