@@ -65,50 +65,21 @@ type InteractiveTests() =
     [<Test>]
     member __.``Assembly reference event successful``() =
         use script = new FSharpScript()
-        let testAssembly = "System.dll"
-        let mutable assemblyResolveEventCount = 0
-        let mutable foundAssemblyReference = false
-        Event.add (fun (assembly: string) ->
-            assemblyResolveEventCount <- assemblyResolveEventCount + 1
-            foundAssemblyReference <- String.Compare(testAssembly, Path.GetFileName(assembly), StringComparison.OrdinalIgnoreCase) = 0)
-            script.AssemblyReferenceAdded
-        script.Eval(sprintf "#r \"%s\"" testAssembly) |> ignoreValue
-        Assert.AreEqual(1, assemblyResolveEventCount)
-        Assert.True(foundAssemblyReference)
+        let testCode = """
+#r "System.dll"
+let stacktype= typeof<System.Collections.Stack>
+stacktype.Name = "Stack"
+"""
+        let opt = script.Eval(testCode) |> getValue
+        let value = opt.Value
+        Assert.AreEqual(true, value.ReflectionValue :?> bool)
 
     [<Test>]
-    member __.``Assembly reference event unsuccessful``() =
+    member __.``Assembly reference unsuccessful``() =
         use script = new FSharpScript()
         let testAssembly = "not-an-assembly-that-can-be-found.dll"
-        let mutable foundAssemblyReference = false
-        Event.add (fun _ -> foundAssemblyReference <- true) script.AssemblyReferenceAdded
         let _result, errors = script.Eval(sprintf "#r \"%s\"" testAssembly)
         Assert.AreEqual(1, errors.Length)
-        Assert.False(foundAssemblyReference)
-
-    [<Test>]
-    member __.``Add include path event successful``() =
-        use script = new FSharpScript()
-        let includePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-        let mutable includePathEventCount = 0
-        let mutable foundIncludePath = false
-        Event.add (fun (inc: string) ->
-            includePathEventCount <- includePathEventCount + 1
-            foundIncludePath <- foundIncludePath || String.Compare(includePath, inc, StringComparison.OrdinalIgnoreCase) = 0)
-            script.IncludePathAdded
-        script.Eval(sprintf "#I @\"%s\"" includePath) |> ignoreValue
-        Assert.AreEqual(1, includePathEventCount)
-        Assert.True(foundIncludePath)
-
-    [<Test>]
-    member __.``Add include path event unsuccessful``() =
-        use script = new FSharpScript()
-        let includePath = Path.Combine("a", "path", "that", "can't", "be", "found")
-        let mutable foundIncludePath = false
-        Event.add (fun _ -> foundIncludePath <- true) script.IncludePathAdded
-        let _result, errors = script.Eval(sprintf "#I @\"%s\"" includePath)
-        Assert.AreEqual(1, errors.Length)
-        Assert.False(foundIncludePath)
 
     [<Test>]
     member _.``Compilation errors report a specific exception``() =
@@ -126,18 +97,6 @@ type InteractiveTests() =
         match result with
         | Ok(_) -> Assert.Fail("expected a failure")
         | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
-
-    [<Test>]
-    member __.``Nuget reference fires multiple events``() =
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
-        let mutable assemblyRefCount = 0
-        let mutable includeAddCount = 0
-        Event.add (fun _ -> assemblyRefCount <- assemblyRefCount + 1) script.AssemblyReferenceAdded
-        Event.add (fun _ -> includeAddCount <- includeAddCount + 1) script.IncludePathAdded
-        script.Eval("#r \"nuget:include=NUnitLite, version=3.11.0\"") |> ignoreValue
-        script.Eval("0") |> ignoreValue
-        Assert.GreaterOrEqual(assemblyRefCount, 2)
-        Assert.GreaterOrEqual(includeAddCount, 1)
 
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
@@ -183,12 +142,27 @@ printfn ""%A"" result
 123
 "
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
-        let mutable assemblyRefCount = 0;
-        Event.add (fun _ -> assemblyRefCount <- assemblyRefCount + 1) script.AssemblyReferenceAdded
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.AreEqual(123, value.ReflectionValue :?> int32)
 #endif
+
+    [<Test>]
+    member __.``ML - use assembly with ref dependencies``() =
+        let code = @"
+#r ""nuget:Microsoft.ML.OnnxTransformer,1.4.0""
+
+open System
+open System.Numerics.Tensors
+let inputValues = [| 12.0; 10.0; 17.0; 5.0 |]
+let tInput = new DenseTensor<float>(inputValues.AsMemory(), new ReadOnlySpan<int>([|4|]))
+tInput.Length
+"
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let opt = script.Eval(code)  |> getValue
+        let value = opt.Value
+        Assert.AreEqual(4L, value.ReflectionValue :?> int64)
+
 
     [<Test>]
     member __.``Simple pinvoke should not be impacted by native resolver``() =
@@ -211,7 +185,6 @@ else
 123
 "
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
-        let mutable assemblyRefCount = 0;
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
         Assert.AreEqual(123, value.ReflectionValue :?> int32)

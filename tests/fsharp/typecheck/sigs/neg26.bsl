@@ -7,9 +7,7 @@ neg26.fs(40,27,40,32): typecheck error FS0361: The override 'Meth1 : int -> int'
 
 neg26.fs(53,27,53,32): typecheck error FS3213: The member 'Meth1 : 'a -> 'a' matches multiple overloads of the same method.
 Please restrict it to one of the following:
-
    Meth1 : int -> int
-
    Meth1 : int -> int.
 
 neg26.fs(52,15,52,23): typecheck error FS0783: At least one override did not correctly implement its corresponding abstract member

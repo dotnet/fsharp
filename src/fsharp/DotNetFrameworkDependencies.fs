@@ -10,6 +10,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     open System.IO
     open System.Reflection
     open Internal.Utilities
+    open Internal.Utilities.FSharpEnvironment
 
     type private TypeInThisAssembly = class end
 
@@ -29,7 +30,6 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     let getDefaultFSharpCoreLocation = Path.Combine(fSharpCompilerLocation, getFSharpCoreLibraryName + ".dll")
     let getDefaultFsiLibraryLocation = Path.Combine(fSharpCompilerLocation, getFsiLibraryName + ".dll")
     let implementationAssemblyDir = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
-    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
@@ -100,7 +100,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | _, -1 ->
             if isRunningOnCoreClr then
                 // Running on coreclr but no deps.json was deployed with the host so default to 3.0
-                Some "netcoreapp3.0"
+                Some "netcoreapp3.1"
             else
                 // Running on desktop
                 None
@@ -115,13 +115,19 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         let desktopProductVersionMonikers = [|
             // major, minor, build, revision, moniker
                4,     8,      3815,     0,    "net48"
+               4,     8,      3761,     0,    "net48"
                4,     7,      3190,     0,    "net472"
+               4,     7,      3062,     0,    "net472"
                4,     7,      2600,     0,    "net471"
+               4,     7,      2558,     0,    "net471"
                4,     7,      2053,     0,    "net47"
+               4,     7,      2046,     0,    "net47"
                4,     6,      1590,     0,    "net462"
+               4,     6,        57,     0,    "net462"
                4,     6,      1055,     0,    "net461"
                4,     6,        81,     0,    "net46"
                4,     0,     30319, 34209,    "net452"
+               4,     0,     30319, 17020,    "net452"
                4,     0,     30319, 18408,    "net451"
                4,     0,     30319, 17929,    "net45"
                4,     0,     30319,     1,    "net4"
@@ -138,14 +144,17 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             with _ -> defaultMscorlibVersion
 
         // Get the ProductVersion of this framework compare with table yield compatible monikers
-        let _, _, _, _, moniker =
-            desktopProductVersionMonikers
-            |> Array.find (fun (major, minor, build, revision, _) ->
-                (majorPart >= major) &&
-                (minorPart >= minor) &&
-                (buildPart >= build) &&
-                (privatePart >= revision))
-        moniker
+        match desktopProductVersionMonikers
+              |> Array.tryFind (fun (major, minor, build, revision, _) ->
+                    (majorPart >= major) &&
+                    (minorPart >= minor) &&
+                    (buildPart >= build) &&
+                    (privatePart >= revision)) with
+        | Some (_,_,_,_,moniker) ->
+            moniker
+        | None ->
+            // no TFM could be found, assume latest stable?
+            "net48"
 
     /// Gets the tfm E.g netcore3.0, net472
     let executionTfm =

@@ -8,10 +8,11 @@ open Internal.Utilities
 open System
 open System.IO
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompileOps
@@ -1833,14 +1834,17 @@ let GenerateIlxCode
 // by the same references. Only used for static linking.
 //----------------------------------------------------------------------------
 
-let NormalizeAssemblyRefs (ctok, tcImports:TcImports) scoref =
+let NormalizeAssemblyRefs (ctok, ilGlobals: ILGlobals, tcImports:TcImports) scoref =
+    let normalizeAssemblyRefByName nm =
+        match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, nm, lookupOnly=false) with 
+        | Some dllInfo -> dllInfo.ILScopeRef
+        | None -> scoref
+
     match scoref with 
     | ILScopeRef.Local 
     | ILScopeRef.Module _ -> scoref
-    | ILScopeRef.Assembly aref -> 
-        match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
-        | Some dllInfo -> dllInfo.ILScopeRef
-        | None -> scoref
+    | ILScopeRef.PrimaryAssembly -> normalizeAssemblyRefByName ilGlobals.primaryAssemblyName
+    | ILScopeRef.Assembly aref -> normalizeAssemblyRefByName aref.Name
 
 let GetGeneratedILModuleName (t:CompilerTarget) (s:string) = 
     // return the name of the file as a module name

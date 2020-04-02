@@ -35,43 +35,24 @@ module internal SymbolHelpers =
             return symbolUses
         }
 
-    let getSymbolUsesInProjects (symbol: FSharpSymbol, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, projects: Project list, userOpName) =
+    let getSymbolUsesInProjects (symbol: FSharpSymbol, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, projects: Project list, onFound: range -> Async<unit>, userOpName) =
         projects
         |> Seq.map (fun project ->
             async {
                 match! projectInfoManager.TryGetOptionsByProject(project, CancellationToken.None) with
                 | Some (_parsingOptions, projectOptions) ->
-                    let! projectCheckResults = checker.ParseAndCheckProject(projectOptions, userOpName = userOpName)
-                    let! uses = projectCheckResults.GetUsesOfSymbol(symbol) 
-                    let distinctUses = uses |> Array.distinctBy (fun symbolUse -> symbolUse.RangeAlternate)
-                    return distinctUses
-                | None -> return [||]
+                    for filePath in projectOptions.SourceFiles do
+                        let! symbolUses = checker.FindBackgroundReferencesInFile(filePath, projectOptions, symbol, userOpName = userOpName)
+                        for symbolUse in symbolUses do 
+                            do! onFound symbolUse
+                | _ -> ()
             })
-        |> Async.Parallel
-        |> Async.map Array.concat
-        // FCS may return several `FSharpSymbolUse`s for same range, which have different `ItemOccurrence`s (Use, UseInAttribute, UseInType, etc.)
-        // We don't care about the occurrence type here, so we distinct by range.
-        |> Async.map (Array.distinctBy (fun x -> x.RangeAlternate))
+        |> Async.Sequential
 
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults,
                                  projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, solution: Solution, userOpName) =
         async {
-            let! symbolUses =
-                match declLoc with
-                | SymbolDeclarationLocation.CurrentDocument ->
-                    checkFileResults.GetUsesOfSymbolInFile(symbol)
-                | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
-                    let projects =
-                        if isInternalToProject then projects
-                        else 
-                            [ for project in projects do
-                                yield project
-                                yield! project.GetDependentProjects() ]
-                            |> List.distinctBy (fun x -> x.Id)
-
-                    getSymbolUsesInProjects (symbol, projectInfoManager, checker, projects, userOpName)
-            
-            return
+            let toDict (symbolUses: range seq) =
                 (symbolUses
                  |> Seq.collect (fun symbolUse -> 
                       solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
@@ -79,7 +60,25 @@ module internal SymbolHelpers =
                 ).ToImmutableDictionary(
                     (fun (id, _) -> id), 
                     fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
-        }
+
+            match declLoc with
+            | SymbolDeclarationLocation.CurrentDocument ->
+                let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol)
+                return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.RangeAlternate))
+            | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
+                let symbolUses = ResizeArray()
+                    
+                let projects =
+                    if isInternalToProject then projects
+                    else 
+                        [ for project in projects do
+                            yield project
+                            yield! project.GetDependentProjects() ]
+                        |> List.distinctBy (fun x -> x.Id)
+                    
+                let! _ = getSymbolUsesInProjects (symbol, projectInfoManager, checker, projects, (fun symbolUse -> async { symbolUses.Add symbolUse }), userOpName)
+                    
+                return toDict symbolUses }
  
     type OriginalText = string
 
@@ -123,7 +122,7 @@ module internal SymbolHelpers =
                             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             let mutable sourceText = sourceText
                             for symbolUse in symbolUses do
-                                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with 
+                                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with 
                                 | None -> ()
                                 | Some span -> 
                                     let textSpan = Tokenizer.fixupSpan(sourceText, span)

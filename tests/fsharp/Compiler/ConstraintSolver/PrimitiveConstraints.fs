@@ -91,19 +91,5 @@ runTest
     /// This suggestion was resolved as by design,
     /// so the test makes sure, we're emitting error message about 'not being a valid object construction expression'
     let ``Invalid object constructor``() = // Regression test for FSharp1.0:4189
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--test:ErrorRanges" |]
-            """
-type ImmutableStack<'a> private(items: 'a list) = 
-   
-    member this.Push item = ImmutableStack(item::items)
-    member this.Pop = match items with | [] -> failwith "No elements in stack" | x::xs -> x,ImmutableStack(xs)
-    
-    // Notice type annotation is commented out, which results in an error
-    new(col (*: seq<'a>*)) = ImmutableStack(List.ofSeq col)
-
-            """
-            [| FSharpErrorSeverity.Error, 41, (4, 29, 4, 56), "A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: new : col:'b -> ImmutableStack<'a>, private new : items:'a list -> ImmutableStack<'a>"
-               FSharpErrorSeverity.Error, 41, (5, 93, 5, 111), "A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: new : col:'b -> ImmutableStack<'a>, private new : items:'a list -> ImmutableStack<'a>"
-               FSharpErrorSeverity.Error, 41, (8, 30, 8, 60), "A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: new : col:'b -> ImmutableStack<'a> when 'b :> seq<'c>, private new : items:'a list -> ImmutableStack<'a>"
-               FSharpErrorSeverity.Error, 696, (8, 30, 8, 60), "This is not a valid object construction expression. Explicit object constructors must either call an alternate constructor or initialize all fields of the object and specify a call to a super class constructor." |]
+        CompilerAssert.TypeCheckWithErrorsAndOptionsAgainstBaseLine [| "--test:ErrorRanges" |] "typecheck/constructors/neg_invalid_constructor.fs"
+            

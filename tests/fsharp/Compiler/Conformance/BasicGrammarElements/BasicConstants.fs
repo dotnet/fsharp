@@ -175,24 +175,52 @@ if x14 <> 0o52 then failwith "Wrong parsing"
 printfn "%A" x14
             """
     [<Test>]
-    let ``float without dot``() = 
+    let ``dotless float``() = 
         CompilerAssert.CompileExeWithOptions [|"--langversion:preview"|]
             """
 let x = 42f
 printfn "%A" x
             """
-    
+
     [<Test>]
-    let ``float with dot``() = 
-        CompilerAssert.CompileExeWithOptions [|"--langversion:preview"|]
+    let ``dotted float``() = 
+        CompilerAssert.CompileExe
             """
 let x = 42.f
 printfn "%A" x
             """
-    
+
     [<Test>]
-    let ``floats with dot should be equal to floats without dot``() = 
+    let ``dotted floats should be equal to dotless floats``() = 
         CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:preview"|]
             """
-if 1.0f <> 1f then failwith "1.0f is not equal to 1f" 
+if 1.0f <> 1f then failwith "1.0f <> 1f"
+            """
+
+    [<Test>]
+    let ``exponent dotted floats should be equal to dotted floats``() =
+        CompilerAssert.CompileExeAndRun
+            """
+if 1.0e1f <> 10.f then failwith "1.0e1f <> 10.f"
+            """
+
+    [<Test>]
+    let ``exponent dotless floats should be equal to dotted floats``() = 
+        CompilerAssert.CompileExeAndRun
+            """
+if 1e1f <> 10.f then failwith "1e1f <> 10.f" 
+            """
+
+    [<Test>]
+    let ``exponent dotted floats should be equal to dotless floats``() = 
+        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:preview"|]
+            """
+if 1.0e1f <> 10f then failwith "1.0e1f <> 10f" 
+            """
+
+    [<Test>]
+    let ``exponent dotless floats should be equal to dotless floats``() = 
+        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:preview"|]
+            """
+if 1e1f <> 10f then failwith "1e1f <> 10f" 
             """
