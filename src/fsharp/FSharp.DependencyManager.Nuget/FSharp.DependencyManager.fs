@@ -37,7 +37,7 @@ module FSharpDependencyManager =
             | _ -> ()
         }
 
-    let parsePackageReference (lines: string list) =
+    let parsePackageReference scriptExt (lines: string list) =
         let mutable binLogPath = None
         let parsePackageReferenceOption (line: string) =
             let validatePackageName package packageName =
@@ -53,7 +53,8 @@ module FSharpDependencyManager =
                 | opt :: rest ->
                     let addInclude v =
                         validatePackageName v "mscorlib"
-                        validatePackageName v "FSharp.Core"
+                        if scriptExt = fsxExt then
+                            validatePackageName v "FSharp.Core"
                         validatePackageName v "System.ValueTuple"
                         validatePackageName v "NETStandard.Library"
                         Some { current with Include = v }
@@ -162,17 +163,17 @@ type FSharpDependencyManager (outputDir:string option) =
 
     member __.Key = key
 
-    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string) : obj =
+    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string, rid: string) : obj =
 
         let scriptExt, poundRprefix  =
             match scriptExt with
-            | ".csx" -> ".csx", "#r \"" 
-            | _ -> ".fsx", "#r @\"" 
+            | ".csx" -> csxExt, "#r \"" 
+            | _ -> fsxExt, "#r @\"" 
 
         let packageReferences, binLogPath =
             packageManagerTextLines
             |> List.ofSeq
-            |> FSharpDependencyManager.parsePackageReference
+            |> FSharpDependencyManager.parsePackageReference scriptExt
 
         let packageReferenceLines =
             packageReferences
@@ -191,6 +192,7 @@ type FSharpDependencyManager (outputDir:string option) =
 
             let generateProjBody =
                 generateProjectBody.Replace("$(TARGETFRAMEWORK)", tfm)
+                                   .Replace("$(RUNTIMEIDENTIFIER)", rid)
                                    .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
                                    .Replace("$(SCRIPTEXTENSION)", scriptExt)
 
@@ -203,7 +205,7 @@ type FSharpDependencyManager (outputDir:string option) =
                 let references = (findReferencesFromResolutions resolutions) |> Array.toSeq
                 let scripts =
                     let scriptPath = projectPath + scriptExt
-                    let scriptBody =  makeScriptFromResolutions resolutions poundRprefix
+                    let scriptBody =  makeScriptFromReferences references poundRprefix
                     emitFile scriptPath scriptBody
                     let loads = (findLoadsFromResolutions resolutions) |> Array.toList
                     List.concat [ [scriptPath]; loads] |> List.toSeq

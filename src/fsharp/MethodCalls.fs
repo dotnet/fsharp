@@ -1473,112 +1473,90 @@ module ProvidedMethodCalls =
             match ea with
             | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation), m))
             |  _ ->
-            match ea.PApplyOption((function ProvidedTypeAsExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let (expr, targetTy) = info.PApply2(id, m)
+            let exprType = ea.PApplyOption((fun x -> x.GetExprType()), m)
+            let exprType = match exprType with | Some exprType -> exprType | None -> fail()
+            match exprType.PUntaint(id, m) with
+            | ProvidedTypeAsExpr (expr, targetTy) ->
+                let (expr, targetTy) = exprType.PApply2((fun _ -> (expr, targetTy)), m)
                 let srcExpr = exprToExpr expr
                 let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id, m)) 
                 let sourceTy = Import.ImportProvidedType amap m (expr.PApply ((fun e -> e.Type), m)) 
                 let te = mkCoerceIfNeeded g targetTy sourceTy srcExpr
                 None, (te, tyOfExpr g te)
-            | None -> 
-            match ea.PApplyOption((function ProvidedTypeTestExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let (expr, targetTy) = info.PApply2(id, m)
+            | ProvidedTypeTestExpr (expr, targetTy) ->
+                let (expr, targetTy) = exprType.PApply2((fun _ -> (expr, targetTy)), m)
                 let srcExpr = exprToExpr expr
                 let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id, m)) 
                 let te = mkCallTypeTest g m targetTy srcExpr
                 None, (te, tyOfExpr g te)
-            | None -> 
-            match ea.PApplyOption((function ProvidedIfThenElseExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let test, thenBranch, elseBranch = info.PApply3(id, m)
+            | ProvidedIfThenElseExpr (test, thenBranch, elseBranch) ->
+                let test, thenBranch, elseBranch = exprType.PApply3((fun _ -> (test, thenBranch, elseBranch)), m)
                 let testExpr = exprToExpr test
                 let ifTrueExpr = exprToExpr thenBranch
                 let ifFalseExpr = exprToExpr elseBranch
                 let te = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
                 None, (te, tyOfExpr g te)
-            | None -> 
-            match ea.PApplyOption((function ProvidedVarExpr x -> Some x | _ -> None), m) with
-            | Some info ->  
-                let _, vTe = varToExpr info
+            | ProvidedVarExpr providedVar ->
+                let _, vTe = varToExpr (exprType.PApply((fun _ -> providedVar), m))
                 None, (vTe, tyOfExpr g vTe)
-            | None -> 
-            match ea.PApplyOption((function ProvidedConstantExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let ce = convertConstExpr g amap m info
+            | ProvidedConstantExpr (obj, prType) ->
+                let ce = convertConstExpr g amap m (exprType.PApply((fun _ -> (obj, prType)), m))
                 None, (ce, tyOfExpr g ce)
-            | None -> 
-            match ea.PApplyOption((function ProvidedNewTupleExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let elems = info.PApplyArray(id, "GetInvokerExpression", m)
+            | ProvidedNewTupleExpr info ->
+                let elems = exprType.PApplyArray((fun _ -> info), "GetInvokerExpression", m)
                 let elemsT = elems |> Array.map exprToExpr |> Array.toList
                 let exprT = mkRefTupledNoTypes g m elemsT
                 None, (exprT, tyOfExpr g exprT)
-            | None -> 
-            match ea.PApplyOption((function ProvidedNewArrayExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let ty, elems = info.PApply2(id, m)
+            | ProvidedNewArrayExpr (ty, elems) ->
+                let ty, elems = exprType.PApply2((fun _ -> (ty, elems)), m)
                 let tyT = Import.ImportProvidedType amap m ty
                 let elems = elems.PApplyArray(id, "GetInvokerExpression", m)
                 let elemsT = elems |> Array.map exprToExpr |> Array.toList
                 let exprT = Expr.Op (TOp.Array, [tyT], elemsT, m)
                 None, (exprT, tyOfExpr g exprT)
-            | None -> 
-            match ea.PApplyOption((function ProvidedTupleGetExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let inp, n = info.PApply2(id, m)
+            | ProvidedTupleGetExpr (inp, n) -> 
+                let inp, n = exprType.PApply2((fun _ -> (inp, n)), m)
                 let inpT = inp |> exprToExpr 
                 // if type of expression is erased type then we need convert it to the underlying base type
-                let typeOfExpr = 
+                let typeOfExpr =
                     let t = tyOfExpr g inpT
                     stripTyEqnsWrtErasure EraseMeasures g t
                 let tupInfo, tysT = tryDestAnyTupleTy g typeOfExpr
                 let exprT = mkTupleFieldGet g (tupInfo, inpT, tysT, n.PUntaint(id, m), m)
                 None, (exprT, tyOfExpr g exprT)
-            | None -> 
-            match ea.PApplyOption((function ProvidedLambdaExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let v, b = info.PApply2(id, m)
+            | ProvidedLambdaExpr (v, b) ->
+                let v, b = exprType.PApply2((fun _ -> (v, b)), m)
                 let vT = addVar v
                 let bT = exprToExpr b
                 removeVar v
                 let exprT = mkLambda m vT (bT, tyOfExpr g bT)
                 None, (exprT, tyOfExpr g exprT)
-            | None -> 
-            match ea.PApplyOption((function ProvidedLetExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let v, e, b = info.PApply3(id, m)
+            | ProvidedLetExpr (v, e, b) ->
+                let v, e, b = exprType.PApply3((fun _ -> (v, e, b)), m)
                 let eT = exprToExpr  e
                 let vT = addVar v
                 let bT = exprToExpr  b
                 removeVar v
                 let exprT = mkCompGenLet m vT eT bT
                 None, (exprT, tyOfExpr g exprT)
-            | None -> 
-            match ea.PApplyOption((function ProvidedVarSetExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let v, e = info.PApply2(id, m)
+            | ProvidedVarSetExpr (v, e) ->
+                let v, e = exprType.PApply2((fun _ -> (v, e)), m)
                 let eT = exprToExpr  e
                 let vTopt, _ = varToExpr v
                 match vTopt with 
                 | None -> 
                     fail()
-                | Some vT -> 
+                | Some vT ->
                     let exprT = mkValSet m (mkLocalValRef vT) eT 
                     None, (exprT, tyOfExpr g exprT)
-            | None -> 
-            match ea.PApplyOption((function ProvidedWhileLoopExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let guardExpr, bodyExpr = info.PApply2(id, m)
+            | ProvidedWhileLoopExpr (guardExpr, bodyExpr) ->
+                let guardExpr, bodyExpr = (exprType.PApply2((fun _ -> (guardExpr, bodyExpr)), m))
                 let guardExprT = exprToExpr guardExpr
                 let bodyExprT = exprToExpr bodyExpr
                 let exprT = mkWhile g (DebugPointAtWhile.No, SpecialWhileLoopMarker.NoSpecialWhileLoopMarker, guardExprT, bodyExprT, m)
                 None, (exprT, tyOfExpr g exprT)
-            | None -> 
-            match ea.PApplyOption((function ProvidedForIntegerRangeLoopExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let v, e1, e2, e3 = info.PApply4(id, m)
+            | ProvidedForIntegerRangeLoopExpr (v, e1, e2, e3) -> 
+                let v, e1, e2, e3 = exprType.PApply4((fun _ -> (v, e1, e2, e3)), m)
                 let e1T = exprToExpr  e1
                 let e2T = exprToExpr  e2
                 let vT = addVar v
@@ -1586,10 +1564,8 @@ module ProvidedMethodCalls =
                 removeVar v
                 let exprT = mkFastForLoop g (DebugPointAtFor.No, m, vT, e1T, true, e2T, e3T)
                 None, (exprT, tyOfExpr g exprT)
-            | None -> 
-            match ea.PApplyOption((function ProvidedNewDelegateExpr x -> Some x | _ -> None), m) with
-            | Some info -> 
-                let delegateTy, boundVars, delegateBodyExpr = info.PApply3(id, m)
+            | ProvidedNewDelegateExpr (delegateTy, boundVars, delegateBodyExpr) ->
+                let delegateTy, boundVars, delegateBodyExpr = exprType.PApply3((fun _ -> (delegateTy, boundVars, delegateBodyExpr)), m)
                 let delegateTyT = Import.ImportProvidedType amap m delegateTy
                 let vs = boundVars.PApplyArray(id, "GetInvokerExpression", m) |> Array.toList 
                 let vsT = List.map addVar vs
@@ -1600,44 +1576,33 @@ module ProvidedMethodCalls =
                 let infoReader = InfoReader(g, amap)
                 let exprT = CoerceFromFSharpFuncToDelegate g amap traitCtxt infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyT
                 None, (exprT, tyOfExpr g exprT)
-            | None -> 
 #if PROVIDED_ADDRESS_OF
-            match ea.PApplyOption((function ProvidedAddressOfExpr x -> Some x | _ -> None), m) with
-            | Some e -> 
-                let eT =  exprToExpr e
+            | ProvidedAddressOfExpr e ->
+                let eT =  exprToExpr (exprType.PApply((fun _ -> e), m))
                 let wrap,ce, _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
                 let ce = wrap ce
                 None, (ce, tyOfExpr g ce)
-            | None -> 
 #endif
-            match ea.PApplyOption((function ProvidedDefaultExpr x -> Some x | _ -> None), m) with
-            | Some pty -> 
-                let ty = Import.ImportProvidedType amap m pty
+            | ProvidedDefaultExpr pty ->
+                let ty = Import.ImportProvidedType amap m (exprType.PApply((fun _ -> pty), m))
                 let ce = mkDefault (m, ty)
                 None, (ce, tyOfExpr g ce)
-            | None -> 
-            match ea.PApplyOption((function ProvidedCallExpr c -> Some c | _ -> None), m) with 
-            | Some info ->
-                methodCallToExpr top ea info
-            | None -> 
-            match ea.PApplyOption((function ProvidedSequentialExpr c -> Some c | _ -> None), m) with 
-            | Some info ->
-                let e1, e2 = info.PApply2(id, m)
+            | ProvidedCallExpr (e1, e2, e3) ->
+                methodCallToExpr top ea (exprType.PApply((fun _ -> (e1, e2, e3)), m))
+            | ProvidedSequentialExpr (e1, e2) ->
+                let e1, e2 = exprType.PApply2((fun _ -> (e1, e2)), m)
                 let e1T = exprToExpr e1
                 let e2T = exprToExpr e2
                 let ce = mkCompGenSequential m e1T e2T
                 None, (ce, tyOfExpr g ce)
-            | None -> 
-            match ea.PApplyOption((function ProvidedTryFinallyExpr c -> Some c | _ -> None), m) with 
-            | Some info ->
-                let e1, e2 = info.PApply2(id, m)
+            | ProvidedTryFinallyExpr (e1, e2) ->
+                let e1, e2 = exprType.PApply2((fun _ -> (e1, e2)), m)
                 let e1T = exprToExpr e1
                 let e2T = exprToExpr e2
                 let ce = mkTryFinally g (e1T, e2T, m, tyOfExpr g e1T, DebugPointAtTry.No, DebugPointAtFinally.No)
                 None, (ce, tyOfExpr g ce)
-            | None -> 
-            match ea.PApplyOption((function ProvidedTryWithExpr c -> Some c | _ -> None), m) with 
-            | Some info ->
+            | ProvidedTryWithExpr (e1, e2, e3, e4, e5) ->
+                let info = exprType.PApply((fun _ -> (e1, e2, e3, e4, e5)), m)
                 let bT = exprToExpr (info.PApply((fun (x, _, _, _, _) -> x), m))
                 let v1 = info.PApply((fun (_, x, _, _, _) -> x), m)
                 let v1T = addVar v1
@@ -1649,12 +1614,8 @@ module ProvidedMethodCalls =
                 removeVar v2
                 let ce = mkTryWith g (bT, v1T, e1T, v2T, e2T, m, tyOfExpr g bT, DebugPointAtTry.No, DebugPointAtWith.No)
                 None, (ce, tyOfExpr g ce)
-            | None -> 
-            match ea.PApplyOption((function ProvidedNewObjectExpr c -> Some c | _ -> None), m) with 
-            | Some info -> 
-                None, ctorCallToExpr info
-            | None -> 
-                fail()
+            | ProvidedNewObjectExpr (e1, e2) ->
+                None, ctorCallToExpr (exprType.PApply((fun _ -> (e1, e2)), m))
 
 
         and ctorCallToExpr (ne: Tainted<_>) =    

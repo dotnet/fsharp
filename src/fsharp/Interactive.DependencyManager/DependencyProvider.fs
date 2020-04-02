@@ -65,6 +65,9 @@ module ReflectionHelper =
             e.InnerException
         | _ -> e
 
+open ReflectionHelper
+open RidHelpers
+
 /// Indicate the type of error to report
 [<RequireQualifiedAccess>]
 type ErrorReportType =
@@ -102,7 +105,7 @@ type IResolveDependenciesResult =
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> IResolveDependenciesResult
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string * rid: string -> IResolveDependenciesResult
 
 type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyInfo, keyProperty: PropertyInfo, resolveDeps: MethodInfo option, resolveDepsEx: MethodInfo option,outputDir: string option) =
     let instance = Activator.CreateInstance(theType, [|outputDir :> obj|])
@@ -118,8 +121,8 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         | _, None, _
         | _, _, None -> None
         | Some _, Some nameProperty, Some keyProperty ->
-            let resolveMethod = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
-            let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
+            let resolveMethod =   getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
+            let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
             Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
 
     static member MakeResultFromObject(result: obj) = {
@@ -192,18 +195,16 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         member __.Key = instance |> keyProperty
 
         /// Resolve the dependencies for the given arguments
-        member __.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm) =
+        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm, rid): IResolveDependenciesResult =
 
-            // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resoveDepsEx
-            // The resolve method can return values in two different tuples:
+            // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resolveDepsEx
+            // the resolve method can return values in two different tuples:
             //     (bool * string list * string list * string list)
             //     (bool * string list * string list)
-            //
             // We use reflection to get the correct method and to determine what we got back.
-            //
             let method, arguments =
                 if resolveDepsEx.IsSome then
-                    resolveDepsEx, [| box scriptExt; box packageManagerTextLines; box tfm |]
+                    resolveDepsEx, [| box scriptExt; box packageManagerTextLines; box tfm; box rid |]
                 elif resolveDeps.IsSome then
                     resolveDeps, [| box scriptDir; box mainScriptName; box scriptName; box packageManagerTextLines; box tfm |]
                 else
@@ -216,7 +217,6 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
                 // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
                 //     1 - object with properties
                 //     3 - (bool * string list * string list)
-
                 // Support legacy api return shape (bool, string seq, string seq) --- original paket packagemanager
                 if Microsoft.FSharp.Reflection.FSharpType.IsTuple (result.GetType()) then
                     // Verify the number of arguments returned in the tuple returned by resolvedependencies, it can be:
@@ -355,12 +355,18 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
                        packageManagerTextLines: string seq,
                        reportError: ResolvingErrorReport,
                        executionTfm: string,
+                       [<Optional;DefaultParameterValue(null:string)>]executionRid: string,
                        [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string,
                        [<Optional;DefaultParameterValue("")>]mainScriptName: string,
                        [<Optional;DefaultParameterValue("")>]fileName: string): IResolveDependenciesResult =
 
         try
-            packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm)
+            let executionRid =
+                if isNull executionRid then
+                    RidHelpers.platformRid
+                else
+                    executionRid
+            packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid)
 
         with e ->
             let e = stripTieWrapper e
