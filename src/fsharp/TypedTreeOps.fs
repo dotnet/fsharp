@@ -9100,4 +9100,28 @@ let CombineCcuContentFragments m l =
 
     CombineModuleOrNamespaceTypeList [] m l
 
+let (|WhileExpr|_|) expr = 
+    match expr with 
+    | Expr.Op (TOp.While (sp1, sp2), _, [Expr.Lambda (_, _, _, [_gv], guardExpr, _, _);Expr.Lambda (_, _, _, [_bv], bodyExpr, _, _)], m) ->
+        Some (sp1, sp2, guardExpr, bodyExpr, m)
+    | _ -> None
 
+let (|TryFinallyExpr|_|) expr = 
+    match expr with 
+    | Expr.Op (TOp.TryFinally (sp1, sp2), [ty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], m) ->
+        Some (sp1, sp2, ty, e1, e2, m)
+    | _ -> None
+
+let (|ForLoopExpr|_|) expr = 
+    match expr with 
+    | Expr.Op (TOp.For (sp1, sp2), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)], m) ->
+        Some (sp1, sp2, e1, e2, v, e3, m)
+    | _ -> None
+
+let (|TryCatchExpr|_|) expr = 
+    match expr with 
+    | Expr.Op (TOp.TryCatch (spTry, spWith), [resTy], [Expr.Lambda (_, _, _, [_], bodyExpr, _, _); Expr.Lambda (_, _, _, [filterVar], filterExpr, _, _); Expr.Lambda (_, _, _, [handlerVar], handlerExpr, _, _)], m) -> 
+        Some (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m)
+    | _ -> None
+
+let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
