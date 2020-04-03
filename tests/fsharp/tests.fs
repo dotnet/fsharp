@@ -348,7 +348,7 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize- --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test.exe") ""
 
@@ -360,7 +360,7 @@ module CoreTests =
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+ --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test.exe") ""
 

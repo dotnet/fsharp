@@ -21,6 +21,7 @@ open FSharp.Compiler.AbstractIL.Internal.BinaryConstants
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
 open FSharp.Compiler.Layout
@@ -2254,13 +2255,17 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
     // This part of the GenExprAux may apply because a 'let' expression can be a state machine expressions.
     match (if IsPossibleStateMachineExpr g expr then ConvertStateMachineExprToObject cenv.g expr else None) with
     | Some res ->
-        match res with 
-        | Choice1Of2 objExpr ->
-            GenExpr cenv cgbuf eenv sp objExpr sequel
-            true
-        | Choice2Of2 (structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setMachineStateBodyExpr, afterMethodThisVar, afterMethodBodyExpr) -> 
-            GenStructStateMachine cenv cgbuf eenv (structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setMachineStateBodyExpr, afterMethodThisVar, afterMethodBodyExpr) sequel
-            true
+        if g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines then
+            match res with 
+            | Choice1Of2 objExpr ->
+                GenExpr cenv cgbuf eenv sp objExpr sequel
+                true
+            | Choice2Of2 (structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setMachineStateBodyExpr, afterMethodThisVar, afterMethodBodyExpr) -> 
+                GenStructStateMachine cenv cgbuf eenv (structTy, stateVars, thisVars, moveNextMethodThisVar, moveNextExprWithJumpTable, setMachineStateBodyExpr, afterMethodThisVar, afterMethodBodyExpr) sequel
+                true
+        else
+            error(Error(FSComp.SR.stateMachineNotSupported(), expr.Range))
+           
     | None ->
     // This part of the GenExprAux may apply because a 'match' expression can be a 'if __useResumableStateMachines ...' expression
     match expr with

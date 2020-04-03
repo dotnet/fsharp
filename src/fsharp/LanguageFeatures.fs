@@ -29,6 +29,7 @@ type LanguageFeature =
     | FromEndSlicing
     | FixedIndexSlice3d4d
     | AndBang
+    | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
 
@@ -65,6 +66,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.AndBang, previewVersion
+            LanguageFeature.ResumableStateMachines, previewVersion
             LanguageFeature.NullableOptionalInterop, previewVersion
             LanguageFeature.DefaultInterfaceMemberConsumption, previewVersion
         ]
@@ -133,6 +135,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang()
+        | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
 

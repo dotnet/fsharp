@@ -9183,10 +9183,6 @@ let (|MatchOptionExpr|_|) expr =
                 rebuildTwoCases (cond, ucref, tg1, tg2, tgs)
 
             Some (cond, noneBranchExpr, someVar, someBranchExpr, rebuild)
-  //      // This case is when the var matched by 'Some' has been optimized away
-  //      | TTarget([], noneBranchExpr, _, _), 
-  //        TTarget([], someBranchExpr, _, _)  -> 
-  //          Some (cond, noneBranchExpr, None, someBranchExpr)
         | _ -> None
     | _ -> None
 
@@ -9212,9 +9208,6 @@ let (|ResumableEntryMatchExpr|_|) g expr =
             else None
 
         | _ -> None
-//        // This case is when the 'let' binding for the matched expression has been optimized into the match
-//    | MatchOptionExpr (ResumableEntryAppExpr g (), noneBranchExpr, someVarOpt, someBranchExpr) ->
-//        Some (noneBranchExpr, someVarOpt, someBranchExpr)
     | _ -> None
 
 let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e
