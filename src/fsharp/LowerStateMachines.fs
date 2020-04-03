@@ -450,7 +450,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             mkCompGenSequential m table (mkLabelled m initLabel expr)
 
     /// Detect constructs allowed in state machines
-    let rec ConvertStateMachineCode env (pcExprOpt: Expr option) expr = 
+    let rec ConvertStateMachineCode env (pcValInfo: ((Val * Expr) * Expr) option) expr = 
         if sm_verbose then 
             printfn "---------ConvertStateMachineCode-------------------"
             printfn "%s" (DebugPrint.showExpr g expr)
@@ -470,8 +470,8 @@ let ConvertStateMachineExprToObject g overallExpr =
                 // printfn "found sequential"
                 let reenterPC = genPC()
                 let envSome = { env with Macros = env.Macros.Add someVar (mkInt g someVar.Range reenterPC) }
-                let resNone = ConvertStateMachineCode env pcExprOpt noneBranchExpr
-                let resSome = ConvertStateMachineCode envSome pcExprOpt someBranchExpr
+                let resNone = ConvertStateMachineCode env pcValInfo noneBranchExpr
+                let resSome = ConvertStateMachineCode envSome pcValInfo someBranchExpr
                 let asyncVars = unionFreeVars (freeInExpr CollectLocals resNone.phase1) resSome.asyncVars 
                 let m = someBranchExpr.Range
                 let recreate reenterLabOpt e1 e2 = 
@@ -521,8 +521,8 @@ let ConvertStateMachineExprToObject g overallExpr =
             | SequentialStateMachineCode g (e1, e2, _m, recreate) ->
                 if sm_verbose then printfn "SequentialStateMachineCode" 
                 // printfn "found sequential"
-                let res1 = ConvertStateMachineCode env pcExprOpt e1
-                let res2 = ConvertStateMachineCode env pcExprOpt e2
+                let res1 = ConvertStateMachineCode env pcValInfo e1
+                let res2 = ConvertStateMachineCode env pcValInfo e2
                 let asyncVars =
                     if res1.entryPoints.IsEmpty then
                         // res1 is synchronous
@@ -546,8 +546,8 @@ let ConvertStateMachineExprToObject g overallExpr =
             | WhileExpr (sp1, sp2, guardExpr, bodyExpr, m) ->
                 if sm_verbose then printfn "WhileExpr" 
 
-                let resg = ConvertStateMachineCode env pcExprOpt guardExpr
-                let resb = ConvertStateMachineCode env pcExprOpt bodyExpr
+                let resg = ConvertStateMachineCode env pcValInfo guardExpr
+                let resb = ConvertStateMachineCode env pcValInfo bodyExpr
                 let eps = resg.entryPoints @ resb.entryPoints
                 // All free variables get captured if there are any entrypoints at all
                 let asyncVars = if eps.IsEmpty then emptyFreeVars else unionFreeVars (freeInExpr CollectLocals resg.phase1) (freeInExpr CollectLocals resb.phase1)
@@ -555,7 +555,14 @@ let ConvertStateMachineExprToObject g overallExpr =
                   phase2 = (fun ctxt -> 
                         let egR = resg.phase2 ctxt
                         let ebR = resb.phase2 ctxt
-                        mkWhile g (sp1, sp2, egR, ebR, m))
+                        
+                        // Clear the pcVal on backward branch, causing jump tables at entry to nested try-blocks to not activate
+                        let ebR2 = 
+                            match pcValInfo with
+                            | None -> ebR
+                            | Some ((pcVal, _), _) -> mkCompGenSequential m ebR (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
+
+                        mkWhile g (sp1, sp2, egR, ebR2, m))
                   entryPoints= eps
                   stateVars = resg.stateVars @ resb.stateVars 
                   thisVars = resg.thisVars @ resb.thisVars
@@ -565,8 +572,8 @@ let ConvertStateMachineExprToObject g overallExpr =
             // Hoever we include the synchronous version of the construct here for completeness.
             | TryFinallyExpr (sp1, sp2, ty, e1, e2, m) ->
                 if sm_verbose then printfn "TryFinallyExpr" 
-                let res1 = ConvertStateMachineCode env pcExprOpt e1
-                let res2 = ConvertStateMachineCode env pcExprOpt e2
+                let res1 = ConvertStateMachineCode env pcValInfo e1
+                let res2 = ConvertStateMachineCode env pcValInfo e2
                 let eps = res1.entryPoints @ res2.entryPoints
                 if eps.Length > 0 then 
                     error(Error(FSComp.SR.stateMachineResumptionInTryFinally(), expr.Range))
@@ -583,9 +590,9 @@ let ConvertStateMachineExprToObject g overallExpr =
             // The expanded code for state machines may use for loops....
             | ForLoopExpr (sp1, sp2, e1, e2, v, e3, m) ->
                 if sm_verbose then printfn "ForLoopExpr" 
-                let res1 = ConvertStateMachineCode env pcExprOpt e1
-                let res2 = ConvertStateMachineCode env pcExprOpt e2
-                let res3 = ConvertStateMachineCode env pcExprOpt e3
+                let res1 = ConvertStateMachineCode env pcValInfo e1
+                let res2 = ConvertStateMachineCode env pcValInfo e2
+                let res3 = ConvertStateMachineCode env pcValInfo e3
                 let eps = res1.entryPoints @ res2.entryPoints @ res3.entryPoints
                 if eps.Length > 0 then 
                     error(Error(FSComp.SR.stateMachineResumptionForLoop(), expr.Range))
@@ -594,7 +601,14 @@ let ConvertStateMachineExprToObject g overallExpr =
                         let e1R = res1.phase2 ctxt
                         let e2R = res2.phase2 ctxt
                         let e3R = res3.phase2 ctxt
-                        mkFor g (sp1, v, e1R, sp2, e2R, e3R, m))
+
+                        // Clear the pcVal on backward branch, causing jump tables at entry to nested try-blocks to not activate
+                        let e3R2 = 
+                            match pcValInfo with
+                            | None -> e3R
+                            | Some ((pcVal, _), _) -> mkCompGenSequential m e3R (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
+
+                        mkFor g (sp1, v, e1R, sp2, e2R, e3R2, m))
                   entryPoints= eps
                   stateVars = res1.stateVars @ res2.stateVars @ res3.stateVars
                   thisVars = res1.thisVars @ res2.thisVars @ res3.thisVars
@@ -603,9 +617,9 @@ let ConvertStateMachineExprToObject g overallExpr =
             // The expanded code for state machines may use try/with....
             | TryCatchExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
                 if sm_verbose then printfn "TryCatchExpr" 
-                let resBody = ConvertStateMachineCode env pcExprOpt bodyExpr
-                let resFilter = ConvertStateMachineCode env pcExprOpt filterExpr
-                let resHandler = ConvertStateMachineCode env pcExprOpt handlerExpr
+                let resBody = ConvertStateMachineCode env pcValInfo bodyExpr
+                let resFilter = ConvertStateMachineCode env pcValInfo filterExpr
+                let resHandler = ConvertStateMachineCode env pcValInfo handlerExpr
                 { phase1 = mkTryWith g (resBody.phase1, filterVar, resFilter.phase1, handlerVar, resHandler.phase1, m, resTy, spTry, spWith)
                   phase2 = (fun ctxt -> 
                     // We can't jump into a try/catch block.  So we jump to the start of the try/catch and add a new jump table
@@ -629,9 +643,9 @@ let ConvertStateMachineExprToObject g overallExpr =
 
                         // Add a jump table at the entry to the try
                         let vBodyRWithJumpTable = 
-                            match pcExprOpt with 
+                            match pcValInfo with 
                             | None -> vBodyR
-                            | Some pcExpr -> addPcJumpTable m innerPcs innerPc2Lab pcExpr vBodyR
+                            | Some ((_, pcValExpr), _) -> addPcJumpTable m innerPcs innerPc2Lab pcValExpr vBodyR
                         let coreExpr = mkTryWith g (vBodyRWithJumpTable, filterVar, filterExprR, handlerVar, handlerExprR, m, resTy, spTry, spWith)
                         // Place all the outer labels just before the try
                         let labelledExpr = (coreExpr, outerLabsForInnerPcs) ||> List.fold (fun e l -> mkLabelled m l e)                
@@ -649,7 +663,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let dtreeR = ConvertStateMachineLeafDecisionTree env dtree 
                 let tglArray = 
                     targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget, _)) -> 
-                        ConvertStateMachineCode env pcExprOpt targetExpr)
+                        ConvertStateMachineCode env pcValInfo targetExpr)
                 let tgl = Array.toList tglArray
                 let entryPoints = tgl |> List.collect (fun res -> res.entryPoints)
                 let asyncVars =
@@ -693,7 +707,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                 let bind = mkBind bind.DebugPoint bind.Var bindExpr
                 if sm_verbose then printfn "LetExpr (non-control-flow, body)" 
 
-                let resBody = ConvertStateMachineCode env pcExprOpt bodyExpr
+                let resBody = ConvertStateMachineCode env pcValInfo bodyExpr
 
                 // The isByrefTy check is an adhoc check to avoid capturing the 'this' parameter of a struct state machine 
                 // You might think we could do this:
@@ -744,11 +758,17 @@ let ConvertStateMachineExprToObject g overallExpr =
     // Detect a state machine and convert it
     match overallExpr with
     | StateMachineInContext (env, remake, pcExprOpt, codeExpr, m) ->
-        if (freeInExpr CollectLocals overallExpr).FreeLocals |> Zset.exists isExpandVar then 
-            printfn "Abandoning: Not all macro variables expanded..."
+        let frees = (freeInExpr CollectLocals overallExpr).FreeLocals
+        if frees |> Zset.exists isExpandVar then 
+            if sm_verbose then 
+                printfn "Abandoning: Not all macro variables expanded..."
             None
         else
             let pcExprROpt = pcExprOpt |> Option.map (ConvertStateMachineLeafExpression env)
+            let pcValInfo = 
+                match pcExprROpt with 
+                | None -> None
+                | Some e -> Some (mkMutableCompGenLocal e.Range "pcVal" g.int32_ty, e)
         
             if sm_verbose then 
                 printfn "Found state machine override method and code expression..."
@@ -759,7 +779,7 @@ let ConvertStateMachineExprToObject g overallExpr =
                 printfn "----------- START STATE MACHINE CONVERSION ----------------------"
     
             // Perform phase1 of the conversion
-            let phase1 = ConvertStateMachineCode env pcExprROpt codeExpr 
+            let phase1 = ConvertStateMachineCode env pcValInfo codeExpr 
 
             // Work out the initial mapping of pcs to labels
             let pcs = [ 1 .. pcCount ]
@@ -776,9 +796,9 @@ let ConvertStateMachineExprToObject g overallExpr =
 
             // Add the jump table
             let moveNextExprWithJumpTable = 
-                match pcExprROpt with 
+                match pcValInfo with 
                 | None -> moveNextExprR
-                | Some pcExprR -> addPcJumpTable m pcs pc2lab pcExprR moveNextExprR
+                | Some ((v,pcValExprR),pcExprR) -> mkCompGenLet m v pcExprR (addPcJumpTable m pcs pc2lab pcValExprR moveNextExprR)
         
             if sm_verbose then printfn "----------- REMAKE ----------------------"
 

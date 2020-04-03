@@ -653,8 +653,8 @@ Microsoft.FSharp.Control.TaskStateMachine`1[T]: Microsoft.FSharp.Control.TaskMac
 Microsoft.FSharp.Control.TaskStateMachine`1[T]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[T] MethodBuilder
 Microsoft.FSharp.Control.TaskStateMachine`1[T]: System.Runtime.CompilerServices.ICriticalNotifyCompletion Awaiter
 Microsoft.FSharp.Control.TaskStateMachine`1[T]: T Result
-Microsoft.FSharp.Control.ContextSensitiveTasks+TaskHelpers: Microsoft.FSharp.Control.TaskBuilder get_task()
-Microsoft.FSharp.Control.ContextSensitiveTasks+TaskHelpers: Microsoft.FSharp.Control.TaskBuilder task
+Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder get_task()
+Microsoft.FSharp.Control.TaskBuilderModule: Microsoft.FSharp.Control.TaskBuilder task
 Microsoft.FSharp.Control.ContextSensitiveTasks+TaskHelpers: Microsoft.FSharp.Control.TaskCode`2[T,T] TaskBuilder.ReturnFrom[TTaskLike,T](Microsoft.FSharp.Control.TaskBuilder, TTaskLike)
 Microsoft.FSharp.Control.ContextSensitiveTasks+TaskHelpers: Microsoft.FSharp.Control.TaskCode`2[TOverall,TResult2] TaskBuilder.Bind[TTaskLike,TResult1,TResult2,TOverall](Microsoft.FSharp.Control.TaskBuilder, TTaskLike, Microsoft.FSharp.Core.FSharpFunc`2[TResult1,Microsoft.FSharp.Control.TaskCode`2[TOverall,TResult2]])
 Microsoft.FSharp.Control.ContextSensitiveTasks+TaskWitnesses: Microsoft.FSharp.Control.TaskCode`2[T,T] CanReturnFromDynamic[TTaskLike,TAwaiter,T](Microsoft.FSharp.Core.CompilerServices.IPriority2, TTaskLike)
