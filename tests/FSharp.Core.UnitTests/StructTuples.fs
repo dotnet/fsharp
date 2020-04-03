@@ -2,7 +2,7 @@
 
 // Various tests for Microsoft.FSharp.Core type forwarding
 
-namespace FSharp.Core.UnitTests.FSharpStructTuples
+namespace FSharp.Core.UnitTests.StructTuples
 
 #if TUPLE_SAMPLE
 open System
