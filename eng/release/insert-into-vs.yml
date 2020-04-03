@@ -1,6 +1,6 @@
 parameters:
   componentBranchName: ''
-  insertBuildPolicy: 'CloudBuild - Request RPS'
+  insertBuildPolicy: 'Request Perf DDRITs'
   insertTargetBranch: ''
   insertTeamEmail: ''
   insertTeamName: ''
