@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -73,6 +74,47 @@ public static class TaskPerfCSharp
     {
         throw (new System.Exception("fail"));
     }
+
+
+    public static async IAsyncEnumerable<int> perf1_AsyncEnumerable(int x)
+    {
+        yield return 1;
+        yield return 2;
+        if (x >= 2)
+        {
+            yield return 3;
+            yield return 4;
+        }
+    }
+
+    public static async IAsyncEnumerable<int> perf2_AsyncEnumerable()
+    {
+        await foreach (var i1 in perf1_AsyncEnumerable(3))
+        {
+            await foreach (var i2 in perf1_AsyncEnumerable(3))
+            {
+                await foreach (var i3 in perf1_AsyncEnumerable(3))
+                {
+                    await foreach (var i4 in perf1_AsyncEnumerable(3))
+                    {
+                        await foreach (var i5 in perf1_AsyncEnumerable(3))
+                        {
+                            await foreach (var i6 in perf1_AsyncEnumerable(i5))
+                            {
+                                yield return i6;
+
+                            }
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+    }
+
 #if MAIN
     public static void Main() { 
         var t = SingleSyncExceptionTask_CSharp();

@@ -3,25 +3,15 @@ module Tests.TaskSeqBuilder
 
 #nowarn "42"
 open System
+open System.Collections.Generic
 open System.Runtime.CompilerServices
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Core.CompilerServices
 open FSharp.Core.CompilerServices.StateMachineHelpers
-open FSharp.Control // AsyncSeq
 
 let verbose = false
 
-type IAsyncDisposable =
-    abstract DisposeAsync: unit -> Task<unit>
-
-type IAsyncEnumerator<'T> =
-    inherit IAsyncDisposable
-    abstract Current: 'T
-    abstract MoveNextAsync: unit -> Task<bool>
-
-type IAsyncEnumerable<'T> =
-    abstract GetAsyncEnumerator: ct: CancellationToken -> IAsyncEnumerator<'T>
 
 type TaskSeqStatus =  DONE = 0 | YIELD = 1 | AWAIT = 2
 
@@ -42,13 +32,13 @@ type TaskSeqStateMachine<'T>() =
     /// Proceed to the next state or raise an exception
     abstract Step : unit -> TaskSeqStatus
 
-    interface IAsyncEnumerable<'T> with
+    interface System.Collections.Generic.IAsyncEnumerable<'T> with
         member this.GetAsyncEnumerator(ct) = 
             let clone = this.MemberwiseClone() :?> TaskSeqStateMachine<'T>
             clone.CancellationToken <- ct
-            (clone :> IAsyncEnumerator<'T>)
+            (clone :> System.Collections.Generic.IAsyncEnumerator<'T>)
 
-    interface IAsyncEnumerator<'T> with
+    interface System.Collections.Generic.IAsyncEnumerator<'T> with
         
         member sm.Current = match sm.Current with ValueSome x -> x | ValueNone -> failwith "no current value"
         
@@ -65,11 +55,12 @@ type TaskSeqStateMachine<'T>() =
                 | None -> () 
                 | Some e -> raise e 
             }
+            |> ValueTask
         
         member this.MoveNextAsync() = 
             tcs <- new TaskCompletionSource<bool>()
             this.MoveNextAsync()
-            tcs.Task
+            ValueTask<bool>(tcs.Task)
 
     member __.PushDispose (f: unit -> Task<unit>) = disposalStack.Add(f)
 
@@ -232,7 +223,11 @@ type TaskSeqBuilder() =
         // A using statement is just a try/finally with the finally block disposing if non-null.
         this.TryFinallyAsync(
             (fun sm -> __expand_body disp sm),
-            (fun () -> if not (isNull (box disp)) then disp.DisposeAsync() else Task.FromResult()))
+            (fun () -> 
+                if not (isNull (box disp)) then 
+                    // TODO should be async
+                    (disp.DisposeAsync().AsTask().Wait(); Task.FromResult())
+                else Task.FromResult()))
 
     [<NoDynamicInvocation>]
     member inline this.For(sequence : seq<'TElement>, __expand_body : 'TElement -> TaskSeqCode<'T>) : TaskSeqCode<'T> =
@@ -308,7 +303,7 @@ module TaskSeq =
               while e.MoveNextAsync().Result do 
                   yield e.Current
           finally
-              e.DisposeAsync().Wait() ]
+              e.DisposeAsync().AsTask().Wait() ]
 
     let toArray (t: taskSeq<'T>) =
         [| let e = t.GetAsyncEnumerator(CancellationToken())
@@ -316,7 +311,7 @@ module TaskSeq =
                while e.MoveNextAsync().Result do 
                    yield e.Current
            finally 
-               e.DisposeAsync().Wait() |]
+               e.DisposeAsync().AsTask().Wait() |]
 
     let toArrayAsync (t: taskSeq<'T>) : Task<'T[]> =
         task { 
@@ -339,7 +334,7 @@ module TaskSeq =
             while e.MoveNextAsync().Result do 
                 f e.Current
         finally 
-            e.DisposeAsync().Wait()
+            e.DisposeAsync().AsTask().Wait()
 
 
 module Examples =
@@ -405,7 +400,7 @@ module Examples =
         }
 
     let perf1_AsyncSeq (x: int) = 
-        asyncSeq {
+        FSharp.Control.AsyncSeqExtensions.asyncSeq {
            yield 1
            yield 2
            if x >= 2 then 
@@ -414,7 +409,7 @@ module Examples =
         }
 
     let perf2_AsyncSeq () = 
-        asyncSeq {
+        FSharp.Control.AsyncSeqExtensions.asyncSeq {
            for i in perf1_AsyncSeq 3 do
              for i in perf1_AsyncSeq 3 do
                for i in perf1_AsyncSeq 3 do
