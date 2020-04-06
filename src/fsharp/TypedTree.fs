@@ -4116,7 +4116,7 @@ type AttribNamedArg =
     override x.ToString() = sprintf "AttribNamedArg(...)"
 
 /// Constants in expressions
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type Const = 
     | Bool of bool
     | SByte of sbyte
@@ -4136,6 +4136,30 @@ type Const =
     | Decimal of Decimal 
     | Unit
     | Zero // null/zero-bit-pattern 
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    override c.ToString() =
+        match c with
+        | Bool b -> (if b then "true" else "false")
+        | SByte x -> string x + "y"
+        | Byte x -> string x + "uy"
+        | Int16 x -> string x + "s"
+        | UInt16 x -> string x + "us"
+        | Int32 x -> string x
+        | UInt32 x -> string x + "u"
+        | Int64 x -> string x + "L"
+        | UInt64 x -> string x + "UL"
+        | IntPtr x -> string x + "n"
+        | UIntPtr x -> string x + "un"
+        | Single x -> string x + "f"
+        | Double x -> string x
+        | Char x -> "'" + string x + "'"
+        | String  x -> "\"" + x + "\""
+        | Decimal  x -> string x + "M"
+        | Unit  -> "()"
+        | Zero -> "Const.Zero"
 
 /// Decision trees. Pattern matching has been compiled down to
 /// a decision tree by this point. The right-hand-sides (actions) of
@@ -4235,7 +4259,7 @@ type DecisionTreeTest =
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type DecisionTreeTarget = 
-    | TTarget of Vals * Expr * DebugPointForTarget
+    | TTarget of Val list * Expr * DebugPointForTarget
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4359,7 +4383,7 @@ type Exprs = Expr list
 type Vals = Val list
 
 /// Represents an expression in the typed abstract syntax
-[<NoEquality; NoComparison; RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
+[<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type Expr =
     /// A constant expression. 
     | Const of
@@ -4496,13 +4520,32 @@ type Expr =
     /// appropriate type instantiation. These are immediately eliminated on subsequent rewrites. 
     | Link of Expr ref
 
-    // Prefer to use the default formatting of this union type
-    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    //member x.DebugText = x.ToString()
-    //
-    //override __.ToString() = "Expr(...)"
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member expr.DebugText = expr.ToDebugString(3)
 
-[<NoEquality; NoComparison; RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
+    override expr.ToString() = expr.ToDebugString(3)
+
+    member expr.ToDebugString(depth: int) = 
+        if depth = 0 then ".." else
+        let depth = depth - 1
+        match expr with 
+        | Const (c, _, _) -> c.ToString()
+        | Val (v, _, _) -> v.LogicalName
+        | Sequential (e1, e2, _, _, _) -> "Sequential(" + e1.ToDebugString(depth) + ", " + e2.ToDebugString(depth) + ")"
+        | Lambda (_, _, _, vs, body, _, _) -> sprintf "Lambda(%+A, " vs + body.ToDebugString(depth) + ")" 
+        | TyLambda (_, tps, body, _, _) -> sprintf "TyLambda(%+A, " tps + body.ToDebugString(depth) + ")"
+        | App (f, _, _, args, _) -> "App(" + f.ToDebugString(depth) + ", [" + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + "])"
+        | LetRec _ -> "LetRec(..)"
+        | Let (bind, body, _, _) -> "Let(" + bind.Var.DisplayName + ", " + bind.Expr.ToDebugString(depth) + ", " + body.ToDebugString(depth) + ")"
+        | Obj (_, _objTy, _, _, _, _, _) -> "Obj(..)"
+        | Match (_, _, _dt, _tgs, _, _) -> "Match(..)"
+        | StaticOptimization (_, _, _, _) -> "StaticOptimization(..)"
+        | Op (op, _, args, _) -> "Op(" + op.ToString() + ", " + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + ")"
+        | Quote _ -> "Quote(..)"
+        | TyChoose _ -> "TyChoose(..)"
+        | Link e -> "Link(" + e.Value.ToDebugString(depth) + ")"
+
+[<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}") >]
 type TOp =
 
     /// An operation representing the creation of a union value of the particular union case
@@ -4619,11 +4662,45 @@ type TOp =
     ///     retTy -- the types of pushed values, if any 
     | ILCall of bool * bool * bool * bool * ValUseFlag * bool * bool * ILMethodRef * TypeInst * TypeInst * TTypes   
 
-    // Prefer to use the default formatting of this union type
-    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-    //member x.DebugText = x.ToString()
-    //
-    //override __.ToString() = "TOp(...)"
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    override op.ToString() = 
+        match op with 
+        | UnionCase ucref -> "UnionCase(" + ucref.CaseName + ")"
+        | ExnConstr ecref -> "ExnConstr(" + ecref.LogicalName + ")"
+        | Tuple _tupinfo -> "Tuple"
+        | AnonRecd _anonInfo -> "AnonRecd(..)"
+        | AnonRecdGet _ -> "AnonRecdGet(..)"
+        | Array -> "NewArray"
+        | Bytes _ -> "Bytes(..)"
+        | UInt16s _ -> "UInt16s(..)"
+        | While _ -> "While"
+        | For _ -> "For"
+        | TryCatch _ -> "TryCatch"
+        | TryFinally _ -> "TryFinally"
+        | Recd (_, tcref) -> "Recd(" + tcref.LogicalName + ")"
+        | ValFieldSet rfref -> "ValFieldSet(" + rfref.FieldName + ")"
+        | ValFieldGet rfref -> "ValFieldGet(" + rfref.FieldName + ")"
+        | ValFieldGetAddr (rfref, _) -> "ValFieldGetAddr(" + rfref.FieldName + ",..)"
+        | UnionCaseTagGet tcref -> "UnionCaseTagGet(" + tcref.LogicalName + ")"
+        | UnionCaseProof ucref -> "UnionCaseProof(" + ucref.CaseName + ")"
+        | UnionCaseFieldGet (ucref, _) -> "UnionCaseFieldGet(" + ucref.CaseName + ",..)"
+        | UnionCaseFieldGetAddr (ucref, _, _) -> "UnionCaseFieldGetAddr(" + ucref.CaseName + ",..)"
+        | UnionCaseFieldSet (ucref, _) -> "UnionCaseFieldSet(" + ucref.CaseName + ",..)"
+        | ExnFieldGet (tcref, _) -> "ExnFieldGet(" + tcref.LogicalName + ",..)"
+        | ExnFieldSet (tcref, _) -> "ExnFieldSet(" + tcref.LogicalName + ",..)"
+        | TupleFieldGet _ -> "TupleFieldGet(..)"
+        | ILAsm _ -> "ILAsm(..)"
+        | RefAddrGet _ -> "RefAddrGet(..)"
+        | Coerce -> "Coerce"
+        | Reraise -> "Reraise"
+        | Return -> "Return"
+        | Goto n -> "Goto(" + string n + ")"
+        | Label n -> "Label(" + string n + ")"
+        | TraitCall info -> "TraitCall(" + info.MemberName + ")"
+        | LValueOp (op, vref) -> sprintf "%+A(%s)" op vref.LogicalName
+        | ILCall (_,_,_,_,_,_,_,m,_,_,_) -> "ILCall(" + m.ToString() + ",..)"
 
 /// Represents the kind of record construction operation.
 type RecordConstructionInfo = 
