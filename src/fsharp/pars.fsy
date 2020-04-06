@@ -3778,6 +3778,9 @@ atomicExprQualification:
             mlCompatWarning (FSComp.SR.parsParenFormIsForML()) (lhs parseState) 
             mkSynDotParenGet lhsm dotm e $2) }
 
+  |   LBRACK  typedSeqExpr RBRACK
+      { (fun e lhsm dotm -> mkSynDotBrackGet lhsm dotm e $2 false) }
+
   |   LBRACK  typedSeqExpr recover
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracket()) 
         (fun e lhsm dotm -> exprFromParseError (mkSynDotBrackGet lhsm dotm e $2 false)) }
