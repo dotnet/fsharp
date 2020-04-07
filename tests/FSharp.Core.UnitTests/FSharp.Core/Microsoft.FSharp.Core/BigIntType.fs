@@ -3,7 +3,7 @@
 // Various tests for the:
 // System.Numerics.BigInteger struct
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Math
+namespace FSharp.Core.UnitTests.Math
 
 #nowarn "52" // error FS0052: The value has been copied to ensure the original is not mutated by this operation 
 
