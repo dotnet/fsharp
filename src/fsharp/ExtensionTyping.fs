@@ -841,7 +841,6 @@ module internal ExtensionTyping =
         | ProvidedIfThenElseExpr of ProvidedExpr * ProvidedExpr * ProvidedExpr
         | ProvidedVarExpr of ProvidedVar
 
-    [<RequireQualifiedAccess; Class; Sealed>]
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     and [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
 #else
@@ -855,49 +854,49 @@ module internal ExtensionTyping =
         member __.GetExprType() =
             match x with
             | Quotations.Patterns.NewObject(ctor, args) ->
-                Some (ProvidedNewObjectExpr (ProvidedConstructorInfo.Create ctxt ctor, [| for a in args -> ProvidedExpr.Create ctxt a |]))
+                Some (ProvidedNewObjectExpr (ProvidedConstructorInfo.CreateNonNull ctxt ctor, [| for a in args -> ProvidedExpr.CreateNonNull ctxt a |]))
             | Quotations.Patterns.WhileLoop(guardExpr, bodyExpr) ->
-                Some (ProvidedWhileLoopExpr (ProvidedExpr.Create ctxt guardExpr, ProvidedExpr.Create ctxt bodyExpr))
+                Some (ProvidedWhileLoopExpr (ProvidedExpr.CreateNonNull ctxt guardExpr, ProvidedExpr.CreateNonNull ctxt bodyExpr))
             | Quotations.Patterns.NewDelegate(ty, vs, expr) ->
-                Some (ProvidedNewDelegateExpr(ProvidedType.Create ctxt ty, ProvidedVar.CreateArray ctxt (List.toArray vs), ProvidedExpr.Create ctxt expr))
+                Some (ProvidedNewDelegateExpr(ProvidedType.CreateNonNull ctxt ty, ProvidedVar.CreateArray ctxt (List.toArray vs), ProvidedExpr.CreateNonNull ctxt expr))
             | Quotations.Patterns.Call(objOpt, meth, args) ->
-                Some (ProvidedCallExpr((match objOpt with None -> None | Some obj -> Some (ProvidedExpr.Create ctxt obj)), 
-                        ProvidedMethodInfo.Create ctxt meth, [| for a in args -> ProvidedExpr.Create ctxt a |]))
+                Some (ProvidedCallExpr((match objOpt with None -> None | Some obj -> Some (ProvidedExpr.CreateNonNull ctxt obj)), 
+                        ProvidedMethodInfo.CreateNonNull ctxt meth, [| for a in args -> ProvidedExpr.CreateNonNull ctxt a |]))
             | Quotations.Patterns.DefaultValue ty ->
-                Some (ProvidedDefaultExpr (ProvidedType.Create ctxt ty))
+                Some (ProvidedDefaultExpr (ProvidedType.CreateNonNull ctxt ty))
             | Quotations.Patterns.Value(obj, ty) ->
-                Some (ProvidedConstantExpr (obj, ProvidedType.Create ctxt ty))
+                Some (ProvidedConstantExpr (obj, ProvidedType.CreateNonNull ctxt ty))
             | Quotations.Patterns.Coerce(arg, ty) ->
-                Some (ProvidedTypeAsExpr (ProvidedExpr.Create ctxt arg, ProvidedType.Create ctxt ty))
+                Some (ProvidedTypeAsExpr (ProvidedExpr.CreateNonNull ctxt arg, ProvidedType.CreateNonNull ctxt ty))
             | Quotations.Patterns.NewTuple args ->
                 Some (ProvidedNewTupleExpr(ProvidedExpr.CreateArray ctxt (Array.ofList args)))
             | Quotations.Patterns.TupleGet(arg, n) ->
-                Some (ProvidedTupleGetExpr (ProvidedExpr.Create ctxt arg, n))
+                Some (ProvidedTupleGetExpr (ProvidedExpr.CreateNonNull ctxt arg, n))
             | Quotations.Patterns.NewArray(ty, args) ->
-                Some (ProvidedNewArrayExpr(ProvidedType.Create ctxt ty, ProvidedExpr.CreateArray ctxt (Array.ofList args)))
+                Some (ProvidedNewArrayExpr(ProvidedType.CreateNonNull ctxt ty, ProvidedExpr.CreateArray ctxt (Array.ofList args)))
             | Quotations.Patterns.Sequential(e1, e2) ->
-                Some (ProvidedSequentialExpr(ProvidedExpr.Create ctxt e1, ProvidedExpr.Create ctxt e2))
+                Some (ProvidedSequentialExpr(ProvidedExpr.CreateNonNull ctxt e1, ProvidedExpr.CreateNonNull ctxt e2))
             | Quotations.Patterns.Lambda(v, body) ->
-                Some (ProvidedLambdaExpr (ProvidedVar.Create ctxt v,  ProvidedExpr.Create ctxt body))
+                Some (ProvidedLambdaExpr (ProvidedVar.CreateNonNull ctxt v,  ProvidedExpr.CreateNonNull ctxt body))
             | Quotations.Patterns.TryFinally(b1, b2) ->
-                Some (ProvidedTryFinallyExpr (ProvidedExpr.Create ctxt b1, ProvidedExpr.Create ctxt b2))
+                Some (ProvidedTryFinallyExpr (ProvidedExpr.CreateNonNull ctxt b1, ProvidedExpr.CreateNonNull ctxt b2))
             | Quotations.Patterns.TryWith(b, v1, e1, v2, e2) ->
-                Some (ProvidedTryWithExpr (ProvidedExpr.Create ctxt b, ProvidedVar.Create ctxt v1, ProvidedExpr.Create ctxt e1, ProvidedVar.Create ctxt v2, ProvidedExpr.Create ctxt e2))
+                Some (ProvidedTryWithExpr (ProvidedExpr.CreateNonNull ctxt b, ProvidedVar.CreateNonNull ctxt v1, ProvidedExpr.CreateNonNull ctxt e1, ProvidedVar.CreateNonNull ctxt v2, ProvidedExpr.CreateNonNull ctxt e2))
 #if PROVIDED_ADDRESS_OF
-            | Quotations.Patterns.AddressOf e -> Some (ProvidedAddressOfExpr (ProvidedExpr.Create ctxt e))
+            | Quotations.Patterns.AddressOf e -> Some (ProvidedAddressOfExpr (ProvidedExpr.CreateNonNull ctxt e))
 #endif
             | Quotations.Patterns.TypeTest(e, ty) ->
-                Some (ProvidedTypeTestExpr(ProvidedExpr.Create ctxt e, ProvidedType.Create ctxt ty))
+                Some (ProvidedTypeTestExpr(ProvidedExpr.CreateNonNull ctxt e, ProvidedType.CreateNonNull ctxt ty))
             | Quotations.Patterns.Let(v, e, b) ->
-                Some (ProvidedLetExpr (ProvidedVar.Create ctxt v, ProvidedExpr.Create ctxt e, ProvidedExpr.Create ctxt b))
+                Some (ProvidedLetExpr (ProvidedVar.CreateNonNull ctxt v, ProvidedExpr.CreateNonNull ctxt e, ProvidedExpr.CreateNonNull ctxt b))
             | Quotations.Patterns.ForIntegerRangeLoop (v, e1, e2, e3) ->
-                Some (ProvidedForIntegerRangeLoopExpr (ProvidedVar.Create ctxt v, ProvidedExpr.Create ctxt e1, ProvidedExpr.Create ctxt e2, ProvidedExpr.Create ctxt e3))
+                Some (ProvidedForIntegerRangeLoopExpr (ProvidedVar.CreateNonNull ctxt v, ProvidedExpr.CreateNonNull ctxt e1, ProvidedExpr.CreateNonNull ctxt e2, ProvidedExpr.CreateNonNull ctxt e3))
             | Quotations.Patterns.VarSet(v, e) ->
-                Some (ProvidedVarSetExpr (ProvidedVar.Create ctxt v, ProvidedExpr.Create ctxt e))
+                Some (ProvidedVarSetExpr (ProvidedVar.CreateNonNull ctxt v, ProvidedExpr.CreateNonNull ctxt e))
             | Quotations.Patterns.IfThenElse(g, t, e) ->
-                Some (ProvidedIfThenElseExpr (ProvidedExpr.Create ctxt g, ProvidedExpr.Create ctxt t, ProvidedExpr.Create ctxt e))
+                Some (ProvidedIfThenElseExpr (ProvidedExpr.CreateNonNull ctxt g, ProvidedExpr.CreateNonNull ctxt t, ProvidedExpr.CreateNonNull ctxt e))
             | Quotations.Patterns.Var v ->
-                Some (ProvidedVarExpr (ProvidedVar.Create ctxt v))
+                Some (ProvidedVarExpr (ProvidedVar.CreateNonNull ctxt v))
             | _ -> None
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         static member Create ctxt t : ProvidedExpr = 
