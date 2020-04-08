@@ -25,9 +25,9 @@
     -->
     <Exec Command='"$(PathToSN32)" /Vr "$(TargetPath)"' Condition = "Exists('$(PathToSN32)') AND Exists('$(TargetPath)') AND '$(IsAdministrator)' == 'true'"/>
 
-    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)" /ExeConfig:$(TargetPath)' Condition = "Exists('$(PathToNGen64)') AND '$(PlatformTarget)' != 'x86' AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true'"/>
-    <Exec Command='"$(PathToNGen32)" install "$(TargetPath)" /ExeConfig:$(TargetPath)' Condition = "Exists('$(PathToNGen32)') AND '$(PlatformTarget)' != 'x64' AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true'"/>
-    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)"' Condition = " Exists('$(PathToNGen64)') AND '$(PlatformTarget)' != 'x86' AND (!Exists('$(TargetPath).config')) AND '$(IsAdministrator)' == 'true' "/>
-    <Exec Command='"$(PathToNGen32)" install "$(TargetPath)"' Condition = " Exists('$(PathToNGen32)') AND '$(PlatformTarget)' != 'x64' AND (!Exists('$(TargetPath).config')) AND '$(IsAdministrator)' == 'true' "/>
+    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)" /NoDependencies /ExeConfig:$(TargetPath)' Condition = "Exists('$(PathToNGen64)') AND '$(PlatformTarget)' != 'x86' AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true'"/>
+    <Exec Command='"$(PathToNGen32)" install "$(TargetPath)" /NoDependencies /ExeConfig:$(TargetPath)' Condition = "Exists('$(PathToNGen32)') AND '$(PlatformTarget)' != 'x64' AND Exists('$(TargetPath).config') AND '$(IsAdministrator)' == 'true'"/>
+    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)" /NoDependencies ' Condition = " Exists('$(PathToNGen64)') AND '$(PlatformTarget)' != 'x86' AND (!Exists('$(TargetPath).config')) AND '$(IsAdministrator)' == 'true' "/>
+    <Exec Command='"$(PathToNGen32)" install "$(TargetPath)" /NoDependencies ' Condition = " Exists('$(PathToNGen32)') AND '$(PlatformTarget)' != 'x64' AND (!Exists('$(TargetPath).config')) AND '$(IsAdministrator)' == 'true' "/>
   </Target>
 </Project>
