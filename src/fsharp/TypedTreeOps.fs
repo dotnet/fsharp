@@ -6972,6 +6972,9 @@ let mkCallSeqSingleton g m ty1 arg1 =
 let mkCallSeqEmpty g m ty1 = 
     mkApps g (typedExprForIntrinsic g m g.seq_empty_info, [[ty1]], [ ], m) 
                  
+let mkCall_isprintf (g: TcGlobals) m aty fmt es = 
+    mkApps g (typedExprForIntrinsic g m g.isprintf_info, [[aty]], fmt::es , m) 
+                 
 let mkCallDeserializeQuotationFSharp20Plus g m e1 e2 e3 e4 = 
     let args = [ e1; e2; e3; e4 ]
     mkApps g (typedExprForIntrinsic g m g.deserialize_quoted_FSharp_20_plus_info, [], [ mkRefTupledNoTypes g m args ], m)

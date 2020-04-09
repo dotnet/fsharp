@@ -47,7 +47,7 @@ let newInfo () =
     addZeros       = false
     precision      = false}
 
-let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringCheckContext option) fmt bty cty = 
+let parseFormatStringInternal (m:range) (g: TcGlobals) isInterp (context: FormatStringCheckContext option) fmt bty cty = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
     // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
     let (offset, fmt) = 
@@ -77,7 +77,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
                if acc |> List.forall (fun (p, _) -> p = None) then // without positional specifiers
                    acc |> List.map snd |> List.rev
                else  
-                   failwithf "%s" <| FSComp.SR.forPositionalSpecifiersNotPermitted()
+                   raise (Failure (FSComp.SR.forPositionalSpecifiersNotPermitted()))
            argtys
        elif System.Char.IsSurrogatePair(fmt,i) then 
           parseLoop acc (i+2, relLine, relCol+2)
@@ -88,65 +88,65 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
               let startCol = relCol
               let relCol = relCol+1
               let i = i+1 
-              if i >= len then failwithf "%s" <| FSComp.SR.forMissingFormatSpecifier()
+              if i >= len then raise (Failure (FSComp.SR.forMissingFormatSpecifier()))
               let info = newInfo()
 
               let rec flags i =
-                if i >= len then failwithf "%s" <| FSComp.SR.forMissingFormatSpecifier()
+                if i >= len then raise (Failure (FSComp.SR.forMissingFormatSpecifier()))
                 match fmt.[i] with
                 | '-' -> 
-                    if info.leftJustify then failwithf "%s" <| FSComp.SR.forFlagSetTwice("-")
+                    if info.leftJustify then raise (Failure (FSComp.SR.forFlagSetTwice("-")))
                     info.leftJustify <- true
                     flags(i+1)
                 | '+' -> 
-                    if info.numPrefixIfPos <> None then failwithf "%s" <| FSComp.SR.forPrefixFlagSpacePlusSetTwice()
+                    if info.numPrefixIfPos <> None then raise (Failure (FSComp.SR.forPrefixFlagSpacePlusSetTwice()))
                     info.numPrefixIfPos <- Some '+'
                     flags(i+1)
                 | '0' -> 
-                    if info.addZeros then failwithf "%s" <| FSComp.SR.forFlagSetTwice("0")
+                    if info.addZeros then raise (Failure (FSComp.SR.forFlagSetTwice("0")))
                     info.addZeros <- true
                     flags(i+1)
                 | ' ' -> 
-                    if info.numPrefixIfPos <> None then failwithf "%s" <| FSComp.SR.forPrefixFlagSpacePlusSetTwice()
+                    if info.numPrefixIfPos <> None then raise (Failure (FSComp.SR.forPrefixFlagSpacePlusSetTwice()))
                     info.numPrefixIfPos <- Some ' '
                     flags(i+1)
-                | '#' -> failwithf "%s" <| FSComp.SR.forHashSpecifierIsInvalid() 
+                | '#' -> raise (Failure (FSComp.SR.forHashSpecifierIsInvalid() ))
                 | _ -> i
 
               let rec digitsPrecision i = 
-                if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
+                if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
                 match fmt.[i] with
                 | c when System.Char.IsDigit c -> digitsPrecision (i+1)
                 | _ -> i 
 
               let precision i = 
-                if i >= len then failwithf "%s" <| FSComp.SR.forBadWidth()
+                if i >= len then raise (Failure (FSComp.SR.forBadWidth()))
                 match fmt.[i] with
                 | c when System.Char.IsDigit c -> info.precision <- true; false,digitsPrecision (i+1)
                 | '*' -> info.precision <- true; true,(i+1)
-                | _ -> failwithf "%s" <| FSComp.SR.forPrecisionMissingAfterDot()
+                | _ -> raise (Failure (FSComp.SR.forPrecisionMissingAfterDot()))
 
               let optionalDotAndPrecision i = 
-                if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
+                if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
                 match fmt.[i] with
                 | '.' -> precision (i+1)
                 | _ -> false,i
 
               let rec digitsWidthAndPrecision i = 
-                if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
+                if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
                 match fmt.[i] with
                 | c when System.Char.IsDigit c -> digitsWidthAndPrecision (i+1)
                 | _ -> optionalDotAndPrecision i
 
               let widthAndPrecision i = 
-                if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
+                if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
                 match fmt.[i] with
                 | c when System.Char.IsDigit c -> false,digitsWidthAndPrecision i
                 | '*' -> true,optionalDotAndPrecision (i+1)
                 | _ -> false,optionalDotAndPrecision i
 
               let rec digitsPosition n i =
-                  if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
+                  if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
                   match fmt.[i] with
                   | c when System.Char.IsDigit c -> digitsPosition (n*10 + int c - int '0') (i+1)
                   | '$' -> Some n, i+1
@@ -171,21 +171,34 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
               let widthArg,(precisionArg,i) = widthAndPrecision i 
               let relCol = relCol + i - oldI
 
-              if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
+              if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
 
               let acc = if precisionArg then (Option.map ((+)1) posi, g.int_ty) :: acc else acc 
 
               let acc = if widthArg then (Option.map ((+)1) posi, g.int_ty) :: acc else acc 
 
-              let checkNoPrecision     c = if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(c.ToString())
-              let checkNoZeroFlag      c = if info.addZeros then failwithf "%s" <| FSComp.SR.forDoesNotSupportZeroFlag(c.ToString())
-              let checkNoNumericPrefix c = if info.numPrefixIfPos <> None then
-                                              failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(c.ToString(), (Option.get info.numPrefixIfPos).ToString())
+              let checkNoPrecision c =
+                  if info.precision then raise (Failure (FSComp.SR.forFormatDoesntSupportPrecision(c.ToString())))
+
+              let checkNoZeroFlag c =
+                  if info.addZeros then raise (Failure (FSComp.SR.forDoesNotSupportZeroFlag(c.ToString())))
+
+              let checkNoNumericPrefix c =
+                  match info.numPrefixIfPos with 
+                  | Some n -> raise (Failure (FSComp.SR.forDoesNotSupportPrefixFlag(c.ToString(), n.ToString())))
+                  | None -> ()
 
               let checkOtherFlags c = 
                   checkNoPrecision c 
                   checkNoZeroFlag c 
                   checkNoNumericPrefix c
+
+              let skipInterp i =
+                 // Explicitly typed holes in interpolated strings get '%P' after them as hole place marker
+                 if isInterp then 
+                     if i+1 < fmt.Length && fmt.[i] = '%' && fmt.[i+1] = 'P' then i + 2 
+                     else raise (Failure (FSComp.SR.forFormatInvalidForInterpolated()))
+                 else i
 
               let collectSpecifierLocation relLine relCol numStdArgs = 
                   let numArgsForSpecifier =
@@ -209,55 +222,68 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
                   parseLoop acc (i+1, relLine, relCol+1) 
 
               | ('d' | 'i' | 'o' | 'u' | 'x' | 'X') ->
-                  if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
+                  if info.precision then raise (Failure (FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())))
                   collectSpecifierLocation relLine relCol 1
-                  parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
+                  let i = skipInterp (i+1)
+                  parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) (i, relLine, relCol+1)
 
               | ('l' | 'L') ->
-                  if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
+                  if info.precision then raise (Failure (FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())))
                   let relCol = relCol+1
                   let i = i+1
                   
                   // "bad format specifier ... In F# code you can use %d, %x, %o or %u instead ..."
                   if i >= len then 
-                      failwithf "%s" <| FSComp.SR.forBadFormatSpecifier()
+                      raise (Failure (FSComp.SR.forBadFormatSpecifier()))
                   // Always error for %l and %Lx
-                  failwithf "%s" <| FSComp.SR.forLIsUnnecessary()
+                  raise (Failure (FSComp.SR.forLIsUnnecessary()))
                   match fmt.[i] with
                   | ('d' | 'i' | 'o' | 'u' | 'x' | 'X') -> 
                       collectSpecifierLocation relLine relCol 1
-                      parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc)  (i+1, relLine, relCol+1)
-                  | _ -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifier()
+                      let i = skipInterp (i+1)
+                      parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc)  (i, relLine, relCol+1)
+                  | _ -> raise (Failure (FSComp.SR.forBadFormatSpecifier()))
 
               | ('h' | 'H') ->
-                  failwithf "%s" <| FSComp.SR.forHIsUnnecessary()
+                  raise (Failure (FSComp.SR.forHIsUnnecessary()))
 
               | 'M' ->
                   collectSpecifierLocation relLine relCol 1
-                  parseLoop ((posi, mkFlexibleDecimalFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
+                  let i = skipInterp (i+1)
+                  parseLoop ((posi, mkFlexibleDecimalFormatTypar g m) :: acc) (i, relLine, relCol+1)
 
               | ('f' | 'F' | 'e' | 'E' | 'g' | 'G') ->
                   collectSpecifierLocation relLine relCol 1
-                  parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) (i+1, relLine, relCol+1)
+                  let i = skipInterp (i+1)
+                  parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) (i, relLine, relCol+1)
 
               | 'b' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol 1
-                  parseLoop ((posi, g.bool_ty)  :: acc) (i+1, relLine, relCol+1)
+                  let i = skipInterp (i+1)
+                  parseLoop ((posi, g.bool_ty)  :: acc) (i, relLine, relCol+1)
 
               | 'c' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol 1
-                  parseLoop ((posi, g.char_ty)  :: acc) (i+1, relLine, relCol+1)
+                  let i = skipInterp (i+1)
+                  parseLoop ((posi, g.char_ty)  :: acc) (i, relLine, relCol+1)
 
               | 's' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol 1
-                  parseLoop ((posi, g.string_ty)  :: acc) (i+1, relLine, relCol+1)
+                  let i = skipInterp (i+1)
+                  parseLoop ((posi, g.string_ty)  :: acc) (i, relLine, relCol+1)
 
               | 'O' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol 1
+                  let i = skipInterp (i+1)
+                  parseLoop ((posi, NewInferenceType ()) :: acc) (i, relLine, relCol+1)
+
+              // residue of hole "...{n}..." in interpolated strings
+              | 'P' when isInterp ->
+                  checkOtherFlags ch
                   parseLoop ((posi, NewInferenceType ()) :: acc) (i+1, relLine, relCol+1)
 
               | 'A' ->
@@ -265,22 +291,25 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
                   | None     // %A has BindingFlags=Public, %+A has BindingFlags=Public | NonPublic
                   | Some '+' -> 
                       collectSpecifierLocation relLine relCol 1
-                      parseLoop ((posi, NewInferenceType ()) :: acc)  (i+1, relLine, relCol+1)
-                  | Some _   -> failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), (Option.get info.numPrefixIfPos).ToString())
+                      let i = skipInterp (i+1)
+                      parseLoop ((posi, NewInferenceType ()) :: acc)  (i, relLine, relCol+1)
+                  | Some n -> raise (Failure (FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), n.ToString())))
 
               | 'a' ->
                   checkOtherFlags ch
                   let xty = NewInferenceType () 
                   let fty = bty --> (xty --> cty)
                   collectSpecifierLocation relLine relCol 2
-                  parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) (i+1, relLine, relCol+1)
+                  let i = skipInterp (i+1)
+                  parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) (i, relLine, relCol+1)
 
               | 't' ->
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol 1
-                  parseLoop ((posi, bty --> cty) :: acc)  (i+1, relLine, relCol+1)
+                  let i = skipInterp (i+1)
+                  parseLoop ((posi, bty --> cty) :: acc)  (i, relLine, relCol+1)
 
-              | c -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c) 
+              | c -> raise (Failure (FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c)))
           
           | '\n' -> parseLoop acc (i+1, relLine+1, 0)   
           | _ -> parseLoop acc (i+1, relLine, relCol+1)
@@ -288,15 +317,15 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringChe
     let results = parseLoop [] (0, 0, m.StartColumn)
     results, Seq.toList specifierLocations
 
-let ParseFormatString m g formatStringCheckContext fmt bty cty dty = 
-    let argtys, specifierLocations = parseFormatStringInternal m g formatStringCheckContext fmt bty cty
+let ParseFormatString m g isInterp formatStringCheckContext fmt bty cty dty = 
+    let argtys, specifierLocations = parseFormatStringInternal m g isInterp formatStringCheckContext fmt bty cty
     let aty = List.foldBack (-->) argtys dty
     let ety = mkRefTupledTy g argtys
-    (aty, ety), specifierLocations 
+    (argtys, aty, ety), specifierLocations 
 
-let TryCountFormatStringArguments m g fmt bty cty =
+let TryCountFormatStringArguments m g isInterp fmt bty cty =
     try
-        let argtys, _specifierLocations = parseFormatStringInternal m g None fmt bty cty
+        let argtys, _specifierLocations = parseFormatStringInternal m g isInterp None fmt bty cty
         Some argtys.Length
     with _ ->
         None

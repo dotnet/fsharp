@@ -130,3 +130,5 @@ msbuild.binlog
 /fcs/FSharp.Compiler.Service.netstandard/*.fsi
 /.ionide/
 **/.DS_Store
+Session.vim
+coc-settings.json

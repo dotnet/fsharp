@@ -147,6 +147,16 @@ let rec LexerIfdefEval (lookup: string -> bool) = function
 // Parsing: continuations for whitespace tokens
 //------------------------------------------------------------------------
 
+[<RequireQualifiedAccess>]
+type LexerStringKind =
+    { IsByteString: bool
+      IsInterpolated: bool
+      IsInterpolatedFirst: bool }
+    static member String = { IsByteString = false; IsInterpolated = false; IsInterpolatedFirst=false }
+    static member ByteString = { IsByteString = true; IsInterpolated = false; IsInterpolatedFirst=false }
+    static member InterpolatedStringFirst = { IsByteString = false; IsInterpolated = true; IsInterpolatedFirst=true }
+    static member InterpolatedStringPart = { IsByteString = false; IsInterpolated = true; IsInterpolatedFirst=false }
+
 /// The parser defines a number of tokens for whitespace and
 /// comments eliminated by the lexer.  These carry a specification of
 /// a continuation for the lexer for continued processing after we've dealt with
@@ -156,9 +166,9 @@ let rec LexerIfdefEval (lookup: string -> bool) = function
 type LexerWhitespaceContinuation =
     | Token of ifdef: LexerIfdefStackEntries
     | IfDefSkip of ifdef: LexerIfdefStackEntries * int * range: range
-    | String of ifdef: LexerIfdefStackEntries * range: range
-    | VerbatimString of ifdef: LexerIfdefStackEntries * range: range
-    | TripleQuoteString of ifdef: LexerIfdefStackEntries * range: range
+    | String of ifdef: LexerIfdefStackEntries * kind: LexerStringKind * range: range
+    | VerbatimString of ifdef: LexerIfdefStackEntries * kind: LexerStringKind * range: range
+    | TripleQuoteString of ifdef: LexerIfdefStackEntries * kind: LexerStringKind * range: range
     | Comment of ifdef: LexerIfdefStackEntries * int * range: range
     | SingleLineComment of ifdef: LexerIfdefStackEntries * int * range: range
     | StringInComment of ifdef: LexerIfdefStackEntries * int * range: range

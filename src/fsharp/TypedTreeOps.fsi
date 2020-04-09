@@ -1969,6 +1969,8 @@ val mkCallSeqSingleton       : TcGlobals -> range -> TType  -> Expr -> Expr
 
 val mkCallSeqEmpty           : TcGlobals -> range -> TType  -> Expr
 
+val mkCall_isprintf: g: TcGlobals -> m: range -> funcTy: TType -> fmtExpr: Expr -> fillExprs: Expr list -> Expr
+
 val mkILAsmCeq                   : TcGlobals -> range -> Expr -> Expr -> Expr
 
 val mkILAsmClt                   : TcGlobals -> range -> Expr -> Expr -> Expr

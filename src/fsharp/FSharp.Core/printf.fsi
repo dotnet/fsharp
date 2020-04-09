@@ -214,6 +214,14 @@ module Printf =
     [<CompiledName("PrintFormatToStringThen")>]
     val sprintf :                 format:StringFormat<'T> -> 'T
 
+    /// <summary>Interpolated print to a string via an internal string buffer and return 
+    /// the result as a string. Helper printers must return strings.</summary>
+    /// <param name="format">The input formatter.</param>
+    /// <returns>The formatted string.</returns>
+    [<CompiledName("InterpolatedPrintFormatToStringThen")>]
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    val isprintf: format:StringFormat<'T> -> 'T
+
     /// <summary>bprintf, but call the given 'final' function to generate the result.
     /// See <c>kprintf</c>.</summary>
     /// <param name="continuation">The function called after formatting to generate the format result.</param>

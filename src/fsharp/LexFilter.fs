@@ -385,6 +385,10 @@ let parenTokensBalance t1 t2 =
     | (CLASS, END) 
     | (SIG, END) 
     | (STRUCT, END) 
+    | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_END _)
+    | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_PART _)
+    | (INTERP_STRING_PART _, INTERP_STRING_PART _)
+    | (INTERP_STRING_PART _, INTERP_STRING_END _)
     | (LBRACK_BAR, BAR_RBRACK)
     | (LESS true, GREATER true) 
     | (BEGIN, END) -> true 
@@ -1229,6 +1233,8 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             | BAR_RBRACK 
             | WITH 
             | FINALLY 
+            | INTERP_STRING_PART _
+            | INTERP_STRING_END _
             | RQUOTE _ ->
                 not (tokenBalancesHeadContext token stack) && 
                 // Only close the context if some context is going to match at some point in the stack.
@@ -1362,12 +1368,17 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             hwTokenFetch useBlockRule
 
         // Balancing rule. Encountering a ')' or '}' balances with a '(' or '{', even if not offside 
-        | ((END | RPAREN | RBRACE | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true) as t2), (CtxtParen (t1, _) :: _) 
+        | ((END | RPAREN | RBRACE | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true | INTERP_STRING_END _ | INTERP_STRING_PART _) as t2), (CtxtParen (t1, _) :: _) 
                 when parenTokensBalance t1 t2 ->
             if debug then dprintf "RPAREN/RBRACE/BAR_RBRACE/RBRACK/BAR_RBRACK/RQUOTE/END at %a terminates CtxtParen()\n" outputPos tokenStartPos
             popCtxt()
-            // Queue a dummy token at this position to check if any closing rules apply
-            delayToken(pool.UseLocation(tokenTup, ODUMMY token))
+            match t2 with 
+            | INTERP_STRING_PART _ -> 
+                pushCtxt tokenTup (CtxtParen (token, tokenStartPos))
+                pushCtxtSeqBlock(false, NoAddBlockEnd)
+            | _ -> 
+                // Queue a dummy token at this position to check if any closing rules apply
+                delayToken(pool.UseLocation(tokenTup, ODUMMY token))
             returnToken tokenLexbufState token
 
         // Balancing rule. Encountering a 'end' can balance with a 'with' but only when not offside 
@@ -1852,6 +1863,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             else
                 returnToken tokenLexbufState token
 
+
         //  'with id = ' ~~~> CtxtSeqBlock 
         //  'with M.id = ' ~~~> CtxtSeqBlock 
         //  'with id1 = 1
@@ -1889,7 +1901,9 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             returnToken tokenLexbufState token
 
         // '(' tokens are balanced with ')' tokens and also introduce a CtxtSeqBlock 
-        | (BEGIN | LPAREN | SIG | LBRACE | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true), _ ->                      
+        // $".... { ... }  ... { ....} " pushes a block context at first {
+        // $".... { ... }  ... { ....} " pushes a block context at second {
+        | (BEGIN | LPAREN | SIG | LBRACE | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true | INTERP_STRING_BEGIN_PART _), _ ->
             if debug then dprintf "LPAREN etc., pushes CtxtParen, pushing CtxtSeqBlock, tokenStartPos = %a\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtParen (token, tokenStartPos))
             pushCtxtSeqBlock(false, NoAddBlockEnd)

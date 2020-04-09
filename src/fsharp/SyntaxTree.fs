@@ -1003,6 +1003,11 @@ type SynExpr =
         expr: SynExpr *
         range: range
 
+    /// F# syntax: interpolated string, e.g. "abc%{123}"
+    | InterpolatedString of
+        contents: Choice<string,SynExpr> list *
+        range: range
+
     /// Gets the syntax range of this constuct
     member e.Range =
         match e with
@@ -1069,7 +1074,8 @@ type SynExpr =
         | SynExpr.LetOrUseBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
-        | SynExpr.Fixed (range=m) -> m
+        | SynExpr.Fixed (range=m) 
+        | SynExpr.InterpolatedString (range=m) -> m
         | SynExpr.Ident id -> id.idRange
 
     /// Get the Range ignoring any (parse error) extra trailing dots
