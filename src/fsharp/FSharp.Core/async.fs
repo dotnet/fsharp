@@ -1413,6 +1413,9 @@ namespace Microsoft.FSharp.Control
                 | _ ->
                     ctxt.econt edi)
 
+        static member Sleep (dueTime: TimeSpan) =
+            Async.Sleep (dueTime.TotalMilliseconds |> Checked.int32)
+
         /// Wait for a wait handle. Both timeout and cancellation are supported
         static member AwaitWaitHandle(waitHandle: WaitHandle, ?millisecondsTimeout:int) =
             let millisecondsTimeout = defaultArg millisecondsTimeout Threading.Timeout.Infinite

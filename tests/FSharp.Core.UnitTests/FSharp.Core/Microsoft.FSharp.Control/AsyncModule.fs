@@ -63,7 +63,7 @@ module ChoiceUtils =
     let runChoice (ChoiceWorkflow(ops, cancelAfter)) =
         // Step 1. build a choice workflow from the abstract representation
         let completed = ref 0
-        let returnAfter time f = async {
+        let returnAfter (time:int) f = async {
             do! Async.Sleep time
             let _ = Interlocked.Increment completed
             return f ()
