@@ -1417,17 +1417,10 @@ namespace Microsoft.FSharp.Control
             Async.Sleep (millisecondsDueTime |> int64)
 
         static member Sleep (dueTime: TimeSpan) =
-            let dueTime = if dueTime < TimeSpan.Zero then
-                              // Limit negative delays to zero.
-                              // Note that Async.Sleep(int) supports infinite delays by passing in -1 (Threading.Timeout.Infinite),
-                              //           Async.Sleep(TimeSpan) does not support infinite delays since there is no TimeSpan.Infinite.
-                              TimeSpan.Zero
-                          else
-                              dueTime
-
-            // If a delay is > than about 290M years, it'll cause an OverflowException.
-            // Note that TimeSpan.MaxValue.TotalMilliseconds is < Int64.MaxValue so this should never happen.
-            Async.Sleep (dueTime.TotalMilliseconds |> Checked.int64)
+            if dueTime < TimeSpan.Zero then
+                raise (ArgumentOutOfRangeException("dueTime"))
+            else
+                Async.Sleep (dueTime.TotalMilliseconds |> Checked.int64)
 
         /// Wait for a wait handle. Both timeout and cancellation are supported
         static member AwaitWaitHandle(waitHandle: WaitHandle, ?millisecondsTimeout:int) =
