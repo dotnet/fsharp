@@ -324,6 +324,7 @@ try {
 
     if ($bootstrap) {
         $script:BuildMessage = "Failure building bootstrap compiler"
+        $toolsetBuildProj = InitializeToolset
         $bootstrapDir = Make-BootstrapBuild
     }
 
