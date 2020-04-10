@@ -15492,14 +15492,15 @@ module EstablishTypeDefinitionCores =
         //      member x.P = x.f + x.f
         let synVisOfRepr = 
             match synTyconRepr with 
-            | SynTypeDefnSimpleRepr.None _ -> None
-            | SynTypeDefnSimpleRepr.TypeAbbrev _ -> None
-            | SynTypeDefnSimpleRepr.Union (vis, _, _) -> vis
-            | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
-            | SynTypeDefnSimpleRepr.Record (vis, _, _) -> vis
-            | SynTypeDefnSimpleRepr.General _ -> None
-            | SynTypeDefnSimpleRepr.Enum _ -> None
+            | SynTypeDefnSimpleRepr.None _
+            | SynTypeDefnSimpleRepr.TypeAbbrev _
+            | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _
+            | SynTypeDefnSimpleRepr.General _
+            | SynTypeDefnSimpleRepr.Enum _
             | SynTypeDefnSimpleRepr.Exception _ -> None
+            | SynTypeDefnSimpleRepr.Union (vis, _, _)
+            | SynTypeDefnSimpleRepr.AnonUnion(vis, _, _)
+            | SynTypeDefnSimpleRepr.Record (vis, _, _) -> vis
          
         let visOfRepr, _ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr None parent
         let visOfRepr = combineAccess vis visOfRepr 
@@ -15551,6 +15552,7 @@ module EstablishTypeDefinitionCores =
 
         let repr = 
             match synTyconRepr with 
+            | SynTypeDefnSimpleRepr.AnonUnion(_attributes, _cases, _range) -> failwithf "Not implemented!"
             | SynTypeDefnSimpleRepr.Exception _ -> TNoRepr
             | SynTypeDefnSimpleRepr.None m -> 
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
@@ -15565,6 +15567,8 @@ module EstablishTypeDefinitionCores =
                     TNoRepr
 
             | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr, envinner, id) (_, m)
+            // | SynTypeDefnSimpleRepr.AnonUnion(_, _, m) ->
+            
             | SynTypeDefnSimpleRepr.Union (_, _, m) -> 
 
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
@@ -15926,6 +15930,7 @@ module EstablishTypeDefinitionCores =
                         // REVIEW: we could do the IComparable/IStructuralHash interface analysis here. 
                         // This would let the type satisfy more recursive IComparable/IStructuralHash constraints 
                         implementedTys, []
+                    | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> failwith "Not Implemented"
 
                 for (implementedTy, m) in implementedTys do
                     if firstPass && isErasedType cenv.g implementedTy then 
@@ -15977,7 +15982,8 @@ module EstablishTypeDefinitionCores =
                           error(Error(FSComp.SR.tcTypesCannotInheritFromMultipleConcreteTypes(), m))
 
                   | SynTypeDefnSimpleRepr.Enum _ -> 
-                      Some(cenv.g.system_Enum_ty) 
+                      Some(cenv.g.system_Enum_ty)
+                  | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> failwith "Not Implemented" 
 
               // Allow super type to be a function type but convert back to FSharpFunc<A,B> to make sure it has metadata
               // (We don't apply the same rule to tuple types, i.e. no F#-declared inheritors of those are permitted)
@@ -16105,6 +16111,8 @@ module EstablishTypeDefinitionCores =
             
             let typeRepr, baseValOpt, safeInitInfo = 
                 match synTyconRepr with 
+                
+                | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> failwith "Not Implemented"
 
                 | SynTypeDefnSimpleRepr.Exception synExnDefnRepr -> 
                     let parent = Parent (mkLocalTyconRef tycon)
@@ -16280,6 +16288,7 @@ module EstablishTypeDefinitionCores =
                             | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
                             | SynTypeDefnSimpleRepr.Record _ -> None
                             | SynTypeDefnSimpleRepr.Enum _ -> None
+                            | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> failwith "Not Implemented"
                             | SynTypeDefnSimpleRepr.General (_, inherits, _, _, _, _, _, _) ->
                                 match inherits with 
                                 | [] -> None

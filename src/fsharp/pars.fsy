@@ -2102,6 +2102,14 @@ tyconDefnOrSpfnSimpleRepr:
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsTypeAbbreviationsCannotHaveVisibilityDeclarations(), rhs parseState 2))
        SynTypeDefnSimpleRepr.TypeAbbrev (ParserDetail.Ok, $3, unionRanges (rhs parseState 1) $3.Range) }
+  
+  /* A choice union type definition */
+  | opt_attributes opt_declVisibility anonUnionTypeRepr
+     { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(),rhs parseState 1))
+       let rangesOf3 = $3 |> List.map (fun (e: SynAnonUnionCase) -> e.Range)
+       let mWhole = (rhs2 parseState 1 2, rangesOf3) ||> List.fold unionRanges
+       SynTypeDefnSimpleRepr.AnonUnion($2, $3, mWhole)
+     }
 
   /* A union type definition */
   | opt_attributes opt_declVisibility unionTypeRepr
@@ -2323,6 +2331,25 @@ unionTypeRepr:
 
   | firstUnionCaseDecl 
      { [$1] } 
+
+/* The core of an anon union type definition */
+anonUnionTypeRepr:
+  /* Note the next three rules are required to disambiguate this from type x = y */
+  /* Attributes can only appear on a single constructor if you've used a | */
+  | LPAREN attrAnonUnionCaseDecl barAndgrabXmlDoc attrAnonUnionCaseDecls rparen
+     { $4 $3 }
+    //  { ($2 (grabXmlDoc(parseState, 1))) :: $4 $3 }
+
+attrAnonUnionCaseDecls:
+  | attrAnonUnionCaseDecl barAndgrabXmlDoc attrAnonUnionCaseDecls  { (fun xmlDoc -> $1 xmlDoc  :: $3 $2) }
+  | attrAnonUnionCaseDecl { (fun xmlDoc -> [ $1 xmlDoc ]) }
+
+/* The core of an anon union case definition */
+attrAnonUnionCaseDecl:
+  | opt_attributes opt_access typ opt_OBLOCKSEP
+      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(),rhs parseState 2))
+        let mDecl = rhs parseState 3
+        (fun xmlDoc -> AnonUnionCase ( $1, ($3 : SynType), xmlDoc,None,mDecl)) }
 
 barAndgrabXmlDoc : 
   | BAR

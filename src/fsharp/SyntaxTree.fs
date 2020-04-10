@@ -1552,6 +1552,12 @@ type SynTypeDefnSimpleRepr =
         unionCases: SynUnionCase list *
         range: range
 
+    /// An anon union type definition, type X = (A | B)
+    | AnonUnion of
+        accessibility: SynAccess option *
+        anonUnionCases: SynAnonUnionCase list *
+        range: range
+
     /// An enum type definition, type X = A = 1 | B = 2
     | Enum of
         cases: SynEnumCase list *
@@ -1600,6 +1606,7 @@ type SynTypeDefnSimpleRepr =
     member this.Range =
         match this with
         | Union (range=m)
+        | AnonUnion (range=m)
         | Enum (range=m)
         | Record (range=m)
         | General (range=m)
@@ -1639,6 +1646,21 @@ type SynUnionCase =
     member this.Range =
         match this with
         | UnionCase (range=m) -> m
+
+[<NoEquality; NoComparison>]
+type SynAnonUnionCase =
+
+    /// The untyped, unchecked syntax tree for one case in a union definition.
+    | AnonUnionCase of
+        attributes: SynAttributes *
+        typ: SynType *
+        xmlDoc: PreXmlDoc *
+        accessibility: SynAccess option *
+        range: range
+    
+    member this.Range =
+        match this with
+        | AnonUnionCase (range=m) -> m
 
 /// Represents the syntax tree for the right-hand-side of union definition, excluding members,
 /// in either a signature or implementation.
