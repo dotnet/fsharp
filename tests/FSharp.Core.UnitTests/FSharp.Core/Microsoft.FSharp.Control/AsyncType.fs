@@ -89,9 +89,14 @@ type AsyncType() =
         Async.RunSynchronously(computation, timeout = 1000) |> ignore
 
     [<Test>]
-    member this.AsyncSleepCancellation1() =
+    [<TestCase("int32")>]
+    [<TestCase("timespan")>]
+    member this.AsyncSleepCancellation1(sleepType) =
         ignoreSynchCtx (fun () ->
-            let computation = Async.Sleep(10000000)
+            let computation = match sleepType with
+                              | "int32"    -> Async.Sleep(10000000)
+                              | "timespan" -> Async.Sleep(10000000. |> TimeSpan.FromMilliseconds)
+                              | unknown    -> raise (NotImplementedException(unknown))
             let result = ref ""
             use cts = new CancellationTokenSource()
             Async.StartWithContinuations(computation,
@@ -105,9 +110,14 @@ type AsyncType() =
         )
 
     [<Test>]
-    member this.AsyncSleepCancellation2() =
+    [<TestCase("int32")>]
+    [<TestCase("timespan")>]
+    member this.AsyncSleepCancellation2(sleepType) =
         ignoreSynchCtx (fun () ->
-            let computation = Async.Sleep(10)
+            let computation = match sleepType with
+                              | "int32"    -> Async.Sleep(10)
+                              | "timespan" -> Async.Sleep(10. |> TimeSpan.FromMilliseconds)
+                              | unknown    -> raise (NotImplementedException(unknown))
             for i in 1..100 do
                 let result = ref ""
                 use completedEvent = new ManualResetEvent(false)
@@ -121,6 +131,36 @@ type AsyncType() =
                 cts.Cancel()
                 completedEvent.WaitOne() |> Assert.IsTrue
                 Assert.IsTrue(!result = "Cancel" || !result = "Ok")
+        )
+
+    [<Test>]
+    [<TestCase("int32")>]
+    [<TestCase("timespan")>]
+    member this.AsyncSleepThrowsOnNegativeDueTimes(sleepType) =
+        async {
+            try
+                do! match sleepType with
+                    | "int32"    -> Async.Sleep(-100)
+                    | "timespan" -> Async.Sleep(-100. |> TimeSpan.FromMilliseconds)
+                    | unknown    -> raise (NotImplementedException(unknown))
+                failwith "Expected ArgumentOutOfRangeException"
+            with
+            | :? ArgumentOutOfRangeException -> ()
+        } |> Async.RunSynchronously
+
+    [<Test>]
+    member this.AsyncSleepInfinitely() =
+        ignoreSynchCtx (fun () ->
+            let computation = Async.Sleep(System.Threading.Timeout.Infinite)
+            let result = TaskCompletionSource()
+            use cts = new CancellationTokenSource(TimeSpan.FromSeconds(1.)) // there's a long way from 1 sec to infinity, but it'll have to do.
+            Async.StartWithContinuations(computation,
+                                            (fun _ -> result.TrySetResult("Ok")        |> ignore),
+                                            (fun _ -> result.TrySetResult("Exception") |> ignore),
+                                            (fun _ -> result.TrySetResult("Cancel")    |> ignore),
+                                            cts.Token)
+            let result = result.Task |> Async.AwaitTask |> Async.RunSynchronously
+            Assert.AreEqual("Cancel", result)
         )
 
     member private this.WaitASec (t:Task) =
