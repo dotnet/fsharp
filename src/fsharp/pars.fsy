@@ -2337,8 +2337,7 @@ anonUnionTypeRepr:
   /* Note the next three rules are required to disambiguate this from type x = y */
   /* Attributes can only appear on a single constructor if you've used a | */
   | LPAREN attrAnonUnionCaseDecl barAndgrabXmlDoc attrAnonUnionCaseDecls rparen
-     { $4 $3 }
-    //  { ($2 (grabXmlDoc(parseState, 1))) :: $4 $3 }
+     { ($2 (grabXmlDoc(parseState, 1))) :: $4 $3 }
 
 attrAnonUnionCaseDecls:
   | attrAnonUnionCaseDecl barAndgrabXmlDoc attrAnonUnionCaseDecls  { (fun xmlDoc -> $1 xmlDoc  :: $3 $2) }

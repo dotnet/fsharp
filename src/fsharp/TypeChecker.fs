@@ -15552,7 +15552,7 @@ module EstablishTypeDefinitionCores =
 
         let repr = 
             match synTyconRepr with 
-            | SynTypeDefnSimpleRepr.AnonUnion(_attributes, _cases, _range) -> failwithf "Not implemented!"
+            | SynTypeDefnSimpleRepr.AnonUnion(_attributes, _cases, _range) -> TNoRepr
             | SynTypeDefnSimpleRepr.Exception _ -> TNoRepr
             | SynTypeDefnSimpleRepr.None m -> 
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
@@ -15567,8 +15567,6 @@ module EstablishTypeDefinitionCores =
                     TNoRepr
 
             | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr, envinner, id) (_, m)
-            // | SynTypeDefnSimpleRepr.AnonUnion(_, _, m) ->
-            
             | SynTypeDefnSimpleRepr.Union (_, _, m) -> 
 
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
@@ -15930,7 +15928,7 @@ module EstablishTypeDefinitionCores =
                         // REVIEW: we could do the IComparable/IStructuralHash interface analysis here. 
                         // This would let the type satisfy more recursive IComparable/IStructuralHash constraints 
                         implementedTys, []
-                    | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> failwith "Not Implemented"
+                    | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> [], []
 
                 for (implementedTy, m) in implementedTys do
                     if firstPass && isErasedType cenv.g implementedTy then 
@@ -15983,7 +15981,7 @@ module EstablishTypeDefinitionCores =
 
                   | SynTypeDefnSimpleRepr.Enum _ -> 
                       Some(cenv.g.system_Enum_ty)
-                  | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> failwith "Not Implemented" 
+                  | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> None
 
               // Allow super type to be a function type but convert back to FSharpFunc<A,B> to make sure it has metadata
               // (We don't apply the same rule to tuple types, i.e. no F#-declared inheritors of those are permitted)
@@ -16111,8 +16109,6 @@ module EstablishTypeDefinitionCores =
             
             let typeRepr, baseValOpt, safeInitInfo = 
                 match synTyconRepr with 
-                
-                | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> failwith "Not Implemented"
 
                 | SynTypeDefnSimpleRepr.Exception synExnDefnRepr -> 
                     let parent = Parent (mkLocalTyconRef tycon)
@@ -16161,6 +16157,38 @@ module EstablishTypeDefinitionCores =
                         tycon.TypeReprInfo, None, NoSafeInitInfo
                     else 
                         TNoRepr, None, NoSafeInitInfo
+                
+                | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) ->
+                    noCLIMutableAttributeCheck()
+                    noMeasureAttributeCheck()
+                    noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedDU
+                    noAbstractClassAttributeCheck()
+                    noAllowNullLiteralAttributeCheck()
+                    structLayoutAttributeCheck false
+                    let _types =
+                        _anonUnionCases
+                        |> List.map(fun (AnonUnionCase(typ=ty)) -> TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner tpenv ty |> fst)
+                        |> List.fold(fun existing current -> current :: (existing |> List.filter (fun e -> typeEquiv g e current |> not))) []
+                        |> List.sortBy(fun ty -> ty.ToString())
+                    // Create a Choice
+                    let mkChoiceTyconRef (g: TcGlobals) m n = 
+                        match n with 
+                        | 0 | 1 -> error(InternalError("mkChoiceTyconRef", m))
+                        | 2 -> g.choice2_tcr
+                        | 3 -> g.choice3_tcr
+                        | 4 -> g.choice4_tcr
+                        | 5 -> g.choice5_tcr
+                        | 6 -> g.choice6_tcr
+                        | 7 -> g.choice7_tcr
+                        | _ -> error(Error(FSComp.SR.tastActivePatternsLimitedToSeven(), m))
+                    let mkChoiceTy (g: TcGlobals) m tinst =
+                        match List.length tinst with 
+                        | 0 -> g.unit_ty
+                        | 1 -> List.head tinst
+                        | length -> mkAppTy (mkChoiceTyconRef g m length) tinst
+                    let ty = mkChoiceTy g _range _types
+                    TMeasureableRepr ty, None, NoSafeInitInfo
+                    // Construct.MakeAnonUnionRepr [ _anonUnionCases], None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.Union (_, unionCases, _) -> 
                     noCLIMutableAttributeCheck()
@@ -16288,7 +16316,7 @@ module EstablishTypeDefinitionCores =
                             | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
                             | SynTypeDefnSimpleRepr.Record _ -> None
                             | SynTypeDefnSimpleRepr.Enum _ -> None
-                            | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> failwith "Not Implemented"
+                            | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> None
                             | SynTypeDefnSimpleRepr.General (_, inherits, _, _, _, _, _, _) ->
                                 match inherits with 
                                 | [] -> None
