@@ -690,7 +690,6 @@ module NavigateTo =
     
         and walkSynTypeDefnSimpleRepr(repr: SynTypeDefnSimpleRepr) isSig container = 
             match repr with
-            | SynTypeDefnSimpleRepr.AnonUnion(_accessibility, _anonUnionCases, _range) -> failwith "Not Implemented"
             | SynTypeDefnSimpleRepr.Enum(enumCases, _) ->
                 for c in enumCases do
                     addEnumCase c isSig container

@@ -455,6 +455,11 @@ type SynType =
         fields:(Ident * SynType) list *
         range: range
 
+    /// An anon union type definition, type X = (A | B)
+    | AnonUnion of
+        anonUnionCases: SynAnonUnionCase list *
+        range: range
+
     /// F# syntax: type[]
     | Array of
         rank: int *
@@ -523,6 +528,7 @@ type SynType =
         | SynType.Tuple (range=m)
         | SynType.Array (range=m)
         | SynType.AnonRecd (range=m)
+        | SynType.AnonUnion (range=m)
         | SynType.Fun (range=m)
         | SynType.Var (range=m)
         | SynType.Anon (range=m)
@@ -1552,12 +1558,6 @@ type SynTypeDefnSimpleRepr =
         unionCases: SynUnionCase list *
         range: range
 
-    /// An anon union type definition, type X = (A | B)
-    | AnonUnion of
-        accessibility: SynAccess option *
-        anonUnionCases: SynAnonUnionCase list *
-        range: range
-
     /// An enum type definition, type X = A = 1 | B = 2
     | Enum of
         cases: SynEnumCase list *
@@ -1606,7 +1606,6 @@ type SynTypeDefnSimpleRepr =
     member this.Range =
         match this with
         | Union (range=m)
-        | AnonUnion (range=m)
         | Enum (range=m)
         | Record (range=m)
         | General (range=m)
