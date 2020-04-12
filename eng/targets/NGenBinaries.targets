@@ -50,10 +50,6 @@
       <PathToSN32>$(WindowsSDK_ExecutablePath_x86)\sn.exe</PathToSN32>
     </PropertyGroup>
 
-    <!-- 
-        Enable Skip Verification and then NGen for both 32 and 64 bit product.
-        If compiling use the app config file, if present.
-    -->
     <Exec Command='"$(PathToSN32)" /q /Vr "$(TargetPath)"' Condition = "Exists('$(PathToSN32)') AND '$(DelaySign)' == 'true' AND Exists('$(TargetPath)') AND '$(IsAdministrator)' == 'true'" ConsoleToMsBuild='true' />
   </Target>
 
