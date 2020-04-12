@@ -273,9 +273,17 @@ function BuildCompiler() {
         $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
         $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
 
+        if ($binaryLog) {
+            $logFilePath = Join-Path $LogDir "fscBootstrapLog.binlog"
+            $args += " /bl:$logFilePath"
+        }
         $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
         Exec-Console $dotnetExe $args
 
+        if ($binaryLog) {
+            $logFilePath = Join-Path $LogDir "fsiBootstrapLog.binlog"
+            $args += " /bl:$logFilePath"
+        }
         $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
         Exec-Console $dotnetExe $args
     }
@@ -284,6 +292,69 @@ function BuildCompiler() {
 function Prepare-TempDir() {
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.props") $TempDir
     Copy-Item (Join-Path $RepoRoot "tests\Resources\Directory.Build.targets") $TempDir
+}
+
+function DownloadDotnetFrameworkSdk() {
+    $dlTempPath = [System.IO.Path]::GetTempPath()
+    $dlRandomFile = [System.IO.Path]::GetRandomFileName()
+    $net48Dir = Join-Path $dlTempPath $dlRandomFile
+    Create-Directory $net48Dir
+
+    $net48Exe = Join-Path $net48Dir "ndp48-devpack-enu.exe"
+    $dlLogFilePath = Join-Path $LogDir "dotnet48.install.log"
+    Invoke-WebRequest "https://go.microsoft.com/fwlink/?linkid=2088517" -OutFile $net48Exe
+
+    Write-Host "Exec-Console $net48Exe /install /quiet /norestart /log $dlLogFilePath"
+    Exec-Console $net48Exe "/install /quiet /norestart /log $dlLogFilePath"
+}
+
+function Test-IsAdmin {
+    ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+}
+
+function TryDownloadDotnetFrameworkSdk() {
+    # If we are not running as admin user, don't bother grabbing ndp sdk -- since we don't need sn.exe
+    $isAdmin = Test-IsAdmin
+    Write-Host "TryDownloadDotnetFrameworkSdk -- Test-IsAdmin = '$isAdmin'"
+    if ($isAdmin -eq $true)
+    {
+        # Get program files(x86) location
+        if (${env:ProgramFiles(x86)} -eq $null) {
+            $programFiles = $env:ProgramFiles
+        }
+        else {
+            $programFiles = ${env:ProgramFiles(x86)}
+        }
+
+        # Get windowsSDK location
+        $windowsSDK_ExecutablePath_x86 = $env:WindowsSDK_ExecutablePath_x86
+        $newWindowsSDK_ExecutablePath_x86 = Join-Path "$programFiles" "Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools"
+
+        if ($windowsSDK_ExecutablePath_x86 -eq $null) {
+            $snPath = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
+        }
+        else {
+            $snPath = Join-Path $windowsSDK_ExecutablePath_x86 "sn.exe"
+            $snPathExists = Test-Path $snPath -PathType Leaf
+            if ($snPathExists -ne $true) {
+                $snPath = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
+            }
+        }
+
+        $snPathExists = Test-Path $snPath -PathType Leaf
+        if ($snPathExists -ne $true) {
+            DownloadDotnetFrameworkSdk
+        }
+
+        $snPathExists = Test-Path $snPath -PathType Leaf
+        if ($snPathExists -eq $true) {
+            if ($windowsSDK_ExecutablePath_x86 -ne $newWindowsSDK_ExecutablePath_x86) {
+                $windowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
+                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86","$newWindowsSDK_ExecutablePath_x86",[System.EnvironmentVariableTarget]::Machine)
+                $env:WindowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
+            }
+        }
+    }
 }
 
 function EnablePreviewSdks() {
@@ -322,9 +393,11 @@ try {
         EnablePreviewSdks
     }
 
+    $buildTool = InitializeBuildTool
+    $toolsetBuildProj = InitializeToolset
+    TryDownloadDotnetFrameworkSdk
     if ($bootstrap) {
         $script:BuildMessage = "Failure building bootstrap compiler"
-        $toolsetBuildProj = InitializeToolset
         $bootstrapDir = Make-BootstrapBuild
     }
 
