@@ -30,6 +30,7 @@ type LanguageFeature =
     | FixedIndexSlice3d4d
     | AndBang
     | NullableOptionalInterop
+    | DefaultInterfaceMemberConsumption
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -65,6 +66,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.AndBang, previewVersion
             LanguageFeature.NullableOptionalInterop, previewVersion
+            LanguageFeature.DefaultInterfaceMemberConsumption, previewVersion
         ]
 
     let specified =
@@ -79,31 +81,63 @@ type LanguageVersion (specifiedVersionAsString) =
 (*      | "5.0" -> languageVersion50    *)
         | _ -> 0m
 
+    let versionToString v =
+        if v = previewVersion then "'preview'"
+        else string v
+
+    let specifiedString = versionToString specified
+
     /// Check if this feature is supported by the selected langversion
-    member __.SupportsFeature featureId =
+    member _.SupportsFeature featureId =
         match features.TryGetValue featureId with
         | true, v -> v <= specified
         | false, _ -> false
 
     /// Has preview been explicitly specified
-    member __.IsPreviewEnabled =
+    member _.IsPreviewEnabled =
         specified = previewVersion
 
     /// Does the languageVersion support this version string
-    member __.ContainsVersion version =
+    member _.ContainsVersion version =
         match version with
         | "?" | "preview" | "default" | "latest" | "latestmajor" -> true
         | _ -> languageVersions.Contains specified
 
     /// Get a list of valid strings for help text
-    member __.ValidOptions = validOptions
+    member _.ValidOptions = validOptions
 
     /// Get a list of valid versions for help text
-    member __.ValidVersions =
+    member _.ValidVersions =
         [|
             for v in languageVersions |> Seq.sort ->
                 sprintf "%M%s" v (if v = defaultVersion then " (Default)" else "")
         |]
 
     /// Get the specified LanguageVersion
-    member __.SpecifiedVersion = specified
+    member _.SpecifiedVersion = specified
+
+    /// Get the specified LanguageVersion as a string
+    member _.SpecifiedVersionString = specifiedString
+
+    /// Get a string name for the given feature.
+    member _.GetFeatureString feature =
+        match feature with
+        | LanguageFeature.SingleUnderscorePattern -> FSComp.SR.featureSingleUnderscorePattern()
+        | LanguageFeature.WildCardInForLoop -> FSComp.SR.featureWildCardInForLoop()
+        | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace()
+        | LanguageFeature.NameOf -> FSComp.SR.featureNameOf()
+        | LanguageFeature.ImplicitYield -> FSComp.SR.featureImplicitYield()
+        | LanguageFeature.OpenStaticClasses -> FSComp.SR.featureOpenStaticClasses()
+        | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal()
+        | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement()
+        | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing()
+        | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d()
+        | LanguageFeature.AndBang -> FSComp.SR.featureAndBang()
+        | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
+        | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
+
+    /// Get a version string associated with the given feature.
+    member _.GetFeatureVersionString feature =
+        match features.TryGetValue feature with
+        | true, v -> versionToString v
+        | _ -> invalidArg "feature" "Internal error: Unable to find feature."

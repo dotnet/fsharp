@@ -3,6 +3,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Symbols
 
 open System
 open System.Collections.Generic
+open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
@@ -12,9 +13,8 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 
 open FSharp.Compiler
-open FSharp.Compiler.Ast
 open FSharp.Compiler.SourceCodeServices
-open System.IO
+open FSharp.Compiler.SyntaxTree
 
 
 [<RequireQualifiedAccess; NoComparison>] 

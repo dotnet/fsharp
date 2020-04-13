@@ -7,14 +7,16 @@ open System.Text
 
 open NUnit.Framework
 
+open Internal.Utilities
 open Internal.Utilities.Text.Lexing
+
 open FSharp.Compiler
 open FSharp.Compiler.Lexer
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Ast
-open Internal.Utilities
+open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.SyntaxTree
 
 [<TestFixture>]
 type HashIfExpression()     =

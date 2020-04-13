@@ -5,13 +5,14 @@ module internal FSharp.Compiler.Detuple
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.Ast
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Lib
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.XmlDoc
 
-//
 // This pass has one aim.
 // - to eliminate tuples allocated at call sites (due to uncurried style)
 //
@@ -154,10 +155,8 @@ let (|TyappAndApp|_|) e =
         | Expr.App _                   -> Some(f, fty, tys, args, m) (* has args, so not combine ty args *)
         | f                             -> Some(f, fty, tys, args, m)
     | _ -> None
-//-------------------------------------------------------------------------
-// GetValsBoundInExpr
-//-------------------------------------------------------------------------
 
+[<AutoOpen>]
 module GlobalUsageAnalysis = 
     let bindAccBounds vals (_isInDTree, v) =  Zset.add v vals
 
@@ -166,11 +165,6 @@ module GlobalUsageAnalysis =
        let z0 = Zset.empty valOrder
        let z  = FoldExpr folder z0 expr
        z
-
-
-    //-------------------------------------------------------------------------
-    // GlobalUsageAnalysis - state and ops
-    //-------------------------------------------------------------------------
 
     type accessor = TupleGet of int * TType list
 
@@ -212,7 +206,6 @@ module GlobalUsageAnalysis =
         let z = if isInDTree then {z with DecisionTreeBindings = Zset.add v z.DecisionTreeBindings} else z
         let z = if z.IterationIsAtTopLevel then {z with TopLevelBindings = Zset.add v z.TopLevelBindings} else z
         z
-        
 
     /// Log the definition of a non-recursive binding
     let logNonRecBinding z (bind: Binding) =
@@ -318,23 +311,13 @@ module GlobalUsageAnalysis =
         z
 
 
-open GlobalUsageAnalysis
-
-//-------------------------------------------------------------------------
-// misc
-//-------------------------------------------------------------------------
-  
 let internalError str = raise(Failure(str))
 
 let mkLocalVal m name ty topValInfo =
-    let compgen    = false in (* REVIEW: review: should this be true? *)
-    NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
+    let compgen    = false
+    Construct.NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
 
-
-//-------------------------------------------------------------------------
-// TupleStructure = tuple structure
-//-------------------------------------------------------------------------
-
+/// Represents inferred information about a tuple value
 type TupleStructure = 
     | UnknownTS
     | TupleTS   of TupleStructure list
@@ -619,17 +602,16 @@ let determineTransforms g (z : GlobalUsageAnalysis.Results) =
    let vtransforms = Zmap.ofList valOrder vtransforms
    vtransforms
 
-
-
 //-------------------------------------------------------------------------
 // pass - penv - env of pass
 //-------------------------------------------------------------------------
 
 type penv =
-   { // The planned transforms 
-     transforms : Zmap<Val, Transform>
-     ccu        : CcuThunk
-     g          : TcGlobals }
+    { // The planned transforms 
+      transforms: Zmap<Val, Transform>
+      ccu: CcuThunk
+      g: TcGlobals
+    }
 
 let hasTransfrom penv f = Zmap.tryFind f penv.transforms
 
@@ -683,7 +665,7 @@ let buildProjections env bindings x xtys =
         xtys 
         |> List.mapi (fun i xty ->
             let vi, vix = newLocalN env i xty
-            let bind = mkBind NoSequencePointAtInvisibleBinding vi (mkTupleFieldGet env.eg (tupInfoRef, x, xtys, i, env.m))
+            let bind = mkBind NoDebugPointAtInvisibleBinding vi (mkTupleFieldGet env.eg (tupInfoRef, x, xtys, i, env.m))
             bind, vix)
         |> List.unzip
 
@@ -752,7 +734,6 @@ let fixupApp (penv: penv) (fx, fty, tys, args, m) =
             Expr.App (fx, fty, tys, args, m) (* no change, f untransformed val *)
     | _ -> 
         Expr.App (fx, fty, tys, args, m)                      (* no change, f is expr *)
-
 
 //-------------------------------------------------------------------------
 // pass - mubinds - translation support
@@ -861,21 +842,20 @@ let postTransformExpr (penv: penv) expr =
         Some (fixupApp penv (f, fty, tys, args, m) )
     | _ -> None
   
-
 let passImplFile penv assembly = 
-    assembly |> RewriteImplFile {PreIntercept =None
-                                 PreInterceptBinding=None
-                                 PostTransform= postTransformExpr penv
-                                 IsUnderQuotations=false } 
-
+    assembly |> RewriteImplFile { PreIntercept =None
+                                  PreInterceptBinding=None
+                                  PostTransform= postTransformExpr penv
+                                  IsUnderQuotations=false } 
 
 //-------------------------------------------------------------------------
 // entry point
 //-------------------------------------------------------------------------
 
 let DetupleImplFile ccu g expr =
-   // collect expr info - wanting usage contexts and bindings 
-   let (z : Results) = GetUsageInfoOfImplFile g expr
+   // Collect expr info - wanting usage contexts and bindings 
+   let z = GetUsageInfoOfImplFile g expr
+
    // For each Val, decide Some "transform", or None if not changing
    let vtrans = determineTransforms g z
 

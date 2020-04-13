@@ -7,6 +7,7 @@ open System.Collections.Generic
 open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
 open FsUnit
 open NUnit.Framework
 
@@ -200,8 +201,6 @@ let parseSourceCode (name: string, code: string) =
     let parseResults = checker.ParseFile(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
     parseResults.ParseTree
 
-open FSharp.Compiler.Ast
-
 let parseSourceCodeAndGetModule (source: string) =
     match parseSourceCode ("test", source) with
     | Some (ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, [ moduleOrNamespace ], _))) -> moduleOrNamespace
@@ -312,12 +311,11 @@ let getParseAndCheckResults (source: string) =
 let inline dumpErrors results =
     (^TResults: (member Errors: FSharpErrorInfo[]) results)
     |> Array.map (fun e ->
-        let range = mkRange e.FileName e.Start e.End
         let message =
             e.Message.Split('\n')
             |> Array.map (fun s -> s.Trim())
             |> String.concat " "
-        sprintf "%s: %s" (range.ToShortString()) message)
+        sprintf "%s: %s" (e.Range.ToShortString()) message)
     |> List.ofArray
 
 

@@ -9,6 +9,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     open System.Globalization
     open System.IO
     open System.Reflection
+    open System.Runtime.InteropServices
     open Internal.Utilities
     open Internal.Utilities.FSharpEnvironment
 
@@ -20,7 +21,9 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | Some path -> path
         | None ->
 #if DEBUG
-            Debug.Print(sprintf "FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171" location)
+            Debug.Print(sprintf """FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location
+                customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171"""
+                location)
 #endif
             // Use the location of this dll
             location
@@ -161,6 +164,25 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         match netcoreTfm with
         | Some tfm -> tfm
         | _ -> getWindowsDesktopTfm ()
+
+    // Computer valid dotnet-rids for this environment:
+    //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
+    //
+    // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
+    let executionRid =
+        let processArchitecture = RuntimeInformation.ProcessArchitecture
+        let baseRid =
+            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then "win"
+            elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then "osx"
+            else "linux"
+        let platformRid =
+            match processArchitecture with
+            | Architecture.X64 ->  baseRid + "-x64"
+            | Architecture.X86 -> baseRid + "-x86"
+            | Architecture.Arm64 -> baseRid + "-arm64"
+            | _ -> baseRid + "-arm"
+        platformRid
+
     let isInReferenceAssemblyPackDirectory filename =
         match frameworkRefsPackDirectoryRoot with
         | Some root ->

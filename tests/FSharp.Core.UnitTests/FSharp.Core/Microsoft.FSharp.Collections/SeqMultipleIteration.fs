@@ -1,4 +1,4 @@
-﻿namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+﻿namespace FSharp.Core.UnitTests.Collections
 
 open NUnit.Framework
 

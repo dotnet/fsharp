@@ -1,28 +1,33 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 /// Defines derived expression manipulation and construction functions.
-module internal FSharp.Compiler.Tastops
+module internal FSharp.Compiler.TypedTreeOps
 
 open System.Collections.Generic 
 open Internal.Utilities
+
+open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.Extensions.ILX 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler 
-open FSharp.Compiler.Range
-open FSharp.Compiler.Rational
-open FSharp.Compiler.Ast
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Lib
-open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Features
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Features
+open FSharp.Compiler.Range
+open FSharp.Compiler.Rational
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.XmlDoc
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
@@ -154,8 +159,8 @@ let remapTyconRef (tcmap: TyconRefMap<_>) tcref =
     | Some tcref -> tcref
     | None -> tcref
 
-let remapUnionCaseRef tcmap (UCRef(tcref, nm)) = UCRef(remapTyconRef tcmap tcref, nm)
-let remapRecdFieldRef tcmap (RFRef(tcref, nm)) = RFRef(remapTyconRef tcmap tcref, nm)
+let remapUnionCaseRef tcmap (UnionCaseRef(tcref, nm)) = UnionCaseRef(remapTyconRef tcmap tcref, nm)
+let remapRecdFieldRef tcmap (RecdFieldRef(tcref, nm)) = RecdFieldRef(remapTyconRef tcmap tcref, nm)
 
 let mkTyparInst (typars: Typars) tyargs =  
 #if CHECKED
@@ -183,10 +188,10 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
               if tinst === tinst' then ty else 
               TType_app (tcref, tinst')
 
-  | TType_ucase (UCRef(tcref, n), tinst) -> 
+  | TType_ucase (UnionCaseRef(tcref, n), tinst) -> 
       match tyenv.tyconRefRemap.TryFind tcref with 
-      | Some tcref' -> TType_ucase (UCRef(tcref', n), remapTypesAux tyenv tinst)
-      | None -> TType_ucase (UCRef(tcref, n), remapTypesAux tyenv tinst)
+      | Some tcref' -> TType_ucase (UnionCaseRef(tcref', n), remapTypesAux tyenv tinst)
+      | None -> TType_ucase (UnionCaseRef(tcref, n), remapTypesAux tyenv tinst)
 
   | TType_anon (anonInfo, l) as ty -> 
       let tupInfo' = remapTupInfoAux tyenv anonInfo.TupInfo
@@ -974,7 +979,7 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     | TType_app (tc1, b1), TType_app (tc2, b2) -> 
         tcrefAEquiv g aenv tc1 tc2 &&
         typesAEquivAux erasureFlag g aenv b1 b2
-    | TType_ucase (UCRef(tc1, n1), b1), TType_ucase (UCRef(tc2, n2), b2) -> 
+    | TType_ucase (UnionCaseRef(tc1, n1), b1), TType_ucase (UnionCaseRef(tc2, n2), b2) -> 
         n1=n2 &&
         tcrefAEquiv g aenv tc1 tc2 &&
         typesAEquivAux erasureFlag g aenv b1 b2
@@ -1059,14 +1064,14 @@ let valOrder = { new IComparer<Val> with member __.Compare(v1, v2) = compare v1.
 let tyconOrder = { new IComparer<Tycon> with member __.Compare(tc1, tc2) = compare tc1.Stamp tc2.Stamp }
 let recdFieldRefOrder = 
     { new IComparer<RecdFieldRef> with 
-         member __.Compare(RFRef(tcref1, nm1), RFRef(tcref2, nm2)) = 
+         member __.Compare(RecdFieldRef(tcref1, nm1), RecdFieldRef(tcref2, nm2)) = 
             let c = tyconOrder.Compare (tcref1.Deref, tcref2.Deref) 
             if c <> 0 then c else 
             compare nm1 nm2 }
 
 let unionCaseRefOrder = 
     { new IComparer<UnionCaseRef> with 
-         member __.Compare(UCRef(tcref1, nm1), UCRef(tcref2, nm2)) = 
+         member __.Compare(UnionCaseRef(tcref1, nm1), UnionCaseRef(tcref2, nm2)) = 
             let c = tyconOrder.Compare (tcref1.Deref, tcref2.Deref) 
             if c <> 0 then c else 
             compare nm1 nm2 }
@@ -1109,10 +1114,12 @@ let ensureCcuHasModuleOrNamespaceAtPath (ccu: CcuThunk) path (CompPath(_, cpath)
         | (hpath :: tpath), ((_, mkind) :: tcpath) -> 
             let modName = hpath.idText 
             if not (Map.containsKey modName mtype.AllEntitiesByCompiledAndLogicalMangledNames) then 
-                let smodul = NewModuleOrNamespace (Some(CompPath(scoref, prior_cpath))) taccessPublic hpath xml [] (MaybeLazy.Strict (NewEmptyModuleOrNamespaceType mkind))
+                let mty = Construct.NewEmptyModuleOrNamespaceType mkind
+                let cpath = CompPath(scoref, prior_cpath)
+                let smodul = Construct.NewModuleOrNamespace (Some cpath) taccessPublic hpath xml [] (MaybeLazy.Strict mty)
                 mtype.AddModuleOrNamespaceByMutation smodul
             let modul = Map.find modName mtype.AllEntitiesByCompiledAndLogicalMangledNames 
-            loop (prior_cpath@[(modName, Namespace)]) tpath tcpath modul 
+            loop (prior_cpath @ [(modName, Namespace)]) tpath tcpath modul 
 
         | _ -> () 
 
@@ -1187,7 +1194,7 @@ let mkCond spBind spTarget m ty e1 e2 e3 = primMkCond spBind spTarget spTarget m
 let exprForValRef m vref = Expr.Val (vref, NormalValUse, m)
 let exprForVal m v = exprForValRef m (mkLocalValRef v)
 let mkLocalAux m s ty mut compgen =
-    let thisv = NewVal(s, m, None, ty, mut, compgen, None, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
+    let thisv = Construct.NewVal(s, m, None, ty, mut, compgen, None, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
     thisv, exprForVal m thisv
 
 let mkLocal m s ty = mkLocalAux m s ty Immutable false
@@ -1231,25 +1238,29 @@ let mkMultiLambdaBind v letSeqPtOpt m tps vsl (b, rty) =
 
 let mkBind seqPtOpt v e = TBind(v, e, seqPtOpt)
 
-let mkLetBind m bind body = Expr.Let (bind, body, m, NewFreeVarsCache())
+let mkLetBind m bind body = Expr.Let (bind, body, m, Construct.NewFreeVarsCache())
 let mkLetsBind m binds body = List.foldBack (mkLetBind m) binds body 
 let mkLetsFromBindings m binds body = List.foldBack (mkLetBind m) binds body 
 let mkLet seqPtOpt m v x body = mkLetBind m (mkBind seqPtOpt v x) body
 
 /// Make sticky bindings that are compiler generated (though the variables may not be - e.g. they may be lambda arguments in a beta reduction)
-let mkCompGenBind v e = TBind(v, e, NoSequencePointAtStickyBinding)
+let mkCompGenBind v e = TBind(v, e, NoDebugPointAtStickyBinding)
 let mkCompGenBinds (vs: Val list) (es: Expr list) = List.map2 mkCompGenBind vs es
 let mkCompGenLet m v x body = mkLetBind m (mkCompGenBind v x) body
 let mkCompGenLets m vs xs body = mkLetsBind m (mkCompGenBinds vs xs) body
 let mkCompGenLetsFromBindings m vs xs body = mkLetsFromBindings m (mkCompGenBinds vs xs) body
 
-let mkInvisibleBind v e = TBind(v, e, NoSequencePointAtInvisibleBinding)
+let mkInvisibleBind v e = TBind(v, e, NoDebugPointAtInvisibleBinding)
 let mkInvisibleBinds (vs: Val list) (es: Expr list) = List.map2 mkInvisibleBind vs es
 let mkInvisibleLet m v x body = mkLetBind m (mkInvisibleBind v x) body
 let mkInvisibleLets m vs xs body = mkLetsBind m (mkInvisibleBinds vs xs) body
 let mkInvisibleLetsFromBindings m vs xs body = mkLetsFromBindings m (mkInvisibleBinds vs xs) body
 
-let mkLetRecBinds m binds body = if isNil binds then body else Expr.LetRec (binds, body, m, NewFreeVarsCache())
+let mkLetRecBinds m binds body =
+    if isNil binds then
+        body 
+    else
+        Expr.LetRec (binds, body, m, Construct.NewFreeVarsCache())
 
 //-------------------------------------------------------------------------
 // Type schemes...
@@ -1298,8 +1309,8 @@ let isBeingGeneralized tp typeScheme =
 // Build conditional expressions...
 //------------------------------------------------------------------------- 
 
-let mkLazyAnd (g: TcGlobals) m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty e1 e2 (Expr.Const (Const.Bool false, m, g.bool_ty))
-let mkLazyOr (g: TcGlobals) m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty e1 (Expr.Const (Const.Bool true, m, g.bool_ty)) e2
+let mkLazyAnd (g: TcGlobals) m e1 e2 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.bool_ty e1 e2 (Expr.Const (Const.Bool false, m, g.bool_ty))
+let mkLazyOr (g: TcGlobals) m e1 e2 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.bool_ty e1 (Expr.Const (Const.Bool true, m, g.bool_ty)) e2
 
 let mkCoerceExpr(e, to_ty, m, from_ty) = Expr.Op (TOp.Coerce, [to_ty;from_ty], [e], m)
 
@@ -2008,7 +2019,7 @@ let accFreeLocalTycon opts x acc =
 
 let accFreeTycon opts (tcref: TyconRef) acc = 
     if not opts.includeLocalTycons then acc
-    elif tcref.IsLocalRef then accFreeLocalTycon opts tcref.PrivateTarget acc
+    elif tcref.IsLocalRef then accFreeLocalTycon opts tcref.ResolvedTarget acc
     else acc
 
 let rec boundTypars opts tps acc = 
@@ -2064,7 +2075,7 @@ and accFreeLocalValInTraitSln _opts v fvs =
 
 and accFreeValRefInTraitSln opts (vref: ValRef) fvs = 
     if vref.IsLocalRef then
-        accFreeLocalValInTraitSln opts vref.PrivateTarget fvs
+        accFreeLocalValInTraitSln opts vref.ResolvedTarget fvs
     else
         // non-local values do not contain free variables 
         fvs
@@ -2086,7 +2097,7 @@ and accFreeInType opts ty acc =
         | [] -> acc  // optimization to avoid unneeded call
         | [h] -> accFreeInType opts h acc // optimization to avoid unneeded call
         | _ -> accFreeInTypes opts tinst acc
-    | TType_ucase (UCRef(tc, _), tinst) -> accFreeInTypes opts tinst (accFreeTycon opts tc acc)
+    | TType_ucase (UnionCaseRef(tc, _), tinst) -> accFreeInTypes opts tinst (accFreeTycon opts tc acc)
     | TType_fun (d, r) -> accFreeInType opts d (accFreeInType opts r acc)
     | TType_var r -> accFreeTyparRef opts r acc
     | TType_forall (tps, r) -> unionFreeTyvars (boundTypars opts tps (freeInType opts r)) acc
@@ -2412,7 +2423,7 @@ type TyparConstraintsWithTypars = (Typar * TyparConstraint) list
 
 module PrettyTypes =
     let newPrettyTypar (tp: Typar) nm = 
-        NewTypar (tp.Kind, tp.Rigidity, Typar(ident(nm, tp.Range), tp.StaticReq, false), false, TyparDynamicReq.Yes, [], false, false)
+        Construct.NewTypar (tp.Kind, tp.Rigidity, Typar(ident(nm, tp.Range), tp.StaticReq, false), false, TyparDynamicReq.Yes, [], false, false)
 
     let NewPrettyTypars renaming tps names = 
         let niceTypars = List.map2 newPrettyTypar tps names
@@ -3354,7 +3365,7 @@ module DebugPrint =
         match stripTyparEqns ty with
         | TType_forall (typars, rty) -> 
            (leftL (tagText "!") ^^ layoutTyparDecls typars --- auxTypeL env rty) |> wrap
-        | TType_ucase (UCRef(tcref, _), tinst)
+        | TType_ucase (UnionCaseRef(tcref, _), tinst)
         | TType_app (tcref, tinst) -> 
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
@@ -3706,7 +3717,7 @@ module DebugPrint =
         reprL
 
     and bindingL g (TBind(v, repr, _)) =
-        valAtBindL g v --- (wordL(tagText "=") ^^ exprL g repr)
+        (valAtBindL g v ^^ wordL(tagText "=")) @@-- exprL g repr
 
     and exprL g expr = exprWrapL g false expr
 
@@ -3720,15 +3731,13 @@ module DebugPrint =
         (aboveListL eqnsL @@ bodyL) 
 
     and letL g bind bodyL = 
-        let eqnL = wordL(tagText "let") ^^ bindingL g bind ^^ wordL(tagText "in")
+        let eqnL = wordL(tagText "let") ^^ bindingL g bind
         (eqnL @@ bodyL) 
 
     and exprWrapL g isAtomic expr =
         let atomL args = atomL g args
         let exprL expr = exprL g expr
-        let iimplL iimpls = iimplL g iimpls
         let valAtBindL v = valAtBindL g v
-        let overrideL tmeth = overrideL g tmeth
         let targetL targets = targetL g targets
         let wrap = bracketIfL isAtomic // wrap iff require atomic expr 
         let lay =
@@ -3747,8 +3756,8 @@ module DebugPrint =
             | Expr.Sequential (expr1, expr2, flag, _, _) -> 
                 let flag = 
                     match flag with
-                    | NormalSeq -> "; (*Seq*)"
-                    | ThenDoSeq -> "; (*ThenDo*)" 
+                    | NormalSeq -> ";"
+                    | ThenDoSeq -> "; ThenDo" 
                 ((exprL expr1 ^^ rightL (tagText flag)) @@ exprL expr2) |> wrap
             | Expr.Lambda (_, _, baseValOpt, argvs, body, _, _) -> 
                 let formalsL = spaceListL (List.map valAtBindL argvs) in
@@ -3823,22 +3832,22 @@ module DebugPrint =
                 let meth = ilMethRef.Name
                 wordL(tagText "ILCall") ^^
                    aboveListL 
-                      [ wordL(tagText "meth ") --- wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
-                        wordL(tagText "tinst ") --- listL typeL tinst
-                        wordL(tagText "minst ") --- listL typeL minst
-                        wordL(tagText "tyargs") --- listL typeL tyargs
-                        wordL(tagText "args ") --- listL exprL args ] 
+                      [ yield wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
+                        if not tinst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL tinst
+                        if not minst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL minst
+                        if not tyargs.IsEmpty then yield wordL (tagText "tyargs") --- listL typeL tyargs
+                        if not args.IsEmpty then yield listL exprL args ] 
                     |> wrap
             | Expr.Op (TOp.Array, [_], xs, _) -> 
                 leftL(tagText "[|") ^^ commaListL (List.map exprL xs) ^^ rightL(tagText "|]")
-            | Expr.Op (TOp.While _, [], [x1;x2], _) -> 
-                wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do") ^^ exprL x2 ^^ rightL(tagText "}")
-            | Expr.Op (TOp.For _, [], [x1;x2;x3], _) -> 
+            | Expr.Op (TOp.While _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
+                (wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do")) @@-- exprL x2
+            | Expr.Op (TOp.For _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
                 wordL(tagText "for") ^^ aboveListL [(exprL x1 ^^ wordL(tagText "to") ^^ exprL x2 ^^ wordL(tagText "do")); exprL x3 ] ^^ rightL(tagText "done")
-            | Expr.Op (TOp.TryCatch _, [_], [x1;x2], _) -> 
-                wordL(tagText "try") ^^ exprL x1 ^^ wordL(tagText "with") ^^ exprL x2 ^^ rightL(tagText "}")
-            | Expr.Op (TOp.TryFinally _, [_], [x1;x2], _) -> 
-                wordL(tagText "try") ^^ exprL x1 ^^ wordL(tagText "finally") ^^ exprL x2 ^^ rightL(tagText "}")
+            | Expr.Op (TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) -> 
+                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh) 
+            | Expr.Op (TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
+                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "finally") @@-- exprL x2)
             | Expr.Op (TOp.Bytes _, _, _, _) -> 
                 wordL(tagText "bytes++")
             | Expr.Op (TOp.UInt16s _, _, _, _) -> wordL(tagText "uint16++")
@@ -3848,15 +3857,21 @@ module DebugPrint =
             | Expr.Op (TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldSet...")
             | Expr.Op (TOp.TryFinally _, _tyargs, _args, _) -> wordL(tagText "TOp.TryFinally...")
             | Expr.Op (TOp.TryCatch _, _tyargs, _args, _) -> wordL(tagText "TOp.TryCatch...")
+            | Expr.Op (TOp.Goto l, _tys, args, _) -> wordL(tagText ("Expr.Goto " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
+            | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Quote (a, _, _, _, _) -> leftL(tagText "<@") ^^ atomL a ^^ rightL(tagText "@>")
             | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _) -> 
-                wordL(tagText "OBJ:") ^^ 
-                aboveListL [typeL ty
-                            exprL ccall
-                            optionL valAtBindL basev
-                            aboveListL (List.map overrideL overrides)
-                            aboveListL (List.map iimplL iimpls)]
+                (leftL (tagText "{") 
+                 @@--
+                  ((wordL(tagText "new ") ++ typeL ty) 
+                   @@-- 
+                   aboveListL [exprL ccall
+                               optionL valAtBindL basev
+                               aboveListL (List.map (tmethodL g) overrides)
+                               aboveListL (List.map (iimplL g) iimpls)]))
+                @@
+                rightL (tagText "}")
 
             | Expr.StaticOptimization (_tcs, csx, x, _) -> 
                 (wordL(tagText "opt") @@- (exprL x)) @@--
@@ -3868,14 +3883,12 @@ module DebugPrint =
         else lay
 
     and implFilesL g implFiles =
-        let implFileL implFiles = implFileL g implFiles
-        aboveListL (List.map implFileL implFiles)
+        aboveListL (List.map (implFileL g) implFiles)
 
     and appL g flayout tys args =
-        let atomL args = atomL g args
         let z = flayout
-        let z = z ^^ instL typeL tys
-        let z = z --- sepL(tagText "`") --- (spaceListL (List.map atomL args))
+        let z = if tys.Length > 0 then z ^^ instL typeL tys else z
+        let z = if args.Length > 0 then z --- spaceListL (List.map (atomL g) args) else z
         z
 
     and implFileL g (TImplFile (_, _, mexpr, _, _, _)) =
@@ -3886,14 +3899,11 @@ module DebugPrint =
         | ModuleOrNamespaceExprWithSig(mtyp, defs, _) -> mdefL g defs @@- (wordL(tagText ":") @@- entityTypeL g mtyp)
 
     and mdefsL  g defs =
-        let mdefL x = mdefL g x
-        wordL(tagText "Module Defs") @@-- aboveListL(List.map mdefL defs)
+        wordL(tagText "Module Defs") @@-- aboveListL(List.map (mdefL g) defs)
 
     and mdefL g x =
-        let tyconL tycon = tyconL g tycon
-        let mbindL x =  mbindL g x 
         match x with
-        | TMDefRec(_, tycons, mbinds, _) -> aboveListL ((tycons |> List.map tyconL) @ List.map mbindL mbinds)
+        | TMDefRec(_, tycons, mbinds, _) -> aboveListL ((tycons |> List.map (tyconL g)) @ (mbinds |> List.map (mbindL g)))
         | TMDefLet(bind, _) -> letL g bind emptyL
         | TMDefDo(e, _) -> exprL g e
         | TMDefs defs -> mdefsL g defs
@@ -3906,9 +3916,8 @@ module DebugPrint =
         (wordL (tagText (if mspec.IsNamespace then "namespace" else "module")) ^^ (wordL (tagText mspec.DemangledModuleOrNamespaceName) |> stampL mspec.Stamp)) @@-- mdefL g rhs
 
     and entityTypeL g (mtyp: ModuleOrNamespaceType) =
-        let tyconL tycon = tyconL g tycon
         aboveListL [jlistL typeOfValL mtyp.AllValsAndMembers
-                    jlistL tyconL mtyp.AllEntities]
+                    jlistL (tyconL g) mtyp.AllEntities]
 
     and entityL g (ms: ModuleOrNamespace) =
         let header = wordL(tagText "module") ^^ (wordL (tagText ms.DemangledModuleOrNamespaceName) |> stampL ms.Stamp) ^^ wordL(tagText ":")
@@ -3919,17 +3928,15 @@ module DebugPrint =
     and ccuL g (ccu: CcuThunk) = entityL g ccu.Contents
 
     and decisionTreeL g x =
-        let exprL expr = exprL g expr
-        let dcaseL dcases = dcaseL g dcases
         match x with 
         | TDBind (bind, body) -> 
-            let bind = wordL(tagText "let") ^^ bindingL g bind ^^ wordL(tagText "in") 
+            let bind = wordL(tagText "let") ^^ bindingL g bind
             (bind @@ decisionTreeL g body) 
         | TDSuccess (args, n) -> 
-            wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map exprL)
+            wordL(tagText "Success") ^^ leftL(tagText "T") ^^ intL n ^^ tupleL (args |> List.map (exprL g))
         | TDSwitch (test, dcases, dflt, _) ->
-            (wordL(tagText "Switch") --- exprL test) @@--
-            (aboveListL (List.map dcaseL dcases) @@
+            (wordL(tagText "Switch") --- exprL g test) @@--
+            (aboveListL (List.map (dcaseL g) dcases) @@
              match dflt with
              | None -> emptyL
              | Some dtree -> wordL(tagText "dflt:") --- decisionTreeL g dtree)
@@ -3946,22 +3953,19 @@ module DebugPrint =
         | (DecisionTreeTest.ActivePatternCase (exp, _, _, _, _)) -> wordL(tagText "query") ^^ exprL g exp
         | (DecisionTreeTest.Error _) -> wordL (tagText "error recovery")
  
-    and targetL g i (TTarget (argvs, body, _)) = leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL g body
+    and targetL g i (TTarget (argvs, body, _)) =
+        leftL(tagText "T") ^^ intL i ^^ tupleL (flatValsL argvs) ^^ rightL(tagText ":") --- exprL g body
 
     and flatValsL vs = vs |> List.map valL
 
     and tmethodL g (TObjExprMethod(TSlotSig(nm, _, _, _, _, _), _, tps, vs, e, _)) =
-        let valAtBindL v = valAtBindL g v
-        (wordL(tagText "TObjExprMethod") --- (wordL (tagText nm)) ^^ wordL(tagText "=")) --
-          (wordL(tagText "METH-LAM") --- angleBracketListL (List.map typarL tps) ^^ rightL(tagText ".")) ---
-          (wordL(tagText "meth-lam") --- tupleL (List.map (List.map valAtBindL >> tupleL) vs) ^^ rightL(tagText ".")) ---
+        ((wordL(tagText "TObjExprMethod") --- (wordL (tagText nm)) ^^ wordL(tagText "=")) --
+         (angleBracketListL (List.map typarL tps) ^^ rightL(tagText ".")) ---
+         (tupleL (List.map (List.map (valAtBindL g) >> tupleL) vs) ^^ rightL(tagText ".")))
+        @@--
           (atomL g e) 
 
-    and overrideL g tmeth = wordL(tagText "with") ^^ tmethodL g tmeth 
-
-    and iimplL g (ty, tmeths) =
-        let tmethodL p = tmethodL g p 
-        wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map tmethodL tmeths) 
+    and iimplL g (ty, tmeths) = wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map (tmethodL g) tmeths) 
 
     let showType x = Layout.showL (typeL x)
 
@@ -3976,14 +3980,14 @@ module DebugPrint =
 //--------------------------------------------------------------------------
 
 let wrapModuleOrNamespaceType id cpath mtyp = 
-    NewModuleOrNamespace (Some cpath) taccessPublic id XmlDoc.Empty [] (MaybeLazy.Strict mtyp)
+    Construct.NewModuleOrNamespace (Some cpath) taccessPublic id XmlDoc.Empty [] (MaybeLazy.Strict mtyp)
 
 let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp = 
     let mspec = wrapModuleOrNamespaceType id cpath mtyp
-    NewModuleOrNamespaceType Namespace [ mspec ] [], mspec
+    Construct.NewModuleOrNamespaceType Namespace [ mspec ] [], mspec
 
 let wrapModuleOrNamespaceExprInNamespace (id: Ident) cpath mexpr = 
-    let mspec = wrapModuleOrNamespaceType id cpath (NewEmptyModuleOrNamespaceType Namespace)
+    let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType Namespace)
     TMDefRec (false, [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
 
 // cleanup: make this a property
@@ -4109,7 +4113,7 @@ let accValRemap g aenv (msigty: ModuleOrNamespaceType) (implVal: Val) (mrpi, mhi
 
 let getCorrespondingSigTy nm (msigty: ModuleOrNamespaceType) = 
     match NameMap.tryFind nm msigty.AllEntitiesByCompiledAndLogicalMangledNames with 
-    | None -> NewEmptyModuleOrNamespaceType ModuleOrType 
+    | None -> Construct.NewEmptyModuleOrNamespaceType ModuleOrType 
     | Some sigsubmodul -> sigsubmodul.ModuleOrNamespaceType
 
 let rec accEntityRemapFromModuleOrNamespaceType (mty: ModuleOrNamespaceType) (msigty: ModuleOrNamespaceType) acc = 
@@ -4479,7 +4483,7 @@ and accFreeRecdFieldRef opts rfref fvs =
 and accFreeExnRef _exnc fvs = fvs // Note: this exnc (TyconRef) should be collected the surround types, e.g. tinst of Expr.Op 
 and accFreeValRef opts (vref: ValRef) fvs = 
     match vref.IsLocalRef with 
-    | true -> accFreeLocalVal opts vref.PrivateTarget fvs
+    | true -> accFreeLocalVal opts vref.ResolvedTarget fvs
     // non-local values do not contain free variables 
     | _ -> fvs
 
@@ -5006,7 +5010,7 @@ and mapImmediateValsAndTycons ft fv (x: ModuleOrNamespaceType) =
 and copyVal compgen (v: Val) = 
     match compgen with 
     | OnlyCloneExprVals when v.IsMemberOrModuleBinding -> v
-    | _ -> v |> NewModifiedVal id
+    | _ -> v |> Construct.NewModifiedVal id
 
 and fixupValData g compgen tmenv (v2: Val) =
     // only fixup if we copy the value
@@ -5058,7 +5062,7 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
 
     | Expr.LetRec (binds, e, m, _) ->  
         let binds', tmenvinner = copyAndRemapAndBindBindings g compgen tmenv binds 
-        Expr.LetRec (binds', remapExpr g compgen tmenvinner e, m, NewFreeVarsCache())
+        Expr.LetRec (binds', remapExpr g compgen tmenvinner e, m, Construct.NewFreeVarsCache())
 
     | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
         primMkMatch (spBind, exprm, remapDecisionTree g compgen tmenv pt, 
@@ -5269,7 +5273,7 @@ and remapRecdField g tmenv x =
           rfield_fattribs = x.rfield_fattribs |> remapAttribs g tmenv } 
 
 and remapRecdFields g tmenv (x: TyconRecdFields) =
-    x.AllFieldsAsList |> List.map (remapRecdField g tmenv) |> MakeRecdFieldsTable 
+    x.AllFieldsAsList |> List.map (remapRecdField g tmenv) |> Construct.MakeRecdFieldsTable 
 
 and remapUnionCase g tmenv (x: UnionCase) = 
     { x with 
@@ -5278,7 +5282,7 @@ and remapUnionCase g tmenv (x: UnionCase) =
           Attribs = x.Attribs |> remapAttribs g tmenv } 
 
 and remapUnionCases g tmenv (x: TyconUnionData) =
-    x.UnionCasesAsList |> List.map (remapUnionCase g tmenv) |> MakeUnionCases 
+    x.UnionCasesAsList |> List.map (remapUnionCase g tmenv) |> Construct.MakeUnionCases 
 
 and remapFsObjData g tmenv x = 
     { x with 
@@ -5370,7 +5374,7 @@ and renameVal tmenv x =
 and copyTycon compgen (tycon: Tycon) = 
     match compgen with 
     | OnlyCloneExprVals -> tycon
-    | _ -> NewClonedTycon tycon
+    | _ -> Construct.NewClonedTycon tycon
 
 /// This operates over a whole nested collection of tycons and vals simultaneously *)
 and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs = 
@@ -5548,8 +5552,8 @@ let rec remarkExpr m x =
         Expr.Let (remarkBind m bind, remarkExpr m e, m, fvs)
 
     | Expr.Match (_, _, pt, targets, _, ty) ->
-        let targetsR = targets |> Array.map (fun (TTarget(vs, e, _)) -> TTarget(vs, remarkExpr m e, SuppressSequencePointAtTarget))
-        primMkMatch (NoSequencePointAtInvisibleBinding, m, remarkDecisionTree m pt, targetsR, m, ty)
+        let targetsR = targets |> Array.map (fun (TTarget(vs, e, _)) -> TTarget(vs, remarkExpr m e, DebugPointForTarget.No))
+        primMkMatch (NoDebugPointAtInvisibleBinding, m, remarkDecisionTree m pt, targetsR, m, ty)
 
     | Expr.Val (x, valUseFlags, _) ->
         Expr.Val (x, valUseFlags, m)
@@ -5565,8 +5569,8 @@ let rec remarkExpr m x =
     | Expr.Op (op, tinst, args, _) -> 
         let op = 
             match op with 
-            | TOp.TryFinally (_, _) -> TOp.TryFinally (NoSequencePointAtTry, NoSequencePointAtFinally)
-            | TOp.TryCatch (_, _) -> TOp.TryCatch (NoSequencePointAtTry, NoSequencePointAtWith)
+            | TOp.TryFinally (_, _) -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
+            | TOp.TryCatch (_, _) -> TOp.TryCatch (DebugPointAtTry.No, DebugPointAtWith.No)
             | _ -> op
         Expr.Op (op, tinst, remarkExprs m args, m)
 
@@ -5579,7 +5583,7 @@ let rec remarkExpr m x =
         Expr.App (remarkExpr m e1, e1ty, tyargs, remarkExprs m args, m)
 
     | Expr.Sequential (e1, e2, dir, _, _) ->
-        Expr.Sequential (remarkExpr m e1, remarkExpr m e2, dir, SuppressSequencePointOnExprOfSequential, m)
+        Expr.Sequential (remarkExpr m e1, remarkExpr m e2, dir, DebugPointAtSequential.StmtOnly, m)
 
     | Expr.StaticOptimization (eqns, e2, e3, _) ->
         Expr.StaticOptimization (eqns, remarkExpr m e2, remarkExpr m e3, m)
@@ -5610,7 +5614,7 @@ and remarkBinds m binds = List.map (remarkBind m) binds
 
 // This very deliberately drops the sequence points since this is used when adjusting the marks for inlined expressions 
 and remarkBind m (TBind(v, repr, _)) = 
-    TBind(v, remarkExpr m repr, NoSequencePointAtStickyBinding)
+    TBind(v, remarkExpr m repr, NoDebugPointAtStickyBinding)
 
 //--------------------------------------------------------------------------
 // Mutability analysis
@@ -6569,7 +6573,7 @@ let mkRefCellContentsRef (g: TcGlobals) = mkRecdFieldRef g.refcell_tcr_canon "co
 
 let mkSequential spSeq m e1 e2 = Expr.Sequential (e1, e2, NormalSeq, spSeq, m)
 
-let mkCompGenSequential m e1 e2 = mkSequential SuppressSequencePointOnExprOfSequential m e1 e2
+let mkCompGenSequential m e1 e2 = mkSequential DebugPointAtSequential.StmtOnly m e1 e2
 
 let rec mkSequentials spSeq g m es = 
     match es with 
@@ -7087,7 +7091,9 @@ let destThrow = function
 let isThrow x = Option.isSome (destThrow x)
 
 // reraise - parsed as library call - internally represented as op form.
-let mkReraiseLibCall (g: TcGlobals) ty m = let ve, vt = typedExprForIntrinsic g m g.reraise_info in Expr.App (ve, vt, [ty], [mkUnit g m], m)
+let mkReraiseLibCall (g: TcGlobals) ty m =
+    let ve, vt = typedExprForIntrinsic g m g.reraise_info
+    Expr.App (ve, vt, [ty], [mkUnit g m], m)
 
 let mkReraise m returnTy = Expr.Op (TOp.Reraise, [returnTy], [], m) (* could suppress unitArg *)
 
@@ -7738,9 +7744,8 @@ let LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty) =
         | tys -> Expr.Op (TOp.TupleFieldGet (tupInfoRef, i), tys, [x], m)
     let isThrowingTarget = function TTarget(_, x, _) -> isThrow x
     if 1 + List.count isThrowingTarget targetsL = targetsL.Length then
-        (* Have failing targets and ONE successful one, so linearize *)
-        let (TTarget (vs, rhs, spTarget)) = Option.get (List.tryFind (isThrowingTarget >> not) targetsL)
-        (* note - old code here used copy value to generate locals - this was not right *)
+        // Have failing targets and ONE successful one, so linearize
+        let (TTarget (vs, rhs, spTarget)) = List.find (isThrowingTarget >> not) targetsL
         let fvs = vs |> List.map (fun v -> fst(mkLocal v.Range v.LogicalName v.Type)) (* fresh *)
         let vtys = vs |> List.map (fun v -> v.Type) 
         let tmpTy = mkRefTupledVarsTy g vs
@@ -7817,7 +7822,7 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
             | _ -> failwith "impossible: rankOfArrayTyconRef: unsupported array rank"
         typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix
 
-    | TType_ucase (UCRef(tcref, _), tinst)   
+    | TType_ucase (UnionCaseRef(tcref, _), tinst)   
     | TType_app (tcref, tinst) -> 
         if tyconRefEq g g.byref_tcr tcref then
             typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + "@"
@@ -8072,17 +8077,17 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
     
     if canUseTypeTestFast g tgty then 
 
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m)
-        let tg2 = mbuilder.AddResultTarget(e2, SuppressSequencePointAtTarget)
-        let tg3 = mbuilder.AddResultTarget(e3, SuppressSequencePointAtTarget)
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
+        let tg2 = mbuilder.AddResultTarget(e2, DebugPointForTarget.No)
+        let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)
         let dtree = TDSwitch(exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         mkCompGenLet m v (mkIsInst tgty vinpe m) expr
 
     else
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m)
-        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, SuppressSequencePointAtTarget)))
-        let tg3 = mbuilder.AddResultTarget(e3, SuppressSequencePointAtTarget)
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
+        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, DebugPointForTarget.No)))
+        let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)
         let dtree = TDSwitch(vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         expr
@@ -8093,15 +8098,15 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
 //    1. The compilation of array patterns in the pattern match compiler
 //    2. The compilation of string patterns in the pattern match compiler
 let mkNullTest g m e1 e2 e3 =
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m)
-        let tg2 = mbuilder.AddResultTarget(e2, SuppressSequencePointAtTarget)
-        let tg3 = mbuilder.AddResultTarget(e3, SuppressSequencePointAtTarget)            
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m)
+        let tg2 = mbuilder.AddResultTarget(e2, DebugPointForTarget.No)
+        let tg3 = mbuilder.AddResultTarget(e3, DebugPointForTarget.No)            
         let dtree = TDSwitch(e1, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         expr         
 let mkNonNullTest (g: TcGlobals) m e = mkAsmExpr ([ IL.AI_ldnull ; IL.AI_cgt_un ], [], [e], [g.bool_ty], m)
-let mkNonNullCond g m ty e1 e2 e3 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m ty (mkNonNullTest g m e1) e2 e3
-let mkIfThen (g: TcGlobals) m e1 e2 = mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.unit_ty e1 e2 (mkUnit g m)
+let mkNonNullCond g m ty e1 e2 e3 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m ty (mkNonNullTest g m e1) e2 e3
+let mkIfThen (g: TcGlobals) m e1 e2 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.unit_ty e1 e2 (mkUnit g m)
 
 
 let ModuleNameIsMangled g attrs =
@@ -8309,7 +8314,7 @@ and preRewriteExpr env expr =
 and postRewriteExpr env expr = 
      match env.PostTransform expr with 
      | None -> expr 
-     | Some expr -> expr 
+     | Some expr2 -> expr2
 
 and rewriteExprStructure env expr =  
   match expr with
@@ -8348,14 +8353,14 @@ and rewriteExprStructure env expr =
       mkTypeLambda m argtyvs (body, rty)
 
   | Expr.Match (spBind, exprm, dtree, targets, m, ty) -> 
-      let dtree' = rewriteDecisionTree env dtree
+      let dtree' = RewriteDecisionTree env dtree
       let targets' = rewriteTargets env targets
       mkAndSimplifyMatch spBind exprm m ty dtree' targets'
 
   | Expr.LetRec (binds, e, m, _) ->
       let binds = rewriteBinds env binds
       let e' = RewriteExpr env e
-      Expr.LetRec (binds, e', m, NewFreeVarsCache())
+      Expr.LetRec (binds, e', m, Construct.NewFreeVarsCache())
 
   | Expr.Let _ -> failwith "unreachable - linear let"
 
@@ -8397,7 +8402,7 @@ and rewriteLinearExpr env expr contf =
                 else rebuildLinearOpExpr (op, tyargs, argsFront', argLast', m)))
 
         | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, sp2, m2, ty) ->
-            let dtree = rewriteDecisionTree env dtree
+            let dtree = RewriteDecisionTree env dtree
             let tg1' = rewriteTarget env tg1
             // tailcall
             rewriteLinearExpr env expr2 (contf << (fun expr2' ->
@@ -8410,7 +8415,7 @@ and rewriteExprs env exprs = List.mapq (RewriteExpr env) exprs
 
 and rewriteFlatExprs env exprs = List.mapq (RewriteExpr env) exprs
 
-and rewriteDecisionTree env x =
+and RewriteDecisionTree env x =
   match x with 
   | TDSuccess (es, n) -> 
       let es' = rewriteFlatExprs env es
@@ -8419,24 +8424,26 @@ and rewriteDecisionTree env x =
 
   | TDSwitch (e, cases, dflt, m) ->
       let e' = RewriteExpr env e
-      let cases' = List.map (fun (TCase(discrim, e)) -> TCase(discrim, rewriteDecisionTree env e)) cases
-      let dflt' = Option.map (rewriteDecisionTree env) dflt
+      let cases' = List.map (fun (TCase(discrim, e)) -> TCase(discrim, RewriteDecisionTree env e)) cases
+      let dflt' = Option.map (RewriteDecisionTree env) dflt
       TDSwitch (e', cases', dflt', m)
 
   | TDBind (bind, body) ->
       let bind' = rewriteBind env bind
-      let body = rewriteDecisionTree env body
+      let body = RewriteDecisionTree env body
       TDBind (bind', body)
 
-and rewriteTarget env (TTarget(vs, e, spTarget)) = TTarget(vs, RewriteExpr env e, spTarget)
+and rewriteTarget env (TTarget(vs, e, spTarget)) =
+    TTarget(vs, RewriteExpr env e, spTarget)
 
-and rewriteTargets env targets = List.map (rewriteTarget env) (Array.toList targets)
+and rewriteTargets env targets =
+    List.map (rewriteTarget env) (Array.toList targets)
 
 and rewriteObjExprOverride env (TObjExprMethod(slotsig, attribs, tps, vs, e, m)) =
-  TObjExprMethod(slotsig, attribs, tps, vs, RewriteExpr env e, m)
+    TObjExprMethod(slotsig, attribs, tps, vs, RewriteExpr env e, m)
 
 and rewriteObjExprInterfaceImpl env (ty, overrides) = 
-  (ty, List.map (rewriteObjExprOverride env) overrides)
+    (ty, List.map (rewriteObjExprOverride env) overrides)
     
 and rewriteModuleOrNamespaceExpr env x = 
     match x with  
@@ -8530,11 +8537,11 @@ let rec remapEntityDataToNonLocal g tmenv (d: Entity) =
             | _ -> None }
 
 and remapTyconToNonLocal g tmenv x = 
-    x |> NewModifiedTycon (remapEntityDataToNonLocal g tmenv)  
+    x |> Construct.NewModifiedTycon (remapEntityDataToNonLocal g tmenv)  
 
 and remapValToNonLocal g tmenv inp = 
     // creates a new stamp
-    inp |> NewModifiedVal (remapValData g tmenv)
+    inp |> Construct.NewModifiedVal (remapValData g tmenv)
 
 let ApplyExportRemappingToEntity g tmenv x = remapTyconToNonLocal g tmenv x
 
@@ -8649,8 +8656,10 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | TDSuccess (es, _n) -> es |> List.forall (checkExpr vrefs)
         | TDSwitch (e, cases, dflt, _m) -> checkExpr vrefs e && cases |> List.forall (checkDecisionTreeCase vrefs) && dflt |> Option.forall (checkDecisionTree vrefs)
         | TDBind (bind, body) -> checkExpr vrefs bind.Expr && checkDecisionTree (vrefs.Add bind.Var.Stamp) body
+
     and checkDecisionTreeCase vrefs (TCase(discrim, dtree)) = 
        (match discrim with DecisionTreeTest.Const _c -> true | _ -> false) && checkDecisionTree vrefs dtree
+
     and checkDecisionTreeTarget vrefs (TTarget(vs, e, _)) = 
        let vrefs = ((vrefs, vs) ||> List.fold (fun s v -> s.Add v.Stamp)) 
        checkExpr vrefs e
@@ -8834,6 +8843,7 @@ let mkGetTupleItemN g m n (ty: ILType) isStruct te retty =
         mkAsmExpr ([mkNormalLdfld (mkILFieldSpecForTupleItem ty n) ], [], [te], [retty], m)
     else
         mkAsmExpr ([IL.mkNormalCall(mkILMethodSpecForTupleItem g ty n)], [], [te], [retty], m)
+
 /// Match an Int32 constant expression
 let (|Int32Expr|_|) expr = 
     match expr with 
@@ -8894,8 +8904,8 @@ let (|CompiledForEachExpr|_|) g expr =
         let mBody = bodyExpr.Range
         let mWholeExpr = expr.Range
 
-        let spForLoop, mForLoop = match enumeratorBind with SequencePointAtBinding spStart -> SequencePointAtForLoop spStart, spStart | _ -> NoSequencePointAtForLoop, mEnumExpr
-        let spWhileLoop = match enumeratorBind with SequencePointAtBinding spStart -> SequencePointAtWhileLoop spStart| _ -> NoSequencePointAtWhileLoop
+        let spForLoop, mForLoop = match enumeratorBind with DebugPointAtBinding spStart -> DebugPointAtFor.Yes spStart, spStart | _ -> DebugPointAtFor.No, mEnumExpr
+        let spWhileLoop = match enumeratorBind with DebugPointAtBinding spStart -> DebugPointAtWhile.Yes spStart| _ -> DebugPointAtWhile.No
         let enumerableTy = tyOfExpr g enumerableExpr
 
         Some (enumerableTy, enumerableExpr, elemVar, bodyExpr, (mEnumExpr, mBody, spForLoop, mForLoop, spWhileLoop, mWholeExpr))
@@ -8976,7 +8986,7 @@ let DetectAndOptimizeForExpression g option expr =
 
             let expr =
                 // let mutable current = enumerableExpr
-                let spBind = (match spForLoop with SequencePointAtForLoop spStart -> SequencePointAtBinding spStart | NoSequencePointAtForLoop -> NoSequencePointAtStickyBinding)
+                let spBind = (match spForLoop with DebugPointAtFor.Yes spStart -> DebugPointAtBinding spStart | DebugPointAtFor.No -> NoDebugPointAtStickyBinding)
                 mkLet spBind mEnumExpr currentVar enumerableExpr
                     // let mutable next = current.TailOrNull
                     (mkCompGenLet mForLoop nextVar tailOrNullExpr 
@@ -9001,7 +9011,7 @@ let BindUnitVars g (mvs: Val list, paramInfos: ArgReprInfo list, body) =
     match mvs, paramInfos with 
     | [v], [] -> 
         assert isUnitTy g v.Type
-        [], mkLet NoSequencePointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
+        [], mkLet NoDebugPointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
     | _ -> mvs, body
 
 let isThreadOrContextStatic g attrs = 
@@ -9012,6 +9022,11 @@ let mkUnitDelayLambda (g: TcGlobals) m e =
     let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
     mkLambda m uv (e, tyOfExpr g e) 
 
+let (|ValApp|_|) g vref expr =
+    match expr with
+    // use 'seq { ... }' as an indicator
+    | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 ->  Some (tyargs, args, m)
+    | _ -> None
 
 let isStaticClass (g:TcGlobals) (x: EntityRef) =
     not x.IsModuleOrNamespace &&
@@ -9027,3 +9042,86 @@ let isStaticClass (g:TcGlobals) (x: EntityRef) =
 #endif
      || (not x.IsILTycon && not x.IsProvided && HasFSharpAttribute g g.attrib_AbstractClassAttribute x.Attribs)) &&
     not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute x.Attribs)
+
+/// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
+/// duplicate modules etc.
+let CombineCcuContentFragments m l = 
+
+    /// Combine module types when multiple namespace fragments contribute to the
+    /// same namespace, making new module specs as we go.
+    let rec CombineModuleOrNamespaceTypes path m (mty1: ModuleOrNamespaceType) (mty2: ModuleOrNamespaceType) = 
+        match mty1.ModuleOrNamespaceKind, mty2.ModuleOrNamespaceKind with 
+        | Namespace, Namespace -> 
+            let kind = mty1.ModuleOrNamespaceKind
+            let tab1 = mty1.AllEntitiesByLogicalMangledName
+            let tab2 = mty2.AllEntitiesByLogicalMangledName
+            let entities = 
+                [ for e1 in mty1.AllEntities do 
+                      match tab2.TryGetValue e1.LogicalName with
+                      | true, e2 -> yield CombineEntities path e1 e2
+                      | _ -> yield e1
+                  for e2 in mty2.AllEntities do 
+                      match tab1.TryGetValue e2.LogicalName with
+                      | true, _ -> ()
+                      | _ -> yield e2 ]
+
+            let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
+
+            ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
+
+        | Namespace, _ | _, Namespace -> 
+            error(Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly(textOfPath path), m))
+
+        | _-> 
+            error(Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly(textOfPath path), m))
+
+    and CombineEntities path (entity1: Entity) (entity2: Entity) = 
+
+        match entity1.IsModuleOrNamespace, entity2.IsModuleOrNamespace with
+        | true, true -> 
+            entity1 |> Construct.NewModifiedTycon (fun data1 -> 
+                        let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
+                        { data1 with 
+                             entity_attribs = entity1.Attribs @ entity2.Attribs
+                             entity_modul_contents = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
+                             entity_opt_data = 
+                                match data1.entity_opt_data with
+                                | Some optData -> Some { optData with entity_xmldoc = xml }
+                                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml } }) 
+        | false, false -> 
+            error(Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path), entity2.Range))
+        | _, _ -> 
+            error(Error(FSComp.SR.tastConflictingModuleAndTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path), entity2.Range))
+    
+    and CombineModuleOrNamespaceTypeList path m l = 
+        match l with
+        | h :: t -> List.fold (CombineModuleOrNamespaceTypes path m) h t
+        | _ -> failwith "CombineModuleOrNamespaceTypeList"
+
+    CombineModuleOrNamespaceTypeList [] m l
+
+let (|WhileExpr|_|) expr = 
+    match expr with 
+    | Expr.Op (TOp.While (sp1, sp2), _, [Expr.Lambda (_, _, _, [_gv], guardExpr, _, _);Expr.Lambda (_, _, _, [_bv], bodyExpr, _, _)], m) ->
+        Some (sp1, sp2, guardExpr, bodyExpr, m)
+    | _ -> None
+
+let (|TryFinallyExpr|_|) expr = 
+    match expr with 
+    | Expr.Op (TOp.TryFinally (sp1, sp2), [ty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], m) ->
+        Some (sp1, sp2, ty, e1, e2, m)
+    | _ -> None
+
+let (|ForLoopExpr|_|) expr = 
+    match expr with 
+    | Expr.Op (TOp.For (sp1, sp2), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)], m) ->
+        Some (sp1, sp2, e1, e2, v, e3, m)
+    | _ -> None
+
+let (|TryCatchExpr|_|) expr = 
+    match expr with 
+    | Expr.Op (TOp.TryCatch (spTry, spWith), [resTy], [Expr.Lambda (_, _, _, [_], bodyExpr, _, _); Expr.Lambda (_, _, _, [filterVar], filterExpr, _, _); Expr.Lambda (_, _, _, [handlerVar], handlerExpr, _, _)], m) -> 
+        Some (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m)
+    | _ -> None
+
+let mkLabelled m l e = mkCompGenSequential m (Expr.Op (TOp.Label l, [], [], m)) e

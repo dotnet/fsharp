@@ -13,37 +13,34 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.ErrorLogger
-
-//----------------------------------------------------------------------------
-// Object model for diagnostics
-
 
 [<RequireQualifiedAccess>]
 type public FSharpErrorSeverity = 
-| Warning 
+    | Warning 
     | Error
 
+/// Object model for diagnostics
 [<Class>]
 type public FSharpErrorInfo = 
     member FileName: string
     member Start: pos
     member End: pos
-    member StartLineAlternate:int
-    member EndLineAlternate:int
-    member StartColumn:int
-    member EndColumn:int
-    member Severity:FSharpErrorSeverity
-    member Message:string
-    member Subcategory:string
-    member ErrorNumber:int
-    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * range * lastPosInFile:(int*int) * suggestNames: bool -> FSharpErrorInfo
-    static member internal CreateFromException : PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpErrorInfo
+    member StartLineAlternate: int
+    member EndLineAlternate: int
+    member StartColumn: int
+    member EndColumn: int
 
-//----------------------------------------------------------------------------
-// Object model for quick info
+    member Range: range
+    member Severity: FSharpErrorSeverity
+    member Message: string
+    member Subcategory: string
+    member ErrorNumber: int
+
+    static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpErrorInfo
+    static member internal CreateFromException: PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpErrorInfo
 
 /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
 //
@@ -64,14 +61,20 @@ type public Layout = Internal.Utilities.StructuredFormat.Layout
 /// A single data tip display element
 [<RequireQualifiedAccess>]
 type public FSharpToolTipElementData<'T> = 
-    { MainDescription:  'T 
+    {
+      MainDescription:  'T 
+
       XmlDoc: FSharpXmlDoc
+
       /// typar instantiation text, to go after xml
       TypeMapping: 'T list
+
       /// Extra text, goes at the end
       Remarks: 'T option
+
       /// Parameter name
-      ParamName : string option }
+      ParamName : string option
+    }
 
 /// A single tool tip display element
 //
@@ -90,7 +93,6 @@ type public FSharpToolTipElement<'T> =
 /// A single data tip display element with where text is expressed as string
 type public FSharpToolTipElement = FSharpToolTipElement<string>
 
-
 /// A single data tip display element with where text is expressed as <see cref="Layout"/>
 type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
 
@@ -98,15 +100,13 @@ type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
 //
 // Note: instances of this type do not hold any references to any compiler resources.
 type public FSharpToolTipText<'T> = 
+
     /// A list of data tip elements to display.
     | FSharpToolTipText of FSharpToolTipElement<'T> list  
 
 type public FSharpToolTipText = FSharpToolTipText<string>
+
 type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
-
-//----------------------------------------------------------------------------
-// Object model for completion list entries (one of several in the API...)
-
 
 [<RequireQualifiedAccess>]
 type public CompletionItemKind =
@@ -119,58 +119,101 @@ type public CompletionItemKind =
     | Other
 
 type UnresolvedSymbol =
-    { FullName: string
+    {
+      FullName: string
+
       DisplayName: string
-      Namespace: string[] }
+
+      Namespace: string[]
+    }
 
 type internal CompletionItem =
-    { ItemWithInst: ItemWithInst
+    {
+      ItemWithInst: ItemWithInst
+
       Kind: CompletionItemKind
+
       IsOwnMember: bool
+
       MinorPriority: int
+
       Type: TyconRef option 
-      Unresolved: UnresolvedSymbol option }
+
+      Unresolved: UnresolvedSymbol option
+    }
     member Item : Item
 
 module public Tooltips =
+
     val ToFSharpToolTipElement: FSharpStructuredToolTipElement -> FSharpToolTipElement
+
     val ToFSharpToolTipText: FSharpStructuredToolTipText -> FSharpToolTipText
+
     val Map: f: ('T1 -> 'T2) -> a: Async<'T1> -> Async<'T2>
 
 // Implementation details used by other code in the compiler    
 module internal SymbolHelpers = 
+
     val isFunction : TcGlobals -> TType -> bool
+
     val ParamNameAndTypesOfUnaryCustomOperation : TcGlobals -> MethInfo -> ParamNameAndType list
 
     val GetXmlDocSigOfEntityRef : InfoReader -> range -> EntityRef -> (string option * string) option
+
     val GetXmlDocSigOfScopedValRef : TcGlobals -> TyconRef -> ValRef -> (string option * string) option
+
     val GetXmlDocSigOfILFieldInfo : InfoReader -> range -> ILFieldInfo -> (string option * string) option
+
     val GetXmlDocSigOfRecdFieldInfo : RecdFieldInfo -> (string option * string) option
+
     val GetXmlDocSigOfUnionCaseInfo : UnionCaseInfo -> (string option * string) option
+
     val GetXmlDocSigOfMethInfo : InfoReader -> range -> MethInfo -> (string option * string) option
+
     val GetXmlDocSigOfValRef : TcGlobals -> ValRef -> (string option * string) option
+
     val GetXmlDocSigOfProp : InfoReader -> range -> PropInfo -> (string option * string) option
+
     val GetXmlDocSigOfEvent : InfoReader -> range -> EventInfo -> (string option * string) option
+
     val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
+
     val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpStructuredToolTipElement
+
     val RemoveDuplicateItems : TcGlobals -> ItemWithInst list -> ItemWithInst list
+
     val RemoveExplicitlySuppressed : TcGlobals -> ItemWithInst list -> ItemWithInst list
+
     val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+
     val RemoveExplicitlySuppressedCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+
     val GetF1Keyword : TcGlobals -> Item -> string option
+
     val rangeOfItem : TcGlobals -> bool option -> Item -> range option
+
     val fileNameOfItem : TcGlobals -> string option -> range -> Item -> string
+
     val FullNameOfItem : TcGlobals -> Item -> string
+
     val ccuOfItem : TcGlobals -> Item -> CcuThunk option
+
     val mutable ToolTipFault : string option
+
     val IsAttribute : InfoReader -> Item -> bool
+
     val IsExplicitlySuppressed : TcGlobals -> Item -> bool
+
     val FlattenItems : TcGlobals -> range -> Item -> Item list
+
 #if !NO_EXTENSIONTYPING
     val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
+
     val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
+
     val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
 #endif
+
     val SimplerDisplayEnv : DisplayEnv -> DisplayEnv
 
 //----------------------------------------------------------------------------

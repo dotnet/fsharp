@@ -24,7 +24,7 @@
     <Description>The F# compiler services package contains a custom build of the F# compiler that exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Authors>Microsoft Corporation; F# community contributors</Authors>
-    <PackageLicenseUrl>https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/fsharp/FSharp.Compiler.Service</PackageProjectUrl>
     <PackageIcon>logo.png</PackageIcon>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
@@ -333,8 +333,17 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/layout.fs">
       <Link>ParserAndUntypedAST/layout.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/ast.fs">
-      <Link>ParserAndUntypedAST/ast.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/XmlDoc.fs">
+      <Link>ParserAndUntypedAST/XmlDoc.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/SyntaxTree.fs">
+      <Link>ParserAndUntypedAST/SyntaxTree.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/SyntaxTreeOps.fs">
+      <Link>ParserAndUntypedAST/SyntaxTreeOps.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/ParseHelpers.fs">
+      <Link>ParserAndUntypedAST/ParseHelpers.fs</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)pppars.fs">
       <Link>ParserAndUntypedAST/pppars.fs</Link>
@@ -358,43 +367,46 @@
       <Link>ParserAndUntypedAST/LexFilter.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/tainted.fsi">
-      <Link>TypedAST/tainted.fsi</Link>
+      <Link>TypedTree/tainted.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/tainted.fs">
-      <Link>TypedAST/tainted.fs</Link>
+      <Link>TypedTree/tainted.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ExtensionTyping.fsi">
-      <Link>TypedAST/ExtensionTyping.fsi</Link>
+      <Link>TypedTree/ExtensionTyping.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ExtensionTyping.fs">
-      <Link>TypedAST/ExtensionTyping.fs</Link>
+      <Link>TypedTree/ExtensionTyping.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QuotationPickler.fsi">
-      <Link>TypedAST/QuotationPickler.fsi</Link>
+      <Link>TypedTree/QuotationPickler.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QuotationPickler.fs">
-      <Link>TypedAST/QuotationPickler.fs</Link>
+      <Link>TypedTree/QuotationPickler.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CompilerGlobalState.fs">
-      <Link>TypedAST/CompilerGlobalState.fs</Link>
+      <Link>TypedTree/CompilerGlobalState.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/tast.fs">
-      <Link>TypedAST/tast.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTree.fs">
+      <Link>TypedTree/TypedTree.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreeBasics.fs">
+      <Link>TypedTree/TypedTreeBasics.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/TcGlobals.fs">
-      <Link>TypedAST/TcGlobals.fs</Link>
+      <Link>TypedTree/TcGlobals.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastOps.fsi">
-      <Link>TypedAST/TastOps.fsi</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreeOps.fsi">
+      <Link>TypedTree/TypedTreeOps.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastOps.fs">
-      <Link>TypedAST/TastOps.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreeOps.fs">
+      <Link>TypedTree/TypedTreeOps.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastPickle.fsi">
-      <Link>TypedAST/TastPickle.fsi</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreePickle.fsi">
+      <Link>TypedTree/.TypedTreePickle.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastPickle.fs">
-      <Link>TypedAST/TastPickle.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreePickle.fs">
+      <Link>TypedTree/.TypedTreePickle.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/import.fsi">
       <Link>Logic/import.fsi</Link>
@@ -410,6 +422,9 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/AttributeChecking.fs">
       <Link>Logic/AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypeRelations.fs">
+      <Link>Logic/TypeRelations.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/InfoReader.fs">
       <Link>Logic/InfoReader.fs</Link>
@@ -428,9 +443,6 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/NameResolution.fs">
       <Link>Logic/NameResolution.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypeRelations.fs">
-      <Link>Logic/TypeRelations.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/SignatureConformance.fs">
       <Link>Logic/SignatureConformance.fs</Link>
@@ -711,12 +723,9 @@
     <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Diagnostics.Process" Version="4.1.0" />
-    <PackageReference Include="System.Diagnostics.TraceSource" Version="4.0.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Loader" Version="4.0.0" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == '$(FcsTargetNetFxFramework)'">
     <Reference Include="System.Runtime" />

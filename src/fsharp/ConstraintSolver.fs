@@ -47,20 +47,23 @@ open Internal.Utilities.Collections
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Ast
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Infos
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Import
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Infos
 open FSharp.Compiler.Lib
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
-open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
@@ -73,30 +76,35 @@ open FSharp.Compiler.TypeRelations
 let compgenId = mkSynId range0 unassignedTyparName
 
 let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
-    NewTypar(kind, rigid, Typar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
+    Construct.NewTypar(kind, rigid, Typar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
     
 let AnonTyparId m = mkSynId m unassignedTyparName
 
 let NewAnonTypar (kind, m, rigid, var, dyn) = 
-    NewTypar (kind, rigid, Typar(AnonTyparId m, var, true), false, dyn, [], false, false)
+    Construct.NewTypar (kind, rigid, Typar(AnonTyparId m, var, true), false, dyn, [], false, false)
     
 let NewNamedInferenceMeasureVar (_m, rigid, var, id) = 
-    NewTypar(TyparKind.Measure, rigid, Typar(id, var, false), false, TyparDynamicReq.No, [], false, false) 
+    Construct.NewTypar(TyparKind.Measure, rigid, Typar(id, var, false), false, TyparDynamicReq.No, [], false, false) 
 
-let NewInferenceMeasurePar () = NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, false)
+let NewInferenceMeasurePar () =
+    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, false)
 
-let NewErrorTypar () = NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
+let NewErrorTypar () =
+    NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
 
-let NewErrorMeasureVar () = NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
+let NewErrorMeasureVar () =
+    NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
 
-let NewInferenceType () = mkTyparTy (NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+let NewInferenceType () =
+    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
 
-let NewErrorType () = mkTyparTy (NewErrorTypar ())
+let NewErrorType () =
+    mkTyparTy (NewErrorTypar ())
 
 let NewErrorMeasure () = Measure.Var (NewErrorMeasureVar ())
 
 let NewByRefKindInferenceType (g: TcGlobals) m = 
-    let tp = NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, HeadTypeStaticReq, true), false, TyparDynamicReq.No, [], false, false)
+    let tp = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, HeadTypeStaticReq, true), false, TyparDynamicReq.No, [], false, false)
     if g.byrefkind_InOut_tcr.CanDeref then
         tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, []), m)]
     mkTyparTy tp
@@ -128,7 +136,6 @@ let FreshenTypars m tpsorig =
 let FreshenMethInfo m (minfo: MethInfo) =
     let _, _, tptys = FreshMethInst m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tptys
-
 
 //-------------------------------------------------------------------------
 // Unification of types: solve/record equality constraints
@@ -207,13 +214,13 @@ exception ConstraintSolverTypesNotInEqualityRelation of displayEnv: DisplayEnv *
 
 exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argTy: TType * paramTy: TType * callRange: range * parameterRange: range
 
-exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Tast.Typar * Tast.TyparConstraint * range  * range 
+exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * TyparConstraint * range  * range 
 
 exception ConstraintSolverError of string * range * range
 
 exception ConstraintSolverRelatedInformation of string option * range * exn 
 
-exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Tast.Typar * TType * exn * range
+exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
 
 exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * range
 
@@ -2769,7 +2776,13 @@ and ResolveOverloading
     // Allow subsumption on arguments. Include the return type.
     // Unify return types.
     match calledMethOpt with 
-    | Some calledMeth -> 
+    | Some calledMeth ->
+    
+        // Static IL interfaces methods are not supported in lower F# versions.
+        if calledMeth.Method.IsILMethod && not calledMeth.Method.IsInstance && isInterfaceTy g calledMeth.Method.ApparentEnclosingType then
+            tryLanguageFeatureRuntimeErrorRecover csenv.InfoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+            tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+
         calledMethOpt, 
         trackErrors {
                         do! errors

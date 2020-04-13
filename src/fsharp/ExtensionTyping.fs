@@ -131,14 +131,20 @@ module internal ExtensionTyping =
                     [ match designTimeAssemblyName, resolutionEnvironment.outputFile with
                       // Check if the attribute is pointing to the file being compiled, in which case ignore it
                       // This checks seems like legacy but is included for compat.
-                      | Some designTimeAssemblyName, Some path when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
+                      | Some designTimeAssemblyName, Some path 
+                         when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
                           ()
+
                       | Some _, _ ->
-                          for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m, compilerToolPaths) do
-                            let resolver = CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported, isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
+                          let provImplTypes = GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m, compilerToolPaths)
+                          for t in provImplTypes do
+                            let resolver =
+                                CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported,
+                                    isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
                             match box resolver with 
                             | null -> ()
                             | _ -> yield (resolver, ilScopeRefOfRuntimeAssembly)
+
                       |   None, _ -> 
                           () ]
 
@@ -497,8 +503,11 @@ module internal ExtensionTyping =
                 | :? ITypeProvider2 as itp2 -> 
                     itp2.GetStaticParametersForMethod x  
                 | _ -> 
-                    // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement an appropriate method called GetStaticParametersForMethod
-                    let meth = provider.GetType().GetMethod( "GetStaticParametersForMethod", bindingFlags, null, [| typeof<System.Reflection.MethodBase> |], null)  
+                    // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively
+                    // implement an appropriate method called GetStaticParametersForMethod
+                    let meth =
+                        provider.GetType().GetMethod( "GetStaticParametersForMethod", bindingFlags, null,
+                            [| typeof<System.Reflection.MethodBase> |], null)  
                     if isNull meth then [| |] else
                     let paramsAsObj = 
                         try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
@@ -515,8 +524,12 @@ module internal ExtensionTyping =
                 | :? ITypeProvider2 as itp2 -> 
                     itp2.ApplyStaticArgumentsForMethod(x, fullNameAfterArguments, staticArgs)  
                 | _ -> 
+
                     // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement a method called GetStaticParametersForMethod
-                    let meth = provider.GetType().GetMethod( "ApplyStaticArgumentsForMethod", bindingFlags, null, [| typeof<System.Reflection.MethodBase>; typeof<string>; typeof<obj[]> |], null)  
+                    let meth =
+                        provider.GetType().GetMethod( "ApplyStaticArgumentsForMethod", bindingFlags, null,
+                            [| typeof<System.Reflection.MethodBase>; typeof<string>; typeof<obj[]> |], null)  
+
                     match meth with 
                     | null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
                     | _ -> 
@@ -618,168 +631,101 @@ module internal ExtensionTyping =
         override __.Equals y = assert false; match y with :? ProvidedConstructorInfo as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
 
-    [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
-    type ProvidedExpr (x: Quotations.Expr, ctxt) =
+    type ProvidedExprType =
+        | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
+#if PROVIDED_ADDRESS_OF
+        | ProvidedAddressOfExpr of ProvidedExpr
+#endif
+        | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr[]
+        | ProvidedWhileLoopExpr of ProvidedExpr * ProvidedExpr
+        | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar[] * ProvidedExpr
+        | ProvidedForIntegerRangeLoopExpr of ProvidedVar * ProvidedExpr * ProvidedExpr * ProvidedExpr
+        | ProvidedSequentialExpr of ProvidedExpr * ProvidedExpr
+        | ProvidedTryWithExpr of ProvidedExpr * ProvidedVar * ProvidedExpr * ProvidedVar * ProvidedExpr
+        | ProvidedTryFinallyExpr of ProvidedExpr * ProvidedExpr
+        | ProvidedLambdaExpr of ProvidedVar * ProvidedExpr
+        | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[] 
+        | ProvidedConstantExpr of obj * ProvidedType
+        | ProvidedDefaultExpr of ProvidedType
+        | ProvidedNewTupleExpr of ProvidedExpr[]
+        | ProvidedTupleGetExpr of ProvidedExpr * int
+        | ProvidedTypeAsExpr of ProvidedExpr * ProvidedType
+        | ProvidedTypeTestExpr of ProvidedExpr * ProvidedType
+        | ProvidedLetExpr of ProvidedVar * ProvidedExpr * ProvidedExpr
+        | ProvidedVarSetExpr of ProvidedVar * ProvidedExpr
+        | ProvidedIfThenElseExpr of ProvidedExpr * ProvidedExpr * ProvidedExpr
+        | ProvidedVarExpr of ProvidedVar
+
+    and [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
+        ProvidedExpr (x: Quotations.Expr, ctxt) =
         member __.Type = x.Type |> ProvidedType.Create ctxt
         member __.Handle = x
         member __.Context = ctxt
         member __.UnderlyingExpressionString = x.ToString()
+        member __.GetExprType() =
+            match x with
+            | Quotations.Patterns.NewObject(ctor, args) ->
+                Some (ProvidedNewObjectExpr (ProvidedConstructorInfo.Create ctxt ctor, [| for a in args -> ProvidedExpr.Create ctxt a |]))
+            | Quotations.Patterns.WhileLoop(guardExpr, bodyExpr) ->
+                Some (ProvidedWhileLoopExpr (ProvidedExpr.Create ctxt guardExpr, ProvidedExpr.Create ctxt bodyExpr))
+            | Quotations.Patterns.NewDelegate(ty, vs, expr) ->
+                Some (ProvidedNewDelegateExpr(ProvidedType.Create ctxt ty, ProvidedVar.CreateArray ctxt (List.toArray vs), ProvidedExpr.Create ctxt expr))
+            | Quotations.Patterns.Call(objOpt, meth, args) ->
+                Some (ProvidedCallExpr((match objOpt with None -> None | Some obj -> Some (ProvidedExpr.Create ctxt obj)), 
+                        ProvidedMethodInfo.Create ctxt meth, [| for a in args -> ProvidedExpr.Create ctxt a |]))
+            | Quotations.Patterns.DefaultValue ty ->
+                Some (ProvidedDefaultExpr (ProvidedType.Create ctxt ty))
+            | Quotations.Patterns.Value(obj, ty) ->
+                Some (ProvidedConstantExpr (obj, ProvidedType.Create ctxt ty))
+            | Quotations.Patterns.Coerce(arg, ty) ->
+                Some (ProvidedTypeAsExpr (ProvidedExpr.Create ctxt arg, ProvidedType.Create ctxt ty))
+            | Quotations.Patterns.NewTuple args ->
+                Some (ProvidedNewTupleExpr(ProvidedExpr.CreateArray ctxt (Array.ofList args)))
+            | Quotations.Patterns.TupleGet(arg, n) ->
+                Some (ProvidedTupleGetExpr (ProvidedExpr.Create ctxt arg, n))
+            | Quotations.Patterns.NewArray(ty, args) ->
+                Some (ProvidedNewArrayExpr(ProvidedType.Create ctxt ty, ProvidedExpr.CreateArray ctxt (Array.ofList args)))
+            | Quotations.Patterns.Sequential(e1, e2) ->
+                Some (ProvidedSequentialExpr(ProvidedExpr.Create ctxt e1, ProvidedExpr.Create ctxt e2))
+            | Quotations.Patterns.Lambda(v, body) ->
+                Some (ProvidedLambdaExpr (ProvidedVar.Create ctxt v,  ProvidedExpr.Create ctxt body))
+            | Quotations.Patterns.TryFinally(b1, b2) ->
+                Some (ProvidedTryFinallyExpr (ProvidedExpr.Create ctxt b1, ProvidedExpr.Create ctxt b2))
+            | Quotations.Patterns.TryWith(b, v1, e1, v2, e2) ->
+                Some (ProvidedTryWithExpr (ProvidedExpr.Create ctxt b, ProvidedVar.Create ctxt v1, ProvidedExpr.Create ctxt e1, ProvidedVar.Create ctxt v2, ProvidedExpr.Create ctxt e2))
+#if PROVIDED_ADDRESS_OF
+            | Quotations.Patterns.AddressOf e -> Some (ProvidedAddressOfExpr (ProvidedExpr.Create ctxt e))
+#endif
+            | Quotations.Patterns.TypeTest(e, ty) ->
+                Some (ProvidedTypeTestExpr(ProvidedExpr.Create ctxt e, ProvidedType.Create ctxt ty))
+            | Quotations.Patterns.Let(v, e, b) ->
+                Some (ProvidedLetExpr (ProvidedVar.Create ctxt v, ProvidedExpr.Create ctxt e, ProvidedExpr.Create ctxt b))
+            | Quotations.Patterns.ForIntegerRangeLoop (v, e1, e2, e3) ->
+                Some (ProvidedForIntegerRangeLoopExpr (ProvidedVar.Create ctxt v, ProvidedExpr.Create ctxt e1, ProvidedExpr.Create ctxt e2, ProvidedExpr.Create ctxt e3))
+            | Quotations.Patterns.VarSet(v, e) ->
+                Some (ProvidedVarSetExpr (ProvidedVar.Create ctxt v, ProvidedExpr.Create ctxt e))
+            | Quotations.Patterns.IfThenElse(g, t, e) ->
+                Some (ProvidedIfThenElseExpr (ProvidedExpr.Create ctxt g, ProvidedExpr.Create ctxt t, ProvidedExpr.Create ctxt e))
+            | Quotations.Patterns.Var v ->
+                Some (ProvidedVarExpr (ProvidedVar.Create ctxt v))
+            | _ -> None
         static member Create ctxt t = match box t with null -> null | _ -> ProvidedExpr (t, ctxt)
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedExpr.Create ctxt)
         override __.Equals y = match y with :? ProvidedExpr as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = x.GetHashCode()
 
-    [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
-    type ProvidedVar (x: Quotations.Var, ctxt) =
+    and [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
+        ProvidedVar (x: Quotations.Var, ctxt) =
         member __.Type = x.Type |> ProvidedType.Create ctxt
         member __.Name = x.Name
         member __.IsMutable = x.IsMutable
         member __.Handle = x
         member __.Context = ctxt
         static member Create ctxt t = match box t with null -> null | _ -> ProvidedVar (t, ctxt)
-        static member Fresh (nm, ty: ProvidedType) = ProvidedVar.Create ty.Context (new Quotations.Var(nm, ty.Handle))
+        static member Fresh (nm, ty: ProvidedType) = ProvidedVar.Create ty.Context (Quotations.Var(nm, ty.Handle))
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedVar.Create ctxt)
         override __.Equals y = match y with :? ProvidedVar as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = x.GetHashCode()
-
-
-    /// Detect a provided new-object expression 
-    let (|ProvidedNewObjectExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.NewObject(ctor, args)  -> 
-            Some (ProvidedConstructorInfo.Create x.Context ctor, [| for a in args -> ProvidedExpr.Create x.Context a |])
-        | _ -> None
-
-    /// Detect a provided while-loop expression 
-    let (|ProvidedWhileLoopExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.WhileLoop(guardExpr, bodyExpr)  -> 
-            Some (ProvidedExpr.Create x.Context guardExpr, ProvidedExpr.Create x.Context bodyExpr)
-        | _ -> None
-
-    /// Detect a provided new-delegate expression 
-    let (|ProvidedNewDelegateExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.NewDelegate(ty, vs, expr)  -> 
-            Some (ProvidedType.Create x.Context ty, ProvidedVar.CreateArray x.Context (List.toArray vs), ProvidedExpr.Create x.Context expr)
-        | _ -> None
-
-    /// Detect a provided call expression 
-    let (|ProvidedCallExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Call(objOpt, meth, args) -> 
-            Some ((match objOpt with None -> None | Some obj -> Some (ProvidedExpr.Create  x.Context obj)), 
-                  ProvidedMethodInfo.Create x.Context meth, 
-                  [| for a in args -> ProvidedExpr.Create  x.Context a |])
-        | _ -> None
-
-    /// Detect a provided default-value expression 
-    let (|ProvidedDefaultExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.DefaultValue ty   -> Some (ProvidedType.Create x.Context ty)
-        | _ -> None
-
-    /// Detect a provided constant expression 
-    let (|ProvidedConstantExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Value(obj, ty)   -> Some (obj, ProvidedType.Create x.Context ty)
-        | _ -> None
-
-    /// Detect a provided type-as expression 
-    let (|ProvidedTypeAsExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Coerce(arg, ty) -> Some (ProvidedExpr.Create x.Context arg, ProvidedType.Create  x.Context ty)
-        | _ -> None
-
-    /// Detect a provided new-tuple expression 
-    let (|ProvidedNewTupleExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.NewTuple args -> Some (ProvidedExpr.CreateArray x.Context (Array.ofList args))
-        | _ -> None
-
-    /// Detect a provided tuple-get expression 
-    let (|ProvidedTupleGetExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.TupleGet(arg, n) -> Some (ProvidedExpr.Create x.Context arg, n)
-        | _ -> None
-
-    /// Detect a provided new-array expression 
-    let (|ProvidedNewArrayExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.NewArray(ty, args) -> Some (ProvidedType.Create  x.Context ty, ProvidedExpr.CreateArray x.Context (Array.ofList args))
-        | _ -> None
-
-    /// Detect a provided sequential expression 
-    let (|ProvidedSequentialExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Sequential(e1, e2) -> Some (ProvidedExpr.Create x.Context e1, ProvidedExpr.Create x.Context e2)
-        | _ -> None
-
-    /// Detect a provided lambda expression 
-    let (|ProvidedLambdaExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Lambda(v, body) -> Some (ProvidedVar.Create x.Context v,  ProvidedExpr.Create x.Context body)
-        | _ -> None
-
-    /// Detect a provided try/finally expression 
-    let (|ProvidedTryFinallyExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.TryFinally(b1, b2) -> Some (ProvidedExpr.Create x.Context b1, ProvidedExpr.Create x.Context b2)
-        | _ -> None
-
-    /// Detect a provided try/with expression 
-    let (|ProvidedTryWithExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.TryWith(b, v1, e1, v2, e2) -> Some (ProvidedExpr.Create x.Context b, ProvidedVar.Create x.Context v1, ProvidedExpr.Create x.Context e1, ProvidedVar.Create x.Context v2, ProvidedExpr.Create x.Context e2)
-        | _ -> None
-
-#if PROVIDED_ADDRESS_OF
-    let (|ProvidedAddressOfExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.AddressOf e -> Some (ProvidedExpr.Create x.Context e)
-        | _ -> None
-#endif
-
-    /// Detect a provided type-test expression 
-    let (|ProvidedTypeTestExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.TypeTest(e, ty) -> Some (ProvidedExpr.Create x.Context e, ProvidedType.Create x.Context ty)
-        | _ -> None
-
-    /// Detect a provided 'let' expression 
-    let (|ProvidedLetExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Let(v, e, b) -> Some (ProvidedVar.Create x.Context v, ProvidedExpr.Create x.Context e, ProvidedExpr.Create x.Context b)
-        | _ -> None
-
-
-    /// Detect a provided expression which is a for-loop over integers
-    let (|ProvidedForIntegerRangeLoopExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.ForIntegerRangeLoop (v, e1, e2, e3) -> 
-            Some (ProvidedVar.Create x.Context v, 
-                  ProvidedExpr.Create x.Context e1, 
-                  ProvidedExpr.Create x.Context e2, 
-                  ProvidedExpr.Create x.Context e3)
-        | _ -> None
-
-    /// Detect a provided 'set variable' expression 
-    let (|ProvidedVarSetExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.VarSet(v, e) -> Some (ProvidedVar.Create x.Context v, ProvidedExpr.Create x.Context e)
-        | _ -> None
-
-    /// Detect a provided 'IfThenElse' expression 
-    let (|ProvidedIfThenElseExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.IfThenElse(g, t, e) ->  Some (ProvidedExpr.Create x.Context g, ProvidedExpr.Create x.Context t, ProvidedExpr.Create x.Context e)
-        | _ -> None
-
-    /// Detect a provided 'Var' expression 
-    let (|ProvidedVarExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Var v  -> Some (ProvidedVar.Create x.Context v)
-        | _ -> None
 
     /// Get the provided invoker expression for a particular use of a method.
     let GetInvokerExpression (provider: ITypeProvider, methodBase: ProvidedMethodBase, paramExprs: ProvidedVar[]) = 
@@ -871,8 +817,11 @@ module internal ExtensionTyping =
                         errorR(Error(FSComp.SR.etNullMemberDeclaringType(fullName, memberName), m))   
                     | _ ->     
                         let miDeclaringTypeFullName = 
-                            TryMemberMember(miDeclaringType, fullName, memberName, "FullName", m, "invalid declaring type full name", fun miDeclaringType -> miDeclaringType.FullName)
+                            TryMemberMember (miDeclaringType, fullName, memberName, "FullName", m,
+                                "invalid declaring type full name",
+                                fun miDeclaringType -> miDeclaringType.FullName)
                             |> unmarshal
+
                         if not (ProvidedType.TaintedEquals (st, miDeclaringType)) then 
                             errorR(Error(FSComp.SR.etNullMemberDeclaringTypeDifferentFromProvidedType(fullName, memberName, miDeclaringTypeFullName), m))   
 
@@ -1086,7 +1035,9 @@ module internal ExtensionTyping =
         | _ -> 
             // Take the static arguments (as strings, taken from the text in the reference we're relinking), 
             // and convert them to objects of the appropriate type, based on the expected kind.
-            let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, resolver) -> typeBeforeArguments.GetStaticParameters resolver), range=range0)
+            let staticParameters =
+                typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, resolver) ->
+                    typeBeforeArguments.GetStaticParameters resolver),range=range0)
 
             let staticParameters = staticParameters.PApplyArray(id, "", m)
             

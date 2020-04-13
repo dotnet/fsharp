@@ -6,8 +6,8 @@ namespace FSharp.Compiler.SourceCodeServices
 open System
 open System.Collections.Generic
 
-open FSharp.Compiler 
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 
 /// Assembly content type.
 type public AssemblyContentType = 
@@ -41,40 +41,55 @@ type public AssemblyPath = string
 /// Represents type, module, member, function or value in a compiled assembly.
 [<NoComparison; NoEquality>]
 type public AssemblySymbol = 
-    { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
+    {
+      /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
       FullName: string
+
       /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
       /// and replaced compiled names with display names (FSharpEntity.DisplayName, FSharpValueOrFunction.DisplayName).
       /// Note: *all* parts are cleaned, not the last one. 
       CleanedIdents: Idents
+
       /// `FSharpEntity.Namespace`.
       Namespace: Idents option
+
       /// The most narrative parent module that has `RequireQualifiedAccess` attribute.
       NearestRequireQualifiedAccessParent: Idents option
+
       /// Parent module that has the largest scope and has `RequireQualifiedAccess` attribute.
       TopRequireQualifiedAccessParent: Idents option
+
       /// Parent module that has `AutoOpen` attribute.
       AutoOpenParent: Idents option
+
       Symbol: FSharpSymbol
+
       /// Function that returns `EntityKind` based of given `LookupKind`.
       Kind: LookupType -> EntityKind
+
       /// Cache display name and namespace, used for completion.
-      UnresolvedSymbol: UnresolvedSymbol }
+      UnresolvedSymbol: UnresolvedSymbol
+    }
 
 /// `RawEntity` list retrieved from an assembly.
 type internal AssemblyContentCacheEntry =
-    { /// Assembly file last write time.
+    {
+      /// Assembly file last write time.
       FileWriteTime: DateTime 
+
       /// Content type used to get assembly content.
       ContentType: AssemblyContentType 
+
       /// Assembly content.
-      Symbols: AssemblySymbol list }
+      Symbols: AssemblySymbol list
+    }
 
 /// Assembly content cache.
 [<NoComparison; NoEquality>]
 type public IAssemblyContentCache =
     /// Try get an assembly cached content.
     abstract TryGet: AssemblyPath -> AssemblyContentCacheEntry option
+
     /// Store an assembly content.
     abstract Set: AssemblyPath -> AssemblyContentCacheEntry -> unit
 
@@ -82,8 +97,10 @@ type public IAssemblyContentCache =
 type public EntityCache =
     interface IAssemblyContentCache 
     new : unit -> EntityCache
+
     /// Clears the cache.
     member Clear : unit -> unit
+
     /// Performs an operation on the cache in thread safe manner.
     member Locking : (IAssemblyContentCache -> 'T) -> 'T
 
@@ -92,25 +109,32 @@ type public StringLongIdent = string
 
 /// Helper data structure representing a symbol, suitable for implementing unresolved identifiers resolution code fixes.
 type public Entity =
-    { /// Full name, relative to the current scope.
+    {
+      /// Full name, relative to the current scope.
       FullRelativeName: StringLongIdent
+
       /// Ident parts needed to append to the current ident to make it resolvable in current scope.
       Qualifier: StringLongIdent
+
       /// Namespace that is needed to open to make the entity resolvable in the current scope.
       Namespace: StringLongIdent option
+
       /// Full display name (i.e. last ident plus modules with `RequireQualifiedAccess` attribute prefixed).
       Name: StringLongIdent
+
       /// Last part of the entity's full name.
-      LastIdent: string }
+      LastIdent: string
+    }
 
 /// Provides assembly content.
 module public AssemblyContentProvider =
+
     /// Given a `FSharpAssemblySignature`, returns assembly content.
     val getAssemblySignatureContent : AssemblyContentType -> FSharpAssemblySignature -> AssemblySymbol list
 
     /// Returns (possibly cached) assembly content.
     val getAssemblyContent : 
-             withCache: ((IAssemblyContentCache -> AssemblySymbol list) -> AssemblySymbol list)  
+          withCache: ((IAssemblyContentCache -> AssemblySymbol list) -> AssemblySymbol list)  
           -> contentType: AssemblyContentType 
           -> fileName: string option 
           -> assemblies: FSharpAssembly list 
@@ -126,10 +150,13 @@ type public ScopeKind =
 
 /// Insert open namespace context.
 type public InsertContext =
-    { /// Current scope kind.
+    {
+      /// Current scope kind.
       ScopeKind: ScopeKind
+
       /// Current position (F# compiler line number).
-      Pos: pos }
+      Pos: pos
+    }
 
 /// Where open statements should be added.
 type public OpenStatementInsertionPoint =
@@ -142,15 +169,15 @@ module public ParsedInput =
     /// Returns `InsertContext` based on current position and symbol idents.
     val tryFindInsertionContext : 
         currentLine: int -> 
-        ast: Ast.ParsedInput -> MaybeUnresolvedIdents -> 
+        ast: ParsedInput -> MaybeUnresolvedIdents -> 
         insertionPoint: OpenStatementInsertionPoint ->
         (( (* requiresQualifiedAccessParent: *) Idents option * (* autoOpenParent: *) Idents option * (*  entityNamespace *) Idents option * (* entity: *) Idents) -> (Entity * InsertContext)[])
     
     /// Returns `InsertContext` based on current position and symbol idents.
-    val findNearestPointToInsertOpenDeclaration : currentLine: int -> ast: Ast.ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext
+    val findNearestPointToInsertOpenDeclaration : currentLine: int -> ast: ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext
 
     /// Returns long identifier at position.
-    val getLongIdentAt : ast: Ast.ParsedInput -> pos: Range.pos -> Ast.LongIdent option
+    val getLongIdentAt : ast: ParsedInput -> pos: pos -> LongIdent option
 
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
     val adjustInsertionPoint : getLineStr: (int -> string) -> ctx: InsertContext -> pos

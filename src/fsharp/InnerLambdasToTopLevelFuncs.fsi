@@ -2,7 +2,7 @@
 
 module internal FSharp.Compiler.InnerLambdasToTopLevelFuncs 
 
-open FSharp.Compiler 
+open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TcGlobals
 
-val MakeTLRDecisions : Tast.CcuThunk -> TcGlobals -> Tast.TypedImplFile -> Tast.TypedImplFile
+val MakeTLRDecisions : CcuThunk -> TcGlobals -> TypedImplFile -> TypedImplFile

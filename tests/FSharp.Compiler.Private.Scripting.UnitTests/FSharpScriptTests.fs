@@ -6,6 +6,7 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.Interactive.Shell
@@ -98,6 +99,24 @@ stacktype.Name = "Stack"
         | Ok(_) -> Assert.Fail("expected a failure")
         | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
 
+    [<Test>]
+    member _.``Script with #r "" errors``() =
+        use script = new FSharpScript()
+        let result, errors = script.Eval("#r \"\"")
+        Assert.IsNotEmpty(errors)
+        match result with
+        | Ok(_) -> Assert.Fail("expected a failure")
+        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+
+    [<Test>]
+    member _.``Script with #r "    " errors``() =
+        use script = new FSharpScript()
+        let result, errors = script.Eval("#r \"    \"")
+        Assert.IsNotEmpty(errors)
+        match result with
+        | Ok(_) -> Assert.Fail("expected a failure")
+        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
     [<Test>]
@@ -148,6 +167,14 @@ printfn ""%A"" result
 #endif
 
     [<Test>]
+    member __.``Eval script with package manager invalid key``() =
+        use script = new FSharpScript()
+        let result, _errors = script.Eval(@"#r ""nugt:FSharp.Data""")
+        match result with
+        | Ok(_) -> Assert.Fail("expected a failure")
+        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+
+    [<Test>]
     member __.``ML - use assembly with ref dependencies``() =
         let code = @"
 #r ""nuget:Microsoft.ML.OnnxTransformer,1.4.0""
@@ -163,6 +190,24 @@ tInput.Length
         let value = opt.Value
         Assert.AreEqual(4L, value.ReflectionValue :?> int64)
 
+
+    [<Test>]
+    member __.``System.Device.Gpio - Ensure we reference the runtime version of the assembly``() =
+        let code = """
+#r "nuget:System.Device.Gpio"
+typeof<System.Device.Gpio.GpioController>.Assembly.Location
+"""
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let opt = script.Eval(code)  |> getValue
+        let value = opt.Value
+
+        if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+            Assert.IsTrue( (value.ReflectionValue :?> string).EndsWith(@"runtimes\win\lib\netstandard2.0\System.Device.Gpio.dll") )
+        else if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then
+            Assert.IsTrue( (value.ReflectionValue :?> string).EndsWith(@"runtimes/linux/lib/netstandard2.0/System.Device.Gpio.dll") )
+        else
+            // Only Windows/Linux supported.
+            ()
 
     [<Test>]
     member __.``Simple pinvoke should not be impacted by native resolver``() =

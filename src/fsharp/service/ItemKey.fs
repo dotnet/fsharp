@@ -6,13 +6,15 @@ open System
 open System.IO
 open System.IO.MemoryMappedFiles
 open System.Reflection.Metadata
+
 open FSharp.NativeInterop
+
 open FSharp.Compiler
-open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Range
+open FSharp.Compiler.TypedTree
 
 #nowarn "9"
 
@@ -250,7 +252,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeTypar tp
         | TType_ucase (uc, _) ->
             match uc with
-            | UnionCaseRef.UCRef(tcref, nm) ->
+            | UnionCaseRef.UnionCaseRef(tcref, nm) ->
                 writeString ItemKeyTags.typeUnionCase
                 writeEntityRef tcref
                 writeString nm
@@ -340,6 +342,12 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString info.Name
             writeType info.FieldType
 
+        | Item.UnionCaseField(info, fieldIndex) ->
+            writeString ItemKeyTags.typeUnionCase
+            writeEntityRef info.TyconRef
+            writeString info.Name
+            writeInt32 fieldIndex
+        
         | Item.AnonRecdField(info, tys, i, _) ->
             writeString ItemKeyTags.itemAnonymousRecordField
             writeString info.ILTypeRef.BasicQualifiedName

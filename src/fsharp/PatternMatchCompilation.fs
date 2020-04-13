@@ -7,16 +7,18 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Tastops.DebugPrint
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.TypeRelations
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Lib
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeOps.DebugPrint
+open FSharp.Compiler.TypeRelations
 
 exception MatchIncomplete of bool * (string * bool) option * range
 exception RuleNeverMatched of range
@@ -281,7 +283,7 @@ let RefuteDiscrimSet g m path discrims =
                     match nonCoveredEnumValues with
                     | None -> Expr.Const (c, m, ty), true
                     | Some (fldName, _) ->
-                        let v = RecdFieldRef.RFRef(tcref, fldName)
+                        let v = RecdFieldRef.RecdFieldRef(tcref, fldName)
                         Expr.Op (TOp.ValFieldGet v, [ty], [], m), false
                 | _ -> Expr.Const (c, m, ty), false
 
@@ -755,7 +757,7 @@ let CompilePatternBasic
     // Add the targets to a match builder.
     // Note the input expression has already been evaluated and saved into a variable,
     // hence no need for a new sequence point.
-    let matchBuilder = MatchBuilder (NoSequencePointAtInvisibleBinding, exprm)
+    let matchBuilder = MatchBuilder (NoDebugPointAtInvisibleBinding, exprm)
     typedClauses |> List.iter (fun c -> matchBuilder.AddTarget c.Target |> ignore)
 
     // Add the incomplete or rethrow match clause on demand,
@@ -811,7 +813,7 @@ let CompilePatternBasic
             // Note we don't emit sequence points at either the succeeding or failing targets of filters since if
             // the exception is filtered successfully then we will run the handler and hit the sequence point there.
             // That sequence point will have the pattern variables bound, which is exactly what we want.
-            let tg = TTarget(List.empty, throwExpr, SuppressSequencePointAtTarget)
+            let tg = TTarget(List.empty, throwExpr, DebugPointForTarget.No)
             let _ = matchBuilder.AddTarget tg
             let clause = TClause(TPat_wild matchm, None, tg, matchm)
             incompleteMatchClauseOnce <- Some clause
@@ -1359,13 +1361,13 @@ let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (o
             let decisionTree, targets = atMostOnePartialAtATime rest
 
             // Make the expression that represents the remaining cases of the pattern match.
-            let expr = mkAndSimplifyMatch NoSequencePointAtInvisibleBinding exprm matchm resultTy decisionTree targets
+            let expr = mkAndSimplifyMatch NoDebugPointAtInvisibleBinding exprm matchm resultTy decisionTree targets
 
             // If the remainder of the match boiled away to nothing interesting.
             // We measure this simply by seeing if the range of the resulting expression is identical to matchm.
             let spTarget =
-                if Range.equals expr.Range matchm then SuppressSequencePointAtTarget
-                else SequencePointAtTarget
+                if Range.equals expr.Range matchm then DebugPointForTarget.No
+                else DebugPointForTarget.Yes
 
             // Make the clause that represents the remaining cases of the pattern match
             let clauseForRestOfMatch = TClause(TPat_wild matchm, None, TTarget(List.empty, expr, spTarget), matchm)

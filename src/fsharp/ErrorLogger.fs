@@ -4,6 +4,7 @@ module public FSharp.Compiler.ErrorLogger
 
 open FSharp.Compiler 
 open FSharp.Compiler.Range
+open FSharp.Compiler.Features
 open System
 
 //------------------------------------------------------------------------
@@ -675,3 +676,16 @@ type public FSharpErrorSeverityOptions =
 // this back in.
 // let dummyMethodFOrBug6417A() = () 
 // let dummyMethodFOrBug6417B() = () 
+
+let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) error =
+    if not (langVersion.SupportsFeature langFeature) then 
+        let featureStr = langVersion.GetFeatureString langFeature
+        let currentVersionStr = langVersion.SpecifiedVersionString
+        let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+        error (Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
+
+let internal tryLanguageFeatureError langVersion langFeature m =
+    tryLanguageFeatureErrorAux langVersion langFeature m error
+
+let internal tryLanguageFeatureErrorRecover langVersion langFeature m =
+    tryLanguageFeatureErrorAux langVersion langFeature m errorR

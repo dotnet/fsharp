@@ -11,18 +11,17 @@ module internal FSharp.Compiler.TcGlobals
 open System.Collections.Generic
 open System.Diagnostics
 
-open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Extensions.ILX 
 open FSharp.Compiler.AbstractIL.Internal.Library
-
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Features
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
 
 open Internal.Utilities
 
@@ -183,11 +182,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       emitDebugInfoInQuotations: bool, noDebugData: bool,
                       pathMap: PathMap, langVersion: LanguageVersion) =
 
-  let vara = NewRigidTypar "a" envRange
-  let varb = NewRigidTypar "b" envRange
-  let varc = NewRigidTypar "c" envRange
-  let vard = NewRigidTypar "d" envRange
-  let vare = NewRigidTypar "e" envRange
+  let vara = Construct.NewRigidTypar "a" envRange
+  let varb = Construct.NewRigidTypar "b" envRange
+  let varc = Construct.NewRigidTypar "c" envRange
+  let vard = Construct.NewRigidTypar "d" envRange
+  let vare = Construct.NewRigidTypar "e" envRange
 
   let varaTy = mkTyparTy vara 
   let varbTy = mkTyparTy varb 
@@ -1101,6 +1100,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.tcref_System_Collections_Generic_IEnumerator = v_IEnumerator_tcr
     
   member __.tcref_System_Attribute = v_System_Attribute_tcr
+
+  // Review: Does this need to be an option type?
+  member val System_Runtime_CompilerServices_RuntimeFeature_ty = tryFindSysTyconRef sysCompilerServices "RuntimeFeature" |> Option.map mkNonGenericTy
 
   member val iltyp_TypedReference      = tryFindSysILTypeRef "System.TypedReference" |> Option.map mkILNonGenericValueTy
   member val iltyp_StreamingContext    = tryFindSysILTypeRef tname_StreamingContext  |> Option.map mkILNonGenericValueTy
