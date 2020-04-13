@@ -337,6 +337,7 @@ function TryDownloadDotnetFrameworkSdk() {
             $snPathX86 = Join-Path $windowsSDK_ExecutablePath_x86 "sn.exe"
             $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
             if ($snPathX86Exists -ne $true) {
+                $windowsSDK_ExecutablePath_x86 = null
                 $snPathX86 = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
             }
         }
@@ -351,6 +352,7 @@ function TryDownloadDotnetFrameworkSdk() {
             $snPathX64 = Join-Path $windowsSDK_ExecutablePath_x64 "sn.exe"
             $snPathX64Exists = Test-Path $snPathX64 -PathType Leaf
             if ($snPathX64Exists -ne $true) {
+                $windowsSDK_ExecutablePath_x86 = null
                 $snPathX64 = Join-Path $newWindowsSDK_ExecutablePath_x64 "sn.exe"
             }
         }
@@ -362,13 +364,11 @@ function TryDownloadDotnetFrameworkSdk() {
         }
 
         $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
-        Write-Host "snPathX86Exists : $snPathX86Exists - '$snPathX86'"
-        Write-Host "windowsSDK_ExecutablePath_x86 - '$windowsSDK_ExecutablePath_x86'"
-        Write-Host "newWindowsSDK_ExecutablePath_x86 - '$newWindowsSDK_ExecutablePath_x86'"
         if ($snPathX86Exists -eq $true) {
             if ($windowsSDK_ExecutablePath_x86 -ne $newWindowsSDK_ExecutablePath_x86) {
                 $windowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
                 # x86 environment variable
+                Write-Host "set WindowsSDK_ExecutablePath_x86=$WindowsSDK_ExecutablePath_x86"
                 [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86","$newWindowsSDK_ExecutablePath_x86",[System.EnvironmentVariableTarget]::Machine)
                 $env:WindowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
             }
@@ -376,15 +376,13 @@ function TryDownloadDotnetFrameworkSdk() {
 
         # Also update environment variable for x64
         $snPathX64Exists = Test-Path $snPathX64 -PathType Leaf
-        Write-Host "snPathX64Exists : $snPathX64Exists - '$snPathX64'"
-        Write-Host "windowsSDK_ExecutablePath_x64 - '$windowsSDK_ExecutablePath_x64'"
-        Write-Host "newWindowsSDK_ExecutablePath_x64 - '$newWindowsSDK_ExecutablePath_x64'"
         if ($snPathX64Exists -eq $true) {
             if ($windowsSDK_ExecutablePath_x64 -ne $newWindowsSDK_ExecutablePath_x64) {
                 $windowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
                 # x64 environment variable
+                Write-Host "set WindowsSDK_ExecutablePath_x64=$WindowsSDK_ExecutablePath_x64"
                 [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x64","$newWindowsSDK_ExecutablePath_x64",[System.EnvironmentVariableTarget]::Machine)
-                $env:WindowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x64
+                $env:WindowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
             }
         }
     }
