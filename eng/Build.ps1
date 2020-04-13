@@ -356,6 +356,7 @@ function TryDownloadDotnetFrameworkSdk() {
         }
 
         $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
+        Write-Host "pre-dl snPathX86Exists : $snPathX86Exists - '$snPathX86'"
         if ($snPathX86Exists -ne $true) {
             DownloadDotnetFrameworkSdk
         }
