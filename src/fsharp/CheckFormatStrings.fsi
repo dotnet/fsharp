@@ -9,7 +9,7 @@ module internal FSharp.Compiler.CheckFormatStrings
 
 open FSharp.Compiler 
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Tast 
+open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TcGlobals
 
 val ParseFormatString : Range.range -> TcGlobals -> formatStringCheckContext: FormatStringCheckContext option -> fmt: string -> bty: TType -> cty: TType -> dty: TType -> (TType * TType) * (Range.range * int) list

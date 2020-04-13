@@ -8,19 +8,22 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open System.Collections.Generic
+
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler
-open FSharp.Compiler.Parser
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
+open FSharp.Compiler.Parser
+open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.Range
+
 open Internal.Utilities
 
 type Position = int * int
+
 type Range = Position * Position
 
 module FSharpTokenTag =
@@ -798,13 +801,13 @@ module Keywords =
 module Lexer =
 
     open System.Threading
-    open FSharp.Compiler.UnicodeLexing
-    open FSharp.Compiler.Range
-    open FSharp.Compiler.Ast
-    open FSharp.Compiler.Text
     open FSharp.Compiler.Features
-    open FSharp.Compiler.Parser
     open FSharp.Compiler.Lexhelp
+    open FSharp.Compiler.Parser
+    open FSharp.Compiler.Range
+    open FSharp.Compiler.SyntaxTree
+    open FSharp.Compiler.Text
+    open FSharp.Compiler.UnicodeLexing
     open Internal.Utilities
 
     [<Flags>]

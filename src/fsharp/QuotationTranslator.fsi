@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// Convert quoted TAST data structures to structures ready for pickling 
-
+/// Convert quoted TAST data structures to structures ready for pickling 
 module internal FSharp.Compiler.QuotationTranslator
 
 open FSharp.Compiler 
-open FSharp.Compiler.Range
-open FSharp.Compiler.Import
-open FSharp.Compiler.Tast
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Import
+open FSharp.Compiler.Range
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 
 exception InvalidQuotedTerm of exn
 exception IgnoringPartOfQuotedTermWarning of string * Range.range

@@ -135,7 +135,9 @@ namespace Microsoft.FSharp.Core
     type StructuralEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface |||
+                      AttributeTargets.Delegate ||| AttributeTargets.Struct |||
+                      AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type NoEqualityAttribute() = 
         inherit System.Attribute()
@@ -150,19 +152,26 @@ namespace Microsoft.FSharp.Core
     type CustomComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface |||
+                      AttributeTargets.Delegate ||| AttributeTargets.Struct |||
+                      AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type NoComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter |||
+                      AttributeTargets.Method ||| AttributeTargets.Property |||
+                      AttributeTargets.Constructor, AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute(includeValue: bool) =
         inherit System.Attribute()
         new() = ReflectedDefinitionAttribute(false)
         member x.IncludeValue = includeValue
 
-    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class ||| AttributeTargets.Field ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum ||| AttributeTargets.Property, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class |||
+                      AttributeTargets.Field ||| AttributeTargets.Interface |||
+                      AttributeTargets.Struct ||| AttributeTargets.Delegate |||
+                      AttributeTargets.Enum ||| AttributeTargets.Property, AllowMultiple=false)>]  
     [<Sealed>]
     type CompiledNameAttribute(compiledName:string) =
         inherit System.Attribute()

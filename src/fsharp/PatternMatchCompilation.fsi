@@ -4,8 +4,8 @@ module internal FSharp.Compiler.PatternMatchCompilation
 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Range
 
@@ -17,8 +17,8 @@ type ActionOnFailure =
     | Rethrow 
     | FailFilter
 
-[<NoEquality; NoComparison>]
 /// Represents the typechecked, elaborated form of a pattern, prior to pattern-match compilation.
+[<NoEquality; NoComparison>]
 type Pattern =
     | TPat_const of Const * range
     | TPat_wild of range
@@ -44,7 +44,7 @@ and PatternValBinding =
 and TypedMatchClause =  
     | TClause of Pattern * Expr option * DecisionTreeTarget * range
 
-val ilFieldToTastConst: ILFieldInit -> Tast.Const
+val ilFieldToTastConst: ILFieldInit -> Const
 
 /// Compile a pattern into a decision tree and a set of targets.
 val internal CompilePattern: 
@@ -71,5 +71,7 @@ val internal CompilePattern:
         DecisionTree * DecisionTreeTarget list
 
 exception internal MatchIncomplete of bool * (string * bool) option * range
+
 exception internal RuleNeverMatched of range
+
 exception internal EnumMatchIncomplete of bool * (string * bool) option * range

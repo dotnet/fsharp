@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 /// Helper members to integrate DependencyManagers into F# codebase
-namespace Interactive.DependencyManager
+namespace Microsoft.Interactive.DependencyManager
 
 open System
 open System.Runtime.InteropServices
@@ -16,18 +16,17 @@ type IResolveDependenciesResult =
     /// The resolution output log
     abstract StdOut: string array
 
-    /// The resolution error log (* process stderror *)
+    /// The resolution error log (process stderr)
     abstract StdError: string array
 
     /// The resolution paths
-    abstract Resolutions: string seq
+    abstract Resolutions: seq<string>
 
     /// The source code file paths
-    abstract SourceFiles: string seq
+    abstract SourceFiles: seq<string>
 
     /// The roots to package directories
-    abstract Roots: string seq
-
+    abstract Roots: seq<string>
 
 /// Wraps access to a DependencyManager implementation
 [<AllowNullLiteralAttribute >]
@@ -43,8 +42,7 @@ type IDependencyManagerProvider =
     abstract Key: string
 
     /// Resolve the dependencies, for the given set of arguments, go find the .dll references, scripts and additional include values.
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string -> IResolveDependenciesResult
-
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string * rid: string -> IResolveDependenciesResult
 
 /// Todo describe this API
 [<RequireQualifiedAccess>]
@@ -52,9 +50,7 @@ type ErrorReportType =
     | Warning
     | Error
 
-
 type ResolvingErrorReport = delegate of ErrorReportType * int * string -> unit
-
 
 /// Provides DependencyManagement functions.
 /// Class is IDisposable
@@ -63,6 +59,8 @@ type DependencyProvider =
 
     /// Construct a new DependencyProvider
     new: assemblyProbingPaths: AssemblyResolutionProbe * nativeProbingRoots: NativeResolutionProbe -> DependencyProvider
+
+    /// Construct a new DependencyProvider
     new: nativeProbingRoots: NativeResolutionProbe -> DependencyProvider
 
     /// Returns a formatted error message for the host to present
@@ -72,7 +70,7 @@ type DependencyProvider =
     member RemoveDependencyManagerKey: packageManagerKey: string * path: string -> string
 
     /// Resolve reference for a list of package manager lines
-    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: string seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string -> IResolveDependenciesResult
+    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: string seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue(null:string)>]executionRid: string  * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string -> IResolveDependenciesResult
 
     /// Fetch a dependencymanager that supports a specific key
     member TryFindDependencyManagerByKey: compilerTools: string seq * outputDir: string * reportError: ResolvingErrorReport * key: string -> IDependencyManagerProvider

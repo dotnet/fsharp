@@ -9,7 +9,8 @@ open FSharp.Compiler.SourceCodeServices
 module ``ComputationExpressions`` =
     let tmp = 1
 
-    let applicativeLib  (opts: {| includeMergeSourcesOverloads: bool |}) = 
+    type Flags = { includeMergeSourcesOverloads: bool; includeBindReturnExtras: bool }
+    let applicativeLib  (opts: Flags) = 
         """
 /// Used for tracking what operations a Trace builder was asked to perform
 [<RequireQualifiedAccess>]
@@ -71,9 +72,11 @@ type TraceApplicative() =
         builder.Trace TraceOp.ApplicativeBindReturn
         Trace (f x.Value)
 
+        """ + (if opts.includeBindReturnExtras then """
     member builder.Bind2Return(x1: Trace<'T1>, x2: Trace<'T2>, f: 'T1 * 'T2 -> 'T3) : Trace<'T3> =
         builder.Trace TraceOp.ApplicativeBind2Return
         Trace (f (x1.Value, x2.Value))
+        """ else "") + """
 
 type TraceApplicativeWithDelayAndRun() =
     inherit TraceApplicative()
@@ -163,11 +166,19 @@ type TraceMultiBindingMonadicCustomOp() =
         builder.Trace (TraceOp.Log (messageFunc boundValues.Value))
         boundValues
 
+type TraceApplicativeCustomOp() =
+    inherit TraceApplicative()
+
+    [<CustomOperation("log", MaintainsVariableSpaceUsingBind = true)>]
+    member builder.Log(boundValues : Trace<'T>, message: string) =
+        builder.Trace (TraceOp.Log message)
+        boundValues
+
 let check msg actual expected = if actual <> expected then failwithf "FAILED %s, expected %A, got %A" msg expected actual
         """
 
-    let includeAll = {| includeMergeSourcesOverloads = true |}
-    let includeMinimal = {| includeMergeSourcesOverloads = false |}
+    let includeAll = { includeMergeSourcesOverloads = true; includeBindReturnExtras=true }
+    let includeMinimal = { includeMergeSourcesOverloads = false; includeBindReturnExtras=false }
 
     let ApplicativeLibTest opts source =
         CompilerAssert.CompileExeAndRunWithOptions [| "/langversion:preview" |] (applicativeLib opts + source)
@@ -199,6 +210,61 @@ let ceResult : Trace<int> =
 
 check "fewljvwerjl1" ceResult.Value 3
 check "fewljvwerj12" (tracer.GetTrace ()) [|TraceOp.ApplicativeBind2Return|]
+            """
+
+    [<Test>]
+    let ``AndBang TraceApplicativeCustomOp`` () =
+        ApplicativeLibTest includeAll """
+
+let tracer = TraceApplicativeCustomOp()
+
+let ceResult : Trace<int> =
+    tracer {
+        let! x = Trace 3
+        and! y = Trace true
+        log "hello!"
+        return if y then x else -1
+    }
+
+check "fewljvwerjlvwe1" ceResult.Value 3
+check "fewljvwerjvwe12" (tracer.GetTrace ()) [|TraceOp.ApplicativeBind2Return; TraceOp.Log "hello!";TraceOp.ApplicativeBindReturn|]
+            """
+
+    [<Test>]
+    let ``AndBang TraceApplicativeCustomOp Minimal`` () =
+        ApplicativeLibTest includeMinimal """
+
+let tracer = TraceApplicativeCustomOp()
+
+let ceResult : Trace<int> =
+    tracer {
+        let! x = Trace 3
+        and! y = Trace true
+        log "hello!"
+        return if y then x else -1
+    }
+
+check "fewljvwerjlvwe1" ceResult.Value 3
+check "fewljvwerjvwe12" (tracer.GetTrace ()) [|TraceOp.MergeSources; TraceOp.ApplicativeBindReturn; TraceOp.Log "hello!";TraceOp.ApplicativeBindReturn|]
+            """
+
+    [<Test>]
+    let ``AndBang TraceApplicativeCustomOpTwice`` () =
+        ApplicativeLibTest includeAll """
+
+let tracer = TraceApplicativeCustomOp()
+
+let ceResult : Trace<int> =
+    tracer {
+        let! x = Trace 3
+        and! y = Trace true
+        log "hello!"
+        log "goodbye!"
+        return if y then x else -1
+    }
+
+check "fewljvwerjlvwe1" ceResult.Value 3
+check "fewljvwerjvwe12" (tracer.GetTrace ()) [|TraceOp.ApplicativeBind2Return; TraceOp.Log "hello!";TraceOp.Log "goodbye!";TraceOp.ApplicativeBindReturn|]
             """
 
     [<Test>]
@@ -345,6 +411,23 @@ let ceResult : int Trace =
 
 check "vlkjrrlwevlk23" ceResult.Value 3
 check "vlkjrrlwevlk24" (tracer.GetTrace ())  [|TraceOp.Delay; TraceOp.ApplicativeBind2Return|]
+        """
+
+    [<Test>]
+    let ``AndBang TraceApplicativeWithDelay Minimal`` () =
+        ApplicativeLibTest includeMinimal """
+
+let tracer = TraceApplicativeWithDelay()
+
+let ceResult : int Trace =
+    tracer {
+        let! x = Trace 3
+        and! y = Trace true
+        return if y then x else -1
+    }
+
+check "vlkjrrlwevlk23" ceResult.Value 3
+check "vlkjrrlwevlk24" (tracer.GetTrace ())  [|TraceOp.Delay; TraceOp.MergeSources; TraceOp.ApplicativeBindReturn|]
         """
 
     [<Test>]

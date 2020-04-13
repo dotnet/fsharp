@@ -7,6 +7,7 @@ open System.IO
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
+open System.Diagnostics
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 
@@ -44,7 +45,6 @@ module private TestReferences =
         let systemDynamicRuntimeRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.System_Dynamic_Runtime).GetReference(display = "System.Dynamic.Runtime.dll (netcoreapp 3.0 ref)")
 
         let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.System_Console).GetReference(display = "System.Console.dll (netcoreapp 3.0 ref)")
-        
 
 [<RequireQualifiedAccess>]
 module private TargetFrameworkUtil =
@@ -71,12 +71,12 @@ type CSharpCompilationFlags =
 
 [<RequireQualifiedAccess>]
 type TestCompilation =
-    | CSharp of CSharpCompilation * CSharpCompilationFlags
+    | CSharp of CSharpCompilation
     | IL of ilSource: string * result: Lazy<string * byte []>
 
     member this.AssertNoErrorsOrWarnings () =
         match this with
-        | TestCompilation.CSharp (c, _) ->
+        | TestCompilation.CSharp c ->
             let diagnostics = c.GetDiagnostics ()
 
             if not diagnostics.IsEmpty then                  
@@ -89,7 +89,8 @@ type TestCompilation =
 
     member this.EmitAsFile (outputPath: string) =
         match this with
-        | TestCompilation.CSharp (c, _) ->
+        | TestCompilation.CSharp c ->
+            let c = c.WithAssemblyName(Path.GetFileNameWithoutExtension outputPath)
             let emitResult = c.Emit outputPath
             if not emitResult.Success then
                 failwithf "Unable to emit C# compilation.\n%A" emitResult.Diagnostics
@@ -104,7 +105,7 @@ type CSharpLanguageVersion =
 [<AbstractClass; Sealed>]
 type CompilationUtil private () =
     
-    static member CreateCSharpCompilation (source: string, lv: CSharpLanguageVersion, ?tf, ?additionalReferences, ?flags) =
+    static member CreateCSharpCompilation (source: string, lv: CSharpLanguageVersion, ?tf, ?additionalReferences) =
         let lv =
             match lv with
             | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
@@ -112,7 +113,6 @@ type CompilationUtil private () =
 
         let tf = defaultArg tf TargetFramework.NetStandard20
         let additionalReferences = defaultArg additionalReferences ImmutableArray.Empty
-        let flags = defaultArg flags CSharpCompilationFlags.None
         let references = TargetFrameworkUtil.getReferences tf
         let c =
             CSharpCompilation.Create(
@@ -120,7 +120,7 @@ type CompilationUtil private () =
                 [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
                 references.As<MetadataReference>().AddRange additionalReferences,
                 CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
-        TestCompilation.CSharp (c, flags)
+        TestCompilation.CSharp c
 
     static member CreateILCompilation (source: string) =
         let compute =

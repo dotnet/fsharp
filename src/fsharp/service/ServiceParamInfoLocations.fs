@@ -2,8 +2,9 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
 
 [<Sealed>]
 type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: range, openParenLocation: pos,  tupleEndLocations: pos list, isThereACloseParen: bool, namedParamNames: string option list) =

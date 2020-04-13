@@ -9,10 +9,10 @@ module Tests.Service.ServiceUntypedParseTests
 
 open System.IO
 open FsUnit
-open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.SyntaxTree
 open NUnit.Framework
 
 let [<Literal>] private Marker = "(* marker *)"

@@ -7,14 +7,16 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Ast
-open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Lib
+open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TcGlobals
 open System.Collections.Generic
 
 module QP = FSharp.Compiler.QuotationPickler
@@ -40,7 +42,7 @@ type QuotationGenerationScope =
       referencedTypeDefs: ResizeArray<ILTypeRef>
       referencedTypeDefsTable: Dictionary<ILTypeRef, int>
       // Accumulate the type splices (i.e. captured type parameters) into here
-      typeSplices: ResizeArray<Tast.Typar * range>
+      typeSplices: ResizeArray<Typar * range>
       // Accumulate the expression splices into here
       exprSplices: ResizeArray<Expr * range>
       isReflectedDefinition : IsReflectedDefinition
@@ -163,7 +165,7 @@ let (|ObjectInitializationCheck|_|) g expr =
            _, _,
            TDSwitch
             (
-                Expr.Op (TOp.ILAsm ([AI_clt], _), _, [Expr.Op (TOp.ValFieldGet ((RFRef(_, name))), _, [Expr.Val (selfRef, NormalValUse, _)], _); Expr.Const (Const.Int32 1, _, _)], _), _, _, _
+                Expr.Op (TOp.ILAsm ([AI_clt], _), _, [Expr.Op (TOp.ValFieldGet ((RecdFieldRef(_, name))), _, [Expr.Val (selfRef, NormalValUse, _)], _); Expr.Const (Const.Int32 1, _, _)], _), _, _, _
             ),
            [| TTarget([], Expr.App (Expr.Val (failInitRef, _, _), _, _, _, _), _); _ |], _, resultTy
         ) when
@@ -828,7 +830,7 @@ and ConvType cenv env m ty =
     | TType_app(tcref, [tyarg]) when isArrayTyconRef cenv.g tcref ->
         QP.mkArrayTy(rankOfArrayTyconRef cenv.g tcref, ConvType cenv env m tyarg)
 
-    | TType_ucase(UCRef(tcref, _), tyargs) // Note: we erase union case 'types' when converting to quotations
+    | TType_ucase(UnionCaseRef(tcref, _), tyargs) // Note: we erase union case 'types' when converting to quotations
     | TType_app(tcref, tyargs) ->
 #if !NO_EXTENSIONTYPING
         match TryElimErasableTyconRef cenv m tcref with

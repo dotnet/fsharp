@@ -207,7 +207,7 @@ stages:
         # Linux
         - job: Linux
           pool:
-            vmImage: ubuntu-16.04
+            vmImage: ubuntu-latest
           variables:
           - name: _SignType
             value: Test
@@ -283,7 +283,7 @@ stages:
         # - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
         #   - job: SourceBuild_Linux
         #     pool:
-        #       vmImage: ubuntu-16.04
+        #       vmImage: ubuntu-latest
         #     steps:
         #     - checkout: self
         #       clean: true
@@ -379,7 +379,7 @@ stages:
 
         - job: Linux_FCS
           pool:
-            vmImage: ubuntu-16.04
+            vmImage: ubuntu-latest
           variables:
           - name: _SignType
             value: Test

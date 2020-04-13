@@ -8,6 +8,7 @@ open FSharp.Compiler
 #nowarn "57"
 
 type Position = int * int
+
 type Range = Position * Position
 
 /// Represents encoded information for the end-of-line continuation of lexing
@@ -15,7 +16,9 @@ type Range = Position * Position
 type FSharpTokenizerLexState = 
     { PosBits: int64
       OtherBits: int64 }
+
     static member Initial : FSharpTokenizerLexState
+
     member Equals : FSharpTokenizerLexState -> bool
 
 /// Represents stable information for the state of the lexing engine at the end of a line

@@ -1498,7 +1498,14 @@ and seekReadFile (ctxt: ILMetadataReader) mdv idx =
     ILModuleRef.Create(name = readStringHeap ctxt nameIdx, hasMetadata= ((flags &&& 0x0001) = 0x0), hash= readBlobHeapOption ctxt hashValueIdx)
 
 and seekReadClassLayout (ctxt: ILMetadataReader) mdv idx =
-    match seekReadOptionalIndexedRow (ctxt.getNumRows TableNames.ClassLayout, seekReadClassLayoutRow ctxt mdv, (fun (_, _, tidx) -> tidx), simpleIndexCompare idx, isSorted ctxt TableNames.ClassLayout, (fun (pack, size, _) -> pack, size)) with 
+    let res =
+        seekReadOptionalIndexedRow (ctxt.getNumRows TableNames.ClassLayout,
+            seekReadClassLayoutRow ctxt mdv,
+            (fun (_, _, tidx) -> tidx),
+            simpleIndexCompare idx,
+            isSorted ctxt TableNames.ClassLayout,
+            (fun (pack, size, _) -> pack, size))
+    match res  with 
     | None -> { Size = None; Pack = None }
     | Some (pack, size) -> { Size = Some size; Pack = Some pack }
 
@@ -2728,12 +2735,13 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
 
                  let pdbm = pdbReaderGetMethod pdbr (uncodedToken TableNames.Method idx)
                  let sps = pdbMethodGetSequencePoints pdbm
-                 (*dprintf "#sps for 0x%x = %d\n" (uncodedToken TableNames.Method idx) (Array.length sps) *)
                  (* let roota, rootb = pdbScopeGetOffsets rootScope in *)
                  let seqpoints =
                     let arr = 
                        sps |> Array.map (fun sp -> 
-                           (* It is VERY annoying to have to call GetURL for the document for each sequence point. This appears to be a short coming of the PDB reader API. They should return an index into the array of documents for the reader *)
+                           // It is VERY annoying to have to call GetURL for the document for
+                           // each sequence point. This appears to be a short coming of the PDB
+                           // reader API. They should return an index into the array of documents for the reader
                            let sourcedoc = get_doc (pdbDocumentGetURL sp.pdbSeqPointDocument)
                            let source = 
                              ILSourceMarker.Create(document = sourcedoc, 

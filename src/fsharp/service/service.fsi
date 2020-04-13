@@ -1,17 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-//----------------------------------------------------------------------------
-// SourceCodeServices API to the compiler as an incremental service for parsing,
-// type checking and intellisense-like environment-reporting.
-//----------------------------------------------------------------------------
-
+/// SourceCodeServices API to the compiler as an incremental service for parsing,
+/// type checking and intellisense-like environment-reporting.
 namespace FSharp.Compiler.SourceCodeServices
+
 open System
 open System.IO
 
-open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler
-open FSharp.Compiler.Ast
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
 open FSharp.Compiler.Text
 

@@ -3,22 +3,27 @@
 namespace FSharp.Compiler
 
 open System
+
 open FSharp.Compiler
-open FSharp.Compiler.Range
-open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.CompileOps
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Tast
+open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
+
     member Get : CompilationThreadToken * TcConfig -> Cancellable<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
+
     member Clear: CompilationThreadToken -> unit
+
     member Downsize: CompilationThreadToken -> unit
   
 /// Used for unit testing
@@ -34,10 +39,14 @@ module internal IncrementalBuilderEventTesting =
 
 /// Represents the state in the incremental graph associated with checking a file
 type internal PartialCheckResults = 
-    { /// This field is None if a major unrecovered error occurred when preparing the initial state
+    {
+      /// This field is None if a major unrecovered error occurred when preparing the initial state
       TcState : TcState
+
       TcImports: TcImports 
+
       TcGlobals: TcGlobals 
+
       TcConfig: TcConfig 
 
       /// This field is None if a major unrecovered error occurred when preparing the initial state
@@ -76,7 +85,8 @@ type internal PartialCheckResults =
       ItemKeyStore: ItemKeyStore option
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      SemanticClassification: struct (range * SemanticClassificationType) [] }
+      SemanticClassification: struct (range * SemanticClassificationType) []
+    }
 
     member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
 
@@ -165,7 +175,7 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
+      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
 
       static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 * tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot * suggestNamesForErrors: bool * keepAllBackgroundSymbolUses: bool * enableBackgroundItemKeyStoreAndSemanticClassification: bool -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
 
@@ -251,10 +261,13 @@ module internal IncrementalBuild =
     /// Only required for unit testing.
     type BuildDescriptionScope = 
         new : unit -> BuildDescriptionScope
+
         /// Declare a named scalar output.
         member DeclareScalarOutput : output:Scalar<'T> -> unit
+
         /// Declare a named vector output.
         member DeclareVectorOutput : output:Vector<'T> -> unit
+
         /// Set the concrete inputs for this build. 
         member GetInitialPartialBuild : vectorinputs: BuildInput list -> PartialBuild
 

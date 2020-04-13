@@ -2,16 +2,19 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Ast
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 
 module Structure =
+
     /// Set of visitor utilities, designed for the express purpose of fetching ranges
     /// from an untyped AST for the purposes of block structure.
     [<RequireQualifiedAccess>]
     module Range =
+
         /// Create a range starting at the end of r1 and finishing at the end of r2
         let endToEnd (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.End r2.End
 
@@ -33,7 +36,6 @@ module Structure =
         let modEnd (m:int) (r: range) =
             let modend = mkPos r.EndLine (r.EndColumn+m)
             mkFileIndexRange r.FileIndex r.Start modend
-
 
         /// Produce a new range by adding modStart to the StartColumn of `r`
         /// and subtracting modEnd from the EndColumn of `r`
@@ -127,6 +129,7 @@ module Structure =
         | UnionDefn
         | Comment
         | XmlDocComment
+
         override self.ToString() = 
             match self with
             | Open                -> "Open"
@@ -270,7 +273,7 @@ module Structure =
             | SynExpr.Match (seqPointAtBinding, _expr, clauses, r)
             | SynExpr.MatchBang (seqPointAtBinding, _expr, clauses, r) ->
                 match seqPointAtBinding with
-                | SequencePointAtBinding sr ->
+                | DebugPointAtBinding sr ->
                     let collapse = Range.endToEnd sr r
                     rcheck Scope.Match Collapse.Same r collapse
                 | _ -> ()
@@ -278,7 +281,7 @@ module Structure =
             | SynExpr.MatchLambda (_, caseRange, clauses, matchSeqPoint, r) ->
                 let caseRange =
                     match matchSeqPoint with
-                    | SequencePointAtBinding r -> r
+                    | DebugPointAtBinding r -> r
                     | _ -> caseRange
                 let collapse = Range.endToEnd caseRange r
                 rcheck Scope.MatchLambda Collapse.Same r collapse
@@ -318,7 +321,7 @@ module Structure =
                 parseExprInterfaces extraImpls
             | SynExpr.TryWith (e, _, matchClauses, _, wholeRange, tryPoint, withPoint) ->
                 match tryPoint, withPoint with
-                | SequencePointAtTry tryRange,  SequencePointAtWith withRange ->
+                | DebugPointAtTry.Yes tryRange,  DebugPointAtWith.Yes withRange ->
                     let fullrange = Range.startToEnd tryRange wholeRange
                     let collapse = Range.endToEnd tryRange wholeRange
                     let collapseTry = Range.endToStart tryRange withRange
@@ -333,7 +336,7 @@ module Structure =
                 List.iter parseMatchClause matchClauses
             | SynExpr.TryFinally (tryExpr, finallyExpr, r, tryPoint, finallyPoint) ->
                 match tryPoint, finallyPoint with
-                | SequencePointAtTry tryRange, SequencePointAtFinally finallyRange ->
+                | DebugPointAtTry.Yes tryRange, DebugPointAtFinally.Yes finallyRange ->
                     let collapse = Range.endToEnd tryRange finallyExpr.Range
                     let fullrange = Range.startToEnd tryRange finallyExpr.Range
                     let collapseFinally = Range.endToEnd finallyRange r
@@ -345,7 +348,7 @@ module Structure =
                 parseExpr finallyExpr
             | SynExpr.IfThenElse (ifExpr, thenExpr, elseExprOpt, spIfToThen, _, ifToThenRange, r) ->
                 match spIfToThen with
-                | SequencePointAtBinding rt ->
+                | DebugPointAtBinding rt ->
                     // Outline the entire IfThenElse
                     let fullrange = Range.startToEnd rt r
                     let collapse = Range.endToEnd  ifExpr.Range r
@@ -463,7 +466,7 @@ module Structure =
 
         and parseSynMemberDefn (objectModelRange: range) d =
             match d with
-            | SynMemberDefn.Member(SynBinding.Binding (attrs=attrs; valData=valData; headPat=synPat; range=bindingRange) as binding, _) ->
+            | SynMemberDefn.Member(SynBinding.Binding (attributes=attrs; valData=valData; headPat=synPat; range=bindingRange) as binding, _) ->
                match valData with
                | SynValData (Some { MemberKind=MemberKind.Constructor }, _, _) ->
                   let collapse = Range.endToEnd synPat.Range d.Range
@@ -550,7 +553,7 @@ module Structure =
                List.iter (parseSynMemberDefn r) members
            | SynTypeDefnRepr.Exception _ -> ()
 
-        let getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope: Scope) (decls: SynModuleDecls) =
+        let getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope: Scope) (decls: SynModuleDecl list) =
             let groupConsecutiveDecls input =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with
@@ -718,7 +721,7 @@ module Structure =
                 let (TypeDefnSig(_, _, memberSigs, r)) = List.last ls
                 lastMemberSigRangeElse r memberSigs
 
-        let lastModuleSigDeclRangeElse range (sigDecls:SynModuleSigDecls) =
+        let lastModuleSigDeclRangeElse range (sigDecls:SynModuleSigDecl list) =
             match sigDecls with
             | [] -> range
             | ls -> 
@@ -778,7 +781,7 @@ module Structure =
                 parseSimpleRepr simpleRepr
             | SynTypeDefnSigRepr.Exception _ -> ()
 
-        let getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> range option) (scope:Scope) (decls: SynModuleSigDecls) =
+        let getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> range option) (scope:Scope) (decls: SynModuleSigDecl list) =
             let groupConsecutiveSigDecls input =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with
@@ -808,7 +811,7 @@ module Structure =
             |> List.choose selectSigRanges
             |> acc.AddRange
 
-        let collectSigHashDirectives (decls: SynModuleSigDecls) =
+        let collectSigHashDirectives (decls: SynModuleSigDecl list) =
             decls
             |> getConsecutiveSigModuleDecls(
                 function

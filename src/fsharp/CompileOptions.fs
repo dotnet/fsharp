@@ -16,14 +16,14 @@ open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompileOps
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops 
-open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.IlxGen
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
-open FSharp.Compiler.IlxGen
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps 
+open FSharp.Compiler.ErrorLogger
 
 module Attributes = 
     open System.Runtime.CompilerServices
@@ -1060,7 +1060,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     
     CompilerOption
        ("ranges", tagNone,
-        OptionSet Tastops.DebugPrint.layoutRanges,
+        OptionSet DebugPrint.layoutRanges,
         Some(InternalCommandLineOption("--ranges", rangeCmdArgs)), None)  
     
     CompilerOption

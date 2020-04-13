@@ -206,11 +206,7 @@ let startupFileName = "startup"
 let commandLineArgsFileName = "commandLineArgs"
 
 [<Struct; CustomEquality; NoComparison>]
-#if DEBUG
-[<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {FileName} IsSynthetic={IsSynthetic} -> {DebugCode}")>]
-#else
-[<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {FileName} IsSynthetic={IsSynthetic}")>]
-#endif
+[<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
 type range(code1:int64, code2: int64) =
     static member Zero = range(0L, 0L)
     new (fIdx, bl, bc, el, ec) = 
@@ -246,13 +242,14 @@ type range(code1:int64, code2: int64) =
 
     member r.FileName = fileOfFileIndex r.FileIndex
 
+    member r.ShortFileName = Path.GetFileName(fileOfFileIndex r.FileIndex)
+
     member r.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
 
     member r.Code1 = code1
 
     member r.Code2 = code2
 
-#if DEBUG
     member r.DebugCode =
         let name = r.FileName
         if name = unknownFileName || name = startupFileName || name = commandLineArgsFileName then name else
@@ -270,7 +267,6 @@ type range(code1:int64, code2: int64) =
               |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
         with e ->
             e.ToString()        
-#endif
 
     member r.ToShortString() = sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
 
@@ -296,9 +292,12 @@ let outputPos   (os:TextWriter) (m:pos)   = fprintf os "(%d,%d)" m.Line m.Column
 
 let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End
     
-let posGt (p1:pos) (p2:pos) = (p1.Line > p2.Line || (p1.Line = p2.Line && p1.Column > p2.Column))
+let posGt (p1: pos) (p2: pos) =
+    let p1Line = p1.Line
+    let p2Line = p2.Line
+    p1Line > p2Line || p1Line = p2Line && p1.Column > p2.Column
 
-let posEq (p1:pos) (p2:pos) = (p1.Line = p2.Line &&  p1.Column = p2.Column)
+let posEq (p1: pos) (p2: pos) = p1.Encoding = p2.Encoding
 
 let posGeq p1 p2 = posEq p1 p2 || posGt p1 p2
 
