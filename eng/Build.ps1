@@ -326,32 +326,64 @@ function TryDownloadDotnetFrameworkSdk() {
             $programFiles = ${env:ProgramFiles(x86)}
         }
 
-        # Get windowsSDK location
+        # Get windowsSDK location for x86
         $windowsSDK_ExecutablePath_x86 = $env:WindowsSDK_ExecutablePath_x86
         $newWindowsSDK_ExecutablePath_x86 = Join-Path "$programFiles" "Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools"
 
         if ($windowsSDK_ExecutablePath_x86 -eq $null) {
-            $snPath = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
+            $snPathX86 = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
         }
         else {
-            $snPath = Join-Path $windowsSDK_ExecutablePath_x86 "sn.exe"
-            $snPathExists = Test-Path $snPath -PathType Leaf
-            if ($snPathExists -ne $true) {
-                $snPath = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
+            $snPathX86 = Join-Path $windowsSDK_ExecutablePath_x86 "sn.exe"
+            $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
+            if ($snPathX86Exists -ne $true) {
+                $snPathX86 = Join-Path $newWindowsSDK_ExecutablePath_x86 "sn.exe"
             }
         }
 
-        $snPathExists = Test-Path $snPath -PathType Leaf
-        if ($snPathExists -ne $true) {
+        $windowsSDK_ExecutablePath_x64 = $env:WindowsSDK_ExecutablePath_x64
+        $newWindowsSDK_ExecutablePath_x64 = Join-Path "$programFiles" "Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64"
+
+        if ($windowsSDK_ExecutablePath_x64 -eq $null) {
+            $snPathX64 = Join-Path $newWindowsSDK_ExecutablePath_x64 "sn.exe"
+        }
+        else {
+            $snPathX64 = Join-Path $windowsSDK_ExecutablePath_x64 "sn.exe"
+            $snPathX64Exists = Test-Path $snPathX64 -PathType Leaf
+            if ($snPathX64Exists -ne $true) {
+                $snPathX64 = Join-Path $newWindowsSDK_ExecutablePath_x64 "sn.exe"
+            }
+        }
+
+        $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
+        if ($snPathX86Exists -ne $true) {
             DownloadDotnetFrameworkSdk
         }
 
-        $snPathExists = Test-Path $snPath -PathType Leaf
-        if ($snPathExists -eq $true) {
+        $snPathX86Exists = Test-Path $snPathX86 -PathType Leaf
+        Write-Host "snPathX86Exists : $snPathX86Exists - '$snPathX86'"
+        Write-Host "windowsSDK_ExecutablePath_x86 - '$windowsSDK_ExecutablePath_x86'"
+        Write-Host "newWindowsSDK_ExecutablePath_x86 - '$newWindowsSDK_ExecutablePath_x86'"
+        if ($snPathX86Exists -eq $true) {
             if ($windowsSDK_ExecutablePath_x86 -ne $newWindowsSDK_ExecutablePath_x86) {
                 $windowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
+                # x86 environment variable
                 [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86","$newWindowsSDK_ExecutablePath_x86",[System.EnvironmentVariableTarget]::Machine)
                 $env:WindowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
+            }
+        }
+
+        # Also update environment variable for x64
+        $snPathX64Exists = Test-Path $snPathX64 -PathType Leaf
+        Write-Host "snPathX64Exists : $snPathX64Exists - '$snPathX64'"
+        Write-Host "windowsSDK_ExecutablePath_x64 - '$windowsSDK_ExecutablePath_x64'"
+        Write-Host "newWindowsSDK_ExecutablePath_x64 - '$newWindowsSDK_ExecutablePath_x64'"
+        if ($snPathX64Exists -eq $true) {
+            if ($windowsSDK_ExecutablePath_x64 -ne $newWindowsSDK_ExecutablePath_x64) {
+                $windowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
+                # x64 environment variable
+                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x64","$newWindowsSDK_ExecutablePath_x64",[System.EnvironmentVariableTarget]::Machine)
+                $env:WindowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x64
             }
         }
     }
