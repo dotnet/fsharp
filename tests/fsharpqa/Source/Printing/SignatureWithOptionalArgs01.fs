@@ -15,7 +15,7 @@ open Microsoft.FSharp.Control
  
 type AsyncTimer(f, ?delay ) =
   let mutable does_again = true
-  let mutable delay:int = delay
+  let mutable delay:int option = delay
   
   member t.Delay 
     with get() = delay
