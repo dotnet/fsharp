@@ -27,7 +27,7 @@
   <WizardData>
     <packages repository="extension" repositoryId="VisualFSharpTemplates">
       <package id="System.ValueTuple" version="4.4.0" />
-      <package id="FSharp.Core" version="4.7.0" />
+      <package id="FSharp.Core" version="4.7.1" />
     </packages>
   </WizardData>
 </VSTemplate>
