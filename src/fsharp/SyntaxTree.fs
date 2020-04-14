@@ -1651,10 +1651,8 @@ type SynAnonUnionCase =
 
     /// The untyped, unchecked syntax tree for one case in a union definition.
     | AnonUnionCase of
-        attributes: SynAttributes *
         typ: SynType *
         xmlDoc: PreXmlDoc *
-        accessibility: SynAccess option *
         range: range
     
     member this.Range =
