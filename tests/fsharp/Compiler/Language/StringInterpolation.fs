@@ -207,6 +207,57 @@ check "vcewweh225u" $"abc %-5d{1}" "abc 1    "
             """
 
     [<Test>]
+    let ``String interpolation of null`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+check "vcewweh221q1" $"{null}" ""
+check "vcewweh221q2" $"%s{null}" ""
+check "vcewweh221q3" $"abc %s{null}" "abc "
+check "vcewweh221q4" $"abc %s{null} def" "abc  def"
+            """
+
+    [<Test>]
+    let ``String interpolation of basic types`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+check "vcewweh221q11" $"{1y}" "1"
+check "vcewweh221q12" $"{1uy}" "1"
+check "vcewweh221q13" $"{1s}" "1"
+check "vcewweh221q14" $"{1us}" "1"
+check "vcewweh221q15" $"{1u}" "1"
+check "vcewweh221q16" $"{1}" "1"
+check "vcewweh221q17" $"{-1}" "-1"
+check "vcewweh221q18" $"{1L}" "1"
+check "vcewweh221q19" $"{1UL}" "1"
+check "vcewweh221q1q" $"{1n}" "1"
+check "vcewweh221q1w" $"{1un}" "1"
+check "vcewweh221q1e" $"{1.0}" "1"
+check "vcewweh221q1r" $"{1.01}" "1.01"
+check "vcewweh221q1t" $"{-1.01}" "-1.01"
+check "vcewweh221q1y" $"{1I}" "1"
+check "vcewweh221q1i" $"{1M}" "1"
+
+check "vcewweh221q1o" $"%d{1y}" "1"
+check "vcewweh221q1p" $"%d{1uy}" "1"
+check "vcewweh221q1a" $"%d{1s}" "1"
+check "vcewweh221q1s" $"%d{1us}" "1"
+check "vcewweh221q1d" $"%d{1u}" "1"
+check "vcewweh221q1f" $"%d{1}" "1"
+check "vcewweh221q1g" $"%d{-1}" "-1"
+check "vcewweh221q1h" $"%d{1L}" "1"
+check "vcewweh221q1j" $"%d{1UL}" "1"
+check "vcewweh221q1k" $"%d{1n}" "1"
+check "vcewweh221q1l" $"%d{1un}" "1"
+
+check "vcewweh221q1" $"%f{1.0}" "1.000000"
+            """
+    [<Test>]
     let ``String interpolation using escaped braces`` () =
         CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
@@ -252,14 +303,14 @@ let check msg a b =
 // Check record expression (parenthesized)
 check "vcewweh18" $"abc{({contents=1}.contents)}def" "abc1def"
 
-// Check record expression (un-parenthesized)
-check "vcewweh19" $"abc{{contents=1}.contents}def" "abc1def"
+// Check {{ }} expression (un-parenthesized)
+check "vcewweh19" $"abc{{contents=1}.contents}def" "abc{contents=1}.contents}def"
 
 // Check record expression (un-parenthesized)
-check "vcewweh20" $"abc{{X=1}}def" "abc{ X = 1 }def"
+check "vcewweh20" $"abc{{X=1}}def" "abc{X=1}def"
 
-// Check record expression (un-parenthesized, multi-line)
-check "vcewweh21" $"abc{{X=1; Y=2}}def" "abc{ X = 1\n  Y = 2 }def"
+// Check {{ }} expression (un-parenthesized, multi-line)
+check "vcewweh21" $"abc{{X=1; Y=2}}def" "abc{X=1; Y=2}def"
 
             """
 
