@@ -3,7 +3,6 @@
   <Import Project="Sdk.targets" Sdk="Microsoft.DotNet.Arcade.Sdk" />
   <Import Project="eng\targets\Imports.targets" />
   <Import Project="eng\targets\NuGet.targets" />
-  <Import Project="eng\targets\NGenBinaries.targets" />
   <Import Project="FSharp.Profiles.props" />
 
   <Target Name="NoneSubstituteTextFiles"
