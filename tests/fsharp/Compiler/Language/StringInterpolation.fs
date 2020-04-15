@@ -25,8 +25,68 @@ check "vcewweh3" $"this is {1} + {1+1} = 3"  "this is 1 + 2 = 3"
 check "vcewweh4" $"this is {1} + {1+1}"  "this is 1 + 2"
 
 check "vcewweh5" $"this is {1}"  "this is 1"
+
             """
 
+    [<Test>]
+    let ``Basic string interpolation verbatim strings`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+check "xvcewweh1" @$"this is 2" "this is 2"
+
+check "xvcewweh2" @$"this is {1} + 1 = 2" "this is 1 + 1 = 2"
+
+check "xvcewweh3" @$"this is {1} + {1+1} = 3"  "this is 1 + 2 = 3"
+
+check "xvcewweh4" @$"this is {1} + {1+1}"  "this is 1 + 2"
+
+check "xvcewweh5" @$"this is {1}"  "this is 1"
+
+check "xvcewweh6" @$"this i\s {1}"  "this i\s 1"
+
+check "xvcewweh1b" $@"this is 2" "this is 2"
+
+check "xvcewweh2b" $@"this is {1} + 1 = 2" "this is 1 + 1 = 2"
+
+check "xvcewweh3b" $@"this is {1} + {1+1} = 3"  "this is 1 + 2 = 3"
+
+check "xvcewweh4b" $@"this is {1} + {1+1}"  "this is 1 + 2"
+
+check "xvcewweh5b" $@"this is {1}"  "this is 1"
+
+check "xvcewweh6b" $@"this i\s {1}"  "this i\s 1"
+
+            """
+
+    [<Test>]
+    let ``Basic string interpolation triple quote strings`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            "
+let check msg a b = 
+    if a = b then printfn \"%s succeeded\" msg else failwithf \"%s failed, expected %A, got %A\" msg b a
+
+check \"xvcewweh1\" $\"\"\"this is 2\"\"\" \"this is 2\"
+
+check \"xvcewweh2\" $\"\"\"this is {1} + 1 = 2\"\"\" \"this is 1 + 1 = 2\"
+
+check \"xvcewweh3\" $\"\"\"this is {1} + {1+1} = 3\"\"\"  \"this is 1 + 2 = 3\"
+
+check \"xvcewweh4\" $\"\"\"this is {1} + {1+1}\"\"\"  \"this is 1 + 2\"
+
+check \"xvcewweh5\" $\"\"\"this is {1}\"\"\"  \"this is 1\"
+
+check \"xvcewweh6\" $\"\"\"this i\s {1}\"\"\"  \"this i\s 1\"
+
+// multiline
+check \"xvcewweh6\"
+    $\"\"\"this
+is {1+1}\"\"\"
+    \"\"\"this
+is 2\"\"\"
+            "
 
     [<Test>]
     let ``String interpolation using atomic expression forms`` () =
@@ -128,6 +188,55 @@ let check msg a b =
 check "vcewweh22m" $"x = {"1"} " "x = 1 "
             """
 
+    [<Test>]
+    let ``String interpolation using .NET Formats`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+check "vcewweh221q" $"abc {1}" "abc 1"
+check "vcewweh222w" $"abc {1:N3}" "abc 1.000"
+check "vcewweh223e" $"abc {1,10}" "abc          1"
+check "vcewweh223r" $"abc {1,-10}" "abc 1         "
+check "vcewweh224t" $"abc {1,10:N3}" "abc      1.000"
+check "vcewweh224y" $"abc {1,-10:N3}" "abc 1.000     "
+check "vcewweh225u" $"abc %d{1}" "abc 1"
+check "vcewweh225u" $"abc %5d{1}" "abc     1"
+check "vcewweh225u" $"abc %-5d{1}" "abc 1    "
+            """
+
+    [<Test>]
+    let ``String interpolation using escaped braces`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+check "vcewweh226i" $"{{" "{"
+check "vcewweh226o" $"{{{{" "{{"
+check "vcewweh226p" $"{{{1}}}" "{1}"
+check "vcewweh227a" $"}}" "}"
+check "vcewweh227s" $"}}}}" "}}"
+check "vcewweh228d" "{{" "{{"
+check "vcewweh229f" "}}" "}}"
+            """
+
+    [<Test>]
+    let ``String interpolation using verbatim strings`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+check "vcewweh226i" $"{{" "{"
+check "vcewweh226o" $"{{{{" "{{"
+check "vcewweh226p" $"{{{1}}}" "{1}"
+check "vcewweh227a" $"}}" "}"
+check "vcewweh227s" $"}}}}" "}}"
+check "vcewweh228d" "{{" "{{"
+check "vcewweh229f" "}}" "}}"
+            """
 
 
     [<Test>]

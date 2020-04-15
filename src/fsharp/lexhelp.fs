@@ -57,6 +57,7 @@ type lexargs =
       errorLogger: ErrorLogger
       applyLineDirectives: bool
       mutable interpolatedStringNesting: int
+      mutable interpolatedStringStyle: LexerStringStyle option
       pathMap: PathMap }
 
 /// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
@@ -67,14 +68,17 @@ type LongUnicodeLexResult =
     | Invalid
 
 let mkLexargs (_filename, defines, lightSyntaxStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
-    { defines = defines
+    { 
+      defines = defines
       ifdefStack= ifdefStack
       lightSyntaxStatus=lightSyntaxStatus
       resourceManager=resourceManager
       errorLogger=errorLogger
       applyLineDirectives=true
       interpolatedStringNesting = 0
-      pathMap=pathMap }
+      pathMap=pathMap
+      interpolatedStringStyle = None
+    }
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f = 

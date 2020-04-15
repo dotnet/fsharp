@@ -473,15 +473,15 @@ module internal LexerStateEncoding =
             | LexCont.IfDefSkip (ifd, n, m) -> FSharpTokenizerColorState.IfDefSkip, int64 n, m.Start, ifd, LexerStringKind.String
             | LexCont.EndLine(LexerEndlineContinuation.Skip(ifd, n, m)) -> FSharpTokenizerColorState.EndLineThenSkip, int64 n, m.Start, ifd, LexerStringKind.String
             | LexCont.EndLine(LexerEndlineContinuation.Token ifd) -> FSharpTokenizerColorState.EndLineThenToken, 0L, pos0, ifd, LexerStringKind.String
-            | LexCont.String (ifd, kind, m) -> FSharpTokenizerColorState.String, 0L, m.Start, ifd, kind
+            | LexCont.String (ifd, LexerStringStyle.SingleQuote, kind, m) -> FSharpTokenizerColorState.String, 0L, m.Start, ifd, kind
+            | LexCont.String (ifd, LexerStringStyle.Verbatim, kind, m) -> FSharpTokenizerColorState.VerbatimString, 0L, m.Start, ifd, kind
+            | LexCont.String (ifd, LexerStringStyle.TripleQuote, kind, m) -> FSharpTokenizerColorState.TripleQuoteString, 0L, m.Start, ifd, kind
             | LexCont.Comment (ifd, n, m) -> FSharpTokenizerColorState.Comment, int64 n, m.Start, ifd, LexerStringKind.String
             | LexCont.SingleLineComment (ifd, n, m) -> FSharpTokenizerColorState.SingleLineComment, int64 n, m.Start, ifd, LexerStringKind.String
-            | LexCont.StringInComment (ifd, n, m) -> FSharpTokenizerColorState.StringInComment, int64 n, m.Start, ifd, LexerStringKind.String
-            | LexCont.VerbatimStringInComment (ifd, n, m) -> FSharpTokenizerColorState.VerbatimStringInComment, int64 n, m.Start, ifd, LexerStringKind.String
-            | LexCont.TripleQuoteStringInComment (ifd, n, m) -> FSharpTokenizerColorState.TripleQuoteStringInComment, int64 n, m.Start, ifd, LexerStringKind.String
+            | LexCont.StringInComment (ifd, LexerStringStyle.SingleQuote, n, m) -> FSharpTokenizerColorState.StringInComment, int64 n, m.Start, ifd, LexerStringKind.String
+            | LexCont.StringInComment (ifd, LexerStringStyle.Verbatim,  n, m) -> FSharpTokenizerColorState.VerbatimStringInComment, int64 n, m.Start, ifd, LexerStringKind.String
+            | LexCont.StringInComment (ifd, LexerStringStyle.TripleQuote, n, m) -> FSharpTokenizerColorState.TripleQuoteStringInComment, int64 n, m.Start, ifd, LexerStringKind.String
             | LexCont.MLOnly (ifd, m) -> FSharpTokenizerColorState.CamlOnly, 0L, m.Start, ifd, LexerStringKind.String
-            | LexCont.VerbatimString (ifd, kind, m) -> FSharpTokenizerColorState.VerbatimString, 0L, m.Start, ifd, kind
-            | LexCont.TripleQuoteString (ifd, kind, m) -> FSharpTokenizerColorState.TripleQuoteString, 0L, m.Start, ifd, kind
         encodeLexCont (tag, n1, p1, ifd, lightSyntaxStatus, stringKind)
 
     let decodeLexInt (state: FSharpTokenizerLexState) =
@@ -490,15 +490,15 @@ module internal LexerStateEncoding =
             match tag with
             |  FSharpTokenizerColorState.Token -> LexCont.Token ifd
             |  FSharpTokenizerColorState.IfDefSkip -> LexCont.IfDefSkip (ifd, n1, mkRange "file" p1 p1)
-            |  FSharpTokenizerColorState.String -> LexCont.String (ifd, stringKind, mkRange "file" p1 p1)
+            |  FSharpTokenizerColorState.String -> LexCont.String (ifd, LexerStringStyle.SingleQuote, stringKind, mkRange "file" p1 p1)
             |  FSharpTokenizerColorState.Comment -> LexCont.Comment (ifd, n1, mkRange "file" p1 p1)
             |  FSharpTokenizerColorState.SingleLineComment -> LexCont.SingleLineComment (ifd, n1, mkRange "file" p1 p1)
-            |  FSharpTokenizerColorState.StringInComment -> LexCont.StringInComment (ifd, n1, mkRange "file" p1 p1)
-            |  FSharpTokenizerColorState.VerbatimStringInComment -> LexCont.VerbatimStringInComment (ifd, n1, mkRange "file" p1 p1)
-            |  FSharpTokenizerColorState.TripleQuoteStringInComment -> LexCont.TripleQuoteStringInComment (ifd, n1, mkRange "file" p1 p1)
+            |  FSharpTokenizerColorState.StringInComment -> LexCont.StringInComment (ifd, LexerStringStyle.SingleQuote, n1, mkRange "file" p1 p1)
+            |  FSharpTokenizerColorState.VerbatimStringInComment -> LexCont.StringInComment (ifd, LexerStringStyle.Verbatim, n1, mkRange "file" p1 p1)
+            |  FSharpTokenizerColorState.TripleQuoteStringInComment -> LexCont.StringInComment (ifd, LexerStringStyle.TripleQuote, n1, mkRange "file" p1 p1)
             |  FSharpTokenizerColorState.CamlOnly -> LexCont.MLOnly (ifd, mkRange "file" p1 p1)
-            |  FSharpTokenizerColorState.VerbatimString -> LexCont.VerbatimString (ifd, stringKind, mkRange "file" p1 p1)
-            |  FSharpTokenizerColorState.TripleQuoteString -> LexCont.TripleQuoteString (ifd, stringKind, mkRange "file" p1 p1)
+            |  FSharpTokenizerColorState.VerbatimString -> LexCont.String (ifd, LexerStringStyle.Verbatim, stringKind, mkRange "file" p1 p1)
+            |  FSharpTokenizerColorState.TripleQuoteString -> LexCont.String (ifd, LexerStringStyle.TripleQuote, stringKind, mkRange "file" p1 p1)
             |  FSharpTokenizerColorState.EndLineThenSkip -> LexCont.EndLine(LexerEndlineContinuation.Skip(ifd, n1, mkRange "file" p1 p1))
             |  FSharpTokenizerColorState.EndLineThenToken -> LexCont.EndLine(LexerEndlineContinuation.Token ifd)
             | _ -> LexCont.Token []
@@ -515,16 +515,22 @@ module internal LexerStateEncoding =
         | LexCont.Token ifd -> Lexer.token (argsWithIfDefs ifd) skip lexbuf
         | LexCont.IfDefSkip (ifd, n, m) -> Lexer.ifdefSkip n m (argsWithIfDefs ifd) skip lexbuf
         // Q: What's this magic 100 number for? Q: it's just an initial buffer size.
-        | LexCont.String (ifd, kind, m) -> Lexer.string (ByteBuffer.Create 100, LexerStringFinisher.Default, m, kind, argsWithIfDefs ifd) skip lexbuf
-        | LexCont.Comment (ifd, n, m) -> Lexer.comment (n, m, (argsWithIfDefs ifd)) skip lexbuf
+        | LexCont.String (ifd, style, kind, m) ->
+            let buf = ByteBuffer.Create 100
+            let args = (buf, LexerStringFinisher.Default, m, kind, argsWithIfDefs ifd)
+            match style with 
+            | LexerStringStyle.SingleQuote -> Lexer.singleQuoteString args skip lexbuf
+            | LexerStringStyle.Verbatim -> Lexer.verbatimString args skip lexbuf
+            | LexerStringStyle.TripleQuote -> Lexer.tripleQuoteString args skip lexbuf
+        | LexCont.Comment (ifd, n, m) -> Lexer.comment (n, m, argsWithIfDefs ifd) skip lexbuf
         // The first argument is 'None' because we don't need XML comments when called from VS
-        | LexCont.SingleLineComment (ifd, n, m) -> Lexer.singleLineComment (None, n, m, (argsWithIfDefs ifd)) skip lexbuf
-        | LexCont.StringInComment (ifd, n, m) -> Lexer.stringInComment n m (argsWithIfDefs ifd) skip lexbuf
-        | LexCont.VerbatimStringInComment (ifd, n, m) -> Lexer.verbatimStringInComment n m (argsWithIfDefs ifd) skip lexbuf
-        | LexCont.TripleQuoteStringInComment (ifd, n, m) -> Lexer.tripleQuoteStringInComment n m (argsWithIfDefs ifd) skip lexbuf
+        | LexCont.SingleLineComment (ifd, n, m) -> Lexer.singleLineComment (None, n, m, argsWithIfDefs ifd) skip lexbuf
+        | LexCont.StringInComment (ifd, style, n, m) ->
+            match style with 
+            | LexerStringStyle.SingleQuote -> Lexer.stringInComment n m (argsWithIfDefs ifd) skip lexbuf
+            | LexerStringStyle.Verbatim -> Lexer.verbatimStringInComment n m (argsWithIfDefs ifd) skip lexbuf
+            | LexerStringStyle.TripleQuote -> Lexer.tripleQuoteStringInComment n m (argsWithIfDefs ifd) skip lexbuf
         | LexCont.MLOnly (ifd, m) -> Lexer.mlOnly m (argsWithIfDefs ifd) skip lexbuf
-        | LexCont.VerbatimString (ifd, kind, m) -> Lexer.verbatimString (ByteBuffer.Create 100, LexerStringFinisher.Default, m, kind, argsWithIfDefs ifd) skip lexbuf
-        | LexCont.TripleQuoteString (ifd, kind, m) -> Lexer.tripleQuoteString (ByteBuffer.Create 100, LexerStringFinisher.Default, m, kind, argsWithIfDefs ifd) skip lexbuf
 
 //----------------------------------------------------------------------------
 // Colorization

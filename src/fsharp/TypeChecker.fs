@@ -5908,9 +5908,34 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             languageFeatureNotSupportedInLibraryError cenv.g.langVersion LanguageFeature.StringInterpolation m
 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
-        let exprFills = parts |> List.choose(function Choice1Of2 _ -> None | Choice2Of2 e -> Some e)
-        let stringText = parts |> List.map(function Choice1Of2 s -> s | Choice2Of2 _ -> "%P") |> String.concat ""
-        TcConstStringFormatExpr cenv overallTy env m tpenv (Some exprFills) stringText
+
+        let fillExprs =
+            parts 
+            |> List.choose (function
+                | Choice1Of2 _ -> None
+                | Choice2Of2 (fillExpr, _)  ->
+                    match fillExpr with 
+                    // Detect "x" part of "...{x,3}..."
+                    | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) -> Some e
+                    | e -> Some e)
+
+        let stringText = 
+            parts
+            |> List.map (function 
+                | Choice1Of2 s -> s
+                | Choice2Of2 (fillExpr, format) -> 
+                    let alignText = 
+                        match fillExpr with 
+                        // Validate and detect ",3" part of "...{x,3}..."
+                        | SynExpr.Tuple (false, args, _, _) -> 
+                            match args with 
+                            | [_; SynExpr.Const (SynConst.Int32 align, _)] -> string align
+                            | _ -> errorR(Error(FSComp.SR.tcInvalidAlignmentInInterpolatedString(), m)); ""
+                        | _ -> ""
+                    let formatText = match format with None -> "()" | Some n -> "(" + n.idText + ")"
+                    "%" + alignText + "P" + formatText )
+            |> String.concat ""
+        TcConstStringFormatExpr cenv overallTy env m tpenv (Some fillExprs) stringText
 
     | SynExpr.Const (synConst, m) -> 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)

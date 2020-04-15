@@ -148,6 +148,12 @@ let rec LexerIfdefEval (lookup: string -> bool) = function
 //------------------------------------------------------------------------
 
 [<RequireQualifiedAccess>]
+type LexerStringStyle =
+    | Verbatim
+    | TripleQuote
+    | SingleQuote
+
+[<RequireQualifiedAccess>]
 type LexerStringKind =
     { IsByteString: bool
       IsInterpolated: bool
@@ -166,14 +172,10 @@ type LexerStringKind =
 type LexerWhitespaceContinuation =
     | Token of ifdef: LexerIfdefStackEntries
     | IfDefSkip of ifdef: LexerIfdefStackEntries * int * range: range
-    | String of ifdef: LexerIfdefStackEntries * kind: LexerStringKind * range: range
-    | VerbatimString of ifdef: LexerIfdefStackEntries * kind: LexerStringKind * range: range
-    | TripleQuoteString of ifdef: LexerIfdefStackEntries * kind: LexerStringKind * range: range
+    | String of ifdef: LexerIfdefStackEntries * style: LexerStringStyle * kind: LexerStringKind * range: range
     | Comment of ifdef: LexerIfdefStackEntries * int * range: range
     | SingleLineComment of ifdef: LexerIfdefStackEntries * int * range: range
-    | StringInComment of ifdef: LexerIfdefStackEntries * int * range: range
-    | VerbatimStringInComment of ifdef: LexerIfdefStackEntries * int * range: range
-    | TripleQuoteStringInComment of ifdef: LexerIfdefStackEntries * int * range: range
+    | StringInComment of ifdef: LexerIfdefStackEntries * style: LexerStringStyle * int * range: range
     | MLOnly of ifdef: LexerIfdefStackEntries * range: range
     | EndLine of LexerEndlineContinuation
 
@@ -182,13 +184,9 @@ type LexerWhitespaceContinuation =
         | LexCont.Token (ifdef=ifd)
         | LexCont.IfDefSkip (ifdef=ifd)
         | LexCont.String (ifdef=ifd)
-        | LexCont.VerbatimString (ifdef=ifd)
         | LexCont.Comment (ifdef=ifd)
         | LexCont.SingleLineComment (ifdef=ifd)
-        | LexCont.TripleQuoteString (ifdef=ifd)
         | LexCont.StringInComment (ifdef=ifd)
-        | LexCont.VerbatimStringInComment (ifdef=ifd)
-        | LexCont.TripleQuoteStringInComment (ifdef=ifd)
         | LexCont.MLOnly (ifdef=ifd) -> ifd
         | LexCont.EndLine endl -> endl.LexerIfdefStack
 

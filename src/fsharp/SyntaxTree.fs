@@ -1003,9 +1003,9 @@ type SynExpr =
         expr: SynExpr *
         range: range
 
-    /// F# syntax: interpolated string, e.g. "abc%{123}"
+    /// F# syntax: interpolated string, e.g. "abc{x}" or "abc{x,3}" or "abc{x:N4}"
     | InterpolatedString of
-        contents: Choice<string,SynExpr> list *
+        contents: Choice<string, (SynExpr * Ident option) > list *
         range: range
 
     /// Gets the syntax range of this constuct

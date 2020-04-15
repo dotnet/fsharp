@@ -77,6 +77,7 @@ module internal PrintfImpl =
             Precision: int
             Width: int
             Flags: FormatFlags
+            InteropHoleDotNetFormat: string option
         }
         member this.IsStarPrecision = this.Precision = StarValue
         member this.IsPrecisionSpecified = this.Precision <> NotSpecifiedValue
@@ -130,8 +131,27 @@ module internal PrintfImpl =
         let parseTypeChar (s: string) i = 
             s.[i], (i + 1)
 
-        let skipInterpHole isInterp (s:string) i =
-            if isInterp && i+1 < s.Length && s.[i] = '%' && s.[i+1] = 'P'  then i+2 else i
+        let parseInteropHoleDotNetFormat typeChar (s: string) i =
+            if typeChar = 'P' then 
+                if i < s.Length && s.[i] = '(' then  
+                     let i2 = s.IndexOf(")", i)
+                     if i2 = -1 then 
+                         None, i
+                     else 
+                         Some s.[i+1..i2-1], i2+1
+                else
+                    None, i
+            else
+                None, i
+
+        // Skip %P() added for hole in "...%d{x}..."
+        let skipInterpolationHole isInterp (s:string) i =
+            if isInterp && i+3 < s.Length && 
+               s.[i] = '%' &&
+               s.[i+1] = 'P' &&
+               s.[i+2] = '(' &&
+               s.[i+3] = ')'  then i+4
+            else i
     
         let findNextFormatSpecifier (s: string) i = 
             let rec go i (buf: Text.StringBuilder) =
@@ -1051,7 +1071,9 @@ module internal PrintfImpl =
         Padding.withPaddingFormatted spec getFormat defaultFormat (Float.noJustification f prefix) (Float.leftJustify isGFormat f prefix padChar) (Float.rightJustify f prefix padChar)
     
     let inline identity v =  v
+
     let inline toString  v =   (^T : (member ToString: IFormatProvider -> string)(v, invariantCulture))
+
     let inline toFormattedString fmt = fun (v: ^T) -> (^T: (member ToString: string * IFormatProvider -> string)(v, fmt, invariantCulture))
 
     let inline numberToString c spec alt unsignedConv  =
@@ -1070,11 +1092,24 @@ module internal PrintfImpl =
     type ObjectPrinter = 
 
         static member ObjectToString<'T>(spec: FormatSpecifier) = 
-            basicWithPadding spec (fun (v: 'T) -> match box v with null -> "<null>" | x -> x.ToString())
+            basicWithPadding spec (fun (v: 'T) ->
+                match box v with
+                | null -> "<null>"
+                | x -> x.ToString())
         
         /// Convert an interpoland to a string
         static member InterpolandToString<'T>(spec: FormatSpecifier) = 
-            basicWithPadding spec (fun (v: 'T) -> match box v with null -> "" | x -> x.ToString())
+            let fmt = 
+                match spec.InteropHoleDotNetFormat with 
+                | None -> null
+                | Some fmt -> "{0:" + fmt + "}"
+            basicWithPadding spec (fun (v: 'T) ->
+                match box v with
+                | null -> ""
+                | x -> 
+                    match fmt with 
+                    | null -> x.ToString()
+                    | fmt -> String.Format(fmt, x))
         
         static member GenericToStringCore(v: 'T, opts: Microsoft.FSharp.Text.StructuredPrintfImpl.FormatOptions, bindingFlags) = 
             let vty = 
@@ -1443,10 +1478,12 @@ module internal PrintfImpl =
             let width, i = FormatString.parseWidth s i
             let precision, i = FormatString.parsePrecision s i
             let typeChar, i = FormatString.parseTypeChar s i
-            // Skip %P insertion points added after %d in interpolated strings
-            let i = FormatString.skipInterpHole isInterp s i
+            let interpHoleDotnetFormat, i = FormatString.parseInteropHoleDotNetFormat typeChar s i
 
-            let spec = { TypeChar = typeChar; Precision = precision; Flags = flags; Width = width}
+            // Skip %P insertion points added after %d{...} etc. in interpolated strings
+            let i = FormatString.skipInterpolationHole isInterp s i
+
+            let spec = { TypeChar = typeChar; Precision = precision; Flags = flags; Width = width; InteropHoleDotNetFormat = interpHoleDotnetFormat }
             
             let next, suffix = FormatString.findNextFormatSpecifier s i
 

@@ -94,15 +94,15 @@ let raiseParseErrorAt m s =
 let checkEndOfFileError t = 
   match t with 
   | LexCont.IfDefSkip(_, _, m)                      -> reportParseErrorAt m (FSComp.SR.parsEofInHashIf())
-  | LexCont.String (_, _, m)                        -> reportParseErrorAt m (FSComp.SR.parsEofInString())
-  | LexCont.TripleQuoteString (_, _, m)             -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteString())
-  | LexCont.VerbatimString (_, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimString())
+  | LexCont.String (_, LexerStringStyle.SingleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInString())
+  | LexCont.String (_, LexerStringStyle.TripleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteString())
+  | LexCont.String (_, LexerStringStyle.Verbatim, _, m)    -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimString())
   | LexCont.Comment (_, _, m)                       -> reportParseErrorAt m (FSComp.SR.parsEofInComment())
   | LexCont.SingleLineComment (_, _, m)             -> reportParseErrorAt m (FSComp.SR.parsEofInComment())
-  | LexCont.StringInComment (_, _, m)               -> reportParseErrorAt m (FSComp.SR.parsEofInStringInComment())
-  | LexCont.VerbatimStringInComment (_, _, m)       -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimStringInComment())
-  | LexCont.TripleQuoteStringInComment (_, _, m)    -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteStringInComment())
-  | LexCont.MLOnly (_, m)                          -> reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml())
+  | LexCont.StringInComment (_, LexerStringStyle.SingleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInStringInComment())
+  | LexCont.StringInComment (_, LexerStringStyle.Verbatim, _, m)    -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimStringInComment())
+  | LexCont.StringInComment (_, LexerStringStyle.TripleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteStringInComment())
+  | LexCont.MLOnly (_, m)                           -> reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml())
   | LexCont.EndLine(LexerEndlineContinuation.Skip(_, _, m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective())
   | LexCont.EndLine(LexerEndlineContinuation.Token(stack))
   | LexCont.Token(stack) -> 
@@ -451,7 +451,8 @@ let rangeOfLongIdent(lid:LongIdent) =
 %right COLON_EQUALS 
 %nonassoc pat_tuple expr_tuple
 %left COMMA
-%nonassoc slice_expr  /* matrix.[e COMMA e] has higher precedence than "e COMMA e" */
+%nonassoc slice_expr /* matrix.[e COMMA e] has higher precedence than "e COMMA e" */
+%nonassoc interpolation_fill /* "...{3,N4}..." .NET style fill has higher precedence than "e COMMA e" */
 %nonassoc DOT_DOT /* for matrix.[1..2, 3..4] the ".." has higher precedence than expression "2 COMMA 3" */
 %nonassoc slice_comma  /* for matrix.[1..2, 3..4] the ", " has higher precedence than ".." */
 %nonassoc paren_pat_colon
@@ -5432,18 +5433,25 @@ stringOrKeywordString:
   | STRING { $1 }
   | KEYWORD_STRING { $1 }
 
+interpolatedStringHole:
+  | declExpr
+     { ($1, None) }
+
+  | declExpr COLON ident %prec interpolation_fill
+     { ($1, Some $3) }
+
 interpolatedStringParts:
   | INTERP_STRING_END
      { [ Choice1Of2 $1 ] }
 
-  | INTERP_STRING_PART declExpr interpolatedStringParts
+  | INTERP_STRING_PART interpolatedStringHole interpolatedStringParts
      { Choice1Of2 $1 :: Choice2Of2 $2 :: $3 }
 
 /* INTERP_STRING_BEGIN_END */
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_END */
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_PART int32 INTERP_STRING_END */
 interpolatedString:
-  | INTERP_STRING_BEGIN_PART declExpr interpolatedStringParts
+  | INTERP_STRING_BEGIN_PART interpolatedStringHole interpolatedStringParts
     { Choice1Of2 $1 :: Choice2Of2 $2 :: $3 }
 
   | INTERP_STRING_BEGIN_END
