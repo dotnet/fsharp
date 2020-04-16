@@ -796,37 +796,48 @@ let CompilePatternBasic
                     mkReraise matchm resultTy
 
                 | Throw ->
-                    // We use throw, or EDI.Throw when EDI is supported, instead of rethrow on unmatched try-catch in a computation expression.
+                    let findMethInfo ty isInstance name (sigTys: TType list) =
+                        TryFindIntrinsicMethInfo infoReader matchm (AccessorDomain.AccessibleFromEverywhere) name ty
+                        |> List.tryFind (fun methInfo ->
+                            methInfo.IsInstance = isInstance &&
+                            (
+                                match methInfo.GetParamTypes(amap, matchm, []) with
+                                | [] -> false
+                                | argTysList ->
+                                    let argTys = (argTysList |> List.reduce (@)) @ [ methInfo.GetFSharpReturnTy (amap, matchm, []) ]
+                                    if argTys.Length <> sigTys.Length then
+                                        false
+                                    else
+                                        (argTys, sigTys)
+                                        ||> List.forall2 (typeEquiv g)
+                            )
+                        )
+
+                    // We use throw, or EDI.Capture(exn).Throw() when EDI is supported, instead of rethrow on unmatched try-catch in a computation expression.
                     // But why? Because this isn't a real .NET exception filter/handler but just a function we're passing
                     // to a computation expression builder to simulate one.
-                    let ediThrowMethInfo =
-                        // EDI.Throw: exn -> unit
-                        let name, sigTys = "Throw", [ g.exn_ty; g.unit_ty ]
-
+                    let ediCaptureMethInfo, ediThrowMethInfo =
+                        // EDI.Capture: exn -> EDI
                         g.system_ExceptionDispatchInfo_ty
-                        |> Option.bind (fun ty ->
-                            TryFindIntrinsicMethInfo infoReader matchm (AccessorDomain.AccessibleFromEverywhere) name ty
-                            |> List.tryFind (fun methInfo ->
-                                not methInfo.IsInstance &&
-                                (
-                                    match methInfo.GetParamTypes(amap, matchm, []) with
-                                    | [] -> false
-                                    | argTysList ->
-                                        let argTys = (argTysList |> List.reduce (@)) @ [ methInfo.GetFSharpReturnTy (amap, matchm, []) ] in
-                                        if argTys.Length <> sigTys.Length then
-                                            false
-                                        else
-                                            (argTys, sigTys)
-                                            ||> List.forall2 (typeEquiv g)
-                                )
-                            ))
+                        |> Option.bind (fun ty -> findMethInfo ty false "Capture" [ g.exn_ty; ty ]),
+                        // edi.Throw: unit -> unit
+                        g.system_ExceptionDispatchInfo_ty
+                        |> Option.bind (fun ty -> findMethInfo ty true "Throw" [ g.unit_ty ])
 
-                    match ediThrowMethInfo with
+                    match Option.map2 (fun x y -> x,y) ediCaptureMethInfo ediThrowMethInfo with
                     | None ->
                         mkThrow matchm resultTy (exprForVal matchm origInputVal)
-                    | Some ediThrowMethInfo ->
-                        fst <| BuildMethodCall tcVal g amap NeverMutates matchm false
-                                   ediThrowMethInfo ValUseFlag.NormalValUse [] [] [ (exprForVal matchm origInputVal) ]
+                    | Some (ediCaptureMethInfo, ediThrowMethInfo) ->
+                        let (edi, _) =
+                            BuildMethodCall tcVal g amap NeverMutates matchm false
+                               ediCaptureMethInfo ValUseFlag.NormalValUse [] [] [ (exprForVal matchm origInputVal) ]
+
+                        let (e, _) =
+                            BuildMethodCall tcVal g amap NeverMutates matchm false
+                                ediThrowMethInfo ValUseFlag.NormalValUse [] [edi] [ ]
+
+                        mkCompGenSequential matchm e (mkDefault (matchm, resultTy))
+
                 | ThrowIncompleteMatchException ->
                     mkThrow matchm resultTy
                         (mkExnExpr(mk_MFCore_tcref g.fslibCcu "MatchFailureException",
