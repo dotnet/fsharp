@@ -111,6 +111,9 @@ check "vcewweh6" $"this is {s.Length} + {1+1} = 8" "this is 6 + 2 = 8"
 // Check null expression
 check "vcewweh8" $"abc{null}def" "abcdef"
 
+// Check mod operator
+check "vcewweh8" $"abc{4%3}def" "abc1def"
+
             """
 
 
@@ -445,4 +448,46 @@ check "pvcewweh1" (sprintf $"foo") "foo"
 
 check "pvcewweh2" (sprintf $"{"foo"}") "foo"
             """
+
+    [<Test>]
+    let ``String interpolation error: format specifiers`` () =
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            """
+// mixed F#/.NET format specifiers
+let x = $"%5d{1:N3}" 
+            """
+            [|(FSharpErrorSeverity.Error, 741, (2, 9, 2, 21),
+                   "Unable to parse format string 'Invalid interpolated string. .NET-style format specifiers such as '{x,3}' or '{x:N5}' may not be mixed with '%' format specifiers.'")|]
+
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            """
+// inner error that looks like format specifiers
+let x = $"{%5d{1:N3}}" 
+            """
+            [|(FSharpErrorSeverity.Error, 1156, (2, 13, 2, 14),
+                   "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).")|]
+
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            """
+// bad F# format specifier
+let x = $"5%6" 
+            """
+            [|(FSharpErrorSeverity.Error, 741, (2, 9, 2, 14),
+                   "Unable to parse format string 'Bad precision in format specifier'")|]
+
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            """
+// incompatible type
+let x = $"%d{"str"}" 
+            """
+            [|(FSharpErrorSeverity.Error, 1, (2, 14, 2, 18),
+                   "The type 'string' is not compatible with any of the types byte,int16,int32,int64,sbyte,uint16,uint32,uint64,nativeint,unativeint, arising from the use of a printf-style format string")|]
+
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            """
+// dangling F#-style specifier
+let x = $"100% sure it fails" 
+            """
+            [|(FSharpErrorSeverity.Error, 1, (2, 9, 2, 29),
+                   "Unable to parse format string ''s' does not support prefix ' ' flag'")|]
 
