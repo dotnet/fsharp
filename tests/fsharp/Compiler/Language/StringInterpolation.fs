@@ -451,6 +451,15 @@ check "pvcewweh2" (sprintf $"{"foo"}") "foo"
 
     [<Test>]
     let ``String interpolation error: format specifiers`` () =
+
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            """
+// no expression
+let x = $"%A" 
+            """
+            [|(FSharpErrorSeverity.Error, 741, (2, 9, 2, 13),
+                   "Unable to parse format string 'Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.'")|]
+
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             """
 // mixed F#/.NET format specifiers
@@ -488,6 +497,42 @@ let x = $"%d{"str"}"
 // dangling F#-style specifier
 let x = $"100% sure it fails" 
             """
-            [|(FSharpErrorSeverity.Error, 1, (2, 9, 2, 29),
+            [|(FSharpErrorSeverity.Error, 741, (2, 9, 2, 29),
                    "Unable to parse format string ''s' does not support prefix ' ' flag'")|]
 
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            """
+// fake expression (delimiters escaped)
+let x = $"%A{{1}}" 
+            """
+            [|(FSharpErrorSeverity.Error, 741, (2, 9, 2, 18),
+                   "Unable to parse format string 'Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.'")|]
+
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            """
+// empty expression
+let x = $"%A{}" 
+            """
+            [|(FSharpErrorSeverity.Error, 10, (2, 14, 2, 15),
+                   "Unexpected interpolated string (final part) in interaction")|]
+
+    [<Test>]
+    let ``String interpolation: .NET-style padding`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+check "padvcewweh0" $"{1,5}" "    1"
+
+check "padvcewweh1" $"{"hello",7}" "    1"
+
+check "padvcewweh2" $"%A{let a:int=1 in a,5}" "(1, 5)"
+
+check "padvcewweh3" $"{(let a:int=1 in a),5}" "    1"
+
+check "padvcewweh4" $"{(if true then 2 else 3),4}" "   2"
+
+check "padvcewweh5" $"{((if true then 2 else 3),4),8}" "  (2, 4)"
+
+            """
