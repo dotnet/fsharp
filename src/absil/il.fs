@@ -354,8 +354,17 @@ let isMscorlib data =
 
 [<Sealed>]
 type ILAssemblyRef(data) =
-    let uniqueStamp = AssemblyRefUniqueStampGenerator.Encode data
-    let uniqueIgnoringVersionStamp = AssemblyRefUniqueStampGenerator.Encode { data with assemRefVersion = None }
+    let pkToken key =
+        match key with
+        | Some (PublicKey bytes) -> Some (PublicKey (SHA1.sha1HashBytes bytes))
+        | Some (PublicKeyToken token) -> Some (PublicKey (token))
+        | None -> None
+
+    let uniqueStamp =
+        AssemblyRefUniqueStampGenerator.Encode { data with assemRefPublicKeyInfo = pkToken (data.assemRefPublicKeyInfo) }
+
+    let uniqueIgnoringVersionStamp =
+        AssemblyRefUniqueStampGenerator.Encode { data with assemRefVersion = None; assemRefPublicKeyInfo = pkToken (data.assemRefPublicKeyInfo) }
 
     member x.Name=data.assemRefName
 
