@@ -412,21 +412,21 @@ let x = $"one"
 
     [<Test>]
     let ``String interpolation internal representation`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions  [| |]
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             """
 let x = $"this is %P()" 
             """
             [|(FSharpErrorSeverity.Error, 3361, (2, 9, 2, 24),
                    "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'")|]
 
-        CompilerAssert.TypeCheckWithErrorsAndOptions  [| |]
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             """
 let x = $"this is %P" 
             """
             [|(FSharpErrorSeverity.Error, 741, (2, 9, 2, 24),
                    "Unable to parse format string 'Invalid interpolated string. The '%P' specifier may not be used explicitly.")|]
 
-        CompilerAssert.TypeCheckWithErrorsAndOptions  [| |]
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             """
 let x = $"%P(){"gotcha"}" 
             """
