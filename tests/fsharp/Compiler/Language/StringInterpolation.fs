@@ -432,3 +432,17 @@ let x = $"%P(){"gotcha"}"
             """
             [|(FSharpErrorSeverity.Error, 741, (2, 9, 2, 26),
                    "Unable to parse format string 'Invalid interpolated string. The '%P' specifier may not be used explicitly.")|]
+
+
+    [<Test>]
+    let ``String interpolation with *printf`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+check "pvcewweh1" (sprintf $"foo") "foo"
+
+check "pvcewweh2" (sprintf $"{"foo"}") "foo"
+            """
+
