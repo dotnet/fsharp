@@ -26,6 +26,10 @@ check "vcewweh4" $"this is {1} + {1+1}"  "this is 1 + 2"
 
 check "vcewweh5" $"this is {1}"  "this is 1"
 
+check "vcewweh6" $"this is {1} {2} {3} {4} {5} {6} {7}"  "this is 1 2 3 4 5 6 7"
+
+check "vcewweh7" $"this is {7} {6} {5} {4} {3} {2} {1}"  "this is 7 6 5 4 3 2 1"
+
             """
 
     [<Test>]
@@ -405,3 +409,26 @@ let x = $"one"
             """
             [|(FSharpErrorSeverity.Error, 3350, (2, 9, 2, 15),
                    "Feature 'string interpolation' is not available in F# 4.7. Please use language version 'preview' or greater.")|]
+
+    [<Test>]
+    let ``String interpolation internal representation`` () =
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| |]
+            """
+let x = $"this is %P()" 
+            """
+            [|(FSharpErrorSeverity.Error, 3361, (2, 9, 2, 24),
+                   "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'")|]
+
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| |]
+            """
+let x = $"this is %P" 
+            """
+            [|(FSharpErrorSeverity.Error, 741, (2, 9, 2, 24),
+                   "Unable to parse format string 'Invalid interpolated string. The '%P' specifier may not be used explicitly.")|]
+
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| |]
+            """
+let x = $"%P(){"gotcha"}" 
+            """
+            [|(FSharpErrorSeverity.Error, 741, (2, 9, 2, 26),
+                   "Unable to parse format string 'Invalid interpolated string. The '%P' specifier may not be used explicitly.")|]
