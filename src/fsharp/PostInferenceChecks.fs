@@ -214,9 +214,12 @@ type cenv =
       isInternalTestSpanStackReferring: bool
 
       // outputs
-      mutable usesQuotations : bool
+      mutable usesQuotations: bool
 
-      mutable entryPointGiven: bool  }
+      mutable entryPointGiven: bool 
+      
+      /// Callback required for quotation generation
+      tcVal: ConstraintSolver.TcValF }
 
     override x.ToString() = "<cenv>"
 
@@ -971,9 +974,9 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
         if cenv.reportErrors then 
             cenv.usesQuotations <- true
 
-            // Translate to quotation data
+            // Translate the quotation to quotation data
             try 
-                let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.No) 
+                let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.No) 
                 let qdata = QuotationTranslator.ConvExprPublic qscope ast  
                 let typeDefs, spliceTypes, spliceExprs = qscope.Close()
                 match savedConv.Value with 
@@ -1749,15 +1752,16 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
                 match v.ReflectedDefinition with 
                 | None -> v.SetValDefn bindRhs
                 | Some _ -> ()
+
                 // Run the conversion process over the reflected definition to report any errors in the
                 // front end rather than the back end. We currently re-run this during ilxgen.fs but there's
                 // no real need for that except that it helps us to bundle all reflected definitions up into 
                 // one blob for pickling to the binary format
                 try
-                    let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.Yes) 
+                    let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.Yes) 
                     let methName = v.CompiledName g.CompilerGlobalState
                     QuotationTranslator.ConvReflectedDefinition qscope methName v bindRhs |> ignore
-
+                    
                     let _, _, exprSplices = qscope.Close()
                     if not (isNil exprSplices) then 
                         errorR(Error(FSComp.SR.chkReflectedDefCantSplice(), v.Range))
@@ -2293,7 +2297,7 @@ and CheckModuleSpec cenv env x =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
+let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcVal, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
     let cenv = 
         { g =g  
           reportErrors=reportErrors 
@@ -2309,6 +2313,7 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
           viewCcu= viewCcu
           isLastCompiland=isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
+          tcVal = tcVal
           entryPointGiven=false}
     
     // Certain type equality checks go faster if these TyconRefs are pre-resolved.
@@ -2336,6 +2341,6 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
 
     CheckModuleExpr cenv env mexpr
     CheckAttribs cenv env extraAttribs
-    if cenv.usesQuotations && QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat g = QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus then 
+    if cenv.usesQuotations && not (QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat(g).SupportsDeserializeEx) then 
         viewCcu.UsesFSharp20PlusQuotations <- true
     cenv.entryPointGiven, cenv.anonRecdTypes

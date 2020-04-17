@@ -70,7 +70,7 @@ module internal Impl =
       match attrs with
       | null | [| |] -> None
       | [| res |] -> let a = (res :?> CompilationMappingAttribute) in Some (a.SourceConstructFlags, a.SequenceNumber, a.VariantNumber)
-      | _ -> raise <| System.InvalidOperationException (SR.GetString (SR.multipleCompilationMappings))
+      | _ -> invalidOp (SR.GetString (SR.multipleCompilationMappings))
 
     let findCompilationMappingAttribute (attrs: obj[]) =
       match tryFindCompilationMappingAttribute attrs with
@@ -292,7 +292,7 @@ module internal Impl =
             else "New" + constrname
 
         match typ.GetMethod(methname, BindingFlags.Static  ||| bindingFlags) with
-        | null -> raise <| System.InvalidOperationException (String.Format (SR.GetString (SR.constructorForUnionCaseNotFound), methname))
+        | null -> invalidOp (String.Format (SR.GetString (SR.constructorForUnionCaseNotFound), methname))
         | meth -> meth
 
     let getUnionCaseConstructor (typ: Type, tag: int, bindingFlags) =

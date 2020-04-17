@@ -99,6 +99,25 @@ type Expr =
     /// <returns>The resulting expression.</returns>
     static member Call : obj:Expr * methodInfo:MethodInfo * arguments:list<Expr> -> Expr
 
+    /// <summary>Builds an expression that represents a call to an static method or module-bound function</summary>
+    /// <param name="methodInfo">The MethodInfo describing the method to call.</param>
+    /// <param name="methodInfoWithWitnesses">The additional MethodInfo describing the method to call, accepting witnesses.</param>
+    /// <param name="witnesses">The list of witnesses to the method.</param>
+    /// <param name="arguments">The list of arguments to the method.</param>
+    /// <returns>The resulting expression.</returns>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    static member CallWithWitnesses: methodInfo: MethodInfo * methodInfoWithWitnesses: MethodInfo * witnesses: Expr list * arguments: Expr list -> Expr
+
+    /// <summary>Builds an expression that represents a call to an instance method associated with an object</summary>
+    /// <param name="obj">The input object.</param>
+    /// <param name="methodInfo">The description of the method to call.</param>
+    /// <param name="methodInfoWithWitnesses">The additional MethodInfo describing the method to call, accepting witnesses.</param>
+    /// <param name="witnesses">The list of witnesses to the method.</param>
+    /// <param name="arguments">The list of arguments to the method.</param>
+    /// <returns>The resulting expression.</returns>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    static member CallWithWitnesses: obj:Expr * methodInfo:MethodInfo * methodInfoWithWitnesses: MethodInfo * witnesses: Expr list * arguments:Expr list -> Expr
+
     /// <summary>Builds an expression that represents the coercion of an expression to a type</summary>
     /// <param name="source">The expression to coerce.</param>
     /// <param name="target">The target type.</param>
@@ -334,8 +353,6 @@ type Expr =
     /// <returns>The resulting expression.</returns>
     static member WithValue: value: obj * expressionType:Type * definition: Expr -> Expr
 
-
-
     /// <summary>Builds an expression that represents a variable</summary>
     /// <param name="variable">The input variable.</param>
     /// <returns>The resulting expression.</returns>
@@ -454,6 +471,13 @@ module Patterns =
     /// <returns>(Expr option * MethodInfo * Expr list) option</returns>
     [<CompiledName("CallPattern")>]
     val (|Call|_|)            : input:Expr -> (Expr option * MethodInfo * Expr list) option
+
+    /// <summary>An active pattern to recognize expressions that represent calls to static and instance methods, and functions defined in modules, including witness arguments</summary>
+    /// <param name="input">The input expression to match against.</param>
+    /// <returns>(Expr option * MethodInfo * MethodInfo * Expr list) option</returns>
+    [<CompiledName("CallWithWitnessesPattern")>]
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    val (|CallWithWitnesses|_|) : input:Expr -> (Expr option * MethodInfo * MethodInfo * Expr list * Expr list) option
 
     /// <summary>An active pattern to recognize expressions that represent coercions from one type to another</summary>
     /// <param name="input">The input expression to match against.</param>
@@ -654,7 +678,6 @@ module Patterns =
     [<CompiledName("VarSetPattern")>]
     val (|VarSet|_|)          : input:Expr -> (Var * Expr) option
     
-
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// <summary>Contains a set of derived F# active patterns to analyze F# expression objects</summary>
 module DerivedPatterns =    

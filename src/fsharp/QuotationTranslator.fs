@@ -18,6 +18,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open System.Collections.Generic
+open System.Collections.Immutable
 
 module QP = FSharp.Compiler.QuotationPickler
 
@@ -30,14 +31,19 @@ type IsReflectedDefinition =
 
 [<RequireQualifiedAccess>]
 type QuotationSerializationFormat =
-    /// Indicates that type references are emitted as integer indexes into a supplied table
-    | FSharp_40_Plus
-    | FSharp_20_Plus
+    { 
+      /// Indicates that witness parameters are recorded
+      SupportsWitnesses: bool 
+      
+      /// Indicates that type references are emitted as integer indexes into a supplied table
+      SupportsDeserializeEx: bool 
+    }
 
 type QuotationGenerationScope =
     { g: TcGlobals
       amap: Import.ImportMap
       scope: CcuThunk
+      tcVal : ConstraintSolver.TcValF
       // Accumulate the references to type definitions
       referencedTypeDefs: ResizeArray<ILTypeRef>
       referencedTypeDefsTable: Dictionary<ILTypeRef, int>
@@ -49,10 +55,11 @@ type QuotationGenerationScope =
       quotationFormat : QuotationSerializationFormat
       mutable emitDebugInfoInQuotations : bool }
 
-    static member Create (g: TcGlobals, amap, scope, isReflectedDefinition) =
+    static member Create (g: TcGlobals, amap, scope, tcVal, isReflectedDefinition) =
         { g = g
           scope = scope
           amap = amap
+          tcVal = tcVal
           referencedTypeDefs = new ResizeArray<_>()
           referencedTypeDefsTable = new Dictionary<_, _>()
           typeSplices = new ResizeArray<_>()
@@ -67,21 +74,27 @@ type QuotationGenerationScope =
         cenv.exprSplices |> ResizeArray.toList
 
     static member ComputeQuotationFormat g =
-        let deserializeExValRef = ValRefForIntrinsic g.deserialize_quoted_FSharp_40_plus_info
-        if deserializeExValRef.TryDeref.IsSome then
-            QuotationSerializationFormat.FSharp_40_Plus
-        else
-            QuotationSerializationFormat.FSharp_20_Plus
+        { SupportsDeserializeEx = (ValRefForIntrinsic g.deserialize_quoted_FSharp_40_plus_info).TryDeref.IsSome
+          SupportsWitnesses = (ValRefForIntrinsic g.call_with_witnesses_info).TryDeref.IsSome }
 
 type QuotationTranslationEnv =
     { 
       /// Map from Val to binding index
       vs: ValMap<int>
 
-      nvs: int
+      numValsInScope: int
 
       /// Map from typar stamps to binding index
       tyvs: StampMap<int>
+
+      /// Indicates this is a witness arg we we disable further generation of witnesses
+      isWitness: bool
+
+      /// All witnesses in scope and their mapping to lambda variables.
+      //
+      // Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see
+      // the point where the empty initial object is created.
+      witnessesInScope: TraitWitnessInfoHashMap<int>
 
       // Map for values bound by the
       //     'let v = isinst e in .... if nonnull v then ...v .... '
@@ -92,10 +105,12 @@ type QuotationTranslationEnv =
       substVals: ValMap<Expr> 
     }
 
-    static member Empty =
+    static member CreateEmpty g =
         { vs = ValMap<_>.Empty
-          nvs = 0
+          numValsInScope = 0
           tyvs = Map.empty
+          isWitness = false
+          witnessesInScope = EmptyTraitWitnessInfoHashMap g
           isinstVals = ValMap<_>.Empty
           substVals = ValMap<_>.Empty }
 
@@ -103,16 +118,26 @@ type QuotationTranslationEnv =
         let idx = env.tyvs.Count
         { env with tyvs = env.tyvs.Add(v.Stamp, idx ) }
 
+    member env.BindWitnessInfo (witnessInfo: TraitWitnessInfo) =
+        let argIdx = env.numValsInScope
+        { env with 
+            witnessesInScope = env.witnessesInScope.Add(witnessInfo, argIdx)
+            numValsInScope = env.numValsInScope + 1 }
+
     member env.BindTypars vs =
-        (env, vs) ||> List.fold (fun env v -> env.BindTypar v) // fold left-to-right because indexes are left-to-right
+        (env, vs) ||> List.fold (fun env v -> env.BindTypar v)
+
+    member env.BindWitnessInfos witnessInfos =
+        (env, witnessInfos) ||> List.fold (fun env v -> env.BindWitnessInfo v)
 
 let BindFormalTypars (env: QuotationTranslationEnv) vs =
     { env with tyvs = Map.empty }.BindTypars vs
 
 let BindVal env v =
+    let n = env.numValsInScope
     { env with
-       vs = env.vs.Add v env.nvs
-       nvs = env.nvs + 1 }
+       vs = env.vs.Add v n
+       numValsInScope = env.numValsInScope + 1 }
 
 let BindIsInstVal env v (ty, e) =
     { env with isinstVals = env.isinstVals.Add v (ty, e) }
@@ -120,7 +145,7 @@ let BindIsInstVal env v (ty, e) =
 let BindSubstVal env v e =
     { env with substVals = env.substVals.Add v e  }
 
-let BindVals env vs = List.fold BindVal env vs // fold left-to-right because indexes are left-to-right
+let BindVals env vs = List.fold BindVal env vs
 
 let BindFlatVals env vs = List.fold BindVal env vs // fold left-to-right because indexes are left-to-right
 
@@ -208,6 +233,27 @@ let rec EmitDebugInfoIfNecessary cenv env m astExpr : QP.ExprData =
 and ConvExpr cenv env (expr : Expr) =
     EmitDebugInfoIfNecessary cenv env expr.Range (ConvExprCore cenv env expr)
 
+and GetWitnessArgs cenv (env : QuotationTranslationEnv) m tps tyargs =
+    let g = cenv.g
+    if g.generateWitnesses && not env.isWitness then 
+        let witnessExprs = 
+            ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal g cenv.amap m tps tyargs 
+            |> CommitOperationResult
+        let env = { env with isWitness = true }
+        witnessExprs |> List.map (fun arg -> 
+            match arg with 
+            | Choice1Of2 witnessInfo -> 
+                if env.witnessesInScope.ContainsKey witnessInfo then 
+                    let witnessArgIdx = env.witnessesInScope.[witnessInfo]
+                    QP.mkVar witnessArgIdx
+                else
+                    System.Diagnostics.Debug.Assert(false, "unexpected missing witness representation")
+                    QP.mkVar 0
+            | Choice2Of2 arg -> 
+                ConvExpr cenv env arg) 
+    else
+        []
+
 and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.ExprData =
 
     let expr = DetectAndOptimizeForExpression cenv.g OptimizeIntRangesOnly expr
@@ -243,18 +289,19 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         let (numEnclTypeArgs, _, isNewObj, valUseFlags, isSelfInit, takesInstanceArg, isPropGet, isPropSet) =
             GetMemberCallInfo cenv.g (vref, vFlags)
 
-        let isMember, tps, curriedArgInfos, retTy =
+        let isMember, tps, witnessInfos, curriedArgInfos, retTy =
             match vref.MemberInfo with
             | Some _ when not vref.IsExtensionMember ->
                 // This is an application of a member method
                 // We only count one argument block for these.
-                let tps, curriedArgInfos, retTy, _ = GetTypeOfIntrinsicMemberInCompiledForm cenv.g vref
-                true, tps, curriedArgInfos, retTy
+                let tps, witnessInfos, curriedArgInfos, retTy, _ = GetTypeOfIntrinsicMemberInCompiledForm cenv.g vref
+                true, tps, witnessInfos, curriedArgInfos, retTy
             | _ ->
                 // This is an application of a module value or extension member
                 let arities = arityOfVal vref.Deref
-                let tps, curriedArgInfos, retTy, _ = GetTopValTypeInCompiledForm cenv.g arities vref.Type m
-                false, tps, curriedArgInfos, retTy
+                let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
+                let tps, witnessInfos, curriedArgInfos, retTy, _ = GetTopValTypeInCompiledForm cenv.g arities numEnclosingTypars vref.Type m
+                false, tps, witnessInfos, curriedArgInfos, retTy
 
         // Compute the object arguments as they appear in a compiled call
         // Strip off the object argument, if any. The curriedArgInfos are already adjusted to compiled member form
@@ -302,26 +349,29 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                          else tryDestRefTupleExpr arg))
 
                 if verboseCReflect then
-                    dprintfn "vref.DisplayName  = %A, after unit adjust, #untupledCurriedArgs = %A, #curriedArgInfos = %d" vref.DisplayName  (List.map List.length untupledCurriedArgs) curriedArgInfos.Length
+                    dprintfn "vref.DisplayName  = %A , after unit adjust, #untupledCurriedArgs = %A, #curriedArgInfos = %d" vref.DisplayName  (List.map List.length untupledCurriedArgs) curriedArgInfos.Length
+
+                let witnessArgTys = GenWitnessTys cenv.g witnessInfos
+                let witnessArgs = GetWitnessArgs cenv env m tps tyargs
+
                 let subCall =
                     if isMember then
-                        // This is an application of a member method
-                        // We only count one argument block for these.
-                        let callArgs = (objArgs :: untupledCurriedArgs) |> List.concat
 
                         let parentTyconR = ConvTyconRef cenv vref.TopValDeclaringEntity m
                         let isNewObj = isNewObj || valUseFlags || isSelfInit
                         // The signature types are w.r.t. to the formal context
                         let envinner = BindFormalTypars env tps
                         let argTys = curriedArgInfos |> List.concat |> List.map fst
+                        let witnessArgTypesR = ConvTypes cenv envinner m witnessArgTys
                         let methArgTypesR = ConvTypes cenv envinner m argTys
                         let methRetTypeR = ConvReturnType cenv envinner m retTy
                         let methName = vref.CompiledName cenv.g.CompilerGlobalState
                         let numGenericArgs = tyargs.Length - numEnclTypeArgs
-                        ConvObjectModelCall cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, callArgs)
+                        ConvObjectModelCall cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, witnessArgTypesR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, objArgs, witnessArgs, untupledCurriedArgs)
                     else
                         // This is an application of the module value.
-                        ConvModuleValueApp cenv env m vref tyargs untupledCurriedArgs
+                        ConvModuleValueApp cenv env m vref tyargs witnessArgs untupledCurriedArgs
+
                 match curriedArgs, curriedArgInfos with
                 // static member and module value unit argument elimination
                 | [arg: Expr], [[]] ->
@@ -384,7 +434,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
     | Expr.Quote (ast, _, _, _, ety) ->
         // F# 2.0-3.1 had a bug with nested 'raw' quotations. F# 4.0 + FSharp.Core 4.4.0.0+ allows us to do the right thing.
-        if cenv.quotationFormat = QuotationSerializationFormat.FSharp_40_Plus &&
+        if cenv.quotationFormat.SupportsDeserializeEx &&
            // Look for a 'raw' quotation
            tyconRefEq cenv.g (tcrefOfAppTy cenv.g ety) cenv.g.raw_expr_tcr
         then
@@ -420,7 +470,6 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let tyargsR = ConvTypes cenv env m tyargs
             let argsR = ConvExprs cenv env args
             QP.mkUnion(tcR, s, tyargsR, argsR)
-
 
         | TOp.Tuple tupInfo, tyargs, _ ->
             let tyR = ConvType cenv env m (mkAnyTupledTy cenv.g tupInfo tyargs)
@@ -588,7 +637,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
              let isPropGet = isProp && methName.StartsWithOrdinal("get_")
              let isPropSet = isProp && methName.StartsWithOrdinal("set_")
              let tyargs = (enclTypeArgs@methTypeArgs)
-             ConvObjectModelCall cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, methArgTypesR, methRetTypeR, methName, tyargs, methTypeArgs.Length, callArgs)
+             ConvObjectModelCall cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, [], methArgTypesR, methRetTypeR, methName, tyargs, methTypeArgs.Length, [], [], [callArgs])
 
         | TOp.TryFinally _, [_resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] ->
             QP.mkTryFinally(ConvExpr cenv env e1, ConvExpr cenv env e2)
@@ -601,10 +650,10 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             QP.mkTryWith(ConvExpr cenv env e1, vfR, ConvExpr cenv envf ef, vhR, ConvExpr cenv envh eh)
 
         | TOp.Bytes bytes, [], [] ->
-              ConvExpr cenv env (Expr.Op (TOp.Array, [cenv.g.byte_ty], List.ofArray (Array.map (mkByte cenv.g m) bytes), m))
+            ConvExpr cenv env (Expr.Op (TOp.Array, [cenv.g.byte_ty], List.ofArray (Array.map (mkByte cenv.g m) bytes), m))
 
         | TOp.UInt16s arr, [], [] ->
-              ConvExpr cenv env (Expr.Op (TOp.Array, [cenv.g.uint16_ty], List.ofArray (Array.map (mkUInt16 cenv.g m) arr), m))
+            ConvExpr cenv env (Expr.Op (TOp.Array, [cenv.g.uint16_ty], List.ofArray (Array.map (mkUInt16 cenv.g m) arr), m))
 
         | TOp.UnionCaseProof _, _, [e] ->
             ConvExpr cenv env e  // Note: we erase the union case proof conversions when converting to quotations
@@ -621,8 +670,39 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.RefAddrGet _, _, _ ->
             wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
 
-        | TOp.TraitCall (_ss), _, _ ->
-            wfail(Error(FSComp.SR.crefQuotationsCantCallTraitMembers(), m))
+        | TOp.TraitCall traitInfo, _, args ->
+            let g = cenv.g
+            let inWitnessPassingScope = not env.witnessesInScope.IsEmpty
+            let witnessArgInfo = 
+                if g.generateWitnesses && inWitnessPassingScope then 
+                    match env.witnessesInScope.TryGetValue traitInfo.TraitKey with 
+                    | true, storage -> Some storage
+                    | _ -> None // failwithf "no storage for witness %s found in scope" w.MemberName
+                else
+                    None
+
+            match witnessArgInfo with 
+            | Some witnessArgIdx -> 
+        
+                let witnessR = QP.mkVar witnessArgIdx
+                let args = if args.Length = 0 then [ mkUnit g m ] else args
+                let argsR = ConvExprs cenv env args
+                (witnessR, argsR) ||> List.fold (fun fR argR -> QP.mkApp (fR, argR))
+        
+            | None ->     
+                // If witnesses are available, we should now always find trait witnesses in scope
+                assert not inWitnessPassingScope
+        
+                let minfoOpt =
+                    if g.generateWitnesses then 
+                        ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal g cenv.amap m traitInfo args |> CommitOperationResult 
+                    else
+                        None
+                match minfoOpt with
+                | None ->
+                    wfail(Error(FSComp.SR.crefQuotationsCantCallTraitMembers(), m))
+                | Some expr ->
+                    ConvExpr cenv env expr             
 
         | _ ->
             wfail(InternalError( "Unexpected expression shape", m))
@@ -718,46 +798,80 @@ and ConvLValueExprCore cenv env expr =
 and ConvObjectModelCall cenv env m callInfo =
     EmitDebugInfoIfNecessary cenv env m (ConvObjectModelCallCore cenv env m callInfo)
 
-and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, callArgs) =
+and ConvObjectModelCallCore cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, witnessArgTypesR, methArgTypesR, methRetTypeR, methName, tyargs, numGenericArgs, objArgs, witnessArgsR, untupledCurriedArgs) =
     let tyargsR = ConvTypes cenv env m tyargs
-    let callArgsR = ConvLValueArgs cenv env callArgs
+    let tupledCurriedArgs = untupledCurriedArgs |> List.concat
+    let allArgsR = 
+        match objArgs with
+        | [ obj ] -> ConvLValueExpr cenv env obj :: (witnessArgsR @ ConvExprs cenv env tupledCurriedArgs)
+        | [] -> witnessArgsR @ ConvLValueArgs cenv env tupledCurriedArgs
+        | _ -> failwith "unreachable"
 
     if isPropGet || isPropSet then
+        assert witnessArgTypesR.IsEmpty
         let propName = ChopPropertyName methName
         if isPropGet then
-            QP.mkPropGet( (parentTyconR, propName, methRetTypeR, methArgTypesR), tyargsR, callArgsR)
+            QP.mkPropGet( (parentTyconR, propName, methRetTypeR, methArgTypesR), tyargsR, allArgsR)
         else
             let args, propTy = List.frontAndBack methArgTypesR
-            QP.mkPropSet( (parentTyconR, propName, propTy, args), tyargsR, callArgsR)
+            QP.mkPropSet( (parentTyconR, propName, propTy, args), tyargsR, allArgsR)
 
     elif isNewObj then
+        assert witnessArgTypesR.IsEmpty
         let ctorR : QuotationPickler.CtorData =
             { ctorParent   = parentTyconR
               ctorArgTypes = methArgTypesR }
-        QP.mkCtorCall(ctorR, tyargsR, callArgsR)
+        QP.mkCtorCall(ctorR, tyargsR, allArgsR)
 
-    else
+    elif witnessArgTypesR.IsEmpty then
+
         let methR : QuotationPickler.MethodData =
             { methParent   = parentTyconR
               methArgTypes = methArgTypesR
               methRetType  = methRetTypeR
               methName     = methName
               numGenericArgs = numGenericArgs }
-        QP.mkMethodCall(methR, tyargsR, callArgsR)
 
-and ConvModuleValueApp cenv env m (vref: ValRef) tyargs (args: Expr list list) =
-    EmitDebugInfoIfNecessary cenv env m (ConvModuleValueAppCore cenv env m vref tyargs args)
+        QP.mkMethodCall(methR, tyargsR, allArgsR)
 
-and ConvModuleValueAppCore cenv env m (vref: ValRef) tyargs (args: Expr list list) =
+    else
+
+        // The old method entry point
+        let methR: QuotationPickler.MethodData =
+            { methParent   = parentTyconR
+              methArgTypes = methArgTypesR
+              methRetType  = methRetTypeR
+              methName     = methName
+              numGenericArgs = numGenericArgs }
+
+        // The witness-passing method entry point
+        let methWR: QuotationPickler.MethodData =
+            { methParent   = parentTyconR
+              methArgTypes = witnessArgTypesR @ methArgTypesR
+              methRetType  = methRetTypeR
+              methName     = ExtraWitnessMethodName methName
+              numGenericArgs = numGenericArgs }
+
+        QP.mkMethodCallW(methR, methWR, List.length witnessArgTypesR, tyargsR, allArgsR)
+
+and ConvModuleValueApp cenv env m (vref:ValRef) tyargs witnessArgs (args: Expr list list) =
+    EmitDebugInfoIfNecessary cenv env m (ConvModuleValueAppCore cenv env m vref tyargs witnessArgs args)
+
+and ConvModuleValueAppCore cenv env m (vref: ValRef) tyargs witnessArgsR (curriedArgs: Expr list list) =
     match vref.DeclaringEntity with
-    | ParentNone -> failwith "ConvModuleValueApp"
+    | ParentNone -> failwith "ConvModuleValueAppCore"
     | Parent(tcref) ->
         let isProperty = IsCompiledAsStaticProperty cenv.g vref.Deref
         let tcrefR = ConvTyconRef cenv tcref m
         let tyargsR = ConvTypes cenv env m tyargs
         let nm = vref.CompiledName cenv.g.CompilerGlobalState
-        let argsR = List.map (ConvExprs cenv env) args
-        QP.mkModuleValueApp(tcrefR, nm, isProperty, tyargsR, argsR)
+        let uncurriedArgsR = ConvExprs cenv env (List.concat curriedArgs)
+        let allArgsR = witnessArgsR @ uncurriedArgsR
+        let nWitnesses = witnessArgsR.Length
+        if nWitnesses = 0 then 
+            QP.mkModuleValueApp(tcrefR, nm, isProperty, tyargsR, allArgsR)
+        else
+            QP.mkModuleValueWApp(tcrefR, nm, isProperty, ExtraWitnessMethodName nm, nWitnesses, tyargsR, allArgsR)
 
 and ConvExprs cenv env args =
     List.map (ConvExpr cenv env) args
@@ -785,10 +899,14 @@ and private ConvValRefCore holeOk cenv env m (vref: ValRef) tyargs =
               // References to local values are embedded by value
               if not holeOk then wfail(Error(FSComp.SR.crefNoSetOfHole(), m))
               let idx = cenv.exprSplices.Count
-              cenv.exprSplices.Add((mkCallLiftValueWithName cenv.g m vty v.LogicalName (exprForValRef m vref), m))
+              let liftExpr = mkCallLiftValueWithName cenv.g m vty v.LogicalName (exprForValRef m vref)
+              cenv.exprSplices.Add((liftExpr, m))
               QP.mkHole(ConvType cenv env m vty, idx)
+
         | Parent _ ->
-              ConvModuleValueApp cenv env m vref tyargs []
+            // First-class use or use of type function
+            let witnessArgs = GetWitnessArgs cenv env m vref.Typars tyargs
+            ConvModuleValueApp cenv env m vref tyargs witnessArgs [] 
 
 and ConvUnionCaseRef cenv (ucref: UnionCaseRef) m =
     let ucgtypR = ConvTyconRef cenv ucref.TyconRef m
@@ -987,8 +1105,7 @@ and ConvILTypeRefUnadjusted cenv m (tr: ILTypeRef) =
     ConvILTypeRef cenv trefAdjusted
 
 and ConvILTypeRef cenv (tr: ILTypeRef) =
-    match cenv.quotationFormat with
-    | QuotationSerializationFormat.FSharp_40_Plus ->
+    if cenv.quotationFormat.SupportsDeserializeEx then
         let idx =
             match cenv.referencedTypeDefsTable.TryGetValue tr with
             | true, idx -> idx
@@ -999,7 +1116,7 @@ and ConvILTypeRef cenv (tr: ILTypeRef) =
                 idx
         QP.Idx idx
 
-    | QuotationSerializationFormat.FSharp_20_Plus ->
+    else
         let assemblyRef =
             match tr.Scope with
             | ILScopeRef.Local -> "."
@@ -1059,7 +1176,7 @@ and ConvReturnType cenv envinner m retTy =
     | Some ty -> ConvType cenv envinner m ty
 
 let ConvExprPublic cenv e =
-    let env = QuotationTranslationEnv.Empty
+    let env = QuotationTranslationEnv.CreateEmpty(cenv.g)
     let astExpr =
         let astExpr = ConvExpr cenv env e
         // always emit debug info for the top level expression
@@ -1077,7 +1194,7 @@ let ConvMethodBase cenv env (methName, v: Val) =
     | Some vspr when not v.IsExtensionMember ->
 
         let vref = mkLocalValRef v
-        let tps, argInfos, retTy, _ = GetTypeOfMemberInMemberForm cenv.g vref
+        let tps, witnessInfos, argInfos, retTy, _ = GetTypeOfMemberInMemberForm cenv.g vref
         let numEnclTypeArgs = vref.MemberApparentEntity.TyparsNoRange.Length
         let argTys = argInfos |> List.concat |> List.map fst
 
@@ -1085,44 +1202,54 @@ let ConvMethodBase cenv env (methName, v: Val) =
 
         // The signature types are w.r.t. to the formal context
         let envinner = BindFormalTypars env tps
+        let witnessArgTysR = ConvTypes cenv envinner m (GenWitnessTys cenv.g witnessInfos)
         let methArgTypesR = ConvTypes cenv envinner m argTys
         let methRetTypeR = ConvReturnType cenv envinner m retTy
 
         let numGenericArgs = tps.Length-numEnclTypeArgs
 
         if isNewObj then
-             QP.MethodBaseData.Ctor
-                 { ctorParent   = parentTyconR
-                   ctorArgTypes = methArgTypesR }
+            assert witnessArgTysR.IsEmpty
+            QP.MethodBaseData.Ctor
+                { ctorParent   = parentTyconR
+                  ctorArgTypes = methArgTypesR }
         else
-             QP.MethodBaseData.Method
+            QP.MethodBaseData.Method
                 { methParent   = parentTyconR
-                  methArgTypes = methArgTypesR
+                  methArgTypes = witnessArgTysR @ methArgTypesR
                   methRetType  = methRetTypeR
                   methName     = methName
                   numGenericArgs=numGenericArgs }
 
     | _ when v.IsExtensionMember ->
 
-        let tps, argInfos, retTy, _ = GetTopValTypeInCompiledForm cenv.g v.ValReprInfo.Value v.Type v.Range
+        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+        let tps, witnessInfos, argInfos, retTy, _ = GetTopValTypeInCompiledForm cenv.g v.ValReprInfo.Value numEnclosingTypars v.Type v.Range
         let argTys = argInfos |> List.concat |> List.map fst
         let envinner = BindFormalTypars env tps
+        let witnessArgTysR = ConvTypes cenv envinner m (GenWitnessTys cenv.g witnessInfos)
         let methArgTypesR = ConvTypes cenv envinner m argTys
         let methRetTypeR = ConvReturnType cenv envinner m retTy
         let numGenericArgs = tps.Length
 
         QP.MethodBaseData.Method
           { methParent   = parentTyconR
-            methArgTypes = methArgTypesR
+            methArgTypes = witnessArgTysR @ methArgTypesR
             methRetType  = methRetTypeR
             methName     = methName
             numGenericArgs=numGenericArgs }
-    | _ ->
 
+    | _ ->
+        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+        let tps, witnessInfos, _argInfos, _retTy, _ = GetTopValTypeInCompiledForm cenv.g v.ValReprInfo.Value numEnclosingTypars v.Type v.Range
+        let envinner = BindFormalTypars env tps
+        let witnessArgTysR = ConvTypes cenv envinner m (GenWitnessTys cenv.g witnessInfos)
+        let nWitnesses = witnessArgTysR.Length
+        let witnessData = (if nWitnesses = 0 then None else Some (ExtraWitnessMethodName methName, nWitnesses))
         QP.MethodBaseData.ModuleDefn
-            { Name = methName
-              Module = parentTyconR
-              IsProperty = IsCompiledAsStaticProperty cenv.g v }
+            ({ Name = methName
+               Module = parentTyconR
+               IsProperty = IsCompiledAsStaticProperty cenv.g v }, witnessData)
 
 let ConvReflectedDefinition cenv methName v e =
     let g = cenv.g
@@ -1131,9 +1258,12 @@ let ConvReflectedDefinition cenv methName v e =
         match e with
         | Expr.TyLambda (_, tps, body, _, _) -> tps, body, applyForallTy g ety (List.map mkTyparTy tps)
         | _ -> [], e, ety
-    let env = QuotationTranslationEnv.Empty
+    let env = QuotationTranslationEnv.CreateEmpty(g)
     let env = env.BindTypars tps
+    let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+    let witnessInfos = GetTraitWitnessInfosOfTypars g numEnclosingTypars tps
     let astExpr =
+        let env = env.BindWitnessInfos witnessInfos
         let astExpr = ConvExpr cenv env taue
         // always emit debug info for ReflectedDefinition expression
         let old = cenv.emitDebugInfoInQuotations
@@ -1143,5 +1273,17 @@ let ConvReflectedDefinition cenv methName v e =
         finally
             cenv.emitDebugInfoInQuotations <- old
 
+    // Add on fake lambdas for implicit arguments for witnesses
+    let astExprWithWitnessLambdas = 
+        List.foldBack 
+            (fun witnessInfo e -> 
+                let ty = GenWitnessTy g witnessInfo
+                let tyR = ConvType cenv env v.DefinitionRange ty
+                let vR = QuotationPickler.freshVar (witnessInfo.MemberName, tyR, false)
+                QuotationPickler.mkLambda (vR, e))
+            witnessInfos
+            astExpr
+
     let mbaseR = ConvMethodBase cenv env (methName, v)
-    mbaseR, astExpr
+    mbaseR, astExprWithWitnessLambdas
+

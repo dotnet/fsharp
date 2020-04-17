@@ -2296,7 +2296,22 @@ type TyparConstraint =
     
     override x.ToString() = sprintf "%+A" x 
     
-/// Represents the specification of a member constraint that must be solved 
+[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+type TraitWitnessInfo = 
+    | TraitWitnessInfo of TTypes * string * MemberFlags * TTypes * TType option
+    
+    /// Get the member name associated with the member constraint.
+    member x.MemberName = (let (TraitWitnessInfo(_, b, _, _, _)) = x in b)
+
+    /// Get the return type recorded in the member constraint.
+    member x.ReturnType = (let (TraitWitnessInfo(_, _, _, _, ty)) = x in ty)
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    override x.ToString() = "TTrait(" + x.MemberName + ")"
+    
+/// The specification of a member constraint that must be solved 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo = 
 
@@ -2304,10 +2319,17 @@ type TraitConstraintInfo =
     /// to store the inferred solution of the constraint.
     | TTrait of tys: TTypes * memberName: string * _memFlags: MemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
 
+    /// Get the key associated with the member constraint.
+    member x.TraitKey = (let (TTrait(a, b, c, d, e, _)) = x in TraitWitnessInfo(a, b, c, d, e))
+
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
 
-    /// Get the argument types required of a member in order to solve the constraint
+    /// Get the member flags associated with the member constraint.
+    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _)) = x in flags)
+
+    /// Get the argument types recorded in the member constraint. This includes the object instance type for
+    /// instance members.
     member x.ArgumentTypes = (let (TTrait(_, _, _, argtys, _, _)) = x in argtys)
 
     /// Get the return type recorded in the member constraint.
