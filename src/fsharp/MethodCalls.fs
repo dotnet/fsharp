@@ -1821,19 +1821,21 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             | FSAnonRecdFieldSln(anonInfo, tinst, i) -> 
                 Choice3Of5  (anonInfo, tinst, i)
 
-            | BuiltInSln -> 
-                Choice5Of5 ()
-
             | ClosedExprSln expr -> 
                 Choice4Of5 expr
+
+            | BuiltInSln -> 
+                Choice5Of5 ()
     match sln with
     | Choice1Of5(minfo, methArgTys) -> 
         let argExprs = 
-            // FIX for #421894 - typechecker assumes that coercion can be applied for the trait calls arguments but codegen doesn't emit coercion operations
+            // FIX for #421894 - typechecker assumes that coercion can be applied for the trait
+            // calls arguments but codegen doesn't emit coercion operations
             // result - generation of non-verifiable code
             // fix - apply coercion for the arguments (excluding 'receiver' argument in instance calls)
 
-            // flatten list of argument types (looks like trait calls with curried arguments are not supported so we can just convert argument list in straightforward way)
+            // flatten list of argument types (looks like trait calls with curried arguments are not supported so
+            // we can just convert argument list in straight-forward way)
             let argTypes =
                 minfo.GetParamTypes(amap, m, methArgTys) 
                 |> List.concat 
@@ -1854,13 +1856,12 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         if minfo.IsStruct && minfo.IsInstance && (match argExprs with [] -> false | h :: _ -> not (isByrefTy g (tyOfExpr g h))) then 
             let h, t = List.headAndTail argExprs
             let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
-            Some (wrap (Expr.Op (TOp.TraitCall (traitInfo), [], (h' :: t), m)))
+            Some (wrap (Expr.Op (TOp.TraitCall traitInfo, [], (h' :: t), m)))
         else        
             Some (MakeMethInfoCall amap m minfo methArgTys argExprs )
 
     | Choice2Of5 (tinst, rfref, isSet) -> 
         match isSet, rfref.RecdField.IsStatic, argExprs.Length with 
-
         // static setter
         | true, true, 1 -> 
             Some (mkStaticRecdFieldSet (rfref, tinst, argExprs.[0], m))
@@ -1878,14 +1879,14 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
         // static getter
         | false, true, 0 -> 
-                Some (mkStaticRecdFieldGet (rfref, tinst, m))
+            Some (mkStaticRecdFieldGet (rfref, tinst, m))
 
         // instance getter
         | false, false, 1 -> 
-                if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs.[0]) then 
-                    Some (mkRecdFieldGetViaExprAddr (argExprs.[0], rfref, tinst, m))
-                else 
-                    Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
+            if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs.[0]) then 
+                Some (mkRecdFieldGetViaExprAddr (argExprs.[0], rfref, tinst, m))
+            else 
+                Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))
         | _ -> None 
 
     | Choice3Of5 (anonInfo, tinst, i) -> 

@@ -5809,7 +5809,10 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
 and DelayGenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs =
     cenv.delayedGenMethods.Enqueue (fun cenv -> GenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs)
 
-and GenMethodForBinding cenv mgbuf eenv (v, mspec, access, paramInfos, retInfo, topValInfo, ctorThisValOpt, baseValOpt, methLambdaTypars, methLambdaVars, methodArgTys, body, returnTy) =
+and GenMethodForBinding
+        cenv mgbuf eenv
+        (v: Val, mspec, access, paramInfos, retInfo, topValInfo,
+         ctorThisValOpt, baseValOpt, methLambdaTypars, methLambdaVars, argTys, body, returnTy) =
     let g = cenv.g
     let m = v.Range
 
@@ -5908,7 +5911,7 @@ and GenMethodForBinding cenv mgbuf eenv (v, mspec, access, paramInfos, retInfo, 
           yield! GenCompilationArgumentCountsAttr cenv v ]
 
     let ilTypars = GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
-    let ilParams = GenParams cenv eenv mspec paramInfos methodArgTys (Some nonUnitNonSelfMethodVars)
+    let ilParams = GenParams cenv eenv mspec paramInfos argTys (Some nonUnitNonSelfMethodVars)
     let ilReturn = GenReturnInfo cenv eenv mspec.FormalReturnType retInfo
     let methName = mspec.Name
     let tref = mspec.MethodRef.DeclaringTypeRef
@@ -5950,7 +5953,8 @@ and GenMethodForBinding cenv mgbuf eenv (v, mspec, access, paramInfos, retInfo, 
         if not useMethodImpl then
             let edef = GenEventForProperty cenv eenvForMeth mspec v ilAttrsThatGoOnPrimaryItem m returnTy
             mgbuf.AddEventDef(tref, edef)
-    | _ -> 
+
+    | _ ->
 
     let mdef = 
         match v.MemberInfo with
@@ -6018,6 +6022,7 @@ and GenMethodForBinding cenv mgbuf eenv (v, mspec, access, paramInfos, retInfo, 
                    // Add the special name flag for all properties               
                    let mdef = mdef.WithSpecialName.With(customAttrs= mkILCustomAttrs ((GenAttrs cenv eenv attrsAppliedToGetterOrSetter) @ sourceNameAttribs @ ilAttrsCompilerGenerated))
                    mdef
+
                | _ ->
                    let mdef = mdef.With(customAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated))
                    mdef
@@ -6053,11 +6058,11 @@ and GenMethodForBinding cenv mgbuf eenv (v, mspec, access, paramInfos, retInfo, 
 
     let mdef =
         if // operator names
-            mdef.Name.StartsWithOrdinal("op_") ||
-            // active pattern names
-            mdef.Name.StartsWithOrdinal("|") ||
-            // event add/remove method
-            v.val_flags.IsGeneratedEventVal then
+           mdef.Name.StartsWithOrdinal("op_") ||
+           // active pattern names
+           mdef.Name.StartsWithOrdinal("|") ||
+           // event add/remove method
+           v.val_flags.IsGeneratedEventVal then
             mdef.WithSpecialName
         else
             mdef
@@ -6109,9 +6114,9 @@ and GenSetVal cenv cgbuf eenv (vref, e, m) sequel =
     GenSetStorage vref.Range cgbuf storage
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
   
-and GenGetValRefAndSequel cenv cgbuf eenv m (v: ValRef) fetchSequel =
+and GenGetValRefAndSequel cenv cgbuf eenv m (v: ValRef) storeSequel =
     let ty = v.Type
-    GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv.amap m eenv.tyenv ty) (StorageForValRef cenv.g m v eenv) fetchSequel
+    GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv.amap m eenv.tyenv ty) (StorageForValRef cenv.g m v eenv) storeSequel
 
 and GenGetVal cenv cgbuf eenv (v: ValRef, m) sequel =
     GenGetValRefAndSequel cenv cgbuf eenv m v None
@@ -6185,17 +6190,22 @@ and GenSetStorage m cgbuf storage =
 
 and CommitGetStorageSequel cenv cgbuf eenv m ty localCloInfo storeSequel =
     match localCloInfo, storeSequel with
-    | Some {contents =NamedLocalIlxClosureInfoGenerator _cloinfo}, _ -> error(InternalError("Unexpected generator", m))
+    | Some {contents =NamedLocalIlxClosureInfoGenerator _cloinfo}, _ -> 
+        error(InternalError("Unexpected generator", m))
+
     | Some {contents =NamedLocalIlxClosureInfoGenerated cloinfo}, Some (tyargs, args, m, sequel) when not (isNil tyargs) ->
         let actualRetTy = GenNamedLocalTyFuncCall cenv cgbuf eenv ty cloinfo tyargs m
         CommitGetStorageSequel cenv cgbuf eenv m actualRetTy None (Some ([], args, m, sequel))
+
     | _, None -> ()
+
     | _, Some ([], [], _, sequel) ->
         GenSequel cenv eenv.cloc cgbuf sequel
+
     | _, Some (tyargs, args, m, sequel) ->
         GenCurriedArgsAndIndirectCall cenv cgbuf eenv (ty, tyargs, args, m) sequel
 
-and GenGetStorageAndSequel cenv cgbuf eenv m (ty, ilTy) storage storeSequel =
+and GenGetStorageAndSequel (cenv: cenv) cgbuf eenv m (ty, ilTy) storage storeSequel =
     let g = cenv.g
     match storage with
     | Local (idx, _, localCloInfo) ->
@@ -6250,11 +6260,11 @@ and GenGetStorageAndSequel cenv cgbuf eenv m (ty, ilTy) storage storeSequel =
 and GenGetLocalVals cenv cgbuf eenvouter m fvs =
     List.iter (fun v -> GenGetLocalVal cenv cgbuf eenvouter m v None) fvs
 
-and GenGetLocalVal cenv cgbuf eenv m (vspec: Val) fetchSequel =
-    GenGetStorageAndSequel cenv cgbuf eenv m (vspec.Type, GenTypeOfVal cenv eenv vspec) (StorageForVal cenv.g m vspec eenv) fetchSequel
+and GenGetLocalVal cenv cgbuf eenv m (vspec: Val) storeSequel =
+    GenGetStorageAndSequel cenv cgbuf eenv m (vspec.Type, GenTypeOfVal cenv eenv vspec) (StorageForVal cenv.g m vspec eenv) storeSequel
 
-and GenGetLocalVRef cenv cgbuf eenv m (vref: ValRef) fetchSequel =
-    GenGetStorageAndSequel cenv cgbuf eenv m (vref.Type, GenTypeOfVal cenv eenv vref.Deref) (StorageForValRef cenv.g m vref eenv) fetchSequel
+and GenGetLocalVRef cenv cgbuf eenv m (vref: ValRef) storeSequel =
+    GenGetStorageAndSequel cenv cgbuf eenv m (vref.Type, GenTypeOfVal cenv eenv vref.Deref) (StorageForValRef cenv.g m vref eenv) storeSequel
 
 and GenStoreVal cenv cgbuf eenv m (vspec: Val) =
     GenSetStorage vspec.Range cgbuf (StorageForVal cenv.g m vspec eenv)
@@ -7628,12 +7638,12 @@ let CodegenAssembly cenv eenv mgbuf fileImpls =
 // structures representing the contents of the module.
 //-------------------------------------------------------------------------
 
-let GetEmptyIlxGenEnv (ilg: ILGlobals) ccu =
+let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
     let thisCompLoc = CompLocForCcu ccu
     { tyenv=TypeReprEnv.Empty
       cloc = thisCompLoc
       valsInScope=ValMap<_>.Empty
-      someTypeInThisAssembly=ilg.typ_Object (* dummy value *)
+      someTypeInThisAssembly= g.ilg.typ_Object (* dummy value *)
       isFinalFile = false
       letBoundVars=[]
       liveLocals=IntMap.empty()
@@ -7686,12 +7696,12 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
                     with
                     | QuotationTranslator.InvalidQuotedTerm e -> warning e; None)
 
-            let referencedTypeDefs, freeTypes, spliceArgExprs = qscope.Close()
+            let referencedTypeDefs, typeSplices, exprSplices  = qscope.Close()
 
-            for (_freeType, m) in freeTypes do
+            for (_typeSplice, m) in typeSplices do
                 error(InternalError("A free type variable was detected in a reflected definition", m))
 
-            for (_spliceArgExpr, m) in spliceArgExprs do
+            for (_exprSplice, m) in exprSplices  do
                 error(Error(FSComp.SR.ilReflectedDefinitionsCannotUseSliceOperator(), m))
 
             let defnsResourceBytes = defns |> QuotationPickler.PickleDefns
@@ -7812,7 +7822,7 @@ let ClearGeneratedValue (ctxt: ExecutionContext) (g: TcGlobals) eenv (v: Val) =
 type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: ConstraintSolver.TcValF, ccu: CcuThunk) =
 
     // The incremental state held by the ILX code generator
-    let mutable ilxGenEnv = GetEmptyIlxGenEnv tcGlobals.ilg ccu
+    let mutable ilxGenEnv = GetEmptyIlxGenEnv tcGlobals ccu
     let anonTypeTable = AnonTypeGenerationTable()
     let intraAssemblyInfo = { StaticFieldInfo = new Dictionary<_, _>(HashIdentity.Structural) }
     let casApplied = new Dictionary<Stamp, bool>()

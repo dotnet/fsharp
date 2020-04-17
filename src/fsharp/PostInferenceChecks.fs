@@ -214,7 +214,7 @@ type cenv =
       isInternalTestSpanStackReferring: bool
 
       // outputs
-      mutable usesQuotations : bool
+      mutable usesQuotations: bool
 
       mutable entryPointGiven: bool  }
 

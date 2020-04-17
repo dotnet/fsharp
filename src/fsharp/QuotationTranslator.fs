@@ -1094,11 +1094,11 @@ let ConvMethodBase cenv env (methName, v: Val) =
                   ctorArgTypes = methArgTypesR }
         else
             QP.MethodBaseData.Method
-               { methParent   = parentTyconR
-                 methArgTypes = methArgTypesR
-                 methRetType  = methRetTypeR
-                 methName     = methName
-                 numGenericArgs=numGenericArgs }
+                { methParent   = parentTyconR
+                  methArgTypes = methArgTypesR
+                  methRetType  = methRetTypeR
+                  methName     = methName
+                  numGenericArgs=numGenericArgs }
 
     | _ when v.IsExtensionMember ->
 

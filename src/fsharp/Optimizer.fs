@@ -154,7 +154,8 @@ type ValInfos(entries) =
 
     member x.TryFind (v: ValRef) = valInfoTable.Force().TryFind v.Deref
 
-    member x.TryFindForFslib (v: ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.GetLinkagePartialKey())
+    member x.TryFindForFslib (v: ValRef) =
+        valInfosForFslib.Force().TryGetValue(v.Deref.GetLinkagePartialKey())
 
 type ModuleInfo = 
     { ValInfos: ValInfos
@@ -2956,7 +2957,6 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
               else 
                   let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (bodyR, bodyty)
                   CurriedLambdaValue (lambdaId, arities, bsize, expr2, ety) 
-                  
 
         let estimatedSize = 
             match vspec with
