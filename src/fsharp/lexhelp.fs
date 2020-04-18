@@ -56,7 +56,8 @@ type lexargs =
       lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger
       applyLineDirectives: bool
-      mutable interpolatedStringNesting: int
+      mutable interpolatedStringNestingCurrent: int
+      mutable interpolatedStringNestingStack: int list
       mutable interpolatedStringStyle: LexerStringStyle option
       pathMap: PathMap }
 
@@ -75,7 +76,8 @@ let mkLexargs (_filename, defines, lightSyntaxStatus, resourceManager, ifdefStac
       resourceManager=resourceManager
       errorLogger=errorLogger
       applyLineDirectives=true
-      interpolatedStringNesting = 0
+      interpolatedStringNestingCurrent = 0
+      interpolatedStringNestingStack = []
       pathMap=pathMap
       interpolatedStringStyle = None
     }

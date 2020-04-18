@@ -35,7 +35,9 @@ type lexargs =
       applyLineDirectives: bool
 
       /// The degree of nesting of '{..}' in an interpolation fill
-      mutable interpolatedStringNesting: int
+      mutable interpolatedStringNestingCurrent: int
+      /// Nesting counters of outer interpolating strings
+      mutable interpolatedStringNestingStack: int list
       
       /// The style of the string to continue after the matching '}' is found
       mutable interpolatedStringStyle: LexerStringStyle option

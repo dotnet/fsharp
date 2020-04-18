@@ -731,8 +731,8 @@ rule token args skip = parse
 
  | "{"
      {
-       if args.interpolatedStringNesting > 0 then
-           args.interpolatedStringNesting <- args.interpolatedStringNesting + 1
+       if args.interpolatedStringNestingCurrent > 0 then
+           args.interpolatedStringNestingCurrent <- args.interpolatedStringNestingCurrent + 1
        LBRACE
      }
 
@@ -742,9 +742,15 @@ rule token args skip = parse
      { 
        // We encounter a '}' in the expression token stream.  First check if we're in an interpolated string expression
        // and continue the string if necessary
-       if args.interpolatedStringNesting = 1 && args.interpolatedStringStyle.IsSome then
+       if args.interpolatedStringNestingCurrent = 1 && args.interpolatedStringStyle.IsSome then
+           match args.interpolatedStringNestingStack with
+           | head :: rest -> 
+             args.interpolatedStringNestingCurrent <- head
+             args.interpolatedStringNestingStack <- rest
+           | [] ->
+             // back to initial state
+             args.interpolatedStringNestingCurrent <- 0
            let buf, fin, m = startString args lexbuf 
-           args.interpolatedStringNesting <- 0
            let style = args.interpolatedStringStyle.Value
            if not skip then 
                (STRING_TEXT (LexCont.String(args.ifdefStack, style, LexerStringKind.InterpolatedStringPart, m)))
@@ -754,8 +760,8 @@ rule token args skip = parse
                | LexerStringStyle.SingleQuote -> singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
                | LexerStringStyle.TripleQuote -> tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
 
-       elif args.interpolatedStringNesting > 1 then
-           args.interpolatedStringNesting <- args.interpolatedStringNesting - 1
+       elif args.interpolatedStringNestingCurrent > 1 then
+           args.interpolatedStringNestingCurrent <- args.interpolatedStringNestingCurrent - 1
            RBRACE
        else
            RBRACE
@@ -1007,7 +1013,11 @@ and singleQuoteString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          args.interpolatedStringNesting <- args.interpolatedStringNesting + 1
+          match args.interpolatedStringNestingCurrent, args.interpolatedStringNestingStack with
+          // initial state, depth = 0
+          | 0, _ -> ()
+          | x, y -> args.interpolatedStringNestingStack <- x :: y
+          args.interpolatedStringNestingCurrent <- 1
           args.interpolatedStringStyle <- Some LexerStringStyle.SingleQuote
           fin.Finish buf kind true
       else
@@ -1077,7 +1087,11 @@ and verbatimString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          args.interpolatedStringNesting <- args.interpolatedStringNesting + 1
+          match args.interpolatedStringNestingCurrent, args.interpolatedStringNestingStack with
+          // initial state, depth = 0
+          | 0, _ -> ()
+          | x, y -> args.interpolatedStringNestingStack <- x :: y
+          args.interpolatedStringNestingCurrent <- 1
           args.interpolatedStringStyle <- Some LexerStringStyle.Verbatim
           fin.Finish buf kind true
       else
@@ -1148,7 +1162,11 @@ and tripleQuoteString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          args.interpolatedStringNesting <- args.interpolatedStringNesting + 1
+          match args.interpolatedStringNestingCurrent, args.interpolatedStringNestingStack with
+          // initial state, depth = 0
+          | 0, _ -> ()
+          | x, y -> args.interpolatedStringNestingStack <- x :: y
+          args.interpolatedStringNestingCurrent <- 1
           args.interpolatedStringStyle <- Some LexerStringStyle.TripleQuote
           fin.Finish buf kind true
       else
