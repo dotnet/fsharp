@@ -245,6 +245,10 @@ function Make-BootstrapBuild() {
     $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
 
     $args = "build $buildToolsProject -c $bootstrapConfiguration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
+    if ($binaryLog) {
+        $logFilePath = Join-Path $LogDir "toolsBootstrapLog.binlog"
+        $args += " /bl:$logFilePath"
+    }
     Exec-Console $dotnetExe $args
 
     Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp3.0" -Destination "$dir\fslex" -Force -Recurse
@@ -254,6 +258,10 @@ function Make-BootstrapBuild() {
     # prepare compiler
     $protoProject = "$RepoRoot\proto.proj"
     $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity -f $bootstrapTfm" + $argNoRestore + $argNoIncremental
+    if ($binaryLog) {
+        $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
+        $args += " /bl:$logFilePath"
+    }
     Exec-Console $dotnetExe $args
 
     Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsc" -Force -Recurse
