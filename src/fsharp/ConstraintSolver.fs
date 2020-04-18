@@ -3061,7 +3061,8 @@ let CreateCodegenState tcVal g amap =
       ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
       InfoReader = new InfoReader(g, amap) }
 
-let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: TraitConstraintInfo) argExprs = trackErrors {
+/// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
+let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo: TraitConstraintInfo) argExprs = trackErrors {
     let css = CreateCodegenState tcVal g amap
 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
@@ -3072,6 +3073,9 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo: Tra
     return sln
   }
 
+/// For some code like "let f() = ([] = [])", a free choice is made for a type parameter
+/// for an interior type variable.  This chooses a solution for a type parameter subject
+/// to its constraints and applies that solution by using a constraint.
 let ChooseTyparSolutionAndSolve css denv tp =
     let g = css.g
     let amap = css.amap
