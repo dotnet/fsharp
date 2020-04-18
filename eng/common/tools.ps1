@@ -286,6 +286,7 @@ function InitializeVisualStudioMSBuild([bool]$install, [object]$vsRequirements =
   if (Test-Path variable:global:_MSBuildExe) {
     return $global:_MSBuildExe
   }
+
   if (!$vsRequirements) { $vsRequirements = $GlobalJson.tools.vs }
   $vsMinVersionStr = if ($vsRequirements.version) { $vsRequirements.version } else { '15.9' }
   $vsMinVersion = [Version]::new($vsMinVersionStr)
@@ -631,7 +632,6 @@ function MSBuild-Core() {
     }
   }
 
-  Write-Host "$buildTool.Path: $buildTool.Path --- $cmdArgs"
   $exitCode = Exec-Process $buildTool.Path $cmdArgs
 
   if ($exitCode -ne 0) {
