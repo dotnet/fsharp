@@ -849,7 +849,9 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
         match newCtxt with 
         // Don't bother to check pushes of Vanilla blocks since we've 
         // always already pushed a SeqBlock at this position.
-        | CtxtVanilla _ -> ()
+        | CtxtVanilla _ 
+        // String interpolation inner expressions are not limited (e.g. multiline strings)
+        | CtxtParen((INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _),_) -> ()
         | _ -> 
             let p1 = undentationLimit true offsideStack
             let c2 = newCtxt.StartCol
