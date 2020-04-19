@@ -86,7 +86,7 @@ type Context =
         | CtxtDo _ -> "do"
         | CtxtInterfaceHead _ -> "interface-decl"
         | CtxtTypeDefns _ -> "type"
-        | CtxtParen _ -> "paren"
+        | CtxtParen(_, p) -> sprintf "paren(%s)" (stringOfPos p)
         | CtxtMemberHead _ -> "member-head"
         | CtxtMemberBody _ -> "body"
         | CtxtSeqBlock (b, p, _addBlockEnd) -> sprintf "seqblock(%s, %s)" (match b with FirstInSeqBlock -> "first" | NotFirstInSeqBlock -> "subsequent") (stringOfPos p)
