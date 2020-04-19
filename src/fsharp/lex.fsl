@@ -731,8 +731,10 @@ rule token args skip = parse
 
  | "{"
      {
-       if args.interpolatedStringNestingCurrent > 0 then
-           args.interpolatedStringNestingCurrent <- args.interpolatedStringNestingCurrent + 1
+       match args.interpolatedStringNesting with
+       | [] -> ()
+       | head :: rest ->
+         args.interpolatedStringNesting <- head + 1 :: rest
        LBRACE
      }
 
@@ -742,16 +744,10 @@ rule token args skip = parse
      { 
        // We encounter a '}' in the expression token stream.  First check if we're in an interpolated string expression
        // and continue the string if necessary
-       if args.interpolatedStringNestingCurrent = 1 && args.interpolatedStringStyle.IsSome then
-           match args.interpolatedStringNestingStack with
-           | head :: rest -> 
-             args.interpolatedStringNestingCurrent <- head
-             args.interpolatedStringNestingStack <- rest
-           | [] ->
-             // back to initial state
-             args.interpolatedStringNestingCurrent <- 0
+       match args.interpolatedStringNesting, args.interpolatedStringStyle with
+       | 1 :: rest, Some style ->
+           args.interpolatedStringNesting <- rest
            let buf, fin, m = startString args lexbuf 
-           let style = args.interpolatedStringStyle.Value
            if not skip then 
                (STRING_TEXT (LexCont.String(args.ifdefStack, style, LexerStringKind.InterpolatedStringPart, m)))
            else 
@@ -759,11 +755,10 @@ rule token args skip = parse
                | LexerStringStyle.Verbatim -> verbatimString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
                | LexerStringStyle.SingleQuote -> singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
                | LexerStringStyle.TripleQuote -> tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
-
-       elif args.interpolatedStringNestingCurrent > 1 then
-           args.interpolatedStringNestingCurrent <- args.interpolatedStringNestingCurrent - 1
+        | head :: rest, _ ->
+           args.interpolatedStringNesting <- head - 1 :: rest
            RBRACE
-       else
+        | _ ->
            RBRACE
      }
 
@@ -1013,11 +1008,7 @@ and singleQuoteString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          match args.interpolatedStringNestingCurrent, args.interpolatedStringNestingStack with
-          // initial state, depth = 0
-          | 0, _ -> ()
-          | x, y -> args.interpolatedStringNestingStack <- x :: y
-          args.interpolatedStringNestingCurrent <- 1
+          args.interpolatedStringNesting <- 1 :: args.interpolatedStringNesting
           args.interpolatedStringStyle <- Some LexerStringStyle.SingleQuote
           fin.Finish buf kind true
       else
@@ -1087,12 +1078,7 @@ and verbatimString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          match args.interpolatedStringNestingCurrent, args.interpolatedStringNestingStack with
-          // initial state, depth = 0
-          | 0, _ -> ()
-          | x, y -> 
-            args.interpolatedStringNestingStack <- x :: y
-          args.interpolatedStringNestingCurrent <- 1
+          args.interpolatedStringNesting <- 1 :: args.interpolatedStringNesting
           args.interpolatedStringStyle <- Some LexerStringStyle.Verbatim
           fin.Finish buf kind true
       else
@@ -1163,11 +1149,7 @@ and tripleQuoteString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          match args.interpolatedStringNestingCurrent, args.interpolatedStringNestingStack with
-          // initial state, depth = 0
-          | 0, _ -> ()
-          | x, y -> args.interpolatedStringNestingStack <- x :: y
-          args.interpolatedStringNestingCurrent <- 1
+          args.interpolatedStringNesting <- 1 :: args.interpolatedStringNesting
           args.interpolatedStringStyle <- Some LexerStringStyle.TripleQuote
           fin.Finish buf kind true
       else

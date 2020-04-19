@@ -34,10 +34,9 @@ type lexargs =
       errorLogger: ErrorLogger
       applyLineDirectives: bool
 
-      /// The degree of nesting of '{..}' in an interpolation fill
-      mutable interpolatedStringNestingCurrent: int
-      /// Nesting counters of outer interpolating strings
-      mutable interpolatedStringNestingStack: int list
+      /// The degree of nesting of '{..}' in an interpolation fill.
+      /// Nesting counters of outer interpolating strings are pushed on stack.
+      mutable interpolatedStringNesting: int list
       
       /// The style of the string to continue after the matching '}' is found
       mutable interpolatedStringStyle: LexerStringStyle option
