@@ -1090,7 +1090,8 @@ and verbatimString sargs skip = parse
           match args.interpolatedStringNestingCurrent, args.interpolatedStringNestingStack with
           // initial state, depth = 0
           | 0, _ -> ()
-          | x, y -> args.interpolatedStringNestingStack <- x :: y
+          | x, y -> 
+            args.interpolatedStringNestingStack <- x :: y
           args.interpolatedStringNestingCurrent <- 1
           args.interpolatedStringStyle <- Some LexerStringStyle.Verbatim
           fin.Finish buf kind true
