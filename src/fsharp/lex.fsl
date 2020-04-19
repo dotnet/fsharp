@@ -733,8 +733,8 @@ rule token args skip = parse
      {
        match args.interpolatedStringNesting with
        | [] -> ()
-       | head :: rest ->
-         args.interpolatedStringNesting <- head + 1 :: rest
+       | (counter, style) :: rest ->
+         args.interpolatedStringNesting <- (counter + 1, style) :: rest
        LBRACE
      }
 
@@ -744,8 +744,8 @@ rule token args skip = parse
      { 
        // We encounter a '}' in the expression token stream.  First check if we're in an interpolated string expression
        // and continue the string if necessary
-       match args.interpolatedStringNesting, args.interpolatedStringStyle with
-       | 1 :: rest, Some style ->
+       match args.interpolatedStringNesting with
+       | (1, style) :: rest ->
            args.interpolatedStringNesting <- rest
            let buf, fin, m = startString args lexbuf 
            if not skip then 
@@ -755,8 +755,8 @@ rule token args skip = parse
                | LexerStringStyle.Verbatim -> verbatimString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
                | LexerStringStyle.SingleQuote -> singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
                | LexerStringStyle.TripleQuote -> tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
-        | head :: rest, _ ->
-           args.interpolatedStringNesting <- head - 1 :: rest
+        | (counter, style) :: rest ->
+           args.interpolatedStringNesting <- (counter - 1, style) :: rest
            RBRACE
         | _ ->
            RBRACE
@@ -1008,8 +1008,7 @@ and singleQuoteString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          args.interpolatedStringNesting <- 1 :: args.interpolatedStringNesting
-          args.interpolatedStringStyle <- Some LexerStringStyle.SingleQuote
+          args.interpolatedStringNesting <- (1, LexerStringStyle.SingleQuote) :: args.interpolatedStringNesting
           fin.Finish buf kind true
       else
           addUnicodeString buf (lexeme lexbuf) 
@@ -1078,8 +1077,7 @@ and verbatimString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          args.interpolatedStringNesting <- 1 :: args.interpolatedStringNesting
-          args.interpolatedStringStyle <- Some LexerStringStyle.Verbatim
+          args.interpolatedStringNesting <- (1, LexerStringStyle.Verbatim) :: args.interpolatedStringNesting
           fin.Finish buf kind true
       else
           addUnicodeString buf (lexeme lexbuf) 
@@ -1149,8 +1147,7 @@ and tripleQuoteString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          args.interpolatedStringNesting <- 1 :: args.interpolatedStringNesting
-          args.interpolatedStringStyle <- Some LexerStringStyle.TripleQuote
+          args.interpolatedStringNesting <- (1, LexerStringStyle.TripleQuote) :: args.interpolatedStringNesting
           fin.Finish buf kind true
       else
           addUnicodeString buf (lexeme lexbuf) 

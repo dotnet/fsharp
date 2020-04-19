@@ -56,8 +56,7 @@ type lexargs =
       lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger
       applyLineDirectives: bool
-      mutable interpolatedStringNesting: int list
-      mutable interpolatedStringStyle: LexerStringStyle option
+      mutable interpolatedStringNesting: (int* LexerStringStyle) list
       pathMap: PathMap }
 
 /// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
@@ -77,7 +76,6 @@ let mkLexargs (_filename, defines, lightSyntaxStatus, resourceManager, ifdefStac
       applyLineDirectives=true
       interpolatedStringNesting = []
       pathMap=pathMap
-      interpolatedStringStyle = None
     }
 
 /// Register the lexbuf and call the given function
