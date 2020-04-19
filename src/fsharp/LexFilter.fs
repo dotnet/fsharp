@@ -1320,7 +1320,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
 
         | _ when tokenForcesHeadContextClosure token offsideStack -> 
             let ctxt = offsideStack.Head
-            if debug then dprintf "IN/ELSE/ELIF/DONE/RPAREN/RBRACE/END at %a terminates context at position %a\n" outputPos tokenStartPos outputPos ctxt.StartPos
+            if debug then dprintf "IN/ELSE/ELIF/DONE/RPAREN/RBRACE/END/INTERP at %a terminates context at position %a\n" outputPos tokenStartPos outputPos ctxt.StartPos
             popCtxt()
             match endTokenForACtxt ctxt with 
             | Some tok ->
@@ -1373,8 +1373,11 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
             if debug then dprintf "RPAREN/RBRACE/BAR_RBRACE/RBRACK/BAR_RBRACK/RQUOTE/END at %a terminates CtxtParen()\n" outputPos tokenStartPos
             popCtxt()
             match t2 with 
+            // $".... { ... }  ... { ....} " pushes a block context at second {
+            //              ~~~~~~~~
+            //                 ^---------INTERP_STRING_PART
             | INTERP_STRING_PART _ -> 
-                pushCtxt tokenTup (CtxtParen (token, tokenStartPos))
+                pushCtxt tokenTup (CtxtParen (token, tokenTup.LexbufState.EndPos))
                 pushCtxtSeqBlock(false, NoAddBlockEnd)
             | _ -> 
                 // Queue a dummy token at this position to check if any closing rules apply
@@ -1902,10 +1905,14 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
 
         // '(' tokens are balanced with ')' tokens and also introduce a CtxtSeqBlock 
         // $".... { ... }  ... { ....} " pushes a block context at first {
-        // $".... { ... }  ... { ....} " pushes a block context at second {
+        // ~~~~~~~~
+        //    ^---------INTERP_STRING_BEGIN_PART
         | (BEGIN | LPAREN | SIG | LBRACE | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true | INTERP_STRING_BEGIN_PART _), _ ->
             if debug then dprintf "LPAREN etc., pushes CtxtParen, pushing CtxtSeqBlock, tokenStartPos = %a\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtParen (token, tokenStartPos))
+            let pos = match token with
+                      | INTERP_STRING_BEGIN_PART _ -> tokenTup.LexbufState.EndPos
+                      | _ -> tokenStartPos
+            pushCtxt tokenTup (CtxtParen (token, pos))
             pushCtxtSeqBlock(false, NoAddBlockEnd)
             returnToken tokenLexbufState token
 
