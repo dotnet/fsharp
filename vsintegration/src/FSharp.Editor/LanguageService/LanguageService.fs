@@ -35,11 +35,11 @@ type internal FSharpCheckerWorkspaceService =
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
     
-    member __.GetKeyNameForLanguage(languageName: string) =
+    member __.GetKeyNameForLanguage(languageName: string?) =
         let unsubstitutedKeyName = keyName
         match languageName with
         | null -> unsubstitutedKeyName
-        | _ ->
+        | NonNull languageName ->
             let substituteLanguageName = if languageName = FSharpConstants.FSharpLanguageName then "FSharp" else languageName
             unsubstitutedKeyName.Replace("%LANGUAGE%", substituteLanguageName)
  

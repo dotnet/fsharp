@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 4:7:0:0
 }
 .assembly StructUnion01
 {
@@ -25,20 +25,28 @@
 }
 .mresource public FSharpSignatureData.StructUnion01
 {
-  // Offset: 0x00000000 Length: 0x0000087E
+  // Offset: 0x00000000 Length: 0x0000087A
+}
+.mresource public FSharpSignatureDataB.StructUnion01
+{
+  // Offset: 0x00000880 Length: 0x000000B0
 }
 .mresource public FSharpOptimizationData.StructUnion01
 {
-  // Offset: 0x00000888 Length: 0x00000421
+  // Offset: 0x00000938 Length: 0x00000421
+}
+.mresource public FSharpOptimizationDataB.StructUnion01
+{
+  // Offset: 0x00000D60 Length: 0x00000067
 }
 .module StructUnion01.dll
-// MVID: {5B1ED843-D3E9-6B24-A745-038343D81E5B}
+// MVID: {5E1730AF-D3E9-6B24-A745-0383AF30175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x017F0000
+// Image base: 0x07190000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

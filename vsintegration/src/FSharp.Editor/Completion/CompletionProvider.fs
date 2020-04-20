@@ -138,7 +138,6 @@ type internal FSharpCompletionProvider
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
             declarationItems |> Array.iteri (fun number declarationItem ->
-                let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declarationItem.Glyph, declarationItem.Accessibility)
                 let name =
                     match declarationItem.NamespaceToOpen with
                     | Some namespaceToOpen -> sprintf "%s (open %s)" declarationItem.Name namespaceToOpen
@@ -153,7 +152,8 @@ type internal FSharpCompletionProvider
                     | _, idents -> Array.last idents
 
                 let completionItem = 
-                    FSharpCommonCompletionItem.Create(name, null, rules = getRules intellisenseOptions.ShowAfterCharIsTyped, glyph = Nullable glyph, filterText = filterText)
+                    let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declarationItem.Glyph, declarationItem.Accessibility)
+                    FSharpCommonCompletionItem.Create(name, displayTextSuffix = null, glyph = Nullable glyph, rules = getRules intellisenseOptions.ShowAfterCharIsTyped, filterText = filterText)
                                         .AddProperty(FullNamePropName, declarationItem.FullName)
                         
                 let completionItem =

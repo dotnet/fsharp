@@ -97,6 +97,11 @@
         <target state="new">nullable optional interop</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNullnessChecking">
+        <source>nullness checking</source>
+        <target state="new">nullness checking</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureOpenStaticClasses">
         <source>open static classes</source>
         <target state="new">open static classes</target>
@@ -7272,6 +7277,11 @@
         <target state="translated">Feld für anonyme Datensätze</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTypeDoesNotHaveAnyNull">
+        <source>The type '{0}' does not support a nullness qualitification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
         <source>The exception '{0}' does not have a field named '{1}'.</source>
         <target state="translated">Die Ausnahme "{0}" enthält kein Feld namens "{1}".</target>
@@ -7285,6 +7295,26 @@
       <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
         <source>The constructor does not have a field named '{0}'.</source>
         <target state="translated">Der Konstruktor hat kein Feld namens "{0}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsCheckNulls">
+        <source>Enable nullness declarations and checks</source>
+        <target state="new">Enable nullness declarations and checks</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNullnessCheckingNotEnabled">
+        <source>The /checknulls language feature is not enabled</source>
+        <target state="new">The /checknulls language feature is not enabled</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypeHasNullAsExtraValue">
+        <source>The type '{0}' has 'null' as an extra value but a constraint does not permit this</source>
+        <target state="new">The type '{0}' has 'null' as an extra value but a constraint does not permit this</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypeHasNullAsTrueValue">
+        <source>The type '{0}' has 'null' as a true representation value but a constraint does not permit this</source>
+        <target state="new">The type '{0}' has 'null' as a true representation value but a constraint does not permit this</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdCcuMismatch">
@@ -7330,6 +7360,31 @@
       <trans-unit id="tcCopyAndUpdateNeedsRecordType">
         <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
         <target state="translated">Die Eingabe in einen Ausdruck für das Kopieren und Aktualisieren, der einen anonymen Datensatz erstellt, muss entweder ein anonymer Datensatz oder ein Datensatz sein.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNullNotNullConstraintInconsistent">
+        <source>The constraints 'null' and 'not null' are inconsistent</source>
+        <target state="new">The constraints 'null' and 'not null' are inconsistent</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csStructNullConstraintInconsistent">
+        <source>The constraints 'struct' and 'null' are inconsistent</source>
+        <target state="new">The constraints 'struct' and 'null' are inconsistent</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csDelegateComparisonConstraintInconsistent">
+        <source>The constraints 'delegate' and 'comparison' are inconsistent</source>
+        <target state="new">The constraints 'delegate' and 'comparison' are inconsistent</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDefaultStructConstructorCallNulls">
+        <source>Nullness warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.</source>
+        <target state="new">Nullness warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkValueWithDefaultValueMustHaveDefaultValueNulls">
+        <source>Nullness warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.</source>
+        <target state="new">Nullness warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInvalidFunctionParameterType">

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:6:0:0
+  .ver 4:7:0:0
 }
 .assembly OptionalArg01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.OptionalArg01
 {
-  // Offset: 0x00000000 Length: 0x00000466
+  // Offset: 0x00000000 Length: 0x0000045A
+}
+.mresource public FSharpSignatureDataB.OptionalArg01
+{
+  // Offset: 0x00000460 Length: 0x00000030
 }
 .mresource public FSharpOptimizationData.OptionalArg01
 {
-  // Offset: 0x00000470 Length: 0x00000445
+  // Offset: 0x00000498 Length: 0x00000445
+}
+.mresource public FSharpOptimizationDataB.OptionalArg01
+{
+  // Offset: 0x000008E8 Length: 0x00000039
 }
 .module OptionalArg01.exe
-// MVID: {5CB489E1-4F48-B5AF-A745-0383E189B45C}
+// MVID: {5E172EE9-4F48-B5AF-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x067B0000
+// Image base: 0x07070000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -61,7 +69,7 @@
       // Code size       9 (0x9)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\OptionalArg01.fs'
+      .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\OptionalArg01.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0

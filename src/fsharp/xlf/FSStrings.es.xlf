@@ -1622,6 +1622,26 @@
         <target state="translated">símbolo "|}"</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningEquivWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability '{2}' and '{3}'.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability '{2}' and '{3}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithTypes">
+        <source>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability '{2}' and '{3}'.</source>
+        <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability '{2}' and '{3}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' does not support nullness.</source>
+        <target state="new">Nullness warning: The type '{0}' does not support nullness.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConstraintSolverNonNullnessWarningWithType">
+        <source>Nullness warning: The type '{0}' supports a null value but a constraint requires the type to be non-null.</source>
+        <target state="new">Nullness warning: The type '{0}' supports a null value but a constraint requires the type to be non-null.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.AND.BANG">
         <source>keyword 'and!'</source>
         <target state="new">keyword 'and!'</target>

@@ -504,7 +504,7 @@ module internal SymbolHelpers =
             // Generalize to get a formal signature 
             let formalTypars = tcref.Typars m
             let formalTypeInst = generalizeTypars formalTypars
-            let ty = TType_app(tcref, formalTypeInst)
+            let ty = TType_app(tcref, formalTypeInst, KnownAmbivalentToNull)
             if isILAppTy g ty then
                 let formalTypeInfo = ILTypeInfo.FromType g ty
                 Some(nlref.Ccu.FileName, formalTypars, formalTypeInfo)
@@ -641,7 +641,7 @@ module internal SymbolHelpers =
         | Item.RecdField rfinfo -> mkXmlComment (GetXmlDocSigOfRecdFieldInfo rfinfo)
         | Item.NewDef _ -> FSharpXmlDoc.None
         | Item.ILField finfo -> mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
-        | Item.Types(_, ((TType_app(tcref, _)) :: _)) ->  mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+        | Item.Types(_, ((TType_app(tcref, _, _)) :: _)) ->  mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
         | Item.CustomOperation (_, _, Some minfo) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
         | Item.TypeVar _  -> FSharpXmlDoc.None
         | Item.ModuleOrNamespaces(modref :: _) -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m modref)
@@ -799,8 +799,8 @@ module internal SymbolHelpers =
               | Item.UnqualifiedType tcRefs1, Item.UnqualifiedType tcRefs2 ->
                   List.zip tcRefs1 tcRefs2
                   |> List.forall (fun (tcRef1, tcRef2) -> tyconRefEq g tcRef1 tcRef2)
-              | Item.Types(_, [TType.TType_app(tcRef1, _)]), Item.UnqualifiedType([tcRef2]) -> tyconRefEq g tcRef1 tcRef2
-              | Item.UnqualifiedType([tcRef1]), Item.Types(_, [TType.TType_app(tcRef2, _)]) -> tyconRefEq g tcRef1 tcRef2
+              | Item.Types(_, [TType.TType_app(tcRef1, _, _)]), Item.UnqualifiedType([tcRef2]) -> tyconRefEq g tcRef1 tcRef2
+              | Item.UnqualifiedType([tcRef1]), Item.Types(_, [TType.TType_app(tcRef2, _, _)]) -> tyconRefEq g tcRef1 tcRef2
               | _ -> false)
               
           member x.GetHashCode item =
@@ -868,22 +868,22 @@ module internal SymbolHelpers =
         // This may explore assemblies that are not in the reference set.
         // In this case just assume the item is not suppressed.
         protectAssemblyExploration true (fun () -> 
-            match item with 
-            | Item.Types(it, [ty]) -> 
-                match tryTcrefOfAppTy g ty with
-                | ValueSome tcr1 ->
-                    g.suppressed_types 
-                    |> List.exists (fun supp ->
-                        let generalizedSupp = generalizedTyconRef supp
-                        // check the display name is precisely the one we're suppressing
-                        match tryTcrefOfAppTy g generalizedSupp with
-                        | ValueSome tcr2 ->
-                            it = supp.DisplayName &&
-                            // check if they are the same logical type (after removing all abbreviations) 
-                            tyconRefEq g tcr1 tcr2
+         match item with 
+         | Item.Types(it, [ty]) -> 
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcr1 ->
+                 g.suppressed_types 
+                 |> List.exists (fun supp -> 
+                    let generalizedSupp = generalizedTyconRef g supp
+                    // check the display name is precisely the one we're suppressing
+                    match tryTcrefOfAppTy g generalizedSupp with
+                    | ValueSome tcr2 ->
+                        it = supp.DisplayName &&
+                        // check if they are the same logical type (after removing all abbreviations)
+                        tyconRefEq g tcr1 tcr2
                         | _ -> false) 
                 | _ -> false
-            | _ -> false)
+         | _ -> false)
 
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
     let RemoveExplicitlySuppressed (g: TcGlobals) (items: ItemWithInst list) = 
@@ -986,7 +986,7 @@ module internal SymbolHelpers =
         | Item.MethodGroup(_, minfo :: _, _) ->
             GetXmlCommentForMethInfoItem infoReader m item minfo
 
-        | Item.Types(_, ((TType_app(tcref, _)) :: _)) -> 
+        | Item.Types (_, ((TType_app (tcref, _, _)):: _)) -> 
             GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib tcref  || tcref.XmlDoc.NonEmpty then Some tcref.XmlDoc else None) infoReader m item 
 
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
@@ -1028,9 +1028,9 @@ module internal SymbolHelpers =
             let g = infoReader.g
             let amap = infoReader.amap
             match item with
-            | Item.Types(_, ((TType_app(tcref, _)) :: _))
+            | Item.Types (_, ((TType_app (tcref, _, _)) :: _))
             | Item.UnqualifiedType(tcref :: _) ->
-                let ty = generalizedTyconRef tcref
+                let ty = generalizedTyconRef g tcref
                 Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
             | _ -> false
         with _ -> false
@@ -1055,7 +1055,7 @@ module internal SymbolHelpers =
         // Union tags (constructors)
         | Item.UnionCase(ucinfo, _) -> 
             let uc = ucinfo.UnionCase 
-            let rty = generalizedTyconRef ucinfo.TyconRef
+            let rty = generalizedTyconRef g ucinfo.TyconRef
             let recd = uc.RecdFields 
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
@@ -1234,7 +1234,7 @@ module internal SymbolHelpers =
            FSharpStructuredToolTipElement.Single(layout, xml)
 
         // Types.
-        | Item.Types(_, ((TType_app(tcref, _)) :: _))
+        | Item.Types (_, ((TType_app (tcref, _, _)) :: _))
         | Item.UnqualifiedType (tcref :: _) -> 
             let denv = { denv with shortTypeNames = true  }
             let layout = NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref
@@ -1427,7 +1427,7 @@ module internal SymbolHelpers =
         | Item.UnqualifiedType (tcref :: _)
         | Item.ExnCase tcref -> 
             // strip off any abbreviation
-            match generalizedTyconRef tcref with 
+            match generalizedTyconRef g tcref with 
             | AppTy g (tcref, _)  -> Some (ticksAndArgCountTextOfTyconRef tcref)
             | _ -> None
 
