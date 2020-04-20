@@ -462,7 +462,7 @@ let private GetObjTypeOfInstanceExtensionMethod g (vref: ValRef) =
     let _, curriedArgInfos, _, _ = GetTopValTypeInCompiledForm g vref.ValReprInfo.Value vref.Type vref.Range
     curriedArgInfos.Head.Head |> fst
 
-/// Get the object type for a member value which is a C#-style extension method
+/// Get the object type for a member value, which might be a C#-style extension method
 let private GetArgInfosOfMember isCSharpExt g (vref: ValRef) =
     if isCSharpExt then
         let _, curriedArgInfos, _, _ = GetTopValTypeInCompiledForm g vref.ValReprInfo.Value vref.Type vref.Range

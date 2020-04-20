@@ -334,8 +334,6 @@ type Expr =
     /// <returns>The resulting expression.</returns>
     static member WithValue: value: obj * expressionType:Type * definition: Expr -> Expr
 
-
-
     /// <summary>Builds an expression that represents a variable</summary>
     /// <param name="variable">The input variable.</param>
     /// <returns>The resulting expression.</returns>
@@ -653,7 +651,6 @@ module Patterns =
     /// <returns>(Var * Expr) option</returns>
     [<CompiledName("VarSetPattern")>]
     val (|VarSet|_|)          : input:Expr -> (Var * Expr) option
-    
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// <summary>Contains a set of derived F# active patterns to analyze F# expression objects</summary>
