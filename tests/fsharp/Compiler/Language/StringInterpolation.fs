@@ -26,6 +26,13 @@ check "vcewweh4" $"this is {1} + {1+1}"  "this is 1 + 2"
 
 check "vcewweh5" $"this is {1}"  "this is 1"
 
+check "vcewweh6" $"123{456}789{012}345"  "12345678912345"
+
+check "vcewweh7" $"123{456}789{"012"}345"  "123456789012345"
+
+check "vcewweh8" $"{1}
+{2}"  "1
+2"
             """
 
     [<Test>]
@@ -185,8 +192,74 @@ let check msg a b =
     if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
 
 // check nested string
-check "vcewweh22m" $"x = {"1"} " "x = 1 "
-            """
+check "vcewweh22m1" $"x = {"1"} " "x = 1 "
+
+check "vcewweh22m2" $"x = {$""} " "x =  "
+
+check "vcewweh22m3" $"x = {$"1 {"2" + $"{3}" + "2"} 1"} " "x = 1 232 1 "
+
+check "vcewweh22m4" $"x = {$"1 {"2" + $"{3}" + "2"} 11 {2} 1"} " "x = 1 232 11 2 1 "
+
+check "vcewweh22m5" $"x = {$"1 {"2" + $"{3}" + "2"} 11 {    $"{{%A{seq{yield 2; yield 2;}  }}}"  } 1"} " "x = 1 232 11 {seq [2; 2]} 1 "
+
+do
+    let genreSpecified = true
+    let getGenre() = "comedy"
+    check "vcewweh22m6" $"/api/movie/{if not genreSpecified then "" else $"q?genre={getGenre()}"}" "/api/movie/q?genre=comedy"
+
+"""
+
+    [<Test>]
+    let ``Triple quote string interpolation using nested string`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            "
+let check msg a b = 
+    if a = b then printfn \"%s succeeded\" msg else failwithf \"%s failed, expected %A, got %A\" msg b a
+do
+    let itvar=\"i\"
+    let iterfrom=\"0\"
+    let iterto=\"100\"
+    let block= $\"\"\"printf(\"%%d\", {itvar});
+    do({itvar});\"\"\"
+    check \"vcewweh22m7\" $\"\"\"
+for({itvar}={iterfrom};{itvar}<{iterto};++{itvar}) {{
+    {block}
+}}\"\"\" \"\"\"
+for(i=0;i<100;++i) {
+    printf(\"%d\", i);
+    do(i);
+}\"\"\"
+"
+
+    [<Test>]
+    let ``Mixed quote string interpolation using nested string`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            "
+let check msg a b = 
+    if a = b then printfn \"%s succeeded\" msg else failwithf \"%s failed, expected %A, got %A\" msg b a
+
+check \"vcewweh22n1\" 
+    $\"\"\"
+    PROCEDURE SEARCH;
+    BEGIN
+    END;\"\"\" 
+    \"\"\"
+    PROCEDURE SEARCH;
+    BEGIN
+    END;\"\"\"
+
+check \"vcewweh22n2\" 
+    $\"\"\"
+    PROCEDURE SEARCH;
+    BEGIN
+        WRITELN({ $\"{21+21}\" });
+    END;\"\"\" 
+    \"\"\"
+    PROCEDURE SEARCH;
+    BEGIN
+        WRITELN(42);
+    END;\"\"\"
+"
 
     [<Test>]
     let ``String interpolation using .NET Formats`` () =

@@ -33,12 +33,9 @@ type lexargs =
       lightSyntaxStatus: LightSyntaxStatus
       errorLogger: ErrorLogger
       applyLineDirectives: bool
-
-      /// The degree of nesting of '{..}' in an interpolation fill
-      mutable interpolatedStringNesting: int
-      
-      /// The style of the string to continue after the matching '}' is found
-      mutable interpolatedStringStyle: LexerStringStyle option
+      /// The degree of nesting of '{..}' and the style of the string to continue afterwards, in an interpolation fill.
+      /// Nesting counters and styles of outer interpolating strings are pushed on this stack.
+      mutable interpolatedStringNesting: (int* LexerStringStyle) list
       pathMap: PathMap }
 
 type LongUnicodeLexResult =
