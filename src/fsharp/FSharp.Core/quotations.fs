@@ -273,6 +273,7 @@ and [<CompiledName("FSharpExpr")>]
         | CombTerm(TryFinallyOp, args) -> combL "TryFinally" (exprs args)
         | CombTerm(TryWithOp, [e1;Lambda(v1, e2);Lambda(v2, e3)]) -> combL "TryWith" [expr e1; varL v1; expr e2; varL v2; expr e3]
         | CombTerm(SequentialOp, args) -> combL "Sequential" (exprs args)
+
         | CombTerm(NewDelegateOp ty, [e]) ->
             let nargs = (getDelegateInvoke ty).GetParameters().Length
             if nargs = 0 then
@@ -586,7 +587,7 @@ module Patterns =
         let fty = ((typeOf f): Type)
         match fty.GetGenericArguments() with
         | [| _; b|] -> b
-        | _ -> raise <| System.InvalidOperationException (SR.GetString(SR.QillFormedAppOrLet))
+        | _ -> invalidOp (SR.GetString(SR.QillFormedAppOrLet))
 
     /// Returns type of the Raw quotation or fails if the quotation is ill formed
     /// if 'verify' is true, verifies all branches, otherwise ignores some of them when not needed
@@ -976,7 +977,7 @@ module Patterns =
                 res
             // return MethodInfo for (generic) type's (generic) method
             match List.tryFind select methInfos with
-            | None          -> raise <| System.InvalidOperationException (SR.GetString SR.QcannotBindToMethod)
+            | None          -> invalidOp (SR.GetString SR.QcannotBindToMethod)
             | Some methInfo -> methInfo
 
     let bindMethodHelper (parentT: Type, nm, marity, argtys, rty) =
@@ -999,14 +1000,14 @@ module Patterns =
 
     let bindModuleProperty (ty: Type, nm) =
         match ty.GetProperty(nm, staticBindingFlags) with
-        | null -> raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindProperty), nm, ty.ToString()))
+        | null -> invalidOp (String.Format(SR.GetString(SR.QcannotBindProperty), nm, ty.ToString()))
         | res -> res
 
     // tries to locate unique function in a given type
     // in case of multiple candidates returns None so bindModuleFunctionWithCallSiteArgs will be used for more precise resolution
     let bindModuleFunction (ty: Type, nm) =
         match ty.GetMethods staticBindingFlags |> Array.filter (fun mi -> mi.Name = nm) with
-        | [||] -> raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindFunction), nm, ty.ToString()))
+        | [||] -> invalidOp (String.Format(SR.GetString(SR.QcannotBindFunction), nm, ty.ToString()))
         | [| res |] -> Some res
         | _ -> None
 
@@ -1031,7 +1032,7 @@ module Patterns =
                     let methodTyArgCount = if mi.IsGenericMethod then mi.GetGenericArguments().Length else 0
                     methodTyArgCount = tyArgs.Length
                 )
-            let fail() = raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindFunction), nm, ty.ToString()))
+            let fail() = invalidOp (String.Format(SR.GetString(SR.QcannotBindFunction), nm, ty.ToString()))
             match candidates with
             | [||] -> fail()
             | [| solution |] -> solution
@@ -1332,7 +1333,7 @@ module Patterns =
         elif a = "." then st.localAssembly
         else
             match System.Reflection.Assembly.Load a with
-            | null -> raise <| System.InvalidOperationException(String.Format(SR.GetString(SR.QfailedToBindAssembly), a.ToString()))
+            | null -> invalidOp(String.Format(SR.GetString(SR.QfailedToBindAssembly), a.ToString()))
             | assembly -> assembly
 
     let u_NamedType st =
@@ -1389,7 +1390,7 @@ module Patterns =
         let n = tyargs.Length
         fun idx ->
           if idx < n then tyargs.[idx]
-          else raise <| System.InvalidOperationException (SR.GetString(SR.QtypeArgumentOutOfRange))
+          else invalidOp (SR.GetString(SR.QtypeArgumentOutOfRange))
 
     let envClosed (spliceTypes: Type[]) =
         { vars = Map.empty
@@ -1672,6 +1673,7 @@ module Patterns =
                 reflectedDefinitionTable.Add(key, Entry exprBuilder)))
         decodedTopResources.Add((assem, resourceName), 0)
 
+    /// Get the reflected definition at the given (always generic) instantiation
     let tryGetReflectedDefinition (methodBase: MethodBase, tyargs: Type []) =
         checkNonNull "methodBase" methodBase
         let data =
@@ -1736,6 +1738,7 @@ module Patterns =
             Some(exprBuilder (envClosed tyargs))
         | None -> None
 
+    /// Get the reflected definition at the generic instantiation
     let tryGetReflectedDefinitionInstantiated (methodBase: MethodBase) =
         checkNonNull "methodBase" methodBase
         match methodBase with
@@ -1912,7 +1915,6 @@ type Expr with
     static member WithValue(value: obj, expressionType: Type, definition: Expr) =
         checkNonNull "expressionType" expressionType
         mkValueWithDefn (value, expressionType, definition)
-
 
     static member Var variable =
         mkVar variable
@@ -2144,8 +2146,7 @@ module ExprShape =
             | ValueOp(v, ty, None), [] -> mkValue(v, ty)
             | ValueOp(v, ty, Some nm), [] -> mkValueWithName(v, ty, nm)
             | WithValueOp(v, ty), [e] -> mkValueWithDefn(v, ty, e)
-            | _ -> raise <| System.InvalidOperationException (SR.GetString(SR.QillFormedAppOrLet))
-
+            | _ -> invalidOp (SR.GetString(SR.QillFormedAppOrLet))
 
         EA(e.Tree, attrs)
 
