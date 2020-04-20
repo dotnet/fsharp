@@ -11,6 +11,7 @@
   </Target>
   
     <Target Name="CheckFileContents" AfterTargets="Restore">
-    <Message Text="Files: $([System.IO.File]::ReadAllText('artifacts\obj\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj.nuget.g.props'))"/>
+    <Message Text="Files: $([System.IO.File]::ReadAllText('artifacts\obj\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj.nuget.g.props'))"
+             Condition="Exists('.packages\microsoft.sourcelink.common\1.0.0-beta2-19554-01')" />
   </Target>
 </Project>
