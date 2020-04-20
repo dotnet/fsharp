@@ -2404,14 +2404,14 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
             CG.EmitInstr cgbuf (pop 0) Push0 (I_br label)
             // NOTE: discard sequel
         | TOp.Return, [e], _ ->
-           GenExpr cenv cgbuf eenv SPSuppress e eenv.exitSequel
-           // NOTE: discard sequel
+            GenExpr cenv cgbuf eenv SPSuppress e eenv.exitSequel
+            // NOTE: discard sequel
         | TOp.Return, [], _ ->
-           GenSequel cenv eenv.cloc cgbuf ReturnVoid
-           // NOTE: discard sequel
+            GenSequel cenv eenv.cloc cgbuf ReturnVoid
+            // NOTE: discard sequel
         | TOp.Label label, _, _ ->
-           cgbuf.SetMarkToHere (Mark label)
-           GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
+            cgbuf.SetMarkToHere (Mark label)
+            GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
         | _ -> error(InternalError("Unexpected operator node expression", expr.Range))
 
     | Expr.StaticOptimization (constraints, e2, e3, m) ->
@@ -4308,7 +4308,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thi
     let cloAttribs = cloinfo.cloAttribs
     let cloFreeVars = cloinfo.cloFreeVars
 
-    let ilCloFreeVars = cloinfo.cloILFreeVars
+    let ilCloFreeVars = cloinfo.ilCloAllFreeVars
     let ilCloGenericFormals = cloinfo.cloILGenericParams
     assert (isNil cloinfo.localTypeFuncDirectILGenericParams)
     let ilCloGenericActuals = cloinfo.cloSpec.GenericArgs
@@ -4436,7 +4436,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thi
         let eenvinner = eenvinner |> AddStorageForLocalVals g [(afterMethodThisVar, Local (locIdx2, realloc, None)) ] 
 
         // Initialize the closure variables
-        for (fv, ilv) in Seq.zip cloFreeVars cloinfo.cloILFreeVars do
+        for (fv, ilv) in Seq.zip cloFreeVars cloinfo.ilCloAllFreeVars do
             if stateVarsSet.Contains fv then
                 // zero-initialize the state var
                 if realloc then 
@@ -4474,13 +4474,14 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
     let cloAttribs = cloinfo.cloAttribs
     let ilCloLambdas = cloinfo.ilCloLambdas
     let cloName = cloinfo.cloName
+    let cloSpec = cloinfo.cloSpec
 
     let ilCloAllFreeVars = cloinfo.ilCloAllFreeVars
     let ilCloGenericFormals = cloinfo.cloILGenericParams
     assert (isNil cloinfo.localTypeFuncDirectILGenericParams)
-    let ilCloGenericActuals = cloinfo.cloSpec.GenericArgs
+    let ilCloGenericActuals = cloSpec.GenericArgs
     let ilCloRetTy = cloinfo.ilCloFormalReturnTy
-    let ilCloTypeRef = cloinfo.cloSpec.TypeRef
+    let ilCloTypeRef = cloSpec.TypeRef
     let ilTyForOverriding = mkILBoxedTy ilCloTypeRef ilCloGenericActuals
 
     let eenvinner = bindBaseOrThisVarOpt cenv eenvinner baseValOpt
@@ -4512,14 +4513,14 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
         cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
 
     CountClosure()
-    for fv in cloFreeVars do
+    for fv in cloinfo.cloFreeVars do
        // State variables always get zero-initialized
        if stateVarsSet.Contains fv then
            GenDefaultValue cenv cgbuf eenvouter (fv.Type, m)
        else
            GenGetLocalVal cenv cgbuf eenvouter m fv None
    
-    CG.EmitInstr cgbuf (pop ilCloFreeVars.Length) (Push [ EraseClosures.mkTyOfLambdas g.ilxPubCloEnv ilCloLambdas]) (I_newobj (ilxCloSpec.Constructor, None))
+    CG.EmitInstr cgbuf (pop ilCloAllFreeVars.Length) (Push [ EraseClosures.mkTyOfLambdas g.ilxPubCloEnv ilCloLambdas]) (I_newobj (cloSpec.Constructor, None))
     GenSequel cenv eenvouter.cloc cgbuf sequel
 
 and GenSequenceExpr
