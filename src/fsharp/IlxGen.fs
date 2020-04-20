@@ -6044,7 +6044,7 @@ and GenMethodForBinding
         let eenvForMeth = eenvForMeth |> AddStorageForLocalVals cenv.g (List.mapi (fun i v -> (v, Arg (numArgsUsed+i))) nonUnitNonSelfMethodVars)
         eenvForMeth
 
-    let tailCallInfo = 
+    let tailCallInfo =
         [(mkLocalValRef v, BranchCallMethod (topValInfo.AritiesOfArgs, curriedArgInfos, methLambdaTypars, selfMethodVars.Length, methLambdaWitnessInfos.Length, nonUnitNonSelfMethodVars.Length))]
 
     // Discard the result on a 'void' return type. For a constructor just return 'void'
@@ -6138,7 +6138,7 @@ and GenMethodForBinding
                 memberInfo.MemberFlags.IsOverrideOrExplicitImpl) then
 
                 let useMethodImpl = memberInfo.ImplementedSlotSigs |> List.exists (fun slotsig -> ComputeUseMethodImpl cenv (v, slotsig))
-             
+
                 let nameOfOverridingMethod = 
                     match ComputeMethodImplNameFixupForMemberBinding cenv (v, memberInfo) with 
                     | None -> mspec.Name
@@ -6157,10 +6157,10 @@ and GenMethodForBinding
             let edef = GenEventForProperty cenv eenvForMeth mspec v ilAttrsThatGoOnPrimaryItem m returnTy
             mgbuf.AddEventDef(tref, edef)
 
-    | _ -> 
-    
+    | _ ->
+
     let mdef = 
-        match v.MemberInfo with 
+        match v.MemberInfo with
         | Some memberInfo when not v.IsExtensionMember ->
 
            let ilMethTypars = ilTypars |> List.drop mspec.DeclaringType.GenericArgs.Length
@@ -6197,7 +6197,7 @@ and GenMethodForBinding
 
                let isAbstract =
                    memberInfo.MemberFlags.IsDispatchSlot &&
-                   let tcref =  v.MemberApparentEntity
+                   let tcref = v.MemberApparentEntity
                    not tcref.Deref.IsFSharpDelegateTycon
 
                let mdef =
@@ -6207,7 +6207,7 @@ and GenMethodForBinding
 
                match memberInfo.MemberFlags.MemberKind with
            
-               | (MemberKind.PropertySet | MemberKind.PropertyGet)  ->
+               | (MemberKind.PropertySet | MemberKind.PropertyGet) ->
                    if not (isNil ilMethTypars) then
                        error(InternalError("A property may not be more generic than the enclosing type - constrain the polymorphism in the expression", v.Range))
                
@@ -6238,7 +6238,7 @@ and GenMethodForBinding
                 match v.MemberInfo with
                 | Some memberInfo when v.IsExtensionMember ->
                      match memberInfo.MemberFlags.MemberKind with
-                     | (MemberKind.PropertySet | MemberKind.PropertyGet)  -> ilAttrsThatGoOnPrimaryItem @ GenAttrs cenv eenv attrsAppliedToGetterOrSetter
+                     | (MemberKind.PropertySet | MemberKind.PropertyGet) -> ilAttrsThatGoOnPrimaryItem @ GenAttrs cenv eenv attrsAppliedToGetterOrSetter
                      | _ -> ilAttrsThatGoOnPrimaryItem
                 | _ -> ilAttrsThatGoOnPrimaryItem
 
@@ -6247,7 +6247,7 @@ and GenMethodForBinding
             mdef
 
     // Does the function have an explicit [<EntryPoint>] attribute?
-    let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
+    let isExplicitEntryPoint = HasFSharpAttribute g g.attrib_EntryPointAttribute attrs
 
     let mdef =
         mdef
@@ -6271,7 +6271,6 @@ and GenMethodForBinding
             mdef
     CountMethodDef()
     mgbuf.AddMethodDef(tref, mdef)
-        
     
 and GenPInvokeMethod (nm, dll, namedArgs) =
     let decoder = AttributeDecoder namedArgs
@@ -7913,7 +7912,6 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
         match reflectedDefinitions with
         | [] -> []
         | _ ->
-            // TODO: generate witness parameters for reflected definitions
             let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.Yes)
             let defns =
               reflectedDefinitions |> List.choose (fun ((methName, v), e) ->
