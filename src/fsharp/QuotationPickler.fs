@@ -97,7 +97,6 @@ type CombOp =
     | TryFinallyOp
     | TryWithOp 
 
-
 /// Represents specifications of a subset of F# expressions 
 type ExprData =
     | AttrExpr   of ExprData * ExprData list
@@ -123,7 +122,8 @@ let mkQuoteRaw40 (a) = QuoteRawExpr (a)
 
 let mkCond (x1, x2, x3)          = CombExpr(CondOp, [], [x1;x2;x3])  
 
-let mkModuleValueApp (tcref, nm, isProp, tyargs, args: ExprData list list) = CombExpr(ModuleValueOp(tcref, nm, isProp), tyargs, List.concat args)
+let mkModuleValueApp (tcref, nm, isProp, tyargs, args: ExprData list list) =
+    CombExpr(ModuleValueOp(tcref, nm, isProp), tyargs, List.concat args)
 
 let mkTuple (ty, x)             = CombExpr(TupleMkOp, [ty], x)
 
