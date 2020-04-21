@@ -38,8 +38,17 @@ module internal ExtensionTyping =
     let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:range, compilerToolPaths:string list) =
 
         // Report an error, blaming the particular type provider component
-        let raiseError (e: exn) =
-            raise (TypeProviderError(FSComp.SR.etProviderHasWrongDesignerAssembly(typeof<TypeProviderAssemblyAttribute>.Name, designTimeAssemblyNameString, e.Message), runTimeAssemblyFileName, m))
+        let raiseError designTimeAssemblyPathOpt (e: exn) =
+            let attrName = typeof<TypeProviderAssemblyAttribute>.Name
+            let exnTypeName = e.GetType().FullName
+            let exnMsg = e.Message
+            match designTimeAssemblyPathOpt with 
+            | None -> 
+                let msg = FSComp.SR.etProviderHasWrongDesignerAssemblyNoPath(attrName, designTimeAssemblyNameString, exnTypeName, exnMsg)
+                raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
+            | Some designTimeAssemblyPath -> 
+                let msg = FSComp.SR.etProviderHasWrongDesignerAssembly(attrName, designTimeAssemblyNameString, designTimeAssemblyPath, exnTypeName, exnMsg)
+                raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
 
         let designTimeAssemblyOpt = getTypeProviderAssembly (runTimeAssemblyFileName, designTimeAssemblyNameString, compilerToolPaths, raiseError)
 
@@ -54,7 +63,17 @@ module internal ExtensionTyping =
                               yield t ]
                 filtered
             with e ->
-                raiseError e
+                let folder = System.IO.Path.GetDirectoryName loadedDesignTimeAssembly.Location
+                let exnTypeName = e.GetType().FullName
+                let exnMsg = e.Message
+                match e with 
+                | :? System.IO.FileLoadException -> 
+                    let msg = FSComp.SR.etProviderHasDesignerAssemblyDependency(designTimeAssemblyNameString, folder, exnTypeName, exnMsg)
+                    raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
+                
+                | _ -> 
+                    let msg = FSComp.SR.etProviderHasDesignerAssemblyException(designTimeAssemblyNameString, folder, exnTypeName, exnMsg)
+                    raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
         | None -> []
 
     let StripException (e: exn) =
