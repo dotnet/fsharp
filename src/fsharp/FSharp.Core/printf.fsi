@@ -140,11 +140,11 @@ module Printf =
 
     /// <summary>Represents a statically-analyzed format associated with writing to a <c>System.Text.StringBuilder</c>. The first type parameter indicates the
     /// arguments of the format operation and the last the overall return type.</summary>
-    type BuilderFormat<'T,'Result>    = Format<'T, StringBuilder, unit, 'Result>
+    type BuilderFormat<'T,'Result> = Format<'T, StringBuilder, unit, 'Result>
 
     /// <summary>Represents a statically-analyzed format when formatting builds a string. The first type parameter indicates the
     /// arguments of the format operation and the last the overall return type.</summary>
-    type StringFormat<'T,'Result>     = Format<'T, unit, string, 'Result>
+    type StringFormat<'T,'Result> = Format<'T, unit, string, 'Result>
 
     /// <summary>Represents a statically-analyzed format associated with writing to a <c>System.IO.TextWriter</c>. The first type parameter indicates the
     /// arguments of the format operation and the last the overall return type.</summary>
@@ -152,67 +152,73 @@ module Printf =
 
     /// <summary>Represents a statically-analyzed format associated with writing to a <c>System.Text.StringBuilder</c>. The type parameter indicates the
     /// arguments and return type of the format operation.</summary>
-    type BuilderFormat<'T>     = BuilderFormat<'T,unit>
+    type BuilderFormat<'T> = BuilderFormat<'T, unit>
+
+//#if NETSTANDARD2_0
+    /// <summary>Represents a statically-analyzed format when formatting builds a string. The type parameter indicates the
+    /// arguments and return type of the format operation.</summary>
+    type FormattableStringFormat<'T> = StringFormat<'T,FormattableString>
+//#endif
 
     /// <summary>Represents a statically-analyzed format when formatting builds a string. The type parameter indicates the
     /// arguments and return type of the format operation.</summary>
-    type StringFormat<'T>      = StringFormat<'T,string>
+    type StringFormat<'T> = StringFormat<'T,string>
 
     /// <summary>Represents a statically-analyzed format associated with writing to a <c>System.IO.TextWriter</c>. The type parameter indicates the
     /// arguments and return type of the format operation.</summary>
-    type TextWriterFormat<'T>  = TextWriterFormat<'T,unit>
+    type TextWriterFormat<'T> = TextWriterFormat<'T,unit>
 
     /// <summary>Print to a <c>System.Text.StringBuilder</c></summary>
     /// <param name="builder">The StringBuilder to print to.</param>
     /// <param name="format">The input formatter.</param>
     /// <returns>The return type and arguments of the formatter.</returns>
     [<CompiledName("PrintFormatToStringBuilder")>]
-    val bprintf : builder:StringBuilder -> format:BuilderFormat<'T> -> 'T
+    val bprintf: builder:StringBuilder -> format:BuilderFormat<'T> -> 'T
 
     /// <summary>Print to a text writer.</summary>
     /// <param name="textWriter">The TextWriter to print to.</param>
     /// <param name="format">The input formatter.</param>
     /// <returns>The return type and arguments of the formatter.</returns>
     [<CompiledName("PrintFormatToTextWriter")>]
-    val fprintf : textWriter:TextWriter -> format:TextWriterFormat<'T> -> 'T
+    val fprintf: textWriter:TextWriter -> format:TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to a text writer, adding a newline</summary>
     /// <param name="textWriter">The TextWriter to print to.</param>
     /// <param name="format">The input formatter.</param>
     /// <returns>The return type and arguments of the formatter.</returns>
     [<CompiledName("PrintFormatLineToTextWriter")>]
-    val fprintfn : textWriter:TextWriter -> format:TextWriterFormat<'T> -> 'T
+    val fprintfn: textWriter:TextWriter -> format:TextWriterFormat<'T> -> 'T
 
     /// <summary>Formatted printing to stderr</summary>
     /// <param name="format">The input formatter.</param>
     /// <returns>The return type and arguments of the formatter.</returns>
     [<CompiledName("PrintFormatToError")>]
-    val eprintf :                 format:TextWriterFormat<'T> -> 'T
+    val eprintf: format:TextWriterFormat<'T> -> 'T
 
     /// <summary>Formatted printing to stderr, adding a newline </summary>
     /// <param name="format">The input formatter.</param>
     /// <returns>The return type and arguments of the formatter.</returns>
     [<CompiledName("PrintFormatLineToError")>]
-    val eprintfn :                format:TextWriterFormat<'T> -> 'T
+    val eprintfn: format:TextWriterFormat<'T> -> 'T
 
     /// <summary>Formatted printing to stdout</summary>
     /// <param name="format">The input formatter.</param>
     /// <returns>The return type and arguments of the formatter.</returns>
     [<CompiledName("PrintFormat")>]
-    val printf  :                 format:TextWriterFormat<'T> -> 'T
+    val printf: format:TextWriterFormat<'T> -> 'T
 
     /// <summary>Formatted printing to stdout, adding a newline.</summary>
     /// <param name="format">The input formatter.</param>
     /// <returns>The return type and arguments of the formatter.</returns>
     [<CompiledName("PrintFormatLine")>]
-    val printfn  :                format:TextWriterFormat<'T> -> 'T
+    val printfn: format:TextWriterFormat<'T> -> 'T
 
     /// <summary>Print to a string via an internal string buffer and return 
     /// the result as a string. Helper printers must return strings.</summary>
     /// <param name="format">The input formatter.</param>
     /// <returns>The formatted string.</returns>
     [<CompiledName("PrintFormatToStringThen")>]
-    val sprintf :                 format:StringFormat<'T> -> 'T
+    val sprintf: format:StringFormat<'T> -> 'T
 
     /// <summary>Interpolated print to a string via an internal string buffer and return 
     /// the result as a string. Helper printers must return strings.</summary>
@@ -222,6 +228,16 @@ module Printf =
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val isprintf: format:StringFormat<'T> -> 'T
 
+//#if NETSTANDARD2_0
+    /// <summary>Interpolated print to a string via an internal string buffer and return 
+    /// the result as a string. Helper printers must return strings.</summary>
+    /// <param name="format">The input formatter.</param>
+    /// <returns>The formatted string.</returns>
+    [<CompiledName("InterpolatedPrintFormatToFormattableStringThen")>]
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    val ifsprintf: format:FormattableStringFormat<'T> -> 'T
+//#endif
+
     /// <summary>bprintf, but call the given 'final' function to generate the result.
     /// See <c>kprintf</c>.</summary>
     /// <param name="continuation">The function called after formatting to generate the format result.</param>
@@ -229,7 +245,7 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     /// <returns>The arguments of the formatter.</returns>
     [<CompiledName("PrintFormatToStringBuilderThen")>]
-    val kbprintf : continuation:(unit -> 'Result)   -> builder:StringBuilder ->    format:BuilderFormat<'T,'Result> -> 'T
+    val kbprintf: continuation:(unit -> 'Result) -> builder:StringBuilder -> format:BuilderFormat<'T,'Result> -> 'T
 
     /// <summary>fprintf, but call the given 'final' function to generate the result.
     /// See <c>kprintf</c>.</summary>
@@ -238,7 +254,7 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     /// <returns>The arguments of the formatter.</returns>
     [<CompiledName("PrintFormatToTextWriterThen")>]
-    val kfprintf : continuation:(unit -> 'Result)   -> textWriter:TextWriter -> format:TextWriterFormat<'T,'Result> -> 'T
+    val kfprintf: continuation:(unit -> 'Result) -> textWriter:TextWriter -> format:TextWriterFormat<'T,'Result> -> 'T
 
     /// <summary>printf, but call the given 'final' function to generate the result.
     /// For example, these let the printing force a flush after all output has 
@@ -247,7 +263,7 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     /// <returns>The arguments of the formatter.</returns>
     [<CompiledName("PrintFormatThen")>]
-    val kprintf  : continuation:(string -> 'Result) ->                format:StringFormat<'T,'Result> -> 'T
+    val kprintf: continuation:(string -> 'Result) -> format:StringFormat<'T,'Result> -> 'T
 
     /// <summary>sprintf, but call the given 'final' function to generate the result.
     /// See <c>kprintf</c>.</summary>
@@ -255,7 +271,7 @@ module Printf =
     /// <param name="format">The input formatter.</param>
     /// <returns>The arguments of the formatter.</returns>
     [<CompiledName("PrintFormatToStringThen")>]
-    val ksprintf : continuation:(string -> 'Result) ->                format:StringFormat<'T,'Result>  -> 'T
+    val ksprintf: continuation:(string -> 'Result) -> format:StringFormat<'T,'Result>  -> 'T
 
     /// <summary>Print to a string buffer and raise an exception with the given
     /// result. Helper printers must return strings.</summary>
