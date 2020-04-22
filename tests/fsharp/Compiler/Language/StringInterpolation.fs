@@ -262,6 +262,28 @@ check \"vcewweh22n2\"
 "
 
     [<Test>]
+    let ``String interpolation to FormattableString`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+let fmt (x: FormattableString) = x.ToString()
+let fmt_us (x: FormattableString) = x.ToString(System.Globalization.CultureInfo("en-US"))
+let fmt_de (x: FormattableString) = x.ToString(System.Globalization.CultureInfo("de-DE"))
+
+check "fwejwflpej1" (fmt $"") ""
+check "fwejwflpej2" (fmt $"abc") "abc"
+check "fwejwflpej3" (fmt $"abc{1}") "abc1"
+check "fwejwflpej4" (fmt $"abc %d{box 1} def") "abc 1 def"
+check "fwejwflpej6" (fmt_us $"abc {box 30000} def") "abc 30000 def"
+check "fwejwflpej7" (fmt_de $"abc {box 30000} def") "abc 30000 def"
+check "fwejwflpej8" (fmt_us $"abc {box 30000:N} def") "abc 30,000.00 def"
+check "fwejwflpej9" (fmt_de $"abc {box 30000:N} def") "abc 30.000,00 def"
+
+            """
+
+    [<Test>]
     let ``String interpolation using .NET Formats`` () =
         CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """

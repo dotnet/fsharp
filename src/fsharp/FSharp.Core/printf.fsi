@@ -154,11 +154,11 @@ module Printf =
     /// arguments and return type of the format operation.</summary>
     type BuilderFormat<'T> = BuilderFormat<'T, unit>
 
-//#if NETSTANDARD2_0
+#if NETSTANDARD
     /// <summary>Represents a statically-analyzed format when formatting builds a string. The type parameter indicates the
     /// arguments and return type of the format operation.</summary>
     type FormattableStringFormat<'T> = StringFormat<'T,FormattableString>
-//#endif
+#endif
 
     /// <summary>Represents a statically-analyzed format when formatting builds a string. The type parameter indicates the
     /// arguments and return type of the format operation.</summary>
@@ -228,7 +228,7 @@ module Printf =
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val isprintf: format:StringFormat<'T> -> 'T
 
-//#if NETSTANDARD2_0
+#if NETSTANDARD
     /// <summary>Interpolated print to a string via an internal string buffer and return 
     /// the result as a string. Helper printers must return strings.</summary>
     /// <param name="format">The input formatter.</param>
@@ -236,7 +236,7 @@ module Printf =
     [<CompiledName("InterpolatedPrintFormatToFormattableStringThen")>]
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val ifsprintf: format:FormattableStringFormat<'T> -> 'T
-//#endif
+#endif
 
     /// <summary>bprintf, but call the given 'final' function to generate the result.
     /// See <c>kprintf</c>.</summary>

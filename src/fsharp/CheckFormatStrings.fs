@@ -47,7 +47,7 @@ let newInfo () =
     addZeros       = false
     precision      = false}
 
-let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context: FormatStringCheckContext option) fmt bty cty = 
+let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormattableString (context: FormatStringCheckContext option) fmt bty cty = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
     // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
     let (offset, fmt) = 
@@ -195,10 +195,12 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context:
 
               // Explicitly typed holes in interpolated strings "....%d{x}..." get additional '%P()' as a hole place marker
               let skipPossibleInterpolationHole i =
-                 if isInterpolation then 
+                 if isInterpolated then 
                      if i+1 < len && fmt.[i] = '%' && fmt.[i+1] = 'P'  then
                         let i = i + 2
                         if i+1 < len && fmt.[i] = '('  && fmt.[i+1] = ')' then 
+                            if isFormattableString then 
+                                raise (Failure (FSComp.SR.forFormatInvalidForInterpolated4()))
                             i + 2
                         else 
                             raise (Failure (FSComp.SR.forFormatInvalidForInterpolated2()))
@@ -300,7 +302,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context:
                   parseLoop ((posi, NewInferenceType ()) :: acc) (i, relLine, relCol+1)
 
               // residue of hole "...{n}..." in interpolated strings become %P(...) 
-              | 'P' when isInterpolation ->
+              | 'P' when isInterpolated ->
                   checkOtherFlags ch
                   let i = requireAndSkipInterpolationHoleFormat (i+1)
                   parseLoop ((posi, NewInferenceType ()) :: acc) (i+1, relLine, relCol+1)
@@ -336,15 +338,15 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context:
     let results = parseLoop [] (0, 0, m.StartColumn)
     results, Seq.toList specifierLocations
 
-let ParseFormatString m g isInterpolation formatStringCheckContext fmt bty cty dty = 
-    let argtys, specifierLocations = parseFormatStringInternal m g isInterpolation formatStringCheckContext fmt bty cty
+let ParseFormatString m g isInterpolated isFormattableString formatStringCheckContext fmt bty cty dty = 
+    let argtys, specifierLocations = parseFormatStringInternal m g isInterpolated isFormattableString formatStringCheckContext fmt bty cty
     let aty = List.foldBack (-->) argtys dty
     let ety = mkRefTupledTy g argtys
     (argtys, aty, ety), specifierLocations 
 
-let TryCountFormatStringArguments m g isInterpolation fmt bty cty =
+let TryCountFormatStringArguments m g isInterpolated fmt bty cty =
     try
-        let argtys, _specifierLocations = parseFormatStringInternal m g isInterpolation None fmt bty cty
+        let argtys, _specifierLocations = parseFormatStringInternal m g isInterpolated false None fmt bty cty
         Some argtys.Length
     with _ ->
         None
