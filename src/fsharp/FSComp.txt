@@ -1493,6 +1493,7 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3351,chkFeatureNotRuntimeSupported,"Feature '%s' is not supported by target runtime."
 3352,typrelInterfaceMemberNoMostSpecificImplementation,"Interface member '%s' does not have a most specific implementation."
 3353,chkFeatureNotSupportedInLibrary,"Feature '%s' requires the F# library for language version %s or greater."
+3354,tcUnableToParseInterpolatedString,"Unable to parse interpolated string '%s'"
 3360,lexByteStringMayNotBeInterpolated,"a byte string may not be interpolated"
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
 fSharpBannerVersion,"%s for F# %s"

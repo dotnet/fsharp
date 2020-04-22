@@ -334,6 +334,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_bool_ty         = mkNonGenericTy v_bool_tcr   
   let v_char_ty         = mkNonGenericTy v_char_tcr
   let v_obj_ty          = mkNonGenericTy v_obj_tcr    
+  let v_FormattableString_tcref = findSysTyconRef sys "FormattableString" 
   let v_FormattableString_ty = mkSysNonGenericTy sys "FormattableString" 
   let v_string_ty       = mkNonGenericTy v_string_tcr
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
@@ -1015,6 +1016,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.bool_ty       = v_bool_ty
   member __.int_ty       = v_int_ty
   member __.string_ty     = v_string_ty
+  member __.system_FormattableString_tcref = v_FormattableString_tcref
   member __.system_FormattableString_ty = v_FormattableString_ty
   member __.unit_ty       = v_unit_ty
   member __.obj_ty        = v_obj_ty

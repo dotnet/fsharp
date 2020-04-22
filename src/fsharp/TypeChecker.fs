@@ -7120,17 +7120,17 @@ and TcConstStringExpr cenv overallTy env m tpenv s =
     if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.string_ty) then 
         mkString cenv.g m s, tpenv
     else 
-        TcConstStringFormatExpr cenv overallTy env m tpenv s
+        TcFormatStringExpr cenv overallTy env m tpenv s
 
-and TcConstStringFormatExpr cenv overallTy env m tpenv (fmtString: string) =
+and TcFormatStringExpr cenv overallTy env m tpenv (fmtString: string) =
     let g = cenv.g
     let aty = NewInferenceType ()
     let bty = NewInferenceType ()
     let cty = NewInferenceType ()
     let dty = NewInferenceType ()
     let ety = NewInferenceType ()
-
     let formatTy = mkPrintfFormatTy g aty bty cty dty ety
+
     // This might qualify as a format string - check via a type directed rule
     let ok = not (isObjTy g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy formatTy
 
@@ -7168,12 +7168,16 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (synFillExprs: SynExpr l
             true, false
         else
             // ... or if that fails then may be a FormattableString by a type-directed rule....
-            if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.system_FormattableString_ty) then 
+            if (not (isObjTy g overallTy) && 
+                cenv.g.system_FormattableString_tcref.CanDeref &&
+                cenv.g.ifsprintf_vref.TryDeref.IsSome &&
+                AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.system_FormattableString_ty) then 
                 true, true
             else
                 UnifyTypes cenv env m overallTy g.string_ty
                 true, false
 
+    printfn "fmtString = <<<%s>>>, isFormattableString = %b" fmtString isFormattableString
     let aty = NewInferenceType ()
     let bty = g.unit_ty 
     let cty = g.string_ty
@@ -7182,12 +7186,12 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (synFillExprs: SynExpr l
 
     if ok then
         // Parse the format string to work out the phantom types 
-        let formatStringCheckContext = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.FormatStringCheckContext
-        let normalizedString = (fmtString.Replace("\r\n", "\n").Replace("\r", "\n"))
+        let formatStringCheckContext = None //match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.FormatStringCheckContext
+        //let normalizedString = (fmtString.Replace("\r\n", "\n").Replace("\r", "\n"))
         
         let (argtys, atyRequired, etyRequired), specifierLocations =
-            try CheckFormatStrings.ParseFormatString m g true isFormattableString formatStringCheckContext normalizedString bty cty dty
-            with Failure errString -> error (Error(FSComp.SR.tcUnableToParseFormatString errString, m))
+            try CheckFormatStrings.ParseFormatString m g true isFormattableString formatStringCheckContext fmtString bty cty dty
+            with Failure errString -> error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
 
         match cenv.tcSink.CurrentSink with 
         | None -> () 

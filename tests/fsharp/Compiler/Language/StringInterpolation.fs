@@ -265,12 +265,14 @@ check \"vcewweh22n2\"
     let ``String interpolation to FormattableString`` () =
         CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
+open System
+open System.Globalization
 let check msg a b = 
     if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
 
 let fmt (x: FormattableString) = x.ToString()
-let fmt_us (x: FormattableString) = x.ToString(System.Globalization.CultureInfo("en-US"))
-let fmt_de (x: FormattableString) = x.ToString(System.Globalization.CultureInfo("de-DE"))
+let fmt_us (x: FormattableString) = x.ToString(CultureInfo("en-US"))
+let fmt_de (x: FormattableString) = x.ToString(CultureInfo("de-DE"))
 
 check "fwejwflpej1" (fmt $"") ""
 check "fwejwflpej2" (fmt $"abc") "abc"
@@ -500,3 +502,43 @@ let x = $"one"
             """
             [|(FSharpErrorSeverity.Error, 3350, (2, 9, 2, 15),
                    "Feature 'string interpolation' is not available in F# 4.7. Please use language version 'preview' or greater.")|]
+
+
+    [<Test>]
+    let ``Basic string interpolation negative`` () =
+        let s =    """
+let x1 = $"one %d{System.String.Empty}" // mismatched types
+let x2 = $"one %s{1}" // mismatched types
+let x3 = $"one %s" // naked percent in interpolated
+let x4 = $"one %d" // naked percent in interpolated
+let x5 = $"one %A" // naked percent in interpolated
+let x6 = $"one %P" // interpolation hole marker in interploation
+let x7 = $"one %P()" // interpolation hole marker in interploation
+let x8 = $"one %f" // naked percent in interpolated
+let x9 = $"one %d{3:N}" // mix of formats
+"""
+        System.IO.File.WriteAllText(@"c:\misc\a.fs", s)
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            s
+            [|(FSharpErrorSeverity.Error, 1, (2, 19, 2, 38),
+               "The type 'string' is not compatible with any of the types byte,int16,int32,int64,sbyte,uint16,uint32,uint64,nativeint,unativeint, arising from the use of a printf-style format string");
+              (FSharpErrorSeverity.Error, 1, (3, 19, 3, 20),
+               """This expression was expected to have type
+    'string'    
+but here has type
+    'int'    """);
+              (FSharpErrorSeverity.Error, 3354, (4, 10, 4, 19),
+               "Unable to parse interpolated string 'Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.'");
+              (FSharpErrorSeverity.Error, 3354, (5, 10, 5, 19),
+               "Unable to parse interpolated string 'Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.'");
+              (FSharpErrorSeverity.Error, 3354, (6, 10, 6, 19),
+               "Unable to parse interpolated string 'Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.'");
+              (FSharpErrorSeverity.Error, 3354, (7, 10, 7, 19),
+               "Unable to parse interpolated string 'Invalid interpolated string. The '%P' specifier may not be used explicitly.'");
+              (FSharpErrorSeverity.Error, 3361, (8, 10, 8, 21),
+               "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'");
+              (FSharpErrorSeverity.Error, 3354, (9, 10, 9, 19),
+               "Unable to parse interpolated string 'Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.'");
+              (FSharpErrorSeverity.Error, 3354, (10, 10, 10, 24),
+               "Unable to parse interpolated string 'Invalid interpolated string. .NET-style format specifiers such as '{x,3}' or '{x:N5}' may not be mixed with '%' format specifiers.'")|]
+  
