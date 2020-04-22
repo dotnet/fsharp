@@ -16,7 +16,7 @@ test cases look similar to:
 This test case builds and runs the test case in the folder core/array
 
 this #define is used to exclude from the build tests that run will not run correctly on the coreclr
-__#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS__
+__#if !NETCOREAPP__
 
 There are some older tests in this section that looks similar to:
 ````
