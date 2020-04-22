@@ -19,17 +19,18 @@ open TestFramework
 open Scripting
 open SingleTest
 
-#if FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
+// All tests which do a manual invoke of the F# compiler are disabled
+
+#if NETCOREAPP
 // Use these lines if you want to test CoreCLR
 let FSC_BASIC = FSC_CORECLR
 let FSI_BASIC = FSI_CORECLR
-let FSIANYCPU_BASIC = FSI_CORECLR
 #else
 let FSC_BASIC = FSC_OPT_PLUS_DEBUG
 let FSI_BASIC = FSI_FILE
 #endif
 
-(*
 [<Test>]
 let diamondAssembly () = 
     let cfg = testConfig "typeProviders/diamondAssembly"
@@ -143,9 +144,10 @@ let helloWorld p =
 [<Test>]
 let ``helloWorld fsc`` () = helloWorld FSC_BASIC
 
+#if !NETCOREAPP
 [<Test>]
 let ``helloWorld fsi`` () = helloWorld FSI_STDIN
-
+#endif
 
 [<Test>]
 let helloWorldCSharp () = 
@@ -238,6 +240,7 @@ let ``negative type provider tests`` (name:string) =
             do
             File.ReadAllText(sprintf "%s%s.%sbslpp" dirp name pref)
                 .Replace("<ASSEMBLY>", getfullpath cfg (sprintf "provider_%s.dll" name))
+                .Replace("<FILEPATH>",dirp)
                 .Replace("<URIPATH>",sprintf "file:///%s" dirp)
                 |> fun txt -> File.WriteAllText(sprintf "%s%s.%sbsl" dirp name pref,txt)
 
@@ -267,13 +270,22 @@ let splitAssembly subdir project =
 
     fsc cfg "--out:providerDesigner.dll -a" ["providerDesigner.fsx"]
 
-    SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
+    fsc cfg "--out:test.exe -r:provider.dll" ["test.fsx"]
 
-    SingleTest.singleTestBuildAndRunAux cfg FSI_BASIC
+    begin 
+        use testOkFile = fileguard cfg "test.ok"
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    SingleTest.singleTestBuildAndRunAux cfg FSIANYCPU_BASIC
-#endif
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+    end
+
+    begin 
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
+        testOkFile.CheckExists()
+    end
 
     // Do the same thing with different load locations for the type provider design-time component
 
@@ -289,23 +301,30 @@ let splitAssembly subdir project =
 
     for dir in someLoadPaths do
 
+        printfn ""
+        printfn "Checking load path '%s'" dir
         clean()
 
         // put providerDesigner.dll into a different place
         mkdir cfg dir
         fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
 
-        SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
+        fsc cfg "--out:test.exe -r:provider.dll" ["test.fsx"]
 
-    for dir in someLoadPaths do
+        begin 
+            use testOkFile = fileguard cfg "test.ok"
 
-        clean()
+            exec cfg ("." ++ "test.exe") ""
 
-        // put providerDesigner.dll into a different place
-        mkdir cfg dir
-        fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
+            testOkFile.CheckExists()
+        end
 
-        SingleTest.singleTestBuildAndRunAux cfg FSI_BASIC
+        begin 
+            use testOkFile = fileguard cfg "test.ok"
+
+            fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
+            testOkFile.CheckExists()
+        end
 
     clean()
 
@@ -360,4 +379,4 @@ let wedgeAssembly () =
     peverify cfg "test3.exe"
 
     exec cfg ("." ++ "test3.exe") ""
-*)
+#endif

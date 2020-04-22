@@ -82,13 +82,13 @@ module Commands =
             CmdResult.ErrorLevel (msg, err)
 #else
         ignore workDir 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if NETCOREAPP
+        exec dotNetExe (fscExe + " " + args)
+#else
         ignore dotNetExe
         printfn "fscExe: %A" fscExe
         printfn "args: %A" args
         exec fscExe args
-#else
-        exec dotNetExe (fscExe + " " + args)
 #endif
 #endif
 
@@ -127,7 +127,7 @@ type TestConfig =
       fsc_flags : string
       FSCOREDLLPATH : string
       FSI : string
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
       FSIANYCPU : string
 #endif
       FSI_FOR_SCRIPTS : string
@@ -204,7 +204,7 @@ let config configurationName envVars =
     File.Copy(coreclrdll, Path.GetDirectoryName(ILASM) ++ "coreclr.dll", overwrite=true)
 
     let FSI = requireFile (FSI_FOR_SCRIPTS)
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     let FSIANYCPU = requireFile (artifactsBinPath ++ "fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
 #endif
     let FSC = requireFile (artifactsBinPath ++ "fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
@@ -226,7 +226,7 @@ let config configurationName envVars =
       BUILD_CONFIG = configurationName
       FSC = FSC
       FSI = FSI
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
       FSIANYCPU = FSIANYCPU
 #endif
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
@@ -250,7 +250,7 @@ let logConfig (cfg: TestConfig) =
     log "fsc_flags           =%s" cfg.fsc_flags
     log "FSCOREDLLPATH       =%s" cfg.FSCOREDLLPATH
     log "FSI                 =%s" cfg.FSI
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     log "FSIANYCPU           =%s" cfg.FSIANYCPU
 #endif
     log "fsi_flags           =%s" cfg.fsi_flags
@@ -466,7 +466,7 @@ let ilasm cfg arg = Printf.ksprintf (Commands.ilasm (exec cfg) cfg.ILASM) arg
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
 let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
 #endif
 let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
