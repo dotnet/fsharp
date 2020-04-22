@@ -517,7 +517,6 @@ let x7 = $"one %P()" // interpolation hole marker in interploation
 let x8 = $"one %f" // naked percent in interpolated
 let x9 = $"one %d{3:N}" // mix of formats
 """
-        System.IO.File.WriteAllText(@"c:\misc\a.fs", s)
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             s
             [|(FSharpErrorSeverity.Error, 1, (2, 19, 2, 38),

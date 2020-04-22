@@ -7177,7 +7177,6 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (synFillExprs: SynExpr l
                 UnifyTypes cenv env m overallTy g.string_ty
                 true, false
 
-    printfn "fmtString = <<<%s>>>, isFormattableString = %b" fmtString isFormattableString
     let aty = NewInferenceType ()
     let bty = g.unit_ty 
     let cty = g.string_ty
