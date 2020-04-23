@@ -335,7 +335,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_char_ty         = mkNonGenericTy v_char_tcr
   let v_obj_ty          = mkNonGenericTy v_obj_tcr    
   let v_FormattableString_tcref = findSysTyconRef sys "FormattableString" 
-  let v_FormattableString_ty = mkSysNonGenericTy sys "FormattableString" 
+  let v_FormattableString_ty = mkNonGenericTy v_FormattableString_tcref
+  let v_FormattableStringFactory_tcref = findSysTyconRef sysCompilerServices "FormattableStringFactory" 
+  let v_FormattableStringFactory_ty = mkNonGenericTy v_FormattableStringFactory_tcref
   let v_string_ty       = mkNonGenericTy v_string_tcr
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
   let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice 
@@ -708,7 +710,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_new_format_info            = makeIntrinsicValRef(fslib_MFCore_nleref,                                  ".ctor"                                , Some "PrintfFormat`5", None                          , [vara;varb;varc;vard;vare], ([[v_string_ty]], mkPrintfFormatTy varaTy varbTy varcTy vardTy vareTy))  
   let v_sprintf_info               = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "sprintf"                              , None                 , Some "PrintFormatToStringThen", [vara],     ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))  
   let v_isprintf_info              = makeIntrinsicValRef(fslib_MFPrintfModule_nleref,                          "isprintf"                             , None                 , Some "InterpolatedPrintFormatToStringThen", [vara],     ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))  
-  let v_ifsprintf_info             = makeIntrinsicValRef(fslib_MFPrintfModule_nleref,                          "ifsprintf"                            , None                 , Some "InterpolatedPrintFormatToFormattableStringThen", [vara],     ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_FormattableString_ty]], varaTy))  
   let v_lazy_force_info            = makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Force"                                , Some "Lazy`1"        , None                          , [vara],     ([[mkLazyTy varaTy]; []], varaTy))
   let v_lazy_create_info           = makeIntrinsicValRef(fslib_MFLazyExtensions_nleref,                        "Create"                               , Some "Lazy`1"        , None                          , [vara],     ([[v_unit_ty --> varaTy]], mkLazyTy varaTy))
 
@@ -1017,7 +1018,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.int_ty       = v_int_ty
   member __.string_ty     = v_string_ty
   member __.system_FormattableString_tcref = v_FormattableString_tcref
+  member __.system_FormattableStringFactory_tcref = v_FormattableStringFactory_tcref
   member __.system_FormattableString_ty = v_FormattableString_ty
+  member __.system_FormattableStringFactory_ty = v_FormattableStringFactory_ty
   member __.unit_ty       = v_unit_ty
   member __.obj_ty        = v_obj_ty
   member __.char_ty       = v_char_ty
@@ -1374,7 +1377,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val new_format_vref            = ValRefForIntrinsic v_new_format_info
   member val sprintf_vref               = ValRefForIntrinsic v_sprintf_info
   member val isprintf_vref              = ValRefForIntrinsic v_isprintf_info
-  member val ifsprintf_vref             = ValRefForIntrinsic v_ifsprintf_info
   member val unbox_vref                 = ValRefForIntrinsic v_unbox_info
   member val unbox_fast_vref            = ValRefForIntrinsic v_unbox_fast_info
   member val istype_vref                = ValRefForIntrinsic v_istype_info
@@ -1402,7 +1404,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.seq_empty_info             = v_seq_empty_info
   member __.sprintf_info               = v_sprintf_info
   member __.isprintf_info              = v_isprintf_info
-  member __.ifsprintf_info             = v_ifsprintf_info
   member __.new_format_info            = v_new_format_info
   member __.unbox_info                 = v_unbox_info
   member __.get_generic_comparer_info  = v_get_generic_comparer_info

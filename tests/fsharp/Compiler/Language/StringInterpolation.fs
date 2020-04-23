@@ -277,11 +277,18 @@ let fmt_de (x: FormattableString) = x.ToString(CultureInfo("de-DE"))
 check "fwejwflpej1" (fmt $"") ""
 check "fwejwflpej2" (fmt $"abc") "abc"
 check "fwejwflpej3" (fmt $"abc{1}") "abc1"
-check "fwejwflpej4" (fmt $"abc %d{box 1} def") "abc 1 def"
-check "fwejwflpej6" (fmt_us $"abc {box 30000} def") "abc 30000 def"
-check "fwejwflpej7" (fmt_de $"abc {box 30000} def") "abc 30000 def"
-check "fwejwflpej8" (fmt_us $"abc {box 30000:N} def") "abc 30,000.00 def"
-check "fwejwflpej9" (fmt_de $"abc {box 30000:N} def") "abc 30.000,00 def"
+check "fwejwflpej6" (fmt_us $"abc {30000} def") "abc 30000 def"
+check "fwejwflpej7" (fmt_de $"abc {30000} def") "abc 30000 def"
+check "fwejwflpej8" (fmt_us $"abc {30000:N} def") "abc 30,000.00 def"
+check "fwejwflpej9" (fmt_de $"abc {30000:N} def") "abc 30.000,00 def"
+check "fwejwflpej10" (fmt_us $"abc {30000} def {40000} hij") "abc 30000 def 40000 hij"
+check "fwejwflpej11" (fmt_us $"abc {30000,-10} def {40000} hij") "abc 30000      def 40000 hij"
+check "fwejwflpej12" (fmt_us $"abc {30000,10} def {40000} hij") "abc      30000 def 40000 hij"
+check "fwejwflpej13" (fmt_de $"abc {30000} def {40000} hij") "abc 30000 def 40000 hij"
+check "fwejwflpej14" (fmt_us $"abc {30000:N} def {40000:N} hij") "abc 30,000.00 def 40,000.00 hij"
+check "fwejwflpej15" (fmt_de $"abc {30000:N} def {40000:N} hij") "abc 30.000,00 def 40.000,00 hij"
+check "fwejwflpej16" (fmt_de $"abc {30000,10:N} def {40000:N} hij") "abc  30.000,00 def 40.000,00 hij"
+check "fwejwflpej17" (fmt_de $"abc {30000,-10:N} def {40000:N} hij") "abc 30.000,00  def 40.000,00 hij"
 
             """
 
@@ -527,17 +534,35 @@ let x9 = $"one %d{3:N}" // mix of formats
 but here has type
     'int'    """);
               (FSharpErrorSeverity.Error, 3354, (4, 10, 4, 19),
-               "Unable to parse interpolated string 'Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.'");
+               "Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.");
               (FSharpErrorSeverity.Error, 3354, (5, 10, 5, 19),
-               "Unable to parse interpolated string 'Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.'");
+               "Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.");
               (FSharpErrorSeverity.Error, 3354, (6, 10, 6, 19),
-               "Unable to parse interpolated string 'Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.'");
+               "Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.");
               (FSharpErrorSeverity.Error, 3354, (7, 10, 7, 19),
-               "Unable to parse interpolated string 'Invalid interpolated string. The '%P' specifier may not be used explicitly.'");
+               "Invalid interpolated string. The '%P' specifier may not be used explicitly.");
               (FSharpErrorSeverity.Error, 3361, (8, 10, 8, 21),
-               "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'");
+               "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}");
               (FSharpErrorSeverity.Error, 3354, (9, 10, 9, 19),
-               "Unable to parse interpolated string 'Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.'");
+               "Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.");
               (FSharpErrorSeverity.Error, 3354, (10, 10, 10, 24),
-               "Unable to parse interpolated string 'Invalid interpolated string. .NET-style format specifiers such as '{x,3}' or '{x:N5}' may not be mixed with '%' format specifiers.'")|]
+               "Invalid interpolated string. .NET-style format specifiers such as '{x,3}' or '{x:N5}' may not be mixed with '%' format specifiers.")|]
+
+    [<Test>]
+    let ``String interpolation FormattableString negative`` () =
+        let s =    """
+
+open System 
+let x1 : FormattableString = $"one %d{100}" // no %d in FormattableString
+let x2 : FormattableString = $"one %s{String.Empty}" // no %s in FormattableString
+let x3 : FormattableString = $"one %10s{String.Empty}" // no %10s in FormattableString
+"""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            s
+            [|(FSharpErrorSeverity.Error, 3354, (4, 30, 4, 44),
+               "Invalid interpolated string. Interpolated strings used as type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{expr}', '{expr,3}' or '{expr:N5}' may be used.");
+              (FSharpErrorSeverity.Error, 3354, (5, 30, 5, 53),
+               "Invalid interpolated string. Interpolated strings used as type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{expr}', '{expr,3}' or '{expr:N5}' may be used.");
+              (FSharpErrorSeverity.Error, 3354, (6, 30, 6, 55),
+               "Invalid interpolated string. Interpolated strings used as type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{expr}', '{expr,3}' or '{expr:N5}' may be used.")|]
   

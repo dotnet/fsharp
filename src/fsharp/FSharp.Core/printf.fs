@@ -131,7 +131,7 @@ module internal PrintfImpl =
         let parseTypeChar (s: string) i = 
             s.[i], (i + 1)
 
-        let parseInteropHoleDotNetFormat typeChar (s: string) i =
+        let parseInterpolatedHoleDotNetFormat typeChar (s: string) i =
             if typeChar = 'P' then 
                 if i < s.Length && s.[i] = '(' then  
                      let i2 = s.IndexOf(")", i)
@@ -145,12 +145,13 @@ module internal PrintfImpl =
                 None, i
 
         // Skip %P() added for hole in "...%d{x}..."
-        let skipInterpolationHole isInterpolatedString (s:string) i =
-            if isInterpolatedString && i+3 < s.Length && 
-               s.[i] = '%' &&
-               s.[i+1] = 'P' &&
-               s.[i+2] = '(' &&
-               s.[i+3] = ')'  then i+4
+        let skipInterpolationHole (fmt:string) i =
+            if i+1 < fmt.Length && fmt.[i] = '%' && fmt.[i+1] = 'P'  then
+                let i = i + 2
+                if i+1 < fmt.Length && fmt.[i] = '('  && fmt.[i+1] = ')' then 
+                    i+2
+                else
+                    i
             else i
     
         let findNextFormatSpecifier (s: string) i = 
@@ -188,9 +189,6 @@ module internal PrintfImpl =
         abstract Finish: unit -> 'Result
 
         abstract Write: string -> unit
-        
-        /// Write a captured interpolation value
-        abstract CaptureInterpoland: obj -> unit
         
         /// Write the result of a '%t' format.  If this is a string it is written. If it is a 'unit' value
         /// the side effect has already happened
@@ -260,20 +258,6 @@ module internal PrintfImpl =
     /// <prefix-string> + <converter for arg1> + <suffix that comes after arg1> + ... <converter for arg-N> + <suffix that comes after arg-N>
     type Specializations<'State, 'Residue, 'Result> =
      
-        /// <prefix-string> + <converter for arg1> + <suffix-string>
-        static member FinalInterpoland1<'A>(s0, s1) =
-            //Console.WriteLine("FinalInterpoland1 (build part 0)") // TODO remove me
-            (fun (prev: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                //Console.WriteLine("FinalInterpoland1 (build part1)") // TODO remove me
-                (fun (arg1: 'A) ->
-                    let env = prev()
-                    //Console.WriteLine("FinalInterpoland1 (execute): arg1 = {0}", arg1) // TODO remove me
-                    env.Write(s0)
-                    env.CaptureInterpoland(box arg1)
-                    env.Write(s1)
-                    env.Finish()
-                )
-            )
         /// <prefix-string> + <converter for arg1> + <suffix-string>
         static member Final1<'A>(s0, conv1, s1) =
             (fun (prev: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
@@ -463,22 +447,6 @@ module internal PrintfImpl =
                     let env() = 
                         let env = prev()
                         Utils.Write(env, s0, conv1 arg1)
-                        env
-                    next env : 'Tail
-                )
-            )
-
-        static member ChainedInterpoland1<'A, 'Tail>(s0, next) =
-            //Console.WriteLine("ChainedInterpoland1 (build part 0)") // TODO remove me
-            (fun (prev: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                //Console.WriteLine("ChainedInterpoland1 (build part 1)") // TODO remove me
-                (fun (arg1: 'A) ->
-                    //Console.WriteLine("ChainedInterpoland1 (arg capture), arg1 = {0}", arg1) // TODO remove me
-                    let env() = 
-                        let env = prev()
-                        //Console.WriteLine("ChainedInterpoland1 (execute), arg1 = {0}", arg1) // TODO remove me
-                        env.Write(s0)
-                        env.CaptureInterpoland(arg1)
                         env
                     next env : 'Tail
                 )
@@ -1275,12 +1243,6 @@ module internal PrintfImpl =
           /// environment-creating function.
           FunctionFactory: PrintfFactory<'Printer, 'State, 'Residue, 'Result> 
 
-          /// The format for the FormattableString, if we're building one of those
-          FormattableStringFormat: string
-
-          /// Ther number of holes in the FormattableString, if we're building one of those
-          FormattableStringHoleCount: int
-
           /// The maximum number of slots needed in the environment including string fragments and output strings from position holders
           BlockCount: int
         }
@@ -1291,14 +1253,10 @@ module internal PrintfImpl =
     ///
     /// The idea of implementation is very simple: every step can either push argument to the stack (if current block of 5 format specifiers is not yet filled) 
     //  or grab the content of stack, build intermediate printer and push it back to stack (so it can later be consumed by as argument) 
-    type private FormatParser<'Printer, 'State, 'Residue, 'Result>(fmt: string, isInterpolatedString, isFormattableString) =
+    type private FormatParser<'Printer, 'State, 'Residue, 'Result>(fmt: string) =
     
         let mutable count = 0
         let mutable optimizedArgCount = 0
-
-        // If we're building a formattable string, we build the resulting format string during the first pass
-        let ffmtb = if isFormattableString then StringBuilder() else null
-        let mutable ffmtCount = 0
 
 #if DEBUG
         let verifyMethodInfoWasTaken (mi: System.Reflection.MemberInfo) =
@@ -1306,33 +1264,8 @@ module internal PrintfImpl =
                 ignore (System.Diagnostics.Debugger.Launch())
 #endif
             
-        let addFormattableFormatStringPlaceholder (spec: FormatSpecifier) =
-            ffmtb.Append "{" |> ignore
-            ffmtb.Append (string ffmtCount) |> ignore
-            match spec.InteropHoleDotNetFormat with 
-            | None -> ()
-            | Some txt -> 
-                ffmtb.Append ":" |> ignore
-                ffmtb.Append txt |> ignore
-            ffmtb.Append "}" |> ignore
-            ffmtCount <- ffmtCount + 1
-
         let buildSpecialChained(spec: FormatSpecifier, argTys: Type[], prefix: string, tail: obj, retTy) = 
-            if isFormattableString then
-                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod("ChainedInterpoland1", NonPublicStatics)
-#if DEBUG                
-                verifyMethodInfoWasTaken mi
-#endif                
-                ffmtb.Append prefix |> ignore
-                addFormattableFormatStringPlaceholder spec
-
-                let argTy = argTys.[0]
-                //Console.WriteLine("buildSpecialChained: argTy = {0}", argTy) // TODO remove me
-                let mi = mi.MakeGenericMethod ([| argTy;  retTy |])
-                let args = [| box prefix |]
-                mi.Invoke(null, args)
-
-            elif spec.TypeChar = 'a' then
+            if spec.TypeChar = 'a' then
                 let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod("LittleAChained", NonPublicStatics)
 #if DEBUG
                 verifyMethodInfoWasTaken mi
@@ -1372,23 +1305,7 @@ module internal PrintfImpl =
                 mi.Invoke(null, args)
             
         let buildSpecialFinal(spec: FormatSpecifier, argTys: Type[], prefix: string, suffix: string) =
-            if isFormattableString then
-                // Every hole in a formattable string captures the interpoland
-                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod("FinalInterpoland1", NonPublicStatics)
-#if DEBUG                
-                verifyMethodInfoWasTaken mi
-#endif                
-                ffmtb.Append prefix |> ignore
-                addFormattableFormatStringPlaceholder spec
-                ffmtb.Append suffix |> ignore
-
-                let argTy = argTys.[0]
-                //Console.WriteLine("buildSpecialFinal: argTy = {0}", argTy) // TODO remove me
-                let mi = mi.MakeGenericMethod [| argTy |]
-                let args = [| box prefix; box suffix  |]
-                mi.Invoke(null, args)
-
-            elif spec.TypeChar = 'a' then
+            if spec.TypeChar = 'a' then
                 let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod("LittleAFinal", NonPublicStatics)
 #if DEBUG
                 verifyMethodInfoWasTaken mi
@@ -1510,10 +1427,10 @@ module internal PrintfImpl =
             let width, i = FormatString.parseWidth s i
             let precision, i = FormatString.parsePrecision s i
             let typeChar, i = FormatString.parseTypeChar s i
-            let interpHoleDotnetFormat, i = FormatString.parseInteropHoleDotNetFormat typeChar s i
+            let interpHoleDotnetFormat, i = FormatString.parseInterpolatedHoleDotNetFormat typeChar s i
 
             // Skip %P insertion points added after %d{...} etc. in interpolated strings
-            let i = FormatString.skipInterpolationHole isInterpolatedString s i
+            let i = FormatString.skipInterpolationHole s i
 
             let spec =
                 { TypeChar = typeChar
@@ -1542,7 +1459,7 @@ module internal PrintfImpl =
 
             let numberOfArgs = parseFromFormatSpecifier suffix s retTy next
 
-            if isFormattableString || spec.TypeChar = 'a' || spec.TypeChar = 't' || spec.IsStarWidth || spec.IsStarPrecision then
+            if spec.TypeChar = 'a' || spec.TypeChar = 't' || spec.IsStarWidth || spec.IsStarPrecision then
                 // Every hole in a formattable string captures the interpoland
                 if numberOfArgs = ContinuationOnStack then
 
@@ -1611,9 +1528,6 @@ module internal PrintfImpl =
             let prefixPos, prefix = FormatString.findNextFormatSpecifier fmt 0
             
             if prefixPos = fmt.Length then 
-                if isFormattableString then 
-                    ffmtb.Append prefix |> ignore
-
                 // If there are not format specifiers then take a simple path
                 box (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) -> 
                     let env = env()
@@ -1631,8 +1545,6 @@ module internal PrintfImpl =
         let result = 
             {
               FormatString = fmt
-              FormattableStringFormat = (if isFormattableString then ffmtb.ToString() else null)
-              FormattableStringHoleCount = ffmtCount
               FunctionFactory = factoryObj  :?> PrintfFactory<'Printer, 'State, 'Residue, 'Result>
               // second component is used in SprintfEnv as value for internal buffer
               BlockCount = (2 * count + 1) - optimizedArgCount 
@@ -1640,11 +1552,7 @@ module internal PrintfImpl =
 
         member _.Result = result
 
-    /// 2-level cache.
-    ///
-    /// We can use the same caches for both interpolated and non-interpolated strings
-    /// since interpolated strings contain %P and don't overlap with non-interpolation strings, and if an interpolated
-    /// string doesn't contain %P then the processing of the format strings is semantically identical.
+    /// 2-level cache, keyed by format string and index types
     type Cache<'Printer, 'State, 'Residue, 'Result>() =
 
         /// 1st level cache (type-indexed). Stores last value that was consumed by the current
@@ -1656,7 +1564,7 @@ module internal PrintfImpl =
         // 2nd level cache (type-indexed). Dictionary that maps format string to the corresponding cache entry
         static let mutable dict : ConcurrentDictionary<string, CachedItem<'Printer, 'State, 'Residue, 'Result>> = null
 
-        static member Get(format: Format<'Printer, 'State, 'Residue, 'Result>, isInterpolatedString, isFormattableString) =
+        static member Get(format: Format<'Printer, 'State, 'Residue, 'Result>) =
             let cacheEntry = Cache<'Printer, 'State, 'Residue, 'Result>.mostRecent
             let fmt = format.Value
             if not (cacheEntry === null) && fmt.Equals cacheEntry.FormatString then 
@@ -1671,9 +1579,11 @@ module internal PrintfImpl =
                     match dict.TryGetValue(fmt) with 
                     | true, res -> res
                     | _ -> 
-                        let parser = FormatParser<'Printer, 'State, 'Residue, 'Result>(fmt, isInterpolatedString, isFormattableString)
+                        let parser = FormatParser<'Printer, 'State, 'Residue, 'Result>(fmt)
                         let result = parser.Result
-                        // Note there's a race condition but it doesn't matter if lose one entry
+                        // Note there's a race condition - the dictionary entry may be re-created by another thread
+                        // but it doesn't matter if lose one entry, as long as the dictionary only ends up holding
+                        // a valid entry.
                         dict.TryAdd(fmt, result) |> ignore
                         result
                 Cache<'Printer, 'State, 'Residue, 'Result>.mostRecent <- v
@@ -1695,8 +1605,6 @@ module internal PrintfImpl =
             buf.[ptr] <- s
             ptr <- ptr + 1
 
-        override __.CaptureInterpoland(_s) = failwith "no interpolands expected" 
-
     type SmallStringPrintfEnv() = 
         inherit PrintfEnv<unit, string, string>(())
         let mutable c = null
@@ -1704,7 +1612,6 @@ module internal PrintfImpl =
         override __.Finish() : string = c
         override __.Write(s: string) = if isNull c then c <- s else c <- c + s
         override __.WriteT s = if isNull c then c <- s else c <- c + s
-        override __.CaptureInterpoland(_s) = failwith "no interpolands expected" 
 
     let StringPrintfEnv n = 
         if n <= 2 then
@@ -1712,41 +1619,17 @@ module internal PrintfImpl =
         else
             LargeStringPrintfEnv(id, n) :> PrintfEnv<_,_,_>
 
-#if NETSTANDARD
-    let FormattableStringPrintfEnv(ffmt: string, n) = 
-        let args: obj[] = Array.zeroCreate n
-        let mutable ptr = 0
-
-        { new PrintfEnv<unit, string, FormattableString>(()) with
-
-            override __.Finish() : FormattableString =
-                //Console.WriteLine("FormattableStringPrintfEnv - fmt = {0}", ffmt)
-                System.Runtime.CompilerServices.FormattableStringFactory.Create(ffmt, args)
-
-            override __.Write(s: string) = ()
-
-            override __.WriteT s = failwith "no %t formats  in FormattableString"
-
-            override __.CaptureInterpoland (value) =
-                //Console.WriteLine("FormattableStringPrintfEnv - CaptureInterpoland({0})", value)
-                args.[ptr] <- value
-                ptr <- ptr + 1
-        }
-#endif
-
     let StringBuilderPrintfEnv<'Result>(k, buf) = 
         { new PrintfEnv<Text.StringBuilder, unit, 'Result>(buf) with
             override __.Finish() : 'Result = k ()
             override __.Write(s: string) = ignore(buf.Append s)
-            override __.WriteT(()) = ()
-            override __.CaptureInterpoland(_s) = failwith "no interpolands expected" }
+            override __.WriteT(()) = () }
 
     let TextWriterPrintfEnv<'Result>(k, tw: IO.TextWriter) =
         { new PrintfEnv<IO.TextWriter, unit, 'Result>(tw) with 
             override __.Finish() : 'Result = k()
             override __.Write(s: string) = tw.Write s
-            override __.WriteT(()) = ()
-            override __.CaptureInterpoland(_s) = failwith "no interpolands expected" }
+            override __.WriteT(()) = () }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Printf =
@@ -1760,52 +1643,37 @@ module Printf =
     type StringFormat<'T,'Result> = Format<'T, unit, string, 'Result>
     type TextWriterFormat<'T,'Result> = Format<'T, TextWriter, unit, 'Result>
     type BuilderFormat<'T> = BuilderFormat<'T,unit>
-#if NETSTANDARD
-    type FormattableStringFormat<'T> = StringFormat<'T,FormattableString>
-#endif
     type StringFormat<'T> = StringFormat<'T,string>
     type TextWriterFormat<'T>  = TextWriterFormat<'T,unit>
 
     [<CompiledName("PrintFormatToStringThen")>]
     let ksprintf continuation (format: StringFormat<'T, 'Result>) : 'T = 
-        let cacheItem = Cache.Get (format, false, false)
+        let cacheItem = Cache.Get format
         let initial() = LargeStringPrintfEnv (continuation, cacheItem.BlockCount) :> PrintfEnv<_,_,_>
         cacheItem.FunctionFactory initial
 
     [<CompiledName("PrintFormatToStringThen")>]
     let sprintf (format: StringFormat<'T>) =
-        let cacheItem = Cache.Get (format, false, false)
+        let cacheItem = Cache.Get format
         let initial() = StringPrintfEnv cacheItem.BlockCount
         cacheItem.FunctionFactory initial
 
     [<CompiledName("InterpolatedPrintFormatToStringThen")>]
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    let isprintf (format: StringFormat<'T>) = 
-        let cacheItem = Cache.Get (format, true, false)
-        let initial() = StringPrintfEnv cacheItem.BlockCount
-        cacheItem.FunctionFactory initial
-
-#if NETSTANDARD
-    [<CompiledName("InterpolatedPrintFormatToFormattableStringThen")>]
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-    let ifsprintf (format: FormattableStringFormat<'T>) =
-        let cacheItem = Cache.Get (format, true, true)
-        let initial() = FormattableStringPrintfEnv (cacheItem.FormattableStringFormat, cacheItem.FormattableStringHoleCount)
-        cacheItem.FunctionFactory initial
-#endif
+    let isprintf (format: StringFormat<'T>) = sprintf format
 
     [<CompiledName("PrintFormatThen")>]
     let kprintf continuation format = ksprintf continuation format
 
     [<CompiledName("PrintFormatToStringBuilderThen")>]
     let kbprintf continuation (builder: StringBuilder) format = 
-        let cacheItem = Cache.Get (format, false, false)
+        let cacheItem = Cache.Get format
         let initial() = StringBuilderPrintfEnv(continuation, builder)
         cacheItem.FunctionFactory initial
     
     [<CompiledName("PrintFormatToTextWriterThen")>]
     let kfprintf continuation textWriter format =
-        let cacheItem = Cache.Get (format, false, false)
+        let cacheItem = Cache.Get format
         let initial() = TextWriterPrintfEnv(continuation, textWriter)
         cacheItem.FunctionFactory initial
 

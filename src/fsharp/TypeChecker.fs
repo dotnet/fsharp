@@ -5903,39 +5903,9 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.InterpolatedString (parts, m) -> 
         tryLanguageFeatureError cenv.g.langVersion LanguageFeature.StringInterpolation m
 
-        // CHeck the library support is available in the referenced FSharp.Core
-        if cenv.g.isprintf_vref.TryDeref.IsNone then 
-            languageFeatureNotSupportedInLibraryError cenv.g.langVersion LanguageFeature.StringInterpolation m
-
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
 
-        let fillExprs =
-            parts 
-            |> List.choose (function
-                | Choice1Of2 _ -> None
-                | Choice2Of2 (fillExpr, _)  ->
-                    match fillExpr with 
-                    // Detect "x" part of "...{x,3}..."
-                    | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) -> Some e
-                    | e -> Some e)
-
-        let stringText = 
-            parts
-            |> List.map (function 
-                | Choice1Of2 s -> s
-                | Choice2Of2 (fillExpr, format) -> 
-                    let alignText = 
-                        match fillExpr with 
-                        // Validate and detect ",3" part of "...{x,3}..."
-                        | SynExpr.Tuple (false, args, _, _) -> 
-                            match args with 
-                            | [_; SynExpr.Const (SynConst.Int32 align, _)] -> string align
-                            | _ -> errorR(Error(FSComp.SR.tcInvalidAlignmentInInterpolatedString(), m)); ""
-                        | _ -> ""
-                    let formatText = match format with None -> "()" | Some n -> "(" + n.idText + ")"
-                    "%" + alignText + "P" + formatText )
-            |> String.concat ""
-        TcInterpolatedStringExpr cenv overallTy env m tpenv fillExprs stringText
+        TcInterpolatedStringExpr cenv overallTy env m tpenv parts
 
     | SynExpr.Const (synConst, m) -> 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
@@ -7139,7 +7109,7 @@ and TcFormatStringExpr cenv overallTy env m tpenv (fmtString: string) =
         let formatStringCheckContext = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.FormatStringCheckContext
         let normalizedString = (fmtString.Replace("\r\n", "\n").Replace("\r", "\n"))
         
-        let (_argtys, atyRequired, etyRequired), specifierLocations =
+        let (_argtys, atyRequired, etyRequired), specifierLocations, _dotnetFormatString =
             try CheckFormatStrings.ParseFormatString m g false false formatStringCheckContext normalizedString bty cty dty
             with Failure errString -> error (Error(FSComp.SR.tcUnableToParseFormatString errString, m))
 
@@ -7159,62 +7129,101 @@ and TcFormatStringExpr cenv overallTy env m tpenv (fmtString: string) =
         mkString g m fmtString, tpenv
 
 /// Check an interpolated string expression
-and TcInterpolatedStringExpr cenv overallTy env m tpenv (synFillExprs: SynExpr list) (fmtString: string) =
+and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (SynExpr * Ident option) > list) =
     let g = cenv.g
 
-    let ok, isFormattableString = 
+    let synFillExprs =
+        parts 
+        |> List.choose (function
+            | Choice1Of2 _ -> None
+            | Choice2Of2 (fillExpr, _)  ->
+                match fillExpr with 
+                // Detect "x" part of "...{x,3}..."
+                | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) -> Some e
+                | e -> Some e)
+
+    let formattableStringInfo = 
         // If this is an interpolated string then the result must be a string
-        if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.string_ty) then 
-            true, false
+        if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.string_ty) then 
+            None
         else
             // ... or if that fails then may be a FormattableString by a type-directed rule....
             if (not (isObjTy g overallTy) && 
-                cenv.g.system_FormattableString_tcref.CanDeref &&
-                cenv.g.ifsprintf_vref.TryDeref.IsSome &&
-                AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.system_FormattableString_ty) then 
-                true, true
-            else
-                UnifyTypes cenv env m overallTy g.string_ty
-                true, false
+                g.system_FormattableString_tcref.CanDeref &&
+                AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_FormattableString_ty) then 
 
+                let ad = env.eAccessRights
+                let createMethod = 
+                    match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "Create" g.system_FormattableStringFactory_ty with 
+                    | [x] -> Some x 
+                    | _ -> None
+
+                createMethod
+
+            else
+                // this should fail and produce an error
+                UnifyTypes cenv env m overallTy g.string_ty
+                None
+
+    let isFormattableString = formattableStringInfo.IsSome
     let aty = NewInferenceType ()
     let bty = g.unit_ty 
     let cty = g.string_ty
     let dty = (if isFormattableString then g.system_FormattableString_ty else g.string_ty)
     let ety = NewInferenceType ()
 
-    if ok then
-        // Parse the format string to work out the phantom types 
-        let formatStringCheckContext = None //match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.FormatStringCheckContext
-        //let normalizedString = (fmtString.Replace("\r\n", "\n").Replace("\r", "\n"))
-        
-        let (argtys, atyRequired, etyRequired), specifierLocations =
-            try CheckFormatStrings.ParseFormatString m g true isFormattableString formatStringCheckContext fmtString bty cty dty
-            with Failure errString -> error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
+    // The format string used for checking in CheckFormatStrings. This replaces interpolation holes with %P
+    let printfFormatString = 
+        parts
+        |> List.map (function 
+            | Choice1Of2 s -> s
+            | Choice2Of2 (fillExpr, format) -> 
+                let alignText = 
+                    match fillExpr with 
+                    // Validate and detect ",3" part of "...{x,3}..."
+                    | SynExpr.Tuple (false, args, _, _) -> 
+                        match args with 
+                        | [_; SynExpr.Const (SynConst.Int32 align, _)] -> string align
+                        | _ -> errorR(Error(FSComp.SR.tcInvalidAlignmentInInterpolatedString(), m)); ""
+                    | _ -> ""
+                let formatText = match format with None -> "()" | Some n -> "(" + n.idText + ")"
+                "%" + alignText + "P" + formatText )
+        |> String.concat ""
 
-        match cenv.tcSink.CurrentSink with 
-        | None -> () 
-        | Some sink -> 
-            for specifierLocation, numArgs in specifierLocations do
-                sink.NotifyFormatSpecifierLocation(specifierLocation, numArgs)
+    // Parse the format string to work out the phantom types and check for absence of '%' specifiers in FormattableString
+    let (argtys, atyRequired, etyRequired), _specifierLocations, dotnetFormatString =
+        try CheckFormatStrings.ParseFormatString m g true isFormattableString None printfFormatString bty cty dty
+        with Failure errString -> error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
+
+    match formattableStringInfo with 
+    | Some createMethInfo -> 
+
+        // FormattableString are *always* turned into FormattableStringFactory.Create calls, boxing each argument
+        let flexes = argtys |> List.map (fun _ -> false)
+        let fillExprs, tpenv = TcExprs cenv env m tpenv flexes argtys synFillExprs
+        let fillExprsBoxed = (argtys, fillExprs) ||> List.map2 (mkCallBox g m)
+        let dotnetFormatStringExpr = mkString g m dotnetFormatString
+        let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
+        let createExpr, _ = BuildPossiblyConditionalMethodCall cenv env NeverMutates m false createMethInfo NormalValUse [] [dotnetFormatStringExpr; argsExpr] []    
+        createExpr, tpenv
+
+    | None -> 
 
         UnifyTypes cenv env m aty atyRequired
         UnifyTypes cenv env m ety etyRequired
-        let fmtExpr = mkCallNewFormat g m aty bty cty dty ety (mkString g m fmtString)
+        let fmtExpr = mkCallNewFormat g m aty bty cty dty ety (mkString g m printfFormatString)
         // Check the expressions filling the holes
         if argtys.Length <> synFillExprs.Length then 
             error (Error(FSComp.SR.tcInterpolationMixedWithPercent(), m))
         let flexes = argtys |> List.map (fun _ -> false)
         let fillExprs, tpenv = TcExprs cenv env m tpenv flexes argtys synFillExprs
-        // Make the call to isprintf
-        if isFormattableString then 
-            mkCall_ifsprintf g m aty fmtExpr fillExprs, tpenv
-        else
-            mkCall_isprintf g m aty fmtExpr fillExprs, tpenv
 
-    else 
-        UnifyTypes cenv env m overallTy g.string_ty
-        mkString g m fmtString, tpenv
+        // Check the library support is available in the referenced FSharp.Core
+        if cenv.g.isprintf_vref.TryDeref.IsNone then 
+            languageFeatureNotSupportedInLibraryError cenv.g.langVersion LanguageFeature.StringInterpolation m
+
+        // Make the call to isprintf
+        mkCall_isprintf g m aty fmtExpr fillExprs, tpenv
 
 //-------------------------------------------------------------------------
 // TcConstExpr
