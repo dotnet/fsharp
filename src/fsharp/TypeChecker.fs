@@ -7149,8 +7149,8 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (
         else
             // ... or if that fails then may be a FormattableString by a type-directed rule....
             if (not (isObjTy g overallTy) && 
-                g.system_FormattableString_tcref.CanDeref &&
-                AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_FormattableString_ty) then 
+                ((g.system_FormattableString_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_FormattableString_ty) 
+                 || (g.system_IFormattable_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_IFormattable_ty))) then 
 
                 let ad = env.eAccessRights
                 let createMethod = 
@@ -7169,7 +7169,7 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (
     let aty = NewInferenceType ()
     let bty = g.unit_ty 
     let cty = g.string_ty
-    let dty = (if isFormattableString then g.system_FormattableString_ty else g.string_ty)
+    let dty = overallTy
     let ety = NewInferenceType ()
 
     // The format string used for checking in CheckFormatStrings. This replaces interpolation holes with %P
@@ -7205,7 +7205,12 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (
         let dotnetFormatStringExpr = mkString g m dotnetFormatString
         let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
         let createExpr, _ = BuildPossiblyConditionalMethodCall cenv env NeverMutates m false createMethInfo NormalValUse [] [dotnetFormatStringExpr; argsExpr] []    
-        createExpr, tpenv
+        let resultExpr = 
+            if typeEquiv g overallTy g.system_IFormattable_ty then
+                mkCoerceIfNeeded g g.system_IFormattable_ty g.system_FormattableString_ty createExpr
+            else
+                createExpr
+        resultExpr, tpenv
 
     | None -> 
 

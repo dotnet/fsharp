@@ -285,6 +285,37 @@ check "fwejwflpej17" (fmt_de $"abc {30000,-10:N} def {40000:N} hij") "abc 30.000
             """
 
     [<Test>]
+    let ``String interpolation to IFormattable`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+open System
+open System.Globalization
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+let fmt (x: IFormattable) = x.ToString()
+let fmt_us (x: IFormattable) = x.ToString("", CultureInfo("en-US"))
+let fmt_de (x: IFormattable) = x.ToString("", CultureInfo("de-DE"))
+
+check "fwejwflpej1" (fmt $"") ""
+check "fwejwflpej2" (fmt $"abc") "abc"
+check "fwejwflpej3" (fmt $"abc{1}") "abc1"
+check "fwejwflpej6" (fmt_us $"abc {30000} def") "abc 30000 def"
+check "fwejwflpej7" (fmt_de $"abc {30000} def") "abc 30000 def"
+check "fwejwflpej8" (fmt_us $"abc {30000:N} def") "abc 30,000.00 def"
+check "fwejwflpej9" (fmt_de $"abc {30000:N} def") "abc 30.000,00 def"
+check "fwejwflpej10" (fmt_us $"abc {30000} def {40000} hij") "abc 30000 def 40000 hij"
+check "fwejwflpej11" (fmt_us $"abc {30000,-10} def {40000} hij") "abc 30000      def 40000 hij"
+check "fwejwflpej12" (fmt_us $"abc {30000,10} def {40000} hij") "abc      30000 def 40000 hij"
+check "fwejwflpej13" (fmt_de $"abc {30000} def {40000} hij") "abc 30000 def 40000 hij"
+check "fwejwflpej14" (fmt_us $"abc {30000:N} def {40000:N} hij") "abc 30,000.00 def 40,000.00 hij"
+check "fwejwflpej15" (fmt_de $"abc {30000:N} def {40000:N} hij") "abc 30.000,00 def 40.000,00 hij"
+check "fwejwflpej16" (fmt_de $"abc {30000,10:N} def {40000:N} hij") "abc  30.000,00 def 40.000,00 hij"
+check "fwejwflpej17" (fmt_de $"abc {30000,-10:N} def {40000:N} hij") "abc 30.000,00  def 40.000,00 hij"
+
+            """
+
+    [<Test>]
     let ``String interpolation using .NET Formats`` () =
         CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
