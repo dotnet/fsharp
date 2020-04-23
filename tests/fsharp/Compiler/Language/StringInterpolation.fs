@@ -542,7 +542,7 @@ but here has type
               (FSharpErrorSeverity.Error, 3354, (7, 10, 7, 19),
                "Invalid interpolated string. The '%P' specifier may not be used explicitly.");
               (FSharpErrorSeverity.Error, 3361, (8, 10, 8, 21),
-               "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}");
+               "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'");
               (FSharpErrorSeverity.Error, 3354, (9, 10, 9, 19),
                "Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.");
               (FSharpErrorSeverity.Error, 3354, (10, 10, 10, 24),
