@@ -580,11 +580,11 @@ let x3 : FormattableString = $"one %10s{String.Empty}" // no %10s in Formattable
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             code
             [|(FSharpErrorSeverity.Error, 3354, (4, 30, 4, 44),
-               "Invalid interpolated string. Interpolated strings used as type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{expr}', '{expr,3}' or '{expr:N5}' may be used.");
+               "Invalid interpolated string. Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{expr}', '{expr,3}' or '{expr:N5}' may be used.");
               (FSharpErrorSeverity.Error, 3354, (5, 30, 5, 53),
-               "Invalid interpolated string. Interpolated strings used as type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{expr}', '{expr,3}' or '{expr:N5}' may be used.");
+               "Invalid interpolated string. Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{expr}', '{expr,3}' or '{expr:N5}' may be used.");
               (FSharpErrorSeverity.Error, 3354, (6, 30, 6, 55),
-               "Invalid interpolated string. Interpolated strings used as type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{expr}', '{expr,3}' or '{expr:N5}' may be used.")|]
+               "Invalid interpolated string. Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{expr}', '{expr,3}' or '{expr:N5}' may be used.")|]
 
 
     [<Test>]
