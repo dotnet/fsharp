@@ -32,7 +32,7 @@ open FSharp.Core.CompilerServices
 open FSharp.Compiler.ExtensionTyping
 #endif
 
-open Microsoft.Interactive.DependencyManager
+open Microsoft.DotNet.DependencyManager
 
 #if DEBUG
 
