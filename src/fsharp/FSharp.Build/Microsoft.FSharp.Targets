@@ -491,7 +491,7 @@ this file.
 
       </ItemGroup>
       <Error
-          Text="This Project references an obsolete TypeProvider: FSharp.Data.TypeProviders.dll, this was removed In VS2019 16.7.0 Preview 1.  Consider Switching to the Nuget package version: https://www.nuget.org/packages/FSharp.Data.TypeProviders."
+          Text="This Project references an obsolete TypeProvider: FSharp.Data.TypeProviders.dll, this was removed In Visual Studio 2019 16.7.0. Consider Switching to the NuGet package version: https://www.nuget.org/packages/FSharp.Data.TypeProviders."
           Condition=" '@(ReferenceToInboxTP->Count())' != '0' " />
     </Target>
 
