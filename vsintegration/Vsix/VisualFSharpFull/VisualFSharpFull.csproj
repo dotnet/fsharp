@@ -93,7 +93,7 @@
       <Private>True</Private>
       <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\DependencyManager\DependencyManager.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\Microsoft.DotNet.DependencyManager\Microsoft.DotNet.DependencyManager.fsproj">
       <Name>Microsoft.DotNet.DependencyManager</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>

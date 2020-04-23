@@ -46,8 +46,8 @@
     <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
-    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\DependencyManager\DependencyManager.txt">
-      <Link>InteractiveDependencyManager.txt</Link>
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\Microsoft.DotNet.DependencyManager\DependencyManager.txt">
+      <Link>DependencyManager.txt</Link>
     </EmbeddedText>
     <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
@@ -534,22 +534,22 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/DotNetFrameworkDependencies.fs">
       <Link>Driver\DotNetFrameworkDependencies.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/DependencyManager/AssemblyResolveHandler.fsi">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fsi">
       <Link>Driver\AssemblyResolveHandler.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/DependencyManager/AssemblyResolveHandler.fs">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fs">
       <Link>Driver\AssemblyResolveHandler.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/DependencyManager/NativeDllResolveHandler.fsi">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fsi">
       <Link>Driver\NativeDllResolveHandler.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/DependencyManager/NativeDllResolveHandler.fs">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fs">
       <Link>Driver\NativeDllResolveHandler.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/DependencyManager/DependencyProvider.fsi">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/DependencyProvider.fsi">
       <Link>Driver/DependencyProvider.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/DependencyManager/DependencyProvider.fs">
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/DependencyProvider.fs">
       <Link>Driver/DependencyProvider.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CompileOps.fsi">
