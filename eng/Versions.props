@@ -12,9 +12,9 @@
   <!-- Version number computation -->
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
-    <FSLanguageVersion>4.7</FSLanguageVersion>
+    <FSLanguageVersion>5.0</FSLanguageVersion>
     <FSCoreMajorVersion>$(FSLanguageVersion)</FSCoreMajorVersion>
-    <FSCorePackageVersion>$(FSCoreMajorVersion).2</FSCorePackageVersion>
+    <FSCorePackageVersion>$(FSCoreMajorVersion).0</FSCorePackageVersion>
     <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
     <!-- The current published nuget package -->
@@ -23,8 +23,8 @@
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <FSPackageMajorVersion>10.8</FSPackageMajorVersion>
-    <FSPackageVersion>$(FSPackageMajorVersion).1</FSPackageVersion>
+    <FSPackageMajorVersion>11.0</FSPackageMajorVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
