@@ -873,7 +873,6 @@ let ``Type provider project references should not throw exceptions`` () =
                    yield "--platform:anycpu";
                    for r in mkStandardProjectReferences () do
                        yield "-r:" + r
-                   yield "-r:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/FSharp.Data.TypeProviders.dll"; 
                   |];
                 ReferencedProjects = [||];
                 IsIncompleteTypeCheckEnvironment = false;

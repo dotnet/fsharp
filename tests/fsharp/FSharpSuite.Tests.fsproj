@@ -15,10 +15,6 @@
     <UnitTestType>nunit</UnitTestType>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(TargetFramework.StartsWith('netstandard')) OR $(TargetFramework.StartsWith('netcoreapp'))">
-    <DefineConstants>$(DefineConstants);FSHARP_SUITE_DRIVES_CORECLR_TESTS</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="..\..\src\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
