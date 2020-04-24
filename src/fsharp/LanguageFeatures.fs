@@ -31,6 +31,7 @@ type LanguageFeature =
     | AndBang
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
+    | NullnessChecking
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -59,12 +60,14 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.FixedIndexSlice3d4d, languageVersion50
             LanguageFeature.FromEndSlicing, languageVersion50
             LanguageFeature.DotlessFloat32Literal, languageVersion50
+            LanguageFeature.DotlessFloat32Literal, languageVersion50
 
             // F# preview
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.AndBang, previewVersion
+            LanguageFeature.NullnessChecking, languageVersion47 // TODO: currently always on because requires FSharp.Core build
             LanguageFeature.NullableOptionalInterop, previewVersion
             LanguageFeature.DefaultInterfaceMemberConsumption, previewVersion
         ]
@@ -133,6 +136,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang()
+        | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
 

@@ -19,6 +19,7 @@ type LanguageFeature =
     | AndBang
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
+    | NullnessChecking
 
 /// LanguageVersion management
 type LanguageVersion =
