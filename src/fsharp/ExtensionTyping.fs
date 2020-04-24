@@ -359,7 +359,7 @@ module internal ExtensionTyping =
         member __.GetGenericTypeDefinition() = x.GetGenericTypeDefinition() |> ProvidedType.CreateWithNullCheck ctxt "GenericTypeDefinition"
         /// Type.BaseType can be null when Type is interface or object
         member __.BaseType = x.BaseType |> ProvidedType.Create ctxt
-        member __.GetStaticParameters(provider: ITypeProvider) = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
+        member __.GetStaticParameters(provider: ITypeProvider) = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArrayNonNull ctxt
         /// Type.GetElementType can be null if i.e. Type is not array\pointer\byref type
         member __.GetElementType() = x.GetElementType() |> ProvidedType.Create ctxt
         member __.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
@@ -412,10 +412,14 @@ module internal ExtensionTyping =
             | null -> nullArg name 
             | t -> ProvidedType (t, ctxt)
 
-        static member CreateArray ctxt xs = 
-            match box xs with
-            | null -> [| |]
-            | _ -> xs |> Array.map (ProvidedType.CreateNonNull ctxt)
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        static member CreateArray ctxt (xs: Type[]) : ProvidedType[] = 
+#else
+        static member CreateArray ctxt (xs: Type[]?) : ProvidedType[]? = 
+#endif
+            match xs with
+            | null -> null
+            | NonNull xs -> xs |> Array.map (ProvidedType.CreateNonNull ctxt)
 
         static member CreateNoContext (x:Type) = ProvidedType.Create ProvidedTypeContext.Empty x
 
@@ -534,10 +538,19 @@ module internal ExtensionTyping =
 
         static member CreateNonNull ctxt x = ProvidedParameterInfo (x, ctxt)
         
-        static member CreateArray ctxt (xs: ParameterInfo[]) : ProvidedParameterInfo[] = 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        static member CreateArray ctxt (xs: ParameterInfo[]) : ParameterInfo[] = 
+#else
+        static member CreateArray ctxt (xs: ParameterInfo[]?) : ProvidedParameterInfo[]? = 
+#endif
+            match xs with 
+            | null -> null
+            | NonNull xs -> xs |> Array.map (ProvidedParameterInfo.CreateNonNull ctxt)
+        
+        static member CreateArrayNonNull ctxt xs : ProvidedParameterInfo[] = 
             match box xs with 
             | null -> [| |]
-            | _ -> xs |> Array.map (ProvidedParameterInfo.CreateNonNull ctxt)
+            | _  -> xs |> Array.map (ProvidedParameterInfo.CreateNonNull ctxt)
         
         interface IProvidedCustomAttributeProvider with 
             member __.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
@@ -600,7 +613,7 @@ module internal ExtensionTyping =
         static member TaintedEquals (pt1: Tainted<ProvidedMethodBase>, pt2: Tainted<ProvidedMethodBase>) = 
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
-        member __.GetStaticParametersForMethod(provider: ITypeProvider) = 
+        member __.GetStaticParametersForMethod(provider: ITypeProvider) : ProvidedParameterInfo[] = 
             let bindingFlags = BindingFlags.Instance ||| BindingFlags.NonPublic ||| BindingFlags.Public 
 
             let staticParams = 
@@ -619,7 +632,7 @@ module internal ExtensionTyping =
                         with err -> raise (StripException (StripException err))
                     paramsAsObj :?> System.Reflection.ParameterInfo[] 
 
-            staticParams |> ProvidedParameterInfo.CreateArray ctxt
+            staticParams |> ProvidedParameterInfo.CreateArrayNonNull ctxt
 
         member __.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments: string, staticArgs: obj[]) = 
             let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.InvokeMethod
@@ -669,10 +682,14 @@ module internal ExtensionTyping =
             | null -> null 
             | NonNull x -> ProvidedFieldInfo (x, ctxt)
 
-        static member CreateArray ctxt xs : ProvidedFieldInfo[] = 
-            match box xs with 
-            | null -> [| |]
-            | _ -> xs |> Array.map (ProvidedFieldInfo.CreateNonNull ctxt)
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        static member CreateArray ctxt (xs: FieldInfo[]) : ProvidedFieldInfo[] = 
+#else
+        static member CreateArray ctxt (xs: FieldInfo[]?) : ProvidedFieldInfo[]? = 
+#endif
+            match xs with 
+            | null -> null
+            | NonNull xs -> xs |> Array.map (ProvidedFieldInfo.CreateNonNull ctxt)
 
         member __.IsInitOnly = x.IsInitOnly
         member __.IsStatic = x.IsStatic
@@ -715,10 +732,14 @@ module internal ExtensionTyping =
             | null -> null
             | NonNull x -> ProvidedMethodInfo (x, ctxt)
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         static member CreateArray ctxt (xs: MethodInfo[]) : ProvidedMethodInfo[] = 
-            match box xs with 
-            | null -> [| |]
-            | _ -> xs |> Array.map (ProvidedMethodInfo.CreateNonNull ctxt)
+#else
+        static member CreateArray ctxt (xs: MethodInfo[]?) : ProvidedMethodInfo[]? = 
+#endif
+            match xs with 
+            | null -> null
+            | NonNull xs -> xs |> Array.map (ProvidedMethodInfo.CreateNonNull ctxt)
 
         member __.Handle = x
         member __.MetadataToken = x.MetadataToken
@@ -750,10 +771,14 @@ module internal ExtensionTyping =
             | null -> null 
             | NonNull x -> ProvidedPropertyInfo (x, ctxt)
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         static member CreateArray ctxt xs : ProvidedPropertyInfo[] = 
-            match box xs with
-            | null -> [| |]
-            | _ -> xs |> Array.map (ProvidedPropertyInfo.CreateNonNull ctxt)
+#else
+        static member CreateArray ctxt (xs: PropertyInfo[]?) : ProvidedPropertyInfo[]? = 
+#endif
+            match xs with
+            | null -> null
+            | NonNull xs -> xs |> Array.map (ProvidedPropertyInfo.CreateNonNull ctxt)
 
         member __.Handle = x
 
@@ -791,10 +816,14 @@ module internal ExtensionTyping =
             | null -> null 
             | NonNull x -> ProvidedEventInfo (x, ctxt)
         
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         static member CreateArray ctxt xs : ProvidedEventInfo[] = 
-            match box xs with 
-            | null -> [| |]
-            | _ -> xs |> Array.map (ProvidedEventInfo.CreateNonNull ctxt)
+#else
+        static member CreateArray ctxt (xs: EventInfo[]?) : ProvidedEventInfo[]? = 
+#endif
+            match xs with 
+            | null -> null
+            | NonNull xs -> xs |> Array.map (ProvidedEventInfo.CreateNonNull ctxt)
         
         member __.Handle = x
 
@@ -828,10 +857,14 @@ module internal ExtensionTyping =
             | null -> null 
             | NonNull x -> ProvidedConstructorInfo (x, ctxt)
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         static member CreateArray ctxt xs : ProvidedConstructorInfo[] = 
-            match box xs with 
-            | null -> [| |]
-            | _ -> xs |> Array.map (ProvidedConstructorInfo.CreateNonNull ctxt)
+#else
+        static member CreateArray ctxt (xs: ConstructorInfo[]?) : ProvidedConstructorInfo[]? = 
+#endif
+            match xs with 
+            | null -> null
+            | NonNull xs -> xs |> Array.map (ProvidedConstructorInfo.CreateNonNull ctxt)
 
         member __.Handle = x
         override __.Equals y = assert false; match y with :? ProvidedConstructorInfo as y -> x.Equals y.Handle | _ -> false
@@ -955,7 +988,7 @@ module internal ExtensionTyping =
         static member CreateNonNull ctxt t = 
             ProvidedVar (t, ctxt)
 
-        static member CreateArray ctxt xs = 
+        static member CreateArray ctxt xs : ProvidedVar[] = 
             match box xs with 
             | null -> [| |]
             | _ -> xs |> Array.map (ProvidedVar.CreateNonNull ctxt)
@@ -986,7 +1019,11 @@ module internal ExtensionTyping =
             errorR(Error(FSComp.SR.etMustNotBeGeneric fullName, m))  
         if TryTypeMember(st, fullName, "IsArray", m, false, fun st->st.IsArray) |> unmarshal then 
             errorR(Error(FSComp.SR.etMustNotBeAnArray fullName, m))  
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         TryTypeMember(st, fullName, "GetInterfaces", m, [||], fun st -> st.GetInterfaces()) |> ignore
+#else
+        TryTypeMember(st, fullName, "GetInterfaces", m, null, fun st -> st.GetInterfaces()) |> ignore
+#endif
 
 
     /// Verify that a provided type has the expected name
