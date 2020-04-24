@@ -298,7 +298,7 @@ module internal FSharpEnvironment =
             try
                 Some (Assembly.UnsafeLoadFrom designTimeAssemblyPath)
             with e ->
-                raiseError e
+                raiseError (Some designTimeAssemblyPath) e
 
         let rec searchParentDirChain path assemblyName =
             seq {
@@ -345,7 +345,7 @@ module internal FSharpEnvironment =
                     let name = AssemblyName designTimeAssemblyName
                     Some (Assembly.Load (name))
                 with e ->
-                    raiseError e
+                    raiseError None e
 
     let getCompilerToolsDesignTimeAssemblyPaths compilerToolPaths = 
         searchToolPaths None compilerToolPaths
