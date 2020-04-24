@@ -85,8 +85,7 @@ type CompilerAssert private () =
     static let _ = config |> ignore
 
 // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
-#if !NETCOREAPP
-#else
+#if NETCOREAPP
     static let projectFile = """
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -189,12 +188,12 @@ let main argv = 0"""
             ProjectFileName = "Z:\\test.fsproj"
             ProjectId = None
             SourceFiles = [|"test.fs"|]
-#if !NETCOREAPP
-            OtherOptions = [|"--preferreduilang:en-US";"--warn:5"|]
-#else
+#if NETCOREAPP
             OtherOptions =
                 let assemblies = getNetCoreAppReferences |> Array.map (fun x -> sprintf "-r:%s" x)
                 Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework";"--warn:5"|] assemblies
+#else
+            OtherOptions = [|"--preferreduilang:en-US";"--warn:5"|]
 #endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
@@ -556,10 +555,10 @@ let main argv = 0"""
 
             // Build command line arguments & start FSI session
             let argv = [| "C:\\fsi.exe" |]
-    #if !NETCOREAPP
-            let args = Array.append argv [|"--noninteractive"|]
-    #else
+    #if NETCOREAPP
             let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
+    #else
+            let args = Array.append argv [|"--noninteractive"|]
     #endif
             let allArgs = Array.append args options
 
