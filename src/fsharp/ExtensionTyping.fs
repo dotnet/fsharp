@@ -394,7 +394,7 @@ module internal ExtensionTyping =
             let argTypes = args |> Array.map (fun arg -> arg.RawSystemType)
             ProvidedType.CreateNoContext(x.MakeGenericType(argTypes))
 
-        member __.AsProvidedVar name = ProvidedVar.Create ctxt (Quotations.Var(name, x))
+        member __.AsProvidedVar name = ProvidedVar.CreateNonNull ctxt (Quotations.Var(name, x))
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         static member Create ctxt x : ProvidedType = 
