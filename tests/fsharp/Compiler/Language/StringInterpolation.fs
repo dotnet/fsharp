@@ -574,10 +574,10 @@ but here has type
                "Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.");
               (FSharpErrorSeverity.Error, 3354, (7, 10, 7, 19),
                "Invalid interpolated string. The '%P' specifier may not be used explicitly.");
-              (fsharperrorseverity.error, 3361, (8, 10, 8, 21),
-               "mismatch in interpolated string. interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'");
-              (fsharperrorseverity.error, 3361, (9, 10, 9, 31),
-               "mismatch in interpolated string. interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'");
+              (FSharpErrorSeverity.Error, 3361, (8, 10, 8, 21),
+               "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'");
+              (FSharpErrorSeverity.Error, 3361, (9, 10, 9, 31),
+               "Invalid interpolated string. The '%P' specifier may not be used explicitly.");
               (FSharpErrorSeverity.Error, 3354, (10, 10, 10, 19),
                "Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.");
               (FSharpErrorSeverity.Error, 3354, (11, 10, 11, 24),
