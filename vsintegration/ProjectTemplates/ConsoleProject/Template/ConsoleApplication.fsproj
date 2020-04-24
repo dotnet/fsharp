@@ -1,31 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-$if$ ($targetframeworkversion$ == 4.5)    <TargetFramework>net45</TargetFramework> $endif$
-$if$ ($targetframeworkversion$ == 4.6)    <TargetFramework>net46</TargetFramework> $endif$
-$if$ ($targetframeworkversion$ == 4.6.1)    <TargetFramework>net461</TargetFramework> $endif$
-$if$ ($targetframeworkversion$ == 4.6.2)    <TargetFramework>net462</TargetFramework> $endif$
-$if$ ($targetframeworkversion$ == 4.7)    <TargetFramework>net47</TargetFramework> $endif$
-$if$ ($targetframeworkversion$ == 4.7.1)    <TargetFramework>net471</TargetFramework> $endif$
-$if$ ($targetframeworkversion$ == 4.7.2)    <TargetFramework>net472</TargetFramework> $endif$
-$if$ ($targetframeworkversion$ == 4.8)    <TargetFramework>net48</TargetFramework> $endif$
-
-    <AssemblyName>$safeprojectname$</AssemblyName>
     <OutputType>Exe</OutputType>
+$if$ ($targetframeworkversion$ == 4.5)    <TargetFramework>net45</TargetFramework>$endif$$if$ ($targetframeworkversion$ == 4.6)    <TargetFramework>net46</TargetFramework> $endif$$if$ ($targetframeworkversion$ == 4.6.1)    <TargetFramework>net461</TargetFramework> $endif$$if$ ($targetframeworkversion$ == 4.6.2)    <TargetFramework>net462</TargetFramework> $endif$$if$ ($targetframeworkversion$ == 4.7)    <TargetFramework>net47</TargetFramework> $endif$$if$ ($targetframeworkversion$ == 4.7.1)    <TargetFramework>net471</TargetFramework> $endif$$if$ ($targetframeworkversion$ == 4.7.2)    <TargetFramework>net472</TargetFramework> $endif$$if$ ($targetframeworkversion$ == 4.8)    <TargetFramework>net48</TargetFramework> $endif$
+$if$ ($safeprojectname$ != $projectname$)    <RootNamespace>$safeprojectname$</RootNamespace> $endif$
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <AssemblyTitle>$projectname$</AssemblyTitle>
-    <AssemblyCompany>$registeredorganization$</AssemblyCompany>
-    <AssemblyProduct>$projectname$</AssemblyProduct>
-    <AssemblyCopyright>Copyright © $registeredorganization$ $year$</AssemblyCopyright>
-
-    <!-- <AssemblyVersion>1.0.*</AssemblyVersion>  -->
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <AssemblyFileVersion>1.0.0.0</AssemblyFileVersion>
-  </PropertyGroup>
-
 </Project>
