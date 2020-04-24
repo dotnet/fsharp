@@ -7195,16 +7195,25 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (
         try CheckFormatStrings.ParseFormatString m g true isFormattableString None printfFormatString bty cty dty
         with Failure errString -> error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
 
+    // Check the expressions filling the holes
+    if argtys.Length <> synFillExprs.Length then 
+        error (Error(FSComp.SR.tcInterpolationMixedWithPercent(), m))
+
     match formattableStringInfo with 
     | Some createMethInfo -> 
 
-        // FormattableString are *always* turned into FormattableStringFactory.Create calls, boxing each argument
+        // Type check the expressions filling the holes
         let flexes = argtys |> List.map (fun _ -> false)
         let fillExprs, tpenv = TcExprs cenv env m tpenv flexes argtys synFillExprs
+
         let fillExprsBoxed = (argtys, fillExprs) ||> List.map2 (mkCallBox g m)
+
         let dotnetFormatStringExpr = mkString g m dotnetFormatString
         let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
+
+        // FormattableString are *always* turned into FormattableStringFactory.Create calls, boxing each argument
         let createExpr, _ = BuildPossiblyConditionalMethodCall cenv env NeverMutates m false createMethInfo NormalValUse [] [dotnetFormatStringExpr; argsExpr] []    
+
         let resultExpr = 
             if typeEquiv g overallTy g.system_IFormattable_ty then
                 mkCoerceIfNeeded g g.system_IFormattable_ty g.system_FormattableString_ty createExpr
@@ -7216,10 +7225,10 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (
 
         UnifyTypes cenv env m aty atyRequired
         UnifyTypes cenv env m ety etyRequired
+
         let fmtExpr = mkCallNewFormat g m aty bty cty dty ety (mkString g m printfFormatString)
-        // Check the expressions filling the holes
-        if argtys.Length <> synFillExprs.Length then 
-            error (Error(FSComp.SR.tcInterpolationMixedWithPercent(), m))
+
+        // Type check the expressions filling the holes
         let flexes = argtys |> List.map (fun _ -> false)
         let fillExprs, tpenv = TcExprs cenv env m tpenv flexes argtys synFillExprs
 
