@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CheckFormatStrings
 
+open System.Text
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.ConstraintSolver
@@ -47,7 +48,7 @@ let newInfo () =
     addZeros       = false
     precision      = false}
 
-let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context: FormatStringCheckContext option) fmt bty cty = 
+let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormattableString (context: FormatStringCheckContext option) fmt bty cty = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
     // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
     let (offset, fmt) = 
@@ -71,6 +72,13 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context:
 
     let specifierLocations = ResizeArray()
 
+    // For FormattableString we collect a .NET Format String with {0} etc. replacing text.  '%%' are replaced
+    // by '%', we check there are no '%' formats, and '{{' and '}}' are *not* replaced since the subsequent
+    // call to String.Format etc. will process them.
+    let dotnetFormatString = StringBuilder() 
+    let appendToDotnetFormatString (s: string) = dotnetFormatString.Append(s) |> ignore 
+    let mutable dotnetFormatStringInterpolationHoleCount = 0
+
     let rec parseLoop acc (i, relLine, relCol) = 
        if i >= len then
            let argtys =
@@ -80,6 +88,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context:
                    raise (Failure (FSComp.SR.forPositionalSpecifiersNotPermitted()))
            argtys
        elif System.Char.IsSurrogatePair(fmt,i) then 
+          appendToDotnetFormatString (fmt.[i..i+1])
           parseLoop acc (i+2, relLine, relCol+2)
        else 
           let c = fmt.[i]
@@ -132,18 +141,18 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context:
                 | '.' -> precision (i+1)
                 | _ -> false,i
 
-              let rec digitsWidthAndPrecision i = 
+              let rec digitsWidthAndPrecision n i = 
                 if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
                 match fmt.[i] with
-                | c when System.Char.IsDigit c -> digitsWidthAndPrecision (i+1)
-                | _ -> optionalDotAndPrecision i
+                | c when System.Char.IsDigit c -> digitsWidthAndPrecision (n*10 + int c - int '0') (i+1)
+                | _ -> Some n, optionalDotAndPrecision i
 
               let widthAndPrecision i = 
                 if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
                 match fmt.[i] with
-                | c when System.Char.IsDigit c -> false,digitsWidthAndPrecision i
-                | '*' -> true,optionalDotAndPrecision (i+1)
-                | _ -> false,optionalDotAndPrecision i
+                | c when System.Char.IsDigit c -> false,digitsWidthAndPrecision 0 i
+                | '*' -> true, (None, optionalDotAndPrecision (i+1))
+                | _ -> false, (None, optionalDotAndPrecision i)
 
               let rec digitsPosition n i =
                   if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
@@ -168,7 +177,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context:
               let relCol = relCol + i - oldI
 
               let oldI = i
-              let widthArg,(precisionArg,i) = widthAndPrecision i 
+              let widthArg,(widthValue, (precisionArg,i)) = widthAndPrecision i 
               let relCol = relCol + i - oldI
 
               if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
@@ -195,28 +204,34 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context:
 
               // Explicitly typed holes in interpolated strings "....%d{x}..." get additional '%P()' as a hole place marker
               let skipPossibleInterpolationHole i =
-                 if isInterpolation then 
-                     if i+1 < len && fmt.[i] = '%' && fmt.[i+1] = 'P'  then
-                        let i = i + 2
-                        if i+1 < len && fmt.[i] = '('  && fmt.[i+1] = ')' then 
-                            i + 2
-                        else 
-                            raise (Failure (FSComp.SR.forFormatInvalidForInterpolated2()))
-                     else
-                         raise (Failure (FSComp.SR.forFormatInvalidForInterpolated()))
-                 else i
+                  if isInterpolated then 
+                      if i+1 < len && fmt.[i] = '%' && fmt.[i+1] = 'P'  then
+                          let i = i + 2
+                          if i+1 < len && fmt.[i] = '('  && fmt.[i+1] = ')' then 
+                              if isFormattableString then 
+                                  raise (Failure (FSComp.SR.forFormatInvalidForInterpolated4()))
+                              i + 2
+                          else 
+                              raise (Failure (FSComp.SR.forFormatInvalidForInterpolated2()))
+                      else
+                          raise (Failure (FSComp.SR.forFormatInvalidForInterpolated()))
+                  else i
 
               // Implicitly typed holes in interpolated strings are translated to '... %P(...)...' in the
               // type checker.  They should always have '(...)' after for format string.  
               let requireAndSkipInterpolationHoleFormat i =
-                 if i < len && fmt.[i] = '(' then 
-                     let i2 = fmt.IndexOf(")", i+1)
-                     if i2 = -1 then 
-                         raise (Failure (FSComp.SR.forFormatInvalidForInterpolated3()))
-                     else 
-                         i2+1
-                 else
-                     raise (Failure (FSComp.SR.forFormatInvalidForInterpolated3()))
+                  if i < len && fmt.[i] = '(' then 
+                      let i2 = fmt.IndexOf(")", i+1)
+                      if i2 = -1 then 
+                          raise (Failure (FSComp.SR.forFormatInvalidForInterpolated3()))
+                      else 
+                          let dotnetAlignment = match widthValue with None -> "" | Some w -> "," + (if info.leftJustify then "-" else "") + string w
+                          let dotnetNumberFormat = match fmt.[i+1..i2-1] with "" -> "" | s -> ":" + s
+                          appendToDotnetFormatString ("{" + string dotnetFormatStringInterpolationHoleCount + dotnetAlignment  + dotnetNumberFormat + "}") 
+                          dotnetFormatStringInterpolationHoleCount <- dotnetFormatStringInterpolationHoleCount + 1
+                          i2+1
+                  else
+                      raise (Failure (FSComp.SR.forFormatInvalidForInterpolated3()))
 
               let collectSpecifierLocation relLine relCol numStdArgs = 
                   let numArgsForSpecifier =
@@ -237,6 +252,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context:
               match ch with
               | '%' ->
                   collectSpecifierLocation relLine relCol 0
+                  appendToDotnetFormatString "%"
                   parseLoop acc (i+1, relLine, relCol+1) 
 
               | ('d' | 'i' | 'o' | 'u' | 'x' | 'X') ->
@@ -300,10 +316,10 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context:
                   parseLoop ((posi, NewInferenceType ()) :: acc) (i, relLine, relCol+1)
 
               // residue of hole "...{n}..." in interpolated strings become %P(...) 
-              | 'P' when isInterpolation ->
+              | 'P' when isInterpolated ->
                   checkOtherFlags ch
                   let i = requireAndSkipInterpolationHoleFormat (i+1)
-                  parseLoop ((posi, NewInferenceType ()) :: acc) (i+1, relLine, relCol+1)
+                  parseLoop ((posi, NewInferenceType ()) :: acc) (i, relLine, relCol+1)
 
               | 'A' ->
                   match info.numPrefixIfPos with
@@ -330,21 +346,25 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolation (context:
 
               | c -> raise (Failure (FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c)))
           
-          | '\n' -> parseLoop acc (i+1, relLine+1, 0)   
-          | _ -> parseLoop acc (i+1, relLine, relCol+1)
+          | '\n' ->
+              appendToDotnetFormatString fmt.[i..i]
+              parseLoop acc (i+1, relLine+1, 0)   
+          | _ ->
+              appendToDotnetFormatString fmt.[i..i]
+              parseLoop acc (i+1, relLine, relCol+1)
            
     let results = parseLoop [] (0, 0, m.StartColumn)
-    results, Seq.toList specifierLocations
+    results, Seq.toList specifierLocations, dotnetFormatString.ToString()
 
-let ParseFormatString m g isInterpolation formatStringCheckContext fmt bty cty dty = 
-    let argtys, specifierLocations = parseFormatStringInternal m g isInterpolation formatStringCheckContext fmt bty cty
+let ParseFormatString m g isInterpolated isFormattableString formatStringCheckContext fmt bty cty dty = 
+    let argtys, specifierLocations, dotnetFormatString = parseFormatStringInternal m g isInterpolated isFormattableString formatStringCheckContext fmt bty cty
     let aty = List.foldBack (-->) argtys dty
     let ety = mkRefTupledTy g argtys
-    (argtys, aty, ety), specifierLocations 
+    (argtys, aty, ety), specifierLocations, dotnetFormatString
 
-let TryCountFormatStringArguments m g isInterpolation fmt bty cty =
+let TryCountFormatStringArguments m g isInterpolated fmt bty cty =
     try
-        let argtys, _specifierLocations = parseFormatStringInternal m g isInterpolation None fmt bty cty
+        let argtys, _specifierLocations, _dotnetFormatString = parseFormatStringInternal m g isInterpolated false None fmt bty cty
         Some argtys.Length
     with _ ->
         None

@@ -139,7 +139,7 @@ let tname_Exception = "System.Exception"
 [<Literal>]
 let tname_Missing = "System.Reflection.Missing"
 [<Literal>]
-let tname_Activator = "System.Activator"
+let tname_FormattableString = "System.FormattableString"
 [<Literal>]
 let tname_SerializationInfo = "System.Runtime.Serialization.SerializationInfo"
 [<Literal>]
@@ -334,6 +334,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_bool_ty         = mkNonGenericTy v_bool_tcr   
   let v_char_ty         = mkNonGenericTy v_char_tcr
   let v_obj_ty          = mkNonGenericTy v_obj_tcr    
+  let v_IFormattable_tcref = findSysTyconRef sys "IFormattable" 
+  let v_FormattableString_tcref = findSysTyconRef sys "FormattableString" 
+  let v_IFormattable_ty = mkNonGenericTy v_IFormattable_tcref
+  let v_FormattableString_ty = mkNonGenericTy v_FormattableString_tcref
+  let v_FormattableStringFactory_tcref = findSysTyconRef sysCompilerServices "FormattableStringFactory" 
+  let v_FormattableStringFactory_ty = mkNonGenericTy v_FormattableStringFactory_tcref
   let v_string_ty       = mkNonGenericTy v_string_tcr
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
   let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice 
@@ -1013,6 +1019,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.bool_ty       = v_bool_ty
   member __.int_ty       = v_int_ty
   member __.string_ty     = v_string_ty
+  member __.system_IFormattable_tcref = v_IFormattable_tcref
+  member __.system_FormattableString_tcref = v_FormattableString_tcref
+  member __.system_FormattableStringFactory_tcref = v_FormattableStringFactory_tcref
+  member __.system_IFormattable_ty = v_IFormattable_ty
+  member __.system_FormattableString_ty = v_FormattableString_ty
+  member __.system_FormattableStringFactory_ty = v_FormattableStringFactory_ty
   member __.unit_ty       = v_unit_ty
   member __.obj_ty        = v_obj_ty
   member __.char_ty       = v_char_ty
@@ -1390,17 +1402,17 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.seq_append_info            = v_seq_append_info
   member __.seq_generated_info         = v_seq_generated_info
   member __.seq_finally_info           = v_seq_finally_info
-  member __.seq_of_functions_info   = v_seq_of_functions_info
+  member __.seq_of_functions_info      = v_seq_of_functions_info
   member __.seq_map_info               = v_seq_map_info
   member __.seq_singleton_info         = v_seq_singleton_info
   member __.seq_empty_info             = v_seq_empty_info
   member __.sprintf_info               = v_sprintf_info
-  member __.isprintf_info               = v_isprintf_info
+  member __.isprintf_info              = v_isprintf_info
   member __.new_format_info            = v_new_format_info
   member __.unbox_info                 = v_unbox_info
-  member __.get_generic_comparer_info                 = v_get_generic_comparer_info
-  member __.get_generic_er_equality_comparer_info        = v_get_generic_er_equality_comparer_info
-  member __.get_generic_per_equality_comparer_info    = v_get_generic_per_equality_comparer_info
+  member __.get_generic_comparer_info  = v_get_generic_comparer_info
+  member __.get_generic_er_equality_comparer_info = v_get_generic_er_equality_comparer_info
+  member __.get_generic_per_equality_comparer_info = v_get_generic_per_equality_comparer_info
   member __.dispose_info               = v_dispose_info
   member __.getstring_info             = v_getstring_info
   member __.unbox_fast_info            = v_unbox_fast_info

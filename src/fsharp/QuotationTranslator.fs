@@ -30,9 +30,10 @@ type IsReflectedDefinition =
 
 [<RequireQualifiedAccess>]
 type QuotationSerializationFormat =
-    /// Indicates that type references are emitted as integer indexes into a supplied table
-    | FSharp_40_Plus
-    | FSharp_20_Plus
+    { 
+      /// Indicates that type references are emitted as integer indexes into a supplied table
+      SupportsDeserializeEx: bool 
+    }
 
 type QuotationGenerationScope =
     { g: TcGlobals
@@ -67,18 +68,16 @@ type QuotationGenerationScope =
         cenv.exprSplices |> ResizeArray.toList
 
     static member ComputeQuotationFormat g =
-        let deserializeExValRef = ValRefForIntrinsic g.deserialize_quoted_FSharp_40_plus_info
-        if deserializeExValRef.TryDeref.IsSome then
-            QuotationSerializationFormat.FSharp_40_Plus
-        else
-            QuotationSerializationFormat.FSharp_20_Plus
+        {
+          SupportsDeserializeEx = (ValRefForIntrinsic g.deserialize_quoted_FSharp_40_plus_info).TryDeref.IsSome
+        }
 
 type QuotationTranslationEnv =
     { 
       /// Map from Val to binding index
       vs: ValMap<int>
 
-      nvs: int
+      numValsInScope: int
 
       /// Map from typar stamps to binding index
       tyvs: StampMap<int>
@@ -94,7 +93,7 @@ type QuotationTranslationEnv =
 
     static member Empty =
         { vs = ValMap<_>.Empty
-          nvs = 0
+          numValsInScope = 0
           tyvs = Map.empty
           isinstVals = ValMap<_>.Empty
           substVals = ValMap<_>.Empty }
@@ -104,15 +103,16 @@ type QuotationTranslationEnv =
         { env with tyvs = env.tyvs.Add(v.Stamp, idx ) }
 
     member env.BindTypars vs =
-        (env, vs) ||> List.fold (fun env v -> env.BindTypar v) // fold left-to-right because indexes are left-to-right
+        (env, vs) ||> List.fold (fun env v -> env.BindTypar v)
 
 let BindFormalTypars (env: QuotationTranslationEnv) vs =
     { env with tyvs = Map.empty }.BindTypars vs
 
 let BindVal env v =
+    let n = env.numValsInScope
     { env with
-       vs = env.vs.Add v env.nvs
-       nvs = env.nvs + 1 }
+       vs = env.vs.Add v n
+       numValsInScope = n + 1 }
 
 let BindIsInstVal env v (ty, e) =
     { env with isinstVals = env.isinstVals.Add v (ty, e) }
@@ -120,9 +120,9 @@ let BindIsInstVal env v (ty, e) =
 let BindSubstVal env v e =
     { env with substVals = env.substVals.Add v e  }
 
-let BindVals env vs = List.fold BindVal env vs // fold left-to-right because indexes are left-to-right
+let BindVals env vs = List.fold BindVal env vs
 
-let BindFlatVals env vs = List.fold BindVal env vs // fold left-to-right because indexes are left-to-right
+let BindFlatVals env vs = List.fold BindVal env vs
 
 exception InvalidQuotedTerm of exn
 
@@ -384,7 +384,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
     | Expr.Quote (ast, _, _, _, ety) ->
         // F# 2.0-3.1 had a bug with nested 'raw' quotations. F# 4.0 + FSharp.Core 4.4.0.0+ allows us to do the right thing.
-        if cenv.quotationFormat = QuotationSerializationFormat.FSharp_40_Plus &&
+        if cenv.quotationFormat.SupportsDeserializeEx &&
            // Look for a 'raw' quotation
            tyconRefEq cenv.g (tcrefOfAppTy cenv.g ety) cenv.g.raw_expr_tcr
         then
@@ -420,7 +420,6 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let tyargsR = ConvTypes cenv env m tyargs
             let argsR = ConvExprs cenv env args
             QP.mkUnion(tcR, s, tyargsR, argsR)
-
 
         | TOp.Tuple tupInfo, tyargs, _ ->
             let tyR = ConvType cenv env m (mkAnyTupledTy cenv.g tupInfo tyargs)
@@ -601,10 +600,10 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             QP.mkTryWith(ConvExpr cenv env e1, vfR, ConvExpr cenv envf ef, vhR, ConvExpr cenv envh eh)
 
         | TOp.Bytes bytes, [], [] ->
-              ConvExpr cenv env (Expr.Op (TOp.Array, [cenv.g.byte_ty], List.ofArray (Array.map (mkByte cenv.g m) bytes), m))
+            ConvExpr cenv env (Expr.Op (TOp.Array, [cenv.g.byte_ty], List.ofArray (Array.map (mkByte cenv.g m) bytes), m))
 
         | TOp.UInt16s arr, [], [] ->
-              ConvExpr cenv env (Expr.Op (TOp.Array, [cenv.g.uint16_ty], List.ofArray (Array.map (mkUInt16 cenv.g m) arr), m))
+            ConvExpr cenv env (Expr.Op (TOp.Array, [cenv.g.uint16_ty], List.ofArray (Array.map (mkUInt16 cenv.g m) arr), m))
 
         | TOp.UnionCaseProof _, _, [e] ->
             ConvExpr cenv env e  // Note: we erase the union case proof conversions when converting to quotations
@@ -987,8 +986,7 @@ and ConvILTypeRefUnadjusted cenv m (tr: ILTypeRef) =
     ConvILTypeRef cenv trefAdjusted
 
 and ConvILTypeRef cenv (tr: ILTypeRef) =
-    match cenv.quotationFormat with
-    | QuotationSerializationFormat.FSharp_40_Plus ->
+    if cenv.quotationFormat.SupportsDeserializeEx then
         let idx =
             match cenv.referencedTypeDefsTable.TryGetValue tr with
             | true, idx -> idx
@@ -999,7 +997,7 @@ and ConvILTypeRef cenv (tr: ILTypeRef) =
                 idx
         QP.Idx idx
 
-    | QuotationSerializationFormat.FSharp_20_Plus ->
+    else
         let assemblyRef =
             match tr.Scope with
             | ILScopeRef.Local -> "."
@@ -1091,11 +1089,11 @@ let ConvMethodBase cenv env (methName, v: Val) =
         let numGenericArgs = tps.Length-numEnclTypeArgs
 
         if isNewObj then
-             QP.MethodBaseData.Ctor
-                 { ctorParent   = parentTyconR
-                   ctorArgTypes = methArgTypesR }
+            QP.MethodBaseData.Ctor
+                { ctorParent   = parentTyconR
+                  ctorArgTypes = methArgTypesR }
         else
-             QP.MethodBaseData.Method
+            QP.MethodBaseData.Method
                 { methParent   = parentTyconR
                   methArgTypes = methArgTypesR
                   methRetType  = methRetTypeR

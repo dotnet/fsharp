@@ -191,8 +191,12 @@ val SolveTypeAsError: DisplayEnv -> ConstraintSolverState -> range -> TType -> u
 
 val ApplyTyparDefaultAtPriority: DisplayEnv -> ConstraintSolverState -> priority: int -> Typar -> unit
 
-val CodegenWitnessThatTypeSupportsTraitConstraint: TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
+/// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
+val CodegenWitnessForTraitConstraint: TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
 
+/// For some code like "let f() = ([] = [])", a free choice is made for a type parameter
+/// for an interior type variable.  This chooses a solution for a type parameter subject
+/// to its constraints and applies that solution by using a constraint.
 val ChooseTyparSolutionAndSolve: ConstraintSolverState -> DisplayEnv -> Typar -> unit
 
 val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool

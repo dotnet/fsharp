@@ -1969,6 +1969,7 @@ val mkCallSeqSingleton       : TcGlobals -> range -> TType  -> Expr -> Expr
 
 val mkCallSeqEmpty           : TcGlobals -> range -> TType  -> Expr
 
+/// Make a call to the 'isprintf' function for string interpolation
 val mkCall_isprintf: g: TcGlobals -> m: range -> funcTy: TType -> fmtExpr: Expr -> fillExprs: Expr list -> Expr
 
 val mkILAsmCeq                   : TcGlobals -> range -> Expr -> Expr -> Expr

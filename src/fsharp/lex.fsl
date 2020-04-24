@@ -543,26 +543,66 @@ rule token args skip = parse
 
  | '"' 
      { let buf, fin, m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | (_, LexerStringStyle.TripleQuote) :: _ -> ()
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), lexbuf.LexemeRange))
+       | [] -> ()
+
        if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, LexerStringKind.String, m))) else singleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
       
  | '$' '"' '"' '"' 
      { let buf, fin, m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), lexbuf.LexemeRange))
+       | [] -> ()
+
        if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, LexerStringKind.InterpolatedStringFirst, m))) else tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
       
  | '$' '"' 
      { let buf,fin,m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | (_, LexerStringStyle.TripleQuote) :: _ -> ()
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), lexbuf.LexemeRange))
+       | _ -> ()
+
        if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, LexerStringKind.InterpolatedStringFirst, m))) else singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
 
  | '"' '"' '"' 
      { let buf, fin, m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), lexbuf.LexemeRange))
+       | _ -> ()
+
        if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, LexerStringKind.String, m))) else tripleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
       
  | '@' '"' 
      { let buf, fin, m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | (_, LexerStringStyle.TripleQuote) :: _ -> ()
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), lexbuf.LexemeRange))
+       | _ -> ()
+
        if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, LexerStringKind.String, m))) else verbatimString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
 
  | ("$@" | "@$") '"' 
      { let buf, fin, m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | (_, LexerStringStyle.TripleQuote) :: _ -> ()
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), lexbuf.LexemeRange))
+       | _ -> ()
+
        if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, LexerStringKind.InterpolatedStringFirst, m))) else verbatimString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
 
  | truewhite+  
@@ -570,7 +610,7 @@ rule token args skip = parse
        else WHITESPACE (LexCont.Token args.ifdefStack) }
 
  | offwhite+  
-     { if args.lightSyntaxStatus.Status then errorR(Error(FSComp.SR.lexTabsNotAllowed(),lexbuf.LexemeRange))
+     { if args.lightSyntaxStatus.Status then errorR(Error(FSComp.SR.lexTabsNotAllowed(), lexbuf.LexemeRange))
        if not skip then (WHITESPACE (LexCont.Token args.ifdefStack)) else token args skip lexbuf }
 
  | "////" op_char* 
@@ -616,7 +656,7 @@ rule token args skip = parse
             | _ -> let text =  (String.sub s start (n-start)) 
                    let lineNumber = 
                        try int32 text
-                       with err -> errorR(Error(FSComp.SR.lexInvalidLineNumber(text),lexbuf.LexemeRange)); 0
+                       with err -> errorR(Error(FSComp.SR.lexInvalidLineNumber(text), lexbuf.LexemeRange)); 0
                    lineNumber, parseWhitespaceBeforeFile n // goto the next state
           
           and parseWhitespaceBeforeFile n =  
@@ -731,8 +771,10 @@ rule token args skip = parse
 
  | "{"
      {
-       if args.interpolatedStringNesting > 0 then
-           args.interpolatedStringNesting <- args.interpolatedStringNesting + 1
+       match args.interpolatedStringNesting with
+       | [] -> ()
+       | (counter, style) :: rest ->
+         args.interpolatedStringNesting <- (counter + 1, style) :: rest
        LBRACE
      }
 
@@ -742,10 +784,10 @@ rule token args skip = parse
      { 
        // We encounter a '}' in the expression token stream.  First check if we're in an interpolated string expression
        // and continue the string if necessary
-       if args.interpolatedStringNesting = 1 && args.interpolatedStringStyle.IsSome then
+       match args.interpolatedStringNesting with
+       | (1, style) :: rest ->
+           args.interpolatedStringNesting <- rest
            let buf, fin, m = startString args lexbuf 
-           args.interpolatedStringNesting <- 0
-           let style = args.interpolatedStringStyle.Value
            if not skip then 
                (STRING_TEXT (LexCont.String(args.ifdefStack, style, LexerStringKind.InterpolatedStringPart, m)))
            else 
@@ -753,11 +795,10 @@ rule token args skip = parse
                | LexerStringStyle.Verbatim -> verbatimString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
                | LexerStringStyle.SingleQuote -> singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
                | LexerStringStyle.TripleQuote -> tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
-
-       elif args.interpolatedStringNesting > 1 then
-           args.interpolatedStringNesting <- args.interpolatedStringNesting - 1
+        | (counter, style) :: rest ->
+           args.interpolatedStringNesting <- (counter - 1, style) :: rest
            RBRACE
-       else
+        | _ ->
            RBRACE
      }
 
@@ -802,7 +843,7 @@ rule token args skip = parse
  | "#light" anywhite* 
  | ("#indent" | "#light") anywhite+ "\"on\""
    { if args.lightSyntaxStatus.ExplicitlySet && args.lightSyntaxStatus.WarnOnMultipleTokens then 
-         warning(Error((0,"#light should only occur as the first non-comment text in an F# source file"),lexbuf.LexemeRange))
+         warning(Error((0,"#light should only occur as the first non-comment text in an F# source file"), lexbuf.LexemeRange))
      // TODO unreachable error above, I think? - brianmcn 
      args.lightSyntaxStatus.Status <- true 
      if not skip then (HASH_LIGHT (LexCont.Token args.ifdefStack)) else token args skip lexbuf } 
@@ -1007,8 +1048,7 @@ and singleQuoteString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          args.interpolatedStringNesting <- args.interpolatedStringNesting + 1
-          args.interpolatedStringStyle <- Some LexerStringStyle.SingleQuote
+          args.interpolatedStringNesting <- (1, LexerStringStyle.SingleQuote) :: args.interpolatedStringNesting
           fin.Finish buf kind true
       else
           addUnicodeString buf (lexeme lexbuf) 
@@ -1077,8 +1117,7 @@ and verbatimString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          args.interpolatedStringNesting <- args.interpolatedStringNesting + 1
-          args.interpolatedStringStyle <- Some LexerStringStyle.Verbatim
+          args.interpolatedStringNesting <- (1, LexerStringStyle.Verbatim) :: args.interpolatedStringNesting
           fin.Finish buf kind true
       else
           addUnicodeString buf (lexeme lexbuf) 
@@ -1148,8 +1187,7 @@ and tripleQuoteString sargs skip = parse
  | "{"
     { let (buf, fin, m, kind, args) = sargs 
       if kind.IsInterpolated then
-          args.interpolatedStringNesting <- args.interpolatedStringNesting + 1
-          args.interpolatedStringStyle <- Some LexerStringStyle.TripleQuote
+          args.interpolatedStringNesting <- (1, LexerStringStyle.TripleQuote) :: args.interpolatedStringNesting
           fin.Finish buf kind true
       else
           addUnicodeString buf (lexeme lexbuf) 
