@@ -4,22 +4,22 @@
     <body>
       <trans-unit id="cantReferenceSystemPackage">
         <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="new">PackageManager can not reference the System Package '{0}'</target>
+        <target state="translated">PackageManager에서 시스템 패키지 '{0}'을(를) 참조할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
         <source>Not used.</source>
-        <target state="new">Not used.</target>
+        <target state="translated">사용되지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
         <source>{0} requires a value</source>
-        <target state="new">{0} requires a value</target>
+        <target state="translated">{0}에는 값이 있어야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
-        <target state="new">Unable to apply implicit argument number {0}</target>
+        <target state="translated">암시적 인수 번호 {0}을(를) 적용할 수 없습니다.</target>
         <note />
       </trans-unit>
     </body>
