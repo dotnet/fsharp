@@ -6,7 +6,7 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
-    <AssemblyName>Interactive.DependencyManager</AssemblyName>
+    <AssemblyName>Microsoft.DotNet.DependencyManager</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
@@ -20,15 +20,15 @@
   </Target>
 
   <ItemGroup>
-    <EmbeddedText Include="InteractiveDependencyManager.txt" />
+    <EmbeddedText Include="DependencyManager.txt" />
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs" />
     <Compile Include="AssemblyResolveHandler.fsi" />
     <Compile Include="AssemblyResolveHandler.fs" />
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs" />
     <Compile Include="NativeDllResolveHandler.fsi" />
     <Compile Include="NativeDllResolveHandler.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\Interactive.DependencyManager\DependencyProvider.fsi" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\Interactive.DependencyManager\DependencyProvider.fs" />
+    <Compile Include="DependencyProvider.fsi" />
+    <Compile Include="DependencyProvider.fs" />
   </ItemGroup>
 
   <ItemGroup>
