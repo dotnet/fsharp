@@ -154,7 +154,7 @@
     <value>Type constraint mismatch. The type \n    '{0}'    \nis not compatible with type\n    '{1}'    {2}\n</value>
   </data>
   <data name="UpperCaseIdentifierInPattern" xml:space="preserve">
-    <value>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</value>
+    <value>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</value>
   </data>
   <data name="NotUpperCaseConstructor" xml:space="preserve">
     <value>Discriminated union cases and exception labels must be uppercase identifiers</value>

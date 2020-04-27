@@ -68,8 +68,8 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">模式中通常不應該使用大寫的變數識別項，這可能表示模式名稱拼字錯誤。</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="needs-review-translation">模式中通常不應該使用大寫的變數識別項，這可能表示模式名稱拼字錯誤。</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
