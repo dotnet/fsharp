@@ -57,7 +57,7 @@ open FSharp.Compiler.XmlDoc
 open Internal.Utilities
 open Internal.Utilities.StructuredFormat
 
-open Microsoft.Interactive.DependencyManager
+open Microsoft.DotNet.DependencyManager
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-namespace Microsoft.Interactive.DependencyManager
+namespace Microsoft.DotNet.DependencyManager
 
 open System
 open System.IO
@@ -266,7 +266,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             with
             | e ->
                 let e = stripTieWrapper e
-                let n, m = InteractiveDependencyManager.SR.couldNotLoadDependencyManagerExtension(path,e.Message)
+                let n, m = DependencyManager.SR.couldNotLoadDependencyManagerExtension(path,e.Message)
                 reportError.Invoke(ErrorReportType.Warning, n, m)
                 None)
         |> Seq.filter (fun a -> assemblyHasAttribute a dependencyManagerAttributeName)
@@ -307,7 +307,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
     member __.CreatePackageManagerUnknownError (compilerTools: string seq, outputDir: string, packageManagerKey: string, reportError: ResolvingErrorReport) =
         let registeredKeys = String.Join(", ", RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError |> Seq.map (fun kv -> kv.Value.Key))
         let searchPaths = assemblySearchPaths.Force()
-        InteractiveDependencyManager.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
+        DependencyManager.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
 
     /// Fetch a dependencymanager that supports a specific key
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -331,7 +331,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         with 
         | e ->
             let e = stripTieWrapper e
-            let err, msg = InteractiveDependencyManager.SR.packageManagerError(e.Message)
+            let err, msg = DependencyManager.SR.packageManagerError(e.Message)
             reportError.Invoke(ErrorReportType.Error, err, msg)
             null, null
 
@@ -355,7 +355,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         with
         | e ->
             let e = stripTieWrapper e
-            let err, msg = InteractiveDependencyManager.SR.packageManagerError(e.Message)
+            let err, msg = DependencyManager.SR.packageManagerError(e.Message)
             reportError.Invoke(ErrorReportType.Error, err, msg)
             Unchecked.defaultof<IDependencyManagerProvider>
 
@@ -380,7 +380,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
         with e ->
             let e = stripTieWrapper e
-            let err, msg = (InteractiveDependencyManager.SR.packageManagerError(e.Message))
+            let err, msg = (DependencyManager.SR.packageManagerError(e.Message))
             reportError.Invoke(ErrorReportType.Error, err, msg)
             ReflectionDependencyManagerProvider.MakeResultFromFields(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
 
