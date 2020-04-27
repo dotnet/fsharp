@@ -539,7 +539,7 @@ module internal ExtensionTyping =
         static member CreateNonNull ctxt x = ProvidedParameterInfo (x, ctxt)
         
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-        static member CreateArray ctxt (xs: ParameterInfo[]) : ParameterInfo[] = 
+        static member CreateArray ctxt (xs: ParameterInfo[]) : ProvidedParameterInfo[] = 
 #else
         static member CreateArray ctxt (xs: ParameterInfo[]?) : ProvidedParameterInfo[]? = 
 #endif
