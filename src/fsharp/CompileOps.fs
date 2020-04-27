@@ -54,7 +54,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.XmlDoc
 
-open Microsoft.Interactive.DependencyManager
+open Microsoft.DotNet.DependencyManager
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
