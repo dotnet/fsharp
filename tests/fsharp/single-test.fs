@@ -11,7 +11,7 @@ type Permutation =
     | FSC_CORECLR
     | FSC_CORECLR_BUILDONLY
     | FSI_CORECLR
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     | FSI_FILE
     | FSI_STDIN
     | GENERATED_SIGNATURE
@@ -309,7 +309,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     | FSC_CORECLR_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "netcoreapp3.0" true true
     | FSI_CORECLR -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "netcoreapp3.0" true false
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     | FSC_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" false true
     | FSC_OPT_PLUS_DEBUG -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" true false
     | FSC_OPT_MINUS_DEBUG -> executeSingleTestBuildAndRun OutputType.Exe "net40" "net472" false false

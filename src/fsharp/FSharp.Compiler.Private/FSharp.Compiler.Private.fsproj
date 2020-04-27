@@ -729,7 +729,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Interactive.DependencyManager\Interactive.DependencyManager.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Microsoft.DotNet.DependencyManager\Microsoft.DotNet.DependencyManager.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">

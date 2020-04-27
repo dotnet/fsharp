@@ -1690,7 +1690,7 @@ module ProvidedMethodCalls =
             |> Array.map (fun pty -> eraseSystemType (amap, m, pty))
         let paramVars = 
             erasedParamTys
-            |> Array.mapi (fun i erasedParamTy -> erasedParamTy.PApply((fun ty -> ProvidedVar.Fresh("arg" + i.ToString(), ty)), m))
+            |> Array.mapi (fun i erasedParamTy -> erasedParamTy.PApply((fun ty -> ty.AsProvidedVar("arg" + i.ToString())), m))
 
 
         // encode "this" as the first ParameterExpression, if applicable
@@ -1698,7 +1698,7 @@ module ProvidedMethodCalls =
             match objArgs with
             | [objArg] -> 
                 let erasedThisTy = eraseSystemType (amap, m, mi.PApply((fun mi -> mi.DeclaringType), m))
-                let thisVar = erasedThisTy.PApply((fun ty -> ProvidedVar.Fresh("this", ty)), m)
+                let thisVar = erasedThisTy.PApply((fun ty -> ty.AsProvidedVar("this")), m)
                 Some objArg, Array.append [| thisVar |] paramVars
             | [] -> None, paramVars
             | _ -> failwith "multiple objArgs?"

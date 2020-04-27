@@ -18,7 +18,7 @@ open Scripting
 open SingleTest
 open HandleExpects
 
-#if FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if NETCOREAPP
 // Use these lines if you want to test CoreCLR
 let FSC_BASIC = FSC_CORECLR
 let FSC_BUILDONLY = FSC_CORECLR_BUILDONLY
@@ -234,7 +234,7 @@ module CoreTests =
         let cfg = testConfig "SDKTests"
         exec cfg cfg.DotNetExe ("msbuild " + Path.Combine(cfg.Directory, "AllSdkTargetsTests.proj"))
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     [<Test>]
     let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC
 
@@ -476,7 +476,7 @@ module CoreTests =
     [<Test>]
     let ``enum-FSI_BASIC`` () = singleTestBuildAndRun "core/enum" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
 
     // Requires winforms will not run on coreclr
     [<Test>]
@@ -1035,7 +1035,7 @@ module CoreTests =
     let ``signedtest-16`` () = signedtest("test-sha1024-full-attributes", "--define:SHA1024", SigningType.PublicSigned)
 #endif
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     [<Test>]
     let quotes () = 
         let cfg = testConfig "core/quotes"
@@ -1434,7 +1434,7 @@ module CoreTests =
     [<Test>]
     let ``fsi_load-FSI_BASIC`` () = singleTestBuildAndRun "core/fsi-load" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     [<Test>]
     let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
 
@@ -1665,7 +1665,7 @@ module CoreTests =
     [<Test>]
     let ``reflect-FSI_BASIC`` () = singleTestBuildAndRun "core/reflect" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     [<Test>]
     let refnormalization () = 
         let cfg = testConfig "core/refnormalization"
@@ -1914,7 +1914,7 @@ module VersionTests =
     [<Test>]
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI_BASIC "preview"
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
 module ToolsTests = 
 
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
@@ -1964,7 +1964,7 @@ module RegressionTests =
     [<Test >]
     let ``tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS 
+#if !NETCOREAPP 
     [<Test>]
     let ``SRTP doesn't handle calling member hiding hinherited members`` () =
         let cfg = testConfig "regression/5531" 
@@ -1999,7 +1999,7 @@ module RegressionTests =
     [<Test >]
     let ``321`` () = singleTestBuildAndRun "regression/321" FSC_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let ``655`` () = 
@@ -2029,7 +2029,7 @@ module RegressionTests =
         peverify cfg  "pack.exe"
 #endif
                 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     // Requires WinForms
     [<Test>]
     let ``83`` () = singleTestBuildAndRun "regression/83" FSC_BASIC
@@ -2052,7 +2052,7 @@ module RegressionTests =
     [<Test >]
     let ``struct-tuple-bug-1-FSI_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let ``struct-measure-bug-1`` () = 
@@ -2061,8 +2061,7 @@ module RegressionTests =
         fsc cfg "%s --optimize- -o:test.exe -g" cfg.fsc_flags ["test.fs"]
 
         peverify cfg "test.exe"
-#endif
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+
 module OptimizationTests =
 
     [<Test>]
@@ -2205,7 +2204,7 @@ module TypecheckTests =
     [<Test>]
     let misc () = singleTestBuildAndRun "typecheck/misc" FSC_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
 
     [<Test>]
     let ``sigs pos24`` () = 
@@ -3231,7 +3230,7 @@ module GeneratedSignatureTests =
     let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
 #endif
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
 module OverloadResolution =
     module ``fsharpqa migrated tests`` = 
         let [<Test>] ``Conformance\Expressions\SyntacticSugar (E_Slices01.fs)`` () = singleNegTest (testConfig "conformance/expressions/syntacticsugar") "E_Slices01"
