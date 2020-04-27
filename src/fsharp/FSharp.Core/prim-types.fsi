@@ -2321,7 +2321,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Asserts that the value is non-null.</summary>
         /// <param name="value">The value to check.</param>
-        /// <returns>True when value is null, false otherwise.</returns>
+        /// <returns>The value when it is not null. If the value is null an exception is raised.</returns>
         [<CompiledName("NonNull")>]
         val inline nonNull : value: 'T? -> 'T when 'T : not struct and 'T : not null
 

@@ -181,7 +181,7 @@ module internal ExtensionTyping =
     let unmarshal (t: Tainted<_>) = t.PUntaintNoFailure id
 
     /// Try to access a member on a provided type, catching and reporting errors
-    let TryTypeMember<'T,'U>(st: Tainted<'T>, fullName, memberName, m, recover, f: 'T -> 'U) =
+    let TryTypeMember<'T,'U>(st: Tainted<'T>, fullName, memberName, m, recover, f: 'T -> 'U) : Tainted<'U> =
         try
             st.PApply (f, m)
         with :? TypeProviderError as tpe -> 
@@ -197,8 +197,12 @@ module internal ExtensionTyping =
             [||]
 
     /// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null, 
-    let TryTypeMemberNonNull (st: Tainted<_>, fullName, memberName, m, recover, f) =
-        match TryTypeMember(st, fullName, memberName, m, recover, f) with 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let TryTypeMemberNonNull<'T, 'U>(st: Tainted<'T>, fullName, memberName, m, recover, (f: 'T -> 'U) : Tainted<'U> =
+#else
+    let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, (recover: 'U), (f: 'T -> 'U?)) : Tainted<'U> =
+#endif
+        match TryTypeMember<'T, 'U?>(st, fullName, memberName, m, withNull recover, f) with 
         | Tainted.Null -> 
             errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName, memberName), m)); 
             st.PApplyNoFailure(fun _ -> recover)
@@ -359,7 +363,11 @@ module internal ExtensionTyping =
         member __.GetGenericTypeDefinition() = x.GetGenericTypeDefinition() |> ProvidedType.CreateWithNullCheck ctxt "GenericTypeDefinition"
         /// Type.BaseType can be null when Type is interface or object
         member __.BaseType = x.BaseType |> ProvidedType.Create ctxt
-        member __.GetStaticParameters(provider: ITypeProvider) = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArrayNonNull ctxt
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        member __.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[] = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
+#else
+        member __.GetStaticParameters(provider: ITypeProvider) : ProvidedParameterInfo[]? = provider.GetStaticParameters x |> ProvidedParameterInfo.CreateArray ctxt
+#endif
         /// Type.GetElementType can be null if i.e. Type is not array\pointer\byref type
         member __.GetElementType() = x.GetElementType() |> ProvidedType.Create ctxt
         member __.GetGenericArguments() = x.GetGenericArguments() |> ProvidedType.CreateArray ctxt
@@ -1019,12 +1027,7 @@ module internal ExtensionTyping =
             errorR(Error(FSComp.SR.etMustNotBeGeneric fullName, m))  
         if TryTypeMember(st, fullName, "IsArray", m, false, fun st->st.IsArray) |> unmarshal then 
             errorR(Error(FSComp.SR.etMustNotBeAnArray fullName, m))  
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-        TryTypeMember(st, fullName, "GetInterfaces", m, [||], fun st -> st.GetInterfaces()) |> ignore
-#else
-        TryTypeMember(st, fullName, "GetInterfaces", m, null, fun st -> st.GetInterfaces()) |> ignore
-#endif
-
+        TryTypeMemberNonNull<ProvidedType, ProvidedType[]>(st, fullName, "GetInterfaces", m, [||], fun st -> st.GetInterfaces()) |> ignore
 
     /// Verify that a provided type has the expected name
     let ValidateExpectedName m expectedPath expectedName (st : Tainted<ProvidedType>) =
@@ -1183,8 +1186,8 @@ module internal ExtensionTyping =
         | -1 -> ()
         | n -> errorR(Error(FSComp.SR.etIllegalCharactersInTypeName(string expectedName.[n], expectedName), m))  
 
-        let staticParameters = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
-        if staticParameters.PUntaint((fun a -> a.Length), m)  = 0 then 
+        let staticParameters : Tainted<ProvidedParameterInfo[]?> = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
+        if staticParameters.PUntaint((fun a -> (nonNull a).Length), m)  = 0 then 
             ValidateProvidedTypeAfterStaticInstantiation(m, st, expectedPath, expectedName)
 
 
@@ -1294,7 +1297,7 @@ module internal ExtensionTyping =
                     // Otherwise, use the full path of the erased type, including mangled arguments
                     let nm = typeBeforeArguments.PUntaint((fun x -> x.Name), m)
                     let enc, _ = ILPathToProvidedType (typeBeforeArguments, m)
-                    let staticParams = typeBeforeArguments.PApplyWithProvider((fun (mb, resolver) -> mb.GetStaticParameters resolver), range=m) 
+                    let staticParams : Tainted<ProvidedParameterInfo[]> = typeBeforeArguments.PApplyWithProvider((fun (st, resolver) -> st.GetStaticParameters resolver |> nonNull), range=m) 
                     let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
                     enc @ [ mangledName ]
  
