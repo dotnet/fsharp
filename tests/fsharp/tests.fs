@@ -218,7 +218,7 @@ module CoreTests =
     let ``test int32-FSI_BASIC`` () = singleTestBuildAndRun "core/int32" FSI_BASIC
 
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     [<Test>]
     let ``subtype-langversion-50-checknulls`` () =
         let cfg = testConfig "core/subtype"
