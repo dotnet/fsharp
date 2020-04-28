@@ -3004,6 +3004,7 @@ namespace Microsoft.FSharp.Collections
     // Lists
     //-------------------------------------------------------------------------
 
+    open System
     open System.Collections.Generic
     open System.Diagnostics
     open Microsoft.FSharp.Core
@@ -3016,7 +3017,7 @@ namespace Microsoft.FSharp.Collections
     [<DebuggerTypeProxyAttribute(typedefof<ListDebugView<_>>)>]
     [<DebuggerDisplay("{DebugDisplay,nq}")>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
-    [<StructuralEquality; StructuralComparison>]
+    [<CustomEquality; CustomComparison>]
     [<CompiledName("FSharpList`1")>]
     type List<'T> = 
        | ([])  :                  'T list
@@ -3025,6 +3026,7 @@ namespace Microsoft.FSharp.Collections
        interface System.Collections.IEnumerable
        interface System.Collections.Generic.IReadOnlyCollection<'T>
        interface System.Collections.Generic.IReadOnlyList<'T>
+       interface IComparable
         
     and 'T list = List<'T>
 
@@ -3186,6 +3188,7 @@ namespace Microsoft.FSharp.Collections
         static member Empty       : 'T list = []
 
         static member Cons(head,tail) : 'T list = head :: tail
+
         override x.ToString() = 
            match x with 
            | [] -> "[]"
@@ -3206,6 +3209,41 @@ namespace Microsoft.FSharp.Collections
 
         [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         member l.GetReverseIndex(_: int, offset: int) = l.Length - offset - 1
+        
+        override this.GetHashCode() =
+            let len = PrivateListHelpers.lengthAcc 0 this
+            let mutable i = len - 1
+            if i > LanguagePrimitives.HashCompare.defaultHashNodes then
+                i <- LanguagePrimitives.HashCompare.defaultHashNodes // Limit the hash
+
+            let rec loop l i acc =
+                match l with
+                | [] -> acc
+                | h::t ->
+                    if i >= 0 then
+                        loop t (i - 1) (LanguagePrimitives.HashCompare.HashCombine i acc (LanguagePrimitives.GenericHash h))
+                    else
+                        acc
+               
+            loop this i 0
+
+        override this.Equals(other) =
+            let rec loop x y =
+                match x, y with
+                | [], [] -> true
+                | _, [] -> false
+                | [], _ -> false
+                | xHead :: xTail, yHead :: yTail ->
+                    if not (GenericEquality xHead yHead) then
+                        false
+                    else
+                        loop xTail yTail
+
+            match other with
+            | :? List<'T> as o ->
+                loop this o
+            | _ ->
+                false
 
         interface IEnumerable<'T> with
             member l.GetEnumerator() = PrivateListHelpers.mkListEnumerator l
@@ -3218,6 +3256,25 @@ namespace Microsoft.FSharp.Collections
 
         interface IReadOnlyList<'T> with
             member l.Item with get(index) = l.[index]
+
+        interface IComparable with
+            member this.CompareTo(other) =
+                let rec loop l1 l2 =
+                    match l1, l2 with
+                    | [], [] -> 0
+                    | _, [] -> 1
+                    | [], _ -> -1
+                    | h1 :: t1, h2 :: t2 ->
+                        let res = GenericComparison h1 h2
+                        if res <> 0 then
+                            res
+                        else
+                            loop t1 t2
+
+                match other with
+                | :? List<'T> as o ->
+                    loop this o
+                | _ -> 0
 
     type seq<'T> = IEnumerable<'T>
 

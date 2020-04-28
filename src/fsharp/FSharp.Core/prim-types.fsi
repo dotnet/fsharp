@@ -1898,7 +1898,7 @@ namespace Microsoft.FSharp.Collections
     /// the notation <c>[1;2;3]</c>. Use the values in the <c>List</c> module to manipulate 
     /// values of this type, or pattern match against the values directly.</remarks>
     [<DefaultAugmentation(false)>]
-    [<StructuralEquality; StructuralComparison>]
+    [<CustomEquality; CustomComparison>]
     [<CompiledName("FSharpList`1")>]
     type List<'T> =
         | ([])  : 'T list
@@ -1948,6 +1948,7 @@ namespace Microsoft.FSharp.Collections
         interface IEnumerable
         interface IReadOnlyCollection<'T>
         interface IReadOnlyList<'T>
+        interface IComparable
 
     /// <summary>An abbreviation for the type of immutable singly-linked lists. </summary>
     ///
