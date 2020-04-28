@@ -613,13 +613,23 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let isInteractiveServer() = fsiServerName <> ""  
     let recordExplicitArg arg = explicitArgs <- explicitArgs @ [arg]
 
-    let executableFileName = 
-        lazy 
-            match tcConfigB.exename with
-            | Some s -> s
-            | None -> 
-            let currentProcess = System.Diagnostics.Process.GetCurrentProcess()
-            Path.GetFileName(currentProcess.MainModule.FileName)
+    let executableFileNameWithoutExtension =
+        lazy
+            let getFsiCommandLine () =
+                let fileNameWithoutExtension path = Path.GetFileNameWithoutExtension(path)
+
+                let currentProcess = System.Diagnostics.Process.GetCurrentProcess()
+                let processFileName = fileNameWithoutExtension currentProcess.MainModule.FileName
+
+                let commandLineExecutableFileName =
+                    try fileNameWithoutExtension (System.Environment.GetCommandLineArgs().[0])
+                    with _ -> ""
+
+                if processFileName = commandLineExecutableFileName
+                then processFileName
+                else sprintf "%s %s" processFileName commandLineExecutableFileName
+
+            tcConfigB.exename |> Option.defaultWith getFsiCommandLine
 
 
     // Additional fsi options are list below.
@@ -628,7 +638,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let displayHelpFsi tcConfigB (blocks:CompilerOptionBlock list) =
         DisplayBannerText tcConfigB;
         fprintfn fsiConsoleOutput.Out ""
-        fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage(executableFileName.Value))
+        fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage(executableFileNameWithoutExtension.Value))
         PrintCompilerOptionBlocks blocks
         exit 0
 
@@ -754,7 +764,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fsiConsoleOutput.uprintfn  "%s" (FSIstrings.SR.fsiBanner3())
      
     member __.ShowHelp() =
-        let helpLine = sprintf "%s --help" (Path.GetFileNameWithoutExtension executableFileName.Value)
+        let helpLine = sprintf "%s --help" executableFileNameWithoutExtension.Value
 
         fsiConsoleOutput.uprintfn  ""
         fsiConsoleOutput.uprintfnn "%s" (FSIstrings.SR.fsiIntroTextHeader1directives());
