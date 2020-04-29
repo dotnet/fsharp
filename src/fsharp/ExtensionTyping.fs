@@ -1187,7 +1187,11 @@ module internal ExtensionTyping =
         | -1 -> ()
         | n -> errorR(Error(FSComp.SR.etIllegalCharactersInTypeName(string expectedName.[n], expectedName), m))  
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        let staticParameters = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
+#else
         let staticParameters : Tainted<ProvidedParameterInfo[]?> = st.PApplyWithProvider((fun (st, provider) -> st.GetStaticParameters provider), range=m) 
+#endif
         if staticParameters.PUntaint((fun a -> (nonNull a).Length), m)  = 0 then 
             ValidateProvidedTypeAfterStaticInstantiation(m, st, expectedPath, expectedName)
 
