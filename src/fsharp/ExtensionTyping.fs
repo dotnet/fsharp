@@ -198,10 +198,10 @@ module internal ExtensionTyping =
 
     /// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null, 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    let TryTypeMemberNonNull<'T, 'U>(st: Tainted<'T>, fullName, memberName, m, recover, (f: 'T -> 'U)) : Tainted<'U> =
-        match TryTypeMember(st, fullName, memberName, m, withNull recover, f) with 
+    let TryTypeMemberNonNull<'T, 'U when 'U : null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U)) : Tainted<'U> =
+        match TryTypeMember(st, fullName, memberName, m, recover, f) with 
 #else
-    let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, (recover: 'U), (f: 'T -> 'U?)) : Tainted<'U> =
+    let TryTypeMemberNonNull<'T, 'U when 'U : not null and 'U : not struct>(st: Tainted<'T>, fullName, memberName, m, recover: 'U, (f: 'T -> 'U?)) : Tainted<'U> =
         match TryTypeMember<'T, 'U?>(st, fullName, memberName, m, withNull recover, f) with 
 #endif
         | Tainted.Null -> 
