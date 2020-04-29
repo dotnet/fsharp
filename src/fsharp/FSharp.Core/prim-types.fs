@@ -3234,7 +3234,7 @@ namespace Microsoft.FSharp.Collections
                 | _, [] -> false
                 | [], _ -> false
                 | xHead :: xTail, yHead :: yTail ->
-                    if not (GenericEquality xHead yHead) then
+                    if not (GenericEqualityER xHead yHead) then
                         false
                     else
                         loop xTail yTail
