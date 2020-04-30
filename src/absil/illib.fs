@@ -377,11 +377,6 @@ module List =
                           let cxy = eltOrder.Compare(x, y)
                           if cxy=0 then loop xs ys else cxy 
                   loop xs ys }
-    
-    module FrontAndBack = 
-        let (|NonEmpty|Empty|) l = match l with [] -> Empty | _ -> NonEmpty(frontAndBack l)
-
-    let range n m = [ n .. m ]
 
     let indexNotFound() = raise (new KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
