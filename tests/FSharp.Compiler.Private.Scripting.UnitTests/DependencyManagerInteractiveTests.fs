@@ -12,7 +12,7 @@ open FSharp.Compiler.SourceCodeServices
 open System.Runtime.InteropServices
 open NUnit.Framework
 
-open Microsoft.Interactive.DependencyManager
+open Microsoft.DotNet.DependencyManager
 
 module Native =
     [<DllImport("NoneExistentDll")>]
