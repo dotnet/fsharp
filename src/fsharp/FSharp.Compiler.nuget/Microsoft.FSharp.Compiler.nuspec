@@ -54,7 +54,7 @@
         <file src="FSharp.Build\$Configuration$\netcoreapp3.0\FSharp.Build.dll"                           target="lib\netcoreapp3.0" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.dll"
                                                                                                           target="lib\netcoreapp3.0" />
-        <file src="Interactive.DependencyManager\$configuration$\netstandard2.0\Interactive.DependencyManager.dll"
+        <file src="Microsoft.DotNet.DependencyManager\$configuration$\netstandard2.0\Microsoft.DotNet.DependencyManager.dll"
                                                                                                           target="lib\netcoreapp3.0" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll"
                                                                                                           target="lib\netcoreapp3.0" />
@@ -76,7 +76,7 @@
         <file src="FSharp.Build\$Configuration$\netcoreapp3.0\**\FSharp.Build.resources.dll"              target="lib\netcoreapp3.0" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\**\FSharp.DependencyManager.Nuget.resources.dll"
                                                                                                           target="lib\netcoreapp3.0" />
-        <file src="Interactive.DependencyManager\$Configuration$\netstandard2.0\**\Interactive.DependencyManager.resources.dll"
+        <file src="Microsoft.DotNet.DependencyManager\$Configuration$\netstandard2.0\**\Microsoft.DotNet.DependencyManager.resources.dll"
                                                                                                           target="lib\netcoreapp3.0" />
     </files>
 </package>

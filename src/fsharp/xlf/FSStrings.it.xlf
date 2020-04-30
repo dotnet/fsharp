@@ -68,8 +68,8 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">In genere non è consigliabile usare identificatori di variabili in lettere maiuscole nei criteri perché potrebbero indicare un nome di criterio con ortografia errata.</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="needs-review-translation">In genere non è consigliabile usare identificatori di variabili in lettere maiuscole nei criteri perché potrebbero indicare un nome di criterio con ortografia errata.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">

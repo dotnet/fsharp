@@ -19,6 +19,7 @@
     <Compile Include="EditDistance.fs" />
     <Compile Include="SuggestionBuffer.fs" />
     <Compile Include="ByteMemoryTests.fs" />
+    <Compile Include="FsiTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
