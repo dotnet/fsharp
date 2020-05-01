@@ -7142,35 +7142,60 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (
                 | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) -> Some e
                 | e -> Some e)
 
-    let formattableStringInfo = 
-        // If this is an interpolated string then the result must be a string
+    let printerTy = NewInferenceType ()
+    let printerArgTy = NewInferenceType ()
+    let printerResidueTy = NewInferenceType ()
+    let printerResultTy = NewInferenceType ()
+    let printerTupleTy = NewInferenceType ()
+    let formatTy = mkPrintfFormatTy g printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy
+
+    let stringKind = 
+        // If this is an interpolated string then try to force the result to be a string
         if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.string_ty) then 
-            None
+
+            // And if that succeeds, the result of printing is a string
+            UnifyTypes cenv env m printerArgTy g.unit_ty
+            UnifyTypes cenv env m printerResidueTy g.string_ty
+            UnifyTypes cenv env m printerResultTy overallTy
+            Choice1Of3 ()
+
+        // ... or if that fails then may be a FormattableString by a type-directed rule....
+        elif (not (isObjTy g overallTy) && 
+              ((g.system_FormattableString_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_FormattableString_ty) 
+               || (g.system_IFormattable_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_IFormattable_ty))) then 
+
+            // And if that succeeds, the result of printing is a string
+            // We work out printerTy further below
+            UnifyTypes cenv env m printerArgTy g.unit_ty
+            UnifyTypes cenv env m printerResidueTy g.string_ty
+            UnifyTypes cenv env m printerResultTy overallTy
+
+            // Find the FormattableStringFactor.Create method in the .NET libraries
+            let ad = env.eAccessRights
+            let createMethodOpt = 
+                match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "Create" g.system_FormattableStringFactory_ty with 
+                | [x] -> Some x 
+                | _ -> None
+
+            match createMethodOpt with 
+            | Some createMethod -> Choice2Of3 createMethod
+            | None -> Choice1Of3 ()
+
+        // ... or if that fails then may be a PrintfFormat by a type-directed rule....
+        elif not (isObjTy g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy formatTy then 
+
+            // And if that succeeds, the printerTy and printerResultTy must be the same (there are no curried arguments)
+            UnifyTypes cenv env m printerTy printerResultTy  
+            match GetIntrinsicConstructorInfosOfType cenv.infoReader m formatTy |> List.filter (fun minfo -> minfo.NumArgs = [2]) with
+            | [ctorInfo] -> Choice3Of3 ctorInfo
+            | _ -> Choice1Of3 ()
+
         else
-            // ... or if that fails then may be a FormattableString by a type-directed rule....
-            if (not (isObjTy g overallTy) && 
-                ((g.system_FormattableString_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_FormattableString_ty) 
-                 || (g.system_IFormattable_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_IFormattable_ty))) then 
+            // this should fail and produce an error
+            UnifyTypes cenv env m overallTy g.string_ty
+            Choice1Of3 ()
 
-                let ad = env.eAccessRights
-                let createMethod = 
-                    match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "Create" g.system_FormattableStringFactory_ty with 
-                    | [x] -> Some x 
-                    | _ -> None
-
-                createMethod
-
-            else
-                // this should fail and produce an error
-                UnifyTypes cenv env m overallTy g.string_ty
-                None
-
-    let isFormattableString = formattableStringInfo.IsSome
-    let aty = NewInferenceType ()
-    let bty = g.unit_ty 
-    let cty = g.string_ty
-    let dty = overallTy
-    let ety = NewInferenceType ()
+    let isFormattableString = (match stringKind with Choice2Of3 _ -> true | _ -> false)
 
     // The format string used for checking in CheckFormatStrings. This replaces interpolation holes with %P
     let printfFormatString = 
@@ -7191,16 +7216,37 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (
         |> String.concat ""
 
     // Parse the format string to work out the phantom types and check for absence of '%' specifiers in FormattableString
-    let (argtys, atyRequired, etyRequired), _specifierLocations, dotnetFormatString =
-        try CheckFormatStrings.ParseFormatString m g true isFormattableString None printfFormatString bty cty dty
+    let (argtys, printerTyRequired, printerTupleTyRequired), _specifierLocations, dotnetFormatString =
+        try CheckFormatStrings.ParseFormatString m g true isFormattableString None printfFormatString printerArgTy printerResidueTy printerResultTy
         with Failure errString -> error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
 
     // Check the expressions filling the holes
     if argtys.Length <> synFillExprs.Length then 
         error (Error(FSComp.SR.tcInterpolationMixedWithPercent(), m))
 
-    match formattableStringInfo with 
-    | Some createMethInfo -> 
+    match stringKind with 
+
+    // The case for $"..." used as type string
+    | Choice1Of3 () -> 
+        
+        UnifyTypes cenv env m printerTy printerTyRequired
+        UnifyTypes cenv env m printerTupleTy printerTupleTyRequired
+
+        let fmtExpr = mkCallNewFormat g m printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy (mkString g m printfFormatString)
+
+        // Type check the expressions filling the holes
+        let flexes = argtys |> List.map (fun _ -> false)
+        let fillExprs, tpenv = TcExprs cenv env m tpenv flexes argtys synFillExprs
+
+        // Check the library support is available in the referenced FSharp.Core
+        if cenv.g.new_format_ext_vref.TryDeref.IsNone then 
+            languageFeatureNotSupportedInLibraryError cenv.g.langVersion LanguageFeature.StringInterpolation m
+
+        // Make the call to isprintf
+        mkCall_sprintf g m printerTy fmtExpr fillExprs, tpenv
+
+    // The case for $"..." used as type FormattableString or IFormattable
+    | Choice2Of3 createMethInfo -> 
 
         // Type check the expressions filling the holes
         let flexes = argtys |> List.map (fun _ -> false)
@@ -7221,23 +7267,27 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (
                 createExpr
         resultExpr, tpenv
 
-    | None -> 
+    // The case for $"...%d{x}..." used as type PrintfFormat - giving a PrintfFormat that captures
+    // is arguments
+    | Choice3Of3 ctor -> 
 
-        UnifyTypes cenv env m aty atyRequired
-        UnifyTypes cenv env m ety etyRequired
-
-        let fmtExpr = mkCallNewFormat g m aty bty cty dty ety (mkString g m printfFormatString)
+        UnifyTypes cenv env m printerTupleTy printerTupleTyRequired
 
         // Type check the expressions filling the holes
         let flexes = argtys |> List.map (fun _ -> false)
         let fillExprs, tpenv = TcExprs cenv env m tpenv flexes argtys synFillExprs
 
+        let fillExprsBoxed = (argtys, fillExprs) ||> List.map2 (mkCallBox g m)
+
+        let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
+
         // Check the library support is available in the referenced FSharp.Core
-        if cenv.g.isprintf_vref.TryDeref.IsNone then 
+        if cenv.g.new_format_ext_vref.TryDeref.IsNone then 
             languageFeatureNotSupportedInLibraryError cenv.g.langVersion LanguageFeature.StringInterpolation m
 
-        // Make the call to isprintf
-        mkCall_isprintf g m aty fmtExpr fillExprs, tpenv
+        let fmtExpr = MakeMethInfoCall cenv.amap m ctor [] [mkString g m printfFormatString; argsExpr]
+
+        fmtExpr, tpenv 
 
 //-------------------------------------------------------------------------
 // TcConstExpr

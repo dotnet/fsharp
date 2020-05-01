@@ -6914,7 +6914,11 @@ let mkCallRaise (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.r
 
 let mkCallNewDecimal (g: TcGlobals) m (e1, e2, e3, e4, e5) = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ], m)
 
-let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety e1 = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
+let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety e1 =
+    mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
+
+let mkCallNewFormatWithExprs (g: TcGlobals) m aty bty cty dty ety fmtStringExpr captureExprs =
+    mkApps g (typedExprForIntrinsic g m g.new_format_ext_info, [[aty;bty;cty;dty;ety]], [fmtStringExpr;captureExprs ], m)
 
 let TryEliminateDesugaredConstants g m c = 
     match c with 
@@ -6972,8 +6976,8 @@ let mkCallSeqSingleton g m ty1 arg1 =
 let mkCallSeqEmpty g m ty1 = 
     mkApps g (typedExprForIntrinsic g m g.seq_empty_info, [[ty1]], [ ], m) 
                  
-let mkCall_isprintf (g: TcGlobals) m aty fmt es = 
-    mkApps g (typedExprForIntrinsic g m g.isprintf_info, [[aty]], fmt::es , m) 
+let mkCall_sprintf (g: TcGlobals) m aty fmt es = 
+    mkApps g (typedExprForIntrinsic g m g.sprintf_info, [[aty]], fmt::es , m) 
                  
 let mkCallDeserializeQuotationFSharp20Plus g m e1 e2 e3 e4 = 
     let args = [ e1; e2; e3; e4 ]
