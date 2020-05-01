@@ -2236,6 +2236,7 @@ Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: S
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.String Value
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.String get_Value()
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: Void .ctor(System.String)
+Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: Void .ctor(System.String,System.Object[])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatLineToError[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatLineToTextWriter[T](System.IO.TextWriter, Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatLine[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
@@ -2246,7 +2247,6 @@ Microsoft.FSharp.Core.PrintfModule: T PrintFormatToStringBuilder[T](System.Text.
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatToStringThenFail[T,TResult](Microsoft.FSharp.Core.PrintfFormat`4[T,Microsoft.FSharp.Core.Unit,System.String,TResult])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatToStringThen[TResult,T](Microsoft.FSharp.Core.FSharpFunc`2[System.String,TResult], Microsoft.FSharp.Core.PrintfFormat`4[T,Microsoft.FSharp.Core.Unit,System.String,TResult])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatToStringThen[T](Microsoft.FSharp.Core.PrintfFormat`4[T,Microsoft.FSharp.Core.Unit,System.String,System.String])
-Microsoft.FSharp.Core.PrintfModule: T InterpolatedPrintFormatToStringThen[T](Microsoft.FSharp.Core.PrintfFormat`4[T,Microsoft.FSharp.Core.Unit,System.String,System.String])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatToTextWriterThen[TResult,T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,TResult], System.IO.TextWriter, Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,TResult])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatToTextWriter[T](System.IO.TextWriter, Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormat[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
