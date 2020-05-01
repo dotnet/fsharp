@@ -2884,8 +2884,11 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
           [ 
             // Check if we are given an explicit framework root - if so, use that
             match tcConfig.clrRoot with 
-            | Some x -> 
-                yield tcConfig.MakePathAbsolute x
+            | Some x ->
+                let clrRoot = tcConfig.MakePathAbsolute x
+                yield clrRoot
+                let clrFacades = Path.Combine(clrRoot, "Facades")
+                if Directory.Exists(clrFacades) then yield clrFacades
 
             | None -> 
 // "there is no really good notion of runtime directory on .NETCore"
