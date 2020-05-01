@@ -25,11 +25,13 @@ type PrintfFormat<'Printer,'State,'Residue,'Result> =
     /// <param name="value">The input string.</param>
     /// <param name="captures">The captured expressions in an interpolation string.</param>
     /// <returns>The PrintfFormat containing the formatted result.</returns>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     new : value:string * captures: obj[] -> PrintfFormat<'Printer,'State,'Residue,'Result>
 
     /// <summary>The raw text of the format string.</summary>
     member Value : string
 
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     member Captures: obj[]
     
 /// <summary>Type of a formatting expression.</summary>
@@ -51,6 +53,7 @@ type PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple> =
     /// <param name="value">The input string.</param>
     /// <param name="captures">The captured expressions in an interpolation string.</param>
     /// <returns>The created format string.</returns>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     new: value:string * captures: obj[] -> PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>
 
 /// <summary>Type of a formatting expression.</summary>
