@@ -87,8 +87,11 @@ check \"xvcewweh5\" $\"\"\"this is {1}\"\"\"  \"this is 1\"
 
 check \"xvcewweh6\" $\"\"\"this i\s {1}\"\"\"  \"this i\s 1\"
 
+// check nested string with %s
+check \"xvcewweh7\" $\"\"\"x = %s{\"1\"}\"\"\" \"x = 1\"
+
 // multiline
-check \"xvcewweh6\"
+check \"xvcewweh8\"
     $\"\"\"this
 is {1+1}\"\"\"
     \"\"\"this
@@ -478,9 +481,6 @@ check "vcewweh22f" $"x = %s{s}" "x = sixsix"
 // check %A of string
 check "vcewweh22g" $"x = %A{s}" "x = \"sixsix\""
 
-// check nested string with %s
-check "vcewweh22l" $"x = %s{"1"}" "x = 1"
-
 check "vcewweh20" $"x = %A{1}" "x = 1"
 
             """
@@ -549,12 +549,10 @@ let x4 = $"one %d" // naked percent in interpolated
 let x5 = $"one %A" // naked percent in interpolated
 let x6 = $"one %P" // interpolation hole marker in interploation
 let x7 = $"one %P()" // interpolation hole marker in interploation
-let x8 = $"one %P(){"gotcha"}" // interpolation hole marker in interploation
+let x8 = $"one %P(){1}" // interpolation hole marker in interploation
 let x9 = $"one %f" // naked percent in interpolated
 let xa = $"one %d{3:N}" // mix of formats
-let xb = $"{%5d{1:N3}}" // inner error that looks like format specifiers
 let xc = $"5%6" // bad F# format specifier
-let xd = $"%A{}" // empty expression
 let xe = $"%A{{1}}" // fake expression (delimiters escaped)
 """
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
@@ -576,20 +574,37 @@ but here has type
                "Invalid interpolated string. The '%P' specifier may not be used explicitly.");
               (FSharpErrorSeverity.Error, 3361, (8, 10, 8, 21),
                "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'");
-              (FSharpErrorSeverity.Error, 3361, (9, 10, 9, 31),
-               "Invalid interpolated string. The '%P' specifier may not be used explicitly.");
+              (FSharpErrorSeverity.Error, 3361, (9, 10, 9, 24),
+               "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'");
               (FSharpErrorSeverity.Error, 3354, (10, 10, 10, 19),
                "Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.");
               (FSharpErrorSeverity.Error, 3354, (11, 10, 11, 24),
                "Invalid interpolated string. .NET-style format specifiers such as '{x,3}' or '{x:N5}' may not be mixed with '%' format specifiers.")
-              (FSharpErrorSeverity.Error, 1156, (12, 13, 12, 14),
-               "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).")
-              (FSharpErrorSeverity.Error, 741, (13, 9, 13, 14),
-               "Unable to parse format string 'Bad precision in format specifier'")
-              (FSharpErrorSeverity.Error, 10, (14, 14, 14, 15),
-               "Unexpected interpolated string (final part) in interaction")
-              (FSharpErrorSeverity.Error, 741, (15, 10, 15, 19),
-               "Unable to parse format string 'Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.'")
+              (FSharpErrorSeverity.Error, 3354, (12, 10, 12, 16),
+               "Invalid interpolated string. Bad precision in format specifier")
+              (FSharpErrorSeverity.Error, 3354, (13, 10, 13, 20),
+               "Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.")
+            |]
+
+        let code = """
+let xb = $"{%5d{1:N3}}" // inner error that looks like format specifiers 
+"""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Error, 1156, (2, 14, 2, 16),
+               "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).");
+              (FSharpErrorSeverity.Error, 10, (2, 18, 2, 19),
+               "Unexpected symbol ':' in expression. Expected '}' or other token.");
+              (FSharpErrorSeverity.Error, 604, (2, 16, 2, 17), "Unmatched '{'")
+            |]
+
+        let code = """
+let xd = $"%A{}" // empty expression
+"""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Error, 10, (2, 15, 2, 17),
+               "Unexpected interpolated string (final part) in binding")
             |]
 
     [<Test>]
