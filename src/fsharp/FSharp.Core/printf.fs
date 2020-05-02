@@ -287,60 +287,63 @@ module internal PrintfImpl =
         member env.RunSteps (args: obj[], steps: Step[]) =
             let mutable argIndex = 0
 
-            for step in steps do 
-                match step with 
-                | Step (prefix, conv1) ->
-                    env.WriteSkipEmpty(prefix)
-                    env.Write(&argIndex, args, conv1)
+            match steps with
+            | [| StepString one |] -> env.Write(one)
+            | _ ->
+                for step in steps do 
+                    match step with 
+                    | Step (prefix, conv1) ->
+                        env.WriteSkipEmpty(prefix)
+                        env.Write(&argIndex, args, conv1)
 
-                | StepString prefix ->
-                    env.WriteSkipEmpty(prefix)
+                    | StepString prefix ->
+                        env.WriteSkipEmpty(prefix)
 
-                | StepLittleT(prefix) -> 
-                    env.WriteSkipEmpty prefix
-                    let farg = args.[argIndex]
-                    argIndex <- argIndex + 1
-                    let f = farg :?> ('State -> 'Residue)
-                    env.WriteT(f env.State)
+                    | StepLittleT(prefix) -> 
+                        env.WriteSkipEmpty prefix
+                        let farg = args.[argIndex]
+                        argIndex <- argIndex + 1
+                        let f = farg :?> ('State -> 'Residue)
+                        env.WriteT(f env.State)
 
-                | StepLittleA(prefix) -> 
-                    env.WriteSkipEmpty prefix
-                    let farg = args.[argIndex]
-                    argIndex <- argIndex + 1
-                    let arg = args.[argIndex]
-                    argIndex <- argIndex + 1
-                    let f = farg :?> ('State -> obj -> 'Residue)
-                    env.WriteT(f env.State arg)
+                    | StepLittleA(prefix) -> 
+                        env.WriteSkipEmpty prefix
+                        let farg = args.[argIndex]
+                        argIndex <- argIndex + 1
+                        let arg = args.[argIndex]
+                        argIndex <- argIndex + 1
+                        let f = farg :?> ('State -> obj -> 'Residue)
+                        env.WriteT(f env.State arg)
 
-                | StepStar1(prefix, conv) -> 
-                    env.WriteSkipEmpty prefix
-                    let star1 = args.[argIndex] :?> int
-                    argIndex <- argIndex + 1
-                    let arg1 = args.[argIndex]
-                    argIndex <- argIndex + 1
-                    env.Write (conv arg1 star1)
-       
-                | StepPercentStar1(prefix) ->
-                    //let _star1 = args.[argIndex] :?> int
-                    argIndex <- argIndex + 1
-                    env.WriteSkipEmpty prefix
-                    env.Write("%")
+                    | StepStar1(prefix, conv) -> 
+                        env.WriteSkipEmpty prefix
+                        let star1 = args.[argIndex] :?> int
+                        argIndex <- argIndex + 1
+                        let arg1 = args.[argIndex]
+                        argIndex <- argIndex + 1
+                        env.Write (conv arg1 star1)
+           
+                    | StepPercentStar1(prefix) ->
+                        //let _star1 = args.[argIndex] :?> int
+                        argIndex <- argIndex + 1
+                        env.WriteSkipEmpty prefix
+                        env.Write("%")
 
-                | StepStar2(prefix, conv) -> 
-                    env.WriteSkipEmpty prefix
-                    let star1 = args.[argIndex] :?> int
-                    argIndex <- argIndex + 1
-                    let star2 = args.[argIndex] :?> int
-                    argIndex <- argIndex + 1
-                    let arg1 = args.[argIndex]
-                    argIndex <- argIndex + 1
-                    env.Write (conv arg1 star1 star2)
+                    | StepStar2(prefix, conv) -> 
+                        env.WriteSkipEmpty prefix
+                        let star1 = args.[argIndex] :?> int
+                        argIndex <- argIndex + 1
+                        let star2 = args.[argIndex] :?> int
+                        argIndex <- argIndex + 1
+                        let arg1 = args.[argIndex]
+                        argIndex <- argIndex + 1
+                        env.Write (conv arg1 star1 star2)
 
-                | StepPercentStar2(prefix) -> 
-                    env.WriteSkipEmpty prefix
-                    //let _star1 = args.[argIndex] :?> int
-                    argIndex <- argIndex + 2
-                    env.Write("%")
+                    | StepPercentStar2(prefix) -> 
+                        env.WriteSkipEmpty prefix
+                        //let _star1 = args.[argIndex] :?> int
+                        argIndex <- argIndex + 2
+                        env.Write("%")
     
             env.Finish()
 
