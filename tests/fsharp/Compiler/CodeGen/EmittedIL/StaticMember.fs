@@ -27,15 +27,15 @@ type C =
 {
 
   .maxstack  8
-  IL_0000:  newobj     instance void StaticMember01/CreateAction@8::.ctor()
-  IL_0005:  ldftn      instance void StaticMember01/CreateAction@8::Invoke()
-  IL_000b:  newobj     instance void [runtime]System.Action::.ctor(object,
-                                                                   native int)
-  IL_0010:  ret
+  IL_0000:  ldnull
+  IL_0001:  ldftn      void StaticMember01/CreateAction@8::Invoke()
+  IL_0007:  newobj     instance void [runtime]System.Action::.ctor(object,
+                                                                    native int)
+  IL_000c:  ret
 }
             """
             """
-.class auto autochar serializable sealed nested assembly beforefieldinit specialname CreateAction@8
+.class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateAction@8
        extends [runtime]System.Object
             """
             ])
@@ -59,15 +59,15 @@ type C =
 {
 
   .maxstack  8
-  IL_0000:  newobj     instance void StaticMember02/CreateAction@8::.ctor()
-  IL_0005:  ldftn      instance void StaticMember02/CreateAction@8::Invoke(int32)
-  IL_000b:  newobj     instance void class [runtime]System.Action`1<int32>::.ctor(object,
-                                                                                  native int)
-  IL_0010:  ret
+  IL_0000:  ldnull
+  IL_0001:  ldftn      void StaticMember02/CreateAction@8::Invoke(int32)
+  IL_0007:  newobj     instance void class [runtime]System.Action`1<int32>::.ctor(object,
+                                                                                   native int)
+  IL_000c:  ret
 }
             """
             """
-.class auto autochar serializable sealed nested assembly beforefieldinit specialname CreateAction@8
+.class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateAction@8
        extends [runtime]System.Object
             """
             ])
@@ -104,17 +104,17 @@ let func = new Action<int32>(fun x -> C.M input.X)
   IL_0000:  ldc.i4.7
   IL_0001:  newobj     instance void StaticMember03/MyClass::.ctor(int32)
   IL_0006:  stloc.0
-  IL_0007:  newobj     instance void StaticMember03/func@15::.ctor()
-  IL_000c:  ldftn      instance void StaticMember03/func@15::Invoke(int32)
-  IL_0012:  newobj     instance void class [runtime]System.Action`1<int32>::.ctor(object,
-                                                                                  native int)
-  IL_0017:  stloc.1
-  IL_0018:  ldc.i4.0
-  IL_0019:  ret
+  IL_0007:  ldnull
+  IL_0008:  ldftn      void StaticMember03/func@15::Invoke(int32)
+  IL_000e:  newobj     instance void class [runtime]System.Action`1<int32>::.ctor(object,
+                                                                                   native int)
+  IL_0013:  stloc.1
+  IL_0014:  ldc.i4.0
+  IL_0015:  ret
 }
             """
             """
-.class auto autochar serializable sealed nested assembly beforefieldinit specialname func@15
+.class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname func@15
        extends [runtime]System.Object
             """
             ])
@@ -139,15 +139,15 @@ type C =
 {
 
   .maxstack  8
-  IL_0000:  newobj     instance void StaticMember04/CreateFunc@9::.ctor()
-  IL_0005:  ldftn      instance int32 StaticMember04/CreateFunc@9::Invoke(int32)
-  IL_000b:  newobj     instance void class [runtime]System.Func`2<int32,int32>::.ctor(object,
-                                                                                      native int)
-  IL_0010:  ret
+  IL_0000:  ldnull
+  IL_0001:  ldftn      int32 StaticMember04/CreateFunc@9::Invoke(int32)
+  IL_0007:  newobj     instance void class [runtime]System.Func`2<int32,int32>::.ctor(object,
+                                                                                       native int)
+  IL_000c:  ret
 }
             """
             """
-.class auto autochar serializable sealed nested assembly beforefieldinit specialname CreateFunc@9
+.class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateFunc@9
        extends [runtime]System.Object
             """
             ])
@@ -172,15 +172,15 @@ type C =
 {
 
   .maxstack  8
-  IL_0000:  newobj     instance void StaticMember05/CreateFunc@9::.ctor()
-  IL_0005:  ldftn      instance int32 StaticMember05/CreateFunc@9::Invoke(int32)
-  IL_000b:  newobj     instance void class [runtime]System.Func`2<int32,int32>::.ctor(object,
-                                                                                      native int)
-  IL_0010:  ret
+  IL_0000:  ldnull
+  IL_0001:  ldftn      int32 StaticMember05/CreateFunc@9::Invoke(int32)
+  IL_0007:  newobj     instance void class [runtime]System.Func`2<int32,int32>::.ctor(object,
+                                                                                       native int)
+  IL_000c:  ret
 }
             """
             """
-.class auto autochar serializable sealed nested assembly beforefieldinit specialname CreateFunc@9
+.class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname CreateFunc@9
        extends [runtime]System.Object
             """
             ])
@@ -289,15 +289,15 @@ do (System.Console.Out.WriteLine "Test Passed";
             """
             (fun verifier -> verifier.VerifyIL [
             """
-IL_00bc:  newobj     instance void StaticMember07/clo@36::.ctor()
-IL_00c1:  ldftn      instance void StaticMember07/clo@36::Invoke(object,
-                                                                 class [runtime]System.EventArgs)
-IL_00c7:  newobj     instance void [runtime]System.EventHandler::.ctor(object,
+IL_00bc:  ldnull
+IL_00bd:  ldftn      void StaticMember07/clo@36::Invoke(object,
+                                                        class [runtime]System.EventArgs)
+IL_00c3:  newobj     instance void [runtime]System.EventHandler::.ctor(object,
                                                                        native int)
-IL_00cc:  callvirt   instance void [System.Windows.Forms]System.Windows.Forms.Form::add_Load(class [runtime]System.EventHandler)
+IL_00c8:  callvirt   instance void [System.Windows.Forms]System.Windows.Forms.Form::add_Load(class [runtime]System.EventHandler)
             """
             """
-.class auto autochar serializable sealed nested assembly beforefieldinit specialname clo@36
+.class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname clo@36
        extends [runtime]System.Object
             """
             ])
