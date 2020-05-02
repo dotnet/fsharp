@@ -557,18 +557,14 @@ type CalledMeth<'T>
         | [ thisArgTy ] when isByrefTy g thisArgTy -> [ destByrefTy g thisArgTy ]
         | res -> res
 
-    member x.NumCalledTyArgs = x.CalledTyArgs.Length
-
-    member x.NumCallerTyArgs = x.CallerTyArgs.Length 
-
     member x.AssignsAllNamedArgs = isNil x.UnassignedNamedArgs
 
     member x.HasCorrectArity =
-      (x.NumCalledTyArgs = x.NumCallerTyArgs)  &&
-      x.ArgSets |> List.forall (fun argSet -> argSet.NumUnnamedCalledArgs = argSet.NumUnnamedCallerArgs) 
+        x.HasCorrectGenericArity &&
+        x.ArgSets |> List.forall (fun argSet -> argSet.NumUnnamedCalledArgs = argSet.NumUnnamedCallerArgs) 
 
     member x.HasCorrectGenericArity =
-      (x.NumCalledTyArgs = x.NumCallerTyArgs)  
+        x.CalledTyArgs.Length = x.CallerTyArgs.Length
 
     member x.IsAccessible(m, ad) = 
         IsMethInfoAccessible x.amap m ad x.Method 
