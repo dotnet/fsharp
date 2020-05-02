@@ -209,8 +209,7 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                 // If at the beginning of inference then use a type variable
                 else 
                     let compgenId = mkSynId range0 unassignedTyparName
-                    let NewInferenceType () = mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
-                    NewInferenceType()
+                    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
             else
                 calledArgTy
 
