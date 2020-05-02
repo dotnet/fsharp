@@ -324,6 +324,28 @@ check "fwejwflpej17" (fmt_de $"abc {30000,-10:N} def {40000:N} hij") "abc 30.000
             """
 
     [<Test>]
+    let ``String interpolation to PrintFormat`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+open System.Text
+open Printf
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+check "fwejwflpej1" (sprintf $"") ""
+check "fwejwflpej2" (sprintf $"abc") "abc"
+check "fwejwflpej3" (sprintf $"abc{1}") "abc1"
+
+let sb = StringBuilder()
+bprintf sb $"{0}"
+bprintf sb $"abc"
+bprintf sb $"abc{1}"
+check "fwejwflpej4" (sb.ToString()) "0abcabc1"
+
+            """
+
+
+    [<Test>]
     let ``String interpolation using .NET Formats`` () =
         CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
