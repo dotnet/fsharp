@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open Microsoft.CodeAnalysis.Text
 
 [<Export(typeof<IFSharpFindUsagesService>)>]
 type internal FSharpFindUsagesService
@@ -79,37 +80,39 @@ type internal FSharpFindUsagesService
                             [ FSharpDefinitionItem.CreateNonNavigableItem(
                                 tags,
                                 ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)),
-                                ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))) ]
-                        | _ ->
-                            declarationSpans
-                            |> List.map (fun span ->
-                                FSharpDefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span))
+                                ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))), None ]
+                        | spans ->
+                            spans |> List.map (fun span -> FSharpDefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span), Some span.Document.Id)
                 } |> liftAsync
             
-            for definitionItem in definitionItems do
+            for definitionItem, _ in definitionItems do
                 do! context.OnDefinitionFoundAsync(definitionItem) |> Async.AwaitTask |> liftAsync
             
             let onFound =
-                fun (symbolUse: range) ->
+                fun (doc: Document) (textSpan: TextSpan) (symbolUse: range) ->
                     async {
                         match declarationRange with
                         | Some declRange when FSharp.Compiler.Range.equals declRange symbolUse -> ()
                         | _ ->
                             if allReferences then
-                                let! referenceDocSpans = rangeToDocumentSpans(document.Project.Solution, symbolUse)
-                                match referenceDocSpans with
-                                | [] -> ()
-                                | _ ->
-                                    for referenceDocSpan in referenceDocSpans do
-                                        for definitionItem in definitionItems do
-                                            let referenceItem = FSharpSourceReferenceItem(definitionItem, referenceDocSpan)
-                                            do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask }
+                                for definitionItem, docId in definitionItems do
+                                    match docId with
+                                    | Some docId ->
+                                        if doc.Id.ProjectId = docId.ProjectId then
+                                            let referenceItem = FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, textSpan))
+                                            do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask 
+                                    | _ ->
+                                        () }
             
             match symbolUse.GetDeclarationLocation document with
             | Some SymbolDeclarationLocation.CurrentDocument ->
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
                 for symbolUse in symbolUses do
-                    do! onFound symbolUse.RangeAlternate |> liftAsync
+                    match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with
+                    | Some textSpan ->
+                        do! onFound document textSpan symbolUse.RangeAlternate |> liftAsync
+                    | _ ->
+                        ()
             | scope ->
                 let projectsToCheck =
                     match scope with
