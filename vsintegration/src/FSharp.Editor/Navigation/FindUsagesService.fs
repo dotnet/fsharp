@@ -66,27 +66,25 @@ type internal FSharpFindUsagesService
                 match declaration with
                 | FSharpFindDeclResult.DeclFound range -> Some range
                 | _ -> None
-            
-            let! definitionItems =
-                async {
-                    let! declarationSpans =
-                        match declarationRange with
-                        | Some range -> rangeToDocumentSpans(document.Project.Solution, range)
-                        | None -> async.Return []
-                    
-                    return 
-                        match declarationSpans with 
-                        | [] -> 
-                            [ FSharpDefinitionItem.CreateNonNavigableItem(
-                                tags,
-                                ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)),
-                                ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))), None ]
-                        | spans ->
-                            spans |> List.map (fun span -> FSharpDefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span), Some span.Document.Id)
-                } |> liftAsync
+
+            let! declarationSpans = async {
+                match declarationRange with
+                | Some range -> return! rangeToDocumentSpans(document.Project.Solution, range)
+                | None -> return! async.Return [] } |> liftAsync
+
+            let isExternal = declarationSpans |> List.isEmpty
+            let displayParts = ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText))
+            let originationParts = ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))
+            let externalDefinitionItem = FSharpDefinitionItem.CreateNonNavigableItem(tags, displayParts, originationParts)
+            let definitionItems =
+                    declarationSpans
+                    |> List.map (fun span -> FSharpDefinitionItem.Create(tags, displayParts, span), span.Document.Id)
             
             for definitionItem, _ in definitionItems do
                 do! context.OnDefinitionFoundAsync(definitionItem) |> Async.AwaitTask |> liftAsync
+
+            if isExternal then
+                do! context.OnDefinitionFoundAsync(externalDefinitionItem) |> Async.AwaitTask |> liftAsync
             
             let onFound =
                 fun (doc: Document) (textSpan: TextSpan) (symbolUse: range) ->
@@ -95,14 +93,17 @@ type internal FSharpFindUsagesService
                         | Some declRange when FSharp.Compiler.Range.equals declRange symbolUse -> ()
                         | _ ->
                             if allReferences then
-                                for definitionItem, docId in definitionItems do
-                                    match docId with
-                                    | Some docId ->
-                                        if doc.Id.ProjectId = docId.ProjectId then
-                                            let referenceItem = FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, textSpan))
-                                            do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask 
-                                    | _ ->
-                                        () }
+                                let definitionItem =
+                                    if isExternal then
+                                        externalDefinitionItem
+                                    else
+                                        definitionItems
+                                        |> List.tryFind (fun (_, docId) -> doc.Id = docId)
+                                        |> Option.map (fun (definitionItem, _) -> definitionItem)
+                                        |> Option.defaultValue externalDefinitionItem
+
+                                let referenceItem = FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, textSpan))
+                                do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask }
             
             match symbolUse.GetDeclarationLocation document with
             | Some SymbolDeclarationLocation.CurrentDocument ->
