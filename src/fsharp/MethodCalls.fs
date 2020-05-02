@@ -125,12 +125,13 @@ type CallerArgs<'T> =
         Named: CallerNamedArg<'T> list list 
     }
     static member Empty : CallerArgs<'T> = { Unnamed = []; Named = [] }
-    member x.CallerArgCounts = (List.length x.Unnamed, List.length x.Named)
+    member x.CallerArgCounts = List.length x.Unnamed, List.length x.Named
     member x.CurriedCallerArgs = List.zip x.Unnamed x.Named
     member x.ArgumentNamesAndTypes =
-      [ (x.Unnamed |> List.map (List.map (fun i -> None, i.CallerArgumentType))) |> List.concat
-        (x.Named |> List.map (List.map (fun i -> Some i.Name, i.CallerArg.CallerArgumentType))) |> List.concat ]
-      |> List.concat
+        let unnamed = x.Unnamed |> List.collect (List.map (fun i -> None, i.CallerArgumentType))
+        let named = x.Named |> List.collect (List.map (fun i -> Some i.Name, i.CallerArg.CallerArgumentType))
+        unnamed @ named
+
 //-------------------------------------------------------------------------
 // Callsite conversions
 //------------------------------------------------------------------------- 
