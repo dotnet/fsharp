@@ -17,7 +17,7 @@ open System.IO
 
 open FSharp.Compiler.Service.Tests.Common
 
-let toIList (x: _ array) = x :> System.Collections.Generic.IReadOnlyCollection<_>
+let toIList (x: _ array) = x :> System.Collections.Generic.IList<_>
 let numProjectsForStressTest = 100
 let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
 
