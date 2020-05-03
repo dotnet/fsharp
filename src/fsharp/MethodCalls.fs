@@ -459,7 +459,7 @@ type CalledMeth<'T>
             let names = System.Collections.Generic.HashSet<_>() 
             for CallerNamedArg(nm, _) in namedCallerArgs do 
                 if not (names.Add nm.idText) then
-                    errorR(Error(FSComp.SR.typrelNamedArgumentHasBeenAssignedMoreThenOnce(), m))
+                    errorR(Error(FSComp.SR.typrelNamedArgumentHasBeenAssignedMoreThenOnce nm.idText, m))
                 
             let argSet = { UnnamedCalledArgs=unnamedCalledArgs; UnnamedCallerArgs=unnamedCallerArgs; ParamArrayCalledArgOpt=paramArrayCalledArgOpt; ParamArrayCallerArgs=paramArrayCallerArgs; AssignedNamedArgs=assignedNamedArgs }
 
