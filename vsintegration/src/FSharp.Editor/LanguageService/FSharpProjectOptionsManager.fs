@@ -240,7 +240,10 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
                                 let! options = tryComputeOptionsByFile document ct
                                 reply.Reply options
                             else
-                                let! options = tryComputeOptions document.Project
+                                // We only care about the latest project in the workspace's solution.
+                                // We do this to prevent any possible cache thrashing in FCS.
+                                let project = document.Project.Solution.Workspace.CurrentSolution.GetProject(document.Project.Id)
+                                let! options = tryComputeOptions project
                                 reply.Reply options
                         with
                         | _ ->
@@ -254,6 +257,9 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
                             if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
                                 reply.Reply None
                             else
+                                // We only care about the latest project in the workspace's solution.
+                                // We do this to prevent any possible cache thrashing in FCS.
+                                let project = project.Solution.Workspace.CurrentSolution.GetProject(project.Id)
                                 let! options = tryComputeOptions project
                                 reply.Reply options
                         with
