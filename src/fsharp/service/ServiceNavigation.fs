@@ -7,6 +7,7 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
+open System.Collections.Generic
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
@@ -98,7 +99,7 @@ module NavigationImpl =
     /// Get information for implementation file      
     let getNavigationFromImplFile (modules: SynModuleOrNamespace list) =
         // Map for dealing with name conflicts
-        let names = System.Collections.Generic.Dictionary<_,_>()
+        let names = Dictionary()
 
         let addItemName name = 
             let count =
