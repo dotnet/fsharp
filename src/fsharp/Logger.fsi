@@ -10,6 +10,8 @@ type internal LogCompilerFunctionId =
     | Service_IncrementalBuildersCache_BuildingNewCache = 3
     | Service_IncrementalBuildersCache_GettingCache = 4
     | CompileOps_TypeCheckOneInputAndFinishEventually = 5
+    | IncrementalBuild_CreateItemKeyStoreAndSemanticClassification = 6
+    | IncrementalBuild_TypeCheck = 7
 
 [<RequireQualifiedAccess>]
 module internal Logger =
