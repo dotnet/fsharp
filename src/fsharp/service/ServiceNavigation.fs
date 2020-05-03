@@ -403,14 +403,16 @@ module NavigationImpl =
 
         // Process declarations nested in a module that should be displayed in the left dropdown
         // (such as type declarations, nested modules etc.)                            
-        let rec processFSharpNavigationTopLevelSigDeclarations(baseName, decls) = decls |> List.collect (function
+        let rec processFSharpNavigationTopLevelSigDeclarations(baseName, decls) = 
+            decls 
+            |> List.collect (function
             | SynModuleSigDecl.ModuleAbbrev(id, lid, m) ->
                 [ createDecl(baseName, id, ModuleDecl, FSharpGlyph.Module, m, rangeOfLid lid, [], FSharpEnclosingEntityKind.Module, false, None) ]
                 
             | SynModuleSigDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, access, _), _, decls, m) ->                
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedSigDeclarations(decls)
-                let newBaseName = (if (baseName = "") then "" else baseName+".") + (textOfLid lid)
+                let newBaseName = (if baseName = "" then "" else baseName + ".") + (textOfLid lid)
                 
                 // Get nested modules and types (for the left dropdown)
                 let other = processFSharpNavigationTopLevelSigDeclarations(newBaseName, decls)
