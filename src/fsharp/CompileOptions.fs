@@ -590,7 +590,7 @@ let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
 //---------------------------------
 
 let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) = 
-    let trimFS (s:string) = if s.StartsWithOrdinal("FS") = true then s.Substring 2 else s
+    let trimFS (s:string) = if s.StartsWithOrdinal "FS" then s.Substring 2 else s
     let trimFStoInt (s:string) =
         try
             Some (int32 (trimFS s))
