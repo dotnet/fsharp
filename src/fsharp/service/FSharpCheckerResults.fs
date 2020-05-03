@@ -515,19 +515,25 @@ type internal TypeCheckInfo
     /// This also checks that there are some remaining results 
     /// exactMatchResidueOpt = Some _ -- means that we are looking for exact matches
     let FilterRelevantItemsBy (getItem: 'a -> Item) (exactMatchResidueOpt : _ option) check (items: 'a list, denv, m) =
-            
         // can throw if type is in located in non-resolved CCU: i.e. bigint if reference to System.Numerics is absent
-        let safeCheck item = try check item with _ -> false
+        let inline safeCheck item = try check item with _ -> false
                                                 
         // Are we looking for items with precisely the given name?
-        if not (isNil items) && exactMatchResidueOpt.IsSome then
-            let items = items |> FilterDeclItemsByResidue getItem exactMatchResidueOpt.Value |> List.filter safeCheck 
-            if not (isNil items) then Some(items, denv, m) else None        
-        else 
+        if isNil items then 
             // When (items = []) we must returns Some([],..) and not None
             // because this value is used if we want to stop further processing (e.g. let x.$ = ...)
-            let items = items |> List.filter safeCheck
-            Some(items, denv, m) 
+            Some(items, denv, m)
+        else
+            match exactMatchResidueOpt with
+            | Some exactMatchResidue ->
+                let items = 
+                    items 
+                    |> FilterDeclItemsByResidue getItem exactMatchResidue 
+                    |> List.filter safeCheck 
+                if not (isNil items) then Some(items, denv, m) else None
+            | _ ->
+                let items = items |> List.filter safeCheck
+                Some(items, denv, m) 
 
     /// Post-filter items to make sure they have precisely the right name
     /// This also checks that there are some remaining results 
