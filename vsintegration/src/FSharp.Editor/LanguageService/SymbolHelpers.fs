@@ -39,14 +39,15 @@ module internal SymbolHelpers =
         projects
         |> Seq.map (fun project ->
             async {
-                match! projectInfoManager.TryGetOptionsByProject(project, CancellationToken.None) with
+                let! ct = Async.CancellationToken
+                match! projectInfoManager.TryGetOptionsByProject(project, ct) with
                 | Some (_parsingOptions, projectOptions) ->
                     for filePath in projectOptions.SourceFiles do
-                        let! symbolUses = checker.FindBackgroundReferencesInFile(filePath, projectOptions, symbol, userOpName = userOpName)
+                        // Do not invalidate the project while this is running in case anything has changed.
+                        let! symbolUses = checker.FindBackgroundReferencesInFile(filePath, projectOptions, symbol, canInvalidateProject = false, userOpName = userOpName)
                         let documentOpt = project.Solution.TryGetDocumentFromPath(filePath, project.Id)
                         match documentOpt with
                         | Some document ->
-                            let! ct = Async.CancellationToken
                             let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
                             for symbolUse in symbolUses do 
                                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with

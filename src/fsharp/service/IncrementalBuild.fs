@@ -1224,6 +1224,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                         sourceFiles, loadClosureOpt: LoadClosure option, 
                         keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification) =
 
+    let keyBuilder = ItemKeyStoreBuilder()
     let tcConfigP = TcConfigProvider.Constant tcConfig
     let fileParsed = new Event<string>()
     let beforeFileChecked = new Event<string>()
@@ -1389,6 +1390,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
                     let input, moduleNamesDict = DeduplicateParsedInputModuleName tcAcc.tcModuleNamesDict input
 
+                    Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
                     let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
                         TypeCheckOneInputEventually 
                             ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
@@ -1397,7 +1399,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                              None, 
                              TcResultsSink.WithSink sink, 
                              tcAcc.tcState, input)
-                        
+                    Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
+
                     /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                     let implFile = if keepAssemblyContents then implFile else None
                     let tcResolutions = if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty
@@ -1407,8 +1410,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     // Build symbol keys
                     let itemKeyStore, semanticClassification =
                         if enableBackgroundItemKeyStoreAndSemanticClassification then
+                            Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
                             let sResolutions = sink.GetResolutions()
-                            let builder = ItemKeyStoreBuilder()
                             let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
                                                                 member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Range.posEq s1 s2 && Range.posEq e1 e2
                                                                 member _.GetHashCode o = o.GetHashCode() })
@@ -1416,9 +1419,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                             |> Seq.iter (fun cnr ->
                                 let r = cnr.Range
                                 if preventDuplicates.Add struct(r.Start, r.End) then
-                                    builder.Write(cnr.Range, cnr.Item))
+                                    keyBuilder.Write(cnr.Range, cnr.Item))
 
-                            builder.TryBuildAndReset(), sResolutions.GetSemanticClassification(tcAcc.tcGlobals, tcAcc.tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+                            let res = keyBuilder.TryBuildAndReset(), sResolutions.GetSemanticClassification(tcAcc.tcGlobals, tcAcc.tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+                            Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                            res
                         else
                             None, [||]
                     
@@ -1687,17 +1692,23 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let t1 = MaxTimeStampInDependencies cache ctok stampedFileNamesNode 
         let t2 = MaxTimeStampInDependencies cache ctok stampedReferencedAssembliesNode 
         max t1 t2
-        
-    member __.GetSlotOfFileName(filename: string) =
+
+    member __.TryGetSlotOfFileName(filename: string) =
         // Get the slot of the given file and force it to build.
         let CompareFileNames (_, f2, _) = 
             let result = 
                    String.Compare(filename, f2, StringComparison.CurrentCultureIgnoreCase)=0
                 || String.Compare(FileSystem.GetFullPathShim filename, FileSystem.GetFullPathShim f2, StringComparison.CurrentCultureIgnoreCase)=0
             result
-        match TryGetSlotByInput(fileNamesNode, partialBuild, CompareFileNames) with
+        TryGetSlotByInput(fileNamesNode, partialBuild, CompareFileNames)
+        
+    member this.GetSlotOfFileName(filename: string) =
+        match this.TryGetSlotOfFileName filename with
         | Some slot -> slot
         | None -> failwith (sprintf "The file '%s' was not part of the project. Did you call InvalidateConfiguration when the list of files in the project changed?" filename)
+
+    member this.ContainsFile(filename: string) =
+        (this.TryGetSlotOfFileName filename).IsSome
         
     member __.GetSlotsCount () =
         let expr = GetExprByName(partialBuild, fileNamesNode)

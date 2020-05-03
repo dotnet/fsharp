@@ -160,8 +160,9 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
     interface IDisposable with
 
         member _.Dispose() =
-            isDisposed <- true
-            mmf.Dispose()
+            if not isDisposed then
+                isDisposed <- true
+                mmf.Dispose()
 
 and [<Sealed>] ItemKeyStoreBuilder() =
 

@@ -168,7 +168,8 @@ type internal FSharpClassificationService
                     | ValueSome classificationDataLookup ->
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                     | _ ->
-                        let! classificationData = checkerProvider.Checker.GetBackgroundSemanticClassificationForFile(document.FilePath, projectOptions, userOpName=userOpName) |> liftAsync
+                        // Do not invalidate the project while this is running in case anything has changed.
+                        let! classificationData = checkerProvider.Checker.GetBackgroundSemanticClassificationForFile(document.FilePath, projectOptions, canInvalidateProject = false, userOpName=userOpName) |> liftAsync
                         let classificationDataLookup = toSemanticClassificationLookup classificationData
                         do! semanticClassificationCache.SetAsync(document, classificationDataLookup) |> liftAsync
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
