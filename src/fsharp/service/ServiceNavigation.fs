@@ -98,15 +98,18 @@ module NavigationImpl =
     /// Get information for implementation file      
     let getNavigationFromImplFile (modules: SynModuleOrNamespace list) =
         // Map for dealing with name conflicts
-        let mutable nameMap = Map.empty 
+        let names = System.Collections.Generic.Dictionary<_,_>()
 
         let addItemName name = 
-            let count = defaultArg (nameMap |> Map.tryFind name) 0
-            nameMap <- (Map.add name (count + 1) (nameMap))
-            (count + 1)
+            let count =
+                match names.TryGetValue name with
+                | true, count -> count + 1
+                | _ -> 1
+            names.[name] <- count
+            count
         
         let uniqueName name idx = 
-            let total = Map.find name nameMap
+            let total = names.[name]
             sprintf "%s_%d_of_%d" name idx total
 
         // Create declaration (for the left dropdown)                
@@ -244,7 +247,7 @@ module NavigationImpl =
                      | _ -> [])) 
             
             (members |> Seq.map fst |> Seq.fold unionRangesChecked range.Zero),
-            (members |> List.map snd |> List.concat)
+            (members |> List.collect snd)
 
         // Process declarations in a module that belong to the right drop-down (let bindings)
         let processNestedDeclarations decls = decls |> List.collect (function
