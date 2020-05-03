@@ -199,8 +199,11 @@ module NavigationImpl =
                 | SynTypeDefnSimpleRepr.Record(_, fields, mb) ->
                     let fields = 
                         [ for (Field(_, _, id, _, _, _, _, m)) in fields do
-                            if (id.IsSome) then
-                              yield createMember(id.Value, FieldDecl, FSharpGlyph.Field, m, FSharpEnclosingEntityKind.Record, false, access) ]
+                            match id with
+                            | Some ident -> 
+                                yield createMember(ident, FieldDecl, FSharpGlyph.Field, m, FSharpEnclosingEntityKind.Record, false, access)
+                            | _ -> 
+                                () ]
                     let nested = fields@topMembers
                     [ createDeclLid(baseName, lid, TypeDecl, FSharpGlyph.Type, m, bodyRange mb nested, nested, FSharpEnclosingEntityKind.Record, false, access) ]
                 | SynTypeDefnSimpleRepr.TypeAbbrev(_, _, mb) ->
@@ -368,8 +371,11 @@ module NavigationImpl =
                 | SynTypeDefnSimpleRepr.Record(_, fields, mb) ->
                     let fields = 
                         [ for (Field(_, _, id, _, _, _, _, m)) in fields do
-                            if (id.IsSome) then
-                              yield createMember(id.Value, FieldDecl, FSharpGlyph.Field, m, FSharpEnclosingEntityKind.Record, false, access) ]
+                            match id with
+                            | Some ident ->
+                                yield createMember(ident, FieldDecl, FSharpGlyph.Field, m, FSharpEnclosingEntityKind.Record, false, access)
+                            | _ ->
+                                () ]
                     let nested = fields@topMembers
                     [ createDeclLid(baseName, lid, TypeDecl, FSharpGlyph.Type, m, bodyRange mb nested, nested, FSharpEnclosingEntityKind.Record, false, access) ]
                 | SynTypeDefnSimpleRepr.TypeAbbrev(_, _, mb) ->
