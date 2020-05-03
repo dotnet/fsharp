@@ -79,9 +79,9 @@ module NavigationImpl =
         else unionRanges r1 r2
     
     let rangeOfDecls2 f decls = 
-      match (decls |> List.map (f >> (fun (d:FSharpNavigationDeclarationItem) -> d.bodyRange))) with 
-      | hd :: tl -> tl |> List.fold unionRangesChecked hd
-      | [] -> range.Zero
+        match decls |> List.map (f >> (fun (d:FSharpNavigationDeclarationItem) -> d.bodyRange)) with 
+        | hd :: tl -> tl |> List.fold unionRangesChecked hd
+        | [] -> range.Zero
     
     let rangeOfDecls = rangeOfDecls2 fst
 
