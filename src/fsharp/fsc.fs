@@ -1128,15 +1128,17 @@ module StaticLinker =
         // Make a dictionary of ccus passed to the compiler will be looked up by qualified assembly name
         let ccuThunksQualifiedName =
             tcImports.GetCcusInDeclOrder()
-            |> List.filter(fun ccuThunk -> ccuThunk.QualifiedName |> Option.isSome)
-            |> List.map(fun ccuThunk -> ccuThunk.QualifiedName |> Option.defaultValue "Assembly Name Not Passed", ccuThunk)
+            |> List.choose (fun ccuThunk -> ccuThunk.QualifiedName |> Option.map (fun v -> v, ccuThunk))
             |> dict
 
         // If we can't type forward using exact assembly match, we need to rely on the loader (Policy, Configuration or the coreclr load heuristics), so use try simple name
         let ccuThunksSimpleName =
             tcImports.GetCcusInDeclOrder()
-            |> List.filter(fun ccuThunk -> not (String.IsNullOrEmpty(ccuThunk.AssemblyName)))
-            |> List.map(fun ccuThunk -> ccuThunk.AssemblyName, ccuThunk)
+            |> List.choose (fun ccuThunk -> 
+                if String.IsNullOrEmpty(ccuThunk.AssemblyName) then
+                    None
+                else
+                    Some (ccuThunk.AssemblyName, ccuThunk))
             |> dict
 
         let followTypeForwardForILTypeRef (tref:ILTypeRef) =
