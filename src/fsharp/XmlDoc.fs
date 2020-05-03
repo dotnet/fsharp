@@ -77,7 +77,7 @@ type XmlDocCollector() =
                 let prevGrabPointPos = grabPoints.[grabPointIndex-1]
                 Array.findFirstIndexWhereTrue lines (fun (_, pos) -> posGeq pos prevGrabPointPos)
 
-        let lines = lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.rev
+        let lines = lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1]
         if lines.Length = 0 then
             [| |]
         else
