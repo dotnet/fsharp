@@ -1224,7 +1224,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                         sourceFiles, loadClosureOpt: LoadClosure option, 
                         keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification) =
 
-    let keyBuilder = ItemKeyStoreBuilder()
     let tcConfigP = TcConfigProvider.Constant tcConfig
     let fileParsed = new Event<string>()
     let beforeFileChecked = new Event<string>()
@@ -1411,6 +1410,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     let itemKeyStore, semanticClassification =
                         if enableBackgroundItemKeyStoreAndSemanticClassification then
                             Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                            let keyBuilder = ItemKeyStoreBuilder()
                             let sResolutions = sink.GetResolutions()
                             let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
                                                                 member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Range.posEq s1 s2 && Range.posEq e1 e2
