@@ -86,7 +86,6 @@ type XmlDocCollector() =
             |> Array.mapi (fun i x -> firstLineNumber - i, x)
             |> Array.takeWhile (fun (sequencedLineNumber, (_, pos)) -> sequencedLineNumber = pos.Line)
             |> Array.map (fun (_, (lineStr, _)) -> lineStr)
-            |> Array.rev
       with e ->
         //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
         [| |]
