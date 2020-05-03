@@ -584,7 +584,7 @@ let inputFileFlagsFsiBase (_tcConfigB: TcConfigBuilder) =
 #endif
 
 let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
-    List.concat [ inputFileFlagsBoth tcConfigB; inputFileFlagsFsiBase tcConfigB]
+    List.append (inputFileFlagsBoth tcConfigB) (inputFileFlagsFsiBase tcConfigB)
 
 // OptionBlock: Errors and warnings
 //---------------------------------
