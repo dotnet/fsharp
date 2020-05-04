@@ -81,7 +81,7 @@ type private FSharpProjectOptionsMessage =
     | ClearSingleFileOptionsCache of DocumentId
 
 [<Sealed>]
-type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, settings: EditorOptions, _serviceProvider, checkerProvider: FSharpCheckerProvider) =
+type private FSharpProjectOptionsReactor (workspace: Workspace, settings: EditorOptions, _serviceProvider, checkerProvider: FSharpCheckerProvider) =
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Hack to store command line options from HandleCommandLineChanges
@@ -208,6 +208,23 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
                 if Array.isEmpty projectOptions.SourceFiles then
                     return None
                 else
+                    // Clear any caches that need clearing and invalidate the project.
+                    let currentSolution = workspace.CurrentSolution
+                    let projectsToClearCache =
+                        cache
+                        |> Seq.filter (fun pair -> not (currentSolution.ContainsProject pair.Key))
+                        |> List.ofSeq
+
+                    if not projectsToClearCache.IsEmpty then
+                        projectsToClearCache
+                        |> List.iter (fun pair -> cache.Remove pair.Key |> ignore)
+                        let options =
+                            projectsToClearCache
+                            |> List.map (fun pair ->
+                                let _, _, projectOptions = pair.Value
+                                projectOptions)
+                        checkerProvider.Checker.ClearCache(options, userOpName = "tryComputeOptions")
+
                     checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = false, userOpName = "computeOptions")
 
                     let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
