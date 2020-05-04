@@ -1775,8 +1775,6 @@ val mkInvalidCastExnNewobj: TcGlobals -> ILInstr
 
 val mkCallNewFormat: TcGlobals -> range -> TType -> TType -> TType -> TType -> TType -> formatStringExpr: Expr -> Expr
 
-val mkCallNewFormatWithExprs: TcGlobals -> range -> TType -> TType -> TType -> TType -> TType -> formatStringExpr: Expr -> captureExprs: Expr -> Expr
-
 val mkCallUnbox       : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallGetGenericComparer : TcGlobals -> range -> Expr

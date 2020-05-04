@@ -31,6 +31,9 @@ let verify actual expected = test expected actual expected
 
 let adjust1 obj n1 = unbox ((unbox obj) n1)
 
+let _ = test "cewoui20" (lazy(sprintf $"")) ""
+let _ = test "cewoui21" (lazy(sprintf $"abc")) "abc"
+let _ = test "cewoui22" (lazy(sprintf $"%d{3}")) "3"
 let _ = test "cewoui2a" (lazy(sprintf $"%o{0}")) "0"
 let _ = test "cewoui2b" (lazy(sprintf $"%o{0}")) "0"
 let _ = test "cewoui2c" (lazy(sprintf $"%o{5}")) "5"
@@ -230,9 +233,20 @@ let _ =
     test "test8440" (lazy(sprintf $"""%-+1A{-10}""")) "-10"
     test "test8442" (lazy(sprintf $"""%-+.5A{-10}""")) "-10"
 
-    // NOTE: %A in $"..." does *not* pick up the static type, which makes a difference for 'None'
-    test "test8445a" (lazy(sprintf "%A" (None: int option))) "None"
-    test "test8445b" (lazy(sprintf $"""%A{(None: int option)}""")) "<null>"
+    // Check the static type matters for %A holes
+    test "test8445b1" (lazy(sprintf $"""%A{(Unchecked.defaultof<int option>)}""")) "None"
+    test "test8445b2" (lazy(sprintf $"""%A{box (None: int option)}""")) "<null>"
+    test "test8445b3" (lazy(sprintf $"""%A{(None: int option)}""")) "None"
+    test "test8445b4" (lazy(sprintf $"""%A{(None: string option)}""")) "None"
+    test "test8445b5" (lazy(sprintf $"""%A{(None: obj option)}""")) "None"
+    test "test8445b6" (lazy($"""%A{(Unchecked.defaultof<int option>)}""")) "None"
+    test "test8445b7a" (lazy($"""{null}""")) ""
+    test "test8445b7b" (lazy($"""%O{null}""")) "<null>"
+    test "test8445b8" (lazy($"""%A{null}""")) "<null>"
+    test "test8445b9" (lazy($"""%A{box (None: int option)}""")) "<null>"
+    test "test8445b10" (lazy($"""%A{(None: int option)}""")) "None"
+    test "test8445b11" (lazy($"""%A{(None: string option)}""")) "None"
+    test "test8445b12" (lazy($"""%A{(None: obj option)}""")) "None"
 
     test "test8445" (lazy(sprintf $"""%A{null}""")) "<null>"
     test "test8446" (lazy(sprintf $"""%5A{null}""")) "<null>"

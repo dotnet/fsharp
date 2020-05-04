@@ -48,7 +48,7 @@ let newInfo () =
     addZeros       = false
     precision      = false}
 
-let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormattableString (context: FormatStringCheckContext option) fmt bty cty = 
+let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormattableString (context: FormatStringCheckContext option) fmt printerArgTy printerResidueTy = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
     // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
     let (offset, fmt) = 
@@ -78,6 +78,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
     let dotnetFormatString = StringBuilder() 
     let appendToDotnetFormatString (s: string) = dotnetFormatString.Append(s) |> ignore 
     let mutable dotnetFormatStringInterpolationHoleCount = 0
+    let percentATys = ResizeArray<_>()
 
     let rec parseLoop acc (i, relLine, relCol) = 
        if i >= len then
@@ -327,13 +328,15 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                   | Some '+' -> 
                       collectSpecifierLocation relLine relCol 1
                       let i = skipPossibleInterpolationHole (i+1)
-                      parseLoop ((posi, NewInferenceType ()) :: acc)  (i, relLine, relCol+1)
+                      let xty = NewInferenceType ()
+                      percentATys.Add(xty)
+                      parseLoop ((posi, xty) :: acc)  (i, relLine, relCol+1)
                   | Some n -> raise (Failure (FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), n.ToString())))
 
               | 'a' ->
                   checkOtherFlags ch
                   let xty = NewInferenceType () 
-                  let fty = bty --> (xty --> cty)
+                  let fty = printerArgTy --> (xty --> printerResidueTy)
                   collectSpecifierLocation relLine relCol 2
                   let i = skipPossibleInterpolationHole (i+1)
                   parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) (i, relLine, relCol+1)
@@ -342,7 +345,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                   checkOtherFlags ch
                   collectSpecifierLocation relLine relCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, bty --> cty) :: acc)  (i, relLine, relCol+1)
+                  parseLoop ((posi, printerArgTy --> printerResidueTy) :: acc)  (i, relLine, relCol+1)
 
               | c -> raise (Failure (FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c)))
           
@@ -354,18 +357,18 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
               parseLoop acc (i+1, relLine, relCol+1)
            
     let results = parseLoop [] (0, 0, m.StartColumn)
-    results, Seq.toList specifierLocations, dotnetFormatString.ToString()
+    results, Seq.toList specifierLocations, dotnetFormatString.ToString(), percentATys.ToArray()
 
-let ParseFormatString m g isInterpolated isFormattableString formatStringCheckContext fmt bty cty dty = 
-    let argtys, specifierLocations, dotnetFormatString = parseFormatStringInternal m g isInterpolated isFormattableString formatStringCheckContext fmt bty cty
-    let aty = List.foldBack (-->) argtys dty
-    let ety = mkRefTupledTy g argtys
-    (argtys, aty, ety), specifierLocations, dotnetFormatString
+let ParseFormatString m g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy printerResultTy = 
+    let argTys, specifierLocations, dotnetFormatString, percentATys = parseFormatStringInternal m g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy
+    let printerTy = List.foldBack (-->) argTys printerResultTy
+    let printerTupleTy = mkRefTupledTy g argTys
+    argTys, printerTy, printerTupleTy, percentATys, specifierLocations, dotnetFormatString
 
-let TryCountFormatStringArguments m g isInterpolated fmt bty cty =
+let TryCountFormatStringArguments m g isInterpolated fmt printerArgTy printerResidueTy =
     try
-        let argtys, _specifierLocations, _dotnetFormatString = parseFormatStringInternal m g isInterpolated false None fmt bty cty
-        Some argtys.Length
+        let argTys, _specifierLocations, _dotnetFormatString, _percentATys = parseFormatStringInternal m g isInterpolated false None fmt printerArgTy printerResidueTy
+        Some argTys.Length
     with _ ->
         None
 

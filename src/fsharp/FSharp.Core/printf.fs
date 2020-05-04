@@ -2,21 +2,34 @@
 
 namespace Microsoft.FSharp.Core
 
-type PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value:string, captures: obj[]) =
+open System
+open System.Collections.Concurrent
+open System.Globalization
+open System.Reflection
+
+open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.Operators
+open Microsoft.FSharp.Collections
+
+open LanguagePrimitives.IntrinsicOperators
+
+type PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value:string, captures: obj[], captureTys: Type[]) =
         
-    new (value) = new PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, null) 
+    new (value) = new PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, null, null) 
 
-    member x.Value = value
+    member _.Value = value
 
-    member x.Captures = captures
+    member _.Captures = captures
 
-    override __.ToString() = value
+    member _.CaptureTypes = captureTys
+
+    override _.ToString() = value
     
-type PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>(value:string, captures) = 
+type PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>(value:string, captures, captureTys: Type[]) = 
 
-    inherit PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, captures)
+    inherit PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, captures, captureTys)
 
-    new (value) = new PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>(value, null)
+    new (value) = new PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>(value, null, null)
 
 type Format<'Printer, 'State, 'Residue, 'Result> = PrintfFormat<'Printer, 'State, 'Residue, 'Result>
 
@@ -45,15 +58,6 @@ module internal PrintfImpl =
     /// with just one reflection call
     /// 2. we can make combinable parts independent from particular printf implementation. Thus final result can be cached and shared. 
     /// i.e when first call to printf "%s %s" will trigger creation of the specialization. Subsequent calls will pick existing specialization
-    open System
-
-    open System.Collections.Concurrent
-    open System.Globalization
-    open System.Reflection
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
-    open Microsoft.FSharp.Collections
-    open LanguagePrimitives.IntrinsicOperators
     
     [<Flags>]
     type FormatFlags = 
@@ -223,7 +227,8 @@ module internal PrintfImpl =
     [<NoComparison; NoEquality>]
     /// Represents one step in the execution of a format string
     type Step =
-        | Step of prefix: string * conv1: (obj -> string) 
+        | StepWithArg of prefix: string * conv1: (obj -> string) 
+        | StepWithTypedArg of prefix: string * conv1: (obj -> Type -> string) 
         | StepString of prefix: string 
         | StepLittleT of prefix: string 
         | StepLittleA of prefix: string
@@ -236,7 +241,10 @@ module internal PrintfImpl =
             let mutable count = 0
             for step in steps do 
                 match step with 
-                | Step (prefix, _conv1) ->
+                | StepWithArg (prefix, _conv) ->
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
+                    count <- count + 1
+                | StepWithTypedArg (prefix, _conv) ->
                     if not (String.IsNullOrEmpty prefix) then count <- count + 1
                     count <- count + 1
                 | StepString prefix ->
@@ -279,19 +287,25 @@ module internal PrintfImpl =
             if not (String.IsNullOrEmpty s) then 
                 env.Write s
 
-        member inline env.Write(argIndex: byref<int>, args: obj[], conv: obj -> string) =
-            let arg = args.[argIndex]
-            argIndex <- argIndex + 1
-            env.Write(conv arg)
-    
-        member env.RunSteps (args: obj[], steps: Step[]) =
+        member env.RunSteps (args: obj[], argTys: Type[], steps: Step[]) =
             let mutable argIndex = 0
+            let mutable tyIndex = 0
 
             for step in steps do 
                 match step with 
-                | Step (prefix, conv1) ->
+                | StepWithArg (prefix, conv) ->
                     env.WriteSkipEmpty(prefix)
-                    env.Write(&argIndex, args, conv1)
+                    let arg = args.[argIndex]
+                    argIndex <- argIndex + 1
+                    env.Write(conv arg)
+
+                | StepWithTypedArg (prefix, conv) ->
+                    env.WriteSkipEmpty(prefix)
+                    let arg = args.[argIndex]
+                    let argTy = argTys.[tyIndex]
+                    argIndex <- argIndex + 1
+                    tyIndex <- tyIndex + 1
+                    env.Write(conv arg argTy)
 
                 | StepString prefix ->
                     env.WriteSkipEmpty(prefix)
@@ -366,7 +380,7 @@ module internal PrintfImpl =
             let allSteps = finalizeSteps steps
             (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
                 let (args, env) = prev()
-                env.RunSteps(finalizeArgs args, allSteps)
+                env.RunSteps(finalizeArgs args, null, allSteps)
             )
 
         static member CaptureFinal1<'A>(steps) =
@@ -375,7 +389,7 @@ module internal PrintfImpl =
                 (fun (arg1: 'A) ->
                     let (args, env) = prev()
                     let finalArgs = box arg1 :: args
-                    env.RunSteps(finalizeArgs finalArgs, allSteps)
+                    env.RunSteps(finalizeArgs finalArgs, null, allSteps)
                 )
             )
 
@@ -385,7 +399,7 @@ module internal PrintfImpl =
                 (fun (arg1: 'A) (arg2: 'B) ->
                     let (args, env) = prev()
                     let finalArgs = box arg2 :: box arg1 :: args
-                    env.RunSteps(finalizeArgs finalArgs, allSteps)
+                    env.RunSteps(finalizeArgs finalArgs, null, allSteps)
                 )
             )
 
@@ -395,7 +409,7 @@ module internal PrintfImpl =
                 (fun (arg1: 'A) (arg2: 'B) (arg3: 'C) ->
                     let (args, env) = prev()
                     let finalArgs = box arg3 :: box arg2 :: box arg1 :: args
-                    env.RunSteps(finalizeArgs finalArgs, allSteps)
+                    env.RunSteps(finalizeArgs finalArgs, null, allSteps)
                 )
             )
 
@@ -985,7 +999,9 @@ module internal PrintfImpl =
                 | false, '%' -> StepPercentStar1 prefix
                 | true, '%' -> StepPercentStar2 prefix
                 | _ ->
-                    let argTy = (match argTys with null -> typeof<obj> | _ -> argTys.[argTys.Length - 1])
+                    // For curried interpolated string format processing, the static types of the '%A' arguments 
+                    // are provided via the argument typed extracted from the curried function. They are known on first phase.
+                    let argTy = match argTys with null -> typeof<obj> | _ -> argTys.[argTys.Length - 1]
                     let conv = getValueConverter argTy spec 
                     if isTwoStar then 
                         let convFunc = conv.FuncObj :?> (obj -> int -> int -> string)
@@ -994,10 +1010,25 @@ module internal PrintfImpl =
                         let convFunc = conv.FuncObj :?> (obj -> int -> string)
                         StepStar1 (prefix, convFunc)
             else
-                let argTy = (match argTys with null -> typeof<obj> | _ -> argTys.[0])
-                let conv = getValueConverter argTy spec
-                let convFunc = conv.FuncObj :?> (obj -> string)
-                Step (prefix, convFunc)
+                // For interpolated string format processing, the static types of the '%A' arguments 
+                // are provided via CaptureTypes and are only known on second phase.
+                match argTys with
+                | null when spec.TypeChar = 'A' ->
+                    let convFunc arg argTy = 
+                        let mi = mi_GenericToString.MakeGenericMethod [| argTy |]
+                        let f = mi.Invoke(null, [| box spec |]) :?> ValueConverter
+                        let f2 = f.FuncObj :?> (obj -> string)
+                        f2 arg
+
+                    StepWithTypedArg (prefix, convFunc)
+
+                | _ -> 
+                    // For curried interpolated string format processing, the static types of the '%A' arguments 
+                    // are provided via the argument typed extracted from the curried function. They are known on first phase.
+                    let argTy = match argTys with null -> typeof<obj> | _ -> argTys.[0]
+                    let conv = getValueConverter argTy spec
+                    let convFunc = conv.FuncObj :?> (obj -> string)
+                    StepWithArg (prefix, convFunc)
             
         let parseSpec i = 
             let flags, i = FormatString.parseFlags fmt (i + 1)
@@ -1165,7 +1196,7 @@ module internal PrintfImpl =
         inherit PrintfEnv<unit, string, string>(())
         let mutable c = null
 
-        override __.Finish() : string = c
+        override __.Finish() : string = if isNull c then "" else c
         override __.Write(s: string) = if isNull c then c <- s else c <- c + s
         override __.WriteT s = if isNull c then c <- s else c <- c + s
 
@@ -1214,7 +1245,7 @@ module Printf =
             // The ksprintf $"...%d{3}...." path, running the steps straight away to produce a string
             let steps = cacheItem.Steps
             let env = envf cacheItem.BlockCount :> PrintfEnv<_,_,_>
-            let res = env.RunSteps(captures, steps)
+            let res = env.RunSteps(captures, format.CaptureTypes, steps)
             unbox res // prove 'T = 'Result
             //continuation res
     
@@ -1236,7 +1267,7 @@ module Printf =
             // The sprintf $"...%d{3}...." path, running the steps straight away to produce a string
             let steps = cacheItem.Steps
             let env = StringPrintfEnv cacheItem.BlockCount
-            let res = env.RunSteps(captures, steps)
+            let res = env.RunSteps(captures, format.CaptureTypes, steps)
             unbox res // proves 'T = string
 
     [<CompiledName("PrintFormatThen")>]

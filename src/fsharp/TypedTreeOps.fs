@@ -6917,9 +6917,6 @@ let mkCallNewDecimal (g: TcGlobals) m (e1, e2, e3, e4, e5) = mkApps g (typedExpr
 let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety e1 =
     mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
 
-let mkCallNewFormatWithExprs (g: TcGlobals) m aty bty cty dty ety fmtStringExpr captureExprs =
-    mkApps g (typedExprForIntrinsic g m g.new_format_ext_info, [[aty;bty;cty;dty;ety]], [fmtStringExpr;captureExprs ], m)
-
 let TryEliminateDesugaredConstants g m c = 
     match c with 
     | Const.Decimal d -> 
