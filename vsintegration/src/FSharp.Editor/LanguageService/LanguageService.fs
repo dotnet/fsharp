@@ -63,7 +63,6 @@ type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager) =
     interface IVsSolutionEvents with
 
         member __.OnAfterCloseSolution(_) =
-            projectManager.Checker.StopBackgroundCompile()
             projectManager.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             VSConstants.S_OK
 
