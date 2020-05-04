@@ -89,8 +89,6 @@ let ``Property getters and setters are removed``() =
     type MyType() =
         static member val MyProperty = 0 with get,set
 """
-    => [
-        "Test"
-        "Test.MyType"
-        "Test.MyType.MyProperty"
-    ]
+    => [ "Test"
+         "Test.MyType"
+         "Test.MyType.MyProperty" ]
