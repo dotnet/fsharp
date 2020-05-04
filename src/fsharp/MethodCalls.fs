@@ -456,10 +456,10 @@ type CalledMeth<'T>
                               | _ -> 
                                   Choice2Of2(arg))
 
-            let names = namedCallerArgs |> List.distinctBy (fun (CallerNamedArg(nm, _)) -> nm.idText) 
-
-            if names.Length <> namedCallerArgs.Length then
-                errorR(Error(FSComp.SR.typrelNamedArgumentHasBeenAssignedMoreThenOnce(), m))
+            let names = System.Collections.Generic.HashSet<_>() 
+            for CallerNamedArg(nm, _) in namedCallerArgs do 
+                if not (names.Add nm.idText) then
+                    errorR(Error(FSComp.SR.typrelNamedArgumentHasBeenAssignedMoreThenOnce nm.idText, m))
                 
             let argSet = { UnnamedCalledArgs=unnamedCalledArgs; UnnamedCallerArgs=unnamedCallerArgs; ParamArrayCalledArgOpt=paramArrayCalledArgOpt; ParamArrayCallerArgs=paramArrayCallerArgs; AssignedNamedArgs=assignedNamedArgs }
 
