@@ -3574,7 +3574,7 @@ let formatILVersion (version: ILVersionInfo) = sprintf "%d.%d.%d.%d" (int versio
 
 let encodeCustomAttrString s =
     let arr = string_as_utf8_bytes s
-    Array.concat [ z_unsigned_int arr.Length; arr ]
+    Array.append (z_unsigned_int arr.Length) arr
 
 let rec encodeCustomAttrElemType x =
     match x with

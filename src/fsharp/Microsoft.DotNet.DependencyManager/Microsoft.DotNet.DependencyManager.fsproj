@@ -5,6 +5,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
+    <IsPackable>true</IsPackable>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
     <AssemblyName>Microsoft.DotNet.DependencyManager</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>

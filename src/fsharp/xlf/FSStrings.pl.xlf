@@ -68,8 +68,8 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">Identyfikatory zmiennych pisane wielkimi literami nie powinny być używane we wzorcach i mogą oznaczać nazwę wzorca z błędami pisowni.</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="needs-review-translation">Identyfikatory zmiennych pisane wielkimi literami nie powinny być używane we wzorcach i mogą oznaczać nazwę wzorca z błędami pisowni.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
