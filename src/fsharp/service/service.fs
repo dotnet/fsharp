@@ -846,7 +846,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 if startBackgroundCompileIfAlreadySeen then 
                    bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile"))
 
-    member bc.ClearCache(options : FSharpProjectOptions list, userOpName) =
+    member bc.ClearCache(options : FSharpProjectOptions seq, userOpName) =
         // This operation can't currently be cancelled nor awaited
         reactor.EnqueueOp(userOpName, "ClearCache", String.Empty, fun ctok -> 
             options

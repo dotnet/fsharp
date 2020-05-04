@@ -213,14 +213,13 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     let projectsToClearCache =
                         cache
                         |> Seq.filter (fun pair -> not (currentSolution.ContainsProject pair.Key))
-                        |> List.ofSeq
 
-                    if not projectsToClearCache.IsEmpty then
+                    if not (Seq.isEmpty projectsToClearCache) then
                         projectsToClearCache
-                        |> List.iter (fun pair -> cache.Remove pair.Key |> ignore)
+                        |> Seq.iter (fun pair -> cache.Remove pair.Key |> ignore)
                         let options =
                             projectsToClearCache
-                            |> List.map (fun pair ->
+                            |> Seq.map (fun pair ->
                                 let _, _, projectOptions = pair.Value
                                 projectOptions)
                         checkerProvider.Checker.ClearCache(options, userOpName = "tryComputeOptions")

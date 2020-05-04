@@ -361,7 +361,7 @@ type public FSharpChecker =
     /// Clear the internal cache of the given projects.
     /// <param name="options">The given project options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member ClearCache: options: FSharpProjectOptions list * ?userOpName: string -> unit
+    member ClearCache: options: FSharpProjectOptions seq * ?userOpName: string -> unit
 
     /// Set the project to be checked in the background.  Overrides any previous call to <c>CheckProjectInBackground</c>
     member CheckProjectInBackground: options: FSharpProjectOptions  * ?userOpName: string -> unit
