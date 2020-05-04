@@ -243,7 +243,7 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
                                 // We only care about the latest project in the workspace's solution.
                                 // We do this to prevent any possible cache thrashing in FCS.
                                 let project = document.Project.Solution.Workspace.CurrentSolution.GetProject(document.Project.Id)
-                                if project <> null then
+                                if not (isNull project) then
                                     let! options = tryComputeOptions project
                                     reply.Reply options
                                 else
@@ -263,7 +263,7 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
                                 // We only care about the latest project in the workspace's solution.
                                 // We do this to prevent any possible cache thrashing in FCS.
                                 let project = project.Solution.Workspace.CurrentSolution.GetProject(project.Id)
-                                if project <> null then
+                                if not (isNull project) then
                                     let! options = tryComputeOptions project
                                     reply.Reply options
                                 else
