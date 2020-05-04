@@ -184,6 +184,18 @@ type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongl
             if areSame(similarKey, key) && isStillValid(key,value) then Some value
             else None
         | None -> None
+
+    member bc.TryGetSimilarAny(tok, key) = 
+        match cache.TryGetKeyValue(tok, key) with
+        | Some(_, value) -> Some value
+        | None -> None
+
+    member bc.TryGetSimilar(tok, key) = 
+        match cache.TryGetKeyValue(tok, key) with
+        | Some(_, value) -> 
+            if isStillValid(key,value) then Some value
+            else None
+        | None -> None
            
     member bc.Set(tok, key:'Key,value:'Value) = 
         cache.Put(tok, key,value)

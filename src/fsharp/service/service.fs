@@ -357,6 +357,19 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
               return builderOpt, creationErrors
       }
 
+    let getSimilarOrCreateBuilder (ctok, options, userOpName) =
+        RequireCompilationThread ctok
+        match incrementalBuildersCache.TryGetSimilar (ctok, options) with
+        | Some res -> Cancellable.ret res
+        // The builder does not exist at all. Create it.
+        | None -> getOrCreateBuilder (ctok, options, userOpName)
+
+    let getOrCreateBuilderWithInvalidationFlag (ctok, options, canInvalidateProject, userOpName) =
+        if canInvalidateProject then
+            getOrCreateBuilder (ctok, options, userOpName)
+        else
+            getSimilarOrCreateBuilder (ctok, options, userOpName)
+
     let parseCacheLock = Lock<ParseCacheLockToken>()
     
 
@@ -699,18 +712,22 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 return (parseResults, typedResults)
            })
 
-    member __.FindReferencesInFile(filename: string, options: FSharpProjectOptions, symbol: FSharpSymbol, userOpName: string) =
+    member __.FindReferencesInFile(filename: string, options: FSharpProjectOptions, symbol: FSharpSymbol, canInvalidateProject: bool, userOpName: string) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "FindReferencesInFile", filename, fun ctok -> 
           cancellable {
-            let! builderOpt, _ = getOrCreateBuilder (ctok, options, userOpName)
+            let! builderOpt, _ = getOrCreateBuilderWithInvalidationFlag (ctok, options, canInvalidateProject, userOpName)
             match builderOpt with
             | None -> return Seq.empty
             | Some builder -> 
-                let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
-                return 
-                    match checkResults.ItemKeyStore with
-                    | None -> Seq.empty
-                    | Some reader -> reader.FindAll symbol.Item })
+                if builder.ContainsFile filename then
+                    let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
+                    return 
+                        match checkResults.ItemKeyStore with
+                        | None -> Seq.empty
+                        | Some reader -> reader.FindAll symbol.Item
+                else
+                    return Seq.empty })
+
 
     member __.GetSemanticClassificationForFile(filename: string, options: FSharpProjectOptions, userOpName: string) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "GetSemanticClassificationForFile", filename, fun ctok -> 
@@ -1172,10 +1189,11 @@ type FSharpChecker(legacyReferenceResolver,
         ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseAndCheckProject(options, userOpName)
 
-    member ic.FindBackgroundReferencesInFile(filename:string, options: FSharpProjectOptions, symbol: FSharpSymbol, ?userOpName: string) =
+    member ic.FindBackgroundReferencesInFile(filename:string, options: FSharpProjectOptions, symbol: FSharpSymbol, ?canInvalidateProject: bool, ?userOpName: string) =
+        let canInvalidateProject = defaultArg canInvalidateProject true
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
-        backgroundCompiler.FindReferencesInFile(filename, options, symbol, userOpName)
+        backgroundCompiler.FindReferencesInFile(filename, options, symbol, canInvalidateProject, userOpName)
 
     member ic.GetBackgroundSemanticClassificationForFile(filename:string, options: FSharpProjectOptions, ?userOpName) =
         let userOpName = defaultArg userOpName "Unknown"

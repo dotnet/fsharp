@@ -1688,7 +1688,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let t2 = MaxTimeStampInDependencies cache ctok stampedReferencedAssembliesNode 
         max t1 t2
         
-    member __.GetSlotOfFileName(filename: string) =
+    member __.TryGetSlotOfFileName(filename: string) =
         // Get the slot of the given file and force it to build.
         let CompareFileNames (_, f2, _) = 
             let result = 
@@ -1696,6 +1696,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 || String.Compare(FileSystem.GetFullPathShim filename, FileSystem.GetFullPathShim f2, StringComparison.CurrentCultureIgnoreCase)=0
             result
         match TryGetSlotByInput(fileNamesNode, partialBuild, CompareFileNames) with
+        | Some slot -> Some slot
+        | None -> None
+        
+    member this.GetSlotOfFileName(filename: string) =
+        match this.TryGetSlotOfFileName(filename) with
         | Some slot -> slot
         | None -> failwith (sprintf "The file '%s' was not part of the project. Did you call InvalidateConfiguration when the list of files in the project changed?" filename)
         
@@ -1704,6 +1709,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         match partialBuild.Results.TryFind(expr.Id) with
         | Some (VectorResult vr) -> vr.Size
         | _ -> failwith "Failed to find sizes"
+
+    member this.ContainsFile(filename: string) =
+        (this.TryGetSlotOfFileName filename).IsSome
       
     member builder.GetParseResultsForFile (ctok: CompilationThreadToken, filename) =
       cancellable {
