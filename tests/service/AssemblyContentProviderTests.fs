@@ -83,4 +83,14 @@ module MyType =
          "Test.MyType"
          "Test.MyType.func123" ]
 
-
+[<Test>]
+let ``Property getters and setters are removed``() =
+    """
+    type MyType() =
+        static member val MyProperty = 0 with get,set
+"""
+    => [
+        "Test"
+        "Test.MyType"
+        "Test.MyType.MyProperty"
+    ]
