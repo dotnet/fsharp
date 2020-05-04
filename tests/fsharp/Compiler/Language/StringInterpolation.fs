@@ -27,8 +27,10 @@ check "vcewweh4" $"this is {1} + {1+1}"  "this is 1 + 2"
 check "vcewweh5" $"this is {1}"  "this is 1"
 
 check "vcewweh6" $"123{456}789{012}345"  "12345678912345"
+check "vcewweh7" $"this is {1} {2} {3} {4} {5} {6} {7}"  "this is 1 2 3 4 5 6 7"
+check "vcewweh8" $"this is {7} {6} {5} {4} {3} {2} {1}"  "this is 7 6 5 4 3 2 1"
 
-check "vcewweh8" $"{1}
+check "vcewweh9" $"{1}
 {2}"  "1
 2"
             """
@@ -85,8 +87,11 @@ check \"xvcewweh5\" $\"\"\"this is {1}\"\"\"  \"this is 1\"
 
 check \"xvcewweh6\" $\"\"\"this i\s {1}\"\"\"  \"this i\s 1\"
 
+// check nested string with %s
+check \"xvcewweh7\" $\"\"\"x = %s{\"1\"}\"\"\" \"x = 1\"
+
 // multiline
-check \"xvcewweh6\"
+check \"xvcewweh8\"
     $\"\"\"this
 is {1+1}\"\"\"
     \"\"\"this
@@ -102,15 +107,18 @@ let s = "sixsix"
 let check msg a b = 
     if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
 
-check "vcewweh4" $"this is %d{1} + {1+1+3} = 6"  "this is 1 + 5 = 6"
+check "vcewwei4" $"this is %d{1} + {1+1+3} = 6"  "this is 1 + 5 = 6"
 
-check "vcewweh5" $"this is 0x%08x{x} + {1+1} = 14" "this is 0x0000000c + 2 = 14"
+check "vcewwei5" $"this is 0x%08x{x} + {1+1} = 14" "this is 0x0000000c + 2 = 14"
 
 // Check dot notation
-check "vcewweh6" $"this is {s.Length} + {1+1} = 8" "this is 6 + 2 = 8"
+check "vcewwei6" $"this is {s.Length} + {1+1} = 8" "this is 6 + 2 = 8"
 
 // Check null expression
-check "vcewweh8" $"abc{null}def" "abcdef"
+check "vcewwei8" $"abc{null}def" "abcdef"
+
+// Check mod operator
+check "vcewwei8" $"abc{4%3}def" "abc1def"
 
             """
 
@@ -126,35 +134,35 @@ let x = 12
 let s = "sixsix"
 
 // Check let expression
-check "vcewweh7" $"abc {let x = 3 in x + x} def" "abc 6 def"
+check "vcewwej7" $"abc {let x = 3 in x + x} def" "abc 6 def"
 
 // Check if expression (parenthesized)
-check "vcewweh9" $"abc{(if true then 3 else 4)}def" "abc3def"
+check "vcewwej9" $"abc{(if true then 3 else 4)}def" "abc3def"
 
 // Check if-then-else expression (un-parenthesized)
-check "vcewweh10" $"abc{if true then 3 else 4}def" "abc3def"
+check "vcewwej10" $"abc{if true then 3 else 4}def" "abc3def"
 
 // Check two if-then-else expression (un-parenthesized)
-check "vcewweh11" $"abc{if true then 3 else 4}def{if false then 3 else 4}xyz" "abc3def4xyz"
+check "vcewwej11" $"abc{if true then 3 else 4}def{if false then 3 else 4}xyz" "abc3def4xyz"
 
 // Check two if-then-else expression (un-parenthesized, first split)
-check "vcewweh12" $"abc{if true then 3
+check "vcewwej12" $"abc{if true then 3
                         else 4}def{if false then 3 else 4}xyz" "abc3def4xyz"
 
 // Check two if-then-else expression (un-parenthesized, second split)
-check "vcewweh13" $"abc{if true then 3 else 4}def{if false then 3
+check "vcewwej13" $"abc{if true then 3 else 4}def{if false then 3
                                                   else 4}xyz" "abc3def4xyz"
 
 // Check two if-then-else expression (un-parenthesized, both split)
-check "vcewweh14" $"abc{if true then 3
+check "vcewwej14" $"abc{if true then 3
                         else 4}def{if false then 3
                                    else 4}xyz" "abc3def4xyz"
 
 // Check if-then expression (un-parenthesized)
-check "vcewweh15" $"abc{if true then ()}def" "abcdef"
+check "vcewwej15" $"abc{if true then ()}def" "abcdef"
 
 // Check two if-then expression (un-parenthesized)
-check "vcewweh16" $"abc{if true then ()}def{if true then ()}xyz" "abcdefxyz"
+check "vcewwej16" $"abc{if true then ()}def{if true then ()}xyz" "abcdefxyz"
 
 // Check multi-line let with parentheses
 check "fahweelvlo"
@@ -314,6 +322,28 @@ check "fwejwflpej16" (fmt_de $"abc {30000,10:N} def {40000:N} hij") "abc  30.000
 check "fwejwflpej17" (fmt_de $"abc {30000,-10:N} def {40000:N} hij") "abc 30.000,00  def 40.000,00 hij"
 
             """
+
+    [<Test>]
+    let ``String interpolation to PrintFormat`` () =
+        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
+            """
+open System.Text
+open Printf
+let check msg a b = 
+    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+
+check "fwejwflpej1" (sprintf $"") ""
+check "fwejwflpej2" (sprintf $"abc") "abc"
+check "fwejwflpej3" (sprintf $"abc{1}") "abc1"
+
+let sb = StringBuilder()
+bprintf sb $"{0}"
+bprintf sb $"abc"
+bprintf sb $"abc{1}"
+check "fwejwflpej4" (sb.ToString()) "0abcabc1"
+
+            """
+
 
     [<Test>]
     let ``String interpolation using .NET Formats`` () =
@@ -541,8 +571,11 @@ let x4 = $"one %d" // naked percent in interpolated
 let x5 = $"one %A" // naked percent in interpolated
 let x6 = $"one %P" // interpolation hole marker in interploation
 let x7 = $"one %P()" // interpolation hole marker in interploation
-let x8 = $"one %f" // naked percent in interpolated
-let x9 = $"one %d{3:N}" // mix of formats
+let x8 = $"one %P(){1}" // interpolation hole marker in interploation
+let x9 = $"one %f" // naked percent in interpolated
+let xa = $"one %d{3:N}" // mix of formats
+let xc = $"5%6" // bad F# format specifier
+let xe = $"%A{{1}}" // fake expression (delimiters escaped)
 """
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             code
@@ -563,10 +596,38 @@ but here has type
                "Invalid interpolated string. The '%P' specifier may not be used explicitly.");
               (FSharpErrorSeverity.Error, 3361, (8, 10, 8, 21),
                "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'");
-              (FSharpErrorSeverity.Error, 3354, (9, 10, 9, 19),
+              (FSharpErrorSeverity.Error, 3361, (9, 10, 9, 24),
+               "Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'");
+              (FSharpErrorSeverity.Error, 3354, (10, 10, 10, 19),
                "Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.");
-              (FSharpErrorSeverity.Error, 3354, (10, 10, 10, 24),
-               "Invalid interpolated string. .NET-style format specifiers such as '{x,3}' or '{x:N5}' may not be mixed with '%' format specifiers.")|]
+              (FSharpErrorSeverity.Error, 3354, (11, 10, 11, 24),
+               "Invalid interpolated string. .NET-style format specifiers such as '{x,3}' or '{x:N5}' may not be mixed with '%' format specifiers.")
+              (FSharpErrorSeverity.Error, 3354, (12, 10, 12, 16),
+               "Invalid interpolated string. Bad precision in format specifier")
+              (FSharpErrorSeverity.Error, 3354, (13, 10, 13, 20),
+               "Invalid interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{1+1}'.")
+            |]
+
+        let code = """
+let xb = $"{%5d{1:N3}}" // inner error that looks like format specifiers 
+"""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Error, 1156, (2, 14, 2, 16),
+               "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).");
+              (FSharpErrorSeverity.Error, 10, (2, 18, 2, 19),
+               "Unexpected symbol ':' in expression. Expected '}' or other token.");
+              (FSharpErrorSeverity.Error, 604, (2, 16, 2, 17), "Unmatched '{'")
+            |]
+
+        let code = """
+let xd = $"%A{}" // empty expression
+"""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Error, 10, (2, 15, 2, 17),
+               "Unexpected interpolated string (final part) in binding")
+            |]
 
     [<Test>]
     let ``String interpolation FormattableString negative`` () =
