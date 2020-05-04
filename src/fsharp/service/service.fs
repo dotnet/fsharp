@@ -850,7 +850,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         // This operation can't currently be cancelled nor awaited
         reactor.EnqueueOp(userOpName, "ClearCache", String.Empty, fun ctok -> 
             options
-            |> List.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(ctok, options)))
+            |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(ctok, options)))
 
     member __.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "NotifyProjectCleaned", options.ProjectFileName, fun ctok -> 
@@ -1149,7 +1149,7 @@ type FSharpChecker(legacyReferenceResolver,
         backgroundCompiler.InvalidateConfiguration(options, startBackgroundCompile, userOpName)
 
     /// Clear the internal cache of the given projects.
-    member __.ClearCache(options: FSharpProjectOptions list, ?userOpName: string) =
+    member __.ClearCache(options: FSharpProjectOptions seq, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.ClearCache(options, userOpName)
 
