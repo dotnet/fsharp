@@ -73,7 +73,7 @@ module MyType =
         "Test.MyType.func123"]
         
 [<Test>]
-let ``Module suffix added by an xplicitly applied MuduleSuffix attribute is removed``() =
+let ``Module suffix added by an explicitly applied ModuleSuffix attribute is removed``() =
     """
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MyType =
