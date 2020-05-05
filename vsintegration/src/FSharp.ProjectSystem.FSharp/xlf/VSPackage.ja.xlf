@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Script.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">File.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
@@ -319,7 +319,7 @@
       </trans-unit>
       <trans-unit id="5037">
         <source>OData Service Connection (LINQ, type provider)</source>
-        <target state="translated">OData サービス接続 (LINQ、型プロバイダー)</target>
+        <target state="translated">OData Service 接続 (LINQ、型プロバイダー)</target>
         <note />
       </trans-unit>
       <trans-unit id="5038">
@@ -429,17 +429,17 @@
       </trans-unit>
       <trans-unit id="7001">
         <source>Customizes the environment to maximize code editor screen space and improve the visibility of F# commands and tool windows.</source>
-        <target state="translated">コード エディターのスクリーン空間を最大化し、F# コマンドとツール ウィンドウの表示状態を改善するように環境をカスタマイズします。</target>
+        <target state="translated">コード エディターのスクリーン空間を最大化し、F# コマンドとツール ウィンドウの表示範囲を改善するように環境をカスタマイズします。</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">F# 4.6 用 Microsoft Visual F# Tools</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">F# {{FSLanguageVersion}} の Microsoft Visual F# Tools {{FSProductVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">F# 4.6 用 Microsoft Visual F# Tools</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">F# {{FSLanguageVersion}} の Microsoft Visual F# Tools {{FSProductVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">F# 4.6 用 Visual F# Tools 10.4</target>
+        <source>Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">F# {{FSLanguageVersion}} の Visual F# Tools {{FSProductVersion}} </target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

@@ -82,13 +82,13 @@ module Commands =
             CmdResult.ErrorLevel (msg, err)
 #else
         ignore workDir 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if NETCOREAPP
+        exec dotNetExe (fscExe + " " + args)
+#else
         ignore dotNetExe
         printfn "fscExe: %A" fscExe
         printfn "args: %A" args
         exec fscExe args
-#else
-        exec dotNetExe (fscExe + " " + args)
 #endif
 #endif
 
@@ -127,7 +127,7 @@ type TestConfig =
       fsc_flags : string
       FSCOREDLLPATH : string
       FSI : string
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
       FSIANYCPU : string
 #endif
       FSI_FOR_SCRIPTS : string
@@ -156,7 +156,10 @@ type FSLibPaths =
 let requireFile nm = 
     if Commands.fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s. Running 'build test' once might solve this issue" nm)
 
-let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
+let packagesDir = 
+    match Environment.GetEnvironmentVariable("NUGET_PACKAGES") with
+    | null -> Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
+    | path -> path
 
 let config configurationName envVars =
 
@@ -168,10 +171,10 @@ let config configurationName envVars =
     let fsharpBuildArchitecture = "net472"
     let fsharpCompilerInteractiveSettingsArchitecture = "net472"
 #else
-    let fscArchitecture = "netcoreapp2.1"
-    let fsiArchitecture = "netcoreapp2.1"
+    let fscArchitecture = "netcoreapp3.0"
+    let fsiArchitecture = "netcoreapp3.0"
     let fsharpCoreArchitecture = "netstandard2.0"
-    let fsharpBuildArchitecture = "netcoreapp2.1"
+    let fsharpBuildArchitecture = "netcoreapp3.0"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
@@ -201,7 +204,7 @@ let config configurationName envVars =
     File.Copy(coreclrdll, Path.GetDirectoryName(ILASM) ++ "coreclr.dll", overwrite=true)
 
     let FSI = requireFile (FSI_FOR_SCRIPTS)
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     let FSIANYCPU = requireFile (artifactsBinPath ++ "fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
 #endif
     let FSC = requireFile (artifactsBinPath ++ "fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
@@ -223,7 +226,7 @@ let config configurationName envVars =
       BUILD_CONFIG = configurationName
       FSC = FSC
       FSI = FSI
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
       FSIANYCPU = FSIANYCPU
 #endif
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
@@ -247,7 +250,7 @@ let logConfig (cfg: TestConfig) =
     log "fsc_flags           =%s" cfg.fsc_flags
     log "FSCOREDLLPATH       =%s" cfg.FSCOREDLLPATH
     log "FSI                 =%s" cfg.FSI
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     log "FSIANYCPU           =%s" cfg.FSIANYCPU
 #endif
     log "fsi_flags           =%s" cfg.fsi_flags
@@ -445,6 +448,7 @@ let execExpectFail cfg p = Command.exec cfg.Directory cfg.EnvironmentVariables e
 let execIn cfg workDir p = Command.exec workDir cfg.EnvironmentVariables execArgs p >> checkResult
 let execBothToOutNoCheck cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = OutputAndErrorToSameFile(Overwrite(outFile)) } p
 let execBothToOut cfg workDir outFile p = execBothToOutNoCheck cfg workDir outFile p >> checkResult
+let execBothToOutExpectFail cfg workDir outFile p = execBothToOutNoCheck cfg workDir outFile p >> checkErrorLevel1
 let execAppendOutIgnoreExitCode cfg workDir outFile p = Command.exec workDir  cfg.EnvironmentVariables { execArgs with Output = Output(Append(outFile)) } p >> alwaysSuccess
 let execAppendErrExpectFail cfg errPath p = Command.exec cfg.Directory cfg.EnvironmentVariables { execArgs with Output = Error(Overwrite(errPath)) } p >> checkErrorLevel1
 let execStdin cfg l p = Command.exec cfg.Directory cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
@@ -454,6 +458,7 @@ let fscIn cfg workDir arg = Printf.ksprintf (Commands.fsc workDir (execIn cfg wo
 let fscAppend cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppend cfg stdoutPath stderrPath) cfg.DotNetExe  cfg.FSC) arg
 let fscAppendIgnoreExitCode cfg stdoutPath stderrPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.DotNetExe  cfg.FSC) arg
 let fscBothToOut cfg out arg = Printf.ksprintf (Commands.fsc cfg.Directory (execBothToOut cfg cfg.Directory out) cfg.DotNetExe  cfg.FSC) arg
+let fscBothToOutExpectFail cfg out arg = Printf.ksprintf (Commands.fsc cfg.Directory (execBothToOutExpectFail cfg cfg.Directory out) cfg.DotNetExe  cfg.FSC) arg
 let fscAppendErrExpectFail cfg errPath arg = Printf.ksprintf (Commands.fsc cfg.Directory (execAppendErrExpectFail cfg errPath) cfg.DotNetExe  cfg.FSC) arg
 let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
@@ -461,7 +466,7 @@ let ilasm cfg arg = Printf.ksprintf (Commands.ilasm (exec cfg) cfg.ILASM) arg
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
 let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
 #endif
 let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
@@ -483,7 +488,9 @@ let diff normalize path1 path2 =
     let append s = result.AppendLine s |> ignore
     let cwd = Directory.GetCurrentDirectory()
 
-    if not <| File.Exists(path1) then failwithf "Invalid path %s" path1
+    if not <| File.Exists(path1) then
+        // creating empty baseline file as this is likely someone initializing a new test
+        File.WriteAllText(path1, String.Empty) 
     if not <| File.Exists(path2) then failwithf "Invalid path %s" path2
 
     let lines1 = File.ReadAllLines(path1)

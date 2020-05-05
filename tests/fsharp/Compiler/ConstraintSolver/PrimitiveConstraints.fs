@@ -29,8 +29,9 @@ let test2 (x : Bar) = (x.Value, x.Value2)
 let f = new Foo(128)
 let b = new Bar(256)
 
-if test1 f <> 128       then exit 1
-if test2 b <> (-1, 256) then exit 1
+if test1 f <> 128       then failwith "test1 f <> 128"
+elif test2 b <> (-1, 256) then failwith "test2 b <> (-1, 256)"
+else ()
 """
 
     [<Test>]
@@ -58,9 +59,10 @@ let f = new Foo(128)
 let b = new Bar(256)
 let r = new Ram(314)
 
-if test f <> (128, "Foo") then exit 1
-if test b <> (-1, "Bar") then exit 1
-if test r <> (10, "Ram") then exit 1
+if test f <> (128, "Foo") then failwith "test f <> (128, 'Foo')"
+elif test b <> (-1, "Bar") then failwith "test b <> (-1, 'Bar')"
+elif test r <> (10, "Ram") then failwith "test r <> (10, 'Ram')"
+else ()
 """
 
     [<Test>]
@@ -72,17 +74,15 @@ let inline isNull<'a when 'a : null> (x : 'a) =
     | null -> "is null"
     | _    -> (x :> obj).ToString()
 
-let runTest =  
+let runTest =
     // Wrapping in try block to work around FSB 1989
     try
-        if isNull null <> "is null" then exit 1
-        if isNull "F#" <> "F#"      then exit 1
-        true
-    with _ -> exit 1
+        if isNull null <> "is null" then failwith "isNull null <> is null"
+        if isNull "F#" <> "F#"      then  failwith "isNull F# <> F#"
+        ()
+    with _ -> reraise()
 
-if runTest <> true then exit 1
-
-exit 0
+runTest
 """
 
     [<Test>]
@@ -91,19 +91,5 @@ exit 0
     /// This suggestion was resolved as by design,
     /// so the test makes sure, we're emitting error message about 'not being a valid object construction expression'
     let ``Invalid object constructor``() = // Regression test for FSharp1.0:4189
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--test:ErrorRanges" |]
-            """
-type ImmutableStack<'a> private(items: 'a list) = 
-   
-    member this.Push item = ImmutableStack(item::items)
-    member this.Pop = match items with | [] -> failwith "No elements in stack" | x::xs -> x,ImmutableStack(xs)
-    
-    // Notice type annotation is commented out, which results in an error
-    new(col (*: seq<'a>*)) = ImmutableStack(List.ofSeq col)
-
-            """
-            [| FSharpErrorSeverity.Error, 41, (4, 29, 4, 56), "A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: new : col:'b -> ImmutableStack<'a>, private new : items:'a list -> ImmutableStack<'a>"
-               FSharpErrorSeverity.Error, 41, (5, 93, 5, 111), "A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: new : col:'b -> ImmutableStack<'a>, private new : items:'a list -> ImmutableStack<'a>"
-               FSharpErrorSeverity.Error, 41, (8, 30, 8, 60), "A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: new : col:'b -> ImmutableStack<'a> when 'b :> seq<'c>, private new : items:'a list -> ImmutableStack<'a>"
-               FSharpErrorSeverity.Error, 696, (8, 30, 8, 60), "This is not a valid object construction expression. Explicit object constructors must either call an alternate constructor or initialize all fields of the object and specify a call to a super class constructor." |]
+        CompilerAssert.TypeCheckWithErrorsAndOptionsAgainstBaseLine [| "--test:ErrorRanges" |] "typecheck/constructors/neg_invalid_constructor.fs"
+            

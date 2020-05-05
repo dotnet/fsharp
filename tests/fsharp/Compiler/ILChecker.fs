@@ -38,39 +38,53 @@ module ILChecker =
 
             exec ildasmPath (ildasmArgs @ [ sprintf "%s /out=%s" dllFilePath ilFilePath ]) |> ignore
 
-            let text = File.ReadAllText(ilFilePath)
+            let unifyRuntimeAssemblyName ilCode =
+                System.Text.RegularExpressions.Regex.Replace(ilCode,
+                    "\[System.Runtime\]|\[System.Runtime.Extensions\]|\[mscorlib\]","[runtime]",
+                    System.Text.RegularExpressions.RegexOptions.Singleline)
+
+            let text =
+                let raw = File.ReadAllText(ilFilePath)
+                let asmName = Path.GetFileNameWithoutExtension(dllFilePath)
+                raw.Replace(asmName, "assembly")
+                |> unifyRuntimeAssemblyName
             let blockComments = @"/\*(.*?)\*/"
             let lineComments = @"//(.*?)\r?\n"
             let strings = @"""((\\[^\n]|[^""\n])*)"""
             let verbatimStrings = @"@(""[^""]*"")+"
             let textNoComments =
-                System.Text.RegularExpressions.Regex.Replace(text, 
-                    blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings, 
-                    (fun me -> 
+                System.Text.RegularExpressions.Regex.Replace(text,
+                    blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings,
+                    (fun me ->
                         if (me.Value.StartsWith("/*") || me.Value.StartsWith("//")) then
                             if me.Value.StartsWith("//") then Environment.NewLine else String.Empty
                         else
                             me.Value), System.Text.RegularExpressions.RegexOptions.Singleline)
                 |> filterSpecialComment
-                    
+
             expectedIL
+            |> List.map (fun (ilCode: string) -> ilCode.Trim() |> unifyRuntimeAssemblyName )
             |> List.iter (fun (ilCode: string) ->
                 let expectedLines = ilCode.Split('\n')
-                let startIndex = textNoComments.IndexOf(expectedLines.[0])
-                if startIndex = -1 || textNoComments.Length < startIndex + ilCode.Length then
+                let startIndex = textNoComments.IndexOf(expectedLines.[0].Trim())
+                if startIndex = -1 then
                     errorMsgOpt <- Some("==EXPECTED CONTAINS==\n" + ilCode + "\n")
                 else
                     let errors = ResizeArray()
                     let actualLines = textNoComments.Substring(startIndex, textNoComments.Length - startIndex).Split('\n')
-                    for i = 0 to expectedLines.Length - 1 do
-                        let expected = expectedLines.[i].Trim()
-                        let actual = actualLines.[i].Trim()
-                        if expected <> actual then
-                            errors.Add(sprintf "\n==\nName: %s\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
+                    if actualLines.Length < expectedLines.Length then
+                        let msg = sprintf "==EXPECTED AT LEAST %d LINES BUT FOUND ONLY %d ==\n" expectedLines.Length actualLines.Length
+                        errorMsgOpt <- Some(msg + "==EXPECTED CONTAINS==\n" + ilCode + "\n")
+                    else
+                        for i = 0 to expectedLines.Length - 1 do
+                            let expected = expectedLines.[i].Trim()
+                            let actual = actualLines.[i].Trim()
+                            if expected <> actual then
+                                errors.Add(sprintf "\n==\nName: '%s'\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
 
-                    if errors.Count > 0 then
-                        let msg = String.concat "\n" errors + "\n\n\n==EXPECTED==\n" + ilCode + "\n"
-                        errorMsgOpt <- Some(msg + "\n\n\n==ACTUAL==\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
+                        if errors.Count > 0 then
+                            let msg = String.concat "\n" errors + "\n\n\n==EXPECTED==\n" + ilCode + "\n"
+                            errorMsgOpt <- Some(msg + "\n\n\n==ACTUAL==\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
             )
 
             if expectedIL.Length = 0 then
@@ -83,7 +97,7 @@ module ILChecker =
             try File.Delete(ilFilePath) with | _ -> ()
 
             match errorMsgOpt with
-            | Some(errorMsg) -> 
+            | Some(errorMsg) ->
                 Assert.Fail(errorMsg)
             | _ -> ()
 

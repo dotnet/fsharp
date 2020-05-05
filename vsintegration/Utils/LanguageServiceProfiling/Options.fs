@@ -76,6 +76,8 @@ let FCS (repositoryDir: string) : Options =
              @"src\absil\ilprint.fs"
              @"src\absil\ilmorph.fsi"
              @"src\absil\ilmorph.fs"
+             @"src\absil\ilwritenativeres.fsi"
+             @"src\absil\ilwritenativeres.fs"
              @"src\absil\ilsupp.fsi"
              @"src\absil\ilsupp.fs"
              @"src\fsharp\FSharp.Compiler.Service\ilpars.fs"
@@ -118,8 +120,8 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\TcGlobals.fs"
              @"src\fsharp\TastOps.fsi"
              @"src\fsharp\TastOps.fs"
-             @"src\fsharp\TastPickle.fsi"
-             @"src\fsharp\TastPickle.fs"
+             @"src\fsharp\.TypedTreePickle.fsi"
+             @"src\fsharp\.TypedTreePickle.fs"
              @"src\fsharp\import.fsi"
              @"src\fsharp\import.fs"
              @"src\fsharp\infos.fs"
@@ -187,7 +189,6 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\service\ServiceParamInfoLocations.fs"
              @"src\fsharp\service\ServiceUntypedParse.fsi"
              @"src\fsharp\service\ServiceUntypedParse.fs"
-             @"src\utils\reshapedmsbuild.fs"
              @"src\fsharp\SimulatedMSBuildReferenceResolver.fs"
              @"src\fsharp\service\FSharpCheckerResults.fsi"
              @"src\fsharp\service\FSharpCheckerResults.fs"
@@ -209,9 +210,8 @@ let FCS (repositoryDir: string) : Options =
             @"--define:FX_ATLEAST_40";
             @"--define:COMPILER";
             @"--define:ENABLE_MONO_SUPPORT"; "--define:FX_MSBUILDRESOLVER_RUNTIMELIKE";
-            @"--define:FX_LCIDFROMCODEPAGE"; "--define:FX_RESX_RESOURCE_READER";
-            @"--define:FX_RESIDENT_COMPILER"; "--define:SHADOW_COPY_REFERENCES";
-            @"--define:EXTENSIONTYPING";
+            @"--define:FX_RESX_RESOURCE_READER"; "--define:FX_RESIDENT_COMPILER";
+            @"--define:SHADOW_COPY_REFERENCES"; "--define:EXTENSIONTYPING";
             @"--define:COMPILER_SERVICE_DLL_ASSUMES_FSHARP_CORE_4_4_0_0";
             @"--define:COMPILER_SERVICE_DLL"; "--define:NO_STRONG_NAMES"; "--define:TRACE";
             @"--doc:..\..\..\bin\v4.5\FSharp.Compiler.Service.xml"; "--optimize-";

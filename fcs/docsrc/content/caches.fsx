@@ -9,7 +9,7 @@ This is a design note on the FSharpChecker component and its caches.  See also t
 Each FSharpChecker object maintains a set of caches.  These are
 
 * ``scriptClosureCache`` - an MRU cache of default size ``projectCacheSize`` that caches the 
-  computation of GetProjectOptionsFromScript. This computation can be lengthy as it can involve processing the transative closure
+  computation of GetProjectOptionsFromScript. This computation can be lengthy as it can involve processing the transitive closure
   of all ``#load`` directives, which in turn can mean parsing an unbounded number of script files
 
 * ``incrementalBuildersCache`` - an MRU cache of projects where a handle is being kept to their incremental checking state, 
@@ -50,7 +50,7 @@ The sizes of some of these caches can be adjusted by giving parameters to FSharp
 the cache sizes above indicate the "strong" size of the cache, where memory is held regardless of the memory 
 pressure on the system. Some of the caches can also hold "weak" references which can be collected at will by the GC.
 
-> Note: Because of these caches, uou should generally use one global, shared FSharpChecker for everything in an IDE application.
+> Note: Because of these caches, you should generally use one global, shared FSharpChecker for everything in an IDE application.
 
 
 Low-Memory Condition

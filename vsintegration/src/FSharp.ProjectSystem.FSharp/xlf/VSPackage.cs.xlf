@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Skript.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">Soubor.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Nástroje Microsoft Visual F# 10.4 pro F# 4.6</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Microsoft Visual F# Tools {{FSProductVersion}} pro F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Nástroje Microsoft Visual F# 10.4 pro F# 4.6</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Microsoft Visual F# Tools {{FSProductVersion}} pro F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Nástroje Visual F# 10.4 pro F# 4.6</target>
+        <source>Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Visual F# Tools {{FSProductVersion}} pro F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
@@ -544,7 +544,7 @@
       </trans-unit>
       <trans-unit id="FSharpCoreVersionIsNotLegacyCompatible">
         <source>Referencing this version of FSharp.Core will cause your project to be incompatible with older versions of Visual Studio.  Do you want to continue?</source>
-        <target state="translated">Odkazování na tuto verzi oboru názvů FSharp.Core zapříčíní nekompatibilitu projektu se staršími verzemi Visual Studia. Chcete pokračovat?</target>
+        <target state="translated">Odkazování na tuto verzi oboru názvů FSharp.Core zapříčiní nekompatibilitu projektu se staršími verzemi sady Visual Studio. Chcete pokračovat?</target>
         <note />
       </trans-unit>
       <trans-unit id="ComputingSourcesAndFlags">

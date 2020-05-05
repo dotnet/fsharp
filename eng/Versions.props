@@ -14,23 +14,23 @@
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <FSLanguageVersion>4.7</FSLanguageVersion>
     <FSCoreMajorVersion>$(FSLanguageVersion)</FSCoreMajorVersion>
-    <FSCorePackageVersion>$(FSCoreMajorVersion).1</FSCorePackageVersion>
+    <FSCorePackageVersion>$(FSCoreMajorVersion).2</FSCorePackageVersion>
     <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersion>4.7.0</FSharpCoreShippedPackageVersion>
+    <FSharpCoreShippedPackageVersion>4.7.1</FSharpCoreShippedPackageVersion>
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <FSPackageMajorVersion>10.6</FSPackageMajorVersion>
-    <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
+    <FSPackageMajorVersion>10.8</FSPackageMajorVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).1</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
-    <VSMinorVersion>3</VSMinorVersion>
+    <VSMinorVersion>5</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
@@ -59,23 +59,23 @@
       https://dotnet.myget.org/F/interactive-window/api/v3/index.json;
       https://myget.org/F/vs-devcore/api/v3/index.json;
       https://myget.org/F/vs-editor/api/v3/index.json;
-      https://vside.myget.org/F/vssdk/api/v3/index.json;
-      https://vside.myget.org/F/vs-impl/api/v3/index.json;
+      https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/nuget/v3/index.json;
+      https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json;
       https://myget.org/F/roslyn_concord/api/v3/index.json;
-      https://vside.myget.org/F/devcore/api/v3/index.json;
     </RestoreSources>
     <!-- version numbers from files -->
     <RoslynVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\RoslynPackageVersion.txt').Trim())</RoslynVersion>
     <!-- System.* packages -->
     <SystemCollectionsImmutableVersion>1.5.0</SystemCollectionsImmutableVersion>
     <SystemConsoleVersion>4.3.0</SystemConsoleVersion>
+    <SystemDataSqlClientPackageVersion>4.3.0</SystemDataSqlClientPackageVersion>
     <SystemDesignVersion>4.0.0</SystemDesignVersion>
     <SystemDiagnosticsProcessVersion>4.3.0</SystemDiagnosticsProcessVersion>
     <SystemDiagnosticsTraceSourceVersion>4.3.0</SystemDiagnosticsTraceSourceVersion>
     <SystemIoCompressionVersion>4.3.0</SystemIoCompressionVersion>
     <SystemLinqExpressionsVersion>4.3.0</SystemLinqExpressionsVersion>
     <SystemLinqQueryableVersion>4.3.0</SystemLinqQueryableVersion>
-    <SystemMemoryVersion>4.5.2</SystemMemoryVersion>
+    <SystemMemoryVersion>4.5.3</SystemMemoryVersion>
     <SystemNetRequestsVersion>4.3.0</SystemNetRequestsVersion>
     <SystemNetSecurityVersion>4.3.0</SystemNetSecurityVersion>
     <SystemReflectionEmitVersion>4.3.0</SystemReflectionEmitVersion>
@@ -90,9 +90,12 @@
     <SystemSecurityCryptographyAlgorithmsVersion>4.3.0</SystemSecurityCryptographyAlgorithmsVersion>
     <SystemSecurityPrincipalVersion>4.3.0</SystemSecurityPrincipalVersion>
     <SystemThreadingTasksParallelVersion>4.3.0</SystemThreadingTasksParallelVersion>
+    <SystemThreadingTasksDataflow>4.11.0</SystemThreadingTasksDataflow>
     <SystemThreadingThreadVersion>4.3.0</SystemThreadingThreadVersion>
     <SystemThreadingThreadPoolVersion>4.3.0</SystemThreadingThreadPoolVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
+    <SystemBuffersVersion>4.5.0</SystemBuffersVersion>
+    <SystemMemoryVersion>4.5.3</SystemMemoryVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
@@ -103,7 +106,7 @@
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.17</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(RoslynVersion)</MicrosoftVisualStudioLanguageServicesVersion>
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildOverallPackagesVersion>16.0.461</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>16.4</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
     <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkVersion>
     <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
@@ -119,7 +122,6 @@
     <MicrosoftVisualStudioGraphModelVersion>16.0.28226-alpha</MicrosoftVisualStudioGraphModelVersion>
     <MicrosoftVisualStudioImageCatalogVersion>16.1.28916.169</MicrosoftVisualStudioImageCatalogVersion>
     <MicrosoftVisualStudioImagingVersion>16.1.28917.181</MicrosoftVisualStudioImagingVersion>
-    <MicrosoftVisualStudioLanguageServerClientVersion>16.1.3121</MicrosoftVisualStudioLanguageServerClientVersion>
     <MicrosoftVisualStudioLanguageStandardClassificationVersion>16.1.89</MicrosoftVisualStudioLanguageStandardClassificationVersion>
     <MicrosoftVisualStudioLanguageVersion>16.1.89</MicrosoftVisualStudioLanguageVersion>
     <MicrosoftVisualStudioLanguageIntellisenseVersion>16.1.89</MicrosoftVisualStudioLanguageIntellisenseVersion>
@@ -156,7 +158,7 @@
     <MicrosoftVisualStudioUtilitiesVersion>16.1.28917.181</MicrosoftVisualStudioUtilitiesVersion>
     <MicrosoftVisualStudioValidationVersion>15.3.58</MicrosoftVisualStudioValidationVersion>
     <MicrosoftVisualStudioWCFReferenceInteropVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropVersion>
-    <MicrosoftVSSDKBuildToolsVersion>16.0.2264</MicrosoftVSSDKBuildToolsVersion>
+    <MicrosoftVSSDKBuildToolsVersion>16.5.2044</MicrosoftVSSDKBuildToolsVersion>
     <VSSDKDebuggerVisualizersVersion>12.0.4</VSSDKDebuggerVisualizersVersion>
     <VSSDKVSLangProjVersion>7.0.4</VSSDKVSLangProjVersion>
     <VSSDKVSLangProj8Version>8.0.4</VSSDKVSLangProj8Version>
@@ -175,15 +177,14 @@
     <MicrosoftNETCoreILDAsmVersion>3.0.0-preview-27318-01</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>3.0.0-preview-27318-01</MicrosoftNETCoreILAsmVersion>
     <MicrosoftNETTestSdkVersion>15.8.0</MicrosoftNETTestSdkVersion>
-    <MicrosoftVisualFSharpTypeProvidersRedistVersion>1.0.0</MicrosoftVisualFSharpTypeProvidersRedistVersion>
     <MicrosoftWin32RegistryVersion>4.3.0</MicrosoftWin32RegistryVersion>
     <NewtonsoftJsonVersion>9.0.1</NewtonsoftJsonVersion>
     <NUnitVersion>3.11.0</NUnitVersion>
     <NUnit3TestAdapterVersion>3.11.2</NUnit3TestAdapterVersion>
     <NUnitLiteVersion>3.11.0</NUnitLiteVersion>
-    <NunitXmlTestLoggerVersion>2.1.36</NunitXmlTestLoggerVersion>
+    <NunitXmlTestLoggerVersion>2.1.41</NunitXmlTestLoggerVersion>
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
-    <StrawberryPerl64Version>5.22.2.1</StrawberryPerl64Version>
+    <StrawberryPerlVersion>5.28.0.1</StrawberryPerlVersion>
     <StreamJsonRpcVersion>2.0.187</StreamJsonRpcVersion>
   </PropertyGroup>
 </Project>

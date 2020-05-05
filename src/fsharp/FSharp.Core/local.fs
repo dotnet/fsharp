@@ -83,12 +83,10 @@ open System.Collections.Generic
 
 module internal List =
 
-    let arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
+    let inline arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
 
     [<SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")>]
     let nonempty x = match x with [] -> false | _ -> true
-
-    let rec iter f x = match x with [] -> () | h :: t -> f h; iter f t
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -498,15 +496,6 @@ module internal List =
                 cons
             else
                 filter predicate t
-
-    let iteri action x =
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
-        let rec loop n x =
-            match x with
-            | [] -> ()
-            | h :: t -> f.Invoke(n, h); loop (n+1) t
-
-        loop 0 x
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -988,6 +977,12 @@ module internal List =
             takeWhileFreshConsTail cons p xs
             cons
 
+    let rec tryLastV (list: 'T list) = 
+        match list with
+        | [] -> ValueNone
+        | [x] -> ValueSome x        
+        | _ :: tail -> tryLastV tail           
+
 module internal Array =
 
     open System
@@ -1179,11 +1174,34 @@ module internal Array =
             let count = min count len
             let res = zeroCreateUnchecked count : 'T[][]
             let minChunkSize = len / count
-            let startIndex = ref 0
+            let mutable startIndex = 0
             for i = 0 to len % count - 1 do
-                res.[i] <- subUnchecked !startIndex (minChunkSize + 1) array
-                startIndex := !startIndex + minChunkSize + 1
+                res.[i] <- subUnchecked startIndex (minChunkSize + 1) array
+                startIndex <- startIndex + minChunkSize + 1
             for i = len % count to count - 1 do
-                res.[i] <- subUnchecked !startIndex minChunkSize array
-                startIndex := !startIndex + minChunkSize
+                res.[i] <- subUnchecked startIndex minChunkSize array
+                startIndex <- startIndex + minChunkSize
             res
+
+module internal Seq =
+    let tryLastV (source : seq<_>) =
+        //checkNonNull "source" source //done in main Seq.tryLast
+        match source with
+        | :? ('T[]) as a -> 
+            if a.Length = 0 then ValueNone
+            else ValueSome(a.[a.Length - 1])
+        
+        | :? ('T IList) as a -> //ResizeArray and other collections
+            if a.Count = 0 then ValueNone
+            else ValueSome(a.[a.Count - 1])
+        
+        | :? ('T list) as a -> List.tryLastV a 
+        
+        | _ -> 
+            use e = source.GetEnumerator()
+            if e.MoveNext() then
+                let mutable res = e.Current
+                while (e.MoveNext()) do res <- e.Current
+                ValueSome(res)
+            else
+                ValueNone

@@ -137,7 +137,6 @@ Conformance03			Conformance\Expressions\DataExpressions\QueryExpressions
 Conformance03			Conformance\Expressions\DataExpressions\RangeExpressions
 
 Conformance04			Conformance\Expressions\DataExpressions\SequenceExpressions
-Conformance04			Conformance\Expressions\DataExpressions\Simple
 Conformance04			Conformance\Expressions\DataExpressions\TupleExpressions
 Conformance04			Conformance\Expressions\ElaborationAndElaboratedExpressions
 Conformance04			Conformance\Expressions\EvaluationAndValues

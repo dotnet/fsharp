@@ -1,18 +1,20 @@
 <Project>
+
   <Import Project="Sdk.targets" Sdk="Microsoft.DotNet.Arcade.Sdk" />
   <Import Project="eng\targets\Imports.targets" />
-  <Import Project="eng\targets\NuGet.targets" />
   <Import Project="eng\targets\NGenBinaries.targets" />
+  <Import Project="eng\targets\NuGet.targets" />
   <Import Project="FSharp.Profiles.props" />
 
   <Target Name="NoneSubstituteTextFiles"
           Inputs="@(NoneSubstituteText)"
           Outputs="@(NoneSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
-          BeforeTargets="AssignTargetPaths;BeforeBuild">
+          BeforeTargets="AssignTargetPaths;BeforeBuild;GenerateFSharpTextResources">
 
     <PropertyGroup>
       <__TargetFilePath>@(NoneSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')</__TargetFilePath>
       <__TargetFileName>@(NoneSubstituteText->'%(Filename)%(Extension)')</__TargetFileName>
+      <__TargetLink>@(NoneSubstituteText->'%(Link)')</__TargetLink>
 
       <_ReplacementText>$([System.IO.File]::ReadAllText('%(NoneSubstituteText.FullPath)'))</_ReplacementText>
       <_ReplacementText Condition="'%(NoneSubstituteText.Pattern1)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern1)', '%(NoneSubstituteText.Replacement1)'))</_ReplacementText>
@@ -20,16 +22,19 @@
 
       <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' != ''">%(NoneSubstituteText.CopyToOutputDirectory)</_CopyToOutputDirectory>
       <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' == ''">Never</_CopyToOutputDirectory>
+
+      <_IncludeInVsix>false</_IncludeInVsix>
+      <_IncludeInVsix Condition="'%(NoneSubstituteText.IncludeInVsix)' == 'true'">true</_IncludeInVsix>
     </PropertyGroup>
 
     <MakeDir Directories="$(IntermediateOutputPath)"
              Condition="!Exists('$(IntermediateOutputPath)')" />
     <WriteLinesToFile File="$(__TargetFilePath)" Lines="$(_ReplacementText)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
-    <!-- Make sure it will get cleaned  -->
-    <ItemGroup >
+    <ItemGroup>
       <None Include="$(__TargetFilePath)" CopyToOutputDirectory="$(_CopyToOutputDirectory)" />
       <FileWrites Include="$(__TargetFilePath)" Condition="'$(__TargetFileName)' != 'App.config'" />
+      <Content Include="$(__TargetFilePath)" CopyToOutputDirectory="Always" IncludeInVsix="true" Link="$(__TargetLink)" Condition="'$(_IncludeInVsix)'=='true'" />
     </ItemGroup>
   </Target>
 
@@ -59,6 +64,29 @@
       <FileWrites Include="$(IntermediateOutputPath)buildproperties.fs" />
       <CompileBefore Include="$(IntermediateOutputPath)buildproperties.fs" />
     </ItemGroup>
+  </Target>
+
+  <Target Name="BeforeResGen"
+          Inputs="@(EmbeddedResource->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
+          Outputs="@(EmbeddedResource->'$(IntermediateOutputPath)resources\%(Filename)%(Extension)')"
+          DependsOnTargets="CopyVsixResources"
+          Condition="'$(Configuration)' != 'Proto' and '$(Language)'=='F#' and '$(DisableCompilerRedirection)' != 'true' ">
+
+    <SubstituteText EmbeddedResources="@(EmbeddedResource)">
+      <Output TaskParameter="CopiedFiles" ItemName="CopiedFiles" />
+    </SubstituteText>
+
+    <ItemGroup>
+        <EmbeddedResource Remove="@(EmbeddedResource)"/>
+        <EmbeddedResource Include="@(CopiedFiles)"/>
+    </ItemGroup>
+
+    <MakeDir Directories="$(IntermediateOutputPath)" Condition="!Exists('$(IntermediateOutputPath)')" />
+    <MakeDir Directories="$(IntermediateOutputPath)resources\" Condition="!Exists('$(IntermediateOutputPath)resources\')" />
+  </Target>
+
+  <Target Name="CopyVsixResources">
+    <Copy SourceFiles="@(CopyVsixResources)" DestinationFolder="$(IntermediateOutputPath)\resources\Resources" />
   </Target>
 
 </Project>

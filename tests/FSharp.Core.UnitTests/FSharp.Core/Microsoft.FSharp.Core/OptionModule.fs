@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Core
+namespace FSharp.Core.UnitTests
 
 open NUnit.Framework
 
@@ -221,6 +221,16 @@ type OptionModule() =
 type ValueOptionTests() =
 
     let assertWasNotCalledThunk () = raise (exn "Thunk should not have been called.")
+
+    [<Test>]
+    member _.``ValueNone gives "ValueNone" when calling ToString`` () =
+        Assert.AreEqual("ValueNone", ValueNone.ToString())
+        Assert.AreEqual("ValueNone", string ValueNone)
+    
+    [<Test>]
+    member _.``ValueNone with sprintf`` () =
+        Assert.AreEqual("ValueNone", sprintf "%O" (ValueNone.ToString()))
+        Assert.AreEqual("ValueNone", sprintf "%A" ValueNone)
 
     [<Test>]
     member this.ValueOptionBasics () =

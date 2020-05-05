@@ -25,18 +25,14 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     // This is a fresh implementation of pre-existing ideas.
 
     open System
-    open System.Diagnostics
-    open System.Text
     open System.IO
     open System.Reflection
     open System.Globalization
     open System.Collections.Generic
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-    open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Reflection
     open Microsoft.FSharp.Collections
-    open Microsoft.FSharp.Primitives.Basics
 
     [<StructuralEquality; NoComparison>]
     type LayoutTag =
@@ -342,8 +338,6 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
 
     module ReflectUtils = 
-        open System
-        open System.Reflection
 
         [<NoEquality; NoComparison>]
         type TypeInfo =
@@ -372,17 +366,27 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             (let cases = FSharpType.GetUnionCases ty 
              cases.Length > 0 && equivHeadTypes (typedefof<list<_>>) cases.[0].DeclaringType)
 
+        [<RequireQualifiedAccess; StructuralComparison; StructuralEquality>]
+        type TupleType =
+            | Value
+            | Reference
+
         [<NoEquality; NoComparison>]
         type ValueInfo =
-          | TupleValue of (obj * Type) list
+          | TupleValue of TupleType * (obj * Type) list
           | FunctionClosureValue of System.Type 
           | RecordValue of (string * obj * Type) list
-          | ConstructorValue of string * (string * (obj * Type)) list
+          | ConstructorValue of declaringType: Type option * string * (string * (obj * Type)) list
           | ExceptionValue of System.Type * (string * (obj * Type)) list
           | UnitValue
           | ObjectValue of obj
 
-        module Value = 
+        module Value =
+
+            // Returns true if a given type has the RequireQualifiedAccess attribute
+            let private requiresQualifiedAccess (declaringType:Type) =
+                let rqaAttr = declaringType.GetCustomAttribute(typeof<RequireQualifiedAccessAttribute>, false)
+                isNull rqaAttr |> not
 
             // Analyze an object to see if it the representation
             // of an F# value.
@@ -399,7 +403,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
                 if FSharpType.IsTuple reprty then 
                     let tyArgs = FSharpType.GetTupleElements(reprty)
-                    TupleValue (FSharpValue.GetTupleFields obj |> Array.mapi (fun i v -> (v, tyArgs.[i])) |> Array.toList)
+                    let fields = FSharpValue.GetTupleFields obj |> Array.mapi (fun i v -> (v, tyArgs.[i])) |> Array.toList
+                    let tupleType =
+                        if reprty.Name.StartsWith "ValueTuple" then TupleType.Value
+                        else TupleType.Reference
+                    TupleValue (tupleType, fields)
                 elif FSharpType.IsFunction reprty then 
                     FunctionClosureValue reprty
                     
@@ -412,7 +420,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                     let tag,vals = FSharpValue.GetUnionFields (obj,reprty,bindingFlags) 
                     let props = tag.GetFields()
                     let pvals = (props,vals) ||> Array.map2 (fun prop v -> prop.Name,(v, prop.PropertyType))
-                    ConstructorValue(tag.Name, Array.toList pvals)
+                    let declaringType =
+                        if requiresQualifiedAccess tag.DeclaringType then Some tag.DeclaringType
+                        else None
+                    ConstructorValue(declaringType, tag.Name, Array.toList pvals)
                 elif FSharpType.IsExceptionRepresentation(reprty,bindingFlags) then 
                     let props = FSharpType.GetExceptionFields(reprty,bindingFlags) 
                     let vals = FSharpValue.GetExceptionFields(obj,bindingFlags) 
@@ -432,16 +443,19 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                 let obj = (box x)
                 match obj with 
                 | null ->
-                   let isNullaryUnion =
-                      match ty.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
-                      | [|:? CompilationRepresentationAttribute as attr|] -> 
+                    let isNullaryUnion =
+                        match ty.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
+                        | [|:? CompilationRepresentationAttribute as attr|] -> 
                           (attr.Flags &&& CompilationRepresentationFlags.UseNullAsTrueValue) = CompilationRepresentationFlags.UseNullAsTrueValue
-                      | _ -> false
-                   if isNullaryUnion then
-                     let nullaryCase = FSharpType.GetUnionCases ty |> Array.filter (fun uc -> uc.GetFields().Length = 0) |> Array.item 0
-                     ConstructorValue(nullaryCase.Name, [])
-                   elif isUnitType ty then UnitValue
-                   else ObjectValue(obj)
+                        | _ -> false
+                    if isNullaryUnion then
+                        let nullaryCase = FSharpType.GetUnionCases ty |> Array.filter (fun uc -> uc.GetFields().Length = 0) |> Array.item 0
+                        let declaringType =
+                            if requiresQualifiedAccess ty then Some ty
+                            else None
+                        ConstructorValue(declaringType, nullaryCase.Name, [])
+                    elif isUnitType ty then UnitValue
+                    else ObjectValue(obj)
                 | _ -> 
                   GetValueInfoOfObject bindingFlags (obj) 
 
@@ -706,11 +720,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             | null -> None 
             | _ -> 
                 match getValueInfo bindingFlags (x, ty) with
-                | ConstructorValue ("Cons",recd) -> Some (unpackCons recd)
-                | ConstructorValue ("Empty",[]) -> None
+                | ConstructorValue (_,"Cons",recd) -> Some (unpackCons recd)
+                | ConstructorValue (_,"Empty",[]) -> None
                 | _ -> failwith "List value had unexpected ValueInfo"
 
-        let compactCommaListL xs = sepListL (sepL Literals.comma) xs // compact, no spaces around "," 
+        let structL = wordL (tagKeyword "struct")
         let nullL = wordL (tagKeyword "null")
         let measureL = wordL (tagPunctuation "()")
           
@@ -828,9 +842,9 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             let path = Dictionary<obj,int>(10,HashIdentity.Reference)
 
             // Roughly count the "nodes" printed, e.g. leaf items and inner nodes, but not every bracket and comma.
-            let size = ref opts.PrintSize
-            let exceededPrintSize() = !size<=0
-            let countNodes n = if !size > 0 then size := !size - n else () // no need to keep decrementing (and avoid wrap around) 
+            let mutable  size = opts.PrintSize
+            let exceededPrintSize() = size<=0
+            let countNodes n = if size > 0 then size <- size - n else () // no need to keep decrementing (and avoid wrap around) 
             let stopShort _ = exceededPrintSize() // for unfoldL
 
             // Recursive descent
@@ -973,17 +987,20 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                 // tuples up args to UnionConstruction or ExceptionConstructor. no node count.
                 match recd with 
                 | [(_,x)] -> objL depthLim Precedence.BracketIfTupleOrNotAtomic x 
-                | txs     -> leftL Literals.leftParen ^^ compactCommaListL (List.map (snd >> objL depthLim Precedence.BracketIfTuple) txs) ^^ rightL Literals.rightParen
+                | txs     -> leftL Literals.leftParen ^^ commaListL (List.map (snd >> objL depthLim Precedence.BracketIfTuple) txs) ^^ rightL Literals.rightParen
 
             and bracketIfL b basicL =
                 if b then (leftL Literals.leftParen) ^^ basicL ^^ (rightL Literals.rightParen) else basicL
 
             and reprL showMode depthLim prec repr x (* x could be null *) =
                 let showModeFilter lay = match showMode with ShowAll -> lay | ShowTopLevelBinding -> emptyL                                                             
-                match repr with 
-                | TupleValue vals -> 
+                match repr with
+                | TupleValue (tupleType, vals) ->
                     let basicL = sepListL (rightL Literals.comma) (List.map (objL depthLim Precedence.BracketIfTuple ) vals)
-                    bracketIfL (prec <= Precedence.BracketIfTuple) basicL 
+                    let fields = bracketIfL (prec <= Precedence.BracketIfTuple) basicL
+                    match tupleType with
+                    | TupleType.Value -> structL ^^ fields
+                    | TupleType.Reference -> fields
 
                 | RecordValue items -> 
                     let itemL (name,x,ty) =
@@ -991,7 +1008,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                       (tagRecordField name,objL depthLim Precedence.BracketIfTuple (x, ty))
                     makeRecordL (List.map itemL items)
 
-                | ConstructorValue (constr,recd) when // x is List<T>. Note: "null" is never a valid list value. 
+                | ConstructorValue (_,constr,recd) when // x is List<T>. Note: "null" is never a valid list value. 
                                                       x<>null && isListType (x.GetType()) ->
                     match constr with 
                     | "Cons" -> 
@@ -1003,13 +1020,17 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                         countNodes 1
                         wordL (tagPunctuation "[]")
 
-                | ConstructorValue(nm,[])   ->
+                | ConstructorValue(declaringType,nm,recd)   ->
                     countNodes 1
-                    (wordL (tagMethod nm))
-
-                | ConstructorValue(nm,recd) ->
-                    countNodes 1 // e.g. Some (Some (Some (Some 2))) should count for 5 
-                    (wordL (tagMethod nm) --- recdAtomicTupleL depthLim recd) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
+                    let caseName =
+                        match declaringType with
+                        | None ->
+                            wordL (tagMethod nm)
+                        | Some declaringType ->
+                            wordL (tagClass declaringType.Name) ^^ sepL (tagPunctuation ".") ^^ wordL (tagMethod nm)
+                    match recd with
+                    | [] -> caseName
+                    | recd -> (caseName --- recdAtomicTupleL depthLim recd) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
 
                 | ExceptionValue(ty,recd) ->
                     countNodes 1
@@ -1025,7 +1046,12 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
                 | ObjectValue(obj)  ->
                     match obj with 
-                    | null -> (countNodes 1; nullL)
+                    | null ->
+                        countNodes 1
+                        // If this is the root element, wrap the null with angle brackets
+                        if depthLim = opts.PrintDepth - 1 then
+                            wordL (tagText "<null>")
+                        else nullL
                     | _ -> 
                     let ty = obj.GetType()
                     match obj with 

@@ -215,3 +215,28 @@ let changeProperty() =
             20
             (10, 5, 10, 23)
             "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '<-' operator e.g. 'x.Property2 <- expression'."
+
+
+    [<Test>]
+    let ``Dont warn external function as unused``() =
+        CompilerAssert.Pass
+            """
+open System
+open System.Runtime.InteropServices
+
+module Test =
+
+    [<DllImport("shell32.dll", CharSet=CharSet.Auto)>]
+    extern int32 ExtractIconEx(string szFileName, int nIconIndex,IntPtr[] phiconLarge, IntPtr[] phiconSmall,uint32 nIcons)
+
+    [<DllImport("user32.dll", EntryPoint="DestroyIcon", SetLastError=true)>]
+    extern int DestroyIcon(IntPtr hIcon)
+
+[<EntryPoint>]
+let main _argv =
+    let _ = Test.DestroyIcon IntPtr.Zero
+
+    let _ = Test.ExtractIconEx("", 0, [| |], [| |], 0u)
+
+    0
+            """

@@ -6,21 +6,19 @@ open System
 open System.Text
 
 open Internal.Utilities
-open Internal.Utilities.Collections
-open Internal.Utilities.Text
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Ast
-open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Range
+open FSharp.Compiler.Lib
+open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.XmlDoc
 
 /// The "mock" filename used by fsi.exe when reading from stdin.
 /// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
@@ -40,8 +38,8 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 
 /// Manage lexer resources (string interning)
 [<Sealed>]
-type LexResourceManager() =
-    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(1024)
+type LexResourceManager(?capacity: int) =
+    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(defaultArg capacity 1024)
     member x.InternIdentifierToken(s) = 
         match strings.TryGetValue s with
         | true, res -> res
@@ -53,7 +51,7 @@ type LexResourceManager() =
 /// Lexer parameters 
 type lexargs =  
     { defines: string list
-      ifdefStack: LexerIfdefStack
+      mutable ifdefStack: LexerIfdefStack
       resourceManager: LexResourceManager
       lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger
@@ -351,7 +349,7 @@ module Keywords =
             | _ -> 
                 IdentifierToken args lexbuf s
 
-    let inline private DoesIdentifierNeedQuotation (s : string) : bool =
+    let DoesIdentifierNeedQuotation (s : string) : bool =
         not (String.forall IsIdentifierPartCharacter s)              // if it has funky chars
         || s.Length > 0 && (not(IsIdentifierFirstCharacter s.[0]))  // or if it starts with a non-(letter-or-underscore)
         || keywordTable.ContainsKey s                               // or if it's a language keyword like "type"
@@ -447,3 +445,4 @@ module Keywords =
           "@>",        FSComp.SR.keywordDescriptionTypedQuotation()
           "<@@",       FSComp.SR.keywordDescriptionUntypedQuotation()
           "@@>",       FSComp.SR.keywordDescriptionUntypedQuotation() ]
+

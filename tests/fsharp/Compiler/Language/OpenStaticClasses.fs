@@ -45,7 +45,7 @@ module OpenSystemMathOnce =
                let x = Min(1.0, 2.0)""")
             [|
                 (FSharpErrorSeverity.Error, 39, (22,28,22,32), "The namespace 'Math' is not defined.");
-                (FSharpErrorSeverity.Error, 39, (23,24,23,27), "The value or constructor 'Min' is not defined.")
+                (FSharpErrorSeverity.Error, 39, (23,24,23,27), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
             |]
 
     [<Test>]
@@ -73,9 +73,9 @@ module OpenSystemMathTwice =
     let x2 = Min(2.0, 1.0)""")
             [|
                 (FSharpErrorSeverity.Error, 39, (22,17,22,21), "The namespace 'Math' is not defined.");
-                (FSharpErrorSeverity.Error, 39, (23,13,23,16), "The value or constructor 'Min' is not defined.")
+                (FSharpErrorSeverity.Error, 39, (23,13,23,16), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
                 (FSharpErrorSeverity.Error, 39, (25,17,25,21), "The namespace 'Math' is not defined.");
-                (FSharpErrorSeverity.Error, 39, (26,14,26,17), "The value or constructor 'Min' is not defined.")
+                (FSharpErrorSeverity.Error, 39, (26,14,26,17), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
             |]
 
     [<Test>]
@@ -100,9 +100,9 @@ module OpenMyMathOnce =
     let x = Min(1.0, 2.0)
     let x2 = Min(1, 2)""")
             [|
-                (FSharpErrorSeverity.Error, 39, (22,10,22,16), "The namespace or module 'MyMath' is not defined.");
-                (FSharpErrorSeverity.Error, 39, (23,13,23,16), "The value or constructor 'Min' is not defined.")
-                (FSharpErrorSeverity.Error, 39, (24,14,24,17), "The value or constructor 'Min' is not defined.")
+                (FSharpErrorSeverity.Error, 39, (22,10,22,16), "The namespace or module 'MyMath' is not defined. Maybe you want one of the following:\r\n   Math");
+                (FSharpErrorSeverity.Error, 39, (23,13,23,16), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
+                (FSharpErrorSeverity.Error, 39, (24,14,24,17), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
             |]
 
     [<Test>]

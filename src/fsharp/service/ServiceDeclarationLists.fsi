@@ -1,15 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-//----------------------------------------------------------------------------
-// API for declaration lists and method overload lists
-
+/// API for declaration lists and method overload lists
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Range
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Tastops
-
+open FSharp.Compiler.Range
+open FSharp.Compiler.TypedTreeOps
 
 [<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.

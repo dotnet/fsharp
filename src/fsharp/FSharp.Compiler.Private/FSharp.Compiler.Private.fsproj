@@ -16,14 +16,6 @@
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
-    <Tailcalls>true</Tailcalls>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <Tailcalls>true</Tailcalls>
-  </PropertyGroup>
-
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
     <PropertyGroup>
       <BuildOutputGroupLocation>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</BuildOutputGroupLocation>
@@ -33,8 +25,14 @@
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Utilities.Core.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Tasks.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Reflection.Metadata.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Buffers.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Collections.Immutable.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Memory.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Numerics.Vectors.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Reflection.Metadata.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Resources.Extensions.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Runtime.CompilerServices.Unsafe.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Threading.Tasks.Dataflow.dll" />
     </ItemGroup>
   </Target>
 
@@ -185,7 +183,7 @@
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
-    </Compile>    
+    </Compile>
     <FsLex Include="..\..\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbsIL\illex.fsl</Link>
@@ -224,8 +222,14 @@
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>AbsIL\ilmorph.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilsign.fs" Condition="$(TargetFramework.StartsWith(netstandard))">
+    <Compile Include="..\..\absil\ilsign.fs" Condition="$(TargetFramework.StartsWith('netstandard'))">
       <Link>AbsIL\ilsign.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilnativeres.fsi">
+      <Link>AbsIL\ilnativeres.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilnativeres.fs">
+      <Link>AbsIL\ilnativeres.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
       <Link>AbsIL\ilsupp.fsi</Link>
@@ -332,8 +336,17 @@
     <Compile Include="..\layout.fs">
       <Link>ParserAndUntypedAST\layout.fs</Link>
     </Compile>
-    <Compile Include="..\ast.fs">
-      <Link>ParserAndUntypedAST\ast.fs</Link>
+    <Compile Include="..\XmlDoc.fs">
+      <Link>ParserAndUntypedAST\XmlDoc.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree.fs">
+      <Link>ParserAndUntypedAST\SyntaxTree.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTreeOps.fs">
+      <Link>ParserAndUntypedAST\SyntaxTreeOps.fs</Link>
+    </Compile>
+    <Compile Include="..\ParseHelpers.fs">
+      <Link>ParserAndUntypedAST\ParseHelpers.fs</Link>
     </Compile>
     <Compile Include="pppars.fs">
       <Link>ParserAndUntypedAST\pppars.fs</Link>
@@ -357,43 +370,46 @@
       <Link>ParserAndUntypedAST\lexfilter.fs</Link>
     </Compile>
     <Compile Include="..\tainted.fsi">
-      <Link>TypedAST\tainted.fsi</Link>
+      <Link>TypedTree\tainted.fsi</Link>
     </Compile>
     <Compile Include="..\tainted.fs">
-      <Link>TypedAST\tainted.fs</Link>
+      <Link>TypedTree\tainted.fs</Link>
     </Compile>
     <Compile Include="..\ExtensionTyping.fsi">
-      <Link>TypedAST\ExtensionTyping.fsi</Link>
+      <Link>TypedTree\ExtensionTyping.fsi</Link>
     </Compile>
     <Compile Include="..\ExtensionTyping.fs">
-      <Link>TypedAST\ExtensionTyping.fs</Link>
+      <Link>TypedTree\ExtensionTyping.fs</Link>
     </Compile>
     <Compile Include="..\QuotationPickler.fsi">
-      <Link>TypedAST\QuotationPickler.fsi</Link>
+      <Link>TypedTree\QuotationPickler.fsi</Link>
     </Compile>
     <Compile Include="..\QuotationPickler.fs">
-      <Link>TypedAST\QuotationPickler.fs</Link>
+      <Link>TypedTree\QuotationPickler.fs</Link>
     </Compile>
     <Compile Include="..\CompilerGlobalState.fs">
-      <Link>TypedAST\CompilerGlobalState.fs</Link>
+      <Link>TypedTree\CompilerGlobalState.fs</Link>
     </Compile>
-    <Compile Include="..\tast.fs">
-      <Link>TypedAST\tast.fs</Link>
+    <Compile Include="..\TypedTree.fs">
+      <Link>TypedTree\TypedTree.fs</Link>
+    </Compile>
+    <Compile Include="..\TypedTreeBasics.fs">
+      <Link>TypedTree\TypedTreeBasics.fs</Link>
     </Compile>
     <Compile Include="..\TcGlobals.fs">
-      <Link>TypedAST\TcGlobals.fs</Link>
+      <Link>TypedTree\TcGlobals.fs</Link>
     </Compile>
-    <Compile Include="..\TastOps.fsi">
-      <Link>TypedAST\TastOps.fsi</Link>
+    <Compile Include="..\TypedTreeOps.fsi">
+      <Link>TypedTree\TypedTreeOps.fsi</Link>
     </Compile>
-    <Compile Include="..\TastOps.fs">
-      <Link>TypedAST\TastOps.fs</Link>
+    <Compile Include="..\TypedTreeOps.fs">
+      <Link>TypedTree\TypedTreeOps.fs</Link>
     </Compile>
-    <Compile Include="..\TastPickle.fsi">
-      <Link>TypedAST\TastPickle.fsi</Link>
+    <Compile Include="..\TypedTreePickle.fsi">
+      <Link>TypedTree\.TypedTreePickle.fsi</Link>
     </Compile>
-    <Compile Include="..\TastPickle.fs">
-      <Link>TypedAST\TastPickle.fs</Link>
+    <Compile Include="..\TypedTreePickle.fs">
+      <Link>TypedTree\.TypedTreePickle.fs</Link>
     </Compile>
     <Compile Include="..\import.fsi">
       <Link>Logic\import.fsi</Link>
@@ -409,6 +425,9 @@
     </Compile>
     <Compile Include="..\AttributeChecking.fs">
       <Link>Logic\AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="..\TypeRelations.fs">
+      <Link>Logic\TypeRelations.fs</Link>
     </Compile>
     <Compile Include="..\InfoReader.fs">
       <Link>Logic\InfoReader.fs</Link>
@@ -427,9 +446,6 @@
     </Compile>
     <Compile Include="..\NameResolution.fs">
       <Link>Logic\NameResolution.fs</Link>
-    </Compile>
-    <Compile Include="..\TypeRelations.fs">
-      <Link>Logic\TypeRelations.fs</Link>
     </Compile>
     <Compile Include="..\SignatureConformance.fs">
       <Link>Logic\SignatureConformance.fs</Link>
@@ -518,7 +534,6 @@
     <Compile Include="..\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
-
     <!-- includes the core of the F# Compiler fsc.exe implementation -->
     <Compile Include="..\DotNetFrameworkDependencies.fs">
       <Link>Driver\DotNetFrameworkDependencies.fs</Link>
@@ -575,6 +590,18 @@
     </Compile>
 
     <!-- the incremental builder and service . -->
+    <Compile Include="..\service\SemanticClassification.fsi">
+      <Link>Service/SemanticClassification.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\SemanticClassification.fs">
+      <Link>Service/SemanticClassification.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ItemKey.fsi">
+      <Link>Service/ItemKey.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ItemKey.fs">
+      <Link>Service/ItemKey.fs</Link>
+    </Compile>
     <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
@@ -702,6 +729,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Microsoft.DotNet.DependencyManager\Microsoft.DotNet.DependencyManager.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
@@ -736,6 +764,8 @@
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
     <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
     <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
+    <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
   </ItemGroup>
 
 </Project>

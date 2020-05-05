@@ -88,7 +88,7 @@ let x =
   }
             """
             [|
-                FSharpErrorSeverity.Error, 767, (8, 14, 8, 34), "The member 'Function' does not correspond to any abstract or virtual method available to override or implement."
+                FSharpErrorSeverity.Error, 767, (8, 14, 8, 34), "The member 'Function' does not correspond to any abstract or virtual method available to override or implement. Maybe you want one of the following:\r\n   MyFunction"
                 FSharpErrorSeverity.Error, 17, (8, 19, 8, 27), "The member 'Function : 'a * 'b -> unit' does not have the correct type to override any given virtual method"
                 FSharpErrorSeverity.Error, 366, (7, 3, 9, 4), "No implementation was given for those members: \r\n\t'abstract member IInterface.MyFunction : int32 * int32 -> unit'\r\n\t'abstract member IInterface.SomeOtherFunction : int32 * int32 -> unit'\r\nNote that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
                 FSharpErrorSeverity.Error, 783, (7, 9, 7, 19), "At least one override did not correctly implement its corresponding abstract member"

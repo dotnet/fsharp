@@ -11,22 +11,21 @@ module internal FSharp.Compiler.TcGlobals
 open System.Collections.Generic
 open System.Diagnostics
 
-open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Extensions.ILX 
 open FSharp.Compiler.AbstractIL.Internal.Library
-
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Features
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
 
 open Internal.Utilities
 
-let internal DummyFileNameForRangesWithoutASpecificLocation = "startup"
+let internal DummyFileNameForRangesWithoutASpecificLocation = startupFileName
 let private envRange = rangeN DummyFileNameForRangesWithoutASpecificLocation 0
 
 /// Represents an intrinsic value from FSharp.Core known to the compiler
@@ -183,11 +182,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       emitDebugInfoInQuotations: bool, noDebugData: bool,
                       pathMap: PathMap, langVersion: LanguageVersion) =
 
-  let vara = NewRigidTypar "a" envRange
-  let varb = NewRigidTypar "b" envRange
-  let varc = NewRigidTypar "c" envRange
-  let vard = NewRigidTypar "d" envRange
-  let vare = NewRigidTypar "e" envRange
+  let vara = Construct.NewRigidTypar "a" envRange
+  let varb = Construct.NewRigidTypar "b" envRange
+  let varc = Construct.NewRigidTypar "c" envRange
+  let vard = Construct.NewRigidTypar "d" envRange
+  let vare = Construct.NewRigidTypar "e" envRange
 
   let varaTy = mkTyparTy vara 
   let varbTy = mkTyparTy varb 
@@ -387,6 +386,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mkListTy ty         = TType_app(v_list_tcr_nice, [ty])
   let mkSeqTy ty1         = TType_app(v_seq_tcr, [ty1])
   let mkRefCellTy ty      = TType_app(v_refcell_tcr_canon, [ty])
+  let mkOptionTy ty      = TType_app(v_option_tcr_nice, [ty])
   let mkQuerySourceTy ty1 ty2         = TType_app(v_querySource_tcr, [ty1; ty2])
   let v_tcref_System_Collections_IEnumerable         = findSysTyconRef sysCollections "IEnumerable";
   let mkArrayType rank (ty : TType) : TType =
@@ -682,6 +682,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_array2D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray2D"                           , None                 , None          , [vara],     ([[mkArrayType 2 varaTy];[v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array3D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray3D"                           , None                 , None          , [vara],     ([[mkArrayType 3 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array4D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray4D"                           , None                 , None          , [vara],     ([[mkArrayType 4 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
+
+  let v_option_toNullable_info     = makeIntrinsicValRef(fslib_MFOptionModule_nleref,                          "toNullable"                           , None                 , Some "ToNullable" , [vara],     ([[mkOptionTy varaTy]], mkNullableTy varaTy))
+  let v_option_defaultValue_info   = makeIntrinsicValRef(fslib_MFOptionModule_nleref,                          "defaultValue"                         , None                 , Some "DefaultValue" , [vara],     ([[varaTy]; [mkOptionTy varaTy]], varaTy))
 
   let v_nativeptr_tobyref_info     = makeIntrinsicValRef(fslib_MFNativePtrModule_nleref,                       "toByRef"                              , None                 , Some "ToByRefInlined", [vara], ([[mkNativePtrTy varaTy]], mkByrefTy varaTy))  
 
@@ -1098,6 +1101,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     
   member __.tcref_System_Attribute = v_System_Attribute_tcr
 
+  // Review: Does this need to be an option type?
+  member val System_Runtime_CompilerServices_RuntimeFeature_ty = tryFindSysTyconRef sysCompilerServices "RuntimeFeature" |> Option.map mkNonGenericTy
+
   member val iltyp_TypedReference      = tryFindSysILTypeRef "System.TypedReference" |> Option.map mkILNonGenericValueTy
   member val iltyp_StreamingContext    = tryFindSysILTypeRef tname_StreamingContext  |> Option.map mkILNonGenericValueTy
   member val iltyp_SerializationInfo   = tryFindSysILTypeRef tname_SerializationInfo  |> Option.map mkILNonGenericBoxedTy
@@ -1411,6 +1417,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.array3D_set_info           = v_array3D_set_info
   member __.array4D_set_info           = v_array4D_set_info
 
+  member val option_toNullable_info     = v_option_toNullable_info
+  member val option_defaultValue_info     = v_option_defaultValue_info
+
   member __.deserialize_quoted_FSharp_20_plus_info       = v_deserialize_quoted_FSharp_20_plus_info
   member __.deserialize_quoted_FSharp_40_plus_info    = v_deserialize_quoted_FSharp_40_plus_info
   member __.cast_quotation_info        = v_cast_quotation_info
@@ -1491,5 +1500,5 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
 #if DEBUG
 // This global is only used during debug output 
-let global_g = ref (None : TcGlobals option)
+let mutable global_g = None : TcGlobals option
 #endif
