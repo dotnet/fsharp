@@ -761,8 +761,7 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkType t
             argInfo :: (argInfos |> List.concat)
-            |> List.map (fun (SynArgInfo(Attributes attrs, _, _)) -> attrs)
-            |> List.concat
+            |> List.collect (fun (SynArgInfo(Attributes attrs, _, _)) -> attrs)
             |> List.iter walkAttribute
     
         and walkMemberSig = function
@@ -885,11 +884,11 @@ module ParsedInput =
         let mutable ns = None
         let modules = ResizeArray<Module>()  
 
-        let inline longIdentToIdents ident = ident |> Seq.map (fun x -> string x) |> Seq.toArray
+        let inline longIdentToIdents ident = ident |> Seq.map string |> Seq.toArray
         
         let addModule (longIdent: LongIdent, range: range) =
             modules.Add 
-                { Idents = longIdent |> List.map string |> List.toArray 
+                { Idents = longIdentToIdents longIdent
                   Range = range }
 
         let doRange kind (scope: LongIdent) line col =

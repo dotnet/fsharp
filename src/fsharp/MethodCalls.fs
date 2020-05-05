@@ -125,12 +125,13 @@ type CallerArgs<'T> =
         Named: CallerNamedArg<'T> list list 
     }
     static member Empty : CallerArgs<'T> = { Unnamed = []; Named = [] }
-    member x.CallerArgCounts = (List.length x.Unnamed, List.length x.Named)
+    member x.CallerArgCounts = List.length x.Unnamed, List.length x.Named
     member x.CurriedCallerArgs = List.zip x.Unnamed x.Named
     member x.ArgumentNamesAndTypes =
-      [ (x.Unnamed |> List.map (List.map (fun i -> None, i.CallerArgumentType))) |> List.concat
-        (x.Named |> List.map (List.map (fun i -> Some i.Name, i.CallerArg.CallerArgumentType))) |> List.concat ]
-      |> List.concat
+        let unnamed = x.Unnamed |> List.collect (List.map (fun i -> None, i.CallerArgumentType))
+        let named = x.Named |> List.collect (List.map (fun i -> Some i.Name, i.CallerArg.CallerArgumentType))
+        unnamed @ named
+
 //-------------------------------------------------------------------------
 // Callsite conversions
 //------------------------------------------------------------------------- 
@@ -209,8 +210,7 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                 // If at the beginning of inference then use a type variable
                 else 
                     let compgenId = mkSynId range0 unassignedTyparName
-                    let NewInferenceType () = mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
-                    NewInferenceType()
+                    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
             else
                 calledArgTy
 
@@ -459,10 +459,10 @@ type CalledMeth<'T>
                               | _ -> 
                                   Choice2Of2(arg))
 
-            let names = namedCallerArgs |> List.map (fun (CallerNamedArg(nm, _)) -> nm.idText) 
-
-            if (List.noRepeats String.order names).Length <> namedCallerArgs.Length then
-                errorR(Error(FSComp.SR.typrelNamedArgumentHasBeenAssignedMoreThenOnce(), m))
+            let names = System.Collections.Generic.HashSet<_>() 
+            for CallerNamedArg(nm, _) in namedCallerArgs do 
+                if not (names.Add nm.idText) then
+                    errorR(Error(FSComp.SR.typrelNamedArgumentHasBeenAssignedMoreThenOnce nm.idText, m))
                 
             let argSet = { UnnamedCalledArgs=unnamedCalledArgs; UnnamedCallerArgs=unnamedCallerArgs; ParamArrayCalledArgOpt=paramArrayCalledArgOpt; ParamArrayCallerArgs=paramArrayCallerArgs; AssignedNamedArgs=assignedNamedArgs }
 

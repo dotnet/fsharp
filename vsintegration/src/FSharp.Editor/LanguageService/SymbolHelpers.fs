@@ -35,7 +35,7 @@ module internal SymbolHelpers =
             return symbolUses
         }
 
-    let getSymbolUsesInProjects (symbol: FSharpSymbol, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, projects: Project list, onFound: range -> Async<unit>, userOpName) =
+    let getSymbolUsesInProjects (symbol: FSharpSymbol, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, projects: Project list, onFound: Document -> TextSpan -> range -> Async<unit>, userOpName) =
         projects
         |> Seq.map (fun project ->
             async {
@@ -43,8 +43,19 @@ module internal SymbolHelpers =
                 | Some (_parsingOptions, projectOptions) ->
                     for filePath in projectOptions.SourceFiles do
                         let! symbolUses = checker.FindBackgroundReferencesInFile(filePath, projectOptions, symbol, userOpName = userOpName)
-                        for symbolUse in symbolUses do 
-                            do! onFound symbolUse
+                        let documentOpt = project.Solution.TryGetDocumentFromPath(filePath, project.Id)
+                        match documentOpt with
+                        | Some document ->
+                            let! ct = Async.CancellationToken
+                            let! sourceText = document.GetTextAsync ct |> Async.AwaitTask
+                            for symbolUse in symbolUses do 
+                                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
+                                | Some textSpan ->
+                                    do! onFound document textSpan symbolUse
+                                | _ ->
+                                    ()
+                        | _ ->
+                            ()
                 | _ -> ()
             })
         |> Async.Sequential
@@ -76,7 +87,7 @@ module internal SymbolHelpers =
                             yield! project.GetDependentProjects() ]
                         |> List.distinctBy (fun x -> x.Id)
                     
-                let! _ = getSymbolUsesInProjects (symbol, projectInfoManager, checker, projects, (fun symbolUse -> async { symbolUses.Add symbolUse }), userOpName)
+                let! _ = getSymbolUsesInProjects (symbol, projectInfoManager, checker, projects, (fun _ _ symbolUse -> async { symbolUses.Add symbolUse }), userOpName)
                     
                 return toDict symbolUses }
  

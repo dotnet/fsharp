@@ -271,11 +271,6 @@ let mapTriple (f1, f2, f3) (a1, a2, a3) = (f1 a1, f2 a2, f3 a3)
 let mapQuadruple (f1, f2, f3, f4) (a1, a2, a3, a4) = (f1 a1, f2 a2, f3 a3, f4 a4)
 let fmap2Of2 f z (a1, a2) = let z, a2 = f z a2 in z, (a1, a2)
 
-module List = 
-    let noRepeats xOrder xs =
-        let s = Zset.addList xs (Zset.empty xOrder) // build set 
-        Zset.elements s // get elements... no repeats
-
 //---------------------------------------------------------------------------
 // Zmap rebinds
 //------------------------------------------------------------------------- 

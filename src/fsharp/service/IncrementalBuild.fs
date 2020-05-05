@@ -1402,6 +1402,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
                     let input, moduleNamesDict = DeduplicateParsedInputModuleName tcAcc.tcModuleNamesDict input
 
+                    Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
                     let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
                         TypeCheckOneInputEventually 
                             ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
@@ -1410,6 +1411,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                              None, 
                              TcResultsSink.WithSink sink, 
                              tcAcc.tcState, input)
+                    Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
                         
                     /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                     let implFile = if keepAssemblyContents then implFile else None
@@ -1420,6 +1422,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     // Build symbol keys
                     let itemKeyStore, semanticClassification =
                         if enableBackgroundItemKeyStoreAndSemanticClassification then
+                            Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
                             let sResolutions = sink.GetResolutions()
                             let builder = ItemKeyStoreBuilder()
                             let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
@@ -1431,7 +1434,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                 if preventDuplicates.Add struct(r.Start, r.End) then
                                     builder.Write(cnr.Range, cnr.Item))
 
-                            builder.TryBuildAndReset(), sResolutions.GetSemanticClassification(tcAcc.tcGlobals, tcAcc.tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+                            let res = builder.TryBuildAndReset(), sResolutions.GetSemanticClassification(tcAcc.tcGlobals, tcAcc.tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+                            Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                            res
                         else
                             None, [||]
                     
