@@ -289,8 +289,9 @@ type public FSharpChecker =
     /// <param name="filename">The filename for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="symbol">The symbol to find all uses in the file.</param>
+    /// <param name="canInvalidateProject">Default: true. If true, this call can invalidate the current state of project if the options have changed. If false, the current state of the project will be used.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member FindBackgroundReferencesInFile : filename : string * options : FSharpProjectOptions * symbol: FSharpSymbol * ?userOpName: string -> Async<range seq>
+    member FindBackgroundReferencesInFile : filename : string * options : FSharpProjectOptions * symbol: FSharpSymbol * ?canInvalidateProject: bool * ?userOpName: string -> Async<range seq>
 
     /// <summary>
     /// <para>Get semantic classification for a file.</para>
@@ -357,6 +358,11 @@ type public FSharpChecker =
     /// <param name="startBackgroundCompileIfAlreadySeen">Start a background compile of the project if a project with the same name has already been seen before.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompileIfAlreadySeen: bool * ?userOpName: string -> unit
+
+    /// Clear the internal cache of the given projects.
+    /// <param name="options">The given project options.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member ClearCache: options: FSharpProjectOptions seq * ?userOpName: string -> unit
 
     /// Set the project to be checked in the background.  Overrides any previous call to <c>CheckProjectInBackground</c>
     member CheckProjectInBackground: options: FSharpProjectOptions  * ?userOpName: string -> unit
