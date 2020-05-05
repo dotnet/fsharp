@@ -707,7 +707,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
 
        // determine vals(env) - transclosure
        let vals = env.ReqdVals @ List.collect valsSubEnvFor env.ReqdSubEnvs  // list, with repeats
-       let vals = List.noRepeats valOrder vals                        // noRepeats
+       let vals = vals |> List.distinctBy (fun v -> v.Stamp)
 
        // Remove genuinely toplevel, no need to close over these
        let vals = vals |> List.filter (IsMandatoryTopLevel >> not)
