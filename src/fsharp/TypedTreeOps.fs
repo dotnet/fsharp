@@ -253,7 +253,7 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.CoercesTo(ty, m) -> 
              Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty, m))
          | TyparConstraint.MayResolveMember(traitInfo, m) -> 
-             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo, m))
+             Some(TyparConstraint.MayResolveMember (remapTraitSln tyenv traitInfo, m))
          | TyparConstraint.DefaultsTo(priority, ty, m) ->
              Some(TyparConstraint.DefaultsTo(priority, remapTypeAux tyenv ty, m))
          | TyparConstraint.IsEnum(uty, m) -> 
@@ -270,7 +270,13 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.IsReferenceType _ 
          | TyparConstraint.RequiresDefaultConstructor _ -> Some x)
 
-and remapTraitAux tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell)) =
+and remapTraitWitnessInfo tyenv (TraitWitnessInfo(tys, nm, mf, argtys, rty)) =
+    let tysR = remapTypesAux tyenv tys
+    let argtysR = remapTypesAux tyenv argtys
+    let rtyR = Option.map (remapTypeAux tyenv) rty
+    TraitWitnessInfo(tysR, nm, mf, argtysR, rtyR)
+
+and remapTraitSln tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell)) =
     let slnCell = 
         match !slnCell with 
         | None -> None
@@ -397,7 +403,7 @@ let mkInstRemap tpinst =
 // entry points for "typar -> TType" instantiation 
 let instType tpinst x = if isNil tpinst then x else remapTypeAux (mkInstRemap tpinst) x
 let instTypes tpinst x = if isNil tpinst then x else remapTypesAux (mkInstRemap tpinst) x
-let instTrait tpinst x = if isNil tpinst then x else remapTraitAux (mkInstRemap tpinst) x
+let instTrait tpinst x = if isNil tpinst then x else remapTraitSln (mkInstRemap tpinst) x
 let instTyparConstraints tpinst x = if isNil tpinst then x else remapTyparConstraintsAux (mkInstRemap tpinst) x
 let instSlotSig tpinst ss = remapSlotSig (fun _ -> []) (mkInstRemap tpinst) ss
 let copySlotSig ss = remapSlotSig (fun _ -> []) Remap.Empty ss
@@ -1159,6 +1165,7 @@ let rec rangeOfExpr x =
     | Expr.Val (_, _, m) | Expr.Op (_, _, _, m) | Expr.Const (_, m, _) | Expr.Quote (_, _, _, m, _)
     | Expr.Obj (_, _, _, _, _, _, m) | Expr.App (_, _, _, _, m) | Expr.Sequential (_, _, _, _, m) 
     | Expr.StaticOptimization (_, _, _, m) | Expr.Lambda (_, _, _, _, _, m, _) 
+    | Expr.WitnessArg (_, m)
     | Expr.TyLambda (_, _, _, m, _)| Expr.TyChoose (_, _, m) | Expr.LetRec (_, _, m, _) | Expr.Let (_, _, m, _) | Expr.Match (_, _, _, _, m, _) -> m
     | Expr.Link eref -> rangeOfExpr (!eref)
 
@@ -2064,6 +2071,11 @@ and accFreeInTrait opts (TTrait(tys, _, _, argtys, rty, sln)) acc =
        (accFreeInTypes opts tys 
          (accFreeInTypes opts argtys 
            (Option.foldBack (accFreeInType opts) rty acc)))
+
+and accFreeInWitnessArg opts (TraitWitnessInfo(tys, _nm, _mf, argtys, rty)) acc = 
+       accFreeInTypes opts tys 
+         (accFreeInTypes opts argtys 
+           (Option.foldBack (accFreeInType opts) rty acc))
 
 and accFreeInTraitSln opts sln acc = 
     match sln with 
@@ -3918,6 +3930,7 @@ module DebugPrint =
                 @@
                 rightL (tagText "}")
 
+            | Expr.WitnessArg _ -> wordL (tagText "<witnessarg>")
             | Expr.StaticOptimization (_tcs, csx, x, _) -> 
                 (wordL(tagText "opt") @@- (exprL x)) @@--
                    (wordL(tagText "|") ^^ exprL csx --- (wordL(tagText "when...") ))
@@ -4422,6 +4435,8 @@ let accFreevarsInVal opts v acc = accFreeTyvars opts accFreeInVal v acc
     
 let accFreeVarsInTraitSln opts tys acc = accFreeTyvars opts accFreeInTraitSln tys acc 
 
+let accFreeVarsInWitnessArg opts tys acc = accFreeTyvars opts accFreeInWitnessArg tys acc 
+
 let boundLocalVal opts v fvs =
     if not opts.includeLocals then fvs else
     let fvs = accFreevarsInVal opts v fvs
@@ -4602,14 +4617,16 @@ and accFreeInExprNonLinear opts x acc =
     | Expr.Val (lvr, flags, _) ->  
         accFreeInValFlags opts flags (accFreeValRef opts lvr acc)
 
-    | Expr.Quote (ast, {contents=Some(_, argTypes, argExprs, _data)}, _, _, ty) ->  
-        accFreeInExpr opts ast 
-            (accFreeInExprs opts argExprs
-               (accFreeVarsInTys opts argTypes
-                  (accFreeVarsInTy opts ty acc))) 
+    | Expr.Quote (ast, dataCell, _, _, ty) ->  
+        match dataCell.Value with 
+        | Some (_, (_, argTypes, argExprs, _data)) ->
+            accFreeInExpr opts ast 
+                (accFreeInExprs opts argExprs
+                   (accFreeVarsInTys opts argTypes
+                      (accFreeVarsInTy opts ty acc))) 
 
-    | Expr.Quote (ast, {contents=None}, _, _, ty) ->  
-        accFreeInExpr opts ast (accFreeVarsInTy opts ty acc)
+        | None ->
+            accFreeInExpr opts ast (accFreeVarsInTy opts ty acc)
 
     | Expr.App (f0, f0ty, tyargs, args, _) -> 
         accFreeVarsInTy opts f0ty
@@ -4649,6 +4666,9 @@ and accFreeInExprNonLinear opts x acc =
          let acc = accFreeInOp opts op acc
          let acc = accFreeVarsInTys opts tinst acc
          accFreeInExprs opts args acc
+
+    | Expr.WitnessArg (witnessInfo, _) ->
+         accFreeVarsInWitnessArg opts witnessInfo acc
 
 and accFreeInOp opts op acc =
     match op with
@@ -5124,13 +5144,15 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
         if vr === vr' && vf === vf' then expr 
         else Expr.Val (vr', vf', m)
 
-    | Expr.Quote (a, {contents=Some(typeDefs, argTypes, argExprs, data)}, isFromQueryExpression, m, ty) ->  
-        // fix value of compgen for both original expression and pickled AST
+    | Expr.Quote (a, dataCell, isFromQueryExpression, m, ty) ->  
+        let doData (typeDefs, argTypes, argExprs, res) = (typeDefs, remapTypesAux tmenv argTypes, remapExprs g compgen tmenv argExprs, res)
+        let data' =
+            match dataCell.Value with 
+            | None -> None
+            | Some (data1, data2) -> Some (doData data1, doData data2)
+            // fix value of compgen for both original expression and pickled AST
         let compgen = fixValCopyFlagForQuotations compgen
-        Expr.Quote (remapExpr g compgen tmenv a, {contents=Some(typeDefs, remapTypesAux tmenv argTypes, remapExprs g compgen tmenv argExprs, data)}, isFromQueryExpression, m, remapType tmenv ty)
-
-    | Expr.Quote (a, {contents=None}, isFromQueryExpression, m, ty) ->  
-        Expr.Quote (remapExpr g (fixValCopyFlagForQuotations compgen) tmenv a, {contents=None}, isFromQueryExpression, m, remapType tmenv ty)
+        Expr.Quote (remapExpr g compgen tmenv a, ref data', isFromQueryExpression, m, remapType tmenv ty)
 
     | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
         let basev', tmenvinner = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv basev 
@@ -5187,6 +5209,10 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
     | Expr.Const (c, m, ty) -> 
         let ty' = remapType tmenv ty 
         if ty === ty' then expr else Expr.Const (c, m, ty')
+
+    | Expr.WitnessArg (witnessInfo, m) ->
+        let witnessInfoR = remapTraitWitnessInfo tmenv witnessInfo
+        Expr.WitnessArg (witnessInfoR, m)
 
 and remapTarget g compgen tmenv (TTarget(vs, e, spTarget)) = 
     let vs', tmenvinner = copyAndRemapAndBindVals g compgen tmenv vs 
@@ -5252,7 +5278,7 @@ and remapOp tmenv op =
         let tys2 = remapTypes tmenv tys
         if tys === tys2 then op else
         TOp.ILAsm (instrs, tys2)
-    | TOp.TraitCall traitInfo -> TOp.TraitCall (remapTraitAux tmenv traitInfo)
+    | TOp.TraitCall traitInfo -> TOp.TraitCall (remapTraitSln tmenv traitInfo)
     | TOp.LValueOp (kind, lvr) -> TOp.LValueOp (kind, remapValRef tmenv lvr)
     | TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, valUseFlags, isProperty, noTailCall, ilMethRef, enclTypeArgs, methTypeArgs, tys) -> 
        TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, remapValFlags tmenv valUseFlags, 
@@ -5637,8 +5663,12 @@ let rec remarkExpr m x =
     | Expr.StaticOptimization (eqns, e2, e3, _) ->
         Expr.StaticOptimization (eqns, remarkExpr m e2, remarkExpr m e3, m)
 
-    | Expr.Const (c, _, ty) -> Expr.Const (c, m, ty)
+    | Expr.Const (c, _, ty) ->
+        Expr.Const (c, m, ty)
   
+    | Expr.WitnessArg (witnessInfo, _) ->
+        Expr.WitnessArg (witnessInfo, m)
+
 and remarkObjExprMethod m (TObjExprMethod(slotsig, attribs, tps, vs, e, _)) = 
     TObjExprMethod(slotsig, attribs, tps, vs, remarkExpr m e, m)
 
@@ -5744,6 +5774,32 @@ let mkArrayType (g: TcGlobals) ty = TType_app (g.array_tcr_nice, [ty])
 
 let mkByteArrayTy (g: TcGlobals) = mkArrayType g g.byte_ty
 
+//---------------------------------------------------------------------------
+// Witnesses
+//---------------------------------------------------------------------------
+
+let GenWitnessArgTys (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
+    let (TraitWitnessInfo(_tys, _nm, _memFlags, argtys, _rty)) = traitInfo
+    let argtys = if argtys.IsEmpty then [g.unit_ty] else argtys
+    let argtysl = List.map List.singleton argtys
+    argtysl
+    //match tys with 
+    //| _ when not memFlags.IsInstance  -> argtysl
+    //| [ty] -> [ty] :: argtysl
+    //| [_; _] -> [g.obj_ty] :: argtysl
+    //| _ -> failwith "unexpected empty type support for trait constraint" 
+
+let GenWitnessTy (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
+    let rty = match traitInfo.ReturnType with None -> g.unit_ty | Some ty -> ty
+    let argtysl = GenWitnessArgTys g traitInfo
+    mkMethodTy g argtysl rty 
+
+let GenWitnessTys (g: TcGlobals) (cxs: TraitWitnessInfos) =
+    if g.generateWitnesses then 
+        cxs |> List.map (GenWitnessTy g)
+    else
+        []
+
 //--------------------------------------------------------------------------
 // tyOfExpr
 //--------------------------------------------------------------------------
@@ -5798,6 +5854,7 @@ let rec tyOfExpr g e =
             //errorR(InternalError("unexpected goto/label/return in tyOfExpr", m))
             // It doesn't matter what type we return here. This is only used in free variable analysis in the code generator
             g.unit_ty
+    | Expr.WitnessArg (witnessInfo, _m) -> GenWitnessTy g witnessInfo
 
 //--------------------------------------------------------------------------
 // Make applications
@@ -6466,12 +6523,11 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
             // tailcall
             targetF z targets.[targets.Length - 1]
                 
-        | Expr.Quote (e, {contents=Some(_typeDefs, _argTypes, argExprs, _)}, _, _, _) -> 
+        | Expr.Quote (e, dataCell, _, _, _) -> 
             let z = exprF z e
-            exprsF z argExprs
-
-        | Expr.Quote (e, {contents=None}, _, _m, _) -> 
-            exprF z e
+            match dataCell.Value with 
+            | None -> z
+            | Some ((_typeDefs, _argTypes, argExprs, _), _) -> exprsF z argExprs
 
         | Expr.Obj (_n, _typ, _basev, basecall, overrides, iimpls, _m) -> 
             let z = exprF z basecall
@@ -6480,6 +6536,8 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
 
         | Expr.StaticOptimization (_tcs, csx, x, _) -> 
             exprsF z [csx;x]
+
+        | Expr.WitnessArg (_witnessInfo, _m) -> z
 
     and valBindF dtree z bind =
         let z = folders.nonRecBindingsIntercept z bind
@@ -7851,32 +7909,6 @@ let LinearizeTopMatch g parent = function
 
 
 //---------------------------------------------------------------------------
-// Witnesses
-//---------------------------------------------------------------------------
-
-let GenWitnessArgTys (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
-    let (TraitWitnessInfo(_tys, _nm, _memFlags, argtys, _rty)) = traitInfo
-    let argtys = if argtys.IsEmpty then [g.unit_ty] else argtys
-    let argtysl = List.map List.singleton argtys
-    argtysl
-    //match tys with 
-    //| _ when not memFlags.IsInstance  -> argtysl
-    //| [ty] -> [ty] :: argtysl
-    //| [_; _] -> [g.obj_ty] :: argtysl
-    //| _ -> failwith "unexpected empty type support for trait constraint" 
-
-let GenWitnessTy (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
-    let rty = match traitInfo.ReturnType with None -> g.unit_ty | Some ty -> ty
-    let argtysl = GenWitnessArgTys g traitInfo
-    mkMethodTy g argtysl rty 
-
-let GenWitnessTys (g: TcGlobals) (cxs: TraitWitnessInfos) =
-    if g.generateWitnesses then 
-        cxs |> List.map (GenWitnessTy g)
-    else
-        []
-
-//---------------------------------------------------------------------------
 // XmlDoc signatures
 //---------------------------------------------------------------------------
 
@@ -8425,13 +8457,12 @@ and rewriteExprStructure env expr =
       if f0 === f0' && args === args' then expr
       else Expr.App (f0', f0ty, tyargs, args', m)
 
-  | Expr.Quote (ast, {contents=Some(typeDefs, argTypes, argExprs, data)}, isFromQueryExpression, m, ty) -> 
-      Expr.Quote ((if env.IsUnderQuotations then RewriteExpr env ast else ast), 
-                  {contents=Some(typeDefs, argTypes, rewriteExprs env argExprs, data)}, 
-                  isFromQueryExpression, m, ty)
-
-  | Expr.Quote (ast, {contents=None}, isFromQueryExpression, m, ty) -> 
-      Expr.Quote ((if env.IsUnderQuotations then RewriteExpr env ast else ast), {contents=None}, isFromQueryExpression, m, ty)
+  | Expr.Quote (ast, dataCell, isFromQueryExpression, m, ty) -> 
+      let data = 
+          match dataCell.Value with
+          | None -> None
+          | Some (data1, data2) -> Some(map3Of4 (rewriteExprs env) data1, map3Of4 (rewriteExprs env) data2)
+      Expr.Quote ((if env.IsUnderQuotations then RewriteExpr env ast else ast), ref data, isFromQueryExpression, m, ty)
 
   | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) -> 
       mkObjExpr(ty, basev, RewriteExpr env basecall, List.map (rewriteObjExprOverride env) overrides, 
@@ -8473,6 +8504,8 @@ and rewriteExprStructure env expr =
 
   | Expr.TyChoose (a, b, m) -> 
       Expr.TyChoose (a, RewriteExpr env b, m)
+
+  | Expr.WitnessArg (witnessInfo, m) -> Expr.WitnessArg (witnessInfo, m)
 
 and rewriteLinearExpr env expr contf =
     // schedule a rewrite on the way back up by adding to the continuation 

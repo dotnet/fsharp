@@ -40,20 +40,32 @@ type QuotationSerializationFormat =
     }
 
 type QuotationGenerationScope =
-    { g: TcGlobals
+    {
+      g: TcGlobals
+
       amap: Import.ImportMap
+
       scope: CcuThunk
+
       tcVal : ConstraintSolver.TcValF
+
       // Accumulate the references to type definitions
       referencedTypeDefs: ResizeArray<ILTypeRef>
+
       referencedTypeDefsTable: Dictionary<ILTypeRef, int>
-      // Accumulate the type splices (i.e. captured type parameters) into here
+
+      /// Accumulate the type splices (i.e. captured type parameters) into here
       typeSplices: ResizeArray<Typar * range>
-      // Accumulate the expression splices into here
+
+      /// Accumulate the expression splices into here
       exprSplices: ResizeArray<Expr * range>
+
       isReflectedDefinition : IsReflectedDefinition
+
       quotationFormat : QuotationSerializationFormat
-      mutable emitDebugInfoInQuotations : bool }
+
+      mutable emitDebugInfoInQuotations : bool
+     }
 
     static member Create (g: TcGlobals, amap, scope, tcVal, isReflectedDefinition) =
         { g = g
@@ -88,7 +100,7 @@ type QuotationTranslationEnv =
       tyvs: StampMap<int>
 
       /// Indicates this is a witness arg we we disable further generation of witnesses
-      isWitness: bool
+      includeWitnesses: bool
 
       /// All witnesses in scope and their mapping to lambda variables.
       //
@@ -109,7 +121,7 @@ type QuotationTranslationEnv =
         { vs = ValMap<_>.Empty
           numValsInScope = 0
           tyvs = Map.empty
-          isWitness = false
+          includeWitnesses = true
           witnessesInScope = EmptyTraitWitnessInfoHashMap g
           isinstVals = ValMap<_>.Empty
           substVals = ValMap<_>.Empty }
@@ -235,24 +247,31 @@ and ConvExpr cenv env (expr : Expr) =
 
 and GetWitnessArgs cenv (env : QuotationTranslationEnv) m tps tyargs =
     let g = cenv.g
-    if g.generateWitnesses && not env.isWitness then 
+    if g.generateWitnesses && env.includeWitnesses then 
         let witnessExprs = 
             ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal g cenv.amap m tps tyargs 
             |> CommitOperationResult
-        let env = { env with isWitness = true }
+        let env = { env with includeWitnesses = false }
         witnessExprs |> List.map (fun arg -> 
             match arg with 
             | Choice1Of2 witnessInfo -> 
-                if env.witnessesInScope.ContainsKey witnessInfo then 
-                    let witnessArgIdx = env.witnessesInScope.[witnessInfo]
-                    QP.mkVar witnessArgIdx
-                else
-                    System.Diagnostics.Debug.Assert(false, "unexpected missing witness representation")
-                    QP.mkVar 0
+                ConvWitnessInfo cenv env m witnessInfo
             | Choice2Of2 arg -> 
                 ConvExpr cenv env arg) 
     else
         []
+
+and ConvWitnessInfo cenv env m witnessInfo =
+    let g = cenv.g
+    let env = { env with includeWitnesses = false }
+    if env.witnessesInScope.ContainsKey witnessInfo then 
+        let witnessArgIdx = env.witnessesInScope.[witnessInfo]
+        QP.mkVar witnessArgIdx
+    else
+        let holeTy = GenWitnessTy g witnessInfo
+        let idx = cenv.exprSplices.Count
+        cenv.exprSplices.Add((Expr.WitnessArg(witnessInfo, m), m))
+        QP.mkHole(ConvType cenv env m holeTy, idx)
 
 and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.ExprData =
 
@@ -706,6 +725,9 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | _ ->
             wfail(InternalError( "Unexpected expression shape", m))
+
+    | Expr.WitnessArg (witnessInfo, m) ->
+        ConvWitnessInfo cenv env m witnessInfo
 
     | _ ->
         wfail(InternalError(sprintf "unhandled construct in AST: %A" expr, expr.Range))
@@ -1175,8 +1197,9 @@ and ConvReturnType cenv envinner m retTy =
     | None -> ConvVoidType cenv m
     | Some ty -> ConvType cenv envinner m ty
 
-let ConvExprPublic cenv e =
+let ConvExprPublic cenv includeWitnesses e =
     let env = QuotationTranslationEnv.CreateEmpty(cenv.g)
+    let env = { env with includeWitnesses = includeWitnesses }
     let astExpr =
         let astExpr = ConvExpr cenv env e
         // always emit debug info for the top level expression

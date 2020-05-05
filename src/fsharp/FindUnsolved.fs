@@ -109,7 +109,8 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
             | TTyconIsStruct(ty1) -> 
                 accTy cenv env ty1)
 
-    | Expr.Link _eref -> failwith "Unexpected reclink"
+    | Expr.Link _eref -> failwith "Unexpected Expr.Link"
+    | Expr.WitnessArg (_witnessInfo, _m) -> failwith "Unexpected Expr.WitnessArg"
 
 and accMethods cenv env baseValOpt l = 
     List.iter (accMethod cenv env baseValOpt) l

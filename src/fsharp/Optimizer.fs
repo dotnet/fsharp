@@ -1893,8 +1893,12 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         OptimizeVal cenv env expr (v, m)
 
     | Expr.Quote (ast, splices, isFromQueryExpression, m, ty) -> 
-          let splices = ref (splices.Value |> Option.map (map3Of4 (List.map (OptimizeExpr cenv env >> fst))))
-          Expr.Quote (ast, splices, isFromQueryExpression, m, ty), 
+          let doData data = map3Of4 (List.map (OptimizeExpr cenv env >> fst)) data
+          let splices =
+              match splices.Value with
+              | Some (data1, data2opt) -> Some (doData data1, doData data2opt)
+              | None -> None
+          Expr.Quote (ast, ref splices, isFromQueryExpression, m, ty), 
           { TotalSize = 10
             FunctionSize = 1
             HasEffect = false  
@@ -1945,6 +1949,14 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.Link _eref -> 
         assert ("unexpected reclink" = "")
         failwith "Unexpected reclink"
+
+    | Expr.WitnessArg _ ->
+        expr, 
+        { TotalSize = 10
+          FunctionSize = 1
+          HasEffect = false  
+          MightMakeCriticalTailcall=false
+          Info=UnknownValue }
 
 /// Optimize/analyze an object expression
 and OptimizeObjectExpr cenv env (ty, baseValOpt, basecall, overrides, iimpls, m) =

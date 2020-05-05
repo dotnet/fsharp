@@ -979,7 +979,10 @@ let StorageForValRef g m (v: ValRef) eenv = StorageForVal g m v.Deref eenv
 let TryStorageForWitness eenv (w: TraitWitnessInfo) = 
     match eenv.witnessesInScope.TryGetValue w with 
     | true, storage -> Some storage
-    | _ -> None
+    | _ ->
+        let inWitnessPassingScope = not eenv.witnessesInScope.IsEmpty
+        assert not inWitnessPassingScope
+        None
 
 let IsValRefIsDllImport g (vref: ValRef) =
     vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute
@@ -2413,7 +2416,12 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
     | Expr.Obj (_, ty, basev, basecall, overrides, interfaceImpls, m) ->
         GenObjectExpr cenv cgbuf eenv expr (ty, basev, basecall, overrides, interfaceImpls, m) sequel
 
-    | Expr.Quote (ast, conv, _, m, ty) -> GenQuotation cenv cgbuf eenv (ast, conv, m, ty) sequel
+    | Expr.Quote (ast, conv, _, m, ty) ->
+        GenQuotation cenv cgbuf eenv (ast, conv, m, ty) sequel
+
+    | Expr.WitnessArg (witnessInfo, m) ->
+       GenWitnessArgFromInfo cenv cgbuf eenv m witnessInfo
+       GenSequel cenv eenv.cloc cgbuf sequel
 
     | Expr.Link _ -> failwith "Unexpected reclink"
 
@@ -3931,13 +3939,19 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
 
 and GenQuotation cenv cgbuf eenv (ast, conv, m, ety) sequel =
     let g = cenv.g
-    let referencedTypeDefs, spliceTypes, spliceArgExprs, astSpec =
+    let referencedTypeDefs, spliceTypes, exprSplices, astSpec =
         match !conv with
-        | Some res -> res
+        | Some (data1, data2) ->
+            if eenv.witnessesInScope.IsEmpty then
+                data1
+            else 
+                data2
+            
         | None ->
             try
+                let inWitnessPassingScope = not eenv.witnessesInScope.IsEmpty
                 let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.No)
-                let astSpec = QuotationTranslator.ConvExprPublic qscope ast
+                let astSpec = QuotationTranslator.ConvExprPublic qscope inWitnessPassingScope ast
                 let referencedTypeDefs, typeSplices, exprSplices = qscope.Close()
                 referencedTypeDefs, List.map fst typeSplices, List.map fst exprSplices, astSpec
             with
@@ -3957,12 +3971,12 @@ and GenQuotation cenv cgbuf eenv (ast, conv, m, ety) sequel =
             let referencedTypeDefExprs = List.map (mkILNonGenericBoxedTy >> mkTypeOfExpr cenv m) referencedTypeDefs
             let referencedTypeDefsExpr = mkArray (g.system_Type_ty, referencedTypeDefExprs, m)
             let spliceTypesExpr = mkArray (g.system_Type_ty, spliceTypeExprs, m)
-            let spliceArgsExpr = mkArray (rawTy, spliceArgExprs, m)
+            let spliceArgsExpr = mkArray (rawTy, exprSplices, m)
             mkCallDeserializeQuotationFSharp40Plus g m someTypeInModuleExpr referencedTypeDefsExpr spliceTypesExpr spliceArgsExpr bytesExpr
         else
             let mkList ty els = List.foldBack (mkCons g ty) els (mkNil g m ty)
             let spliceTypesExpr = mkList g.system_Type_ty spliceTypeExprs
-            let spliceArgsExpr = mkList rawTy spliceArgExprs
+            let spliceArgsExpr = mkList rawTy exprSplices
             mkCallDeserializeQuotationFSharp20Plus g m someTypeInModuleExpr spliceTypesExpr spliceArgsExpr bytesExpr
 
     let afterCastExpr =

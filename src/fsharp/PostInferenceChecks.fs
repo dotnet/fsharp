@@ -976,11 +976,16 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
 
             // Translate the quotation to quotation data
             try 
-                let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.No) 
-                let qdata = QuotationTranslator.ConvExprPublic qscope ast  
-                let typeDefs, spliceTypes, spliceExprs = qscope.Close()
+                let doData flag = 
+                    let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.No) 
+                    let qdata = QuotationTranslator.ConvExprPublic qscope flag ast  
+                    let typeDefs, spliceTypes, spliceExprs = qscope.Close()
+                    typeDefs, List.map fst spliceTypes, List.map fst spliceExprs, qdata
+
+                let data1 = doData false
+                let data2 = doData true
                 match savedConv.Value with 
-                | None -> savedConv:= Some (typeDefs, List.map fst spliceTypes, List.map fst spliceExprs, qdata)
+                | None -> savedConv:= Some (data1, data2)
                 | Some _ -> ()
             with QuotationTranslator.InvalidQuotedTerm e -> 
                 errorRecovery e m
@@ -1124,6 +1129,10 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
                 CheckTypeNoByrefs cenv env m ty2
             | TTyconIsStruct ty1 -> 
                 CheckTypeNoByrefs cenv env m ty1)
+        NoLimit
+
+    | Expr.WitnessArg _ ->
+        assert false
         NoLimit
 
     | Expr.Link _ -> 

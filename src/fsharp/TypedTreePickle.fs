@@ -2585,6 +2585,7 @@ and p_expr expr st =
     | Expr.StaticOptimization (a, b, c, d) -> p_byte 11 st; p_tup4 p_constraints p_expr p_expr p_dummy_range (a, b, c, d) st
     | Expr.TyChoose (a, b, c)            -> p_byte 12 st; p_tup3 p_tyar_specs p_expr p_dummy_range (a, b, c) st
     | Expr.Quote (ast, _, _, m, ty)         -> p_byte 13 st; p_tup3 p_expr p_dummy_range p_ty (ast, m, ty) st
+    | Expr.WitnessArg _ -> pfailwith st "unexpected Expr.WitnessArg" 
 
 and u_expr st =
     let tag = u_byte st

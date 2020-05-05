@@ -4523,11 +4523,17 @@ type Expr =
     // MUTABILITY: this use of mutability is awkward and perhaps should be removed
     | Quote of
         quotedExpr: Expr *
-        quotationInfo: (ILTypeRef list * TTypes * Exprs * ExprData) option ref *
+        quotationInfo: ((ILTypeRef list * TTypes * Exprs * ExprData) * (ILTypeRef list * TTypes * Exprs * ExprData)) option ref *
         isFromQueryExpression: bool *
         range: range *
         quotedType: TType  
     
+
+    /// Used in quotation generation to indicate a witness argument
+    | WitnessArg of
+        witnessInfo: TraitWitnessInfo *
+        range: range
+
     /// Indicates a free choice of typars that arises due to 
     /// minimization of polymorphism at let-rec bindings. These are 
     /// resolved to a concrete instantiation on subsequent rewrites. 
@@ -4564,6 +4570,7 @@ type Expr =
         | StaticOptimization (_, _, _, _) -> "StaticOptimization(..)"
         | Op (op, _, args, _) -> "Op(" + op.ToString() + ", " + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + ")"
         | Quote _ -> "Quote(..)"
+        | WitnessArg _  -> "WitnessArg(..)"
         | TyChoose _ -> "TyChoose(..)"
         | Link e -> "Link(" + e.Value.ToDebugString(depth) + ")"
 

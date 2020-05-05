@@ -34,7 +34,7 @@ type QuotationGenerationScope  =
     member Close: unit -> ILTypeRef list * (TType * range) list * (Expr * range) list
     static member ComputeQuotationFormat : TcGlobals -> QuotationSerializationFormat
 
-val ConvExprPublic : QuotationGenerationScope -> Expr -> QuotationPickler.ExprData 
+val ConvExprPublic : QuotationGenerationScope -> includeWitnesses: bool -> Expr -> QuotationPickler.ExprData 
 val ConvReflectedDefinition: QuotationGenerationScope -> string -> Val -> Expr -> QuotationPickler.MethodBaseData * QuotationPickler.ExprData
 
 val (|ModuleValueOrMemberUse|_|) : TcGlobals -> Expr -> (ValRef * ValUseFlag * Expr * TType * TypeInst * Expr list) option

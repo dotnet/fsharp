@@ -3863,6 +3863,8 @@ let EliminateInitializationGraphs
             | Expr.Link eref -> CheckExpr st !eref
             | Expr.TyChoose (_, b, _) -> CheckExpr st b
             | Expr.Quote _ -> ()
+            | Expr.WitnessArg (_witnessInfo, _m) ->
+                failwith "Unexpected Expr.WitnessArg"
 
         and CheckBinding st (TBind(_, e, _)) = CheckExpr st e 
         and CheckDecisionTree st = function
