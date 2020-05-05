@@ -216,7 +216,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
                     if not (Seq.isEmpty projectsToClearCache) then
                         projectsToClearCache
-                        |> Seq.iter (fun pair -> cache.Remove pair.Key |> ignore)
+                        |> Seq.iter (fun pair -> cache.TryRemove pair.Key |> ignore)
                         let options =
                             projectsToClearCache
                             |> Seq.map (fun pair ->
