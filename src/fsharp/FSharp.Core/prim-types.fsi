@@ -715,7 +715,7 @@ namespace Microsoft.FSharp.Core
         new : unit -> NoDynamicInvocationAttribute
 
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        new : isLegacy: bool -> NoDynamicInvocationAttribute
+        internal new : isLegacy: bool -> NoDynamicInvocationAttribute
 
     /// <summary>This attribute is used to indicate that references to the elements of a module, record or union 
     /// type require explicit qualified access.</summary>
