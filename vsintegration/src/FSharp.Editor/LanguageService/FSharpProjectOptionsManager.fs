@@ -89,8 +89,8 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
 
     let legacyProjectSites = ConcurrentDictionary<ProjectId, IProjectSite>()
 
-    let cache = Dictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
-    let singleFileCache = Dictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
+    let cache = ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
+    let singleFileCache = ConcurrentDictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
 
     let rec tryComputeOptionsByFile (document: Document) (ct: CancellationToken) =
         async {
@@ -128,7 +128,7 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
 
             | true, (fileStamp2, parsingOptions, projectOptions) ->
                 if fileStamp <> fileStamp2 then
-                    singleFileCache.Remove(document.Id) |> ignore
+                    singleFileCache.TryRemove(document.Id) |> ignore
                     return! tryComputeOptionsByFile document ct
                 else
                     return Some(parsingOptions, projectOptions)
@@ -218,7 +218,7 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
   
             | true, (oldProject, parsingOptions, projectOptions) ->
                 if isProjectInvalidated oldProject project settings then
-                    cache.Remove(projectId) |> ignore
+                    cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project
                 else
                     return Some(parsingOptions, projectOptions)
@@ -240,8 +240,14 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
                                 let! options = tryComputeOptionsByFile document ct
                                 reply.Reply options
                             else
-                                let! options = tryComputeOptions document.Project
-                                reply.Reply options
+                                // We only care about the latest project in the workspace's solution.
+                                // We do this to prevent any possible cache thrashing in FCS.
+                                let project = document.Project.Solution.Workspace.CurrentSolution.GetProject(document.Project.Id)
+                                if not (isNull project) then
+                                    let! options = tryComputeOptions project
+                                    reply.Reply options
+                                else
+                                    reply.Reply None
                         with
                         | _ ->
                             reply.Reply None
@@ -254,17 +260,23 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
                             if project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles || project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
                                 reply.Reply None
                             else
-                                let! options = tryComputeOptions project
-                                reply.Reply options
+                                // We only care about the latest project in the workspace's solution.
+                                // We do this to prevent any possible cache thrashing in FCS.
+                                let project = project.Solution.Workspace.CurrentSolution.GetProject(project.Id)
+                                if not (isNull project) then
+                                    let! options = tryComputeOptions project
+                                    reply.Reply options
+                                else
+                                    reply.Reply None
                         with
                         | _ ->
                             reply.Reply None
 
                 | FSharpProjectOptionsMessage.ClearOptions(projectId) ->
-                    cache.Remove(projectId) |> ignore
+                    cache.TryRemove(projectId) |> ignore
                     legacyProjectSites.TryRemove(projectId) |> ignore
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
-                    singleFileCache.Remove(documentId) |> ignore
+                    singleFileCache.TryRemove(documentId) |> ignore
         }
 
     let agent = MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
