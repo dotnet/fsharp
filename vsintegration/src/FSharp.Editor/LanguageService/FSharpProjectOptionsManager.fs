@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
-
+ 
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent
@@ -81,7 +81,7 @@ type private FSharpProjectOptionsMessage =
     | ClearSingleFileOptionsCache of DocumentId
 
 [<Sealed>]
-type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, settings: EditorOptions, _serviceProvider, checkerProvider: FSharpCheckerProvider) =
+type private FSharpProjectOptionsReactor (workspace: Workspace, settings: EditorOptions, _serviceProvider, checkerProvider: FSharpCheckerProvider) =
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Hack to store command line options from HandleCommandLineChanges
@@ -208,6 +208,22 @@ type private FSharpProjectOptionsReactor (_workspace: VisualStudioWorkspace, set
                 if Array.isEmpty projectOptions.SourceFiles then
                     return None
                 else
+                    // Clear any caches that need clearing and invalidate the project.
+                    let currentSolution = workspace.CurrentSolution
+                    let projectsToClearCache =
+                        cache
+                        |> Seq.filter (fun pair -> not (currentSolution.ContainsProject pair.Key))
+
+                    if not (Seq.isEmpty projectsToClearCache) then
+                        projectsToClearCache
+                        |> Seq.iter (fun pair -> cache.TryRemove pair.Key |> ignore)
+                        let options =
+                            projectsToClearCache
+                            |> Seq.map (fun pair ->
+                                let _, _, projectOptions = pair.Value
+                                projectOptions)
+                        checkerProvider.Checker.ClearCache(options, userOpName = "tryComputeOptions")
+
                     checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = false, userOpName = "computeOptions")
 
                     let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
