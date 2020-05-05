@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
-
+ 
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent
@@ -216,7 +216,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
                     if not (Seq.isEmpty projectsToClearCache) then
                         projectsToClearCache
-                        |> Seq.iter (fun pair -> cache.Remove pair.Key |> ignore)
+                        |> Seq.iter (fun pair -> cache.TryRemove pair.Key |> ignore)
                         let options =
                             projectsToClearCache
                             |> Seq.map (fun pair ->
