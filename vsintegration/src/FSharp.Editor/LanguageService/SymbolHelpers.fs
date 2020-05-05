@@ -42,7 +42,7 @@ module internal SymbolHelpers =
                 match! projectInfoManager.TryGetOptionsByProject(project, CancellationToken.None) with
                 | Some (_parsingOptions, projectOptions) ->
                     for filePath in projectOptions.SourceFiles do
-                        let! symbolUses = checker.FindBackgroundReferencesInFile(filePath, projectOptions, symbol, userOpName = userOpName)
+                        let! symbolUses = checker.FindBackgroundReferencesInFile(filePath, projectOptions, symbol, canInvalidateProject = false, userOpName = userOpName)
                         let documentOpt = project.Solution.TryGetDocumentFromPath(filePath, project.Id)
                         match documentOpt with
                         | Some document ->
