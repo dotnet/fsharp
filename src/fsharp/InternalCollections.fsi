@@ -66,6 +66,12 @@ namespace Internal.Utilities.Collections
     /// Get the value for the given key or None, but only if entry is still valid
     member TryGet : 'Token * key:'Key -> 'Value option
 
+    /// Get the value for the given key or <c>None</c> if not still valid. Skips `areSame` checking unless `areSimilar` is not provided.
+    member TryGetSimilarAny : 'Token * key:'Key -> 'Value option
+
+    /// Get the value for the given key or None, but only if entry is still valid. Skips `areSame` checking unless `areSimilar` is not provided.
+    member TryGetSimilar : 'Token * key:'Key -> 'Value option
+
     /// Remove the given value from the mru cache.
     member RemoveAnySimilar : 'Token * key:'Key -> unit
 

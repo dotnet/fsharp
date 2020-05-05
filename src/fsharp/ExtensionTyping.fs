@@ -38,8 +38,17 @@ module internal ExtensionTyping =
     let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:range, compilerToolPaths:string list) =
 
         // Report an error, blaming the particular type provider component
-        let raiseError (e: exn) =
-            raise (TypeProviderError(FSComp.SR.etProviderHasWrongDesignerAssembly(typeof<TypeProviderAssemblyAttribute>.Name, designTimeAssemblyNameString, e.Message), runTimeAssemblyFileName, m))
+        let raiseError designTimeAssemblyPathOpt (e: exn) =
+            let attrName = typeof<TypeProviderAssemblyAttribute>.Name
+            let exnTypeName = e.GetType().FullName
+            let exnMsg = e.Message
+            match designTimeAssemblyPathOpt with 
+            | None -> 
+                let msg = FSComp.SR.etProviderHasWrongDesignerAssemblyNoPath(attrName, designTimeAssemblyNameString, exnTypeName, exnMsg)
+                raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
+            | Some designTimeAssemblyPath -> 
+                let msg = FSComp.SR.etProviderHasWrongDesignerAssembly(attrName, designTimeAssemblyNameString, designTimeAssemblyPath, exnTypeName, exnMsg)
+                raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
 
         let designTimeAssemblyOpt = getTypeProviderAssembly (runTimeAssemblyFileName, designTimeAssemblyNameString, compilerToolPaths, raiseError)
 
@@ -54,7 +63,17 @@ module internal ExtensionTyping =
                               yield t ]
                 filtered
             with e ->
-                raiseError e
+                let folder = System.IO.Path.GetDirectoryName loadedDesignTimeAssembly.Location
+                let exnTypeName = e.GetType().FullName
+                let exnMsg = e.Message
+                match e with 
+                | :? System.IO.FileLoadException -> 
+                    let msg = FSComp.SR.etProviderHasDesignerAssemblyDependency(designTimeAssemblyNameString, folder, exnTypeName, exnMsg)
+                    raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
+                
+                | _ -> 
+                    let msg = FSComp.SR.etProviderHasDesignerAssemblyException(designTimeAssemblyNameString, folder, exnTypeName, exnMsg)
+                    raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
         | None -> []
 
     let StripException (e: exn) =
@@ -362,6 +381,7 @@ module internal ExtensionTyping =
         member __.MakeGenericType (args: ProvidedType[]) =
             let argTypes = args |> Array.map (fun arg -> arg.RawSystemType)
             ProvidedType.CreateNoContext(x.MakeGenericType(argTypes))
+        member __.AsProvidedVar name = ProvidedVar.Create ctxt (Quotations.Var(name, x))
         static member Create ctxt x = match x with null -> null | t -> ProvidedType (t, ctxt)
         static member CreateWithNullCheck ctxt name x = match x with null -> nullArg name | t -> ProvidedType (t, ctxt)
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedType.Create ctxt)
@@ -631,7 +651,7 @@ module internal ExtensionTyping =
         override __.Equals y = assert false; match y with :? ProvidedConstructorInfo as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
 
-    type ProvidedExprType =
+    and ProvidedExprType =
         | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
 #if PROVIDED_ADDRESS_OF
         | ProvidedAddressOfExpr of ProvidedExpr
@@ -722,7 +742,6 @@ module internal ExtensionTyping =
         member __.Handle = x
         member __.Context = ctxt
         static member Create ctxt t = match box t with null -> null | _ -> ProvidedVar (t, ctxt)
-        static member Fresh (nm, ty: ProvidedType) = ProvidedVar.Create ty.Context (Quotations.Var(nm, ty.Handle))
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedVar.Create ctxt)
         override __.Equals y = match y with :? ProvidedVar as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = x.GetHashCode()
