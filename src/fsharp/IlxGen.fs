@@ -877,6 +877,9 @@ and IlxGenEnv =
       /// All witnesses in scope and their mapping to storage for the witness value.
       witnessesInScope: TraitWitnessInfoHashMap<ValStorage>
 
+      /// Suppress witnesses when not generating witness-passing code
+      suppressWitnesses: bool
+
       /// For optimizing direct tail recursion to a loop - mark says where to branch to.  Length is 0 or 1.
       /// REVIEW: generalize to arbitrary nested local loops??
       innerVals: (ValRef * (BranchCallItem * Mark)) list
@@ -976,12 +979,15 @@ let StorageForVal g m v eenv =
 
 let StorageForValRef g m (v: ValRef) eenv = StorageForVal g m v.Deref eenv
 
-let TryStorageForWitness eenv (w: TraitWitnessInfo) = 
+let ComputeGenerateWitnesses (g: TcGlobals) eenv =
+    g.generateWitnesses && not eenv.witnessesInScope.IsEmpty && not eenv.suppressWitnesses
+
+let TryStorageForWitness (g: TcGlobals) eenv (w: TraitWitnessInfo) = 
     match eenv.witnessesInScope.TryGetValue w with 
     | true, storage -> Some storage
     | _ ->
-        let inWitnessPassingScope = not eenv.witnessesInScope.IsEmpty
-        assert not inWitnessPassingScope
+        let generateWitnesses = ComputeGenerateWitnesses g eenv
+        assert not generateWitnesses
         None
 
 let IsValRefIsDllImport g (vref: ValRef) =
@@ -3107,7 +3113,7 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
 
 and GenWitnessArgFromInfo cenv cgbuf eenv m witnessInfo =
     let g = cenv.g
-    let storage = TryStorageForWitness eenv witnessInfo
+    let storage = TryStorageForWitness g eenv witnessInfo
     match storage with 
     | None ->
         System.Diagnostics.Debug.Assert(false, "expected storage for witness")
@@ -3117,17 +3123,17 @@ and GenWitnessArgFromInfo cenv cgbuf eenv m witnessInfo =
 
 and GenWitnessArgsFromInfos cenv cgbuf eenv m witnessInfos =
     let g = cenv.g
-    let inWitnessPassingScope = not eenv.witnessesInScope.IsEmpty
+    let generateWitnesses = ComputeGenerateWitnesses g eenv
     // Witness arguments are only generated in emitted 'inline' code where witness parameters are available.
-    if g.generateWitnesses && inWitnessPassingScope then 
+    if generateWitnesses then 
         for witnessInfo in witnessInfos do
             GenWitnessArgFromInfo cenv cgbuf eenv m witnessInfo
 
 and GenWitnessArgs cenv cgbuf eenv m tps tyargs =
     let g = cenv.g
-    let inWitnessPassingScope = not eenv.witnessesInScope.IsEmpty
+    let generateWitnesses = ComputeGenerateWitnesses g eenv
     // Witness arguments are only generated in emitted 'inline' code where witness parameters are available.
-    if g.generateWitnesses && inWitnessPassingScope then 
+    if generateWitnesses then 
         let mwitnesses = 
             ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal g cenv.amap m tps tyargs 
             |> CommitOperationResult
@@ -3937,21 +3943,18 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
 // Generate expression quotations
 //--------------------------------------------------------------------------
 
-and GenQuotation cenv cgbuf eenv (ast, conv, m, ety) sequel =
+and GenQuotation cenv cgbuf eenv (ast, qdataCell, m, ety) sequel =
     let g = cenv.g
+    let suppressWitnesses = eenv.suppressWitnesses
     let referencedTypeDefs, spliceTypes, exprSplices, astSpec =
-        match !conv with
+        match qdataCell.Value with
         | Some (data1, data2) ->
-            if eenv.witnessesInScope.IsEmpty then
-                data1
-            else 
-                data2
+            if suppressWitnesses then data1 else data2
             
         | None ->
             try
-                let inWitnessPassingScope = not eenv.witnessesInScope.IsEmpty
                 let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.No)
-                let astSpec = QuotationTranslator.ConvExprPublic qscope inWitnessPassingScope ast
+                let astSpec = QuotationTranslator.ConvExprPublic qscope suppressWitnesses ast
                 let referencedTypeDefs, typeSplices, exprSplices = qscope.Close()
                 referencedTypeDefs, List.map fst typeSplices, List.map fst exprSplices, astSpec
             with
@@ -4045,10 +4048,10 @@ and MakeNotSupportedExnExpr cenv eenv (argExpr, m) =
 
 and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExprs, m) expr sequel =
     let g = cenv.g
-    let inWitnessPassingScope = not eenv.witnessesInScope.IsEmpty
+    let generateWitnesses = ComputeGenerateWitnesses g eenv
     let witness = 
-        if g.generateWitnesses && inWitnessPassingScope then 
-            TryStorageForWitness eenv traitInfo.TraitKey
+        if generateWitnesses then 
+            TryStorageForWitness g eenv traitInfo.TraitKey
         else
             None
 
@@ -4062,7 +4065,7 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
     | None ->     
 
     // If witnesses are available, we should now always find trait witnesses in scope
-    assert not inWitnessPassingScope
+    assert not generateWitnesses
         
     let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
     match minfoOpt with
@@ -4710,8 +4713,8 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) eenvouter takenNames ex
 
     // Work out if the closure captures any witnesses. 
     let cloWitnessInfos = 
-        let inWitnessPassingScope = not eenvouter.witnessesInScope.IsEmpty
-        if g.generateWitnesses && inWitnessPassingScope then 
+        let generateWitnesses = ComputeGenerateWitnesses g eenvinner
+        if generateWitnesses then 
             GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars // TODO: 0 may be wrong here
         else
             []
@@ -5019,8 +5022,8 @@ and GenStaticOptimization cenv cgbuf eenv (constraints, e2, e3, _m) sequel =
     // When witnesses are not available we use the dynamic implementation.
 
     let e =
-        let inWitnessPassingScope = not eenv.witnessesInScope.IsEmpty
-        if DecideStaticOptimizations cenv.g constraints inWitnessPassingScope = StaticOptimizationAnswer.Yes then 
+        let generateWitnesses = ComputeGenerateWitnesses cenv.g eenv
+        if DecideStaticOptimizations cenv.g constraints generateWitnesses = StaticOptimizationAnswer.Yes then 
             e2
         else 
             e3
@@ -5540,13 +5543,15 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
 
         // if we have any expression recursion depth, we should delay the generation of a method to prevent stack overflows
         let generator = if cenv.exprRecursionDepth > 0 then DelayGenMethodForBinding else GenMethodForBinding
-        generator cenv cgbuf.mgbuf eenv (vspec, mspec, false, access, ctps, mtps, [], curriedArgInfos, paramInfos, argTys, retInfo, topValInfo, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, methLambdaBodyTy)
+        let hasWitnessEntry = cenv.g.generateWitnesses && not witnessInfos.IsEmpty
+
+        generator cenv cgbuf.mgbuf eenv (vspec, mspec, hasWitnessEntry, false, access, ctps, mtps, [], curriedArgInfos, paramInfos, argTys, retInfo, topValInfo, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, methLambdaBodyTy)
 
         // If generating witnesses, then generate the second entry point with additional arguments.
         // Take a copy of the expression to ensure generated names are unique.
-        if cenv.g.generateWitnesses && not witnessInfos.IsEmpty then 
+        if hasWitnessEntry then 
             let copyOfLambdaBody = copyExpr cenv.g CloneAll methLambdaBody
-            generator cenv cgbuf.mgbuf eenv (vspec, mspecW, true, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaTypars, methLambdaVars, copyOfLambdaBody, methLambdaBodyTy)
+            generator cenv cgbuf.mgbuf eenv (vspec, mspecW, hasWitnessEntry, true, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaTypars, methLambdaVars, copyOfLambdaBody, methLambdaBodyTy)
 
     | StaticProperty (ilGetterMethSpec, optShadowLocal) ->
 
@@ -6010,10 +6015,14 @@ and DelayGenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs =
 
 and GenMethodForBinding
         cenv mgbuf eenv
-        (v: Val, mspec, hasWitnessArgs, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo,
+        (v: Val, mspec, hasWitnessEntry, generateWitnessArgs, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo,
          ctorThisValOpt, baseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, returnTy) =
     let g = cenv.g
     let m = v.Range
+    
+    // If a method has a witness-passing version of the code, then suppress
+    // the generation of any witness in the non-witness passing version of the code
+    let eenv = { eenv with suppressWitnesses = hasWitnessEntry && not generateWitnessArgs }
 
     let selfMethodVars, nonSelfMethodVars, compileAsInstance =
         match v.MemberInfo with
@@ -6038,7 +6047,7 @@ and GenMethodForBinding
     let isCtor = v.IsConstructor
 
     let methLambdaWitnessInfos = 
-        if hasWitnessArgs then 
+        if generateWitnessArgs then 
             GetTraitWitnessInfosOfTypars cenv.g ctps.Length methLambdaTypars
         else
             []
@@ -6084,8 +6093,8 @@ and GenMethodForBinding
             // on the attribute. Older compilers
             let bodyExpr =
                 let attr = TryFindFSharpBoolAttributeAssumeFalse cenv.g cenv.g.attrib_NoDynamicInvocationAttribute v.Attribs
-                if (not hasWitnessArgs && attr.IsSome) ||
-                   (hasWitnessArgs && attr = Some false) then
+                if (not generateWitnessArgs && attr.IsSome) ||
+                   (generateWitnessArgs && attr = Some false) then
                     let exnArg = mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(v.CompiledName g.CompilerGlobalState))
                     let exnExpr = MakeNotSupportedExnExpr cenv eenv (exnArg, m)
                     mkThrow m returnTy exnExpr
@@ -7883,6 +7892,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
       cloc = thisCompLoc
       valsInScope=ValMap<_>.Empty
       witnessesInScope = EmptyTraitWitnessInfoHashMap g
+      suppressWitnesses = false
       someTypeInThisAssembly= g.ilg.typ_Object // dummy value
       isFinalFile = false
       letBoundVars=[]

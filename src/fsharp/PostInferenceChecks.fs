@@ -976,14 +976,14 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
 
             // Translate the quotation to quotation data
             try 
-                let doData flag = 
+                let doData suppressWitnesses = 
                     let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.No) 
-                    let qdata = QuotationTranslator.ConvExprPublic qscope flag ast  
+                    let qdata = QuotationTranslator.ConvExprPublic qscope suppressWitnesses ast  
                     let typeDefs, spliceTypes, spliceExprs = qscope.Close()
                     typeDefs, List.map fst spliceTypes, List.map fst spliceExprs, qdata
 
-                let data1 = doData false
-                let data2 = doData true
+                let data1 = doData true
+                let data2 = doData false
                 match savedConv.Value with 
                 | None -> savedConv:= Some (data1, data2)
                 | Some _ -> ()
