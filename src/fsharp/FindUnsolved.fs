@@ -109,8 +109,15 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
             | TTyconIsStruct(ty1) -> 
                 accTy cenv env ty1)
 
+    | Expr.WitnessArg (witnessInfo, _m) ->
+        accWitnessInfo cenv env witnessInfo
+
     | Expr.Link _eref -> failwith "Unexpected Expr.Link"
-    | Expr.WitnessArg (_witnessInfo, _m) -> failwith "Unexpected Expr.WitnessArg"
+
+and accWitnessInfo cenv env (TraitWitnessInfo(tys, _nm, _mf, argtys, rty)) =
+    argtys |> accTypeInst cenv env 
+    rty |> Option.iter (accTy cenv env)
+    tys |> List.iter (accTy cenv env)
 
 and accMethods cenv env baseValOpt l = 
     List.iter (accMethod cenv env baseValOpt) l

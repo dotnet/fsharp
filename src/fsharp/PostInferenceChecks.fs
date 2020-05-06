@@ -1131,8 +1131,10 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
                 CheckTypeNoByrefs cenv env m ty1)
         NoLimit
 
-    | Expr.WitnessArg _ ->
-        assert false
+    | Expr.WitnessArg (TraitWitnessInfo(tys, _nm, _mf, argtys, rty), m) ->
+        CheckTypeInstNoByrefs cenv env m tys
+        CheckTypeInstNoByrefs cenv env m argtys
+        Option.iter (CheckTypeNoByrefs cenv env m) rty
         NoLimit
 
     | Expr.Link _ -> 

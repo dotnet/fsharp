@@ -6537,7 +6537,8 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
         | Expr.StaticOptimization (_tcs, csx, x, _) -> 
             exprsF z [csx;x]
 
-        | Expr.WitnessArg (_witnessInfo, _m) -> z
+        | Expr.WitnessArg (_witnessInfo, _m) ->
+            z
 
     and valBindF dtree z bind =
         let z = folders.nonRecBindingsIntercept z bind
@@ -8505,7 +8506,8 @@ and rewriteExprStructure env expr =
   | Expr.TyChoose (a, b, m) -> 
       Expr.TyChoose (a, RewriteExpr env b, m)
 
-  | Expr.WitnessArg (witnessInfo, m) -> Expr.WitnessArg (witnessInfo, m)
+  | Expr.WitnessArg (witnessInfo, m) ->
+      Expr.WitnessArg (witnessInfo, m)
 
 and rewriteLinearExpr env expr contf =
     // schedule a rewrite on the way back up by adding to the continuation 

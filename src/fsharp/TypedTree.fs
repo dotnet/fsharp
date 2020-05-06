@@ -4528,8 +4528,22 @@ type Expr =
         range: range *
         quotedType: TType  
     
-
-    /// Used in quotation generation to indicate a witness argument
+    /// Used in quotation generation to indicate a witness argument, spliced into a quotation literal.
+    ///
+    /// For example:
+    ///
+    ///     let inline f x = <@ sin x @>
+    ///
+    /// needs to pass a witness argument to `sin x`, captured from the surrounding context, for the witness-passing
+    /// version of the code.  Thus the QuotationTranslation and IlxGen makes the generated code as follows:
+    ///
+    ///  f(x) { return Deserialize(<@ sin _spliceHole @>, [| x |]) }
+    ///
+    ///  f$W(witnessForSin, x) { return Deserialize(<@ sin$W _spliceHole1 _spliceHole2 @>, [| WitnessArg(witnessForSin), x |]) }
+    ///
+    /// where _spliceHole1 will be the location of the witness argument in the quotation data, and 
+    /// witnessArg is the lambda for the witness
+    /// 
     | WitnessArg of
         witnessInfo: TraitWitnessInfo *
         range: range

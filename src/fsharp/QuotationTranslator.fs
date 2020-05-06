@@ -412,12 +412,12 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
     // Blast type application nodes and expression application nodes apart so values are left with just their type arguments
     | Expr.App (f, fty, (_ :: _ as tyargs), (_ :: _ as args), m) ->
-      let rfty = applyForallTy cenv.g fty tyargs
-      ConvExpr cenv env (primMkApp (primMkApp (f, fty) tyargs [] m, rfty) [] args m)
+        let rfty = applyForallTy cenv.g fty tyargs
+        ConvExpr cenv env (primMkApp (primMkApp (f, fty) tyargs [] m, rfty) [] args m)
 
     // Uses of possibly-polymorphic values
     | Expr.App (InnerExprPat(Expr.Val (vref, _vFlags, m)), _fty, tyargs, [], _) ->
-      ConvValRef true cenv env m vref tyargs
+        ConvValRef true cenv env m vref tyargs
 
     // Simple applications
     | Expr.App (f, _fty, tyargs, args, m) ->
@@ -469,18 +469,29 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         ConvDecisionTree cenv env tgs typR dtree
 
     // initialization check
-    | Expr.Sequential (ObjectInitializationCheck cenv.g, x1, NormalSeq, _, _) -> ConvExpr cenv env x1
-    | Expr.Sequential (x0, x1, NormalSeq, _, _)  -> QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
-    | Expr.Obj (_, ty, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, m) when isDelegateTy cenv.g ty ->
-         let f = mkLambdas m tps tmvs (e, GetFSharpViewOfReturnType cenv.g (returnTyOfMethod cenv.g tmethod))
-         let fR = ConvExpr cenv env f
-         let tyargR = ConvType cenv env m ctyp
-         QP.mkDelegate(tyargR, fR)
+    | Expr.Sequential (ObjectInitializationCheck cenv.g, x1, NormalSeq, _, _) ->
+        ConvExpr cenv env x1
 
-    | Expr.StaticOptimization (_, _, x, _)               -> ConvExpr cenv env x
-    | Expr.TyChoose _  -> ConvExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
-    | Expr.Sequential  (x0, x1, ThenDoSeq, _, _)                        -> QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
-    | Expr.Obj (_lambdaId, _typ, _basev, _basecall, _overrides, _iimpls, m)      -> wfail(Error(FSComp.SR.crefQuotationsCantContainObjExprs(), m))
+    | Expr.Sequential (x0, x1, NormalSeq, _, _)  ->
+        QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
+
+    | Expr.Obj (_, ty, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, m) when isDelegateTy cenv.g ty ->
+        let f = mkLambdas m tps tmvs (e, GetFSharpViewOfReturnType cenv.g (returnTyOfMethod cenv.g tmethod))
+        let fR = ConvExpr cenv env f
+        let tyargR = ConvType cenv env m ctyp
+        QP.mkDelegate(tyargR, fR)
+
+    | Expr.StaticOptimization (_, _, x, _) ->
+         ConvExpr cenv env x
+
+    | Expr.TyChoose _ ->
+        ConvExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
+
+    | Expr.Sequential  (x0, x1, ThenDoSeq, _, _) ->
+        QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
+
+    | Expr.Obj (_lambdaId, _typ, _basev, _basecall, _overrides, _iimpls, m) ->
+        wfail(Error(FSComp.SR.crefQuotationsCantContainObjExprs(), m))
 
     | Expr.Op (op, tyargs, args, m) ->
         match op, tyargs, args with
