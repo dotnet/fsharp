@@ -221,6 +221,7 @@ type EvaluationEventArgs(fsivalue : FsiValue option, symbolUse : FSharpSymbolUse
 /// and accessible via the programming model
 type FsiEvaluationSessionHostConfig () = 
     let evaluationEvent = new Event<EvaluationEventArgs> () 
+    let setGetValuesFuncEvent = new Event<unit -> (string * obj) list> ()
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract FormatProvider: System.IFormatProvider  
     /// Called by the evaluation session to ask the host for parameters to format text for output
@@ -290,6 +291,12 @@ type FsiEvaluationSessionHostConfig () =
     member x.OnEvaluation = evaluationEvent.Publish
     member internal x.TriggerEvaluation (value, symbolUse, decl) =
         evaluationEvent.Trigger (EvaluationEventArgs (value, symbolUse, decl) )
+
+    member x.FixupFsiObj (fsiObj: obj) =
+        setGetValuesFuncEvent.Publish.Add(fun getValuesFunc -> callInstanceMethod1 fsiObj [||] "SetGetValues" getValuesFunc)
+
+    member internal x.TriggerSetGetValues getValuesFunc =
+        setGetValuesFuncEvent.Trigger getValuesFunc
 
 /// Used to print value signatures along with their values, according to the current
 /// set of pretty printers installed in the system, and default printing rules.
@@ -2437,7 +2444,7 @@ type FsiCompilationException(message: string, errorInfos: FSharpErrorInfo[] opti
 
 /// The primary type, representing a full F# Interactive session, reading from the given
 /// text input, writing to the given text output and error writers.
-type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, legacyReferenceResolver: ReferenceResolver.Resolver option) = 
+type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, legacyReferenceResolver: ReferenceResolver.Resolver option) as this = 
 
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 
@@ -2616,6 +2623,16 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         userRes, errorInfos
 
     let dummyScriptFileName = "input.fsx"
+
+    do 
+        let weakThis = WeakReference<_> this
+        fsi.TriggerSetGetValues(fun () ->
+            match weakThis.TryGetTarget() with
+            | true, this ->
+                this.GetBoundValues()
+                |> List.map (fun (v: FsiBoundValue) -> (v.Name, v.Value.ReflectionValue))
+            | _ ->
+                [])
 
     interface IDisposable with 
         member x.Dispose() = 
@@ -2873,23 +2890,23 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // So we access these via reflection
         { // Connect the configuration through to the 'fsi' object from FSharp.Compiler.Interactive.Settings
             new FsiEvaluationSessionHostConfig () with 
-              member __.FormatProvider = getInstanceProperty fsiObj "FormatProvider"
-              member __.FloatingPointFormat = getInstanceProperty fsiObj "FloatingPointFormat"
-              member __.AddedPrinters = getInstanceProperty fsiObj "AddedPrinters"
-              member __.ShowDeclarationValues = getInstanceProperty fsiObj "ShowDeclarationValues"
-              member __.ShowIEnumerable = getInstanceProperty fsiObj "ShowIEnumerable"
-              member __.ShowProperties = getInstanceProperty fsiObj "ShowProperties"
-              member __.PrintSize = getInstanceProperty fsiObj "PrintSize"
-              member __.PrintDepth = getInstanceProperty fsiObj "PrintDepth"
-              member __.PrintWidth = getInstanceProperty fsiObj "PrintWidth"
-              member __.PrintLength = getInstanceProperty fsiObj "PrintLength"
-              member __.ReportUserCommandLineArgs args = setInstanceProperty fsiObj "CommandLineArgs" args
-              member __.StartServer(fsiServerName) =  failwith "--fsi-server not implemented in the default configuration"
-              member __.EventLoopRun() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "Run"   
-              member __.EventLoopInvoke(f : unit -> 'T) =  callInstanceMethod1 (getInstanceProperty fsiObj "EventLoop") [|typeof<'T>|] "Invoke" f
-              member __.EventLoopScheduleRestart() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "ScheduleRestart"
-              member __.UseFsiAuxLib = useFsiAuxLib
-              member __.GetOptionalConsoleReadLine(_probe) = None }
+                member __.FormatProvider = getInstanceProperty fsiObj "FormatProvider"
+                member __.FloatingPointFormat = getInstanceProperty fsiObj "FloatingPointFormat"
+                member __.AddedPrinters = getInstanceProperty fsiObj "AddedPrinters"
+                member __.ShowDeclarationValues = getInstanceProperty fsiObj "ShowDeclarationValues"
+                member __.ShowIEnumerable = getInstanceProperty fsiObj "ShowIEnumerable"
+                member __.ShowProperties = getInstanceProperty fsiObj "ShowProperties"
+                member __.PrintSize = getInstanceProperty fsiObj "PrintSize"
+                member __.PrintDepth = getInstanceProperty fsiObj "PrintDepth"
+                member __.PrintWidth = getInstanceProperty fsiObj "PrintWidth"
+                member __.PrintLength = getInstanceProperty fsiObj "PrintLength"
+                member __.ReportUserCommandLineArgs args = setInstanceProperty fsiObj "CommandLineArgs" args
+                member __.StartServer(fsiServerName) =  failwith "--fsi-server not implemented in the default configuration"
+                member __.EventLoopRun() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "Run"   
+                member __.EventLoopInvoke(f : unit -> 'T) =  callInstanceMethod1 (getInstanceProperty fsiObj "EventLoop") [|typeof<'T>|] "Invoke" f
+                member __.EventLoopScheduleRestart() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "ScheduleRestart"
+                member __.UseFsiAuxLib = useFsiAuxLib
+                member __.GetOptionalConsoleReadLine(_probe) = None }
 //-------------------------------------------------------------------------------
 // If no "fsi" object for the configuration is specified, make the default
 // configuration one which stores the settings in-process 

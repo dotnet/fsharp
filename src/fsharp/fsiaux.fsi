@@ -66,9 +66,15 @@ namespace FSharp.Compiler.Interactive
 
         /// <summary>Gets or sets a the current event loop being used to process interactions.</summary>
         member EventLoop: IEventLoop with get,set
+        
+        /// <summary>Gets the current state of values that are bound in the interactive session.</summary>
+        member GetValues: unit -> (string * obj) list
     
         /// <summary>Sets the current event loop being used to process interactions.</summary>
         member internal SetEventLoop: (unit -> bool) * ((unit -> obj) -> obj) * (unit -> unit) -> unit
+
+        /// <summary>Used to allow the InteractiveSession to query for the current state of values.</summary>
+        member internal SetGetValues : (unit -> (string * obj) list) -> unit
     
 
     module Settings = 

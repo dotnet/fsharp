@@ -80,6 +80,7 @@ type InteractiveSession()  =
     let mutable showIEnumerable = true
     let mutable showProperties = true
     let mutable addedPrinters = []
+    let mutable getValues = fun () -> []
 
     member self.FloatingPointFormat with get() = fpfmt and set v = fpfmt <- v
     member self.FormatProvider with get() = fp and set v = fp <- v
@@ -105,6 +106,8 @@ type InteractiveSession()  =
        with get () = evLoop
        and set (x:IEventLoop)  = evLoop.ScheduleRestart(); evLoop <- x
 
+    member self.GetValues() = getValues ()
+
     member self.AddPrintTransformer(printer : 'T -> obj) =
       addedPrinters <- Choice2Of2 (typeof<'T>, (fun (x:obj) -> printer (unbox x))) :: addedPrinters
 
@@ -114,6 +117,9 @@ type InteractiveSession()  =
                      member __.Run() = run()
                      member __.Invoke(f) = invoke((fun () -> f() |> box)) |> unbox
                      member __.ScheduleRestart() = restart() }
+
+    member internal self.SetGetValues (getValuesFunc: (unit -> (string * obj) list)) =
+        getValues <- getValuesFunc
     
 [<assembly: CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly", Scope="member", Target="FSharp.Compiler.Interactive.InteractiveSession.#ThreadException")>]
 do()
