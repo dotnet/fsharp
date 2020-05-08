@@ -150,7 +150,7 @@ module FsxCompletionProviderTests =
         let expected = List<string>([
             "CommandLineArgs"; "EventLoop"; "FloatingPointFormat"; "FormatProvider"; "PrintDepth"; 
             "PrintLength"; "PrintSize"; "PrintWidth"; "ShowDeclarationValues"; "ShowIEnumerable"; 
-            "ShowProperties"; "AddPrinter"; "AddPrintTransformer"; "Equals"; "GetHashCode"; 
+            "ShowProperties"; "AddPrinter"; "AddPrintTransformer"; "GetValues"; "Equals"; "GetHashCode"; 
             "GetType"; "ToString"; ])
 
         // We execute in a seperate appdomain so that we can set BaseDirectory to a non-existent location
