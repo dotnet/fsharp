@@ -556,19 +556,19 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member __.DeclaredInterfaces = 
         if isUnresolved() then emptyReadOnlyCollection else
-        ErrorLogger.protectAssemblyExploration [] (fun () -> 
+        ErrorLogger.protectAssemblyExploration emptyReadOnlyCollection (fun () -> 
             GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap range0 (generalizedTyconRef entity)
             |> List.map (fun ty -> FSharpType(cenv, ty))
+            :> IReadOnlyCollection<_>
         )
-        :> IReadOnlyCollection<_>
 
     member __.AllInterfaces = 
         if isUnresolved() then emptyReadOnlyCollection else
-        ErrorLogger.protectAssemblyExploration [] (fun () -> 
+        ErrorLogger.protectAssemblyExploration emptyReadOnlyCollection (fun () -> 
             AllInterfacesOfType cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes (generalizedTyconRef entity)
             |> List.map (fun ty -> FSharpType(cenv, ty))
+            :> IReadOnlyCollection<_>
         )
-        :> IReadOnlyCollection<_>
     
     member __.IsAttributeType =
         if isUnresolved() then false else
