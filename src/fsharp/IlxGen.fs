@@ -7827,7 +7827,7 @@ let SetGeneratedValue (ctxt: ExecutionContext) (g: TcGlobals) eenv isForced (v: 
 let ClearGeneratedValue (ctxt: ExecutionContext) (g: TcGlobals) eenv (v: Val) =
   try
     match StorageForVal g v.Range v eenv with
-      | StaticField (fspec, _, hasLiteralAttr, _, _, _, _ilGetterMethRef, ilSetterMethRef, _) ->
+      | StaticField (fspec, _, hasLiteralAttr, _, _, _, _ilGetterMethRef, _ilSetterMethRef, _) ->
           if not hasLiteralAttr && v.IsMutable then
               let ty = ctxt.LookupType fspec.ActualType
               SetGeneratedValue ctxt g eenv false v (defaultOf ty)
