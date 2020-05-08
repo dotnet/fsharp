@@ -445,9 +445,14 @@ module InterfaceStubGenerator =
     // Sometimes interface members are stored in the form of `IInterface<'T> -> ...`,
     // so we need to get the 2nd generic argument
     let internal (|MemberFunctionType|_|) (ty: FSharpType) =
-        if ty.IsFunctionType && ty.GenericArguments.Count = 2 then
-            Some ty.GenericArguments.[1]
-        else None
+        if ty.IsFunctionType then
+            let args = ty.GenericArguments |> Seq.toArray
+            if args.Length = 2 then
+                Some args.[1]
+            else
+                None
+        else 
+            None
 
     let internal (|TypeOfMember|_|) (m: FSharpMemberOrFunctionOrValue) =
         match m.FullTypeSafe with
@@ -459,13 +464,20 @@ module InterfaceStubGenerator =
     let internal (|EventFunctionType|_|) (ty: FSharpType) =
         match ty with
         | MemberFunctionType ty ->
-            if ty.IsFunctionType && ty.GenericArguments.Count = 2 then
-                let retType = ty.GenericArguments.[0]
-                let argType = ty.GenericArguments.[1]
-                if argType.GenericArguments.Count = 2 then
-                    Some (argType.GenericArguments.[0], retType)
-                else None
-            else None
+            if ty.IsFunctionType then
+                let args = ty.GenericArguments |> Seq.toArray
+                if args.Length = 2 then
+                    let retType = args.[0]
+                    let argType = args.[1]
+                    let args = argType.GenericArguments |> Seq.toArray
+                    if args.Length = 2 then
+                        Some (args.[0], retType)
+                    else
+                        None
+                else
+                    None
+            else
+                None
         | _ ->
             None
 
