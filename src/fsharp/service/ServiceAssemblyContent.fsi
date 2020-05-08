@@ -198,7 +198,7 @@ module public Extensions =
         member PublicNestedEntities : seq<FSharpEntity>
 
         /// Safe version of `GetMembersFunctionsAndValues`.
-        member TryGetMembersFunctionsAndValues : IList<FSharpMemberOrFunctionOrValue>
+        member TryGetMembersFunctionsAndValues : IReadOnlyCollection<FSharpMemberOrFunctionOrValue>
 
     type FSharpMemberOrFunctionOrValue with
         /// Safe version of `FullType`.

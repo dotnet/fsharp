@@ -68,7 +68,7 @@ module Extensions =
             x.NestedEntities |> Seq.filter (fun entity -> entity.Accessibility.IsPublic)
 
         member x.TryGetMembersFunctionsAndValues = 
-            try x.MembersFunctionsAndValues with _ -> [||] :> _
+            try x.MembersFunctionsAndValues with _ -> [] :> _
 
     let isOperator (name: string) =
         name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") && name.Length > 4
