@@ -14,10 +14,11 @@ open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 open FsUnit
 open System.IO
+open System.Collections.Generic
 
 open FSharp.Compiler.Service.Tests.Common
 
-let toIList (x: _ array) = x :> System.Collections.Generic.IList<_>
+let toIList (x: _ array) = x :> IList<_>
 let numProjectsForStressTest = 100
 let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
 
@@ -44,7 +45,8 @@ let x1 = C.M(arg1 = 3, arg2 = 4, arg3 = 5)
 /// This is x2
 let x2 = C.M(arg1 = 3, arg2 = 4, ?arg3 = Some 5)
 
-/// This is x3
+/// This is
+/// x3
 let x3 (
           /// This is not x3
           p: int
@@ -231,7 +233,7 @@ let ``Test multi project 1 xmldoc`` () =
     | _ -> failwith "odd symbol!"
     
     match x3FromProject1A with 
-    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc |> shouldEqual ([|" This is x3"|] |> toIList)
+    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc |> shouldEqual ([|" This is"; " x3"|] |> toIList)
     | _ -> failwith "odd symbol!"
 
     match x1FromProjectMultiProject with 
