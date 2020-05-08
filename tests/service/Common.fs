@@ -283,7 +283,7 @@ let attribsOfSymbol (s:FSharpSymbol) =
 //            if v.LiteralValue.IsSome then yield "literal"
         | _ -> () ]
 
-let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) = 
+let rec allSymbolsInEntities compGen (entities: IReadOnlyCollection<FSharpEntity>) = 
     [ for e in entities do 
           yield (e :> FSharpSymbol) 
           for gp in e.GenericParameters do 

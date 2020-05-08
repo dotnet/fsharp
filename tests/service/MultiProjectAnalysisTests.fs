@@ -148,13 +148,14 @@ let ``Test multi project 1 whole project errors`` () =
 let ``Test multi project 1 basic`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunSynchronously
+    let entities = wholeProjectResults.AssemblySignature.Entities |> Seq.toArray
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["MultiProject1"]
+    [ for x in entities -> x.DisplayName ] |> shouldEqual ["MultiProject1"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
+    [ for x in entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
 
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
+    [ for x in entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
         |> shouldEqual ["p"; "c"; "u"]
 
 [<Test>]
@@ -343,12 +344,13 @@ let ``Test ManyProjectsStressTest basic`` () =
     let checker = ManyProjectsStressTest.makeCheckerForStressTest true
 
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
+    let entities = wholeProjectResults.AssemblySignature.Entities |> Seq.toArray
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["JointProject"]
+    [ for x in entities -> x.DisplayName ] |> shouldEqual ["JointProject"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
+    [ for x in entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
+    [ for x in entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
         |> shouldEqual ["p"]
 
 [<Test>]
@@ -357,12 +359,13 @@ let ``Test ManyProjectsStressTest cache too small`` () =
     let checker = ManyProjectsStressTest.makeCheckerForStressTest false
 
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
+    let entities = wholeProjectResults.AssemblySignature.Entities |> Seq.toArray
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual ["JointProject"]
+    [ for x in entities -> x.DisplayName ] |> shouldEqual ["JointProject"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
+    [ for x in entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual []
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
+    [ for x in entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
         |> shouldEqual ["p"]
 
 [<Test>]

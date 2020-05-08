@@ -203,22 +203,25 @@ let ``Symbols many tests`` () =
     let partialAssemblySignature = typeCheckResults2.PartialAssemblySignature
     
     partialAssemblySignature.Entities.Count |> shouldEqual 1  // one entity
-    let moduleEntity = partialAssemblySignature.Entities.[0]
+    let moduleEntity = partialAssemblySignature.Entities |> Seq.head
 
     moduleEntity.DisplayName |> shouldEqual "Test"
 
-    let classEntity = moduleEntity.NestedEntities.[0]
+    let classEntity = moduleEntity.NestedEntities |> Seq.head
 
-    let fnVal = moduleEntity.MembersFunctionsAndValues.[0]
+    let fnVal = moduleEntity.MembersFunctionsAndValues  |> Seq.head
 
     fnVal.Accessibility.IsPublic |> shouldEqual true
     fnVal.Attributes.Count |> shouldEqual 1
-    fnVal.CurriedParameterGroups.Count |> shouldEqual 1
-    fnVal.CurriedParameterGroups.[0].Count |> shouldEqual 2
-    fnVal.CurriedParameterGroups.[0].[0].Name.IsSome |> shouldEqual true
-    fnVal.CurriedParameterGroups.[0].[1].Name.IsSome |> shouldEqual true
-    fnVal.CurriedParameterGroups.[0].[0].Name.Value |> shouldEqual "x"
-    fnVal.CurriedParameterGroups.[0].[1].Name.Value |> shouldEqual "y"
+
+    let curried = fnVal.CurriedParameterGroups |> Seq.map Seq.toArray |> Seq.toArray
+    curried.Length |> shouldEqual 1
+    curried.[0].Length |> shouldEqual 2
+    curried.[0].[0].Name.IsSome |> shouldEqual true
+    curried.[0].[1].Name.IsSome |> shouldEqual true
+    curried.[0].[0].Name.Value |> shouldEqual "x"
+    curried.[0].[1].Name.Value |> shouldEqual "y"
+
     fnVal.DeclarationLocation.StartLine |> shouldEqual 3
     fnVal.DisplayName |> shouldEqual "foo"
     fnVal.DeclaringEntity.Value.DisplayName |> shouldEqual "Test"
@@ -239,8 +242,8 @@ let ``Symbols many tests`` () =
     fnVal.IsTypeFunction |> shouldEqual false
 
     fnVal.FullType.IsFunctionType |> shouldEqual true // int * int -> unit
-    fnVal.FullType.GenericArguments.[0].IsTupleType |> shouldEqual true // int * int 
-    let argTy1 = fnVal.FullType.GenericArguments.[0].GenericArguments.[0]
+    (fnVal.FullType.GenericArguments |> Seq.head).IsTupleType |> shouldEqual true // int * int 
+    let argTy1 = (fnVal.FullType.GenericArguments |> Seq.head).GenericArguments |> Seq.head
 
     argTy1.TypeDefinition.DisplayName |> shouldEqual "int" // int
 

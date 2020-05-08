@@ -163,14 +163,15 @@ let ``Test project1 basic`` () =
 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
+    let entities = wholeProjectResults.AssemblySignature.Entities |> Seq.toArray
 
-    set [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual (set ["N"; "M"])
+    set [ for x in entities -> x.DisplayName ] |> shouldEqual (set ["N"; "M"])
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual ["D1"; "D2"; "D3"; "SaveOptions" ]
+    [ for x in entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual ["D1"; "D2"; "D3"; "SaveOptions" ]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[1].NestedEntities -> x.DisplayName ] |> shouldEqual ["C"; "CAbbrev"]
+    [ for x in entities.[1].NestedEntities -> x.DisplayName ] |> shouldEqual ["C"; "CAbbrev"]
 
-    set [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
+    set [ for x in entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
         |> shouldEqual (set ["y2"; "pair2"; "pair1"; "( ++ )"; "c1"; "c2"; "mmmm1"; "mmmm2"; "enumValue" ])
 
 [<Test>]
@@ -689,12 +690,13 @@ let ``Test project2 basic`` () =
 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project2.options) |> Async.RunSynchronously
+    let entities = wholeProjectResults.AssemblySignature.Entities |> Seq.toArray
 
-    set [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual (set ["M"])
+    set [ for x in entities -> x.DisplayName ] |> shouldEqual (set ["M"])
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual ["DUWithNormalFields"; "DUWithNamedFields"; "GenericClass" ]
+    [ for x in entities.[0].NestedEntities -> x.DisplayName ] |> shouldEqual ["DUWithNormalFields"; "DUWithNamedFields"; "GenericClass" ]
 
-    set [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
+    set [ for x in entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
         |> shouldEqual (set ["c"; "GenericFunction"])
 
 [<Test>]
@@ -931,13 +933,14 @@ let ``Test project3 basic`` () =
 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project3.options) |> Async.RunSynchronously
+    let entities =wholeProjectResults.AssemblySignature.Entities |> Seq.toArray
 
-    set [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual (set ["M"])
+    set [ for x in entities -> x.DisplayName ] |> shouldEqual (set ["M"])
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] 
+    [ for x in entities.[0].NestedEntities -> x.DisplayName ] 
         |> shouldEqual ["IFoo"; "CFoo"; "CBaseFoo"; "IFooImpl"; "CFooImpl"; "CBaseFooImpl"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
+    [ for x in entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
         |> shouldEqual ["IFooImplObjectExpression"; "CFooImplObjectExpression"; "getP"; "setP"; "getE";"getM"]
 
 [<Test>]
@@ -1294,13 +1297,14 @@ let ``Test project4 whole project errors`` () =
 [<Test>]
 let ``Test project4 basic`` () = 
     let wholeProjectResults = checker.ParseAndCheckProject(Project4.options) |> Async.RunSynchronously
+    let entities = wholeProjectResults.AssemblySignature.Entities |> Seq.toArray
 
-    set [ for x in wholeProjectResults.AssemblySignature.Entities -> x.DisplayName ] |> shouldEqual (set ["M"])
+    set [ for x in entities -> x.DisplayName ] |> shouldEqual (set ["M"])
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].NestedEntities -> x.DisplayName ] 
+    [ for x in entities.[0].NestedEntities -> x.DisplayName ] 
         |> shouldEqual ["Foo"]
 
-    [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
+    [ for x in entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
         |> shouldEqual ["twice"]
 
 [<Test>]
@@ -4624,11 +4628,11 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMe
 [<Test>]
 let ``Test project36 FSharpMemberOrFunctionOrValue.LiteralValue`` () =
     let wholeProjectResults = Project36.keepAssemblyContentsChecker.ParseAndCheckProject(Project36.options) |> Async.RunSynchronously
-    let project36Module = wholeProjectResults.AssemblySignature.Entities.[0]
-    let lit = project36Module.MembersFunctionsAndValues.[0]
+    let project36Module = wholeProjectResults.AssemblySignature.Entities |> Seq.head
+    let lit = project36Module.MembersFunctionsAndValues |> Seq.head
     shouldEqual true (lit.LiteralValue.Value |> unbox |> (=) 1.)
 
-    let notLit = project36Module.MembersFunctionsAndValues.[1]
+    let notLit = project36Module.MembersFunctionsAndValues |> Seq.tail |> Seq.head
     shouldEqual true notLit.LiteralValue.IsNone
 
 module internal Project37 = 
@@ -4697,7 +4701,7 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
         match su.Symbol with
         | :? FSharpMemberOrFunctionOrValue as funcSymbol ->
             let getAttrArg() =
-                let arg = funcSymbol.Attributes.[0].ConstructorArguments.[0] |> snd      
+                let arg = (funcSymbol.Attributes |> Seq.head).ConstructorArguments |> Seq.head |> snd      
                 arg :?> FSharpType 
             match funcSymbol.DisplayName with
             | "withType" ->
@@ -4706,24 +4710,24 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
             | "withGenericType" ->
                 let t = getAttrArg()
                 t.TypeDefinition.DisplayName |> shouldEqual "list"
-                t.GenericArguments.[0].TypeDefinition.DisplayName |> shouldEqual "int"
+                (t.GenericArguments |> Seq.head).TypeDefinition.DisplayName |> shouldEqual "int"
             | "withTupleType" ->
                 let t = getAttrArg()
                 t.IsTupleType |> shouldEqual true
-                t.GenericArguments.[0].TypeDefinition.DisplayName |> shouldEqual "int"
-                t.GenericArguments.[1].TypeDefinition.DisplayName |> shouldEqual "int"
+                (t.GenericArguments |> Seq.head).TypeDefinition.DisplayName |> shouldEqual "int"
+                (t.GenericArguments |> Seq.tail |> Seq.head).TypeDefinition.DisplayName |> shouldEqual "int"
             | "withFuncType" ->
                 let t = getAttrArg()
                 t.IsFunctionType |> shouldEqual true
-                t.GenericArguments.[0].TypeDefinition.DisplayName |> shouldEqual "int"
-                t.GenericArguments.[1].TypeDefinition.DisplayName |> shouldEqual "int"
+                (t.GenericArguments |> Seq.head).TypeDefinition.DisplayName |> shouldEqual "int"
+                (t.GenericArguments |> Seq.tail |> Seq.head).TypeDefinition.DisplayName |> shouldEqual "int"
             | "withTypeArray" ->
-                let attr = funcSymbol.Attributes.[0].ConstructorArguments.[0] |> snd      
+                let attr = (funcSymbol.Attributes |> Seq.head).ConstructorArguments |> Seq.head |> snd      
                 let ta = attr :?> obj[] |> Array.map (fun t -> t :?> FSharpType)
                 ta.[0].TypeDefinition.DisplayName |> shouldEqual "TestUnion"
                 ta.[1].TypeDefinition.DisplayName |> shouldEqual "TestRecord"
             | "withIntArray" ->
-                let attr = funcSymbol.Attributes.[0].ConstructorArguments.[0] |> snd      
+                let attr = (funcSymbol.Attributes |> Seq.head).ConstructorArguments |> Seq.head |> snd      
                 let a = attr :?> obj[] |> Array.map (fun t -> t :?> int)
                 a |> shouldEqual [| 0; 1; 2 |] 
             | _ -> ()
