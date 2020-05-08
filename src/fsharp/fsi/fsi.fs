@@ -2873,23 +2873,23 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // So we access these via reflection
         { // Connect the configuration through to the 'fsi' object from FSharp.Compiler.Interactive.Settings
             new FsiEvaluationSessionHostConfig () with 
-                member __.FormatProvider = getInstanceProperty fsiObj "FormatProvider"
-                member __.FloatingPointFormat = getInstanceProperty fsiObj "FloatingPointFormat"
-                member __.AddedPrinters = getInstanceProperty fsiObj "AddedPrinters"
-                member __.ShowDeclarationValues = getInstanceProperty fsiObj "ShowDeclarationValues"
-                member __.ShowIEnumerable = getInstanceProperty fsiObj "ShowIEnumerable"
-                member __.ShowProperties = getInstanceProperty fsiObj "ShowProperties"
-                member __.PrintSize = getInstanceProperty fsiObj "PrintSize"
-                member __.PrintDepth = getInstanceProperty fsiObj "PrintDepth"
-                member __.PrintWidth = getInstanceProperty fsiObj "PrintWidth"
-                member __.PrintLength = getInstanceProperty fsiObj "PrintLength"
-                member __.ReportUserCommandLineArgs args = setInstanceProperty fsiObj "CommandLineArgs" args
-                member __.StartServer(fsiServerName) =  failwith "--fsi-server not implemented in the default configuration"
-                member __.EventLoopRun() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "Run"   
-                member __.EventLoopInvoke(f : unit -> 'T) =  callInstanceMethod1 (getInstanceProperty fsiObj "EventLoop") [|typeof<'T>|] "Invoke" f
-                member __.EventLoopScheduleRestart() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "ScheduleRestart"
-                member __.UseFsiAuxLib = useFsiAuxLib
-                member __.GetOptionalConsoleReadLine(_probe) = None }
+              member __.FormatProvider = getInstanceProperty fsiObj "FormatProvider"
+              member __.FloatingPointFormat = getInstanceProperty fsiObj "FloatingPointFormat"
+              member __.AddedPrinters = getInstanceProperty fsiObj "AddedPrinters"
+              member __.ShowDeclarationValues = getInstanceProperty fsiObj "ShowDeclarationValues"
+              member __.ShowIEnumerable = getInstanceProperty fsiObj "ShowIEnumerable"
+              member __.ShowProperties = getInstanceProperty fsiObj "ShowProperties"
+              member __.PrintSize = getInstanceProperty fsiObj "PrintSize"
+              member __.PrintDepth = getInstanceProperty fsiObj "PrintDepth"
+              member __.PrintWidth = getInstanceProperty fsiObj "PrintWidth"
+              member __.PrintLength = getInstanceProperty fsiObj "PrintLength"
+              member __.ReportUserCommandLineArgs args = setInstanceProperty fsiObj "CommandLineArgs" args
+              member __.StartServer(fsiServerName) =  failwith "--fsi-server not implemented in the default configuration"
+              member __.EventLoopRun() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "Run"   
+              member __.EventLoopInvoke(f : unit -> 'T) =  callInstanceMethod1 (getInstanceProperty fsiObj "EventLoop") [|typeof<'T>|] "Invoke" f
+              member __.EventLoopScheduleRestart() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "ScheduleRestart"
+              member __.UseFsiAuxLib = useFsiAuxLib
+              member __.GetOptionalConsoleReadLine(_probe) = None }
 //-------------------------------------------------------------------------------
 // If no "fsi" object for the configuration is specified, make the default
 // configuration one which stores the settings in-process 
