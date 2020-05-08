@@ -2404,8 +2404,8 @@ and FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, own
 
     member __.Attributes = 
         topArgInfo.Attribs 
-        |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) 
-        |> makeReadOnlyCollectionOfList
+        |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a)))
+        :> IReadOnlyCollection<_>
 
     member __.IsParamArrayArg = isParamArrayArg
 
@@ -2452,25 +2452,31 @@ and FSharpAssemblySignature (cenv, topAttribs: TypeChecker.TopAttribs option, op
         loop mtyp :> IReadOnlyCollection<_>
 
     member __.Attributes =
-        [ match optViewedCcu with 
-          | Some ccu -> 
-                match ccu.TryGetILModuleDef() with 
-                | Some ilModule -> 
-                    match ilModule.Manifest with 
-                    | None -> ()
-                    | Some manifest -> 
-                        for a in AttribInfosOfIL cenv.g cenv.amap cenv.thisCcu.ILScopeRef range0 manifest.CustomAttrs do
-                            yield FSharpAttribute(cenv, a)
-                | None -> 
-                    // If no module is available, then look in the CCU contents. 
-                    if ccu.IsFSharp then
-                        for a in ccu.Contents.Attribs do 
-                            yield FSharpAttribute(cenv, FSAttribInfo (cenv.g, a))
-          | None -> 
-              match topAttribs with
-              | None -> ()
-              | Some tA -> for a in tA.assemblyAttrs do yield FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a)) ]
-        :> IReadOnlyCollection<_>
+        match optViewedCcu with 
+        | Some ccu -> 
+            match ccu.TryGetILModuleDef() with 
+            | Some ilModule -> 
+                match ilModule.Manifest with 
+                | None -> emptyReadOnlyCollection
+                | Some manifest -> 
+                    AttribInfosOfIL cenv.g cenv.amap cenv.thisCcu.ILScopeRef range0 manifest.CustomAttrs
+                    |> List.map (fun a -> FSharpAttribute(cenv, a))
+                    :> IReadOnlyCollection<_>
+            | None -> 
+                // If no module is available, then look in the CCU contents. 
+                if ccu.IsFSharp then
+                    ccu.Contents.Attribs
+                    |> List.map (fun a -> FSharpAttribute(cenv, FSAttribInfo (cenv.g, a)))
+                    :> IReadOnlyCollection<_>
+                else
+                    emptyReadOnlyCollection
+        | None -> 
+            match topAttribs with
+            | None -> emptyReadOnlyCollection
+            | Some tA -> 
+                tA.assemblyAttrs 
+                |> List.map (fun a ->FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a)))
+                :> IReadOnlyCollection<_>
 
     member __.FindEntityByPath path =
         let findNested name entity = 
