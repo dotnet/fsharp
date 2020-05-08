@@ -133,11 +133,11 @@ and [<Class>] public FSharpAssemblySignature =
     internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType * tcImports: TcImports * topAttribs: TypeChecker.TopAttribs option * contents: ModuleOrNamespaceType -> FSharpAssemblySignature
 
     /// The (non-nested) module and type definitions in this signature
-    member Entities:  IList<FSharpEntity>
+    member Entities:  IReadOnlyCollection<FSharpEntity>
 
     /// Get the declared attributes for the assembly.
     /// Only available when parsing an entire project. 
-    member Attributes: IList<FSharpAttribute>
+    member Attributes: IReadOnlyCollection<FSharpAttribute>
 
     /// Find entity using compiled names
     member FindEntityByPath: string list -> FSharpEntity option
@@ -215,10 +215,10 @@ and [<Class>] public FSharpEntity =
     member IsFSharpModule: bool 
 
     /// Get the generic parameters, possibly including unit-of-measure parameters
-    member GenericParameters: IList<FSharpGenericParameter>
+    member GenericParameters: IReadOnlyCollection<FSharpGenericParameter>
 #if !NO_EXTENSIONTYPING
     /// Get the static parameters for a provided type
-    member StaticParameters: IList<FSharpStaticParameter>
+    member StaticParameters: IReadOnlyCollection<FSharpStaticParameter>
 #endif
     /// Indicates that a module is compiled to a class with the given mangled name. The mangling is reversed during lookup 
     member HasFSharpModuleSuffix : bool
@@ -257,7 +257,7 @@ and [<Class>] public FSharpEntity =
     member IsNamespace : bool
 
     /// Get the in-memory XML documentation for the entity, used when code is checked in-memory
-    member XmlDoc: IList<string>
+    member XmlDoc: IReadOnlyCollection<string>
 
       /// Get the XML documentation signature for the entity, used for .xml file lookup for compiled code
     member XmlDocSig: string
@@ -270,13 +270,13 @@ and [<Class>] public FSharpEntity =
     member UsesPrefixDisplay: bool                   
 
     /// Get the declared attributes for the type 
-    member Attributes: IList<FSharpAttribute>     
+    member Attributes: IReadOnlyCollection<FSharpAttribute>     
 
     /// Get the declared interface implementations
-    member DeclaredInterfaces : IList<FSharpType>  
+    member DeclaredInterfaces : IReadOnlyCollection<FSharpType>  
 
     /// Get all the interface implementations, by walking the type hierarchy
-    member AllInterfaces : IList<FSharpType>  
+    member AllInterfaces : IReadOnlyCollection<FSharpType>  
 
     /// Check if the entity inherits from System.Attribute in its type hierarchy
     member IsAttributeType : bool
@@ -285,27 +285,27 @@ and [<Class>] public FSharpEntity =
     member BaseType : FSharpType option
 
     /// Get the properties, events and methods of a type definitions, or the functions and values of a module
-    member MembersFunctionsAndValues : IList<FSharpMemberOrFunctionOrValue>
+    member MembersFunctionsAndValues : IReadOnlyCollection<FSharpMemberOrFunctionOrValue>
 
     [<System.Obsolete("Renamed to MembersFunctionsAndValues")>]
-    member MembersOrValues : IList<FSharpMemberOrFunctionOrValue>
+    member MembersOrValues : IReadOnlyCollection<FSharpMemberOrFunctionOrValue>
 
     /// Get the modules and types defined in a module, or the nested types of a type
-    member NestedEntities : IList<FSharpEntity>
+    member NestedEntities : IReadOnlyCollection<FSharpEntity>
 
     /// Get the fields of a record, class, struct or enum from the perspective of the F# language.
     /// This includes static fields, the 'val' bindings in classes and structs, and the value definitions in enums.
     /// For classes, the list may include compiler generated fields implied by the use of primary constructors.
-    member FSharpFields : IList<FSharpField>
+    member FSharpFields : IReadOnlyCollection<FSharpField>
 
     [<System.Obsolete("Renamed to FSharpFields")>]
-    member RecordFields : IList<FSharpField>
+    member RecordFields : IReadOnlyCollection<FSharpField>
 
     /// Get the type abbreviated by an F# type abbreviation
     member AbbreviatedType   : FSharpType 
 
     /// Get the cases of a union type
-    member UnionCases : IList<FSharpUnionCase>
+    member UnionCases : IReadOnlyCollection<FSharpUnionCase>
 
     /// Indicates if the type is a delegate with the given Invoke signature 
     member FSharpDelegateSignature : FSharpDelegateSignature
@@ -325,7 +325,7 @@ and [<Class>] public FSharpEntity =
 /// Represents a delegate signature in an F# symbol
 and [<Class>] public FSharpDelegateSignature =
     /// Get the argument types of the delegate signature
-    member DelegateArguments : IList<string option * FSharpType>
+    member DelegateArguments : IReadOnlyCollection<string option * FSharpType>
 
     /// Get the return type of the delegate signature
     member DelegateReturnType : FSharpType
@@ -349,23 +349,23 @@ and [<Class>] public FSharpAbstractParameter =
     member IsOptionalArg : bool
 
     /// The declared attributes of the parameter 
-    member Attributes : IList<FSharpAttribute>     
+    member Attributes : IReadOnlyCollection<FSharpAttribute>     
 
 /// Represents the signature of an abstract slot of a class or interface 
 and [<Class>] public FSharpAbstractSignature =
     internal new : SymbolEnv * SlotSig -> FSharpAbstractSignature
 
     /// Get the arguments of the abstract slot
-    member AbstractArguments : IList<IList<FSharpAbstractParameter>>
+    member AbstractArguments : IReadOnlyCollection<IReadOnlyCollection<FSharpAbstractParameter>>
 
     /// Get the return type of the abstract slot
     member AbstractReturnType : FSharpType
 
     /// Get the generic arguments of the type defining the abstract slot
-    member DeclaringTypeGenericParameters : IList<FSharpGenericParameter>
+    member DeclaringTypeGenericParameters : IReadOnlyCollection<FSharpGenericParameter>
         
     /// Get the generic arguments of the abstract slot
-    member MethodGenericParameters : IList<FSharpGenericParameter>
+    member MethodGenericParameters : IReadOnlyCollection<FSharpGenericParameter>
 
     /// Get the name of the abstract slot
     member Name : string
@@ -388,7 +388,7 @@ and [<Class>] public FSharpUnionCase =
     member HasFields: bool
 
     /// Get the data carried by the case. 
-    member UnionCaseFields: IList<FSharpField>
+    member UnionCaseFields: IReadOnlyCollection<FSharpField>
 
     /// Get the type constructed by the case. Normally exactly the type of the enclosing type, sometimes an abbreviation of it 
     member ReturnType: FSharpType
@@ -397,7 +397,7 @@ and [<Class>] public FSharpUnionCase =
     member CompiledName: string
 
     /// Get the in-memory XML documentation for the union case, used when code is checked in-memory
-    member XmlDoc: IList<string>
+    member XmlDoc: IReadOnlyCollection<string>
 
     /// Get the XML documentation signature for .xml file lookup for the union case, used for .xml file lookup for compiled code 
     member XmlDocSig: string
@@ -406,7 +406,7 @@ and [<Class>] public FSharpUnionCase =
     member Accessibility: FSharpAccessibility 
 
     /// Get the attributes for the case, attached to the generated static method to make instances of the case 
-    member Attributes: IList<FSharpAttribute>
+    member Attributes: IReadOnlyCollection<FSharpAttribute>
 
     /// Indicates if the union case is for a type in an unresolved assembly 
     member IsUnresolved : bool
@@ -471,7 +471,7 @@ and [<Class>] public FSharpField =
     member IsNameGenerated: bool
 
     /// Get the in-memory XML documentation for the field, used when code is checked in-memory
-    member XmlDoc: IList<string>
+    member XmlDoc: IReadOnlyCollection<string>
 
     /// Get the XML documentation signature for .xml file lookup for the field, used for .xml file lookup for compiled code
     member XmlDocSig: string
@@ -483,10 +483,10 @@ and [<Class>] public FSharpField =
     member DeclarationLocation: range
 
     /// Get the attributes attached to generated property 
-    member PropertyAttributes: IList<FSharpAttribute> 
+    member PropertyAttributes: IReadOnlyCollection<FSharpAttribute> 
 
     /// Get the attributes attached to generated field 
-    member FieldAttributes: IList<FSharpAttribute> 
+    member FieldAttributes: IReadOnlyCollection<FSharpAttribute> 
 
     /// Get the name of the field 
     member Name : string
@@ -521,7 +521,7 @@ and [<Class>] public FSharpGenericParameter =
     member IsMeasure : bool
 
     /// Get the in-memory XML documentation for the type parameter, used when code is checked in-memory
-    member XmlDoc : IList<string>
+    member XmlDoc : IReadOnlyCollection<string>
        
     /// Indicates if this is a statically resolved type variable
     member IsSolveAtCompileTime : bool 
@@ -530,10 +530,10 @@ and [<Class>] public FSharpGenericParameter =
     member IsCompilerGenerated : bool 
 
     /// Get the declared attributes of the type parameter. 
-    member Attributes: IList<FSharpAttribute>                      
+    member Attributes: IReadOnlyCollection<FSharpAttribute>                      
        
     /// Get the declared or inferred constraints for the type parameter
-    member Constraints: IList<FSharpGenericParameterConstraint> 
+    member Constraints: IReadOnlyCollection<FSharpGenericParameterConstraint> 
 
 
 #if !NO_EXTENSIONTYPING
@@ -565,7 +565,7 @@ and [<Class>] public FSharpStaticParameter =
 and [<Class; NoEquality; NoComparison>] public FSharpGenericParameterMemberConstraint = 
 
     /// Get the types that may be used to satisfy the constraint
-    member MemberSources : IList<FSharpType>
+    member MemberSources : IReadOnlyCollection<FSharpType>
 
     /// Get the name of the method required by the constraint
     member MemberName : string 
@@ -574,7 +574,7 @@ and [<Class; NoEquality; NoComparison>] public FSharpGenericParameterMemberConst
     member MemberIsStatic : bool
 
     /// Get the argument types of the method required by the constraint
-    member MemberArgumentTypes : IList<FSharpType>
+    member MemberArgumentTypes : IReadOnlyCollection<FSharpType>
 
     /// Get the return type of the method required by the constraint
     member MemberReturnType : FSharpType 
@@ -640,7 +640,7 @@ and [<Class; NoEquality; NoComparison>] public FSharpGenericParameterConstraint 
     member IsSimpleChoiceConstraint : bool
 
     /// Gets further information about a choice constraint
-    member SimpleChoices : IList<FSharpType>
+    member SimpleChoices : IReadOnlyCollection<FSharpType>
 
     /// Indicates a constraint that a type has a parameterless constructor 
     member IsRequiresDefaultConstructorConstraint  : bool
@@ -695,7 +695,7 @@ and [<Class>] public FSharpMemberOrFunctionOrValue =
     member DeclarationLocation: range
     
     /// Get the typars of the member, function or value
-    member GenericParameters: IList<FSharpGenericParameter>
+    member GenericParameters: IReadOnlyCollection<FSharpGenericParameter>
 
     /// Get the full type of the member, function or value when used as a first class value
     member FullType: FSharpType
@@ -725,7 +725,7 @@ and [<Class>] public FSharpMemberOrFunctionOrValue =
     member IsExplicitInterfaceImplementation : bool
 
     /// Gets the list of the abstract slot signatures implemented by the member
-    member ImplementedAbstractSignatures : IList<FSharpAbstractSignature>
+    member ImplementedAbstractSignatures : IReadOnlyCollection<FSharpAbstractSignature>
 
     /// Indicates if this is a member, including extension members?
     member IsMember : bool
@@ -819,20 +819,20 @@ and [<Class>] public FSharpMemberOrFunctionOrValue =
     /// Get the name as presented in F# error messages and documentation
     member DisplayName : string
 
-    member CurriedParameterGroups : IList<IList<FSharpParameter>>
+    member CurriedParameterGroups : IReadOnlyCollection<IReadOnlyCollection<FSharpParameter>>
 
     /// Gets the overloads for the current method
     /// matchParameterNumber indicates whether to filter the overloads to match the number of parameters in the current symbol
-    member Overloads : bool -> IList<FSharpMemberOrFunctionOrValue> option
+    member Overloads : bool -> IReadOnlyCollection<FSharpMemberOrFunctionOrValue> option
 
     member ReturnParameter : FSharpParameter
 
     /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
     /// these value references after copying a collection of values. 
-    member Attributes: IList<FSharpAttribute>
+    member Attributes: IReadOnlyCollection<FSharpAttribute>
 
     /// Get the in-memory XML documentation for the value, used when code is checked in-memory
-    member XmlDoc: IList<string>
+    member XmlDoc: IReadOnlyCollection<string>
 
     /// XML documentation signature for the value, used for .xml file lookup for compiled code
     member XmlDocSig: string
@@ -880,7 +880,7 @@ and [<Class>] public FSharpParameter =
     member Type : FSharpType 
 
     /// The declared attributes of the parameter 
-    member Attributes: IList<FSharpAttribute>
+    member Attributes: IReadOnlyCollection<FSharpAttribute>
 
     /// Indicate this is a param array argument
     member IsParamArrayArg: bool
@@ -913,7 +913,7 @@ and [<Class>] public FSharpActivePatternCase =
     member Group : FSharpActivePatternGroup
 
     /// Get the in-memory XML documentation for the active pattern case, used when code is checked in-memory
-    member XmlDoc: IList<string>
+    member XmlDoc: IReadOnlyCollection<string>
 
       /// XML documentation signature for the active pattern case, used for .xml file lookup for compiled code
     member XmlDocSig: string
@@ -925,7 +925,7 @@ and [<Class>] public FSharpActivePatternGroup =
     member Name: string option
 
     /// The names of the active pattern cases
-    member Names: IList<string> 
+    member Names: IReadOnlyCollection<string> 
 
     /// Indicate this is a total active pattern
     member IsTotal : bool 
@@ -958,7 +958,7 @@ and [<Class>] public FSharpType =
     member TypeDefinition : FSharpEntity 
 
     /// Get the generic arguments for a tuple type, a function type or a type constructed using a named entity
-    member GenericArguments : IList<FSharpType>
+    member GenericArguments : IReadOnlyCollection<FSharpType>
     
     /// Indicates if the type is a tuple type (reference or struct). The GenericArguments property returns the elements of the tuple type.
     member IsTupleType : bool
@@ -992,7 +992,7 @@ and [<Class>] public FSharpType =
 
     /// Get all the interface implementations, by walking the type hierarchy, taking into account the instantiation of this type
     /// if it is an instantiation of a generic type.
-    member AllInterfaces : IList<FSharpType>  
+    member AllInterfaces : IReadOnlyCollection<FSharpType>  
 
     /// Get the base type, if any, taking into account the instantiation of this type
     /// if it is an instantiation of a generic type.
@@ -1004,7 +1004,7 @@ and [<Class>] public FSharpType =
 
     /// Adjust a group of types by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.
-    static member Prettify : types: IList<FSharpType> -> IList<FSharpType>
+    static member Prettify : types: IReadOnlyCollection<FSharpType> -> IReadOnlyCollection<FSharpType>
 
     /// Adjust the type in a single parameter by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.
@@ -1012,15 +1012,15 @@ and [<Class>] public FSharpType =
 
     /// Adjust the types in a group of parameters by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.
-    static member Prettify : parameters: IList<FSharpParameter> -> IList<FSharpParameter>
+    static member Prettify : parameters: IReadOnlyCollection<FSharpParameter> -> IReadOnlyCollection<FSharpParameter>
 
     /// Adjust the types in a group of curried parameters by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.
-    static member Prettify : parameters: IList<IList<FSharpParameter>> -> IList<IList<FSharpParameter>>
+    static member Prettify : parameters: IReadOnlyCollection<IReadOnlyCollection<FSharpParameter>> -> IReadOnlyCollection<IReadOnlyCollection<FSharpParameter>>
 
     /// Adjust the types in a group of curried parameters and return type by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.
-    static member Prettify : parameters: IList<IList<FSharpParameter>> * returnParameter: FSharpParameter -> IList<IList<FSharpParameter>> * FSharpParameter
+    static member Prettify : parameters: IReadOnlyCollection<IReadOnlyCollection<FSharpParameter>> * returnParameter: FSharpParameter -> IReadOnlyCollection<IReadOnlyCollection<FSharpParameter>> * FSharpParameter
 
     [<System.Obsolete("Renamed to HasTypeDefinition")>]
     member IsNamedType : bool
@@ -1036,10 +1036,10 @@ and [<Class>] public FSharpAttribute =
     member AttributeType : FSharpEntity
 
     /// The arguments to the constructor for the attribute
-    member ConstructorArguments : IList<FSharpType * obj>
+    member ConstructorArguments : IReadOnlyCollection<FSharpType * obj>
 
     /// The named arguments for the attribute
-    member NamedArguments : IList<FSharpType * string * bool * obj>
+    member NamedArguments : IReadOnlyCollection<FSharpType * string * bool * obj>
 
     /// Indicates if the attribute type is in an unresolved assembly 
     member IsUnresolved : bool
