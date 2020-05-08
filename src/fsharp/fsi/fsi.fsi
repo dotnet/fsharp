@@ -266,6 +266,11 @@ type FsiEvaluationSession =
     /// Tries to find a root-level value that is bound to the given identifier
     member TryFindBoundValue : name: string -> FsiBoundValue option
 
+    /// Creates a root-level value with the given name and .NET object.
+    /// This will throw if the .NET object contains types from assemblies that are not referenced in the interactive session.
+    /// Name must be a valid identifier.
+    member AddBoundValue : name: string * reflectionValue: obj -> unit
+
     /// Load the dummy interaction, load the initial files, and,
     /// if interacting, start the background thread to read the standard input.
     ///
