@@ -93,8 +93,6 @@ type public FsiEvaluationSessionHostConfig =
     /// Hook for listening for evaluation bindings
     member OnEvaluation : IEvent<EvaluationEventArgs>
 
-    member FixupFsiObj : fsiObj: obj -> unit
-
     ///<summary>
     /// <para>Indicate a special console "readline" reader for the evaluation session, if any.</para><para> </para>
     ///

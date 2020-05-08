@@ -62,8 +62,15 @@ type internal SimpleEventLoop() =
                      runSignal.Dispose()
                      exitSignal.Dispose()
                      doneSignal.Dispose()
-                     
+    
+[<Sealed>]
+type InteractiveValue(name: string, reflectionType: Type, reflectionValue: obj) =
+    
+    member _.Name = name
 
+    member _.ReflectionType = reflectionType
+
+    member _.ReflectionValue = reflectionValue
 
 [<Sealed>]
 type InteractiveSession()  = 
@@ -118,7 +125,7 @@ type InteractiveSession()  =
                      member __.Invoke(f) = invoke((fun () -> f() |> box)) |> unbox
                      member __.ScheduleRestart() = restart() }
 
-    member internal self.SetGetValues (getValuesFunc: (unit -> (string * obj) list)) =
+    member internal self.SetGetValues (getValuesFunc: (unit -> InteractiveValue list)) =
         getValues <- getValuesFunc
     
 [<assembly: CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly", Scope="member", Target="FSharp.Compiler.Interactive.InteractiveSession.#ThreadException")>]

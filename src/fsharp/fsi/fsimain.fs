@@ -224,53 +224,56 @@ let evaluateSession(argv: string[]) =
 #endif
         // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig = 
-            let c =
-                { new FsiEvaluationSessionHostConfig () with 
-                    member __.FormatProvider = fsiConfig0.FormatProvider
-                    member __.FloatingPointFormat = fsiConfig0.FloatingPointFormat
-                    member __.AddedPrinters = fsiConfig0.AddedPrinters
-                    member __.ShowDeclarationValues = fsiConfig0.ShowDeclarationValues
-                    member __.ShowIEnumerable = fsiConfig0.ShowIEnumerable
-                    member __.ShowProperties = fsiConfig0.ShowProperties
-                    member __.PrintSize = fsiConfig0.PrintSize  
-                    member __.PrintDepth = fsiConfig0.PrintDepth
-                    member __.PrintWidth = fsiConfig0.PrintWidth
-                    member __.PrintLength = fsiConfig0.PrintLength
-                    member __.ReportUserCommandLineArgs args = fsiConfig0.ReportUserCommandLineArgs args
-                    member __.EventLoopRun() = 
-#if !FX_NO_WINFORMS
-                        match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
-                        | Some l -> (l :> IEventLoop).Run()
-                        | _ -> 
-#endif
-                        fsiConfig0.EventLoopRun()
-                    member __.EventLoopInvoke(f) = 
-#if !FX_NO_WINFORMS
-                        match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
-                        | Some l -> (l :> IEventLoop).Invoke(f)
-                        | _ -> 
-#endif
-                        fsiConfig0.EventLoopInvoke(f)
-                    member __.EventLoopScheduleRestart() = 
-#if !FX_NO_WINFORMS
-                        match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
-                        | Some l -> (l :> IEventLoop).ScheduleRestart()
-                        | _ -> 
-#endif
-                        fsiConfig0.EventLoopScheduleRestart()
 
-                    member __.UseFsiAuxLib = fsiConfig0.UseFsiAuxLib
-
-                    member __.StartServer(fsiServerName) = StartServer fsiSession fsiServerName
-                
-                    // Connect the configuration through to the 'fsi' Event loop
-                    member __.GetOptionalConsoleReadLine(probe) = getConsoleReadLine(probe) }
+            // Set the implementation for the interactive session to get values.
             match fsiObjOpt with 
-            | Some fsiObj ->
-                c.FixupFsiObj fsiObj
-            | _ ->
-                ()
-            c
+            | Some(:? Interactive.InteractiveSession as fsi) -> 
+                fsi.SetGetValues(fun () ->
+                    fsiSession.GetBoundValues()
+                    |> List.map (fun boundValue ->
+                        Interactive.InteractiveValue(boundValue.Name, boundValue.Value.ReflectionType, boundValue.Value.ReflectionValue)))
+            | _ -> ()
+
+            { new FsiEvaluationSessionHostConfig () with 
+                member __.FormatProvider = fsiConfig0.FormatProvider
+                member __.FloatingPointFormat = fsiConfig0.FloatingPointFormat
+                member __.AddedPrinters = fsiConfig0.AddedPrinters
+                member __.ShowDeclarationValues = fsiConfig0.ShowDeclarationValues
+                member __.ShowIEnumerable = fsiConfig0.ShowIEnumerable
+                member __.ShowProperties = fsiConfig0.ShowProperties
+                member __.PrintSize = fsiConfig0.PrintSize  
+                member __.PrintDepth = fsiConfig0.PrintDepth
+                member __.PrintWidth = fsiConfig0.PrintWidth
+                member __.PrintLength = fsiConfig0.PrintLength
+                member __.ReportUserCommandLineArgs args = fsiConfig0.ReportUserCommandLineArgs args
+                member __.EventLoopRun() = 
+#if !FX_NO_WINFORMS
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
+                    | Some l -> (l :> IEventLoop).Run()
+                    | _ -> 
+#endif
+                    fsiConfig0.EventLoopRun()
+                member __.EventLoopInvoke(f) = 
+#if !FX_NO_WINFORMS
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
+                    | Some l -> (l :> IEventLoop).Invoke(f)
+                    | _ -> 
+#endif
+                    fsiConfig0.EventLoopInvoke(f)
+                member __.EventLoopScheduleRestart() = 
+#if !FX_NO_WINFORMS
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
+                    | Some l -> (l :> IEventLoop).ScheduleRestart()
+                    | _ -> 
+#endif
+                    fsiConfig0.EventLoopScheduleRestart()
+
+                member __.UseFsiAuxLib = fsiConfig0.UseFsiAuxLib
+
+                member __.StartServer(fsiServerName) = StartServer fsiSession fsiServerName
+                
+                // Connect the configuration through to the 'fsi' Event loop
+                member __.GetOptionalConsoleReadLine(probe) = getConsoleReadLine(probe) }
 
         // Create the console
         and fsiSession : FsiEvaluationSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error, collectible=false, legacyReferenceResolver=legacyReferenceResolver)

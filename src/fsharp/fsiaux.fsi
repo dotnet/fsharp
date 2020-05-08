@@ -2,6 +2,8 @@
 
 namespace FSharp.Compiler.Interactive
 
+    open System
+
     /// <summary>An event loop used by the currently executing F# Interactive session to execute code
     /// in the context of a GUI or another event-based system.</summary>
     type IEventLoop =
@@ -16,6 +18,21 @@ namespace FSharp.Compiler.Interactive
 
         /// <summary>Schedule a restart for the event loop.</summary>
         abstract ScheduleRestart : unit -> unit
+
+    [<Sealed>]
+    /// Represents an evaluated F# value that is bound to an identifier at the root-level.
+    type InteractiveValue =
+
+        internal new : name: string * reflectionType: Type * reflectionValue: obj -> InteractiveValue
+        
+        /// The identifier of the value.
+        member Name : string
+
+        /// The type of the value, from the point of view of the .NET type system.
+        member ReflectionType : Type
+
+        /// The value, as an object.
+        member ReflectionValue : obj
     
     [<Sealed>]
     /// <summary>Operations supported by the currently executing F# Interactive session.</summary>
@@ -68,13 +85,13 @@ namespace FSharp.Compiler.Interactive
         member EventLoop: IEventLoop with get,set
         
         /// <summary>Gets the current state of values that are bound in the interactive session.</summary>
-        member GetValues: unit -> (string * obj) list
+        member GetValues: unit -> InteractiveValue list
     
         /// <summary>Sets the current event loop being used to process interactions.</summary>
         member internal SetEventLoop: (unit -> bool) * ((unit -> obj) -> obj) * (unit -> unit) -> unit
 
-        /// <summary>Used to allow the InteractiveSession to query for the current state of values.</summary>
-        member internal SetGetValues : (unit -> (string * obj) list) -> unit
+        /// <summary>Used to allow the InteractiveSession to get a list of current values in a session.</summary>
+        member internal SetGetValues : (unit -> InteractiveValue list) -> unit
     
 
     module Settings = 

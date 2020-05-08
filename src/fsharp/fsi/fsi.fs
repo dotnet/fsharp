@@ -221,7 +221,6 @@ type EvaluationEventArgs(fsivalue : FsiValue option, symbolUse : FSharpSymbolUse
 /// and accessible via the programming model
 type FsiEvaluationSessionHostConfig () = 
     let evaluationEvent = new Event<EvaluationEventArgs> () 
-    let setGetValuesFuncEvent = new Event<unit -> (string * obj) list> ()
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract FormatProvider: System.IFormatProvider  
     /// Called by the evaluation session to ask the host for parameters to format text for output
@@ -291,12 +290,6 @@ type FsiEvaluationSessionHostConfig () =
     member x.OnEvaluation = evaluationEvent.Publish
     member internal x.TriggerEvaluation (value, symbolUse, decl) =
         evaluationEvent.Trigger (EvaluationEventArgs (value, symbolUse, decl) )
-
-    member x.FixupFsiObj (fsiObj: obj) =
-        setGetValuesFuncEvent.Publish.Add(fun getValuesFunc -> callInstanceMethod1 fsiObj [||] "SetGetValues" getValuesFunc)
-
-    member internal x.TriggerSetGetValues getValuesFunc =
-        setGetValuesFuncEvent.Trigger getValuesFunc
 
 /// Used to print value signatures along with their values, according to the current
 /// set of pretty printers installed in the system, and default printing rules.
@@ -2444,7 +2437,7 @@ type FsiCompilationException(message: string, errorInfos: FSharpErrorInfo[] opti
 
 /// The primary type, representing a full F# Interactive session, reading from the given
 /// text input, writing to the given text output and error writers.
-type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, legacyReferenceResolver: ReferenceResolver.Resolver option) as this = 
+type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, legacyReferenceResolver: ReferenceResolver.Resolver option) = 
 
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 
@@ -2623,16 +2616,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         userRes, errorInfos
 
     let dummyScriptFileName = "input.fsx"
-
-    do 
-        let weakThis = WeakReference<_> this
-        fsi.TriggerSetGetValues(fun () ->
-            match weakThis.TryGetTarget() with
-            | true, this ->
-                this.GetBoundValues()
-                |> List.map (fun (v: FsiBoundValue) -> (v.Name, v.Value.ReflectionValue))
-            | _ ->
-                [])
 
     interface IDisposable with 
         member x.Dispose() = 
