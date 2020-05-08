@@ -2414,8 +2414,6 @@ and FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, own
     member __.IsOutArg = isOutArg
 
     member __.IsOptionalArg = isOptionalArg
-    
-    member private x.ValReprInfo = topArgInfo
 
     override x.Equals(other: obj) =
         box x === other || 
