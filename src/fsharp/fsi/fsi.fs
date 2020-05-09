@@ -1516,7 +1516,6 @@ type internal FsiDynamicCompiler
         let prefixPath = pathOfLid prefix
         let qualifiedName = ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath)
 
-        let tcConfigB = { tcConfigB with implicitlyResolveAssemblies = false }
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         // Build a simple module with a single 'let' decl with a default value.
