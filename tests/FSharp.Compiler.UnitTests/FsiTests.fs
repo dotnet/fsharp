@@ -376,6 +376,16 @@ let ``Creation of a bound value fails if the name contains an operator at the fr
     Assert.AreEqual("Identifier expected", error.Message)
 
 [<Test>]
+let ``Creation of a bound value fails if the name contains dots`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("x.x", 1)
+    let error = errors |> Array.exactlyOne
+
+    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
+    Assert.AreEqual("Identifier expected", error.Message)
+
+[<Test>]
 let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution`` () =
     use fsiSession = createFsiSession ()
 
