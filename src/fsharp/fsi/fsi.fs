@@ -984,12 +984,10 @@ let internal importReflectionType amap (reflectionTy: Type) =
 
         mkILTy boxity tspec           
 
-    let ilTy = reflectionTyToILType reflectionTy
-
-    let rec import (ilTy: ILType) =              
+    let rec import (ilTy: ILType) =
         Import.ImportILType amap range0 (ilTy.GenericArgs |> List.map import) ilTy
 
-    import ilTy
+    import (reflectionTyToILType reflectionTy)
 
 let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let vis = Accessibility.TAccess([])
@@ -1496,12 +1494,20 @@ type internal FsiDynamicCompiler
             None
 
     member __.AddBoundValue (ctok, errorLogger: ErrorLogger, istate, name: string, value: obj) =
-        let name =
-            let mutable token = Unchecked.defaultof<_>
-            SourceCodeServices.Lexer.FSharpLexer.Lex(SourceText.ofString name, fun t -> token <- t)
-            if not token.IsIdentifier then
-                errorLogger.Error(Error(FSComp.SR.parsUnexpectedIdentifier name, range0))
-            name
+        if String.IsNullOrWhiteSpace name then
+            errorLogger.Error(Error(FSComp.SR.parsIdentifierExpected(), range0))
+
+        // Verify that the name is a valid identifier for a value.
+        SourceCodeServices.Lexer.FSharpLexer.Lex(SourceText.ofString name, 
+            let mutable foundOne = false
+            fun t -> 
+                if not t.IsIdentifier || foundOne then
+                    errorLogger.Error(Error(FSComp.SR.parsIdentifierExpected(), range0))
+                foundOne <- true)
+
+        if PrettyNaming.IsCompilerGeneratedName name then
+            errorLogger.Warning(Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved(), range0))
+
         let amap = istate.tcImports.GetImportMap()
         let ty = importReflectionType amap (value.GetType())
 
@@ -1510,6 +1516,7 @@ type internal FsiDynamicCompiler
         let prefixPath = pathOfLid prefix
         let qualifiedName = ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath)
 
+        let tcConfigB = { tcConfigB with implicitlyResolveAssemblies = false }
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         // Build a simple module with a single 'let' decl with a default value.
@@ -2925,8 +2932,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let errorOptions = TcConfig.Create(tcConfigB, validate = false).errorSeverityOptions
         let errorLogger = CompilationErrorLogger("AddBoundValue", errorOptions)
         fsiInteractionProcessor.AddBoundValue(ctok, errorLogger, name, reflectionValue)
-        |> commitResult
-        |> ignore
+        |> commitResultNonThrowing errorOptions "input.fsx" errorLogger
 
     /// Performs these steps:
     ///    - Load the dummy interaction, if any

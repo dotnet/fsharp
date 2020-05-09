@@ -267,9 +267,9 @@ type FsiEvaluationSession =
     member TryFindBoundValue : name: string -> FsiBoundValue option
 
     /// Creates a root-level value with the given name and .NET object.
-    /// This will throw if the .NET object contains types from assemblies that are not referenced in the interactive session.
+    /// If the .NET object contains types from assemblies that are not referenced in the interactive session, it will try to implicitly resolve them by default configuration.
     /// Name must be a valid identifier.
-    member AddBoundValue : name: string * reflectionValue: obj -> unit
+    member AddBoundValue : name: string * reflectionValue: obj -> Choice<FsiValue option, exn> * FSharpErrorInfo[]
 
     /// Load the dummy interaction, load the initial files, and,
     /// if interacting, start the background thread to read the standard input.

@@ -4,6 +4,10 @@ open System.IO
 open FSharp.Compiler.Interactive.Shell
 open NUnit.Framework
 
+type FSharpErrorSeverity = FSharp.Compiler.SourceCodeServices.FSharpErrorSeverity
+
+type CustomType = { X: int }
+
 let createFsiSession () =
     // Intialize output and input streams
     let inStream = new StringReader("")
@@ -241,3 +245,162 @@ let ``Values are successfully shadowed even with intermediate interactions`` () 
     Assert.AreEqual("x", boundValue.Name)
     Assert.AreEqual((1, 2), boundValue.Value.ReflectionValue)
     Assert.AreEqual(typeof<int * int>, boundValue.Value.ReflectionType)
+
+[<Test>]
+let ``Creation of a simple bound value succeeds`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("x", 1)
+    Assert.IsEmpty errors
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual("x", boundValue.Name)
+    Assert.AreEqual(typeof<int>, boundValue.Value.ReflectionType)
+    Assert.AreEqual(1, boundValue.Value.ReflectionValue)
+
+[<Test>]
+let ``Creation of a bound value succeeds with underscores in the identifier`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("x_y_z", 1)
+    Assert.IsEmpty errors
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual("x_y_z", boundValue.Name)
+
+[<Test>]
+let ``Creation of a bound value succeeds with tildes in the identifier`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("``hello world``", 1)
+    Assert.IsEmpty errors
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual("``hello world``", boundValue.Name)
+
+[<Test>]
+let ``Creation of a bound value succeeds with tildes in the identifier and with 'at' but has warning`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("``hello @ world``", 1)
+    let error = errors |> Array.exactlyOne
+
+    Assert.AreEqual(FSharpErrorSeverity.Warning, error.Severity)
+    Assert.AreEqual("Identifiers containing '@' are reserved for use in F# code generation", error.Message)
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual("``hello @ world``", boundValue.Name)
+
+[<Test>]
+let ``Creation of a bound value fails if the name is not a valid identifier with 'at' in front`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("@x", 1)
+    let error = errors |> Array.exactlyOne
+
+    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
+    Assert.AreEqual("Identifier expected", error.Message)
+
+[<Test>]
+let ``Creation of a bound value fails if the name is not a valid identifier with 'at' in back`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("x@", 1)
+    let error = errors |> Array.exactlyOne
+
+    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
+    Assert.AreEqual("Identifier expected", error.Message)
+
+[<Test>]
+let ``Creation of a bound value fails if the name is null`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue(null, 1)
+    let error = errors |> Array.exactlyOne
+
+    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
+    Assert.AreEqual("Identifier expected", error.Message)
+
+[<Test>]
+let ``Creation of a bound value fails if the name is empty`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("", 1)
+    let error = errors |> Array.exactlyOne
+
+    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
+    Assert.AreEqual("Identifier expected", error.Message)
+
+[<Test>]
+let ``Creation of a bound value fails if the name is whitespace`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue(" ", 1)
+    let error = errors |> Array.exactlyOne
+
+    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
+    Assert.AreEqual("Identifier expected", error.Message)
+
+[<Test>]
+let ``Creation of a bound value fails if the name contains spaces`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("x x", 1)
+    let error = errors |> Array.exactlyOne
+
+    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
+    Assert.AreEqual("Identifier expected", error.Message)
+
+[<Test>]
+let ``Creation of a bound value fails if the name contains an operator at the end`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("x+", 1)
+    let error = errors |> Array.exactlyOne
+
+    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
+    Assert.AreEqual("Identifier expected", error.Message)
+
+[<Test>]
+let ``Creation of a bound value fails if the name contains an operator at the front`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("+x", 1)
+    let error = errors |> Array.exactlyOne
+
+    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
+    Assert.AreEqual("Identifier expected", error.Message)
+
+[<Test>]
+let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("x", { X = 1 })
+    Assert.IsEmpty errors
+
+[<Test>]
+let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution, and then doing some evaluation`` () =
+    use fsiSession = createFsiSession ()
+
+    let _, errors = fsiSession.AddBoundValue("x", { X = 1 })
+    Assert.IsEmpty errors
+
+    fsiSession.EvalInteraction("let y = { x with X = 5 }")
+
+    let boundValues = fsiSession.GetBoundValues()
+    Assert.AreEqual(2, boundValues.Length)
+
+    let v1 = boundValues.[0]
+    let v2 = boundValues.[1]
+
+    Assert.AreEqual("x", v1.Name)
+    Assert.AreEqual({ X = 1 }, v1.Value.ReflectionValue)
+    Assert.AreEqual(typeof<CustomType>, v1.Value.ReflectionType)
+
+    Assert.AreEqual("y", v2.Name)
+    Assert.AreEqual({ X = 5 }, v2.Value.ReflectionValue)
+    Assert.AreEqual(typeof<CustomType>, v2.Value.ReflectionType)
