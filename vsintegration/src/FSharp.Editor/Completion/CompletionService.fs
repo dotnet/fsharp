@@ -27,15 +27,12 @@ type internal FSharpCompletionService
     let builtInProviders = 
         ImmutableArray.Create<CompletionProvider>(
             FSharpCompletionProvider(workspace, serviceProvider, checkerProvider, projectInfoManager, assemblyContentProvider),
-            FSharpCommonCompletionProvider.Create(
-                HashDirectiveCompletionProvider(workspace, projectInfoManager,
-                    [ Completion.Create("""\s*#load\s+(@?"*(?<literal>"[^"]*"?))""", [".fs"; ".fsx"], useIncludeDirectives = true)
-                      Completion.Create("""\s*#r\s+(@?"*(?<literal>"[^"]*"?))""", [".dll"; ".exe"], useIncludeDirectives = true)
-                      Completion.Create("""\s*#I\s+(@?"*(?<literal>"[^"]*"?))""", ["\x00"], useIncludeDirectives = false) ])))
+            FSharpCommonCompletionProvider.Create(KeywordCompletionProvider(projectInfoManager)),
+            FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager)))
 
-    override this.Language = FSharpConstants.FSharpLanguageName
-    override this.GetBuiltInProviders() = builtInProviders
-    override this.GetRules() =
+    override _.Language = FSharpConstants.FSharpLanguageName
+    override _.GetBuiltInProviders() = builtInProviders
+    override _.GetRules() =
         let enterKeyRule =
             match settings.IntelliSense.EnterKeySetting with
             | NeverNewline -> EnterKeyRule.Never
@@ -59,7 +56,7 @@ type internal FSharpCompletionServiceFactory
         settings: EditorOptions
     ) =
     interface ILanguageServiceFactory with
-        member this.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
+        member _.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
             upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, checkerProvider, projectInfoManager, assemblyContentProvider, settings)
 
 
