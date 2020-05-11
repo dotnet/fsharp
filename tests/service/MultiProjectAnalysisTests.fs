@@ -14,9 +14,11 @@ open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 open FsUnit
 open System.IO
+open System.Collections.Generic
 
 open FSharp.Compiler.Service.Tests.Common
 
+let toIList (x: _ array) = x :> IList<_>
 let numProjectsForStressTest = 100
 let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
 
@@ -42,6 +44,13 @@ let x1 = C.M(arg1 = 3, arg2 = 4, arg3 = 5)
 
 /// This is x2
 let x2 = C.M(arg1 = 3, arg2 = 4, ?arg3 = Some 5)
+
+/// This is
+/// x3
+let x3 (
+          /// This is not x3
+          p: int
+      ) = ()
 
 /// This is type U
 type U = 
@@ -195,10 +204,13 @@ let ``Test multi project 1 xmldoc`` () =
     let p1B = checker.ParseAndCheckProject(Project1B.options) |> Async.RunSynchronously
     let mp = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunSynchronously
 
-    let x1FromProject1A = 
+    let symbolFromProject1A sym = 
         [ for s in p1A.GetAllUsesOfAllSymbols() |> Async.RunSynchronously do
-             if  s.Symbol.DisplayName = "x1" then 
+             if  s.Symbol.DisplayName = sym then 
                  yield s.Symbol ]   |> List.head
+        
+    let x1FromProject1A = symbolFromProject1A "x1"
+    let x3FromProject1A = symbolFromProject1A "x3"
 
     let x1FromProjectMultiProject = 
         [ for s in mp.GetAllUsesOfAllSymbols() |> Async.RunSynchronously do
@@ -218,6 +230,10 @@ let ``Test multi project 1 xmldoc`` () =
 
     match x1FromProject1A with 
     | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc.Count |> shouldEqual 1
+    | _ -> failwith "odd symbol!"
+    
+    match x3FromProject1A with 
+    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc |> shouldEqual ([|" This is"; " x3"|] |> toIList)
     | _ -> failwith "odd symbol!"
 
     match x1FromProjectMultiProject with 
