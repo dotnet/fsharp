@@ -42,6 +42,20 @@ type internal FSharpCompletionProvider
     static let [<Literal>] IsExtensionMemberPropName = "IsExtensionMember"
     static let [<Literal>] NamespaceToOpenPropName = "NamespaceToOpen"
     static let [<Literal>] IndexPropName = "Index"
+    static let [<Literal>] KeywordDescription = "KeywordDescription"
+
+    static let keywordCompletionItems =
+        Keywords.KeywordsWithDescription
+        |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorName keyword))
+        |> List.sortBy (fun (keyword, _) -> keyword)
+        |> List.mapi (fun n (keyword, description) ->
+            FSharpCommonCompletionItem.Create(
+                displayText = keyword,
+                displayTextSuffix = "",
+                rules = CompletionItemRules.Default,
+                glyph = Nullable Glyph.Keyword,
+                sortText = sprintf "%06d" (1000000 + n))
+                .AddProperty(KeywordDescription, description))
     
     let checker = checkerProvider.Checker
     
@@ -172,6 +186,19 @@ type internal FSharpCompletionProvider
                 let sortText = priority.ToString("D6")
                 let completionItem = completionItem.WithSortText(sortText)
                 results.Add(completionItem))
+
+            
+            if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
+                let lineStr = textLines.[caretLinePos.Line].ToString()
+
+                let completionContext =
+                    parseResults.ParseTree 
+                    |> Option.bind (fun parseTree ->
+                         UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, parseTree, lineStr))
+
+                match completionContext with
+                | None -> results.AddRange(keywordCompletionItems)
+                | _ -> ()
             
             return results
         }
@@ -222,10 +249,15 @@ type internal FSharpCompletionProvider
                     // mix main description and xmldoc by using one collector
                     XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, description) 
                     return CompletionDescription.Create(documentation.ToImmutableArray())
-                else 
+                else
                     return CompletionDescription.Empty
-            | _ -> 
-                return CompletionDescription.Empty
+            | _ ->
+                // Try keyword descriptions if they exist
+                match completionItem.Properties.TryGetValue KeywordDescription with
+                | true, keywordDescription ->
+                    return CompletionDescription.FromText(keywordDescription)
+                | false, _ ->
+                    return CompletionDescription.Empty
         } |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     override _.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
@@ -237,7 +269,7 @@ type internal FSharpCompletionProvider
                 | true, x -> Some x
                 | _ -> None
 
-            // do not add extension members, keywords and not yet resolved symbols to the MRU list
+            // do not add extension members and unresolved symbols to the MRU list
             if not (item.Properties.ContainsKey NamespaceToOpenPropName) && not (item.Properties.ContainsKey IsExtensionMemberPropName) then
                 match fullName with
                 | Some fullName ->

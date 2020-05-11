@@ -27,7 +27,6 @@ type internal FSharpCompletionService
     let builtInProviders = 
         ImmutableArray.Create<CompletionProvider>(
             FSharpCompletionProvider(workspace, serviceProvider, checkerProvider, projectInfoManager, assemblyContentProvider),
-            FSharpCommonCompletionProvider.Create(KeywordCompletionProvider(projectInfoManager)),
             FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager)))
 
     override _.Language = FSharpConstants.FSharpLanguageName
