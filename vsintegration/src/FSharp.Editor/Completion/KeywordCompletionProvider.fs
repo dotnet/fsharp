@@ -10,9 +10,6 @@ open FSharp.Compiler.SourceCodeServices
 open System.Collections.Immutable
 
 type internal KeywordCompletionProvider(projectInfoManager: FSharpProjectOptionsManager) =
-
-    static let [<Literal>] IsKeywordPropName = "IsKeyword"
-
     let keywordCompletionItems =
         Keywords.KeywordsWithDescription
         |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorName keyword))
@@ -24,8 +21,7 @@ type internal KeywordCompletionProvider(projectInfoManager: FSharpProjectOptions
                 rules = CompletionItemRules.Default,
                 glyph = Nullable Glyph.Keyword,
                 description = ImmutableArray.Create(SymbolDisplayPart(SymbolDisplayPartKind.Text, null, description)),
-                sortText = sprintf "%06d" (1000000 + n))
-                .AddProperty(IsKeywordPropName, ""))
+                sortText = sprintf "%06d" (1000000 + n)))
 
     interface IFSharpCommonCompletionProvider with
         member _.ProvideCompletionsAsync(context) =
