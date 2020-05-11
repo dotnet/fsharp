@@ -1711,7 +1711,7 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
     let capturedNameResolutions = ()
     do ignore capturedNameResolutions // don't capture this!
 
-    member this.GetUsesOfSymbol item =
+    member __.GetUsesOfSymbol item =
         // This member returns what is potentially a very large array, which may approach the size constraints of the Large Object Heap.
         // This is unlikely in practice, though, because we filter down the set of all symbol uses to those specifically for the given `item`.
         // Consequently we have a much lesser chance of ending up with an array large enough to be promoted to the LOH.
@@ -1720,9 +1720,9 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
                 if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.Item) then
                     yield symbolUse |]
 
-    member this.AllUsesOfSymbols = allUsesOfSymbols
+    member __.AllUsesOfSymbols = allUsesOfSymbols
 
-    member this.GetFormatSpecifierLocationsAndArity() = formatSpecifierLocations
+    member __.GetFormatSpecifierLocationsAndArity() = formatSpecifierLocations
 
     static member Empty = TcSymbolUses(Unchecked.defaultof<_>, ResizeArray(), Array.empty)
 
@@ -1790,35 +1790,35 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
                 { SourceText = sourceText
                   LineStartPositions = positions })
 
-    member this.GetResolutions() =
+    member __.GetResolutions() =
         TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
 
-    member this.GetSymbolUses() =
+    member __.GetSymbolUses() =
         TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
 
-    member this.GetOpenDeclarations() =
-        capturedOpenDeclarations |> Seq.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) |> Seq.toArray
+    member __.GetOpenDeclarations() =
+        capturedOpenDeclarations.ToArray() |> Array.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace)
 
-    member this.GetFormatSpecifierLocations() =
+    member __.GetFormatSpecifierLocations() =
         capturedFormatSpecifierLocations.ToArray()
 
     interface ITypecheckResultsSink with
-        member sink.NotifyEnvWithScope(m, nenv, ad) =
+        member __.NotifyEnvWithScope(m, nenv, ad) =
             if allowedRange m then
                 capturedEnvs.Add((m, nenv, ad))
 
-        member sink.NotifyExprHasType(ty, nenv, ad, m) =
+        member __.NotifyExprHasType(ty, nenv, ad, m) =
             if allowedRange m then
                 capturedExprTypings.Add((ty, nenv, ad, m))
 
-        member sink.NotifyNameResolution(endPos, item, tpinst, occurenceType, nenv, ad, m, replace) =
+        member __.NotifyNameResolution(endPos, item, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
                 if replace then
                     remove m
                 elif not (isAlreadyDone endPos item m) then
                     capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
 
-        member sink.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
+        member __.NotifyMethodGroupNameResolution(endPos, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, replace) =
             if allowedRange m then
                 if replace then
                     remove m
@@ -1826,15 +1826,15 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
                     capturedNameResolutions.Add(CapturedNameResolution(item, tpinst, occurenceType, nenv, ad, m))
                     capturedMethodGroupResolutions.Add(CapturedNameResolution(itemMethodGroup, [], occurenceType, nenv, ad, m))
 
-        member sink.NotifyFormatSpecifierLocation(m, numArgs) =
+        member __.NotifyFormatSpecifierLocation(m, numArgs) =
             capturedFormatSpecifierLocations.Add((m, numArgs))
 
-        member sink.NotifyOpenDeclaration openDeclaration =
+        member __.NotifyOpenDeclaration openDeclaration =
             capturedOpenDeclarations.Add openDeclaration
 
-        member sink.CurrentSourceText = sourceText
+        member __.CurrentSourceText = sourceText
 
-        member sink.FormatStringCheckContext = formatStringCheckContext.Value
+        member __.FormatStringCheckContext = formatStringCheckContext.Value
 
 /// An abstract type for reporting the results of name resolution and type checking, and which allows
 /// temporary suspension and/or redirection of reporting.
