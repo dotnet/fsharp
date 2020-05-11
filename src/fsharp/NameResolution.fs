@@ -1708,9 +1708,6 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
         capturedNameResolutions
         |> ResizeArray.mapToSmallArrayChunks (fun cnr -> { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range })
 
-    let capturedNameResolutions = ()
-    do ignore capturedNameResolutions // don't capture this!
-
     member this.GetUsesOfSymbol item =
         // This member returns what is potentially a very large array, which may approach the size constraints of the Large Object Heap.
         // This is unlikely in practice, though, because we filter down the set of all symbol uses to those specifically for the given `item`.
