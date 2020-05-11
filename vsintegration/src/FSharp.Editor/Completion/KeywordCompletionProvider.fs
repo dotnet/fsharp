@@ -10,7 +10,7 @@ open FSharp.Compiler.SourceCodeServices
 open System.Collections.Immutable
 
 type internal KeywordCompletionProvider(projectInfoManager: FSharpProjectOptionsManager) =
-    let keywordCompletionItems =
+    static let keywordCompletionItems =
         Keywords.KeywordsWithDescription
         |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorName keyword))
         |> List.sortBy (fun (keyword, _) -> keyword)
