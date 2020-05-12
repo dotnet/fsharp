@@ -143,10 +143,10 @@ type internal FSharpCompletionProvider
 
             declarationItems |> Array.iteri (fun number declarationItem ->
                 let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declarationItem.Glyph, declarationItem.Accessibility)
-                let name =
+                let namespaceName =
                     match declarationItem.NamespaceToOpen with
-                    | Some namespaceToOpen -> sprintf "%s (open %s)" declarationItem.Name namespaceToOpen
-                    | _ -> declarationItem.Name
+                    | Some namespaceToOpen -> namespaceToOpen
+                    | _ -> null // Icky, but this is how roslyn handles it
                     
                 let filterText =
                     match declarationItem.NamespaceToOpen, declarationItem.Name.Split '.' with
@@ -157,8 +157,14 @@ type internal FSharpCompletionProvider
                     | _, idents -> Array.last idents
 
                 let completionItem = 
-                    FSharpCommonCompletionItem.Create(name, null, rules = getRules intellisenseOptions.ShowAfterCharIsTyped, glyph = Nullable glyph, filterText = filterText)
-                                        .AddProperty(FullNamePropName, declarationItem.FullName)
+                    FSharpCommonCompletionItem.Create(
+                        declarationItem.Name,
+                        null,
+                        rules = getRules intellisenseOptions.ShowAfterCharIsTyped,
+                        glyph = Nullable glyph,
+                        filterText = filterText,
+                        inlineDescription = namespaceName)
+                        .AddProperty(FullNamePropName, declarationItem.FullName)
                         
                 let completionItem =
                     match declarationItem.Kind with
@@ -167,7 +173,7 @@ type internal FSharpCompletionProvider
                     | _ -> completionItem
                 
                 let completionItem =
-                    if name <> declarationItem.NameInCode then
+                    if declarationItem.Name <> declarationItem.NameInCode then
                         completionItem.AddProperty(NameInCodePropName, declarationItem.NameInCode)
                     else completionItem
 
