@@ -155,7 +155,7 @@ type AsyncType() =
         ignoreSynchCtx (fun () ->
             let computation = Async.Sleep(System.Threading.Timeout.Infinite)
             let result = TaskCompletionSource()
-            use cts = new CancellationTokenSource(TimeSpan.FromSeconds(1.)) // there's a long way from 1 sec to infinity, but it'll have to do.
+            use cts = new CancellationTokenSource(TimeSpan.FromSeconds(1.0)) // there's a long way from 1 sec to infinity, but it'll have to do.
             Async.StartWithContinuations(computation,
                                             (fun _ -> result.TrySetResult("Ok")        |> ignore),
                                             (fun _ -> result.TrySetResult("Exception") |> ignore),
