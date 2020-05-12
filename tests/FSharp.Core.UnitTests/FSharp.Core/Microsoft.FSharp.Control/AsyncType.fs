@@ -93,10 +93,11 @@ type AsyncType() =
     [<TestCase("timespan")>]
     member this.AsyncSleepCancellation1(sleepType) =
         ignoreSynchCtx (fun () ->
-            let computation = match sleepType with
-                              | "int32"    -> Async.Sleep(10000000)
-                              | "timespan" -> Async.Sleep(10000000. |> TimeSpan.FromMilliseconds)
-                              | unknown    -> raise (NotImplementedException(unknown))
+            let computation =
+                match sleepType with
+                | "int32"    -> Async.Sleep(10000000)
+                | "timespan" -> Async.Sleep(10000000.0 |> TimeSpan.FromMilliseconds)
+                | unknown    -> raise (NotImplementedException(unknown))
             let result = ref ""
             use cts = new CancellationTokenSource()
             Async.StartWithContinuations(computation,
@@ -114,10 +115,11 @@ type AsyncType() =
     [<TestCase("timespan")>]
     member this.AsyncSleepCancellation2(sleepType) =
         ignoreSynchCtx (fun () ->
-            let computation = match sleepType with
-                              | "int32"    -> Async.Sleep(10)
-                              | "timespan" -> Async.Sleep(10. |> TimeSpan.FromMilliseconds)
-                              | unknown    -> raise (NotImplementedException(unknown))
+            let computation =
+                match sleepType with
+                | "int32"    -> Async.Sleep(10)
+                | "timespan" -> Async.Sleep(10.0 |> TimeSpan.FromMilliseconds)
+                | unknown    -> raise (NotImplementedException(unknown))
             for i in 1..100 do
                 let result = ref ""
                 use completedEvent = new ManualResetEvent(false)
@@ -141,7 +143,7 @@ type AsyncType() =
             try
                 do! match sleepType with
                     | "int32"    -> Async.Sleep(-100)
-                    | "timespan" -> Async.Sleep(-100. |> TimeSpan.FromMilliseconds)
+                    | "timespan" -> Async.Sleep(-100.0 |> TimeSpan.FromMilliseconds)
                     | unknown    -> raise (NotImplementedException(unknown))
                 failwith "Expected ArgumentOutOfRangeException"
             with

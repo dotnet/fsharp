@@ -1416,6 +1416,7 @@ namespace Microsoft.FSharp.Control
         static member Sleep (millisecondsDueTime: int32) : Async<unit> =
             Async.Sleep (millisecondsDueTime |> int64)
 
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         static member Sleep (dueTime: TimeSpan) =
             if dueTime < TimeSpan.Zero then
                 raise (ArgumentOutOfRangeException("dueTime"))
