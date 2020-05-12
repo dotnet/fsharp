@@ -250,7 +250,7 @@ let ``Values are successfully shadowed even with intermediate interactions`` () 
 let ``Creation of a simple bound value succeeds`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("x", 1)
+    let errors = fsiSession.AddBoundValue("x", 1)
     Assert.IsEmpty errors
 
     let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
@@ -263,7 +263,7 @@ let ``Creation of a simple bound value succeeds`` () =
 let ``Creation of a bound value succeeds with underscores in the identifier`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("x_y_z", 1)
+    let errors = fsiSession.AddBoundValue("x_y_z", 1)
     Assert.IsEmpty errors
 
     let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
@@ -274,7 +274,7 @@ let ``Creation of a bound value succeeds with underscores in the identifier`` ()
 let ``Creation of a bound value succeeds with tildes in the identifier`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("``hello world``", 1)
+    let errors = fsiSession.AddBoundValue("``hello world``", 1)
     Assert.IsEmpty errors
 
     let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
@@ -282,10 +282,29 @@ let ``Creation of a bound value succeeds with tildes in the identifier`` () =
     Assert.AreEqual("``hello world``", boundValue.Name)
 
 [<Test>]
+let ``Creation of a bound value succeeds with 'it' as the indentifier`` () =
+    use fsiSession = createFsiSession ()
+
+    fsiSession.EvalInteraction("\"test\"")
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual("it", boundValue.Name)
+    Assert.AreEqual(typeof<string>, boundValue.Value.ReflectionType)
+
+    let errors = fsiSession.AddBoundValue("it", 1)
+    Assert.IsEmpty errors
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual("it", boundValue.Name)
+    Assert.AreEqual(typeof<int>, boundValue.Value.ReflectionType)
+
+[<Test>]
 let ``Creation of a bound value succeeds with tildes in the identifier and with 'at' but has warning`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("``hello @ world``", 1)
+    let errors = fsiSession.AddBoundValue("``hello @ world``", 1)
     let error = errors |> Array.exactlyOne
 
     Assert.AreEqual(FSharpErrorSeverity.Warning, error.Severity)
@@ -299,7 +318,7 @@ let ``Creation of a bound value succeeds with tildes in the identifier and with 
 let ``Creation of a bound value fails if the name is not a valid identifier with 'at' in front`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("@x", 1)
+    let errors = fsiSession.AddBoundValue("@x", 1)
     let error = errors |> Array.exactlyOne
 
     Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
@@ -309,7 +328,7 @@ let ``Creation of a bound value fails if the name is not a valid identifier with
 let ``Creation of a bound value fails if the name is not a valid identifier with 'at' in back`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("x@", 1)
+    let errors = fsiSession.AddBoundValue("x@", 1)
     let error = errors |> Array.exactlyOne
 
     Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
@@ -319,7 +338,7 @@ let ``Creation of a bound value fails if the name is not a valid identifier with
 let ``Creation of a bound value fails if the name is null`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue(null, 1)
+    let errors = fsiSession.AddBoundValue(null, 1)
     let error = errors |> Array.exactlyOne
 
     Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
@@ -329,7 +348,7 @@ let ``Creation of a bound value fails if the name is null`` () =
 let ``Creation of a bound value fails if the name is empty`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("", 1)
+    let errors = fsiSession.AddBoundValue("", 1)
     let error = errors |> Array.exactlyOne
 
     Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
@@ -339,7 +358,7 @@ let ``Creation of a bound value fails if the name is empty`` () =
 let ``Creation of a bound value fails if the name is whitespace`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue(" ", 1)
+    let errors = fsiSession.AddBoundValue(" ", 1)
     let error = errors |> Array.exactlyOne
 
     Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
@@ -349,7 +368,7 @@ let ``Creation of a bound value fails if the name is whitespace`` () =
 let ``Creation of a bound value fails if the name contains spaces`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("x x", 1)
+    let errors = fsiSession.AddBoundValue("x x", 1)
     let error = errors |> Array.exactlyOne
 
     Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
@@ -359,7 +378,7 @@ let ``Creation of a bound value fails if the name contains spaces`` () =
 let ``Creation of a bound value fails if the name contains an operator at the end`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("x+", 1)
+    let errors = fsiSession.AddBoundValue("x+", 1)
     let error = errors |> Array.exactlyOne
 
     Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
@@ -369,7 +388,7 @@ let ``Creation of a bound value fails if the name contains an operator at the en
 let ``Creation of a bound value fails if the name contains an operator at the front`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("+x", 1)
+    let errors = fsiSession.AddBoundValue("+x", 1)
     let error = errors |> Array.exactlyOne
 
     Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
@@ -379,7 +398,7 @@ let ``Creation of a bound value fails if the name contains an operator at the fr
 let ``Creation of a bound value fails if the name contains dots`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("x.x", 1)
+    let errors = fsiSession.AddBoundValue("x.x", 1)
     let error = errors |> Array.exactlyOne
 
     Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
@@ -389,14 +408,14 @@ let ``Creation of a bound value fails if the name contains dots`` () =
 let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("x", { X = 1 })
+    let errors = fsiSession.AddBoundValue("x", { X = 1 })
     Assert.IsEmpty errors
 
 [<Test>]
 let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution, and then doing some evaluation`` () =
     use fsiSession = createFsiSession ()
 
-    let _, errors = fsiSession.AddBoundValue("x", { X = 1 })
+    let errors = fsiSession.AddBoundValue("x", { X = 1 })
     Assert.IsEmpty errors
 
     fsiSession.EvalInteraction("let y = { x with X = 5 }")

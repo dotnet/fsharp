@@ -2398,8 +2398,8 @@ type internal FsiInteractionProcessor
     member __.AddBoundValue(ctok, errorLogger, name, value: obj) =
         currState 
         |> InteractiveCatch errorLogger (fun istate -> 
-            fsiDynamicCompiler.AddBoundValue(ctok, errorLogger, istate, name, value), Completed None)
-        |> commitResult
+            fsiDynamicCompiler.AddBoundValue(ctok, errorLogger, istate, name, value), Completed None) |> fst
+        |> setCurrState
 
     member __.PartialAssemblySignatureUpdated = event.Publish
 
@@ -2931,7 +2931,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let errorOptions = TcConfig.Create(tcConfigB, validate = false).errorSeverityOptions
         let errorLogger = CompilationErrorLogger("AddBoundValue", errorOptions)
         fsiInteractionProcessor.AddBoundValue(ctok, errorLogger, name, reflectionValue)
-        |> commitResultNonThrowing errorOptions "input.fsx" errorLogger
+        let errs = errorLogger.GetErrors()
+        ErrorHelpers.CreateErrorInfos (errorOptions, true, "input.fsx", errs, true)
 
     /// Performs these steps:
     ///    - Load the dummy interaction, if any
