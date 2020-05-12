@@ -172,6 +172,9 @@ type internal IncrementalBuilder =
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: TimeStampCache * CompilationThreadToken -> DateTime
 
+      /// Does the given file exist in the builder's pipeline?
+      member ContainsFile: filename: string -> bool
+
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)

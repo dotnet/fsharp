@@ -172,7 +172,7 @@ module Scripting =
 
     let redirectToLog () = redirectTo System.Console.Out
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     let defaultPlatform = 
         match Environment.OSVersion.Platform, Environment.Is64BitOperatingSystem with 
         | PlatformID.MacOSX, true -> "osx.10.11-x64"

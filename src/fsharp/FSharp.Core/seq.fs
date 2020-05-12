@@ -254,7 +254,7 @@ namespace Microsoft.FSharp.Collections
                             setIndex 0
                             true
                         else
-                            if index = System.Int32.MaxValue then raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
+                            if index = System.Int32.MaxValue then invalidOp (SR.GetString(SR.enumerationPastIntMaxValue))
                             if index = finalIndex then
                                 false
                             else
@@ -391,7 +391,7 @@ namespace Microsoft.FSharp.Collections
                 member __.Current = 
                     match curr with 
                     | Some v -> v 
-                    | None -> raise <| System.InvalidOperationException (SR.GetString(SR.moveNextNotCalledOrFinished))
+                    | None -> invalidOp (SR.GetString(SR.moveNextNotCalledOrFinished))
 
             interface System.Collections.IEnumerator with
                 member x.Current = box (x :> IEnumerator<_>).Current

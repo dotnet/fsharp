@@ -136,6 +136,7 @@ module internal ExtensionTyping =
         member MakeArrayType: unit -> ProvidedType
         member MakeArrayType: rank: int -> ProvidedType
         member MakeGenericType: args: ProvidedType[] -> ProvidedType
+        member AsProvidedVar : name: string -> ProvidedVar
         static member Void : ProvidedType
         static member CreateNoContext : Type -> ProvidedType
         member TryGetILTypeRef : unit -> ILTypeRef option
@@ -243,7 +244,7 @@ module internal ExtensionTyping =
         ProvidedConstructorInfo = 
         inherit ProvidedMethodBase
       
-    type ProvidedExprType =
+    and ProvidedExprType =
         | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
 #if PROVIDED_ADDRESS_OF
         | ProvidedAddressOfExpr of ProvidedExpr
@@ -280,7 +281,6 @@ module internal ExtensionTyping =
         member Type : ProvidedType
         member Name : string
         member IsMutable : bool
-        static member Fresh : string * ProvidedType -> ProvidedVar
         override Equals : obj -> bool
         override GetHashCode : unit -> int
 
