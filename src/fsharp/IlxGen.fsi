@@ -104,6 +104,9 @@ type public IlxAssemblyGenerator =
     /// Invert the compilation of the given value and clear the storage of the value
     member ClearGeneratedValue: ExecutionContext * Val -> unit
 
+    /// Invert the compilation of the given value and set the storage of the value, even if it is immutable
+    member ForceSetGeneratedValue: ExecutionContext * Val * obj -> unit
+
     /// Invert the compilation of the given value and return its current dynamic value and its compiled System.Type
     member LookupGeneratedValue: ExecutionContext * Val -> (obj * System.Type) option
 
