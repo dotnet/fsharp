@@ -1871,6 +1871,8 @@ val mkCallDivisionOperator                   : TcGlobals -> range -> TType -> Ex
 
 val mkCallModulusOperator                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
+val mkCallDefaultOf                          : TcGlobals -> range -> TType -> Expr
+
 val mkCallBitwiseAndOperator                 : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 val mkCallBitwiseOrOperator                  : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
