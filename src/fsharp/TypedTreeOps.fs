@@ -6812,6 +6812,8 @@ let mkCallDivisionOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForInt
 
 let mkCallModulusOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_modulus_info, [[ty; ty; ty]], [e1;e2], m)
 
+let mkCallDefaultOf (g: TcGlobals) m ty = mkApps g (typedExprForIntrinsic g m g.unchecked_defaultof_info, [[ty]], [], m)
+
 let mkCallBitwiseAndOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_and_info, [[ty]], [e1;e2], m)
 
 let mkCallBitwiseOrOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_or_info, [[ty]], [e1;e2], m)
