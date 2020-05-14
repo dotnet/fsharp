@@ -1278,6 +1278,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.unchecked_unary_plus_info  = v_unchecked_unary_plus_info
   member __.unchecked_unary_minus_info = v_unchecked_unary_minus_info
   member __.unchecked_unary_not_info   = v_unchecked_unary_not_info
+  member __.unchecked_defaultof_info   = v_unchecked_defaultof_info
 
   member __.checked_addition_info      = v_checked_addition_info
   member __.checked_subtraction_info   = v_checked_subtraction_info
