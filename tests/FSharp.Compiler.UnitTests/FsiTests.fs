@@ -1,5 +1,7 @@
-﻿module FSharp.Compiler.UnitTests.FsiTests
+﻿[<NUnit.Framework.SingleThreaded>]
+module FSharp.Compiler.UnitTests.FsiTests
 
+open System
 open System.IO
 open FSharp.Compiler.Interactive.Shell
 open NUnit.Framework
@@ -403,6 +405,12 @@ let ``Creation of a bound value fails if the name contains dots`` () =
 
     Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
     Assert.AreEqual("Identifier expected", error.Message)
+
+[<Test>]
+let ``Creation of a bound value throws if the value passed is null`` () =
+    use fsiSession = createFsiSession ()
+
+    Assert.Throws<ArgumentNullException>(fun () -> fsiSession.AddBoundValue("x", null) |> ignore) |> ignore
 
 [<Test>]
 let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution`` () =

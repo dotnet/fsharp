@@ -2922,7 +2922,11 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     member __.TryFindBoundValue(name: string) =
         fsiDynamicCompiler.TryFindBoundValue(fsiInteractionProcessor.CurrentState, name)
 
-    member __.AddBoundValue(name: string, reflectionValue: obj) =
+    member __.AddBoundValue(name: string, value: obj) =
+        match value with
+        | null -> nullArg "value"
+        | _ -> ()
+
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
@@ -2930,7 +2934,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
         let errorOptions = TcConfig.Create(tcConfigB, validate = false).errorSeverityOptions
         let errorLogger = CompilationErrorLogger("AddBoundValue", errorOptions)
-        fsiInteractionProcessor.AddBoundValue(ctok, errorLogger, name, reflectionValue)
+        fsiInteractionProcessor.AddBoundValue(ctok, errorLogger, name, value)
         let errs = errorLogger.GetErrors()
         ErrorHelpers.CreateErrorInfos (errorOptions, true, "input.fsx", errs, true)
 
