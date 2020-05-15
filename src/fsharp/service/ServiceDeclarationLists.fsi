@@ -20,14 +20,6 @@ type public FSharpDeclarationListItem =
     /// Get the name for the declaration as it's presented in source code.
     member NameInCode : string
 
-    /// Get the description text for the declaration. Computing this property may require using compiler
-    /// resources and may trigger execution of a type provider method to retrieve documentation.
-    ///
-    /// May return "Loading..." if timeout occurs
-    member StructuredDescriptionText : FSharpStructuredToolTipText
-
-    member DescriptionText : FSharpToolTipText
-
     /// Get the description text, asynchronously.  Never returns "Loading...".
     member StructuredDescriptionTextAsync : Async<FSharpStructuredToolTipText>
 
