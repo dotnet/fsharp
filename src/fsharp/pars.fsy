@@ -3050,7 +3050,7 @@ atomicPattern:
 
   | atomicPatternLongIdent %prec prec_atompat_pathop 
       { let vis, lidwd = $1 
-        if not (isNilOrSingleton lidwd.Lid) || (let c = (List.head lidwd.Lid).idText.[0] in String.isUpperCaseCharacter c)
+        if not (isNilOrSingleton lidwd.Lid) || String.isLeadingIdentifierCharacterUpperCase (List.head lidwd.Lid).idText
         then mkSynPatMaybeVar lidwd vis (lhs parseState)
         else mkSynPatVar vis (List.head lidwd.Lid) }
 
@@ -5291,7 +5291,7 @@ operatorName:
 /* One part of an active pattern name */
 activePatternCaseName: 
   | IDENT
-     { if not (String.startsWithUpperCaseCharacter _1) then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsActivePatternCaseMustBeginWithUpperCase());  
+     { if not (String.isLeadingIdentifierCharacterUpperCase _1) then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsActivePatternCaseMustBeginWithUpperCase());  
        if ($1.IndexOf('|') <> -1) then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsActivePatternCaseContainsPipe());  
        $1 }
 

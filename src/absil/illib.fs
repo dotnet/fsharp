@@ -506,15 +506,14 @@ module String =
     // Scripts that distinguish between upper and lower case (bicameral) DU Discriminators and Active Pattern identifiers are required to start with an upper case character.
     // For valid identifiers where the case of the identifier can not be determined because there is no upper and lower case we will allow DU Discriminators and upper case characters 
     // to be used.  This means that developers using unicameral scripts such as hindi, are not required to prefix these identifiers with an Upper case latin character. 
-    // '_' is a special case'  It is a valid identifier char, it disables definite assignment checks.  And it is neither upper or lower cased.
-    let isUpperCaseCharacter c =
-        // if IsUpper and IsLower return the same value, then we can't tell if it's upper or lower case, so it is a case insensensitive language
-        // thusly the char must be good.
-        if Char.IsUpper c = Char.IsLower c then (c <> '_')
-        else Char.IsUpper c
+    //
+    let isLeadingIdentifierCharacterUpperCase (s:string) =
+        let isUpperCaseCharacter c =
+            // if IsUpper and IsLower return the same value, then we can't tell if it's upper or lower case, so ensure it is a letter
+            // otherwise it is bicameral, so must be upper case
+            if Char.IsUpper c = Char.IsLower c then Char.IsLetter c
+            else Char.IsUpper c
 
-    let startsWithUpperCaseCharacter (s:string) =
-        let s = s.Trim('`')
         s.Length >= 1 && isUpperCaseCharacter s.[0]
 
     let capitalize (s: string) =
