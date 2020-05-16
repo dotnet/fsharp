@@ -192,7 +192,7 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if every result from
         /// <c>chooser</c> is <c>ValueNone</c>.</exception>
         /// <returns>The first result.</returns>
-        [<CompiledName("PickV";Experimental(ExperimentalAttributeMessages.RequiresPreview))>]
+        [<CompiledName("PickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val pickV: chooser:('T -> 'U voption) -> array:'T[] -> 'U 
 
         /// <summary>Applies the given function to each element of the array. Returns
