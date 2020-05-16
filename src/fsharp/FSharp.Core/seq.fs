@@ -514,7 +514,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Unfold")>]
         let unfold generator state = mkUnfoldSeq generator state
         
-        [<CompiledName("UnfoldV")>]
+        [<CompiledName("UnfoldV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let unfoldV generator state = mkUnfoldVSeq generator state
 
         [<CompiledName("Empty")>]
@@ -660,7 +660,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             revamp (IEnumerator.choose chooser) source
             
-        [<CompiledName("ChooseV")>]
+        [<CompiledName("ChooseV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let chooseV chooser source =
             checkNonNull "source" source
             revamp (IEnumerator.chooseV chooser) source
@@ -697,7 +697,7 @@ namespace Microsoft.FSharp.Collections
                 res <- chooser e.Current
             res
             
-        [<CompiledName("TryPickV")>]
+        [<CompiledName("TryPickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let tryPickV chooser (source : seq<'T>) =
             checkNonNull "source" source
             use e = source.GetEnumerator()

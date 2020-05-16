@@ -162,7 +162,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Choose")>]
         let choose chooser list = Microsoft.FSharp.Primitives.Basics.List.choose chooser list
         
-        [<CompiledName("ChooseV")>]
+        [<CompiledName("ChooseV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let chooseV chooser list = Microsoft.FSharp.Primitives.Basics.List.chooseV chooser list
 
         [<CompiledName("SplitAt")>]
@@ -414,7 +414,7 @@ namespace Microsoft.FSharp.Collections
                 | None -> tryPick chooser t
                 | r -> r
                 
-        [<CompiledName("TryPickV")>]
+        [<CompiledName("TryPickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let rec tryPickV chooser list =
             match list with
             | [] -> ValueNone
@@ -432,7 +432,7 @@ namespace Microsoft.FSharp.Collections
                 | None -> pick chooser t
                 | Some r -> r
                 
-        [<CompiledName("PickV")>]
+        [<CompiledName("PickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let rec pickV chooser list =
             match list with
             | [] -> indexNotFound()
@@ -722,5 +722,5 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Unfold")>]
         let unfold<'T, 'State> (generator:'State -> ('T*'State) option) (state:'State) = Microsoft.FSharp.Primitives.Basics.List.unfold generator state
         
-        [<CompiledName("UnfoldV")>]
+        [<CompiledName("UnfoldV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let unfoldV<'T, 'State> (generator:'State -> ('T*'State) voption) (state:'State) = Microsoft.FSharp.Primitives.Basics.List.unfoldV generator state

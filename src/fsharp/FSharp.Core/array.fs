@@ -465,7 +465,7 @@ namespace Microsoft.FSharp.Collections
                     | Some res -> res
             loop 0 
             
-        [<CompiledName("PickV")>]
+        [<CompiledName("PickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let pickV chooser (array: _[]) = 
             checkNonNull "array" array
             let rec loop i = 
@@ -487,7 +487,7 @@ namespace Microsoft.FSharp.Collections
                 | res -> res
             loop 0 
             
-        [<CompiledName("TryPickV")>]
+        [<CompiledName("TryPickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let tryPickV chooser (array: _[]) = 
             checkNonNull "array" array
             let rec loop i = 
@@ -544,7 +544,7 @@ namespace Microsoft.FSharp.Collections
             else
                 empty
                 
-        [<CompiledName("ChooseV")>]
+        [<CompiledName("ChooseV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let chooseV (chooser: 'T -> 'U ValueOption) (array: 'T[]) =             
             checkNonNull "array" array                    
             
@@ -934,7 +934,7 @@ namespace Microsoft.FSharp.Collections
             loop state
             res.ToArray()
             
-        [<CompiledName("UnfoldV")>]
+        [<CompiledName("UnfoldV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let unfoldV<'T, 'State> (generator: 'State -> ('T*'State) voption) (state: 'State) =
             let res = ResizeArray<_>()
             let rec loop state =

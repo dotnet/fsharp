@@ -38,7 +38,7 @@ namespace Microsoft.FSharp.Control
             sourceEvent.Add(fun x -> match chooser x with None -> () | Some r -> ev.Trigger r)
             ev.Publish
             
-        [<CompiledName("ChooseV")>]
+        [<CompiledName("ChooseV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let chooseV chooser (sourceEvent: IEvent<'Delegate,'T>) =
             let ev = new Event<_>() 
             sourceEvent.Add(fun x -> match chooser x with ValueNone -> () | ValueSome r -> ev.Trigger r)

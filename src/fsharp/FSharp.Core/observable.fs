@@ -71,7 +71,7 @@ namespace Microsoft.FSharp.Control
 
                              member x.Completed() = observer.OnCompleted() } }
                              
-        [<CompiledName("ChooseV")>]
+        [<CompiledName("ChooseV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let chooseV chooser (source: IObservable<'T>) =
             { new IObservable<'U> with 
                  member x.Subscribe(observer) =

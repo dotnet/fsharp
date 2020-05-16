@@ -776,7 +776,7 @@ module Map =
     let tryPick chooser (table: Map<_, _>) =
         table.TryPick chooser
         
-    [<CompiledName("TryPickV")>]
+    [<CompiledName("TryPickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
     let tryPickV chooser (table: Map<_, _>) =
         table.TryPickV chooser
 
@@ -786,7 +786,7 @@ module Map =
         | None -> raise (KeyNotFoundException())
         | Some res -> res
         
-    [<CompiledName("PickV")>]
+    [<CompiledName("PickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
     let pickV chooser (table: Map<_, _>) =
         match tryPickV chooser table with
         | ValueNone -> raise (KeyNotFoundException())
