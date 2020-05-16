@@ -538,6 +538,7 @@ Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Mic
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] AwaitTask(System.Threading.Tasks.Task)
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] Ignore[T](Microsoft.FSharp.Control.FSharpAsync`1[T])
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] Sleep(Int32)
+Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] Sleep(System.TimeSpan)
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] SwitchToContext(System.Threading.SynchronizationContext)
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] SwitchToNewThread()
 Microsoft.FSharp.Control.FSharpAsync: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] SwitchToThreadPool()
