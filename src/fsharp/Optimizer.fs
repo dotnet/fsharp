@@ -2901,6 +2901,54 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
                    MightMakeCriticalTailcall = mayBeCriticalTailcall
                    Info=ValueOfExpr newExpr }
 
+and TryApplicationToLambda (v: Val) cenv env topValInfo (f, fty, tyargs, args: Exprs, m) ety =
+    let g = cenv.g
+
+    match f with
+    // For partial applications, try to wrap it in a lambda as they have better optimization strategies.
+    | Expr.Val (vref, _, _) when not v.IsCompiledAsTopLevel && not v.IsMutable && not vref.IsMutable && 
+                                 not vref.IsTypeFunction && isFunTy g ety ->
+        match vref.ValReprInfo with
+        | Some valInfo ->
+            // We check the number of curried arguments with the applied arguments to ensure that it's safe to turn
+            //     this app expr into a lambda one.
+            // Example:
+            (*
+                let test a b c d e f g : int -> unit =
+                    printfn "hello"
+                    System.Console.WriteLine
+
+                let test2 a b c d e f g xs =
+                    let action = test a b c d e f g
+                    printfn "world"
+                    xs |> Array.iter action
+            *)
+            // In the example, we should not make a lambda around "test" in "test2" because "test" is fully applied but returns
+            //     a partial application.
+
+            // The currently passed arguments must not have any effects.
+            let argTys, retTy = stripFunTy g ety
+            if valInfo.NumCurriedArgs = args.Length + argTys.Length && not (ExprsHaveEffect g args) then
+                let remainingArgs, remainingArgExprs = 
+                    argTys
+                    |> List.mapi (fun i argTy -> mkCompGenLocal m ("arg" + string i) argTy)
+                    |> List.unzip
+
+                let argsR = args @ remainingArgExprs
+
+                let f1 =
+                    let appExpr = primMkApp (f, fty) tyargs argsR m
+                    mkLambdas m [] remainingArgs (appExpr, retTy)
+
+                OptimizeLambdas (Some v) cenv env topValInfo f1 ety
+                |> Some
+            else
+                None
+        | _ ->
+            None
+    | _ ->
+        None
+
 /// Optimize/analyze a lambda expression
 and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety = 
     match e with 
@@ -2968,6 +3016,14 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
                  HasEffect=false
                  MightMakeCriticalTailcall = false
                  Info= valu }
+    | Expr.App (f, fty, tyargs, argsl, m) -> 
+        match vspec with
+        | Some v ->
+            match TryApplicationToLambda v cenv env topValInfo (f, fty, tyargs, argsl, m) ety with
+            | Some res -> res
+            | _ -> OptimizeExpr cenv env e 
+        | _ ->
+            OptimizeExpr cenv env e 
     | _ -> OptimizeExpr cenv env e 
       
 /// Recursive calls that first try to make an expression "fit" the a shape
