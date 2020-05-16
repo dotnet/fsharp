@@ -156,7 +156,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="chooser">The function to generate options from the key/value pairs.</param>
         /// <param name="table">The input map.</param>
         /// <returns>The first result.</returns>
-        [<CompiledName("TryPickV")>]
+        [<CompiledName("TryPickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val tryPickV: chooser:('Key -> 'T -> 'U voption) -> table:Map<'Key,'T> -> 'U voption
 
         /// <summary>Searches the map looking for the first element where the given function returns a <c>Some</c> value</summary>
@@ -170,7 +170,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="chooser">The function to generate options from the key/value pairs.</param>
         /// <param name="table">The input map.</param>
         /// <returns>The first result.</returns>
-        [<CompiledName("PickV")>]
+        [<CompiledName("PickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val pickV: chooser:('Key -> 'T -> 'U voption) -> table:Map<'Key,'T> -> 'U 
 
         /// <summary>Folds over the bindings in the map.</summary>

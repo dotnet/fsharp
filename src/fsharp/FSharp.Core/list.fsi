@@ -67,7 +67,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="chooser">The function to generate options from the elements.</param>
         /// <param name="list">The input list.</param>
         /// <returns>The list comprising the values selected from the chooser function.</returns>
-        [<CompiledName("ChooseV")>]
+        [<CompiledName("ChooseV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val chooseV: chooser:('T -> 'U voption) -> list:'T list -> 'U list
 
         /// <summary>Divides the input list into chunks of size at most <c>chunkSize</c>.</summary>
@@ -592,7 +592,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="list">The input list.</param>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown when the list is empty.</exception>
         /// <returns>The first resulting value.</returns>
-        [<CompiledName("PickV")>]
+        [<CompiledName("PickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val pickV: chooser:('T -> 'U voption) -> list:'T list -> 'U
 
         /// <summary>Returns a list with all elements permuted according to the
@@ -839,7 +839,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="chooser">The function to generate options from the elements.</param>
         /// <param name="list">The input list.</param>
         /// <returns>The first resulting value or ValueNone.</returns>
-        [<CompiledName("TryPickV")>]
+        [<CompiledName("TryPickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val tryPickV: chooser:('T -> 'U voption) -> list:'T list -> 'U voption
 
         /// <summary>Returns the first element for which the given function returns True.
@@ -903,7 +903,7 @@ namespace Microsoft.FSharp.Collections
         /// element of the list and the next state value.</param>
         /// <param name="state">The initial state value.</param>
         /// <returns>The result list.</returns>
-        [<CompiledName("UnfoldV")>]
+        [<CompiledName("UnfoldV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val unfoldV<'T,'State> : generator:('State -> ('T * 'State) voption) -> state:'State -> 'T list
 
         /// <summary>Splits a list of pairs into two lists.</summary>

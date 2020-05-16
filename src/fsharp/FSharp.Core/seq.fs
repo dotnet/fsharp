@@ -713,7 +713,7 @@ namespace Microsoft.FSharp.Collections
             | None -> indexNotFound()
             | Some x -> x
             
-        [<CompiledName("PickV")>]
+        [<CompiledName("PickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let pickV chooser source =
             checkNonNull "source" source
             match tryPickV chooser source with

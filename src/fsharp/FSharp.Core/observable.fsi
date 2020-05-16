@@ -94,7 +94,7 @@ namespace Microsoft.FSharp.Control
         /// and ValueNone for observations to ignore.</param>
         /// <param name="source">The input Observable.</param>
         /// <returns>An Observable that only propagates some of the observations from the source.</returns>
-        [<CompiledName("ChooseV")>]
+        [<CompiledName("ChooseV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val chooseV: chooser:('T -> 'U voption) -> source:IObservable<'T> -> IObservable<'U>
 
         /// <summary>Returns an observable which, for each observer, allocates an item of state

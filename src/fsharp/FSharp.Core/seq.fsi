@@ -151,7 +151,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The result sequence.</returns>
         /// 
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        [<CompiledName("ChooseV")>]
+        [<CompiledName("ChooseV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val chooseV: chooser:('T -> 'U voption) -> source:seq<'T> -> seq<'U>
 
         /// <summary>Divides the input sequence into chunks of size at most <c>chunkSize</c>.</summary>
@@ -957,7 +957,7 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown when every item of the sequence
         /// evaluates to <c>None</c> when the given function is applied.</exception>
-        [<CompiledName("PickV")>]
+        [<CompiledName("PickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val pickV: chooser:('T -> 'U voption) -> source:seq<'T> -> 'U 
 
         /// <summary>Builds a new sequence object that delegates to the given sequence object. This ensures 
@@ -1326,7 +1326,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The chosen element or <c>ValueNone</c>.</returns>
         ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        [<CompiledName("TryPickV")>]
+        [<CompiledName("TryPickV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val tryPickV: chooser:('T -> 'U voption) -> source:seq<'T> -> 'U voption
 
         /// <summary>Returns the transpose of the given sequence of sequences.</summary>
@@ -1385,7 +1385,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="state">The initial state value.</param>
         ///
         /// <returns>The result sequence.</returns>
-        [<CompiledName("UnfoldV")>]
+        [<CompiledName("UnfoldV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val unfoldV   : generator:('State -> ('T * 'State) voption) -> state:'State -> seq<'T>
 
         /// <summary>Returns a sequence that yields sliding windows containing elements drawn from the input

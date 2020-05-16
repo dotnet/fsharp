@@ -64,7 +64,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="chooser">The function to select and transform event values to pass on.</param>
         /// <param name="sourceEvent">The input event.</param>
         /// <returns>An event that fires only when the chooser returns ValueSome.</returns>
-        [<CompiledName("ChooseV")>]
+        [<CompiledName("ChooseV");Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         val chooseV: chooser:('T -> 'U voption) -> sourceEvent:IEvent<'Del,'T> -> IEvent<'U>
 
         [<CompiledName("Scan")>]
