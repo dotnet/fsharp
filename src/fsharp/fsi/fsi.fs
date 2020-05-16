@@ -579,8 +579,6 @@ let internal directoryName (s:string) =
         | res -> if res = "" then "." else res
 
 
-
-
 //----------------------------------------------------------------------------
 // cmd line - state for options
 //----------------------------------------------------------------------------
@@ -618,14 +616,20 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
             let getFsiCommandLine () =
                 let fileNameWithoutExtension path = Path.GetFileNameWithoutExtension(path)
 
-                let currentProcess = System.Diagnostics.Process.GetCurrentProcess()
+                let currentProcess = Process.GetCurrentProcess()
                 let processFileName = fileNameWithoutExtension currentProcess.MainModule.FileName
 
                 let commandLineExecutableFileName =
-                    try fileNameWithoutExtension (System.Environment.GetCommandLineArgs().[0])
+                    try fileNameWithoutExtension (Environment.GetCommandLineArgs().[0])
                     with _ -> ""
 
-                if processFileName = commandLineExecutableFileName
+                let stringComparison =
+                    match Environment.OSVersion.Platform with
+                    | PlatformID.MacOSX
+                    | PlatformID.Unix -> StringComparison.Ordinal
+                    | _ -> StringComparison.OrdinalIgnoreCase
+                
+                if String.Compare(processFileName, commandLineExecutableFileName, stringComparison) = 0
                 then processFileName
                 else sprintf "%s %s" processFileName commandLineExecutableFileName
 
