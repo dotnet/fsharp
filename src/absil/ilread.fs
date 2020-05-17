@@ -1070,7 +1070,7 @@ let seekReadCustomAttributeRow (ctxt: ILMetadataReader) idx =
     let parentIdx = seekReadHasCustomAttributeIdx ctxt mdv &addr
     let typeIdx = seekReadCustomAttributeTypeIdx ctxt mdv &addr
     let valIdx = seekReadBlobIdx ctxt mdv &addr
-    (parentIdx, typeIdx, valIdx)  
+    struct (parentIdx, typeIdx, valIdx)  
 
 /// Read Table FieldMarshal.
 let seekReadFieldMarshalRow (ctxt: ILMetadataReader) mdv idx = 
@@ -2354,10 +2354,10 @@ and customAttrsReader ctxtH tag: ILAttributesStored =
       (fun idx -> 
           let (ctxt: ILMetadataReader) = getHole ctxtH
           seekReadIndexedRows (ctxt.getNumRows TableNames.CustomAttribute, 
-                                  seekReadCustomAttributeRow ctxt, (fun (a, _, _) -> a), 
+                                  seekReadCustomAttributeRow ctxt, (fun struct (a, _, _) -> a), 
                                   hcaCompare (TaggedIndex(tag,idx)), 
                                   isSorted ctxt TableNames.CustomAttribute, 
-                                  (fun (_, b, c) -> seekReadCustomAttr ctxt (b, c)))
+                                  (fun struct (_, b, c) -> seekReadCustomAttr ctxt (b, c)))
           |> List.toArray)
 
 and seekReadCustomAttr ctxt (TaggedIndex(cat, idx), b) = 
