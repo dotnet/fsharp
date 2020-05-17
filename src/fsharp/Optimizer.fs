@@ -2906,7 +2906,8 @@ and TryApplicationToLambda (v: Val) cenv env topValInfo (f, fty, tyargs, args: E
 
     match f with
     // For partial applications, try to wrap it in a lambda as they have better optimization strategies.
-    | Expr.Val (vref, _, _) when not v.IsCompiledAsTopLevel && not v.IsMutable && not vref.IsMutable && 
+    | Expr.Val (vref, _, _) when cenv.settings.localOpt() && not v.IsCompiledAsTopLevel && 
+                                 not v.IsMutable && not vref.IsMutable && 
                                  not vref.IsTypeFunction && isFunTy g ety ->
         match vref.ValReprInfo with
         | Some valInfo ->
