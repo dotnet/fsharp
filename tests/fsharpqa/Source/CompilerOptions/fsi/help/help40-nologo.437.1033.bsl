@@ -1,5 +1,5 @@
 
-Usage: fsi.exe <options> [script.fsx [<arguments>]]
+Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 
 
 		- INPUT FILES -
