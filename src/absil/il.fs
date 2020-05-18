@@ -1957,19 +1957,14 @@ type ILTypeDefKind =
 let typeKindOfFlags nm _mdefs _fdefs (super: ILType option) flags =
     if (flags &&& 0x00000020) <> 0x0 then ILTypeDefKind.Interface
     else
-         let isEnum, isDelegate, isMulticastDelegate, isValueType =
-            match super with
-            | None -> false, false, false, false
-            | Some ty ->
-                ty.TypeSpec.Name = "System.Enum",
-                ty.TypeSpec.Name = "System.Delegate",
-                ty.TypeSpec.Name = "System.MulticastDelegate",
-                ty.TypeSpec.Name = "System.ValueType" && nm <> "System.Enum"
-         let selfIsMulticastDelegate = nm = "System.MulticastDelegate"
-         if isEnum then ILTypeDefKind.Enum
-         elif (isDelegate && not selfIsMulticastDelegate) || isMulticastDelegate then ILTypeDefKind.Delegate
-         elif isValueType then ILTypeDefKind.ValueType
-         else ILTypeDefKind.Class
+        match super with
+        | None -> ILTypeDefKind.Class
+        | Some ty ->
+            let name = ty.TypeSpec.Name
+            if name = "System.Enum" then ILTypeDefKind.Enum
+            elif (name = "System.Delegate" && nm <> "System.MulticastDelegate") || name = "System.MulticastDelegate" then ILTypeDefKind.Delegate
+            elif name = "System.ValueType" && nm <> "System.Enum" then ILTypeDefKind.ValueType
+            else ILTypeDefKind.Class
 
 let convertTypeAccessFlags access =
     match access with
