@@ -1550,11 +1550,10 @@ and readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx) =
 
 and seekReadTypeDefRowExtents (ctxt: ILMetadataReader) _info (idx: int) =
     if idx >= ctxt.getNumRows TableNames.TypeDef then 
-        ctxt.getNumRows TableNames.Field + 1, 
-        ctxt.getNumRows TableNames.Method + 1
+        struct (ctxt.getNumRows TableNames.Field + 1, ctxt.getNumRows TableNames.Method + 1)
     else
         let (_, _, _, _, fieldsIdx, methodsIdx) = seekReadTypeDefRow ctxt (idx + 1)
-        fieldsIdx, methodsIdx 
+        struct (fieldsIdx, methodsIdx )
 
 and seekReadTypeDefRowWithExtents ctxt (idx: int) =
     let info= seekReadTypeDefRow ctxt idx
@@ -1578,7 +1577,7 @@ and typeDefReader ctxtH: ILTypeDefStored =
 
            let ((flags, nameIdx, namespaceIdx, extendsIdx, fieldsIdx, methodsIdx) as info) = seekReadTypeDefRow ctxt idx
            let nm = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
-           let (endFieldsIdx, endMethodsIdx) = seekReadTypeDefRowExtents ctxt info idx
+           let struct (endFieldsIdx, endMethodsIdx) = seekReadTypeDefRowExtents ctxt info idx
            let typars = seekReadGenericParams ctxt 0 (tomd_TypeDef, idx)
            let numtypars = typars.Length
            let super = seekReadOptionalTypeDefOrRef ctxt numtypars AsObject extendsIdx
