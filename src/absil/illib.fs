@@ -511,8 +511,9 @@ module String =
         let isUpperCaseCharacter c =
             // if IsUpper and IsLower return the same value, then we can't tell if it's upper or lower case, so ensure it is a letter
             // otherwise it is bicameral, so must be upper case
-            if Char.IsUpper c = Char.IsLower c then Char.IsLetter c
-            else Char.IsUpper c
+            let isUpper = Char.IsUpper c
+            if isUpper = Char.IsLower c then Char.IsLetter c
+            else isUpper
 
         s.Length >= 1 && isUpperCaseCharacter s.[0]
 
