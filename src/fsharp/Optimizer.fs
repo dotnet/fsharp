@@ -2929,7 +2929,6 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
         let env = BindTypeVarsToUnknown tps env
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
-        let env = BindInternalValsToUnknown cenv (Option.toList baseValOpt) env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
         let exprR = mkMemberLambdas m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyty)
         let arities = vsl.Length
