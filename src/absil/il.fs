@@ -1954,7 +1954,7 @@ type ILTypeDefKind =
     | Enum
     | Delegate
 
-let typeKindOfFlags nm _mdefs _fdefs (super: ILType option) flags =
+let typeKindOfFlags nm (super: ILType option) flags =
     if (flags &&& 0x00000020) <> 0x0 then ILTypeDefKind.Interface
     else
         match super with
@@ -2066,11 +2066,11 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
-    member x.IsClass = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Class
-    member x.IsStruct = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.ValueType
-    member x.IsInterface = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Interface
-    member x.IsEnum = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Enum
-    member x.IsDelegate = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Delegate
+    member x.IsClass = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Class
+    member x.IsStruct = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.ValueType
+    member x.IsInterface = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Interface
+    member x.IsEnum = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Enum
+    member x.IsDelegate = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Delegate
     member x.Access = typeAccessOfFlags (int x.Attributes)
     member x.IsAbstract = x.Attributes &&& TypeAttributes.Abstract <> enum 0
     member x.IsSealed = x.Attributes &&& TypeAttributes.Sealed <> enum 0
