@@ -1508,50 +1508,58 @@ type internal FsiDynamicCompiler
             None
 
     member __.AddBoundValue (ctok, errorLogger: ErrorLogger, istate, name: string, value: obj) =
-        if String.IsNullOrWhiteSpace name then
-            errorLogger.Error(Error(FSComp.SR.parsIdentifierExpected(), range0))
+        try
+            match value with
+            | null -> nullArg "value"
+            | _ -> ()
 
-        // Verify that the name is a valid identifier for a value.
-        SourceCodeServices.Lexer.FSharpLexer.Lex(SourceText.ofString name, 
-            let mutable foundOne = false
-            fun t -> 
-                if not t.IsIdentifier || foundOne then
-                    errorLogger.Error(Error(FSComp.SR.parsIdentifierExpected(), range0))
-                foundOne <- true)
+            if String.IsNullOrWhiteSpace name then
+                invalidArg "name" "Name cannot be null or white-space."
 
-        if PrettyNaming.IsCompilerGeneratedName name then
-            errorLogger.Warning(Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved(), range0))
+            // Verify that the name is a valid identifier for a value.
+            SourceCodeServices.Lexer.FSharpLexer.Lex(SourceText.ofString name, 
+                let mutable foundOne = false
+                fun t -> 
+                    if not t.IsIdentifier || foundOne then
+                        invalidArg "name" "Name is not a valid identifier."
+                    foundOne <- true)
 
-        let amap = istate.tcImports.GetImportMap()
-        let ty = importReflectionType amap (value.GetType())
+            if PrettyNaming.IsCompilerGeneratedName name then
+                invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved() |> snd)
 
-        let i = nextFragmentId()
-        let prefix = mkFragmentPath i
-        let prefixPath = pathOfLid prefix
-        let qualifiedName = ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath)
+            let amap = istate.tcImports.GetImportMap()
+            let ty = importReflectionType amap (value.GetType())
 
-        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
+            let i = nextFragmentId()
+            let prefix = mkFragmentPath i
+            let prefixPath = pathOfLid prefix
+            let qualifiedName = ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath)
 
-        // Build a simple module with a single 'let' decl with a default value.
-        let moduleOrNamespace, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
-        let tcEnvAtEndOfLastInput = 
-            TypeChecker.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
-            |> TypeChecker.AddLocalVal TcResultsSink.NoSink range0 v
+            let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
-        // Generate IL for the given typled impl and create new interactive state.
-        let ilxGenerator = istate.ilxGenerator
-        let isIncrementalFragment = true
-        let showTypes = false
-        let declaredImpls = [impl]
-        let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, istate.optEnv, istate.tcState, tcConfig, false, EmptyTopAttrs, prefix, isIncrementalFragment, declaredImpls, ilxGenerator)
-        let istate, declaredImpls = ProcessCodegenResults(ctok, errorLogger, istate, optEnv, istate.tcState, tcConfig, prefix, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults)
-        let newState = { istate with tcState = istate.tcState.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput }
+            // Build a simple module with a single 'let' decl with a default value.
+            let moduleOrNamespace, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
+            let tcEnvAtEndOfLastInput = 
+                TypeChecker.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
+                |> TypeChecker.AddLocalVal TcResultsSink.NoSink range0 v
 
-        // Force set the val with the given value obj.
-        let ctxt = valuePrinter.GetEvaluationContext(newState.emEnv)
-        ilxGenerator.ForceSetGeneratedValue(ctxt, v, value)
+            // Generate IL for the given typled impl and create new interactive state.
+            let ilxGenerator = istate.ilxGenerator
+            let isIncrementalFragment = true
+            let showTypes = false
+            let declaredImpls = [impl]
+            let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, istate.optEnv, istate.tcState, tcConfig, false, EmptyTopAttrs, prefix, isIncrementalFragment, declaredImpls, ilxGenerator)
+            let istate, declaredImpls = ProcessCodegenResults(ctok, errorLogger, istate, optEnv, istate.tcState, tcConfig, prefix, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults)
+            let newState = { istate with tcState = istate.tcState.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput }
 
-        fst (processContents newState declaredImpls)
+            // Force set the val with the given value obj.
+            let ctxt = valuePrinter.GetEvaluationContext(newState.emEnv)
+            ilxGenerator.ForceSetGeneratedValue(ctxt, v, value)
+
+            processContents newState declaredImpls
+        with
+        | ex ->
+            istate, CompletedWithReportedError(StopProcessingExn(Some ex))
     
     member __.GetInitialInteractiveState () =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
@@ -2412,8 +2420,8 @@ type internal FsiInteractionProcessor
     member __.AddBoundValue(ctok, errorLogger, name, value: obj) =
         currState 
         |> InteractiveCatch errorLogger (fun istate -> 
-            fsiDynamicCompiler.AddBoundValue(ctok, errorLogger, istate, name, value), Completed None) |> fst
-        |> setCurrState
+            fsiDynamicCompiler.AddBoundValue(ctok, errorLogger, istate, name, value))
+        |> commitResult
 
     member __.PartialAssemblySignatureUpdated = event.Publish
 
@@ -2937,20 +2945,14 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiDynamicCompiler.TryFindBoundValue(fsiInteractionProcessor.CurrentState, name)
 
     member __.AddBoundValue(name: string, value: obj) =
-        match value with
-        | null -> nullArg "value"
-        | _ -> ()
-
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        let errorOptions = TcConfig.Create(tcConfigB, validate = false).errorSeverityOptions
-        let errorLogger = CompilationErrorLogger("AddBoundValue", errorOptions)
         fsiInteractionProcessor.AddBoundValue(ctok, errorLogger, name, value)
-        let errs = errorLogger.GetErrors()
-        ErrorHelpers.CreateErrorInfos (errorOptions, true, "input.fsx", errs, true)
+        |> commitResult
+        |> ignore
 
     /// Performs these steps:
     ///    - Load the dummy interaction, if any

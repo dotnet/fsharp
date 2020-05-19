@@ -252,8 +252,7 @@ let ``Values are successfully shadowed even with intermediate interactions`` () 
 let ``Creation of a simple bound value succeeds`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("x", 1)
-    Assert.IsEmpty errors
+    fsiSession.AddBoundValue("x", 1)
 
     let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
@@ -265,8 +264,7 @@ let ``Creation of a simple bound value succeeds`` () =
 let ``Creation of a bound value succeeds with underscores in the identifier`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("x_y_z", 1)
-    Assert.IsEmpty errors
+    fsiSession.AddBoundValue("x_y_z", 1)
 
     let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
@@ -276,8 +274,7 @@ let ``Creation of a bound value succeeds with underscores in the identifier`` ()
 let ``Creation of a bound value succeeds with tildes in the identifier`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("``hello world``", 1)
-    Assert.IsEmpty errors
+    fsiSession.AddBoundValue("``hello world``", 1)
 
     let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
@@ -294,8 +291,7 @@ let ``Creation of a bound value succeeds with 'it' as the indentifier`` () =
     Assert.AreEqual("it", boundValue.Name)
     Assert.AreEqual(typeof<string>, boundValue.Value.ReflectionType)
 
-    let errors = fsiSession.AddBoundValue("it", 1)
-    Assert.IsEmpty errors
+    fsiSession.AddBoundValue("it", 1)
 
     let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
@@ -303,111 +299,67 @@ let ``Creation of a bound value succeeds with 'it' as the indentifier`` () =
     Assert.AreEqual(typeof<int>, boundValue.Value.ReflectionType)
 
 [<Test>]
-let ``Creation of a bound value succeeds with tildes in the identifier and with 'at' but has warning`` () =
+let ``Creation of a bound value fails with tildes in the identifier and with 'at' but has warning`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("``hello @ world``", 1)
-    let error = errors |> Array.exactlyOne
-
-    Assert.AreEqual(FSharpErrorSeverity.Warning, error.Severity)
-    Assert.AreEqual("Identifiers containing '@' are reserved for use in F# code generation", error.Message)
-
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
-
-    Assert.AreEqual("``hello @ world``", boundValue.Name)
+    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("``hello @ world``", 1)) |> ignore
 
 [<Test>]
 let ``Creation of a bound value fails if the name is not a valid identifier with 'at' in front`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("@x", 1)
-    let error = errors |> Array.exactlyOne
-
-    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
-    Assert.AreEqual("Identifier expected", error.Message)
+    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("@x", 1)) |> ignore
 
 [<Test>]
 let ``Creation of a bound value fails if the name is not a valid identifier with 'at' in back`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("x@", 1)
-    let error = errors |> Array.exactlyOne
-
-    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
-    Assert.AreEqual("Identifier expected", error.Message)
+    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x@", 1)) |> ignore
 
 [<Test>]
 let ``Creation of a bound value fails if the name is null`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue(null, 1)
-    let error = errors |> Array.exactlyOne
-
-    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
-    Assert.AreEqual("Identifier expected", error.Message)
+    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue(null, 1)) |> ignore
 
 [<Test>]
 let ``Creation of a bound value fails if the name is empty`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("", 1)
-    let error = errors |> Array.exactlyOne
-
-    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
-    Assert.AreEqual("Identifier expected", error.Message)
+    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("", 1)) |> ignore
 
 [<Test>]
 let ``Creation of a bound value fails if the name is whitespace`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue(" ", 1)
-    let error = errors |> Array.exactlyOne
-
-    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
-    Assert.AreEqual("Identifier expected", error.Message)
+    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue(" ", 1)) |> ignore
 
 [<Test>]
 let ``Creation of a bound value fails if the name contains spaces`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("x x", 1)
-    let error = errors |> Array.exactlyOne
-
-    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
-    Assert.AreEqual("Identifier expected", error.Message)
+    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x x", 1)) |> ignore
 
 [<Test>]
 let ``Creation of a bound value fails if the name contains an operator at the end`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("x+", 1)
-    let error = errors |> Array.exactlyOne
-
-    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
-    Assert.AreEqual("Identifier expected", error.Message)
+    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x+", 1)) |> ignore
 
 [<Test>]
 let ``Creation of a bound value fails if the name contains an operator at the front`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("+x", 1)
-    let error = errors |> Array.exactlyOne
-
-    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
-    Assert.AreEqual("Identifier expected", error.Message)
+    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("+x", 1)) |> ignore
 
 [<Test>]
 let ``Creation of a bound value fails if the name contains dots`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("x.x", 1)
-    let error = errors |> Array.exactlyOne
-
-    Assert.AreEqual(FSharpErrorSeverity.Error, error.Severity)
-    Assert.AreEqual("Identifier expected", error.Message)
+    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x.x", 1)) |> ignore
 
 [<Test>]
-let ``Creation of a bound value throws if the value passed is null`` () =
+let ``Creation of a bound value fails if the value passed is null`` () =
     use fsiSession = createFsiSession ()
 
     Assert.Throws<ArgumentNullException>(fun () -> fsiSession.AddBoundValue("x", null) |> ignore) |> ignore
@@ -416,16 +368,13 @@ let ``Creation of a bound value throws if the value passed is null`` () =
 let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("x", { X = 1 })
-    Assert.IsEmpty errors
+    fsiSession.AddBoundValue("x", { X = 1 })
 
 [<Test>]
 let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution, and then doing some evaluation`` () =
     use fsiSession = createFsiSession ()
 
-    let errors = fsiSession.AddBoundValue("x", { X = 1 })
-    Assert.IsEmpty errors
-
+    fsiSession.AddBoundValue("x", { X = 1 })
     fsiSession.EvalInteraction("let y = { x with X = 5 }")
 
     let boundValues = fsiSession.GetBoundValues()
@@ -441,3 +390,22 @@ let ``Creation of a bound value succeeds if the value contains types from assemb
     Assert.AreEqual("y", v2.Name)
     Assert.AreEqual({ X = 5 }, v2.Value.ReflectionValue)
     Assert.AreEqual(typeof<CustomType>, v2.Value.ReflectionType)
+
+[<Test>]
+let ``Creation of a bound value, of type ResizeArray<string>, succeeds`` () =
+    use fsiSession = createFsiSession ()
+
+    let xs = ResizeArray()
+    xs.Add("banana")
+    xs.Add("apple")
+
+    fsiSession.AddBoundValue("xs", xs)
+
+    let boundValues = fsiSession.GetBoundValues()
+    Assert.AreEqual(1, boundValues.Length)
+
+    let v1 = boundValues.[0]
+
+    Assert.AreEqual("xs", v1.Name)
+    Assert.AreEqual(xs, v1.Value.ReflectionValue)
+    Assert.AreEqual(typeof<ResizeArray<string>>, v1.Value.ReflectionType)
