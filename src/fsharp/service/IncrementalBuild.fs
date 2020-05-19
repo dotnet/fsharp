@@ -709,9 +709,7 @@ module internal IncrementalBuild =
                 | Some cardinality ->    
                     let CheckStamp acc slot = 
                         match GetVectorExprResult (bt, inputExpr, slot) with
-                        | Available (ires, _, _) ->
-                            let res = func cache ctok ires
-                            if DateTime.Compare(acc, res) > 0 then acc else res
+                        | Available (ires, _, _) -> max acc (func cache ctok ires)
                         | _ -> acc
                     [0..cardinality-1] |> List.fold CheckStamp acc
                 | None -> acc
