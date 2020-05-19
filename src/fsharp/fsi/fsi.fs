@@ -970,7 +970,7 @@ let internal importReflectionType amap (reflectionTy: Type) =
             if index = -1 then
                 fullName
             else
-                fullName.Substring(0, index - 1)
+                fullName.Substring(0, index)
 
         let isTop = reflectionTy.DeclaringType = null
         if isTop then
