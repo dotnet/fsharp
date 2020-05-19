@@ -6,10 +6,6 @@ open System.IO
 open FSharp.Compiler.Interactive.Shell
 open NUnit.Framework
 
-type FSharpErrorSeverity = FSharp.Compiler.SourceCodeServices.FSharpErrorSeverity
-
-type CustomType = { X: int }
-
 let createFsiSession () =
     // Intialize output and input streams
     let inStream = new StringReader("")
@@ -364,6 +360,8 @@ let ``Creation of a bound value fails if the value passed is null`` () =
 
     Assert.Throws<ArgumentNullException>(fun () -> fsiSession.AddBoundValue("x", null) |> ignore) |> ignore
 
+type CustomType = { X: int }
+
 [<Test>]
 let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution`` () =
     use fsiSession = createFsiSession ()
@@ -409,3 +407,28 @@ let ``Creation of a bound value, of type ResizeArray<string>, succeeds`` () =
     Assert.AreEqual("xs", v1.Name)
     Assert.AreEqual(xs, v1.Value.ReflectionValue)
     Assert.AreEqual(typeof<ResizeArray<string>>, v1.Value.ReflectionType)
+
+type CustomType2() =
+
+    member _.Message = "hello"
+
+[<Test>]
+let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution, and then use a member from it`` () =
+    use fsiSession = createFsiSession ()
+
+    let value = CustomType2()
+    fsiSession.AddBoundValue("x", value)
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual("x", boundValue.Name)
+    Assert.AreEqual(value, boundValue.Value.ReflectionValue)
+    Assert.AreEqual(typeof<CustomType2>, boundValue.Value.ReflectionType)
+
+    fsiSession.EvalInteraction("let x = x.Message")
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual("x", boundValue.Name)
+    Assert.AreEqual("hello", boundValue.Value.ReflectionValue)
+    Assert.AreEqual(typeof<string>, boundValue.Value.ReflectionType)
