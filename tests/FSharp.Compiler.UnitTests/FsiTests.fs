@@ -491,3 +491,37 @@ let ``Creation of a bound value fails if the value's type is not public`` () =
     use fsiSession = createFsiSession ()
 
     Assert.Throws<InvalidOperationException>(fun () -> fsiSession.AddBoundValue("x", NonPublicCustomType())) |> ignore
+
+[<Test>]
+let ``Creation of a bound value succeeds if the value is a partial application function type`` () =
+    use fsiSession = createFsiSession ()
+
+    fsiSession.AddBoundValue("createFsiSession", createFsiSession)
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual(typeof<unit -> FsiEvaluationSession>, boundValue.Value.ReflectionType)
+
+[<Test>]
+let ``Creation of a bound value succeeds if the value is a partial application function type with four arguments`` () =
+    use fsiSession = createFsiSession ()
+
+    let addXYZW x y z w = x + y + z + w
+    let addYZW = addXYZW 1
+    let addZW = addYZW 2
+
+    fsiSession.AddBoundValue("addZW", addZW)
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual(typeof<int -> int -> int>, boundValue.Value.ReflectionType.BaseType)
+
+[<Test>]
+let ``Creation of a bound value succeeds if the value is a lambda`` () =
+    use fsiSession = createFsiSession ()
+
+    fsiSession.AddBoundValue("addXYZW", fun x y z -> x + y + z)
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual(typeof<int -> int -> int -> int>, boundValue.Value.ReflectionType.BaseType)
