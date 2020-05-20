@@ -522,7 +522,7 @@ let ``Creation of a bound value succeeds if the value is a partial application f
 let ``Creation of a bound value succeeds if the value is a lambda`` () =
     use fsiSession = createFsiSession ()
 
-    fsiSession.AddBoundValue("addXYZW", fun x y z -> x + y + z)
+    fsiSession.AddBoundValue("addXYZ", fun x y z -> x + y + z)
 
     let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
