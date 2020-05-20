@@ -432,3 +432,62 @@ let ``Creation of a bound value succeeds if the value contains types from assemb
     Assert.AreEqual("x", boundValue.Name)
     Assert.AreEqual("hello", boundValue.Value.ReflectionValue)
     Assert.AreEqual(typeof<string>, boundValue.Value.ReflectionType)
+
+[<Test>]
+let ``Creation of a bound value succeeds if the value contains generic types from assemblies that are not referenced in the session, due to implicit resolution, and then use a member from it`` () =
+    use fsiSession = createFsiSession ()
+
+    let value = ResizeArray<CustomType2>()
+    value.Add(CustomType2())
+
+    fsiSession.AddBoundValue("x", value)
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual("x", boundValue.Name)
+    Assert.AreEqual(value, boundValue.Value.ReflectionValue)
+    Assert.AreEqual(typeof<ResizeArray<CustomType2>>, boundValue.Value.ReflectionType)
+
+    fsiSession.EvalInteraction("let x = x.[0].Message")
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual("x", boundValue.Name)
+    Assert.AreEqual("hello", boundValue.Value.ReflectionValue)
+    Assert.AreEqual(typeof<string>, boundValue.Value.ReflectionType)
+
+[<Test>]
+let ``Creation of a bound value succeeds if the value contains two generic types from assemblies that are not referenced in the session, due to implicit resolution`` () =
+    use fsiSession = createFsiSession ()
+
+    let value = ({ X = 1 }, CustomType2())
+
+    fsiSession.AddBoundValue("x", value)
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual("x", boundValue.Name)
+    Assert.AreEqual(value, boundValue.Value.ReflectionValue)
+    Assert.AreEqual(typeof<CustomType * CustomType2>, boundValue.Value.ReflectionType)
+
+[<Test>]
+let ``Creation of a bound value fails if the value contains types from a dynamic assembly`` () =
+    use fsiSession = createFsiSession ()
+
+    fsiSession.AddBoundValue("fsiSession", fsiSession)
+
+    let res, _ = fsiSession.EvalInteractionNonThrowing("""
+type TypeInDynamicAssembly() = class end
+fsiSession.AddBoundValue("x", TypeInDynamicAssembly())""")
+
+    match res with
+    | Choice2Of2 ex -> Assert.AreEqual(typeof<NotSupportedException>, ex.GetType())
+    | _ -> failwith "Expected an exception"
+
+type internal NonPublicCustomType() = class end
+
+[<Test>]
+let ``Creation of a bound value fails if the value's type is not public`` () =
+    use fsiSession = createFsiSession ()
+
+    Assert.Throws<InvalidOperationException>(fun () -> fsiSession.AddBoundValue("x", NonPublicCustomType())) |> ignore

@@ -959,49 +959,56 @@ let internal WithImplicitHome (tcConfigB, dir) f =
     try f() 
     finally tcConfigB.implicitIncludeDir <- old
 
-let internal importReflectionType amap (reflectionTy: Type) =
-    let reflectionTyToILTypeRef (reflectionTy: Type) =
-        let aref = ILAssemblyRef.FromAssemblyName(reflectionTy.Assembly.GetName())
-        let scoref = ILScopeRef.Assembly aref
+let internal convertReflectionTypeToILTypeRef (reflectionTy: Type) =
+    if reflectionTy.Assembly.IsDynamic then
+        raise (NotSupportedException(sprintf "Unable to import type, %A, from a dynamic assembly." reflectionTy))
 
-        let fullName = reflectionTy.FullName
-        let index = fullName.IndexOf("[")
-        let fullName =
-            if index = -1 then
-                fullName
-            else
-                fullName.Substring(0, index)
+    if not reflectionTy.IsPublic && not reflectionTy.IsNestedPublic then
+        invalidOp (sprintf "Cannot import the non-public type, %A." reflectionTy)
 
-        let isTop = reflectionTy.DeclaringType = null
-        if isTop then
-            ILTypeRef.Create(scoref, [], fullName)
+    let aref = ILAssemblyRef.FromAssemblyName(reflectionTy.Assembly.GetName())
+    let scoref = ILScopeRef.Assembly aref
+
+    let fullName = reflectionTy.FullName
+    let index = fullName.IndexOf("[")
+    let fullName =
+        if index = -1 then
+            fullName
         else
-            let names = String.split StringSplitOptions.None [|"+";"."|] fullName
-            let enc = names.[..names.Length - 2]
-            let nm = names.[names.Length - 1]
-            ILTypeRef.Create(scoref, List.ofArray enc, nm)
+            fullName.Substring(0, index)
 
-    let rec reflectionTyToILType (reflectionTy: Type) =
-        let tref = reflectionTyToILTypeRef reflectionTy
-        let genericArgs =
-            reflectionTy.GenericTypeArguments
-            |> Seq.map reflectionTyToILType
-            |> List.ofSeq
+    let isTop = reflectionTy.DeclaringType = null
+    if isTop then
+        ILTypeRef.Create(scoref, [], fullName)
+    else
+        let names = String.split StringSplitOptions.None [|"+";"."|] fullName
+        let enc = names.[..names.Length - 2]
+        let nm = names.[names.Length - 1]
+        ILTypeRef.Create(scoref, List.ofArray enc, nm)
 
-        let boxity =
-            if reflectionTy.IsValueType then
-                ILBoxity.AsValue
-            else
-                ILBoxity.AsObject
+let rec internal convertReflectionTypeToILType (reflectionTy: Type) =
+    let reflectionTy =
+        // Special case functions.
+        if FSharp.Reflection.FSharpType.IsFunction reflectionTy then
+            reflectionTy.BaseType
+        else
+            reflectionTy
 
-        let tspec = ILTypeSpec.Create(tref, genericArgs)
+    let tref = convertReflectionTypeToILTypeRef reflectionTy
+    let genericArgs =
+        reflectionTy.GenericTypeArguments
+        |> Seq.map convertReflectionTypeToILType
+        |> List.ofSeq
 
-        mkILTy boxity tspec           
+    let boxity =
+        if reflectionTy.IsValueType then
+            ILBoxity.AsValue
+        else
+            ILBoxity.AsObject
 
-    let rec import (ilTy: ILType) =
-        Import.ImportILType amap range0 (ilTy.GenericArgs |> List.map import) ilTy
+    let tspec = ILTypeSpec.Create(tref, genericArgs)
 
-    import (reflectionTyToILType reflectionTy)
+    mkILTy boxity tspec
 
 let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let vis = Accessibility.TAccess([])
@@ -1507,7 +1514,38 @@ type internal FsiDynamicCompiler
         | _ ->
             None
 
-    member __.AddBoundValue (ctok, errorLogger: ErrorLogger, istate, name: string, value: obj) =
+    member private this.ImportReflectionType (ctok, istate, reflectionTy) =
+        let amap = istate.tcImports.GetImportMap()
+        
+        let resolveAssemblyRefOfILType istate (ilTy: ILType) =
+            let tcImports = istate.tcImports
+                
+            if ilTy.IsNominal then
+                match ilTy.TypeRef.Scope with
+                | ILScopeRef.Assembly aref ->
+                    // Simple name unification. If it fails, then try to resolve the assembly.
+                    if tcImports.TryFindDllInfo(ctok, range0, aref.Name, lookupOnly = true).IsNone then
+                        this.EvalRequireReference(ctok, istate, range0, aref.Name)
+                        |> snd
+                    else
+                        istate
+                | _ ->
+                    istate
+            else
+                istate
+        
+        let rec import istate (ilTy: ILType) =
+            let istate = resolveAssemblyRefOfILType istate ilTy
+            let istate, tinst =
+                (ilTy.GenericArgs, (istate, []))
+                ||> List.foldBack (fun ilGenericArgTy (istate, tinst) ->
+                    let istate, ty = import istate ilGenericArgTy
+                    (istate, ty :: tinst))
+            istate, Import.ImportILType amap range0 tinst ilTy
+        
+        import istate (convertReflectionTypeToILType reflectionTy)
+
+    member this.AddBoundValue (ctok, errorLogger: ErrorLogger, istate, name: string, value: obj) =
         try
             match value with
             | null -> nullArg "value"
@@ -1527,8 +1565,8 @@ type internal FsiDynamicCompiler
             if PrettyNaming.IsCompilerGeneratedName name then
                 invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved() |> snd)
 
+            let istate, ty = this.ImportReflectionType(ctok, istate, value.GetType())
             let amap = istate.tcImports.GetImportMap()
-            let ty = importReflectionType amap (value.GetType())
 
             let i = nextFragmentId()
             let prefix = mkFragmentPath i
