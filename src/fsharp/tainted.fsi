@@ -75,7 +75,7 @@ type internal Tainted<'T> =
     member PApplyArray : ('T -> 'U[]) * string * range:range -> Tainted<'U>[]
 
     /// Apply an operation that returns an option. Unwrap option. Any exception will be attributed to the type provider with an error located at the given range
-    member PApplyOption : ('T -> 'U option) * range:range -> Tainted<'U> option
+    member PApplyOption : ('T -> 'U option) * range:range -> Tainted<'U> voption
 
     /// Apply an operation and 'untaint' the result. The result must be marshallable. Any exception will be attributed to the type provider with an error located at the given range
     member PUntaint : ('T -> 'U) * range:range -> 'U

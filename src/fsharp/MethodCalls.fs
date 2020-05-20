@@ -1469,7 +1469,7 @@ module ProvidedMethodCalls =
             | Tainted.Null -> error(Error(FSComp.SR.etNullProvidedExpression(ea.TypeProviderDesignation), m))
             |  _ ->
             let exprType = ea.PApplyOption((fun x -> x.GetExprType()), m)
-            let exprType = match exprType with | Some exprType -> exprType | None -> fail()
+            let exprType = match exprType with ValueSome exprType -> exprType | ValueNone -> fail()
             match exprType.PUntaint(id, m) with
             | ProvidedTypeAsExpr (expr, targetTy) ->
                 let (expr, targetTy) = exprType.PApply2((fun _ -> (expr, targetTy)), m)
@@ -1639,8 +1639,8 @@ module ProvidedMethodCalls =
             let targetMethInfo = ProvidedMeth(amap, meth.PApply((fun mce -> upcast mce), m), None, m)
             let objArgs = 
                 match objOpt.PApplyOption(id, m) with
-                | None -> []
-                | Some objExpr -> [exprToExpr objExpr]
+                | ValueNone -> []
+                | ValueSome objExpr -> [exprToExpr objExpr]
 
             let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpression", m) -> exprToExpr ea ]
             let genericArguments = 

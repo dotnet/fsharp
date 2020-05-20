@@ -129,12 +129,11 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
         |   null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
         |   _ -> a |> Array.map (fun u -> Tainted(context,u))
 
-
     member this.PApplyOption(f,range:range) =        
         let a = this.Protect f range
         match a with 
-        | None ->  None
-        | Some x -> Some (Tainted(context,x))
+        | None ->  ValueNone
+        | Some x -> ValueSome (Tainted(context,x))
 
     member this.PUntaint(f,range:range) = this.Protect f range
     member this.PUntaintNoFailure f = this.PUntaint(f, range0)

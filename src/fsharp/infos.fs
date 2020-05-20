@@ -41,13 +41,18 @@ let CanImportILType scoref amap m ilty =
 
 /// Indicates if an F# type is the type associated with an F# exception declaration
 let isExnDeclTy g ty =
-    isAppTy g ty && (tcrefOfAppTy g ty).IsExceptionDecl
+    match tryTcrefOfAppTy g ty with
+    | ValueSome tcref -> tcref.IsExceptionDecl
+    | _ -> false
 
 /// Get the base type of a type, taking into account type instantiations. Return None if the
 /// type has no base type.
 let GetSuperTypeOfType g amap m ty =
 #if !NO_EXTENSIONTYPING
-    let ty = (if isAppTy g ty && (tcrefOfAppTy g ty).IsProvided then stripTyEqns g ty else stripTyEqnsAndMeasureEqns g ty)
+    let ty =
+        match tryTcrefOfAppTy g ty with
+        | ValueSome tcref when tcref.IsProvided -> stripTyEqns g ty 
+        | _ -> stripTyEqnsAndMeasureEqns g ty
 #else
     let ty = stripTyEqnsAndMeasureEqns g ty
 #endif
@@ -58,36 +63,36 @@ let GetSuperTypeOfType g amap m ty =
         let st = info.ProvidedType
         let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some t), m)
         match superOpt with
-        | None -> None
-        | Some super -> Some(Import.ImportProvidedType amap m super)
+        | ValueNone -> ValueNone
+        | ValueSome super -> ValueSome(Import.ImportProvidedType amap m super)
 #endif
     | ILTypeMetadata (TILObjectReprData(scoref, _, tdef)) ->
         let tinst = argsOfAppTy g ty
         match tdef.Extends with
-        | None -> None
-        | Some ilty -> Some (ImportILType scoref amap m tinst ilty)
+        | None -> ValueNone
+        | Some ilty -> ValueSome (ImportILType scoref amap m tinst ilty)
 
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
         if isFSharpObjModelTy g ty || isExnDeclTy g ty then
             let tcref = tcrefOfAppTy g ty
-            Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
+            ValueSome (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
         elif isArrayTy g ty then
-            Some g.system_Array_ty
+            ValueSome g.system_Array_ty
         elif isRefTy g ty && not (isObjTy g ty) then
-            Some g.obj_ty
+            ValueSome g.obj_ty
         elif isStructTupleTy g ty then
-            Some g.obj_ty
+            ValueSome g.obj_ty
         elif isFSharpStructOrEnumTy g ty then
             if isFSharpEnumTy g ty then
-                Some g.system_Enum_ty
+                ValueSome g.system_Enum_ty
             else
-                Some g.system_Value_ty
+                ValueSome g.system_Value_ty
         elif isAnonRecdTy g ty then
-            Some g.obj_ty
+            ValueSome g.obj_ty
         elif isRecdTy g ty || isUnionTy g ty then
-            Some g.obj_ty
+            ValueSome g.obj_ty
         else
-            None
+            ValueNone
 
 /// Make a type for System.Collections.Generic.IList<ty>
 let mkSystemCollectionsGenericIListTy (g: TcGlobals) ty = TType_app(g.tcref_System_Collections_Generic_IList, [ty])
@@ -213,10 +218,9 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref
                         else
                             state
                     let state =
-                        Option.foldBack
-                          (loop (ndeep+1))
-                          (GetSuperTypeOfType g amap m ty)
-                          state
+                        match GetSuperTypeOfType g amap m ty with
+                        | ValueNone -> state
+                        | ValueSome s -> loop (ndeep+1) s state
                     state
         let acc = visitor ty acc
         (visitedTycon, visited, acc)

@@ -5304,8 +5304,8 @@ type Construct() =
                 ((fun (m, objTy) -> 
                       let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
                       match baseSystemTy with 
-                      | None -> objTy 
-                      | Some t -> importProvidedType t),
+                      | ValueNone -> objTy 
+                      | ValueSome t -> importProvidedType t),
                   ErrorLogger.findOriginalException)
 
         TProvidedTypeExtensionPoint 
