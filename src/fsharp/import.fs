@@ -288,16 +288,18 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
         
         /// Adjust for the known primitive numeric types that accept units of measure. 
         let tcref =
-            if genericArgs.Length <> 1 then tcref
-            elif tyconRefEq g tcref g.system_Double_tcref then g.pfloat_tcr
-            elif tyconRefEq g tcref g.system_Single_tcref then g.pfloat32_tcr
-            elif tyconRefEq g tcref g.system_Decimal_tcref then g.pdecimal_tcr
-            elif tyconRefEq g tcref g.system_Int16_tcref then g.pint16_tcr
-            elif tyconRefEq g tcref g.system_Int32_tcref then g.pint_tcr
-            elif tyconRefEq g tcref g.system_Int64_tcref then g.pint64_tcr
-            elif tyconRefEq g tcref g.system_SByte_tcref then g.pint8_tcr
-            else tcref
-        
+            match genericArgs with
+            | [_] -> 
+                if tyconRefEq g tcref g.system_Double_tcref then g.pfloat_tcr
+                elif tyconRefEq g tcref g.system_Single_tcref then g.pfloat32_tcr
+                elif tyconRefEq g tcref g.system_Decimal_tcref then g.pdecimal_tcr
+                elif tyconRefEq g tcref g.system_Int16_tcref then g.pint16_tcr
+                elif tyconRefEq g tcref g.system_Int32_tcref then g.pint_tcr
+                elif tyconRefEq g tcref g.system_Int64_tcref then g.pint64_tcr
+                elif tyconRefEq g tcref g.system_SByte_tcref then g.pint8_tcr
+                else tcref
+            | _ -> tcref
+
         let tps = tcref.Typars m
         if tps.Length <> genericArgs.Length then 
            error(Error(FSComp.SR.impInvalidNumberOfGenericArguments(tcref.CompiledName, tps.Length, genericArgs.Length), m))
