@@ -6,6 +6,8 @@ open System.IO
 open FSharp.Compiler.Interactive.Shell
 open NUnit.Framework
 
+#nowarn "1104"
+
 let createFsiSession () =
     // Intialize output and input streams
     let inStream = new StringReader("")
@@ -514,7 +516,7 @@ let ``Creation of a bound value succeeds if the value is a partial application f
 
     let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-    Assert.AreEqual(typeof<int -> int -> int>, boundValue.Value.ReflectionType.BaseType)
+    Assert.AreEqual(typeof<int -> int -> int>, boundValue.Value.ReflectionType)
 
 [<Test>]
 let ``Creation of a bound value succeeds if the value is a lambda`` () =
@@ -524,4 +526,22 @@ let ``Creation of a bound value succeeds if the value is a lambda`` () =
 
     let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-    Assert.AreEqual(typeof<int -> int -> int -> int>, boundValue.Value.ReflectionType.BaseType)
+    Assert.AreEqual(typeof<int -> int -> int -> int>, boundValue.Value.ReflectionType)
+
+type TestFSharpFunc() =
+    inherit FSharpFunc<int, int>()
+
+    override _.Invoke x = x
+
+type ``Test2FSharp @ Func``() =
+    inherit TestFSharpFunc()
+
+[<Test>]
+let ``Creation of a bound value succeeds if the value is a type that inherits FSharpFunc`` () =
+    use fsiSession = createFsiSession ()
+
+    fsiSession.AddBoundValue("test", ``Test2FSharp @ Func``())
+
+    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+
+    Assert.AreEqual(typeof<``Test2FSharp @ Func``>, boundValue.Value.ReflectionType)

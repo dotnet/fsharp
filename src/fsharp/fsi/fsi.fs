@@ -990,7 +990,15 @@ let rec internal convertReflectionTypeToILType (reflectionTy: Type) =
     let reflectionTy =
         // Special case functions.
         if FSharp.Reflection.FSharpType.IsFunction reflectionTy then
-            reflectionTy.BaseType
+            let ctors = reflectionTy.GetConstructors(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
+            if ctors.Length = 1 && 
+               ctors.[0].GetCustomAttribute<CompilerGeneratedAttribute>() <> null && 
+               not ctors.[0].IsPublic && 
+               PrettyNaming.IsCompilerGeneratedName reflectionTy.Name then
+                let rec get (typ: Type) = if FSharp.Reflection.FSharpType.IsFunction typ.BaseType then get typ.BaseType else typ
+                get reflectionTy
+            else
+                reflectionTy
         else
             reflectionTy
 
