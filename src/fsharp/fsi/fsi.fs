@@ -959,49 +959,64 @@ let internal WithImplicitHome (tcConfigB, dir) f =
     try f() 
     finally tcConfigB.implicitIncludeDir <- old
 
-let internal importReflectionType amap (reflectionTy: Type) =
-    let reflectionTyToILTypeRef (reflectionTy: Type) =
-        let aref = ILAssemblyRef.FromAssemblyName(reflectionTy.Assembly.GetName())
-        let scoref = ILScopeRef.Assembly aref
+let internal convertReflectionTypeToILTypeRef (reflectionTy: Type) =
+    if reflectionTy.Assembly.IsDynamic then
+        raise (NotSupportedException(sprintf "Unable to import type, %A, from a dynamic assembly." reflectionTy))
 
-        let fullName = reflectionTy.FullName
-        let index = fullName.IndexOf("[")
-        let fullName =
-            if index = -1 then
-                fullName
-            else
-                fullName.Substring(0, index - 1)
+    if not reflectionTy.IsPublic && not reflectionTy.IsNestedPublic then
+        invalidOp (sprintf "Cannot import the non-public type, %A." reflectionTy)
 
-        let isTop = reflectionTy.DeclaringType = null
-        if isTop then
-            ILTypeRef.Create(scoref, [], fullName)
+    let aref = ILAssemblyRef.FromAssemblyName(reflectionTy.Assembly.GetName())
+    let scoref = ILScopeRef.Assembly aref
+
+    let fullName = reflectionTy.FullName
+    let index = fullName.IndexOf("[")
+    let fullName =
+        if index = -1 then
+            fullName
         else
-            let names = String.split StringSplitOptions.None [|"+";"."|] fullName
-            let enc = names.[..names.Length - 2]
-            let nm = names.[names.Length - 1]
-            ILTypeRef.Create(scoref, List.ofArray enc, nm)
+            fullName.Substring(0, index)
 
-    let rec reflectionTyToILType (reflectionTy: Type) =
-        let tref = reflectionTyToILTypeRef reflectionTy
-        let genericArgs =
-            reflectionTy.GenericTypeArguments
-            |> Seq.map reflectionTyToILType
-            |> List.ofSeq
+    let isTop = reflectionTy.DeclaringType = null
+    if isTop then
+        ILTypeRef.Create(scoref, [], fullName)
+    else
+        let names = String.split StringSplitOptions.None [|"+";"."|] fullName
+        let enc = names.[..names.Length - 2]
+        let nm = names.[names.Length - 1]
+        ILTypeRef.Create(scoref, List.ofArray enc, nm)
 
-        let boxity =
-            if reflectionTy.IsValueType then
-                ILBoxity.AsValue
+let rec internal convertReflectionTypeToILType (reflectionTy: Type) =
+    let reflectionTy =
+        // Special case functions.
+        if FSharp.Reflection.FSharpType.IsFunction reflectionTy then
+            let ctors = reflectionTy.GetConstructors(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
+            if ctors.Length = 1 && 
+               ctors.[0].GetCustomAttribute<CompilerGeneratedAttribute>() <> null && 
+               not ctors.[0].IsPublic && 
+               PrettyNaming.IsCompilerGeneratedName reflectionTy.Name then
+                let rec get (typ: Type) = if FSharp.Reflection.FSharpType.IsFunction typ.BaseType then get typ.BaseType else typ
+                get reflectionTy
             else
-                ILBoxity.AsObject
+                reflectionTy
+        else
+            reflectionTy
 
-        let tspec = ILTypeSpec.Create(tref, genericArgs)
+    let tref = convertReflectionTypeToILTypeRef reflectionTy
+    let genericArgs =
+        reflectionTy.GenericTypeArguments
+        |> Seq.map convertReflectionTypeToILType
+        |> List.ofSeq
 
-        mkILTy boxity tspec           
+    let boxity =
+        if reflectionTy.IsValueType then
+            ILBoxity.AsValue
+        else
+            ILBoxity.AsObject
 
-    let rec import (ilTy: ILType) =
-        Import.ImportILType amap range0 (ilTy.GenericArgs |> List.map import) ilTy
+    let tspec = ILTypeSpec.Create(tref, genericArgs)
 
-    import (reflectionTyToILType reflectionTy)
+    mkILTy boxity tspec
 
 let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let vis = Accessibility.TAccess([])
@@ -1507,51 +1522,90 @@ type internal FsiDynamicCompiler
         | _ ->
             None
 
-    member __.AddBoundValue (ctok, errorLogger: ErrorLogger, istate, name: string, value: obj) =
-        if String.IsNullOrWhiteSpace name then
-            errorLogger.Error(Error(FSComp.SR.parsIdentifierExpected(), range0))
-
-        // Verify that the name is a valid identifier for a value.
-        SourceCodeServices.Lexer.FSharpLexer.Lex(SourceText.ofString name, 
-            let mutable foundOne = false
-            fun t -> 
-                if not t.IsIdentifier || foundOne then
-                    errorLogger.Error(Error(FSComp.SR.parsIdentifierExpected(), range0))
-                foundOne <- true)
-
-        if PrettyNaming.IsCompilerGeneratedName name then
-            errorLogger.Warning(Error(FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved(), range0))
-
+    member private this.ImportReflectionType (ctok, istate, reflectionTy) =
         let amap = istate.tcImports.GetImportMap()
-        let ty = importReflectionType amap (value.GetType())
+        
+        let resolveAssemblyRefOfILType istate (ilTy: ILType) =
+            let tcImports = istate.tcImports
+                
+            if ilTy.IsNominal then
+                match ilTy.TypeRef.Scope with
+                | ILScopeRef.Assembly aref ->
+                    // Simple name unification. If it fails, then try to resolve the assembly.
+                    if tcImports.TryFindDllInfo(ctok, range0, aref.Name, lookupOnly = true).IsNone then
+                        this.EvalRequireReference(ctok, istate, range0, aref.Name)
+                        |> snd
+                    else
+                        istate
+                | _ ->
+                    istate
+            else
+                istate
+        
+        let rec import istate (ilTy: ILType) =
+            let istate = resolveAssemblyRefOfILType istate ilTy
+            let istate, tinst =
+                (ilTy.GenericArgs, (istate, []))
+                ||> List.foldBack (fun ilGenericArgTy (istate, tinst) ->
+                    let istate, ty = import istate ilGenericArgTy
+                    (istate, ty :: tinst))
+            istate, Import.ImportILType amap range0 tinst ilTy
+        
+        import istate (convertReflectionTypeToILType reflectionTy)
 
-        let i = nextFragmentId()
-        let prefix = mkFragmentPath i
-        let prefixPath = pathOfLid prefix
-        let qualifiedName = ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath)
+    member this.AddBoundValue (ctok, errorLogger: ErrorLogger, istate, name: string, value: obj) =
+        try
+            match value with
+            | null -> nullArg "value"
+            | _ -> ()
 
-        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
+            if String.IsNullOrWhiteSpace name then
+                invalidArg "name" "Name cannot be null or white-space."
 
-        // Build a simple module with a single 'let' decl with a default value.
-        let moduleOrNamespace, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
-        let tcEnvAtEndOfLastInput = 
-            TypeChecker.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
-            |> TypeChecker.AddLocalVal TcResultsSink.NoSink range0 v
+            // Verify that the name is a valid identifier for a value.
+            SourceCodeServices.Lexer.FSharpLexer.Lex(SourceText.ofString name, 
+                let mutable foundOne = false
+                fun t -> 
+                    if not t.IsIdentifier || foundOne then
+                        invalidArg "name" "Name is not a valid identifier."
+                    foundOne <- true)
 
-        // Generate IL for the given typled impl and create new interactive state.
-        let ilxGenerator = istate.ilxGenerator
-        let isIncrementalFragment = true
-        let showTypes = false
-        let declaredImpls = [impl]
-        let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, istate.optEnv, istate.tcState, tcConfig, false, EmptyTopAttrs, prefix, isIncrementalFragment, declaredImpls, ilxGenerator)
-        let istate, declaredImpls = ProcessCodegenResults(ctok, errorLogger, istate, optEnv, istate.tcState, tcConfig, prefix, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults)
-        let newState = { istate with tcState = istate.tcState.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput }
+            if PrettyNaming.IsCompilerGeneratedName name then
+                invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved() |> snd)
 
-        // Force set the val with the given value obj.
-        let ctxt = valuePrinter.GetEvaluationContext(newState.emEnv)
-        ilxGenerator.ForceSetGeneratedValue(ctxt, v, value)
+            let istate, ty = this.ImportReflectionType(ctok, istate, value.GetType())
+            let amap = istate.tcImports.GetImportMap()
 
-        fst (processContents newState declaredImpls)
+            let i = nextFragmentId()
+            let prefix = mkFragmentPath i
+            let prefixPath = pathOfLid prefix
+            let qualifiedName = ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath)
+
+            let tcConfig = TcConfig.Create(tcConfigB,validate=false)
+
+            // Build a simple module with a single 'let' decl with a default value.
+            let moduleOrNamespace, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
+            let tcEnvAtEndOfLastInput = 
+                TypeChecker.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
+                |> TypeChecker.AddLocalVal TcResultsSink.NoSink range0 v
+
+            // Generate IL for the given typled impl and create new interactive state.
+            let ilxGenerator = istate.ilxGenerator
+            let isIncrementalFragment = true
+            let showTypes = false
+            let declaredImpls = [impl]
+            let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, istate.optEnv, istate.tcState, tcConfig, false, EmptyTopAttrs, prefix, isIncrementalFragment, declaredImpls, ilxGenerator)
+            let istate, declaredImpls = ProcessCodegenResults(ctok, errorLogger, istate, optEnv, istate.tcState, tcConfig, prefix, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults)
+            let newState = { istate with tcState = istate.tcState.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput }
+
+            // Force set the val with the given value obj.
+            let ctxt = valuePrinter.GetEvaluationContext(newState.emEnv)
+            ilxGenerator.ForceSetGeneratedValue(ctxt, v, value)
+
+            processContents newState declaredImpls
+        with
+        | ex ->
+            istate, CompletedWithReportedError(StopProcessingExn(Some ex))
     
     member __.GetInitialInteractiveState () =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
@@ -2412,8 +2466,8 @@ type internal FsiInteractionProcessor
     member __.AddBoundValue(ctok, errorLogger, name, value: obj) =
         currState 
         |> InteractiveCatch errorLogger (fun istate -> 
-            fsiDynamicCompiler.AddBoundValue(ctok, errorLogger, istate, name, value), Completed None) |> fst
-        |> setCurrState
+            fsiDynamicCompiler.AddBoundValue(ctok, errorLogger, istate, name, value))
+        |> commitResult
 
     member __.PartialAssemblySignatureUpdated = event.Publish
 
@@ -2937,20 +2991,14 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         fsiDynamicCompiler.TryFindBoundValue(fsiInteractionProcessor.CurrentState, name)
 
     member __.AddBoundValue(name: string, value: obj) =
-        match value with
-        | null -> nullArg "value"
-        | _ -> ()
-
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        let errorOptions = TcConfig.Create(tcConfigB, validate = false).errorSeverityOptions
-        let errorLogger = CompilationErrorLogger("AddBoundValue", errorOptions)
         fsiInteractionProcessor.AddBoundValue(ctok, errorLogger, name, value)
-        let errs = errorLogger.GetErrors()
-        ErrorHelpers.CreateErrorInfos (errorOptions, true, "input.fsx", errs, true)
+        |> commitResult
+        |> ignore
 
     /// Performs these steps:
     ///    - Load the dummy interaction, if any
