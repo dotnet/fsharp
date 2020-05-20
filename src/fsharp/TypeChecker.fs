@@ -3099,9 +3099,16 @@ let BuildDisposableCleanup cenv env m (v: Val) =
 let BuildOffsetToStringData cenv env m = 
     let ad = env.eAccessRights
     let offsetToStringDataMethod = 
-        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "get_OffsetToStringData" cenv.g.system_RuntimeHelpers_ty with 
+        // Prefer string.GetPinnableReference introduced in .NET Core 3
+        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "GetPinnableReference" cenv.g.string_ty with 
         | [x] -> x
-        | _ -> error(Error(FSComp.SR.tcCouldNotFindOffsetToStringData(), m)) 
+        | _ ->
+            // Otherwise, fall back to 'RuntimeHelpers.GetOffsetToStringData' (likely to happen if targeting an older platform)
+            match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "get_OffsetToStringData" cenv.g.system_RuntimeHelpers_ty with
+            | [x] -> x
+            | _ ->
+                // Otherwise, kaboom!
+                error(Error(FSComp.SR.tcCouldNotFindOffsetToStringData(), m)) 
 
     let offsetExpr, _ = BuildPossiblyConditionalMethodCall cenv env NeverMutates m false offsetToStringDataMethod NormalValUse [] [] []    
     offsetExpr
@@ -11006,10 +11013,18 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBindi
     | ty when isStringTy cenv.g ty -> 
         let charPtrTy = mkNativePtrTy cenv.g cenv.g.char_ty
         UnifyTypes cenv env mBinding charPtrTy overallPatTy
+        
+        // When targeting .NET Core or higher:
         //
         //    let ptr: nativeptr<char> = 
         //        let pinned s = str
-        //        (nativeptr)s + get_OffsettoStringData()
+        //        (nativeptr)s + GetPinnableReference()
+        //
+        // Otherwise,
+        //
+        //    let ptr: nativeptr<char> = 
+        //        let pinned s = str
+        //        (nativeptr)s + get_OffsetToStringData()
 
         mkCompGenLetIn mBinding "pinnedString" cenv.g.string_ty fixedExpr (fun (v, ve) -> 
             v.SetIsFixed()

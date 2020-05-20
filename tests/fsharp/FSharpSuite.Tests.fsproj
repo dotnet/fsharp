@@ -30,6 +30,7 @@
     <Compile Include="Compiler\ILChecker.fs" />
     <Compile Include="Compiler\Utilities.fs" />
     <Compile Include="Compiler\CompilerAssert.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\FixedExpressionCodeGen.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\LiteralValue.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
