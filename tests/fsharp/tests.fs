@@ -194,6 +194,9 @@ module CoreTests =
     let ``printf-FSC_BASIC`` () = singleTestBuildAndRun "core/printf" FSC_BASIC
 
     [<Test>]
+    let ``printf-interpolated-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/printf-interpolated" FSC_BASIC "preview"
+
+    [<Test>]
     let ``tlr-FSC_BASIC`` () = singleTestBuildAndRun "core/tlr" FSC_BASIC
 
     [<Test>]

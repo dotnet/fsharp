@@ -1773,7 +1773,7 @@ val mkInvalidCastExnNewobj: TcGlobals -> ILInstr
 // Construct calls to some intrinsic functions
 //------------------------------------------------------------------------- 
 
-val mkCallNewFormat              : TcGlobals -> range -> TType -> TType -> TType -> TType -> TType -> Expr -> Expr
+val mkCallNewFormat: TcGlobals -> range -> TType -> TType -> TType -> TType -> TType -> formatStringExpr: Expr -> Expr
 
 val mkCallUnbox       : TcGlobals -> range -> TType -> Expr -> Expr
 
@@ -1970,6 +1970,9 @@ val mkCallSeqMap             : TcGlobals -> range -> TType  -> TType -> Expr -> 
 val mkCallSeqSingleton       : TcGlobals -> range -> TType  -> Expr -> Expr
 
 val mkCallSeqEmpty           : TcGlobals -> range -> TType  -> Expr
+
+/// Make a call to the 'isprintf' function for string interpolation
+val mkCall_sprintf: g: TcGlobals -> m: range -> funcTy: TType -> fmtExpr: Expr -> fillExprs: Expr list -> Expr
 
 val mkILAsmCeq                   : TcGlobals -> range -> Expr -> Expr -> Expr
 

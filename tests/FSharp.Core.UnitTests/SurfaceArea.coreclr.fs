@@ -2233,10 +2233,20 @@ Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.S
 Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.String Value
 Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.String get_Value()
 Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: Void .ctor(System.String)
+Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: Void .ctor(System.String, System.Object[], System.Type[])
+Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.Object[] Captures
+Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.Object[] get_Captures()
+Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.Type[] CaptureTypes
+Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.Type[] get_CaptureTypes()
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.String ToString()
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.String Value
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.String get_Value()
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: Void .ctor(System.String)
+Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: Void .ctor(System.String, System.Object[], System.Type[])
+Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Object[] Captures
+Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Object[] get_Captures()
+Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Type[] CaptureTypes
+Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Type[] get_CaptureTypes()
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatLineToError[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatLineToTextWriter[T](System.IO.TextWriter, Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatLine[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
