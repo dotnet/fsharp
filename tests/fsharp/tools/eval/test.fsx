@@ -1542,7 +1542,7 @@ module EvaluationTests =
 
         test5 3s 4s
         test5 3L 4L
-(*
+
         let iarr = [| 0..1000 |]
         let ilist = [ 0..1000 ]
 
@@ -1738,7 +1738,6 @@ module EvaluationTests =
 
 
         Eval <@ Array.average [| 0.0 .. 1.0 .. 10000.0 |] @> 
-*)
 
     module LanguagePrimitiveCastingUnitsOfMeasure = 
         [<Measure>]

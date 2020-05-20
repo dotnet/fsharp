@@ -3574,7 +3574,6 @@ module MoreWitnessTests =
     open System.Runtime.CompilerServices
     open System.IO
 
-    // TODO - ths fails
     [<ReflectedDefinition>]
     module Tests = 
         let inline f0 (x: 'T) : (unit -> 'T) list = 
@@ -3834,6 +3833,37 @@ module TestOuterConstrainedClass =
 
     let z = { Group1 = 1; Group2 = 2 } + { Group1 = 2; Group2 = 3 } // ok
 
+module TestInlineQuotationOfAbsOperator  =
+
+    let inline f x = <@ abs x @>
+
+    type C(n:int) = 
+        static member Abs(c: C) = C(-c.P)
+        member x.P = n
+
+    let v1 = f 3
+    let v2 = f 3.4
+    let v3 = f (C(4))
+    
+    test "check abs1" 
+       (match v1 with 
+         | CallWithWitnesses(None, minfo1, minfo2, [Value(f,_)], [Int32 3]) ->
+             minfo1.Name = "Abs" && minfo2.Name = "Abs$W" && ((f :?> (int -> int)) -3 = 3)
+         | _ -> false)
+
+    test "check abs2" 
+       (match v2 with 
+         | CallWithWitnesses(None, minfo1, minfo2, [Value(f,_)], [Double 3.4]) ->
+             minfo1.Name = "Abs" && minfo2.Name = "Abs$W"  && ((f :?> (double -> double)) -3.0 = 3.0)
+         | _ -> false)
+
+    test "check abs3" 
+       (match v3 with 
+         | CallWithWitnesses(None, minfo1, minfo2, [Value(f,_)], [Value (v,_)]) ->
+             minfo1.Name = "Abs" && minfo2.Name = "Abs$W"  && ((v :?> C).P = 4) && (((f :?> (C -> C)) (C(-7))).P = 7)
+         | _ -> false)
+
+    
 
 #endif
 

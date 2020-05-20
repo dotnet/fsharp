@@ -1924,7 +1924,7 @@ let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
     | Some expr -> 
         Choice2Of2 (mkMemberLambdas m [] None None vsl (expr, tyOfExpr g expr))
     | None -> 
-        Choice1Of2 witnessInfo
+        Choice1Of2 traitInfo
 
 /// Generate the arguments passed for a set of (solved) traits in non-generic code
 let GenWitnessArgs amap g m (traitInfos: TraitConstraintInfo list) =

@@ -1955,6 +1955,8 @@ val mkCallCastQuotation      : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallLiftValueWithName          : TcGlobals -> range -> TType -> string -> Expr -> Expr
 
+val mkCallLiftValue: TcGlobals -> range -> TType -> Expr -> Expr
+
 val mkCallLiftValueWithDefn          : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallSeqCollect         : TcGlobals -> range -> TType  -> TType -> Expr -> Expr -> Expr

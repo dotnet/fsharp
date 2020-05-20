@@ -254,23 +254,28 @@ and GetWitnessArgs cenv (env : QuotationTranslationEnv) m tps tyargs =
         let env = { env with suppressWitnesses = true }
         witnessExprs |> List.map (fun arg -> 
             match arg with 
-            | Choice1Of2 witnessInfo -> 
-                ConvWitnessInfo cenv env m witnessInfo
+            | Choice1Of2 traitInfo -> 
+                ConvWitnessInfo cenv env m traitInfo
             | Choice2Of2 arg -> 
                 ConvExpr cenv env arg) 
     else
         []
 
-and ConvWitnessInfo cenv env m witnessInfo =
+and ConvWitnessInfo cenv env m traitInfo =
     let g = cenv.g
+    let witnessInfo = traitInfo.TraitKey
     let env = { env with suppressWitnesses = true }
+    // First check if this is a witness in ReflectedDefinition code
     if env.witnessesInScope.ContainsKey witnessInfo then 
         let witnessArgIdx = env.witnessesInScope.[witnessInfo]
         QP.mkVar witnessArgIdx
+    // Otherwise it is a witness in a quotation literal 
     else
         let holeTy = GenWitnessTy g witnessInfo
         let idx = cenv.exprSplices.Count
-        cenv.exprSplices.Add((Expr.WitnessArg(witnessInfo, m), m))
+        let fillExpr = Expr.WitnessArg(traitInfo, m)
+        let liftExpr = mkCallLiftValue cenv.g m holeTy fillExpr
+        cenv.exprSplices.Add((liftExpr, m))
         QP.mkHole(ConvType cenv env m holeTy, idx)
 
 and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.ExprData =
@@ -744,8 +749,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | _ ->
             wfail(InternalError( "Unexpected expression shape", m))
 
-    | Expr.WitnessArg (witnessInfo, m) ->
-        ConvWitnessInfo cenv env m witnessInfo
+    | Expr.WitnessArg (traitInfo, m) ->
+        ConvWitnessInfo cenv env m traitInfo
 
     | _ ->
         wfail(InternalError(sprintf "unhandled construct in AST: %A" expr, expr.Range))

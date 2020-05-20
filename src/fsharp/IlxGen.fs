@@ -982,12 +982,12 @@ let StorageForValRef g m (v: ValRef) eenv = StorageForVal g m v.Deref eenv
 let ComputeGenerateWitnesses (g: TcGlobals) eenv =
     g.generateWitnesses && not eenv.witnessesInScope.IsEmpty && not eenv.suppressWitnesses
 
-let TryStorageForWitness (g: TcGlobals) eenv (w: TraitWitnessInfo) = 
+let TryStorageForWitness (_g: TcGlobals) eenv (w: TraitWitnessInfo) = 
     match eenv.witnessesInScope.TryGetValue w with 
     | true, storage -> Some storage
     | _ ->
-        let generateWitnesses = ComputeGenerateWitnesses g eenv
-        assert not generateWitnesses
+        //let generateWitnesses = ComputeGenerateWitnesses g eenv
+        //assert not generateWitnesses
         None
 
 let IsValRefIsDllImport g (vref: ValRef) =
@@ -2425,8 +2425,8 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
     | Expr.Quote (ast, conv, _, m, ty) ->
         GenQuotation cenv cgbuf eenv (ast, conv, m, ty) sequel
 
-    | Expr.WitnessArg (witnessInfo, m) ->
-       GenWitnessArgFromInfo cenv cgbuf eenv m witnessInfo
+    | Expr.WitnessArg (traitInfo, m) ->
+       GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo
        GenSequel cenv eenv.cloc cgbuf sequel
 
     | Expr.Link _ -> failwith "Unexpected reclink"
@@ -3111,23 +3111,43 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
 // Generate calls (try to detect direct calls)
 //--------------------------------------------------------------------------
 
-and GenWitnessArgFromInfo cenv cgbuf eenv m witnessInfo =
+and GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo =
+    let g = cenv.g
+    let storage = TryStorageForWitness g eenv traitInfo.TraitKey
+    match storage with 
+    | None ->
+        let witnessExpr =
+           ConstraintSolver.CodegenWitnessesForTraitWitness cenv.tcVal g cenv.amap m traitInfo 
+            |> CommitOperationResult
+        match witnessExpr with
+        | Choice1Of2 _traitInfo ->
+            System.Diagnostics.Debug.Assert(false, "expected storage for witness")
+            //failwith "unexpected non-generation of witness "
+        | Choice2Of2 arg ->
+            let eenv = { eenv with suppressWitnesses = true }
+            GenExpr cenv cgbuf eenv SPSuppress arg Continue
+    | Some storage -> 
+        let ty = GenWitnessTy g traitInfo.TraitKey
+        GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv.amap m eenv.tyenv ty) storage None
+
+and GenWitnessArgFromWitnessInfo cenv cgbuf eenv m witnessInfo =
     let g = cenv.g
     let storage = TryStorageForWitness g eenv witnessInfo
     match storage with 
     | None ->
         System.Diagnostics.Debug.Assert(false, "expected storage for witness")
+        //failwith "unexpected non-generation of witness "
     | Some storage -> 
         let ty = GenWitnessTy g witnessInfo
         GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv.amap m eenv.tyenv ty) storage None
 
-and GenWitnessArgsFromInfos cenv cgbuf eenv m witnessInfos =
+and GenWitnessArgsFromWitnessInfos cenv cgbuf eenv m witnessInfos =
     let g = cenv.g
     let generateWitnesses = ComputeGenerateWitnesses g eenv
     // Witness arguments are only generated in emitted 'inline' code where witness parameters are available.
     if generateWitnesses then 
         for witnessInfo in witnessInfos do
-            GenWitnessArgFromInfo cenv cgbuf eenv m witnessInfo
+            GenWitnessArgFromWitnessInfo cenv cgbuf eenv m witnessInfo
 
 and GenWitnessArgs cenv cgbuf eenv m tps tyargs =
     let g = cenv.g
@@ -3140,8 +3160,8 @@ and GenWitnessArgs cenv cgbuf eenv m tps tyargs =
 
         for witnessArg in mwitnesses do
             match witnessArg with 
-            | Choice1Of2 witnessInfo ->
-                GenWitnessArgFromInfo cenv cgbuf eenv m witnessInfo
+            | Choice1Of2 traitInfo ->
+                GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo
             | Choice2Of2 arg ->
                 GenExpr cenv cgbuf eenv SPSuppress arg Continue
 
@@ -3289,7 +3309,8 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
           let _, witnessInfos, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm cenv.g topValInfo ctps.Length vref.Type m
 
           let mspec = 
-              if not cenv.g.generateWitnesses || witnessInfos.IsEmpty then
+              let generateWitnesses = ComputeGenerateWitnesses g eenv
+              if not generateWitnesses || witnessInfos.IsEmpty then
                   mspec 
               else 
                   mspecW
@@ -3946,7 +3967,7 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
 and GenQuotation cenv cgbuf eenv (ast, qdataCell, m, ety) sequel =
     let g = cenv.g
     let suppressWitnesses = eenv.suppressWitnesses
-    let referencedTypeDefs, spliceTypes, exprSplices, astSpec =
+    let referencedTypeDefs, typeSplices, exprSplices, astSpec =
         match qdataCell.Value with
         | Some (data1, data2) ->
             if suppressWitnesses then data1 else data2
@@ -3964,7 +3985,7 @@ and GenQuotation cenv cgbuf eenv (ast, qdataCell, m, ety) sequel =
 
     let someTypeInModuleExpr = mkTypeOfExpr cenv m eenv.someTypeInThisAssembly
     let rawTy = mkRawQuotedExprTy g                      
-    let spliceTypeExprs = List.map (GenType cenv.amap m eenv.tyenv >> (mkTypeOfExpr cenv m)) spliceTypes
+    let typeSpliceExprs = List.map (GenType cenv.amap m eenv.tyenv >> (mkTypeOfExpr cenv m)) typeSplices
 
     let bytesExpr = Expr.Op (TOp.Bytes astSerializedBytes, [], [], m)
 
@@ -3973,14 +3994,14 @@ and GenQuotation cenv cgbuf eenv (ast, qdataCell, m, ety) sequel =
         if qf.SupportsDeserializeEx then 
             let referencedTypeDefExprs = List.map (mkILNonGenericBoxedTy >> mkTypeOfExpr cenv m) referencedTypeDefs
             let referencedTypeDefsExpr = mkArray (g.system_Type_ty, referencedTypeDefExprs, m)
-            let spliceTypesExpr = mkArray (g.system_Type_ty, spliceTypeExprs, m)
+            let typeSplicesExpr = mkArray (g.system_Type_ty, typeSpliceExprs, m)
             let spliceArgsExpr = mkArray (rawTy, exprSplices, m)
-            mkCallDeserializeQuotationFSharp40Plus g m someTypeInModuleExpr referencedTypeDefsExpr spliceTypesExpr spliceArgsExpr bytesExpr
+            mkCallDeserializeQuotationFSharp40Plus g m someTypeInModuleExpr referencedTypeDefsExpr typeSplicesExpr spliceArgsExpr bytesExpr
         else
             let mkList ty els = List.foldBack (mkCons g ty) els (mkNil g m ty)
-            let spliceTypesExpr = mkList g.system_Type_ty spliceTypeExprs
+            let typeSplicesExpr = mkList g.system_Type_ty typeSpliceExprs
             let spliceArgsExpr = mkList rawTy exprSplices
-            mkCallDeserializeQuotationFSharp20Plus g m someTypeInModuleExpr spliceTypesExpr spliceArgsExpr bytesExpr
+            mkCallDeserializeQuotationFSharp20Plus g m someTypeInModuleExpr typeSplicesExpr spliceArgsExpr bytesExpr
 
     let afterCastExpr =
         // Detect a typed quotation and insert the cast if needed. The cast should not fail but does
@@ -4437,7 +4458,7 @@ and GenSequenceExpr
             CodeGenMethod cenv cgbuf.mgbuf
                 ([], "GetFreshEnumerator", eenvinner, 1,
                  (fun cgbuf eenv ->
-                    GenWitnessArgsFromInfos cenv cgbuf eenv m cloWitnessInfos
+                    GenWitnessArgsFromWitnessInfos cenv cgbuf eenv m cloWitnessInfos
                     for fv in cloFreeVars do
                         // State variables always get zero-initialized
                         if stateVarsSet.Contains fv then
@@ -4489,7 +4510,7 @@ and GenSequenceExpr
 
     CountClosure()
 
-    GenWitnessArgsFromInfos cenv cgbuf eenvouter m cloWitnessInfos
+    GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloWitnessInfos
     for fv in cloFreeVars do
        /// State variables always get zero-initialized
        if stateVarsSet.Contains fv then
@@ -4611,7 +4632,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars e
 and GenClosureAlloc cenv (cgbuf: CodeGenBuffer) eenv (cloinfo, m) =
     let g = cenv.g
     CountClosure()
-    GenWitnessArgsFromInfos cenv cgbuf eenv m cloinfo.cloWitnessInfos
+    GenWitnessArgsFromWitnessInfos cenv cgbuf eenv m cloinfo.cloWitnessInfos
     GenGetLocalVals cenv cgbuf eenv m cloinfo.cloFreeVars
     CG.EmitInstr cgbuf
         (pop cloinfo.ilCloAllFreeVars.Length)
@@ -4993,7 +5014,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
     let ctxtGenericArgsForDelegee = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
     let ilxCloSpec = IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloAllFreeVars), ctxtGenericArgsForDelegee)
 
-    GenWitnessArgsFromInfos cenv cgbuf eenvouter m cloWitnessInfos
+    GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloWitnessInfos
     GenGetLocalVals cenv cgbuf eenvouter m cloFreeVars
 
     CG.EmitInstr cgbuf (pop ilCloAllFreeVars.Length) (Push [EraseClosures.mkTyOfLambdas g.ilxPubCloEnv ilCloLambdas]) (I_newobj (ilxCloSpec.Constructor, None))

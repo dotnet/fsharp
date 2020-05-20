@@ -253,7 +253,7 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.CoercesTo(ty, m) -> 
              Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty, m))
          | TyparConstraint.MayResolveMember(traitInfo, m) -> 
-             Some(TyparConstraint.MayResolveMember (remapTraitSln tyenv traitInfo, m))
+             Some(TyparConstraint.MayResolveMember (remapTraitInfo tyenv traitInfo, m))
          | TyparConstraint.DefaultsTo(priority, ty, m) ->
              Some(TyparConstraint.DefaultsTo(priority, remapTypeAux tyenv ty, m))
          | TyparConstraint.IsEnum(uty, m) -> 
@@ -276,7 +276,7 @@ and remapTraitWitnessInfo tyenv (TraitWitnessInfo(tys, nm, mf, argtys, rty)) =
     let rtyR = Option.map (remapTypeAux tyenv) rty
     TraitWitnessInfo(tysR, nm, mf, argtysR, rtyR)
 
-and remapTraitSln tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell)) =
+and remapTraitInfo tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell)) =
     let slnCell = 
         match !slnCell with 
         | None -> None
@@ -403,7 +403,7 @@ let mkInstRemap tpinst =
 // entry points for "typar -> TType" instantiation 
 let instType tpinst x = if isNil tpinst then x else remapTypeAux (mkInstRemap tpinst) x
 let instTypes tpinst x = if isNil tpinst then x else remapTypesAux (mkInstRemap tpinst) x
-let instTrait tpinst x = if isNil tpinst then x else remapTraitSln (mkInstRemap tpinst) x
+let instTrait tpinst x = if isNil tpinst then x else remapTraitInfo (mkInstRemap tpinst) x
 let instTyparConstraints tpinst x = if isNil tpinst then x else remapTyparConstraintsAux (mkInstRemap tpinst) x
 let instSlotSig tpinst ss = remapSlotSig (fun _ -> []) (mkInstRemap tpinst) ss
 let copySlotSig ss = remapSlotSig (fun _ -> []) Remap.Empty ss
@@ -4435,7 +4435,7 @@ let accFreevarsInVal opts v acc = accFreeTyvars opts accFreeInVal v acc
     
 let accFreeVarsInTraitSln opts tys acc = accFreeTyvars opts accFreeInTraitSln tys acc 
 
-let accFreeVarsInWitnessArg opts tys acc = accFreeTyvars opts accFreeInWitnessArg tys acc 
+let accFreeVarsInTraitInfo opts tys acc = accFreeTyvars opts accFreeInTrait tys acc 
 
 let boundLocalVal opts v fvs =
     if not opts.includeLocals then fvs else
@@ -4667,8 +4667,8 @@ and accFreeInExprNonLinear opts x acc =
          let acc = accFreeVarsInTys opts tinst acc
          accFreeInExprs opts args acc
 
-    | Expr.WitnessArg (witnessInfo, _) ->
-         accFreeVarsInWitnessArg opts witnessInfo acc
+    | Expr.WitnessArg (traitInfo, _) ->
+         accFreeVarsInTraitInfo opts traitInfo acc
 
 and accFreeInOp opts op acc =
     match op with
@@ -5210,9 +5210,9 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
         let ty' = remapType tmenv ty 
         if ty === ty' then expr else Expr.Const (c, m, ty')
 
-    | Expr.WitnessArg (witnessInfo, m) ->
-        let witnessInfoR = remapTraitWitnessInfo tmenv witnessInfo
-        Expr.WitnessArg (witnessInfoR, m)
+    | Expr.WitnessArg (traitInfo, m) ->
+        let traitInfoR = remapTraitInfo tmenv traitInfo
+        Expr.WitnessArg (traitInfoR, m)
 
 and remapTarget g compgen tmenv (TTarget(vs, e, spTarget)) = 
     let vs', tmenvinner = copyAndRemapAndBindVals g compgen tmenv vs 
@@ -5278,7 +5278,7 @@ and remapOp tmenv op =
         let tys2 = remapTypes tmenv tys
         if tys === tys2 then op else
         TOp.ILAsm (instrs, tys2)
-    | TOp.TraitCall traitInfo -> TOp.TraitCall (remapTraitSln tmenv traitInfo)
+    | TOp.TraitCall traitInfo -> TOp.TraitCall (remapTraitInfo tmenv traitInfo)
     | TOp.LValueOp (kind, lvr) -> TOp.LValueOp (kind, remapValRef tmenv lvr)
     | TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, valUseFlags, isProperty, noTailCall, ilMethRef, enclTypeArgs, methTypeArgs, tys) -> 
        TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, remapValFlags tmenv valUseFlags, 
@@ -5783,11 +5783,6 @@ let GenWitnessArgTys (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
     let argtys = if argtys.IsEmpty then [g.unit_ty] else argtys
     let argtysl = List.map List.singleton argtys
     argtysl
-    //match tys with 
-    //| _ when not memFlags.IsInstance  -> argtysl
-    //| [ty] -> [ty] :: argtysl
-    //| [_; _] -> [g.obj_ty] :: argtysl
-    //| _ -> failwith "unexpected empty type support for trait constraint" 
 
 let GenWitnessTy (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
     let rty = match traitInfo.ReturnType with None -> g.unit_ty | Some ty -> ty
@@ -5854,7 +5849,7 @@ let rec tyOfExpr g e =
             //errorR(InternalError("unexpected goto/label/return in tyOfExpr", m))
             // It doesn't matter what type we return here. This is only used in free variable analysis in the code generator
             g.unit_ty
-    | Expr.WitnessArg (witnessInfo, _m) -> GenWitnessTy g witnessInfo
+    | Expr.WitnessArg (traitInfo, _m) -> GenWitnessTy g traitInfo.TraitKey
 
 //--------------------------------------------------------------------------
 // Make applications
@@ -7112,6 +7107,9 @@ let mkCallDeserializeQuotationFSharp40Plus g m e1 e2 e3 e4 e5 =
 let mkCallCastQuotation g m ty e1 = 
     mkApps g (typedExprForIntrinsic g m g.cast_quotation_info, [[ty]], [ e1 ], m)
 
+let mkCallLiftValue (g: TcGlobals) m ty e1 = 
+    mkApps g (typedExprForIntrinsic g m g.lift_value_info, [[ty]], [e1], m)
+
 let mkCallLiftValueWithName (g: TcGlobals) m ty nm e1 = 
     let vref = ValRefForIntrinsic g.lift_value_with_name_info 
     // Use "Expr.ValueWithName" if it exists in FSharp.Core
@@ -7119,7 +7117,7 @@ let mkCallLiftValueWithName (g: TcGlobals) m ty nm e1 =
     | ValueSome _ ->
         mkApps g (typedExprForIntrinsic g m g.lift_value_with_name_info, [[ty]], [mkRefTupledNoTypes g m [e1; mkString g m nm]], m)
     | ValueNone ->
-        mkApps g (typedExprForIntrinsic g m g.lift_value_info, [[ty]], [e1], m)
+        mkCallLiftValue g m ty e1
 
 let mkCallLiftValueWithDefn g m qty e1 = 
     assert isQuotedExprTy g qty

@@ -4545,7 +4545,7 @@ type Expr =
     /// witnessArg is the lambda for the witness
     /// 
     | WitnessArg of
-        witnessInfo: TraitWitnessInfo *
+        traitInfo: TraitConstraintInfo *
         range: range
 
     /// Indicates a free choice of typars that arises due to 

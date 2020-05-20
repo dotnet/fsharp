@@ -3071,23 +3071,28 @@ let CreateCodegenState tcVal g amap =
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
 let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
     let css = CreateCodegenState tcVal g amap
-
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-
     let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
-
     let sln = GenWitnessExpr amap g m traitInfo argExprs
     return sln
   }
 
-/// Generate the arguments passed for a use of a generic construct that accepts trait witnesses
+/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
 let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let ftps, _renaming, tinst = FreshenTypeInst m typars
-    let cxs = GetTraitConstraintInfosOfTypars g ftps 
+    let traitInfos = GetTraitConstraintInfosOfTypars g ftps 
     do! SolveTypeEqualsTypeEqns csenv 0 m NoTrace None tinst tyargs
-    return MethodCalls.GenWitnessArgs amap g m cxs
+    return MethodCalls.GenWitnessArgs amap g m traitInfos
+  }
+
+/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
+let CodegenWitnessesForTraitWitness tcVal g amap m traitInfo = trackErrors {
+    let css = CreateCodegenState tcVal g amap
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
+    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
+    return MethodCalls.GenWitnessExprLambda amap g m traitInfo
   }
 
 /// For some code like "let f() = ([] = [])", a free choice is made for a type parameter

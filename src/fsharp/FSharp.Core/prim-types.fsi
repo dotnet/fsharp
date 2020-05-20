@@ -719,7 +719,6 @@ namespace Microsoft.FSharp.Core
         /// <returns>NoDynamicInvocationAttribute</returns>
         new : unit -> NoDynamicInvocationAttribute
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         internal new : isLegacy: bool -> NoDynamicInvocationAttribute
 
     /// <summary>This attribute is used to indicate that references to the elements of a module, record or union 

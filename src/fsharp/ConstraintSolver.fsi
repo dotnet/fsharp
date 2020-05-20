@@ -195,7 +195,10 @@ val ApplyTyparDefaultAtPriority: DisplayEnv -> ConstraintSolverState -> priority
 val CodegenWitnessForTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
 
 /// Generate the arguments passed when using a generic construct that accepts traits witnesses
-val CodegenWitnessesForTyparInst : TcValF -> TcGlobals -> ImportMap -> range -> Typars -> TType list -> OperationResult<Choice<TraitWitnessInfo, Expr> list>
+val CodegenWitnessesForTyparInst : TcValF -> TcGlobals -> ImportMap -> range -> Typars -> TType list -> OperationResult<Choice<TraitConstraintInfo, Expr> list>
+
+/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
+val CodegenWitnessesForTraitWitness : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> OperationResult<Choice<TraitConstraintInfo, Expr>>
 
 /// For some code like "let f() = ([] = [])", a free choice is made for a type parameter
 /// for an interior type variable.  This chooses a solution for a type parameter subject
