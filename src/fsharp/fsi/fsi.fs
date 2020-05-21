@@ -1295,7 +1295,7 @@ type internal FsiDynamicCompiler
         let tcGlobals = istate.tcGlobals
         let amap = tcImports.GetImportMap()
         
-        let rec import ccuinfos (ilTy: ILType) : ImportedAssembly list * TType =
+        let rec import ccuinfos (ilTy: ILType) =
             let ccuinfos, tinst =
                 (ilTy.GenericArgs, (ccuinfos, []))
                 ||> List.foldBack (fun ilGenericArgTy (ccuInfos, tinst) ->
@@ -1308,7 +1308,7 @@ type internal FsiDynamicCompiler
                 match tryTcrefOfAppTy tcGlobals ty with
                 | ValueSome tcref ->
                     match tcref.CompilationPath.ILScopeRef with
-                    | ILScopeRef.Assembly aref  when not (prevCcuinfos |> List.exists (fun x -> x.FSharpViewOfMetadata.AssemblyName = aref.Name)) ->
+                    | ILScopeRef.Assembly aref when not (prevCcuinfos |> List.exists (fun x -> x.FSharpViewOfMetadata.AssemblyName = aref.Name)) ->
                         (tcImports.GetImportedAssemblies() |> List.find (fun x -> x.FSharpViewOfMetadata.AssemblyName = aref.Name)) :: ccuinfos
                     | _ ->
                         ccuinfos
