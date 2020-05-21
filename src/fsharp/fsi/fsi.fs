@@ -1316,7 +1316,12 @@ type internal FsiDynamicCompiler
                     ccuinfos
             ccuinfos, ty
         
-        let ccuinfos, ty = import [] (convertReflectionTypeToILType reflectionTy)
+        let ilTy = convertReflectionTypeToILType reflectionTy
+
+        if not (Import.CanImportILType amap range0 ilTy) then
+            invalidOp (sprintf "Unable to import type, %A." reflectionTy)
+
+        let ccuinfos, ty = import [] ilTy
         // After we have successfully imported the type, then we can add newly resolved ccus to the env.
         addCcusToIncrementalEnv istate ccuinfos, ty
 
