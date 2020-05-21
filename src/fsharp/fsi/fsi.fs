@@ -1488,7 +1488,7 @@ type internal FsiDynamicCompiler
                     input.MetaCommandDiagnostics |> List.iter diagnosticSink
                     let parsedInput = 
                         match input.SyntaxTree with 
-                        | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],input.FileName,(true,false),errorLogger,(*retryLocked*)false)
+                        | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],input.FileName,true,false,errorLogger,(*retryLocked*)false)
                         | _-> input.SyntaxTree
                     input.FileName, parsedInput)
               |> List.unzip

@@ -1240,7 +1240,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     // Mark up the source files with an indicator flag indicating if they are the last source file in the project
     let sourceFiles = 
         let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
-        ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, (flag, isExe))))
+        ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, flag, isExe)))
 
     let defaultTimeStamp = DateTime.UtcNow
 
@@ -1256,7 +1256,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     let allDependencies =
         [| yield! basicDependencies
-           for (_, f, _) in sourceFiles do
+           for (_, f, _, _) in sourceFiles do
                 yield f |]
 
     //----------------------------------------------------
@@ -1265,13 +1265,13 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// This is a build task function that gets placed into the build rules as the computation for a VectorStamp
     ///
     /// Get the timestamp of the given file name.
-    let StampFileNameTask (cache: TimeStampCache) _ctok (_m: range, filename: string, _isLastCompiland) =
+    let StampFileNameTask (cache: TimeStampCache) _ctok (_m: range, filename: string, _isLastCompiland, _isExe) =
         cache.GetFileTimeStamp filename
 
     /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
     ///
     /// Parse the given file and return the given input.
-    let ParseTask ctok (sourceRange: range, filename: string, isLastCompiland) =
+    let ParseTask ctok (sourceRange: range, filename: string, isLastCompiland, isExe) =
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
         let errorLogger = CompilationErrorLogger("ParseTask", tcConfig.errorSeverityOptions)
@@ -1280,7 +1280,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
         try  
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
-            let input = ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
+            let input = ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, isExe, errorLogger, (*retryLocked*)true)
             fileParsed.Trigger filename
 
             input, sourceRange, filename, errorLogger.GetErrors ()
@@ -1553,7 +1553,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     // START OF BUILD DESCRIPTION
 
     // Inputs
-    let fileNamesNode               = InputVector<range*string*(bool*bool)> "FileNames"
+    let fileNamesNode               = InputVector<range*string*bool*bool> "FileNames"
     let referencedAssembliesNode    = InputVector<Choice<string, IProjectReference>*(TimeStampCache -> CompilationThreadToken -> DateTime)> "ReferencedAssemblies"
         
     // Build
@@ -1695,7 +1695,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         
     member __.TryGetSlotOfFileName(filename: string) =
         // Get the slot of the given file and force it to build.
-        let CompareFileNames (_, f2, _) = 
+        let CompareFileNames (_, f2, _, _) = 
             let result = 
                    String.Compare(filename, f2, StringComparison.CurrentCultureIgnoreCase)=0
                 || String.Compare(FileSystem.GetFullPathShim filename, FileSystem.GetFullPathShim f2, StringComparison.CurrentCultureIgnoreCase)=0
@@ -1736,7 +1736,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         return ParseTask ctok results
       }
 
-    member __.SourceFiles  = sourceFiles  |> List.map (fun (_, f, _) -> f)
+    member __.SourceFiles  = sourceFiles  |> List.map (fun (_, f, _, _) -> f)
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.

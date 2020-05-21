@@ -3361,7 +3361,7 @@ let ComputeAnonModuleName check defaultNamespace filename (m: range) =
         mkRange filename pos0 pos0
     pathToSynLid anonymousModuleNameRange (splitNamespace combined)
 
-let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) = 
+let PostParseModuleImpl (_i, defaultNamespace, allowAnonModule, filename, impl) = 
     match impl with 
     | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) -> 
         let lid = 
@@ -3373,9 +3373,8 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) 
         SynModuleOrNamespace(lid, isRec, kind, decls, xmlDoc, attribs, access, m)
 
     | ParsedImplFileFragment.AnonModule (defs, m)-> 
-        let isLast, isExe = isLastCompiland 
         let lower = String.lowercase filename
-        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix lower)) then
+        if not allowAnonModule && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix lower)) then
             match defs with
             | SynModuleDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(), trimRangeToLine m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), trimRangeToLine m))
@@ -3391,7 +3390,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, filename, impl) 
             | _ -> lid, kind
         SynModuleOrNamespace(lid, a, kind, c, d, e, None, m)
 
-let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) = 
+let PostParseModuleSpec (defaultNamespace, isLastCompiland, isExe, filename, intf) = 
     match intf with 
     | ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, isRec, kind, decls, xmlDoc, attribs, access, m)) -> 
         let lid = 
@@ -3403,9 +3402,8 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
         SynModuleOrNamespaceSig(lid, isRec, NamedModule, decls, xmlDoc, attribs, access, m)
 
     | ParsedSigFileFragment.AnonModule (defs, m) -> 
-        let isLast, isExe = isLastCompiland
         let lower = String.lowercase filename
-        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix lower)) then 
+        if not (isLastCompiland && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix lower)) then 
             match defs with
             | SynModuleSigDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(), m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(), m))
@@ -3423,13 +3421,15 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, filename, intf) 
 
 
 
-let PostParseModuleImpls (defaultNamespace, filename, (isLastCompiland, isExe), ParsedImplFile (hashDirectives, impls)) = 
+let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, isExe, ParsedImplFile (hashDirectives, impls)) = 
     match impls |> List.rev |> List.tryPick (function ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, _, _, _, _, _, _, _)) -> Some lid | _ -> None) with
     | Some lid when impls.Length > 1 -> 
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(), rangeOfLid lid))
     | _ -> 
         ()
-    let impls = impls |> List.mapi (fun i x -> PostParseModuleImpl (i, defaultNamespace, (isLastCompiland, isExe), filename, x)) 
+
+    let allowAnonModule = isLastCompiland && isExe
+    let impls = impls |> List.mapi (fun i x -> PostParseModuleImpl (i, defaultNamespace, allowAnonModule, filename, x)) 
     let qualName = QualFileNameOfImpls filename impls
     let isScript = IsScript filename
 
@@ -3443,14 +3443,14 @@ let PostParseModuleImpls (defaultNamespace, filename, (isLastCompiland, isExe), 
               yield! GetScopedPragmasForHashDirective hd ]
     ParsedInput.ImplFile (ParsedImplFileInput (filename, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland))
   
-let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSigFile (hashDirectives, specs)) = 
+let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, isExe, ParsedSigFile (hashDirectives, specs)) = 
     match specs |> List.rev |> List.tryPick (function ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, _, _, _, _, _, _, _)) -> Some lid | _ -> None) with
     | Some lid when specs.Length > 1 -> 
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(), rangeOfLid lid))
     | _ -> 
         ()
         
-    let specs = specs |> List.mapi (fun i x -> PostParseModuleSpec(i, defaultNamespace, isLastCompiland, filename, x)) 
+    let specs = specs |> List.map (fun x -> PostParseModuleSpec(defaultNamespace, isLastCompiland, isExe, filename, x)) 
     let qualName = QualFileNameOfSpecs filename specs
     let scopedPragmas = 
         [ for (SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _)) in specs do 
@@ -3495,7 +3495,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
         let inputT = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput (fileName, qualNameOfFileT, scopedPragmas, hashDirectives, modules))
         inputT, moduleNamesDictT
 
-let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland) = 
+let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland, isExe) = 
     // The assert below is almost ok, but it fires in two cases:
     //  - fsi.exe sometimes passes "stdin" as a dummy filename
     //  - if you have a #line directive, e.g. 
@@ -3516,10 +3516,10 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
 
             if FSharpImplFileSuffixes |> List.exists (Filename.checkSuffix lower) then  
                 let impl = Parser.implementationFile lexer lexbuf 
-                PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, impl)
+                PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, isExe, impl)
             elif FSharpSigFileSuffixes |> List.exists (Filename.checkSuffix lower) then  
                 let intfs = Parser.signatureFile lexer lexbuf 
-                PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, intfs)
+                PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, isExe, intfs)
             else 
                 delayLogger.Error(Error(FSComp.SR.buildInvalidSourceFileExtension filename, Range.rangeStartup))
         scopedPragmas <- GetScopedPragmasForInput input
@@ -3533,7 +3533,7 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
 // parsing - ParseOneInputFile
 // Filename is (ml/mli/fs/fsi source). Parse it to AST. 
 //----------------------------------------------------------------------------
-let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger) =
+let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, isExe, errorLogger) =
     use unwindbuildphase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
     try 
         let skip = true in (* don't report whitespace from lexer *)
@@ -3560,7 +3560,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
                         | IHash (_, m) -> dprintf "Parsed OK, got hash @ %a\n" outputRange m
                     exit 0
 
-                let res = ParseInput(tokenizer.Lexer, errorLogger, lexbuf, None, filename, isLastCompiland)
+                let res = ParseInput(tokenizer.Lexer, errorLogger, lexbuf, None, filename, isLastCompiland, isExe)
 
                 if tcConfig.reportNumDecls then 
                     let rec flattenSpecs specs = 
@@ -3582,7 +3582,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
     with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None 
 
             
-let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
+let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, isExe, errorLogger, retryLocked) =
     try 
        let lower = String.lowercase filename
        if List.exists (Filename.checkSuffix lower) (FSharpSigFileSuffixes@FSharpImplFileSuffixes) then  
@@ -3591,7 +3591,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
             let isFeatureSupported featureId = tcConfig.langVersion.SupportsFeature featureId
             use reader = File.OpenReaderAndRetry (filename, tcConfig.inputCodePage, retryLocked)
             let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(isFeatureSupported, reader)
-            ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
+            ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, isExe, errorLogger)
        else error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
     with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None 
      
@@ -5205,8 +5205,9 @@ module ScriptPreprocessClosure =
         let isFeatureSupported featureId = tcConfig.langVersion.SupportsFeature featureId
         let lexbuf = UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText) 
 
-        let isLastCompiland = (IsScript filename), tcConfig.target.IsExe        // The root compiland is last in the list of compilands.
-        ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, errorLogger) 
+        let isLastCompiland = IsScript filename // The root compiland is last in the list of compilands.
+        let isExe = tcConfig.target.IsExe
+        ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, isExe, errorLogger) 
 
     /// Create a TcConfig for load closure starting from a single .fsx file
     let CreateScriptTextTcConfig 

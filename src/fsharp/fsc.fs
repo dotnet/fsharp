@@ -1844,7 +1844,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
             |> List.choose (fun (filename: string, isLastCompiland) -> 
                 let pathOfMetaCommandSource = Path.GetDirectoryName filename
-                match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], filename, (isLastCompiland, isExe), errorLogger, (*retryLocked*)false) with
+                match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], filename, isLastCompiland, isExe, errorLogger, (*retryLocked*)false) with
                 | Some input -> Some (input, pathOfMetaCommandSource)
                 | None -> None
                 ) 

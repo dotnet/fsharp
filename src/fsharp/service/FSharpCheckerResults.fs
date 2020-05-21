@@ -1514,7 +1514,7 @@ module internal ParseAndCheckFile =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
                     CompileOps.IsScript(fileName)
                 let isExe = options.IsExe
-                try Some (ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe)))
+                try Some (ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, isLastCompiland, isExe))
                 with e ->
                     errHandler.ErrorLogger.StopProcessingRecovery e Range.range0 // don't re-raise any exceptions, we must return None.
                     None)

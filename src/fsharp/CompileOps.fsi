@@ -77,7 +77,7 @@ type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedInput * ModuleNamesDict
 
 /// Parse a single input (A signature file or implementation file)
-val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> ParsedInput
+val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland: bool * isExe: bool -> ParsedInput
 
 //----------------------------------------------------------------------------
 // Error and warnings
@@ -722,7 +722,7 @@ val DefaultReferencesForScriptsAndOutOfProjectSources: bool -> string list
 //--------------------------------------------------------------------------
 
 /// Parse one input file
-val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * string list * string * isLastCompiland: (bool * bool) * ErrorLogger * (*retryLocked*) bool -> ParsedInput option
+val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * string list * string * isLastCompiland: bool * isExe: bool * ErrorLogger * (*retryLocked*) bool -> ParsedInput option
 
 //----------------------------------------------------------------------------
 // Type checking and querying the type checking state
