@@ -1294,6 +1294,8 @@ type internal FsiDynamicCompiler
         let tcImports = istate.tcImports
         let tcGlobals = istate.tcGlobals
         let amap = tcImports.GetImportMap()
+
+        let prevCcuinfos = tcImports.GetImportedAssemblies()
         
         let rec import ccuinfos (ilTy: ILType) =
             let ccuinfos, tinst =
@@ -1321,6 +1323,10 @@ type internal FsiDynamicCompiler
             invalidOp (sprintf "Unable to import type, %A." reflectionTy)
 
         let ccuinfos, ty = import [] ilTy
+        let ccuinfos = 
+            ccuinfos 
+            |> List.distinctBy (fun x -> x.FSharpViewOfMetadata.AssemblyName)
+            |> List.filter (fun asm1 -> not (prevCcuinfos |> List.exists (fun asm2 -> asm2.FSharpViewOfMetadata.AssemblyName = asm1.FSharpViewOfMetadata.AssemblyName)))
         // After we have successfully imported the type, then we can add newly resolved ccus to the env.
         addCcusToIncrementalEnv istate ccuinfos, ty
 
