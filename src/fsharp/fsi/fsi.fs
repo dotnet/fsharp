@@ -1302,13 +1302,12 @@ type internal FsiDynamicCompiler
                     let ccuinfos2, ty = import ccuInfos ilGenericArgTy
                     (ccuinfos2 @ ccuinfos, ty :: tinst))
 
-            let prevCcuinfos = tcImports.GetImportedAssemblies()
             let ty = Import.ImportILType amap range0 tinst ilTy
             let ccuinfos =
                 match tryTcrefOfAppTy tcGlobals ty with
                 | ValueSome tcref ->
                     match tcref.CompilationPath.ILScopeRef with
-                    | ILScopeRef.Assembly aref when not (prevCcuinfos |> List.exists (fun x -> x.FSharpViewOfMetadata.AssemblyName = aref.Name)) ->
+                    | ILScopeRef.Assembly aref ->
                         (tcImports.GetImportedAssemblies() |> List.find (fun x -> x.FSharpViewOfMetadata.AssemblyName = aref.Name)) :: ccuinfos
                     | _ ->
                         ccuinfos
