@@ -209,7 +209,7 @@ type cenv =
 
       reportErrors: bool
 
-      isLastCompiland : bool*bool
+      isLastCompiland: bool
 
       isInternalTestSpanStackReferring: bool
 
@@ -1790,8 +1790,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
     let isExplicitEntryPoint = HasFSharpAttribute g g.attrib_EntryPointAttribute v.Attribs
     if isExplicitEntryPoint then 
         cenv.entryPointGiven <- true
-        let isLastCompiland = fst cenv.isLastCompiland
-        if not isLastCompiland && cenv.reportErrors  then 
+        if not cenv.isLastCompiland && cenv.reportErrors  then 
             errorR(Error(FSComp.SR.chkEntryPointUsage(), v.Range)) 
 
     // Analyze the r.h.s. for the "IsCompiledAsStaticPropertyWithoutField" condition
@@ -2293,7 +2292,7 @@ and CheckModuleSpec cenv env x =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
+let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, denv, mexpr, extraAttribs, (isLastCompiland: bool), isInternalTestSpanStackReferring) =
     let cenv = 
         { g =g  
           reportErrors=reportErrors 

@@ -20,6 +20,7 @@ val CheckTopImpl:
     viewCcu: CcuThunk *
     denv: DisplayEnv *
     mexpr: ModuleOrNamespaceExprWithSig *
-    extraAttribs: Attribs * (bool * bool) *
+    extraAttribs: Attribs *
+    isLastCompiland: bool *
     isInternalTestSpanStackReferring: bool 
        -> bool * StampMap<AnonRecdTypeInfo>
