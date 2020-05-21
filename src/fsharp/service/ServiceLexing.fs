@@ -1445,10 +1445,9 @@ module Lexer =
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
 
-        usingLexbufForParsing (lexbuf, filePath) (fun lexbuf -> 
-            while not lexbuf.IsPastEndOfStream do
-                ct.ThrowIfCancellationRequested ()
-                onToken (getNextToken lexbuf) lexbuf.LexemeRange)
+        while not lexbuf.IsPastEndOfStream do
+            ct.ThrowIfCancellationRequested ()
+            onToken (getNextToken lexbuf) lexbuf.LexemeRange
 
     let lex text filePath conditionalCompilationDefines flags supportsFeature lexCallback pathMap ct =
         let errorLogger = CompilationErrorLogger("Lexer", ErrorLogger.FSharpErrorSeverityOptions.Default)
