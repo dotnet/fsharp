@@ -43,7 +43,6 @@
     <Compile Include="Compiler\ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="Compiler\ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Compiler\ErrorMessages\MissingElseBranch.fs" />
-    <Compile Include="Compiler\ErrorMessages\MissingExpressionTests.fs" />
     <Compile Include="Compiler\ErrorMessages\UnitGenericAbstactType.fs" />
     <Compile Include="Compiler\ErrorMessages\NameResolutionTests.fs" />
     <Compile Include="Compiler\ErrorMessages\TypeMismatchTests.fs" />
@@ -53,6 +52,7 @@
     <Compile Include="Compiler\ErrorMessages\WrongSyntaxInForLoop.fs" />
     <Compile Include="Compiler\ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="Compiler\ErrorMessages\DontSuggestTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\MissingExpressionTests.fs" />
     <Compile Include="Compiler\ErrorMessages\InvalidNumericLiteralTests.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
