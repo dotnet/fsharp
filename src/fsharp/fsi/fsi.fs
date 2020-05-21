@@ -1285,6 +1285,41 @@ type internal FsiDynamicCompiler
 
         { istate with boundValues = boundValues }, Completed itValue
 
+    let addCcusToIncrementalEnv istate ccuinfos =
+        let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) istate.optEnv ccuinfos
+        istate.ilxGenerator.AddExternalCcus (ccuinfos |> List.map (fun ccuinfo -> ccuinfo.FSharpViewOfMetadata))
+        { istate with optEnv = optEnv }
+
+    let importReflectionType istate reflectionTy =
+        let tcImports = istate.tcImports
+        let tcGlobals = istate.tcGlobals
+        let amap = tcImports.GetImportMap()
+        
+        let rec import ccuinfos (ilTy: ILType) : ImportedAssembly list * TType =
+            let ccuinfos, tinst =
+                (ilTy.GenericArgs, (ccuinfos, []))
+                ||> List.foldBack (fun ilGenericArgTy (ccuInfos, tinst) ->
+                    let ccuinfos2, ty = import ccuInfos ilGenericArgTy
+                    (ccuinfos2 @ ccuinfos, ty :: tinst))
+
+            let prevCcuinfos = tcImports.GetImportedAssemblies()
+            let ty = Import.ImportILType amap range0 tinst ilTy
+            let ccuinfos =
+                match tryTcrefOfAppTy tcGlobals ty with
+                | ValueSome tcref ->
+                    match tcref.CompilationPath.ILScopeRef with
+                    | ILScopeRef.Assembly aref  when not (prevCcuinfos |> List.exists (fun x -> x.FSharpViewOfMetadata.AssemblyName = aref.Name)) ->
+                        (tcImports.GetImportedAssemblies() |> List.find (fun x -> x.FSharpViewOfMetadata.AssemblyName = aref.Name)) :: ccuinfos
+                    | _ ->
+                        ccuinfos
+                | _ ->
+                    ccuinfos
+            ccuinfos, ty
+        
+        let ccuinfos, ty = import [] (convertReflectionTypeToILType reflectionTy)
+        // After we have successfully imported the type, then we can add newly resolved ccus to the env.
+        addCcusToIncrementalEnv istate ccuinfos, ty
+
     member __.DynamicAssemblyName = assemblyName
 
     member __.DynamicAssembly = (assemblyBuilder :> Assembly)
@@ -1381,10 +1416,8 @@ type internal FsiDynamicCompiler
             with e ->
                 tcConfigB.RemoveReferencedAssemblyByPath(m,path)
                 reraise()
-        let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) istate.optEnv ccuinfos
-        istate.ilxGenerator.AddExternalCcus (ccuinfos |> List.map (fun ccuinfo -> ccuinfo.FSharpViewOfMetadata)) 
         resolutions,
-        { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv); optEnv = optEnv }
+        { addCcusToIncrementalEnv istate ccuinfos with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv) }
 
 
     member __.EvalDependencyManagerTextFragment (packageManager:IDependencyManagerProvider,m,path: string) =
@@ -1522,37 +1555,6 @@ type internal FsiDynamicCompiler
         | _ ->
             None
 
-    member private this.ImportReflectionType (ctok, istate, reflectionTy) =
-        let amap = istate.tcImports.GetImportMap()
-        
-        let resolveAssemblyRefOfILType istate (ilTy: ILType) =
-            let tcImports = istate.tcImports
-                
-            if ilTy.IsNominal then
-                match ilTy.TypeRef.Scope with
-                | ILScopeRef.Assembly aref ->
-                    // Simple name unification. If it fails, then try to resolve the assembly.
-                    if tcImports.TryFindDllInfo(ctok, range0, aref.Name, lookupOnly = true).IsNone then
-                        this.EvalRequireReference(ctok, istate, range0, aref.Name)
-                        |> snd
-                    else
-                        istate
-                | _ ->
-                    istate
-            else
-                istate
-        
-        let rec import istate (ilTy: ILType) =
-            let istate = resolveAssemblyRefOfILType istate ilTy
-            let istate, tinst =
-                (ilTy.GenericArgs, (istate, []))
-                ||> List.foldBack (fun ilGenericArgTy (istate, tinst) ->
-                    let istate, ty = import istate ilGenericArgTy
-                    (istate, ty :: tinst))
-            istate, Import.ImportILType amap range0 tinst ilTy
-        
-        import istate (convertReflectionTypeToILType reflectionTy)
-
     member this.AddBoundValue (ctok, errorLogger: ErrorLogger, istate, name: string, value: obj) =
         try
             match value with
@@ -1573,7 +1575,7 @@ type internal FsiDynamicCompiler
             if PrettyNaming.IsCompilerGeneratedName name then
                 invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved() |> snd)
 
-            let istate, ty = this.ImportReflectionType(ctok, istate, value.GetType())
+            let istate, ty = importReflectionType istate (value.GetType())
             let amap = istate.tcImports.GetImportMap()
 
             let i = nextFragmentId()
