@@ -43,7 +43,7 @@
     <Compile Include="Compiler\ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="Compiler\ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Compiler\ErrorMessages\MissingElseBranch.fs" />
-    <Compile Include="Compiler\ErrorMessages\MissingExpression.fs" />
+    <Compile Include="Compiler\ErrorMessages\MissingExpressionTests.fs" />
     <Compile Include="Compiler\ErrorMessages\UnitGenericAbstactType.fs" />
     <Compile Include="Compiler\ErrorMessages\NameResolutionTests.fs" />
     <Compile Include="Compiler\ErrorMessages\TypeMismatchTests.fs" />
