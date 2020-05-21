@@ -14,7 +14,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 
-type internal Completion =
+type internal HashCompletion =
     { DirectiveRegex: Regex
       AllowableExtensions: string list
       UseIncludeDirectives: bool }
@@ -23,7 +23,7 @@ type internal Completion =
           AllowableExtensions = allowableExtensions
           UseIncludeDirectives = useIncludeDirectives }
 
-type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoManager: FSharpProjectOptionsManager, completions: Completion list) =
+type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoManager: FSharpProjectOptionsManager, completions: HashCompletion list) =
 
     let [<Literal>] NetworkPath = "\\\\"
     let commitRules = ImmutableArray.Create(CharacterSetModificationRule.Create(CharacterSetModificationKind.Replace, '"', '\\', ',', '/'))
@@ -82,9 +82,18 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
            )
         |> Seq.toList
 
+    static member Create(workspace: Workspace, projectInfoManager: FSharpProjectOptionsManager) =
+        let completions =
+            [
+                HashCompletion.Create("""\s*#load\s+(@?"*(?<literal>"[^"]*"?))""", [ ".fs"; ".fsx" ], useIncludeDirectives = true)
+                HashCompletion.Create("""\s*#r\s+(@?"*(?<literal>"[^"]*"?))""", [ ".dll"; ".exe" ], useIncludeDirectives = true)
+                HashCompletion.Create("""\s*#I\s+(@?"*(?<literal>"[^"]*"?))""", [ "\x00" ], useIncludeDirectives = false)
+            ]
+        HashDirectiveCompletionProvider(workspace, projectInfoManager, completions)
+
     interface IFSharpCommonCompletionProvider with
 
-        member this.ProvideCompletionsAsync(context) =
+        member _.ProvideCompletionsAsync(context) =
             asyncMaybe {    
                 let document = context.Document
                 let position = context.Position
@@ -137,7 +146,7 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
             |> Async.Ignore
             |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
  
-        member __.IsInsertionTrigger(text, position, _) = 
+        member _.IsInsertionTrigger(text, position, _) = 
             // Bring up completion when the user types a quote (i.e.: #r "), or if they type a slash
             // path separator character, or if they type a comma (#r "foo,version...").
             // Also, if they're starting a word.  i.e. #r "c:\W
@@ -147,7 +156,7 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
                     FSharpCommonCompletionUtilities.IsStartingNewWord(text, position, (fun x -> Char.IsLetter x), (fun x -> Char.IsLetterOrDigit x))
             isTriggerChar && isInStringLiteral(text, position)
  
-        member __.GetTextChangeAsync(baseGetTextChangeAsync, selectedItem, ch, cancellationToken) = 
+        member _.GetTextChangeAsync(baseGetTextChangeAsync, selectedItem, ch, cancellationToken) = 
             // When we commit "\\" when the user types \ we have to adjust for the fact that the
             // controller will automatically append \ after we commit.  Because of that, we don't
             // want to actually commit "\\" as we'll end up with "\\\".  So instead we just commit

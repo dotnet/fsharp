@@ -626,6 +626,11 @@ namespace Microsoft.FSharp.Core
         /// <summary>Indicates one or more adjustments to the compiled representation of an F# type or member</summary>
         member Flags : CompilationRepresentationFlags
 
+    module internal ExperimentalAttributeMessages = begin
+        [<Literal>]
+        val RequiresPreview : string = "Experimental library feature, requires '--langversion:preview'"
+    end
+        
     /// <summary>This attribute is used to tag values that are part of an experimental library
     /// feature.</summary>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]
