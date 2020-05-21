@@ -9,7 +9,7 @@ open FSharp.Compiler.SourceCodeServices
 module ``Missing Expression`` =
     
     [<Test>]
-    let ``Missing expression after let``() =
+    let ``Missing Expression after let``() =
         CompilerAssert.TypeCheckSingleError
             """
 let sum = 0

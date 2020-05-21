@@ -9,7 +9,7 @@ open FSharp.Compiler.SourceCodeServices
 module ``Module Abbreviations`` =
 
     [<Test>]
-    let ``Downcast Instead Of Upcast``() =
+    let ``Public Module Abbreviation``() =
         CompilerAssert.TypeCheckSingleError
             """
 module public L1 = List

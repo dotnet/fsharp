@@ -9,7 +9,7 @@ open FSharp.Compiler.SourceCodeServices
 module ``Invalid Numeric Literal`` =
 
     [<Test>]
-    let ``1up is invalid numeric literal``() =
+    let ``1up is invalid Numeric Literal``() =
         CompilerAssert.TypeCheckSingleError
             """
 let foo = 1up // int
