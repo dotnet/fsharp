@@ -1237,7 +1237,7 @@ and AddBindingsForModuleTopVals _g allocVal _cloc eenv vs =
 let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap: ImportMap, isIncrementalFragment, g, ccu, fragName, intraAssemblyInfo, eenv, typedImplFiles) =
     let cloc = CompLocForFragment fragName ccu
     let allocVal = ComputeAndAddStorageForLocalTopVal (amap, g, intraAssemblyInfo, true, NoShadowLocal)
-    (eenv, typedImplFiles) ||> List.fold (fun eenv (TImplFile (qname, _, mexpr, _, _, _)) ->
+    (eenv, typedImplFiles) ||> Array.fold (fun eenv (TImplFile (qname, _, mexpr, _, _, _)) ->
         let cloc = { cloc with TopImplQualifiedName = qname.Text }
         if isIncrementalFragment then
             match mexpr with
@@ -7610,9 +7610,9 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
 
 
 let CodegenAssembly cenv eenv mgbuf fileImpls =
-    if not (isNil fileImpls) then
-        let a, b = List.frontAndBack fileImpls
-        let eenv = List.fold (GenTopImpl cenv mgbuf None) eenv a
+    if not (Array.isEmpty fileImpls) then
+        let a, b = Array.take (fileImpls.Length - 1) fileImpls, Array.last fileImpls
+        let eenv = Array.fold (GenTopImpl cenv mgbuf None) eenv a
         let eenv = GenTopImpl cenv mgbuf cenv.opts.mainMethodInfo eenv b
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any

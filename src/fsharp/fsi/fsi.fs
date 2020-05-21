@@ -1205,7 +1205,7 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError(fsiConsoleOutput);
         codegenResults, optEnv, fragName
 
-    let ProcessInputs (ctok, errorLogger: ErrorLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent) =
+    let ProcessInputs (ctok, errorLogger: ErrorLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput[], showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent) =
         let optEnv    = istate.optEnv
         let tcState   = istate.tcState
         let ilxGenerator = istate.ilxGenerator
@@ -1293,7 +1293,7 @@ type internal FsiDynamicCompiler
         let i = nextFragmentId()
         let prefix = mkFragmentPath i 
         // Ensure the path includes the qualifying name 
-        let inputs = inputs |> List.map (PrependPathToInput prefix) 
+        let inputs = inputs |> Array.map (PrependPathToInput prefix) 
         let istate,_,_ = ProcessInputs (ctok, errorLogger, istate, inputs, true, false, false, prefix)
         istate
 
@@ -1305,7 +1305,7 @@ type internal FsiDynamicCompiler
         let prefixPath = pathOfLid prefix
         let impl = SynModuleOrNamespace(prefix,(*isRec*)false, NamedModule,defs,PreXmlDoc.Empty,[],None,rangeStdin)
         let input = ParsedInput.ImplFile (ParsedImplFileInput (filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl], true))
-        let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, true, isInteractiveItExpr, prefix)
+        let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [|input|], showTypes, true, isInteractiveItExpr, prefix)
         let tcState = istate.tcState 
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
         processContents newState declaredImpls
@@ -1470,7 +1470,7 @@ type internal FsiDynamicCompiler
           
           // Intent "[Loading %s]\n" (String.concat "\n     and " sourceFiles)
           fsiConsoleOutput.uprintf "[%s " (FSIstrings.SR.fsiLoadingFilesPrefixText())
-          closure.Inputs  |> List.iteri (fun i input -> 
+          closure.Inputs  |> Array.iteri (fun i input -> 
               if i=0 then fsiConsoleOutput.uprintf  "%s" input.FileName
               else fsiConsoleOutput.uprintnf " %s %s" (FSIstrings.SR.fsiLoadingFilesPrefixText()) input.FileName)
           fsiConsoleOutput.uprintfn "]"
@@ -1483,7 +1483,7 @@ type internal FsiDynamicCompiler
           // Non-scripts will not have been parsed during #load closure so parse them now
           let sourceFiles,inputs = 
               closure.Inputs  
-              |> List.map (fun input-> 
+              |> Array.map (fun input-> 
                     input.ParseDiagnostics |> List.iter diagnosticSink
                     input.MetaCommandDiagnostics |> List.iter diagnosticSink
                     let parsedInput = 
@@ -1491,12 +1491,12 @@ type internal FsiDynamicCompiler
                         | None -> ParseOneInputFile(tcConfig,lexResourceManager,["INTERACTIVE"],input.FileName,true,false,errorLogger,(*retryLocked*)false)
                         | _-> input.SyntaxTree
                     input.FileName, parsedInput)
-              |> List.unzip
+              |> Array.unzip
           
           errorLogger.AbortOnError(fsiConsoleOutput);
-          if inputs |> List.exists Option.isNone then failwith "parse error"
-          let inputs = List.map Option.get inputs 
-          let istate = (istate, sourceFiles, inputs) |||> List.fold2 (fun istate sourceFile input -> fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, input))
+          if inputs |> Array.exists Option.isNone then failwith "parse error"
+          let inputs = Array.map Option.get inputs 
+          let istate = (istate, sourceFiles, inputs) |||> Array.fold2 (fun istate sourceFile input -> fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, input))
           fsiDynamicCompiler.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs)
 
     member __.GetBoundValues istate =
@@ -1593,7 +1593,7 @@ type internal FsiDynamicCompiler
             let ilxGenerator = istate.ilxGenerator
             let isIncrementalFragment = true
             let showTypes = false
-            let declaredImpls = [impl]
+            let declaredImpls = [|impl|]
             let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, istate.optEnv, istate.tcState, tcConfig, false, EmptyTopAttrs, prefix, isIncrementalFragment, declaredImpls, ilxGenerator)
             let istate, declaredImpls = ProcessCodegenResults(ctok, errorLogger, istate, optEnv, istate.tcState, tcConfig, prefix, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults)
             let newState = { istate with tcState = istate.tcState.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput }

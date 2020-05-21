@@ -96,7 +96,7 @@ type public IlxAssemblyGenerator =
 
     /// Register a fragment of the current assembly with the ILX code generator. If 'isIncrementalFragment' is true then the input
     /// is assumed to be a fragment 'typed' into FSI.EXE, otherwise the input is assumed to be the result of a '#load'
-    member AddIncrementalLocalAssemblyFragment: isIncrementalFragment: bool * fragName:string * typedImplFiles: TypedImplFile list -> unit
+    member AddIncrementalLocalAssemblyFragment: isIncrementalFragment: bool * fragName:string * typedImplFiles: TypedImplFile[] -> unit
 
     /// Generate ILX code for an assembly fragment
     member GenerateCode: IlxGenOptions * TypedAssemblyAfterOptimization * Attribs * Attribs -> IlxGenResults

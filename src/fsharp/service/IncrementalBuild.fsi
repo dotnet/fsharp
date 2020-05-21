@@ -100,7 +100,7 @@ type internal IncrementalBuilder =
       member TcConfig : TcConfig
 
       /// The full set of source files including those from options
-      member SourceFiles : string list
+      member SourceFiles : string[]
 
       /// Raised just before a file is type-checked, to invalidate the state of the file in VS and force VS to request a new direct typecheck of the file.
       /// The incremental builder also typechecks the file (error and intellisense results from the background builder are not
@@ -167,7 +167,7 @@ type internal IncrementalBuilder =
       /// This may be a long-running operation.
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
-      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
+      member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile[] option>
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: TimeStampCache * CompilationThreadToken -> DateTime
@@ -178,9 +178,9 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
+      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
 
-      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 * tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot * suggestNamesForErrors: bool * keepAllBackgroundSymbolUses: bool * enableBackgroundItemKeyStoreAndSemanticClassification: bool -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
+      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string[] * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 * tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot * suggestNamesForErrors: bool * keepAllBackgroundSymbolUses: bool * enableBackgroundItemKeyStoreAndSemanticClassification: bool -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.
 module internal IncrementalBuild =
@@ -258,7 +258,7 @@ module internal IncrementalBuild =
     type BuildInput =
         /// Declare a named scalar output.
         static member ScalarInput: node:Scalar<'T> * value: 'T -> BuildInput
-        static member VectorInput: node:Vector<'T> * value: 'T list -> BuildInput
+        static member VectorInput: node:Vector<'T> * value: 'T[] -> BuildInput
 
     /// Declare build outputs and bind them to real values.
     /// Only required for unit testing.

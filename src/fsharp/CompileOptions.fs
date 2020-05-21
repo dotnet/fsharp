@@ -1584,12 +1584,12 @@ let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =
                                               testingAndQAFlags       tcConfigB])
   ]
 
-let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string list, commandLineArgs) =
+let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string[], commandLineArgs) =
     try
         let sourceFilesAcc = ResizeArray sourceFiles
         let collect name = if not (Filename.isDll name) then sourceFilesAcc.Add name
         ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, commandLineArgs)
-        ResizeArray.toList sourceFilesAcc
+        ResizeArray.toArray sourceFilesAcc
     with e ->
         errorRecovery e range0
         sourceFiles
@@ -1695,16 +1695,17 @@ let GetInitialOptimizationEnv (tcImports:TcImports, tcGlobals:TcGlobals) =
     let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) optEnv ccuinfos 
     optEnv
    
-let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu:CcuThunk, implFiles) =
+let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu:CcuThunk, implFiles: _[]) =
     // NOTE: optEnv - threads through 
     //
     // Always optimize once - the results of this step give the x-module optimization 
     // info.  Subsequent optimization steps choose representations etc. which we don't 
     // want to save in the x-module info (i.e. x-module info is currently "high level"). 
-    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-start" implFiles
+    let implFilesArray = List.ofArray implFiles
+    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-start" implFilesArray
 #if DEBUG
     if tcConfig.showOptimizationData then 
-        dprintf "Expression prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.implFilesL tcGlobals implFiles)))
+        dprintf "Expression prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.implFilesL tcGlobals implFilesArray)))
     
     if tcConfig.showOptimizationData then 
         dprintf "CCU prior to optimization:\n%s\n" (Layout.showL (Layout.squashTo 192 (DebugPrint.entityL tcGlobals ccu.Contents)))
@@ -1721,7 +1722,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
     let results, (optEnvFirstLoop, _, _, _) = 
         ((optEnv0, optEnv0, optEnv0, SignatureHidingInfo.Empty), implFiles) 
         
-        ||> List.mapFold (fun (optEnvFirstLoop, optEnvExtraLoop, optEnvFinalSimplify, hidden) implFile -> 
+        ||> Array.mapFold (fun (optEnvFirstLoop, optEnvExtraLoop, optEnvFinalSimplify, hidden) implFile -> 
 
             //ReportTime tcConfig ("Initial simplify")
             let (optEnvFirstLoop, implFile, implFileOptData, hidden), optimizeDuringCodeGen = 
@@ -1786,10 +1787,10 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 
             ((implFile, optimizeDuringCodeGen), implFileOptData), (optEnvFirstLoop, optEnvExtraLoop, optEnvFinalSimplify, hidden))
 
-    let implFiles, implFileOptDatas = List.unzip results
+    let implFiles, implFileOptDatas = Array.unzip results
     let assemblyOptData = Optimizer.UnionOptimizationInfos implFileOptDatas
     let tassembly = TypedAssemblyAfterOptimization implFiles
-    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-end" (List.map fst implFiles)
+    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-end" (Array.map fst implFiles |> List.ofArray)
     ReportTime tcConfig ("Ending Optimizations")
     tassembly, assemblyOptData, optEnvFirstLoop
 

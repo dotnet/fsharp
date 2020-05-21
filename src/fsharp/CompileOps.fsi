@@ -274,7 +274,7 @@ type TcConfigBuilder =
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
       /// Sources added into the build with #load
-      mutable loadedSources: (range * string * string) list
+      mutable loadedSources: (range * string * string)[]
       mutable compilerToolPaths: string  list
       mutable referencedDLLs: AssemblyReference  list
       mutable packageManagerLines: Map<string, (bool * string * range) list>
@@ -413,7 +413,7 @@ type TcConfigBuilder =
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
           -> TcConfigBuilder
 
-    member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
+    member DecideNames: string[] -> outfile: string * pdbfile: string option * assemblyName: string 
     member TurnWarningOff: range * string -> unit
     member TurnWarningOn: range * string -> unit
     member AddIncludePath: range * string * string -> unit
@@ -547,9 +547,9 @@ type TcConfig =
     member GetTargetFrameworkDirectories: unit -> string list
     
     /// Get the loaded sources that exist and issue a warning for the ones that don't
-    member GetAvailableLoadedSources: unit -> (range*string) list
+    member GetAvailableLoadedSources: unit -> (range * string)[]
     
-    member ComputeCanContainEntryPoint: sourceFiles:string list -> bool list *bool 
+    member ComputeCanContainEntryPoint: sourceFiles: string[] -> bool[] * bool 
 
     /// File system query based on TcConfig settings
     member ResolveSourceFile: range * filename: string * pathLoadedFrom: string -> string
@@ -764,18 +764,18 @@ val TypeCheckOneInputEventually :
            -> Eventually<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs 
-val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState
+val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U)[] * TcState -> (TcEnv * TopAttribs * 'T[] * 'U[]) * TcState
     
 /// Finish the checking of a closed set of inputs 
-val TypeCheckClosedInputSetFinish: TypedImplFile list * TcState -> TcState * TypedImplFile list
+val TypeCheckClosedInputSetFinish: TypedImplFile[] * TcState -> TcState * TypedImplFile[]
 
 /// Check a closed set of inputs 
-val TypeCheckClosedInputSet: CompilationThreadToken * checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * ParsedInput  list  -> TcState * TopAttribs * TypedImplFile list * TcEnv
+val TypeCheckClosedInputSet: CompilationThreadToken * checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * ParsedInput[] -> TcState * TopAttribs * TypedImplFile[] * TcEnv
 
 /// Check a single input and finish the checking
 val TypeCheckOneInputAndFinishEventually :
     checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * NameResolution.TcResultsSink * TcState * ParsedInput 
-        -> Eventually<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
+        -> Eventually<(TcEnv * TopAttribs * TypedImplFile[] * ModuleOrNamespaceType[]) * TcState>
 
 /// Indicates if we should report a warning
 val ReportWarning: FSharpErrorSeverityOptions -> PhasedDiagnostic -> bool
@@ -812,10 +812,10 @@ type LoadClosure =
       UnresolvedReferences: UnresolvedAssemblyReference list
 
       /// The list of all sources in the closure with inputs when available, with associated parse errors and warnings
-      Inputs: LoadClosureInput list
+      Inputs: LoadClosureInput[]
 
       /// The original #load references, including those that didn't resolve
-      OriginalLoadReferences: (range * string * string) list
+      OriginalLoadReferences: (range * string * string)[]
 
       /// The #nowarns
       NoWarns: (string * range list) list

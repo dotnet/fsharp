@@ -71,7 +71,7 @@ val compileOfAst :
     noframework:bool *
     exiter:Exiter * 
     loggerProvider: ErrorLoggerProvider * 
-    inputs:ParsedInput list *
+    inputs:ParsedInput[] *
     tcImportsCapture : (TcImports -> unit) option *
     dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
       -> unit

@@ -240,7 +240,12 @@ module Array =
     /// Returns true if one array has trailing elements equal to another's.
     let endsWith (suffix: _ []) (whole: _ []) =
         isSubArray suffix whole (whole.Length-suffix.Length)
-        
+
+    let unzip4 (array: _ []) = 
+        let a, b, cd = Array.unzip3 (Array.map (fun (x, y, z, w) -> (x, y, (z, w))) array)
+        let c, d = Array.unzip cd
+        a, b, c, d
+
 module Option = 
 
     let mapFold f s opt = 

@@ -2103,7 +2103,7 @@ type TcConfigBuilder =
       mutable implicitlyResolveAssemblies: bool
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
-      mutable loadedSources: (range * string * string) list
+      mutable loadedSources: (range * string * string)[]
       mutable compilerToolPaths: string list
       mutable referencedDLLs: AssemblyReference list
       mutable packageManagerLines: Map<string, (bool * string * range) list>
@@ -2274,7 +2274,7 @@ type TcConfigBuilder =
           packageManagerLines = Map.empty
           projectReferences = []
           knownUnresolvedReferences = []
-          loadedSources = []
+          loadedSources = Array.Empty()
           errorSeverityOptions = FSharpErrorSeverityOptions.Default
           embedResources = []
           inputCodePage = None
@@ -2437,17 +2437,30 @@ type TcConfigBuilder =
     /// Decide names of output file, pdb and assembly
     member tcConfigB.DecideNames (sourceFiles) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        if sourceFiles = [] then errorR(Error(FSComp.SR.buildNoInputsSpecified(), rangeCmdArgs))
-        let ext() = match tcConfigB.target with CompilerTarget.Dll -> ".dll" | CompilerTarget.Module -> ".netmodule" | CompilerTarget.ConsoleExe | CompilerTarget.WinExe -> ".exe"
-        let implFiles = sourceFiles |> List.filter (fun lower -> List.exists (Filename.checkSuffix (String.lowercase lower)) FSharpImplFileSuffixes)
+        if Array.isEmpty sourceFiles then errorR (Error (FSComp.SR.buildNoInputsSpecified (), rangeCmdArgs))
+
         let outfile = 
-            match tcConfigB.outputFile, List.rev implFiles with 
-            | None, [] -> "out" + ext()
-            | None, h :: _ -> 
-                let basic = fileNameOfPath h
-                let modname = try Filename.chopExtension basic with _ -> basic
-                modname+(ext())
-            | Some f, _ -> f
+            match tcConfigB.outputFile with
+            | Some f -> f
+            | None ->
+
+            let ext =
+                match tcConfigB.target with
+                | CompilerTarget.Dll -> ".dll"
+                | CompilerTarget.Module -> ".netmodule"
+                | CompilerTarget.ConsoleExe | CompilerTarget.WinExe -> ".exe"
+
+            let lastImplFile =
+                sourceFiles |> Array.tryFindBack (fun lower ->
+                    List.exists (checkSuffix (String.lowercase lower)) FSharpImplFileSuffixes)
+
+            match lastImplFile with
+            | None -> "out" + ext
+            | Some last ->
+                let basic = fileNameOfPath last
+                let modname = try chopExtension basic with _ -> basic
+                modname + ext
+
         let assemblyName = 
             let baseName = fileNameOfPath outfile
             (fileNameWithoutExtension baseName)
@@ -2514,8 +2527,8 @@ type TcConfigBuilder =
                 | None ->
                         // File doesn't exist in the paths. Assume it will be in the load-ed from directory.
                         ComputeMakePathAbsolute pathLoadedFrom originalPath
-            if not (List.contains path (List.map (fun (_, _, path) -> path) tcConfigB.loadedSources)) then
-                tcConfigB.loadedSources <- tcConfigB.loadedSources ++ (m, originalPath, path)
+            if not (Array.exists (fun (_, _, sourcePath) -> sourcePath = path) tcConfigB.loadedSources) then
+                tcConfigB.loadedSources <- Array.append tcConfigB.loadedSources [| m, originalPath, path |]
 
     member tcConfigB.AddEmbeddedSourceFile (file) = 
         tcConfigB.embedSourceList <- tcConfigB.embedSourceList ++ file
@@ -2869,9 +2882,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member tcConfig.CloneOfOriginalBuilder = 
         { data with conditionalCompilationDefines=data.conditionalCompilationDefines }
 
-    member tcConfig.ComputeCanContainEntryPoint(sourceFiles: string list) = 
-        let n = sourceFiles.Length in 
-        (sourceFiles |> List.mapi (fun i _ -> (i = n-1)), tcConfig.target.IsExe)
+    member tcConfig.ComputeCanContainEntryPoint(sourceFiles: string[]) = 
+        let n = sourceFiles.Length in
+        (sourceFiles |> Array.mapi (fun i _ -> (i = n-1)), tcConfig.target.IsExe)
             
     // This call can fail if no CLR is found (this is the path to mscorlib)
     member tcConfig.GetTargetFrameworkDirectories() = 
@@ -2957,7 +2970,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         let lightOnByDefault = List.exists (Filename.checkSuffix lower) FSharpLightSyntaxFileSuffixes
         if lightOnByDefault then (tcConfig.light <> Some false) else (tcConfig.light = Some true )
 
-    member tcConfig.GetAvailableLoadedSources() =
+    member tcConfig.GetAvailableLoadedSources(): (range * string)[] =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         let resolveLoadedSource (m, originalPath, path) =
             try
@@ -2977,8 +2990,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             with e -> errorRecovery e m; None
 
         tcConfig.loadedSources 
-        |> List.choose resolveLoadedSource 
-        |> List.distinct     
+        |> Array.choose resolveLoadedSource 
+        |> Array.distinct     
 
     /// A closed set of assemblies where, for any subset S:
     ///    - the TcImports object built for S (and thus the F# Compiler CCUs for the assemblies in S) 
@@ -5149,9 +5162,9 @@ type LoadClosure =
       /// The list of references that were not resolved during load closure. These may still be extension references.
       UnresolvedReferences: UnresolvedAssemblyReference list
       /// The list of all sources in the closure with inputs when available
-      Inputs: LoadClosureInput list
+      Inputs: LoadClosureInput[]
       /// The #load, including those that didn't resolve
-      OriginalLoadReferences: (range * string * string) list
+      OriginalLoadReferences: (range * string * string)[]
       /// The #nowarns
       NoWarns: (string * range list) list
       /// Diagnostics seen while processing resolutions
@@ -5365,7 +5378,7 @@ module ScriptPreprocessClosure =
                             yield! resolveDependencyManagerSources filename
 
                             let postSources = tcConfig.GetAvailableLoadedSources()
-                            let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
+                            let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else Array.Empty()
 
                             yield! resolveDependencyManagerSources filename
                             for (m, subFile) in sources do
@@ -5411,11 +5424,11 @@ module ScriptPreprocessClosure =
         let sourceFiles = [ for (ClosureFile(filename, m, _, _, _, _)) in closureFiles -> (filename, m) ]
 
         let sourceInputs = 
-            [  for (ClosureFile(filename, _, input, parseDiagnostics, metaDiagnostics, _nowarns)) in closureFiles ->
+            [| for (ClosureFile(filename, _, input, parseDiagnostics, metaDiagnostics, _nowarns)) in closureFiles ->
                    ({ FileName=filename
                       SyntaxTree=input
                       ParseDiagnostics=parseDiagnostics
-                      MetaCommandDiagnostics=metaDiagnostics } : LoadClosureInput) ]
+                      MetaCommandDiagnostics=metaDiagnostics } : LoadClosureInput) |]
 
         let globalNoWarns = closureFiles |> List.collect (fun (ClosureFile(_, _, _, _, _, noWarns)) -> noWarns)
 
@@ -5787,23 +5800,23 @@ let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, pre
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
-    let tcEnvsAtEndFile, topAttrs, implFiles, ccuSigsForFiles = List.unzip4 results
-    let topAttrs = List.foldBack CombineTopAttrs topAttrs EmptyTopAttrs
-    let implFiles = List.choose id implFiles
+    let tcEnvsAtEndFile, topAttrs, implFiles, ccuSigsForFiles = Array.unzip4 results
+    let topAttrs = Array.foldBack CombineTopAttrs topAttrs EmptyTopAttrs
+    let implFiles = Array.choose id implFiles
     // This is the environment required by fsi.exe when incrementally adding definitions 
-    let tcEnvAtEndOfLastFile = (match tcEnvsAtEndFile with h :: _ -> h | _ -> tcState.TcEnvFromSignatures)
+    let tcEnvAtEndOfLastFile = if Array.isEmpty tcEnvsAtEndFile then tcState.TcEnvFromSignatures else tcEnvsAtEndFile.[0]
     (tcEnvAtEndOfLastFile, topAttrs, implFiles, ccuSigsForFiles), tcState
 
 let TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     eventually {
         Logger.LogBlockStart LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         let! results, tcState = TypeCheckOneInputEventually(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input)
-        let result = TypeCheckMultipleInputsFinish([results], tcState)
+        let result = TypeCheckMultipleInputsFinish([|results|], tcState)
         Logger.LogBlockStop LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         return result
     }
 
-let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
+let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile[], tcState) =
     // Publish the latest contents to the CCU 
     tcState.tcsCcu.Deref.Contents <- Construct.NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
 
@@ -5816,7 +5829,7 @@ let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
     
 let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions 
-    let results, tcState = (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
+    let results, tcState = (tcState, inputs) ||> Array.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
     let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile

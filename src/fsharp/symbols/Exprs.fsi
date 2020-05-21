@@ -11,7 +11,7 @@ open FSharp.Compiler.TypedTree
 /// Represents the definitional contents of an assembly, as seen by the F# language
 type public FSharpAssemblyContents = 
 
-    internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * thisCcuType: ModuleOrNamespaceType option * tcImports: TcImports * mimpls: TypedImplFile list -> FSharpAssemblyContents
+    internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * thisCcuType: ModuleOrNamespaceType option * tcImports: TcImports * mimpls: TypedImplFile[] -> FSharpAssemblyContents
 
     /// The contents of the implementation files in the assembly
     member ImplementationFiles:  FSharpImplementationFileContents list

@@ -66,7 +66,7 @@ val GetCoreFsiCompilerOptions     : TcConfigBuilder -> CompilerOptionBlock list
 val GetCoreServiceCompilerOptions : TcConfigBuilder -> CompilerOptionBlock list
 
 /// Apply args to TcConfigBuilder and return new list of source files
-val ApplyCommandLineArgs: tcConfigB: TcConfigBuilder * sourceFiles: string list * argv: string list -> string list
+val ApplyCommandLineArgs: tcConfigB: TcConfigBuilder * sourceFiles: string[] * argv: string list -> string[]
 
 // Expose the "setters" for some user switches, to enable setting of defaults
 val SetOptimizeSwitch : TcConfigBuilder -> OptionSwitch -> unit
@@ -79,7 +79,7 @@ val GetGeneratedILModuleName : CompilerTarget -> string -> string
 
 val GetInitialOptimizationEnv : TcImports * TcGlobals -> IncrementalOptimizationEnv
 val AddExternalCcuToOptimizationEnv : TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
-val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * string * ImportMap * bool * IncrementalOptimizationEnv * CcuThunk * TypedImplFile list -> TypedAssemblyAfterOptimization * Optimizer.LazyModuleInfo * IncrementalOptimizationEnv 
+val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * string * ImportMap * bool * IncrementalOptimizationEnv * CcuThunk * TypedImplFile[] -> TypedAssemblyAfterOptimization * Optimizer.LazyModuleInfo * IncrementalOptimizationEnv 
 
 val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxGen.IlxAssemblyGenerator
 

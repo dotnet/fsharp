@@ -189,9 +189,9 @@ type DisposablesTracker() =
                 try i.Dispose() with _ -> ()
 
 
-let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, assemblyName, niceNameGen, tcEnv0, inputs, exiter: Exiter) =
+let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, assemblyName, niceNameGen, tcEnv0, inputs: _[], exiter: Exiter) =
     try 
-        if isNil inputs then error(Error(FSComp.SR.fscNoImplementationFiles(), Range.rangeStartup))
+        if Array.isEmpty inputs then error(Error(FSComp.SR.fscNoImplementationFiles(), Range.rangeStartup))
         let ccuName = assemblyName
         let tcInitialState = GetInitialTcState (rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv0)
         TypeCheckClosedInputSet (ctok, (fun () -> errorLogger.ErrorCount > 0), tcConfig, tcImports, tcGlobals, None, tcInitialState, inputs)
@@ -200,7 +200,7 @@ let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, a
         exiter.Exit 1
 
 /// Check for .fsx and, if present, compute the load closure for of #loaded files.
-let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFiles, lexResourceManager) =
+let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFiles, lexResourceManager): string[] =
 
     let combineFilePath file =
         try
@@ -244,7 +244,7 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
     // Find closure of .fsx files.
     commandLineSourceFiles |> List.iter AppendClosureInformation
 
-    List.rev allSources
+    allSources |> Array.ofList |> Array.rev
 
 let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals, lcidFromCodePage, argv) =
     let mutable inputFilesRef = []
@@ -1772,7 +1772,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
     // process command line, flags and collect filenames 
-    let sourceFiles = 
+    let sourceFiles: string[] = 
 
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them. 
@@ -1839,10 +1839,10 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
     let inputs =
         try
-            let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint 
-            isLastCompiland |> List.zip sourceFiles
+            let isLastCompiland, isExe = tcConfig.ComputeCanContainEntryPoint sourceFiles 
+            Array.zip sourceFiles isLastCompiland
             // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
-            |> List.choose (fun (filename: string, isLastCompiland) -> 
+            |> Array.choose (fun (filename: string, isLastCompiland) -> 
                 let pathOfMetaCommandSource = Path.GetDirectoryName filename
                 match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], filename, isLastCompiland, isExe, errorLogger, (*retryLocked*)false) with
                 | Some input -> Some (input, pathOfMetaCommandSource)
@@ -1854,16 +1854,16 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     
     let inputs, _ =
         (Map.empty, inputs)
-        ||> List.mapFold (fun state (input,x) -> let inputT, stateT = DeduplicateParsedInputModuleName state input in (inputT,x), stateT)
+        ||> Array.mapFold (fun state (input,x) -> let inputT, stateT = DeduplicateParsedInputModuleName state input in (inputT,x), stateT)
 
     if tcConfig.parseOnly then exiter.Exit 0 
     if not tcConfig.continueAfterParseFailure then 
         AbortOnError(errorLogger, exiter)
 
     if tcConfig.printAst then                
-        inputs |> List.iter (fun (input, _filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
+        inputs |> Array.iter (fun (input, _filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
 
-    let tcConfig = (tcConfig, inputs) ||> List.fold (fun z (x, m) -> ApplyMetaCommandsFromInputToTcConfig(z, x, m))
+    let tcConfig = (tcConfig, inputs) ||> Array.fold (fun z (x, m) -> ApplyMetaCommandsFromInputToTcConfig(z, x, m))
     let tcConfigP = TcConfigProvider.Constant tcConfig
 
     // Import other assemblies
@@ -1884,7 +1884,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // Type check the inputs
-    let inputs = inputs |> List.map fst
+    let inputs = Array.map fst inputs
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd = 
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
 
@@ -1946,7 +1946,7 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 
 // This is for the compile-from-AST feature of FCS.
 // TODO: consider removing this feature from FCS, which as far as I know is not used by anyone.
-let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, inputs : ParsedInput list) =
+let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, inputs: ParsedInput[]) =
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
@@ -1988,7 +1988,7 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse) 
 
     let meta = Directory.GetCurrentDirectory()
-    let tcConfig = (tcConfig,inputs) ||> List.fold (fun tcc inp -> ApplyMetaCommandsFromInputToTcConfig (tcc, inp,meta))
+    let tcConfig = (tcConfig,inputs) ||> Array.fold (fun tcc inp -> ApplyMetaCommandsFromInputToTcConfig (tcc, inp,meta))
     let tcConfigP = TcConfigProvider.Constant tcConfig
 
     let tcGlobals,tcImports =  
@@ -2026,7 +2026,7 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
   
 /// Phase 2a: encode signature data, optimize, encode optimization data
 let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, 
-                 errorLogger: ErrorLogger, generatedCcu: CcuThunk, outfile, typedImplFiles, 
+                 errorLogger: ErrorLogger, generatedCcu: CcuThunk, outfile, typedImplFiles: _[], 
                  topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
       
     // Encode the signature data

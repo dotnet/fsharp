@@ -895,13 +895,13 @@ let ``Type provider project references should not throw exceptions`` () =
                 UseScriptResolutionRules = false;
                 LoadTime = System.DateTime.Now
                 UnresolvedReferences = None;
-                OriginalLoadReferences = [];
+                OriginalLoadReferences = [||];
                 ExtraProjectInfo = None;})|];
            IsIncompleteTypeCheckEnvironment = false;
            UseScriptResolutionRules = false;
            LoadTime = System.DateTime.Now
            UnresolvedReferences = None;
-           OriginalLoadReferences = [];
+           OriginalLoadReferences = [||];
            ExtraProjectInfo = None;}
 
     //printfn "options: %A" options
@@ -990,7 +990,7 @@ let ``Projects creating generated types should not utilize cross-project-referen
                 UseScriptResolutionRules = false;
                 LoadTime = System.DateTime.Now
                 UnresolvedReferences = None;
-                OriginalLoadReferences = [];
+                OriginalLoadReferences = [||];
                 Stamp = None;
                 ExtraProjectInfo = None;})|];
            IsIncompleteTypeCheckEnvironment = false;
@@ -998,7 +998,7 @@ let ``Projects creating generated types should not utilize cross-project-referen
            LoadTime = System.DateTime.Now
            UnresolvedReferences = None;
            Stamp = None;
-           OriginalLoadReferences = [];
+           OriginalLoadReferences = [||];
            ExtraProjectInfo = None;}
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"    

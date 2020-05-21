@@ -1669,7 +1669,7 @@ module internal ParseAndCheckFile =
                 with e ->
                     errorR e
                     let mty = Construct.NewEmptyModuleOrNamespaceType Namespace
-                    return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
+                    return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, Array.Empty(), [| mty |]), tcState)
             }
                 
         let errors = errHandler.CollectedDiagnostics
@@ -1678,7 +1678,7 @@ module internal ParseAndCheckFile =
             match resOpt with
             | Some ((tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState) ->
                 TypeCheckInfo(tcConfig, tcGlobals, 
-                              List.head ccuSigsForFiles, 
+                              Array.head ccuSigsForFiles, 
                               tcState.Ccu,
                               tcImports,
                               tcEnvAtEnd.AccessRights,
@@ -1690,7 +1690,7 @@ module internal ParseAndCheckFile =
                               loadClosure,
                               reactorOps,
                               textSnapshotInfo,
-                              List.tryHead implFiles,
+                              Array.tryHead implFiles,
                               sink.GetOpenDeclarations())     
                      |> Result.Ok
             | None -> 
@@ -2011,7 +2011,7 @@ type FSharpCheckProjectResults
           errors: FSharpErrorInfo[], 
           details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
                    TopAttribs option * CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef *
-                   AccessorDomain * TypedImplFile list option * string[]) option) =
+                   AccessorDomain * TypedImplFile[] option * string[]) option) =
 
     let getDetails() = 
         match details with 
@@ -2036,7 +2036,7 @@ type FSharpCheckProjectResults
         let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
         let mimpls = 
             match tcAssemblyExpr with 
-            | None -> []
+            | None -> Array.Empty()
             | Some mimpls -> mimpls
         tcGlobals, thisCcu, tcImports, mimpls
 
@@ -2045,7 +2045,7 @@ type FSharpCheckProjectResults
         let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
         let mimpls = 
             match tcAssemblyExpr with 
-            | None -> []
+            | None -> Array.Empty()
             | Some mimpls -> mimpls
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
@@ -2054,7 +2054,7 @@ type FSharpCheckProjectResults
         let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
         let mimpls = 
             match tcAssemblyExpr with 
-            | None -> []
+            | None -> Array.Empty()
             | Some mimpls -> mimpls
         let outfile = "" // only used if tcConfig.writeTermsToFiles is true
         let importMap = tcImports.GetImportMap()
@@ -2063,8 +2063,7 @@ type FSharpCheckProjectResults
         let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, thisCcu, mimpls)                
         let mimpls =
             match optimizedImpls with
-            | TypedAssemblyAfterOptimization files ->
-                files |> List.map fst
+            | TypedAssemblyAfterOptimization files -> Array.map fst files
 
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
