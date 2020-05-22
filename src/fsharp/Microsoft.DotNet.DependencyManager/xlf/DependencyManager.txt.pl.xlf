@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="couldNotLoadDependencyManagerExtension">
         <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
-        <target state="new">The dependency manager extension {0} could not be loaded. Message: {1}</target>
+        <target state="translated">Nie można załadować rozszerzenia menedżera zależności {0}. Komunikat: {1}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
         <source>{0}</source>
-        <target state="new">{0}</target>
+        <target state="translated">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <target state="translated">Klucz menedżera pakietów „{0}” nie został zarejestrowany w elemencie {1}. Obecnie zarejestrowane: {2}</target>
         <note />
       </trans-unit>
     </body>

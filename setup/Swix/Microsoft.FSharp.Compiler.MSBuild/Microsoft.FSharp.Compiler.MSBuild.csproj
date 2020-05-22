@@ -97,6 +97,7 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
   file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Resources.Extensions.dll"
   file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Runtime.CompilerServices.Unsafe.dll"
   file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Threading.Tasks.Dataflow.dll"
+  file source="$(BinariesFolder)\Interactive.DependencyManager\$(Configuration)\netstandard2.0\Interactive.DependencyManager.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)\FSharp.Compiler.Server.Shared\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Server.Shared.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\FSharp.Core.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\FSharp.Core.optdata"
