@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Reflection
+open System.Runtime.InteropServices
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
 open FSharp.Compiler.SourceCodeServices
@@ -228,11 +229,15 @@ type DependencyManagerInteractiveTests() =
 
 TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
 """
-        use script = scriptHost()
-        let opt = script.Eval(text) |> getValue
-        let value = opt.Value
-        Assert.AreEqual(typeof<string>, value.ReflectionType)
-        Assert.AreEqual("cpu", value.ReflectionValue :?> string)
+
+        if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+            use script = scriptHost()
+            let opt = script.Eval(text) |> getValue
+            let value = opt.Value
+            Assert.AreEqual(typeof<string>, value.ReflectionType)
+            Assert.AreEqual("cpu", value.ReflectionValue :?> string)
+        ()
+
 
     [<Test>]
     member __.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
