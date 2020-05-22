@@ -4396,7 +4396,15 @@ and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloAllFreeVa
 
   let tdefs = EraseClosures.convIlxClosureDef g.ilxPubCloEnv tref.Enclosing tdef cloInfo
   tdefs
-      
+
+and GenStaticClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloAllFreeVars, ilCloLambdas, ilCtorBody, mdefs, mimpls, ext, ilIntfTys) =
+    let tdefs = GenClosureTypeDefs cenv (tref, ilGenParams, attrs, ilCloAllFreeVars, ilCloLambdas, ilCtorBody, mdefs, mimpls, ext, ilIntfTys)
+
+    // Apply the abstract attribute, turning the sealed class into abstract sealed (i.e. static class).
+    // Remove the redundant constructor.
+    tdefs |> List.map (fun td -> td.WithAbstract(true)
+                                   .With(methods= mkILMethodsFromArray (td.Methods.AsArray |> Array.filter (fun m -> not m.IsConstructor))))
+
 and GenGenericParams cenv eenv tps = 
     tps |> DropErasedTypars |> List.map (GenGenericParam cenv eenv)
 
@@ -4781,7 +4789,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
                 false
          with _ ->
             false
-    
+
     // Work out the free type variables for the morphing thunk
     let takenNames = List.map nameOfVal tmvs
     let (cloAttribs, _, _, cloFreeTyvars, cloFreeVars, ilDelegeeTypeRef, ilCloFreeVars, eenvinner) =
@@ -4789,46 +4797,64 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
     let ilDelegeeGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
     let ilDelegeeGenericActualsInner = mkILFormalGenericArgs 0 ilDelegeeGenericParams
 
+    // When creating a delegate that does not capture any variables, we can instead create a static closure and directly reference the method.
+    let useStaticClosure = cloFreeVars.IsEmpty
+
     // Create a new closure class with a single "delegee" method that implements the delegate.
     let delegeeMethName = "Invoke"
     let ilDelegeeTyInner = mkILBoxedTy ilDelegeeTypeRef ilDelegeeGenericActualsInner
-
+    
     let envForDelegeeUnderTypars = AddTyparsToEnv methTyparsOfOverridingMethod eenvinner
-
-    let numthis = 1
+    
+    let numthis = if useStaticClosure then 0 else 1
     let tmvs, body = BindUnitVars g (tmvs, List.replicate (List.concat slotsig.FormalParams).Length ValReprInfo.unnamedTopArg1, body)
-
+    
     // The slot sig contains a formal instantiation. When creating delegates we're only
     // interested in the actual instantiation since we don't have to emit a method impl.
     let ilDelegeeParams, ilDelegeeRet = GenActualSlotsig m cenv envForDelegeeUnderTypars slotsig methTyparsOfOverridingMethod tmvs
-
+    
     let envForDelegeeMeth = AddStorageForLocalVals g (List.mapi (fun i v -> (v, Arg (i+numthis))) tmvs) envForDelegeeUnderTypars
     let ilMethodBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways, [], delegeeMethName, envForDelegeeMeth, 1, body, (if slotSigHasVoidReturnTy slotsig then discardAndReturnVoid else Return))
     let delegeeInvokeMeth =
-        mkILNonGenericInstanceMethod
-            (delegeeMethName, ILMemberAccess.Assembly,
+        (if useStaticClosure then mkILNonGenericStaticMethod else mkILNonGenericInstanceMethod)
+            (delegeeMethName,
+             ILMemberAccess.Assembly,
              ilDelegeeParams,
              ilDelegeeRet,
              MethodBody.IL ilMethodBody)
     let delegeeCtorMeth = mkILSimpleStorageCtor(None, Some g.ilg.typ_Object.TypeSpec, ilDelegeeTyInner, [], [], ILMemberAccess.Assembly)
     let ilCtorBody = delegeeCtorMeth.MethodBody
-
+    
     let ilCloLambdas = Lambdas_return ilCtxtDelTy
     let ilAttribs = GenAttrs cenv eenvinner cloAttribs
-    let cloTypeDefs = GenClosureTypeDefs cenv (ilDelegeeTypeRef, ilDelegeeGenericParams, ilAttribs, ilCloFreeVars, ilCloLambdas, ilCtorBody, [delegeeInvokeMeth], [], g.ilg.typ_Object, [])
+    let cloTypeDefs =
+        (if useStaticClosure then GenStaticClosureTypeDefs else GenClosureTypeDefs)
+            cenv (ilDelegeeTypeRef, ilDelegeeGenericParams, ilAttribs, ilCloFreeVars, ilCloLambdas, ilCtorBody, [delegeeInvokeMeth], [], g.ilg.typ_Object, [])
     for cloTypeDef in cloTypeDefs do
         cgbuf.mgbuf.AddTypeDef(ilDelegeeTypeRef, cloTypeDef, false, false, None)
     CountClosure()
 
+    // Push the constructor for the delegee
     let ctxtGenericArgsForDelegee = GenGenericArgs m eenvouter.tyenv cloFreeTyvars
-    let ilxCloSpec = IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloFreeVars), ctxtGenericArgsForDelegee)
-    GenGetLocalVals cenv cgbuf eenvouter m cloFreeVars
-    CG.EmitInstr cgbuf (pop ilCloFreeVars.Length) (Push [EraseClosures.mkTyOfLambdas g.ilxPubCloEnv ilCloLambdas]) (I_newobj (ilxCloSpec.Constructor, None))
-
+    if useStaticClosure then
+        GenUnit cenv eenvouter m cgbuf
+    else
+        let ilxCloSpec = IlxClosureSpec.Create(IlxClosureRef(ilDelegeeTypeRef, ilCloLambdas, ilCloFreeVars), ctxtGenericArgsForDelegee)
+        GenGetLocalVals cenv cgbuf eenvouter m cloFreeVars
+        CG.EmitInstr cgbuf (pop ilCloFreeVars.Length) (Push [EraseClosures.mkTyOfLambdas g.ilxPubCloEnv ilCloLambdas]) (I_newobj (ilxCloSpec.Constructor, None))
+    
+    // Push the function pointer to the Invoke method of the delegee
     let ilDelegeeTyOuter = mkILBoxedTy ilDelegeeTypeRef ctxtGenericArgsForDelegee
-    let ilDelegeeInvokeMethOuter = mkILNonGenericInstanceMethSpecInTy (ilDelegeeTyOuter, "Invoke", typesOfILParams ilDelegeeParams, ilDelegeeRet.Type)
-    let ilDelegeeCtorMethOuter = mkCtorMethSpecForDelegate g.ilg (ilCtxtDelTy, useUIntPtrForDelegateCtor)
+    let ilDelegeeInvokeMethOuter =
+        (if useStaticClosure then mkILNonGenericStaticMethSpecInTy else mkILNonGenericInstanceMethSpecInTy)
+            (ilDelegeeTyOuter,
+             "Invoke",
+             typesOfILParams ilDelegeeParams,
+             ilDelegeeRet.Type)
     CG.EmitInstr cgbuf (pop 0) (Push [g.ilg.typ_IntPtr]) (I_ldftn ilDelegeeInvokeMethOuter)
+
+    // Instantiate the delegate
+    let ilDelegeeCtorMethOuter = mkCtorMethSpecForDelegate g.ilg (ilCtxtDelTy, useUIntPtrForDelegateCtor)
     CG.EmitInstr cgbuf (pop 2) (Push [ilCtxtDelTy]) (I_newobj(ilDelegeeCtorMethOuter, None))
     GenSequel cenv eenvouter.cloc cgbuf sequel
 
