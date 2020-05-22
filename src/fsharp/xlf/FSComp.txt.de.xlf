@@ -14,42 +14,42 @@
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
-        <target state="new">Available overloads:\n{0}</target>
+        <target state="translated">Verfügbare Überladungen:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
-        <target state="new">Known types of arguments: {0}</target>
+        <target state="translated">Bekannte Argumenttypen: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixSingular">
         <source>Known type of argument: {0}</source>
-        <target state="new">Known type of argument: {0}</target>
+        <target state="translated">Bekannter Argumenttyp: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundReturnType">
         <source>Known return type: {0}</source>
-        <target state="new">Known return type: {0}</target>
+        <target state="translated">Bekannter Rückgabetyp: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundTypeParametersPrefixPlural">
         <source>Known type parameters: {0}</source>
-        <target state="new">Known type parameters: {0}</target>
+        <target state="translated">Bekannte Typparameter: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundTypeParametersPrefixSingular">
         <source>Known type parameter: {0}</source>
-        <target state="new">Known type parameter: {0}</target>
+        <target state="translated">Bekannter Typparameter: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
         <source>Argument at index {0} doesn't match</source>
-        <target state="new">Argument at index {0} doesn't match</target>
+        <target state="translated">Das Argument bei Index {0} stimmt nicht überein.</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
-        <target state="new">Argument '{0}' doesn't match</target>
+        <target state="translated">Das Argument "{0}" stimmt nicht überein.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -139,7 +139,7 @@
       </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
-        <target state="new"> - {0}</target>
+        <target state="translated"> - {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
-        <target state="new">This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</target>
+        <target state="translated">Dieses Feature wird in dieser Version von F# nicht unterstützt. Möglicherweise müssen Sie "/langversion:preview" hinzufügen, um dieses Feature zu verwenden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -219,12 +219,12 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
-        <target state="new">use! may not be combined with and!</target>
+        <target state="translated">"use!" darf nicht mit "and!" kombiniert werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
+        <target state="translated">Das Konstrukt "let! ... and! ..." kann nur verwendet werden, wenn der Berechnungsausdrucks-Generator entweder eine {0}-Methode oder geeignete MergeSource- und Bind-Methoden definiert.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -234,7 +234,7 @@
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
-        <target state="new">The type '{0}' does not define the field, constructor or member '{1}'.</target>
+        <target state="translated">Der Typ "{0}" definiert nicht das Feld, den Konstruktor oder den Member "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -2014,7 +2014,7 @@
       </trans-unit>
       <trans-unit id="csCandidates">
         <source>Candidates:\n{0}</source>
-        <target state="needs-review-translation">Kandidaten: {0}</target>
+        <target state="translated">Kandidaten:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="parsDoCannotHaveVisibilityDeclarations">
@@ -5164,7 +5164,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="needs-review-translation">Dies ist kein gültiges numerisches Literal. Die folgenden numerischen Literale sind z.B. gültig: 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
+        <target state="translated">Dies ist kein gültiges numerisches Literal. Unter anderem sind die folgenden numerischen Literale gültig: 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
