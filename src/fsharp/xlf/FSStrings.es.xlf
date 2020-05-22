@@ -1624,7 +1624,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AND.BANG">
         <source>keyword 'and!'</source>
-        <target state="new">keyword 'and!'</target>
+        <target state="translated">palabra clave 'and!'</target>
         <note />
       </trans-unit>
     </body>
