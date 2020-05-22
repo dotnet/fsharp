@@ -459,14 +459,14 @@ let rec UnionOptimizationInfos (minfos : seq<LazyModuleInfo>) =
              |> NameMap.union UnionOptimizationInfos }
 
 let FindOrCreateModuleInfo n (ss: Map<_, _>) = 
-    match ss.TryFind n with 
-    | Some res -> res
-    | None -> EmptyModuleInfo
+    match ss.TryGetValue n with 
+    | true, res -> res
+    | _ -> EmptyModuleInfo
 
 let FindOrCreateGlobalModuleInfo n (ss: LayeredMap<_, _>) = 
-    match ss.TryFind n with 
-    | Some res -> res
-    | None -> EmptyModuleInfo
+    match ss.TryGetValue n with 
+    | true, res -> res
+    | _ -> EmptyModuleInfo
 
 let rec BindValueInSubModuleFSharpCore (mp: string[]) i (v: Val) vval ss =
     if i < mp.Length then 
