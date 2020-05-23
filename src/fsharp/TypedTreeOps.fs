@@ -1393,11 +1393,9 @@ type ValHash<'T> =
         let (ValHash t) = ht
         t.Values :> seq<'T>
 
-    member ht.TryFind (v: Val) = 
+    member ht.TryGetValue(v:Val, [<System.Runtime.InteropServices.Out>] value: byref<'T>) = 
         let (ValHash t) = ht
-        match t.TryGetValue v.Stamp with
-        | true, v -> Some v
-        | _ -> None
+        t.TryGetValue(v.Stamp, &value)
 
     member ht.Add (v: Val, x) = 
         let (ValHash t) = ht

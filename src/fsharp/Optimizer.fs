@@ -146,16 +146,17 @@ type ValInfos(entries) =
                 dict.Add(vkey, p) |> ignore
             dict)
 
-    member x.Entries = valInfoTable.Force().Values
+    member __.Entries = valInfoTable.Force().Values
 
     member x.Map f = ValInfos(Seq.map f x.Entries)
 
     member x.Filter f = ValInfos(Seq.filter f x.Entries)
 
-    member x.TryFind (v: ValRef) = valInfoTable.Force().TryFind v.Deref
+    member __.TryGetValue(v:ValRef, [<System.Runtime.InteropServices.Out>] value: byref<_>) = 
+        valInfoTable.Force().TryGetValue(v.Deref, &value)
 
-    member x.TryFindForFslib (v: ValRef) =
-        valInfosForFslib.Force().TryGetValue(v.Deref.GetLinkagePartialKey())
+    member __.TryFindForFslib (v: ValRef, [<System.Runtime.InteropServices.Out>] value: byref<_>) = 
+        valInfosForFslib.Force().TryGetValue(v.Deref.GetLinkagePartialKey(), &value)
 
 type ModuleInfo = 
     { ValInfos: ValInfos
@@ -616,9 +617,9 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
     elif cenv.settings.crossModuleOpt () || vref.MustInline then 
         match TryGetInfoForNonLocalEntityRef env vref.nlr.EnclosingEntity.nlr with
         | Some structInfo ->
-            match structInfo.ValInfos.TryFind vref with 
-            | Some ninfo -> snd ninfo
-            | None -> 
+            match structInfo.ValInfos.TryGetValue vref with 
+            | true, ninfo -> snd ninfo
+            | _ -> 
                   //dprintn ("\n\n*** Optimization info for value "+n+" from module "+(full_name_of_nlpath smv)+" not found, module contains values: "+String.concat ", " (NameMap.domainL structInfo.ValInfos))  
                   //System.Diagnostics.Debug.Assert(false, sprintf "Break for module %s, value %s" (full_name_of_nlpath smv) n)
                   if cenv.g.compilingFslib then 

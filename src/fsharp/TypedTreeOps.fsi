@@ -404,7 +404,7 @@ type ValHash<'T> =
 
     member Values : seq<'T>
 
-    member TryFind : Val -> 'T option
+    member TryGetValue : Val * [<System.Runtime.InteropServices.Out>] value:byref<'T> -> bool
 
     member Add : Val * 'T -> unit
 
