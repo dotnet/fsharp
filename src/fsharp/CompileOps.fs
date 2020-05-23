@@ -4285,10 +4285,10 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         match remainingNamespace with
         | next :: rest ->
             // Inject the namespace entity 
-            match entity.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind next with
-            | Some childEntity ->
+            match entity.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryGetValue next with
+            | true, childEntity ->
                 tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, childEntity, next :: injectedNamespace, rest, provider, st)
-            | None -> 
+            | _ -> 
                 // Build up the artificial namespace if there is not a real one.
                 let cpath = CompPath(ILScopeRef.Local, injectedNamespace |> List.rev |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace)) )
                 let mid = ident (next, rangeStartup)
@@ -4564,15 +4564,15 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
                 let optdata = 
                     lazy 
-                        (match Map.tryFind ccuName optDatas with 
-                         | None -> 
-                            if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName 
-                            None
-                         | Some info -> 
+                        (match optDatas.TryGetValue ccuName with
+                         | true, info -> 
                             let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), info)
                             let res = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) 
                             if verbose then dprintf "found optimization data for CCU %s\n" ccuName 
-                            Some res)
+                            Some res
+                         | _ -> 
+                            if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName 
+                            None)
 
                 let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
 
