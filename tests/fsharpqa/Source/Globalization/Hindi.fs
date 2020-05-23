@@ -14,8 +14,8 @@ module पिछले =
   
   // DU
   type ख़तरxनाक = 
-               | Uअलगाववादी     // There's no uppercase/lowercase in Hindi, so I'm adding a latin char
-               | Aमिलती of ख़तरनाक
+               | अलगाववादी     // There's no uppercase/lowercase in Hindi, ensure that a Hindi character will suffice to start the DU case name
+               | मिलती of ख़तरनाक
                | X
   
   // Record

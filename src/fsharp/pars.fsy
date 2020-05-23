@@ -3050,7 +3050,7 @@ atomicPattern:
 
   | atomicPatternLongIdent %prec prec_atompat_pathop 
       { let vis, lidwd = $1 
-        if not (isNilOrSingleton lidwd.Lid) || (let c = (List.head lidwd.Lid).idText.[0] in Char.IsUpper(c) && not (Char.IsLower c)) 
+        if not (isNilOrSingleton lidwd.Lid) || String.isLeadingIdentifierCharacterUpperCase (List.head lidwd.Lid).idText
         then mkSynPatMaybeVar lidwd vis (lhs parseState)
         else mkSynPatVar vis (List.head lidwd.Lid) }
 
@@ -4072,7 +4072,10 @@ atomicExprQualification:
             mlCompatWarning (FSComp.SR.parsParenFormIsForML()) (lhs parseState) 
             mkSynDotParenGet lhsm dotm e $2) }
 
-  | LBRACK  typedSeqExpr recover
+  |   LBRACK  typedSeqExpr RBRACK
+      { (fun e lhsm dotm -> mkSynDotBrackGet lhsm dotm e $2 false) }
+
+  |   LBRACK  typedSeqExpr recover
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracket()) 
         (fun e lhsm dotm -> exprFromParseError (mkSynDotBrackGet lhsm dotm e $2 false)) }
 
@@ -5290,8 +5293,8 @@ operatorName:
 
 /* One part of an active pattern name */
 activePatternCaseName: 
-  | IDENT 
-     { if not (String.isUpper $1) then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsActivePatternCaseMustBeginWithUpperCase());  
+  | IDENT
+     { if not (String.isLeadingIdentifierCharacterUpperCase _1) then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsActivePatternCaseMustBeginWithUpperCase());  
        if ($1.IndexOf('|') <> -1) then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsActivePatternCaseContainsPipe());  
        $1 }
 

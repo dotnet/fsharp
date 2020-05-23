@@ -503,9 +503,20 @@ module String =
     let uppercase (s: string) =
         s.ToUpperInvariant()
 
-    let isUpper (s: string) = 
-        s.Length >= 1 && Char.IsUpper s.[0] && not (Char.IsLower s.[0])
-        
+    // Scripts that distinguish between upper and lower case (bicameral) DU Discriminators and Active Pattern identifiers are required to start with an upper case character.
+    // For valid identifiers where the case of the identifier can not be determined because there is no upper and lower case we will allow DU Discriminators and upper case characters 
+    // to be used.  This means that developers using unicameral scripts such as hindi, are not required to prefix these identifiers with an Upper case latin character. 
+    //
+    let isLeadingIdentifierCharacterUpperCase (s:string) =
+        let isUpperCaseCharacter c =
+            // if IsUpper and IsLower return the same value, then we can't tell if it's upper or lower case, so ensure it is a letter
+            // otherwise it is bicameral, so must be upper case
+            let isUpper = Char.IsUpper c
+            if isUpper = Char.IsLower c then Char.IsLetter c
+            else isUpper
+
+        s.Length >= 1 && isUpperCaseCharacter s.[0]
+
     let capitalize (s: string) =
         if s.Length = 0 then s 
         else uppercase s.[0..0] + s.[ 1.. s.Length - 1 ]
