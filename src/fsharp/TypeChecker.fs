@@ -2096,8 +2096,6 @@ let emptyUnscopedTyparEnv: SyntacticUnscopedTyparEnv = UnscopedTyparEnv Map.empt
 
 let AddUnscopedTypar n p (UnscopedTyparEnv tab) = UnscopedTyparEnv (Map.add n p tab)
 
-let TryFindUnscopedTypar n (UnscopedTyparEnv tab) = Map.tryFind n tab
-
 let HideUnscopedTypars typars (UnscopedTyparEnv tab) = 
     UnscopedTyparEnv (List.fold (fun acc (tp: Typar) -> Map.remove tp.Name acc) tab typars)
 
@@ -3879,30 +3877,33 @@ let EliminateInitializationGraphs
         and CheckValRef st (v: ValRef) m = 
             match st with 
             | MaybeLazy -> 
-                if recursiveVals.TryFind v.Deref |> Option.isSome then 
+                if recursiveVals.ContainsKey v.Deref then
                     warning (RecursiveUseCheckedAtRuntime (denv, v, m)) 
                     if not reportedEager then 
-                      (warning (LetRecCheckedAtRuntime m); reportedEager <- true)
+                        warning (LetRecCheckedAtRuntime m)
+                        reportedEager <- true
                     runtimeChecks <- true
 
             | Top | DefinitelyStrict ->
-                if recursiveVals.TryFind v.Deref |> Option.isSome then 
-                    if availIfInOrder.TryFind v.Deref |> Option.isNone then 
+                if recursiveVals.ContainsKey v.Deref then
+                    if not (availIfInOrder.ContainsKey v.Deref) then
                         warning (LetRecEvaluatedOutOfOrder (denv, boundv, v, m)) 
                         outOfOrder <- true
                         if not reportedEager then 
-                          (warning (LetRecCheckedAtRuntime m); reportedEager <- true)
+                            warning (LetRecCheckedAtRuntime m)
+                            reportedEager <- true
                     definiteDependencies <- (boundv, v) :: definiteDependencies
-            | InnerTop -> 
-                if recursiveVals.TryFind v.Deref |> Option.isSome then 
+
+            | InnerTop ->
+                if recursiveVals.ContainsKey v.Deref then
                     directRecursiveData <- true
+
             | DefinitelyLazy -> () 
         and checkDelayed st b = 
             match st with 
             | MaybeLazy | DefinitelyStrict -> CheckExpr MaybeLazy b
             | DefinitelyLazy | Top | InnerTop -> () 
           
-       
         CheckExpr Top expr
    
 
@@ -4569,7 +4570,7 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
 /// If optKind=Some kind, then this is the kind we're expecting (we're in *analysis* mode)
 /// If optKind=None, we need to determine the kind (we're in *synthesis* mode)
 ///
-and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk tpenv (Typar(id, _, _) as tp) =
+and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk ((UnscopedTyparEnv elements) as tpenv) (Typar(id, _, _) as tp) =
     let checkRes (res: Typar) =
         match optKind, res.Kind with
         | Some TyparKind.Measure, TyparKind.Type -> error (Error(FSComp.SR.tcExpectedUnitOfMeasureMarkWithAttribute(), id.idRange)); res, tpenv
@@ -4582,18 +4583,16 @@ and TcTyparOrMeasurePar optKind cenv (env: TcEnv) newOk tpenv (Typar(id, _, _) a
     match env.eNameResEnv.eTypars.TryGetValue key with
     | true, res -> checkRes res
     | _ -> 
-    match TryFindUnscopedTypar key tpenv with
-    | Some res -> checkRes res
-    | None -> 
+    match elements.TryGetValue key with
+    | true, res -> checkRes res
+    | _ -> 
         if newOk = NoNewTypars then
             let suggestTypeParameters (addToBuffer: string -> unit) =
                 for p in env.eNameResEnv.eTypars do
                     addToBuffer ("'" + p.Key)
 
-                match tpenv with
-                | UnscopedTyparEnv elements ->
-                    for p in elements do
-                        addToBuffer ("'" + p.Key)
+                for p in elements do
+                    addToBuffer ("'" + p.Key)
 
             let reportedId = Ident("'" + id.idText, id.idRange)
             error (UndefinedName(0, FSComp.SR.undefinedNameTypeParameter, reportedId, suggestTypeParameters))

@@ -611,7 +611,7 @@ let TryGetInfoForNonLocalEntityRef env (nleref: NonLocalEntityRef) =
 let GetInfoForNonLocalVal cenv env (vref: ValRef) =
     if vref.IsDispatchSlot then 
         UnknownValInfo
-    // REVIEW: optionally turn x-module on/off on per-module basis or  
+    // REVIEW: optionally turn x-module on/off on per-module basis or
     elif cenv.settings.crossModuleOpt () || vref.MustInline then 
         match TryGetInfoForNonLocalEntityRef env vref.nlr.EnclosingEntity.nlr with
         | ValueSome structInfo ->

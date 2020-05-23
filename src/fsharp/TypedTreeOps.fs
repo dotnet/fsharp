@@ -1396,6 +1396,10 @@ type ValHash<'T> =
     member ht.TryGetValue(v:Val, [<System.Runtime.InteropServices.Out>] value: byref<'T>) = 
         let (ValHash t) = ht
         t.TryGetValue(v.Stamp, &value)
+        
+    member ht.ContainsKey (v:Val) = 
+        let (ValHash t) = ht
+        t.ContainsKey v.Stamp
 
     member ht.Add (v: Val, x) = 
         let (ValHash t) = ht

@@ -406,6 +406,8 @@ type ValHash<'T> =
 
     member TryGetValue : Val * [<System.Runtime.InteropServices.Out>] value:byref<'T> -> bool
 
+    member ContainsKey : Val -> bool
+
     member Add : Val * 'T -> unit
 
     static member Create : unit -> ValHash<'T>
