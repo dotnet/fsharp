@@ -582,9 +582,9 @@ let GetInfoForLocalValue cenv env (v: Val) m =
         match cenv.localInternalVals.TryGetValue v.Stamp with
         | true, res -> res
         | _ ->
-            match env.localExternalVals.TryFind v.Stamp with 
-            | Some vval -> vval
-            | None -> 
+            match env.localExternalVals.TryGetValue v.Stamp with 
+            | true, vval -> vval
+            | _ -> 
                 if v.MustInline then
                     errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
 #if CHECKED
@@ -592,23 +592,21 @@ let GetInfoForLocalValue cenv env (v: Val) m =
 #endif
                 UnknownValInfo 
 
-let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
-
 let TryGetInfoForEntity sv n = 
-    match sv.ModuleOrNamespaceInfos.TryFind n with 
-    | Some info -> Some (info.Force())
-    | None -> None
+    match sv.ModuleOrNamespaceInfos.TryGetValue n with 
+    | true, info -> ValueSome (info.Force())
+    | _ -> ValueNone
 
 let rec TryGetInfoForPath sv (p:_[]) i = 
-    if i >= p.Length then Some sv else 
+    if i >= p.Length then ValueSome sv else 
     match TryGetInfoForEntity sv p.[i] with 
-    | Some info -> TryGetInfoForPath info p (i+1)
-    | None -> None
+    | ValueSome info -> TryGetInfoForPath info p (i+1)
+    | ValueNone -> ValueNone
 
 let TryGetInfoForNonLocalEntityRef env (nleref: NonLocalEntityRef) = 
-    match TryGetInfoForCcu env nleref.Ccu with 
-    | Some ccuinfo -> TryGetInfoForPath (ccuinfo.Force()) nleref.Path 0
-    | None -> None
+    match env.globalModuleInfos.TryGetValue nleref.Ccu.AssemblyName with 
+    | true, ccuinfo -> TryGetInfoForPath (ccuinfo.Force()) nleref.Path 0
+    | _ -> ValueNone
               
 let GetInfoForNonLocalVal cenv env (vref: ValRef) =
     if vref.IsDispatchSlot then 
@@ -616,7 +614,7 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
     // REVIEW: optionally turn x-module on/off on per-module basis or  
     elif cenv.settings.crossModuleOpt () || vref.MustInline then 
         match TryGetInfoForNonLocalEntityRef env vref.nlr.EnclosingEntity.nlr with
-        | Some structInfo ->
+        | ValueSome structInfo ->
             match structInfo.ValInfos.TryGetValue vref with 
             | true, ninfo -> snd ninfo
             | _ -> 
@@ -628,7 +626,7 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
                       | _ -> UnknownValInfo
                   else
                       UnknownValInfo
-        | None -> 
+        | ValueNone -> 
             //dprintf "\n\n*** Optimization info for module %s from ccu %s not found." (full_name_of_nlpath smv) (ccu_of_nlpath smv).AssemblyName  
             //System.Diagnostics.Debug.Assert(false, sprintf "Break for module %s, ccu %s" (full_name_of_nlpath smv) (ccu_of_nlpath smv).AssemblyName)
             UnknownValInfo
