@@ -1699,11 +1699,11 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
            errorR(Error(FSComp.SR.activePatternChoiceHasFreeTypars(v.LogicalName), v.Range))
     | _ -> ()
     
-    match cenv.potentialUnboundUsesOfVals.TryFind v.Stamp with
-    | None -> () 
-    | Some m ->
+    match cenv.potentialUnboundUsesOfVals.TryGetValue v.Stamp with
+    | true, m ->
          let nm = v.DisplayName
          errorR(Error(FSComp.SR.chkMemberUsedInInvalidWay(nm, nm, stringOfRange m), v.Range))
+    | _ -> ()
 
     v.Type |> CheckTypePermitAllByrefs cenv env v.Range
     v.Attribs |> CheckAttribs cenv env

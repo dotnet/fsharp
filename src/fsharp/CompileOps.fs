@@ -4055,21 +4055,20 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     member tcImports.FindCcuInfo (ctok, m, assemblyName, lookupOnly) = 
         CheckDisposed()
         let rec look (t: TcImports) = 
-            match NameMap.tryFind assemblyName t.CcuTable with
-            | Some res -> Some res
-            | None -> 
+            match t.CcuTable.TryGetValue assemblyName with
+            | true, res -> ValueSome res
+            | _ -> 
                  match t.Base with 
                  | Some t2 -> look t2 
-                 | None -> None
+                 | None -> ValueNone
 
         match look tcImports with
-        | Some res -> ResolvedImportedAssembly res
-        | None ->
+        | ValueSome res -> ResolvedImportedAssembly res
+        | ValueNone ->
             tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly)
             match look tcImports with 
-            | Some res -> ResolvedImportedAssembly res
-            | None -> UnresolvedImportedAssembly assemblyName
-        
+            | ValueSome res -> ResolvedImportedAssembly res
+            | ValueNone -> UnresolvedImportedAssembly assemblyName
 
     member tcImports.FindCcu (ctok, m, assemblyName, lookupOnly) = 
         CheckDisposed()
