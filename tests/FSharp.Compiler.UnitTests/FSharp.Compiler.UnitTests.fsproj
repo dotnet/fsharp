@@ -20,6 +20,7 @@
     <Compile Include="SuggestionBuffer.fs" />
     <Compile Include="ByteMemoryTests.fs" />
     <Compile Include="FsiTests.fs" />
+    <Compile Include="ByteMemoryTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
