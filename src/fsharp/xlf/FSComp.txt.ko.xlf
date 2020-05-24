@@ -14,42 +14,42 @@
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
-        <target state="new">Available overloads:\n{0}</target>
+        <target state="translated">사용 가능한 오버로드:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
-        <target state="new">Known types of arguments: {0}</target>
+        <target state="translated">알려진 인수 형식: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixSingular">
         <source>Known type of argument: {0}</source>
-        <target state="new">Known type of argument: {0}</target>
+        <target state="translated">알려진 인수 형식: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundReturnType">
         <source>Known return type: {0}</source>
-        <target state="new">Known return type: {0}</target>
+        <target state="translated">알려진 반환 형식: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundTypeParametersPrefixPlural">
         <source>Known type parameters: {0}</source>
-        <target state="new">Known type parameters: {0}</target>
+        <target state="translated">알려진 형식 매개 변수: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundTypeParametersPrefixSingular">
         <source>Known type parameter: {0}</source>
-        <target state="new">Known type parameter: {0}</target>
+        <target state="translated">알려진 형식 매개 변수: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
         <source>Argument at index {0} doesn't match</source>
-        <target state="new">Argument at index {0} doesn't match</target>
+        <target state="translated">인덱스 {0}의 인수가 일치하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
-        <target state="new">Argument '{0}' doesn't match</target>
+        <target state="translated">'{0}' 인수가 일치하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -139,7 +139,7 @@
       </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
-        <target state="new"> - {0}</target>
+        <target state="translated"> - {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
@@ -194,7 +194,7 @@
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
-        <target state="new">This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</target>
+        <target state="translated">이 기능은 이 F# 버전에서 지원되지 않습니다. 이 기능을 사용하기 위해 /langversion:preview를 추가해야 할 수도 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -219,12 +219,12 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
-        <target state="new">use! may not be combined with and!</target>
+        <target state="translated">use!는 and!와 함께 사용할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
+        <target state="translated">'let! ... and! ...' 구문은 계산 식 작성기에서 '{0}' 메서드 또는 적절한 'MergeSource' 및 'Bind' 메서드를 정의한 경우에만 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -234,7 +234,7 @@
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
-        <target state="new">The type '{0}' does not define the field, constructor or member '{1}'.</target>
+        <target state="translated">'{0}' 형식은 '{1}' 필드, 생성자 또는 멤버를 정의하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -2014,7 +2014,7 @@
       </trans-unit>
       <trans-unit id="csCandidates">
         <source>Candidates:\n{0}</source>
-        <target state="needs-review-translation">후보: {0}</target>
+        <target state="translated">후보:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="parsDoCannotHaveVisibilityDeclarations">
@@ -5164,7 +5164,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="needs-review-translation">유효한 숫자 리터럴이 아닙니다. 유효한 숫자 리터럴로는 1, 0x1, 0b0001(int), 1u(uint32), 1L(int64), 1UL(uint64), 1s(int16), 1y(sbyte), 1uy(byte), 1.0(float), 1.0f(float32), 1.0m(decimal), 1I(BigInteger) 등이 있습니다.</target>
+        <target state="translated">유효한 숫자 리터럴이 아닙니다. 유효한 숫자 리터럴로는 1, 0x1, 0o1, 0b1, 1l(int), 1u(uint32), 1L(int64), 1UL(uint64), 1s(int16), 1y(sbyte), 1uy(byte), 1.0(float), 1.0f(float32), 1.0m(decimal), 1I(BigInteger) 등이 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">

@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="cantReferenceSystemPackage">
         <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="new">PackageManager can not reference the System Package '{0}'</target>
+        <target state="translated">PackageManager がシステム パッケージ '{0}' を参照できません</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
@@ -14,12 +14,12 @@
       </trans-unit>
       <trans-unit id="requiresAValue">
         <source>{0} requires a value</source>
-        <target state="new">{0} requires a value</target>
+        <target state="translated">{0} には値が必要です</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
-        <target state="new">Unable to apply implicit argument number {0}</target>
+        <target state="translated">暗黙的な引数番号 {0} を適用できません</target>
         <note />
       </trans-unit>
     </body>

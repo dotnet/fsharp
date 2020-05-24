@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="cantReferenceSystemPackage">
         <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="new">PackageManager can not reference the System Package '{0}'</target>
+        <target state="translated">PackageManager não pode referenciar o pacote do sistema '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
@@ -14,12 +14,12 @@
       </trans-unit>
       <trans-unit id="requiresAValue">
         <source>{0} requires a value</source>
-        <target state="new">{0} requires a value</target>
+        <target state="translated">{0} requer um valor</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
-        <target state="new">Unable to apply implicit argument number {0}</target>
+        <target state="translated">Não é possível aplicar o número do argumento implícito {0}</target>
         <note />
       </trans-unit>
     </body>
