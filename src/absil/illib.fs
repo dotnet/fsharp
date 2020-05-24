@@ -1147,10 +1147,11 @@ module NameMap =
 
     /// Union entries by identical key, using the provided function to union sets of values
     let union unionf (ms: NameMap<_> seq) = 
-        seq { for m in ms do yield! m } 
-           |> Seq.groupBy (fun (KeyValue(k, _v)) -> k) 
-           |> Seq.map (fun (k, es) -> (k, unionf (Seq.map (fun (KeyValue(_k, v)) -> v) es))) 
-           |> Map.ofSeq
+        ms
+        |> Seq.concat
+        |> Seq.groupBy (fun (KeyValue(k, _v)) -> k) 
+        |> Seq.map (fun (k, es) -> (k, unionf (Seq.map (fun (KeyValue(_k, v)) -> v) es))) 
+        |> Map.ofSeq
 
     /// For every entry in m2 find an entry in m1 and fold 
     let subfold2 errf f m1 m2 acc =
@@ -1175,13 +1176,9 @@ module NameMap =
 
     let mem v (m: NameMap<'T>) = Map.containsKey v m
 
-    let find v (m: NameMap<'T>) = Map.find v m
-
-    let tryFind v (m: NameMap<'T>) = Map.tryFind v m 
-
     let add v x (m: NameMap<'T>) = Map.add v x m
 
-    let isEmpty (m: NameMap<'T>) = (Map.isEmpty m)
+    let isEmpty (m: NameMap<'T>) = Map.isEmpty m
 
     let existsInRange p m = Map.foldBack (fun _ y acc -> acc || p y) m false 
 
@@ -1255,13 +1252,11 @@ type LayeredMultiMap<'Key, 'Value when 'Key : equality and 'Key : comparison>(co
         let x = (x, kvs) ||> Array.fold (fun x (KeyValue(k, v)) -> x.Add(k, v))
         x.MarkAsCollapsible()
 
-    member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
+    member __.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
 
-    member x.TryFind k = contents.TryFind k
+    member __.TryGetValue k = contents.TryGetValue k
 
-    member x.TryGetValue k = contents.TryGetValue k
-
-    member x.Values = contents.Values |> List.concat
+    member __.Values = contents.Values |> List.concat
 
     static member Empty : LayeredMultiMap<'Key, 'Value> = LayeredMultiMap LayeredMap.Empty
 
@@ -1388,8 +1383,8 @@ module Shim =
             // Use the .NET functionality to auto-detect the unicode encoding
             let stream = FileSystem.FileStreamReadShim(filename) 
             match codePage with 
-            | None -> new  StreamReader(stream,true)
-            | Some n -> new  StreamReader(stream,System.Text.Encoding.GetEncoding(n))
+            | None -> new StreamReader(stream,true)
+            | Some n -> new StreamReader(stream,System.Text.Encoding.GetEncoding(n))
           with 
               // We can get here if the file is locked--like when VS is saving a file--we don't have direct
               // access to the HRESULT to see that this is EONOACCESS.

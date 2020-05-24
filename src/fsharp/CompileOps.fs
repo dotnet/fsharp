@@ -4019,23 +4019,22 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     member tcImports.TryFindDllInfo (ctok: CompilationThreadToken, m, assemblyName, lookupOnly) =
         CheckDisposed()
         let rec look (t: TcImports) =       
-            match NameMap.tryFind assemblyName t.DllTable with
-            | Some res -> Some res
-            | None -> 
+            match t.DllTable.TryGetValue assemblyName with
+            | true, res -> ValueSome res
+            | _ -> 
                 match t.Base with 
                 | Some t2 -> look t2
-                | None -> None
+                | None -> ValueNone
         match look tcImports with
-        | Some res -> Some res
-        | None ->
+        | ValueSome res -> ValueSome res
+        | ValueNone ->
             tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly)
             look tcImports
-    
 
     member tcImports.FindDllInfo (ctok, m, assemblyName) =
         match tcImports.TryFindDllInfo (ctok, m, assemblyName, lookupOnly=false) with 
-        | Some res -> res
-        | None -> error(Error(FSComp.SR.buildCouldNotResolveAssembly assemblyName, m))
+        | ValueSome res -> res
+        | _ -> error(Error(FSComp.SR.buildCouldNotResolveAssembly assemblyName, m))
 
     member tcImports.GetImportedAssemblies() = 
         CheckDisposed()
@@ -4055,9 +4054,9 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     member tcImports.FindCcuInfo (ctok, m, assemblyName, lookupOnly) = 
         CheckDisposed()
         let rec look (t: TcImports) = 
-            match NameMap.tryFind assemblyName t.CcuTable with
-            | Some res -> Some res
-            | None -> 
+            match t.CcuTable.TryGetValue assemblyName with
+            | true, res -> Some res
+            | _ -> 
                  match t.Base with 
                  | Some t2 -> look t2 
                  | None -> None
@@ -4714,7 +4713,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     member tcImports.TryFindProviderGeneratedAssemblyByName(ctok, assemblyName: string) : System.Reflection.Assembly option = 
         // The assembly may not be in the resolutions, but may be in the load set including EST injected assemblies
         match tcImports.TryFindDllInfo (ctok, range0, assemblyName, lookupOnly=true) with 
-        | Some res -> 
+        | ValueSome res -> 
             // Provider-generated assemblies don't necessarily have an on-disk representation we can load.
             res.ProviderGeneratedAssembly 
         | _ -> None

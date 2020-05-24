@@ -111,18 +111,26 @@ let mainMethName = CompilerGeneratedName "main"
 type AttributeDecoder(namedArgs) =
 
     let nameMap = namedArgs |> List.map (fun (AttribNamedArg(s, _, _, c)) -> s, c) |> NameMap.ofList
-    let findConst x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_, Expr.Const (c, _, _))) -> Some c | _ -> None
-    let findAppTr x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_, Expr.App (_, _, [TType_app(tr, _)], _, _))) -> Some tr | _ -> None
 
-    member __.FindInt16 x dflt = match findConst x with | Some(Const.Int16 x) -> x | _ -> dflt
+    let findConst x = 
+        match nameMap.TryGetValue x with 
+        | true, AttribExpr(_, Expr.Const (c, _, _)) -> ValueSome c 
+        | _ -> ValueNone
 
-    member __.FindInt32 x dflt = match findConst x with | Some(Const.Int32 x) -> x | _ -> dflt
+    let findAppTr x = 
+        match nameMap.TryGetValue x with 
+        | true, AttribExpr(_, Expr.App (_, _, [TType_app(tr, _)], _, _)) -> ValueSome tr 
+        | _ -> ValueNone
 
-    member __.FindBool x dflt = match findConst x with | Some(Const.Bool x) -> x | _ -> dflt
+    member __.FindInt16 x dflt = match findConst x with ValueSome(Const.Int16 x) -> x | _ -> dflt
 
-    member __.FindString x dflt = match findConst x with | Some(Const.String x) -> x | _ -> dflt
+    member __.FindInt32 x dflt = match findConst x with ValueSome(Const.Int32 x) -> x | _ -> dflt
 
-    member __.FindTypeName x dflt = match findAppTr x with | Some tr -> tr.DisplayName | _ -> dflt         
+    member __.FindBool x dflt = match findConst x with ValueSome(Const.Bool x) -> x | _ -> dflt
+
+    member __.FindString x dflt = match findConst x with ValueSome(Const.String x) -> x | _ -> dflt
+
+    member __.FindTypeName x dflt = match findAppTr x with ValueSome tr -> tr.DisplayName | _ -> dflt         
 
 //--------------------------------------------------------------------------
 // Statistics

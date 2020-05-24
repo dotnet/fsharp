@@ -6356,7 +6356,7 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
         // See bug 5758: Non-monotonicity in inference: need to ensure that parameters are never inferred to have byref type, instead it is always declared
         byrefs |> Map.iter (fun _ (orig, v) -> 
             if not orig && isByrefTy cenv.g v.Type then errorR(Error(FSComp.SR.tcParameterInferredByref v.DisplayName, v.Range)))
-        mkMultiLambda m (List.map (fun nm -> NameMap.find nm vspecMap) vs) (bodyExpr, resultTy), tpenv 
+        mkMultiLambda m (List.map (fun nm -> vspecMap.Item nm) vs) (bodyExpr, resultTy), tpenv 
     | e -> 
         // Dive into the expression to check for syntax errors and suppress them if they show.
         conditionallySuppressErrorReporting (not isFirst && synExprContainsError e) (fun () ->
@@ -13035,7 +13035,7 @@ module IncrClassChecking =
             errorR (ParameterlessStructCtor(tcref.Range))
         
         // Put them in order 
-        let ctorArgs = List.map (fun v -> NameMap.find v vspecs) ctorArgNames
+        let ctorArgs = List.map (fun v -> vspecs.Item v) ctorArgNames
         let safeThisValOpt = MakeAndPublishSafeThisVal cenv env thisIdOpt thisTy
         
         // NOTE: the type scheme here is not complete!!! The ctorTy is more or less 

@@ -960,9 +960,11 @@ type Entity =
     /// Get a union case of a type by name
     member x.GetUnionCaseByName n =
         match x.UnionTypeInfo with 
-        | ValueSome x -> NameMap.tryFind n x.CasesTable.CasesByName
-        | ValueNone -> None
-
+        | ValueSome x -> 
+            match x.CasesTable.CasesByName.TryGetValue n with
+            | true, x -> ValueSome x
+            | _ -> ValueNone
+        | ValueNone -> ValueNone
     
     /// Create a new entity with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Entity = 
@@ -3799,13 +3801,13 @@ type UnionCaseRef =
     /// Dereference the reference to the union case
     member x.UnionCase = 
         match x.TyconRef.GetUnionCaseByName x.CaseName with 
-        | Some res -> res
-        | None -> error(InternalError(sprintf "union case %s not found in type %s" x.CaseName x.TyconRef.LogicalName, x.TyconRef.Range))
+        | ValueSome res -> res
+        | ValueNone -> error(InternalError(sprintf "union case %s not found in type %s" x.CaseName x.TyconRef.LogicalName, x.TyconRef.Range))
 
     /// Try to dereference the reference 
     member x.TryUnionCase =
         x.TyconRef.TryDeref 
-        |> ValueOptionInternal.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName |> ValueOptionInternal.ofOption)
+        |> ValueOptionInternal.bind (fun tcref -> tcref.GetUnionCaseByName x.CaseName)
 
     /// Get the attributes associated with the union case
     member x.Attribs = x.UnionCase.Attribs

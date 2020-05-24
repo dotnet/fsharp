@@ -73,7 +73,7 @@ let UnionCaseRefsInModuleOrNamespace (modref: ModuleOrNamespaceRef) =
 /// Try to find a type with a union case of the given name
 let TryFindTypeWithUnionCase (modref: ModuleOrNamespaceRef) (id: Ident) =
     modref.ModuleOrNamespaceType.AllEntities
-    |> QueueList.tryFind (fun tycon -> tycon.GetUnionCaseByName id.idText |> Option.isSome)
+    |> QueueList.tryFind (fun tycon -> tycon.GetUnionCaseByName id.idText |> ValueOption.isSome)
 
 /// Try to find a type with a record field of the given name
 let TryFindTypeWithRecdField (modref: ModuleOrNamespaceRef) (id: Ident) =
@@ -1212,9 +1212,12 @@ let LookupTypeNameInEnvHaveArity fq nm numTyArgs (nenv: NameResolutionEnv) =
         | ValueSome pos -> DecodeGenericTypeName pos nm
         | _ -> NameArityPair(nm, numTyArgs)
 
-    match nenv.TyconsByDemangledNameAndArity(fq).TryFind key with
-    | None -> nenv.TyconsByAccessNames(fq).TryFind nm |> Option.map List.head
-    | res -> res
+    match nenv.TyconsByDemangledNameAndArity(fq).TryGetValue key with
+    | true, res -> ValueSome res
+    | _ -> 
+        match nenv.TyconsByAccessNames(fq).TryGetValue nm with
+        | true, x::_ -> ValueSome x
+        | _ -> ValueNone
 
 /// Implements unqualified lookups of type names where the number of generic arguments is NOT known
 /// from context.
@@ -1259,7 +1262,7 @@ let LookupTypeNameInEnvMaybeHaveArity fq nm (typeNameResInfo: TypeNameResolution
     if typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo then
         LookupTypeNameInEnvNoArity fq nm nenv
     else
-        LookupTypeNameInEnvHaveArity fq nm typeNameResInfo.StaticArgsInfo.NumStaticArgs nenv |> Option.toList
+        LookupTypeNameInEnvHaveArity fq nm typeNameResInfo.StaticArgsInfo.NumStaticArgs nenv |> ValueOption.toList
 
 /// A flag which indicates if direct references to generated provided types are allowed. Normally these
 /// are disallowed.
@@ -2225,8 +2228,8 @@ let TryFindUnionCaseOfType g ty nm =
     match tryAppTy g ty with
     | ValueSome(tcref, tinst) ->
         match tcref.GetUnionCaseByName nm with
-        | None -> ValueNone
-        | Some ucase -> ValueSome(UnionCaseInfo(tinst, tcref.MakeNestedUnionCaseRef ucase))
+        | ValueNone -> ValueNone
+        | ValueSome ucase -> ValueSome(UnionCaseInfo(tinst, tcref.MakeNestedUnionCaseRef ucase))
     | _ ->
         ValueNone
 
@@ -3057,11 +3060,11 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
         match rest with
         | [] ->
             match LookupTypeNameInEnvHaveArity fullyQualified id.idText staticResInfo.NumStaticArgs nenv with
-            | Some res ->
+            | ValueSome res ->
                 let res = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities ([(ResolutionInfo.Empty, res)], typeNameResInfo, genOk, unionRanges m id.idRange)
                 assert (res.Length = 1)
                 success res.Head
-            | None ->
+            | _ ->
                 // For Good Error Reporting!
                 let tcrefs = LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
                 match tcrefs with
@@ -3090,7 +3093,7 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                     NoResultsOrUsefulErrors
                 | OpenQualified ->
                     match LookupTypeNameInEnvHaveArity fullyQualified id.idText staticResInfo.NumStaticArgs nenv with
-                    | Some tcref when IsEntityAccessible ncenv.amap m2 ad tcref ->
+                    | ValueSome tcref when IsEntityAccessible ncenv.amap m2 ad tcref ->
                         let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange, tcref)
                         OneResult (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk 1 m2 tcref id2 rest2)
                     | _ ->

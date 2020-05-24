@@ -1326,7 +1326,7 @@ module StaticLinker =
                     else
                         if not (depModuleTable.ContainsKey ilAssemRef.Name) then 
                             match tcImports.TryFindDllInfo(ctok, Range.rangeStartup, ilAssemRef.Name, lookupOnly=false) with 
-                            | Some dllInfo ->
+                            | ValueSome dllInfo ->
                                 let ccu = 
                                     match tcImports.FindCcuFromAssemblyRef (ctok, Range.rangeStartup, ilAssemRef) with 
                                     | ResolvedCcu ccu -> Some ccu
@@ -1378,7 +1378,7 @@ module StaticLinker =
                                 // Push the new work items
                                 remaining <- refs.AssemblyReferences @ remaining
 
-                            | None -> 
+                            | _ -> 
                                 warning(Error(FSComp.SR.fscAssumeStaticLinkContainsNoDependencies(ilAssemRef.Name), rangeStartup)) 
                                 depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
                 done
@@ -1421,7 +1421,7 @@ module StaticLinker =
                 | _ -> failwith "Invalid ILScopeRef, expected ILScopeRef.Assembly"
               if debugStaticLinking then printfn "adding provider-generated assembly '%s' into static linking set" ilAssemRef.Name
               match tcImports.TryFindDllInfo(ctok, Range.rangeStartup, ilAssemRef.Name, lookupOnly=false) with 
-              | Some dllInfo ->
+              | ValueSome dllInfo ->
                   let ccu = 
                       match tcImports.FindCcuFromAssemblyRef (ctok, Range.rangeStartup, ilAssemRef) with 
                       | ResolvedCcu ccu -> Some ccu
@@ -1429,7 +1429,7 @@ module StaticLinker =
 
                   let modul = dllInfo.RawMetadata.TryGetILModuleDef().Value
                   yield (ccu, dllInfo.ILScopeRef, modul), (ilAssemRef.Name, provAssemStaticLinkInfo)
-              | None -> () ]
+              | _ -> () ]
 
     // Compute a static linker. This only captures tcImports (a large data structure) if
     // static linking is enabled. Normally this is not the case, which lets us collect tcImports
@@ -2139,11 +2139,11 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
 
     let normalizeAssemblyRefs (aref: ILAssemblyRef) = 
         match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
-        | Some dllInfo ->
+        | ValueSome dllInfo ->
             match dllInfo.ILScopeRef with 
             | ILScopeRef.Assembly ref -> ref
             | _ -> aref
-        | None -> aref
+        | _ -> aref
 
     match dynamicAssemblyCreator with 
     | None -> 

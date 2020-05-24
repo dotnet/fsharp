@@ -628,7 +628,7 @@ type TcImports =
     /// This excludes any framework imports (which may be shared between multiple builds)
     member GetCcusExcludingBase: unit -> CcuThunk list 
     member FindDllInfo: CompilationThreadToken * range * string -> ImportedBinary
-    member TryFindDllInfo: CompilationThreadToken * range * string * lookupOnly: bool -> option<ImportedBinary>
+    member TryFindDllInfo: CompilationThreadToken * range * string * lookupOnly: bool -> voption<ImportedBinary>
     member FindCcuFromAssemblyRef: CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 #if !NO_EXTENSIONTYPING
     member ProviderGeneratedTypeRoots: ProviderGeneratedType list

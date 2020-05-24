@@ -4033,17 +4033,12 @@ let mkRepackageRemapping mrpi =
 //--------------------------------------------------------------------------
 
 let accEntityRemap (msigty: ModuleOrNamespaceType) (entity: Entity) (mrpi, mhi) =
-    let sigtyconOpt = (NameMap.tryFind entity.LogicalName msigty.AllEntitiesByCompiledAndLogicalMangledNames)
-    match sigtyconOpt with 
-    | None -> 
-        // The type constructor is not present in the signature. Hence it is hidden. 
-        let mhi = { mhi with HiddenTycons = Zset.add entity mhi.HiddenTycons }
-        (mrpi, mhi) 
-    | Some sigtycon -> 
+    match msigty.AllEntitiesByCompiledAndLogicalMangledNames.TryGetValue entity.LogicalName with
+    | true, sigtycon -> 
         // The type constructor is in the signature. Hence record the repackage entry 
         let sigtcref = mkLocalTyconRef sigtycon
         let tcref = mkLocalTyconRef entity
-        let mrpi = { mrpi with RepackagedEntities = ((tcref, sigtcref) :: mrpi.RepackagedEntities) }
+        let mrpi = { mrpi with RepackagedEntities = (tcref, sigtcref) :: mrpi.RepackagedEntities }
         // OK, now look for hidden things 
         let mhi = 
             if (match entity.TypeReprInfo with TNoRepr -> false | _ -> true) && (match sigtycon.TypeReprInfo with TNoRepr -> true | _ -> false) then 
@@ -4054,7 +4049,7 @@ let accEntityRemap (msigty: ModuleOrNamespaceType) (entity: Entity) (mrpi, mhi) 
                 // Find the fields that have been hidden or which were non-public anyway. 
                 let mhi = 
                     (entity.AllFieldsArray, mhi) ||> Array.foldBack (fun rfield mhi ->
-                        match sigtycon.GetFieldByName(rfield.Name) with 
+                        match sigtycon.GetFieldByName rfield.Name with 
                         | Some _ -> 
                             // The field is in the signature. Hence it is not hidden. 
                             mhi
@@ -4066,7 +4061,7 @@ let accEntityRemap (msigty: ModuleOrNamespaceType) (entity: Entity) (mrpi, mhi) 
                 let mhi = 
                     (entity.UnionCasesAsList, mhi) ||> List.foldBack (fun ucase mhi ->
                         match sigtycon.GetUnionCaseByName ucase.DisplayName with 
-                        | Some _ -> 
+                        | ValueSome _ -> 
                             // The constructor is in the signature. Hence it is not hidden. 
                             mhi
                         | _ -> 
@@ -4074,21 +4069,24 @@ let accEntityRemap (msigty: ModuleOrNamespaceType) (entity: Entity) (mrpi, mhi) 
                             let ucref = tcref.MakeNestedUnionCaseRef ucase
                             { mhi with HiddenUnionCases = Zset.add ucref mhi.HiddenUnionCases })
                 mhi
-        (mrpi, mhi) 
-
-let accSubEntityRemap (msigty: ModuleOrNamespaceType) (entity: Entity) (mrpi, mhi) =
-    let sigtyconOpt = (NameMap.tryFind entity.LogicalName msigty.AllEntitiesByCompiledAndLogicalMangledNames)
-    match sigtyconOpt with 
-    | None -> 
+        mrpi, mhi
+    | _ -> 
         // The type constructor is not present in the signature. Hence it is hidden. 
         let mhi = { mhi with HiddenTycons = Zset.add entity mhi.HiddenTycons }
-        (mrpi, mhi) 
-    | Some sigtycon -> 
+        mrpi, mhi 
+
+let accSubEntityRemap (msigty: ModuleOrNamespaceType) (entity: Entity) (mrpi, mhi) =
+    match msigty.AllEntitiesByCompiledAndLogicalMangledNames.TryGetValue entity.LogicalName with 
+    | true, sigtycon -> 
         // The type constructor is in the signature. Hence record the repackage entry 
         let sigtcref = mkLocalTyconRef sigtycon
         let tcref = mkLocalTyconRef entity
         let mrpi = { mrpi with RepackagedEntities = ((tcref, sigtcref) :: mrpi.RepackagedEntities) }
-        (mrpi, mhi) 
+        mrpi, mhi
+    | _ -> 
+        // The type constructor is not present in the signature. Hence it is hidden. 
+        let mhi = { mhi with HiddenTycons = Zset.add entity mhi.HiddenTycons }
+        mrpi, mhi
 
 let valLinkageAEquiv g aenv (v1: Val) (v2: Val) = 
     (v1.GetLinkagePartialKey() = v2.GetLinkagePartialKey()) &&
@@ -4105,16 +4103,16 @@ let accValRemap g aenv (msigty: ModuleOrNamespaceType) (implVal: Val) (mrpi, mhi
     match sigValOpt with 
     | None -> 
         let mhi = { mhi with HiddenVals = Zset.add implVal mhi.HiddenVals }
-        (mrpi, mhi) 
+        mrpi, mhi
     | Some (sigVal: Val) -> 
         // The value is in the signature. Add the repackage entry. 
         let mrpi = { mrpi with RepackagedVals = (vref, mkLocalValRef sigVal) :: mrpi.RepackagedVals }
-        (mrpi, mhi) 
+        mrpi, mhi
 
 let getCorrespondingSigTy nm (msigty: ModuleOrNamespaceType) = 
-    match NameMap.tryFind nm msigty.AllEntitiesByCompiledAndLogicalMangledNames with 
-    | None -> Construct.NewEmptyModuleOrNamespaceType ModuleOrType 
-    | Some sigsubmodul -> sigsubmodul.ModuleOrNamespaceType
+    match msigty.AllEntitiesByCompiledAndLogicalMangledNames.TryGetValue nm with
+    | true, sigsubmodul -> sigsubmodul.ModuleOrNamespaceType
+    | _ -> Construct.NewEmptyModuleOrNamespaceType ModuleOrType 
 
 let rec accEntityRemapFromModuleOrNamespaceType (mty: ModuleOrNamespaceType) (msigty: ModuleOrNamespaceType) acc = 
     let acc = (mty.AllEntities, acc) ||> QueueList.foldBack (fun e acc -> accEntityRemapFromModuleOrNamespaceType e.ModuleOrNamespaceType (getCorrespondingSigTy e.LogicalName msigty) acc) 
