@@ -286,10 +286,10 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 let tcref = ImportProvidedNamedType env m st
                 tcref, [] 
         
+        let genericArgsLength = genericArgs.Length
         /// Adjust for the known primitive numeric types that accept units of measure. 
         let tcref =
-            match genericArgs with
-            | [_] -> 
+            if genericArgsLength = 1 then
                 if tyconRefEq g tcref g.system_Double_tcref then g.pfloat_tcr
                 elif tyconRefEq g tcref g.system_Single_tcref then g.pfloat32_tcr
                 elif tyconRefEq g tcref g.system_Decimal_tcref then g.pdecimal_tcr
@@ -298,11 +298,12 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 elif tyconRefEq g tcref g.system_Int64_tcref then g.pint64_tcr
                 elif tyconRefEq g tcref g.system_SByte_tcref then g.pint8_tcr
                 else tcref
-            | _ -> tcref
+            else
+                tcref
 
         let tps = tcref.Typars m
-        if tps.Length <> genericArgs.Length then 
-           error(Error(FSComp.SR.impInvalidNumberOfGenericArguments(tcref.CompiledName, tps.Length, genericArgs.Length), m))
+        if tps.Length <> genericArgsLength then 
+           error(Error(FSComp.SR.impInvalidNumberOfGenericArguments(tcref.CompiledName, tps.Length, genericArgsLength), m))
 
         let genericArgs = 
             (tps, genericArgs) ||> List.map2 (fun tp genericArg ->  
