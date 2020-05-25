@@ -15,7 +15,7 @@ module ``List Tests`` =
 
         CompilerAssert.TypeCheckSingleError
             """
-    List.hd [1] |> ignore
+List.hd [1] |> ignore
             """
             FSharpErrorSeverity.Error
             39
@@ -31,7 +31,7 @@ module ``List Tests`` =
         
         CompilerAssert.TypeCheckSingleError
             """
-    List.tl [1] |> ignore
+List.tl [1] |> ignore
             """
             FSharpErrorSeverity.Error
             39
