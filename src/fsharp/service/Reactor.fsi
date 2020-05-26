@@ -45,6 +45,9 @@ type internal Reactor =
     /// For debug purposes
     member CurrentQueueLength : int
 
+    /// Override the current reactor event listener.
+    member SetListener : IReactorListener -> unit
+
     /// Put the operation in the queue, and return an async handle to its result. 
     member EnqueueAndAwaitOpAsync : userOpName:string * opName:string * opArg:string * (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
 
