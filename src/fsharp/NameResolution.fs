@@ -2398,10 +2398,10 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
             | _ -> ()
 
         let errorTextF s =
-            if isAppTy g ty then
-                let tcref = tcrefOfAppTy g ty
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcref ->
                 FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndTypars, s)
-            else
+            | _ ->
                 FSComp.SR.undefinedNameFieldConstructorOrMember(s)
 
         raze (UndefinedName (depth, errorTextF, id, suggestMembers))
