@@ -665,7 +665,7 @@ type Build() =
             "--other:internal quote" + Environment.NewLine +
             "blah" + Environment.NewLine +
             "foo.fs" + Environment.NewLine +
-            @"C:\Program Files\spaces.fs" + Environment.NewLine
+            @"C:\Program Files\spaces.fs"
 
         AssertEqual expected cmd
 
