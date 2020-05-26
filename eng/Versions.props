@@ -23,7 +23,7 @@
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <FSPackageMajorVersion>10.9</FSPackageMajorVersion>
+    <FSPackageMajorVersion>10.10</FSPackageMajorVersion>
     <FSPackageVersion>$(FSPackageMajorVersion).2</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
