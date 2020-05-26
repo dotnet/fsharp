@@ -19,37 +19,37 @@ type public IReactorListener =
 
 type public EmptyReactorListener() =
     interface IReactorListener with
-        override __.OnReactorPauseBeforeBackgroundWork _ = ()
-        override __.OnReactorOperationStart _ _ _ _  = ()
-        override __.OnReactorOperationEnd _ _ _ = ()
-        override __.OnReactorBackgroundStart _ _ _ = ()
-        override __.OnReactorBackgroundCancelled _ _ = ()
-        override __.OnReactorBackgroundEnd _ _ _ = ()
-        override __.OnSetBackgroundOp _ = ()
-        override __.OnCancelBackgroundOp () = ()
-        override __.OnEnqueueOp _ _ _ _ = ()
+        override _.OnReactorPauseBeforeBackgroundWork _ = ()
+        override _.OnReactorOperationStart _ _ _ _  = ()
+        override _.OnReactorOperationEnd _ _ _ = ()
+        override _.OnReactorBackgroundStart _ _ _ = ()
+        override _.OnReactorBackgroundCancelled _ _ = ()
+        override _.OnReactorBackgroundEnd _ _ _ = ()
+        override _.OnSetBackgroundOp _ = ()
+        override _.OnCancelBackgroundOp () = ()
+        override _.OnEnqueueOp _ _ _ _ = ()
 
 type public DefaultReactorListener() =
     interface IReactorListener with
-        override __.OnReactorPauseBeforeBackgroundWork pauseMillis =
+        override _.OnReactorPauseBeforeBackgroundWork pauseMillis =
             Trace.TraceInformation("Reactor: {0:n3} pausing {1} milliseconds", DateTime.Now.TimeOfDay.TotalSeconds, pauseMillis)
-        override __.OnReactorOperationStart userOpName opName opArg approxQueueLength =
+        override _.OnReactorOperationStart userOpName opName opArg approxQueueLength =
             Trace.TraceInformation("Reactor: {0:n3} --> {1}.{2} ({3}), remaining {4}", DateTime.Now.TimeOfDay.TotalSeconds, userOpName, opName, opArg, approxQueueLength)
-        override __.OnReactorOperationEnd userOpName opName elapsed =
+        override _.OnReactorOperationEnd userOpName opName elapsed =
             let taken = elapsed.TotalMilliseconds
             let msg = (if taken > 10000.0 then "BAD-OP: >10s " elif taken > 3000.0 then "BAD-OP: >3s " elif taken > 1000.0 then "BAD-OP: > 1s " elif taken > 500.0 then "BAD-OP: >0.5s " else "")
             Trace.TraceInformation("Reactor: {0:n3} {1}<-- {2}.{3}, took {4} ms", DateTime.Now.TimeOfDay.TotalSeconds, msg, userOpName, opName, taken)
-        override __.OnReactorBackgroundStart bgUserOpName bgOpName bgOpArg =
+        override _.OnReactorBackgroundStart bgUserOpName bgOpName bgOpArg =
             Trace.TraceInformation("Reactor: {0:n3} --> background step {1}.{2} ({3})", DateTime.Now.TimeOfDay.TotalSeconds, bgUserOpName, bgOpName, bgOpArg)
-        override __.OnReactorBackgroundCancelled bgUserOpName bgOpName =
+        override _.OnReactorBackgroundCancelled bgUserOpName bgOpName =
             Trace.TraceInformation("FCS: <-- background step {0}.{1}, was cancelled", bgUserOpName, bgOpName)
-        override __.OnReactorBackgroundEnd _bgUserOpName _bgOpName elapsed =
+        override _.OnReactorBackgroundEnd _bgUserOpName _bgOpName elapsed =
             let taken = elapsed.TotalMilliseconds
             let msg = (if taken > 10000.0 then "BAD-BG-SLICE: >10s " elif taken > 3000.0 then "BAD-BG-SLICE: >3s " elif taken > 1000.0 then "BAD-BG-SLICE: > 1s " else "")
             Trace.TraceInformation("Reactor: {0:n3} {1}<-- background step, took {2} ms", DateTime.Now.TimeOfDay.TotalSeconds, msg, taken)
-        override __.OnSetBackgroundOp approxQueueLength =
+        override _.OnSetBackgroundOp approxQueueLength =
             Trace.TraceInformation("Reactor: {0:n3} enqueue start background, length {1}", DateTime.Now.TimeOfDay.TotalSeconds, approxQueueLength)
-        override __.OnCancelBackgroundOp () =
+        override _.OnCancelBackgroundOp () =
             Trace.TraceInformation("FCS: trying to cancel any active background work")
-        override __.OnEnqueueOp userOpName opName opArg approxQueueLength =
+        override _.OnEnqueueOp userOpName opName opArg approxQueueLength =
             Trace.TraceInformation("Reactor: {0:n3} enqueue {1}.{2} ({3}), length {4}", DateTime.Now.TimeOfDay.TotalSeconds, userOpName, opName, opArg, approxQueueLength)
