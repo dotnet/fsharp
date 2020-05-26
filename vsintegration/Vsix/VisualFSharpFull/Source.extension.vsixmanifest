@@ -29,6 +29,7 @@
       <Action Type="Ngen" Path="FSharp.ProjectSystem.FSharp.dll" />
       <Action Type="Ngen" Path="FSharp.ProjectSystem.PropertyPages.dll" />
       <Action Type="Ngen" Path="FSharp.VS.FSI.dll" />
+      <Action Type="Ngen" Path="Interactive.DependencyManager.dll" />
     </Actions>
   </Installer>
   <Dependencies>

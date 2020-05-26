@@ -4,22 +4,22 @@
     <body>
       <trans-unit id="cantReferenceSystemPackage">
         <source>PackageManager can not reference the System Package '{0}'</source>
-        <target state="new">PackageManager can not reference the System Package '{0}'</target>
+        <target state="translated">PackageManager, '{0}' Sistem Paketine başvuramıyor</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
         <source>Not used.</source>
-        <target state="new">Not used.</target>
+        <target state="translated">Kullanılmıyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
         <source>{0} requires a value</source>
-        <target state="new">{0} requires a value</target>
+        <target state="translated">{0}, bir değer gerektiriyor</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
-        <target state="new">Unable to apply implicit argument number {0}</target>
+        <target state="translated">Örtük bağımsız değişken sayısı ({0}) uygulanamıyor</target>
         <note />
       </trans-unit>
     </body>

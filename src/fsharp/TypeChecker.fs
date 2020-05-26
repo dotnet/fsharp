@@ -5234,7 +5234,7 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 topValData (inlineFlag, de
             let name = id.idText
             match values.TryGetValue name with
             | true, value ->
-                if not (String.IsNullOrEmpty name) && Char.IsLower(name.[0]) then
+                if not (String.IsNullOrEmpty name) && not (String.isLeadingIdentifierCharacterUpperCase name) then
                     match env.eNameResEnv.ePatItems.TryGetValue name with
                     | true, Item.Value vref when vref.LiteralValue.IsSome ->
                         warning(Error(FSComp.SR.checkLowercaseLiteralBindingInPattern name, id.idRange))
@@ -12776,7 +12776,7 @@ module TcRecdUnionAndEnumDeclarations = begin
             errorR(Error(FSComp.SR.tcUnionCaseNameConflictsWithGeneratedType(name, "Tags"), id.idRange))
 
         CheckNamespaceModuleOrTypeName cenv.g id
-        if not (String.isUpper name) && name <> opNameCons && name <> opNameNil then
+        if not (String.isLeadingIdentifierCharacterUpperCase name) && name <> opNameCons && name <> opNameNil then
             errorR(NotUpperCaseConstructor(id.idRange))
 
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
@@ -15176,7 +15176,7 @@ module TcExceptionDeclarations =
 
     let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, UnionCase(_, id, _, _, _, _), _, doc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
-        if not (String.isUpper id.idText) then errorR(NotUpperCaseConstructor m)
+        if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor m)
         let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
         let vis = TcRecdUnionAndEnumDeclarations.CombineReprAccess parent vis
         CheckForDuplicateConcreteType env (id.idText + "Exception") id.idRange
