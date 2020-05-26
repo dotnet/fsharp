@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly LetIfThenElse01
 {
@@ -29,20 +29,24 @@
 }
 .mresource public FSharpSignatureData.LetIfThenElse01
 {
-  // Offset: 0x00000000 Length: 0x000001E5
+  // Offset: 0x00000000 Length: 0x000001D9
+}
+.mresource public FSharpSignatureDataB.LetIfThenElse01
+{
+  // Offset: 0x000001E0 Length: 0x00000007
 }
 .mresource public FSharpOptimizationData.LetIfThenElse01
 {
   // Offset: 0x000001F0 Length: 0x00000076
 }
 .module LetIfThenElse01.exe
-// MVID: {59B19213-BE5A-D8FD-A745-03831392B159}
+// MVID: {5E172EE9-BE5A-D8FD-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02940000
+// Image base: 0x06FC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -65,7 +69,7 @@
              [6] int32 y2,
              [7] valuetype [mscorlib]System.DateTime V_7)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 6,6 : 12,51 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\LetIfThenElse01.fs'
+    .line 6,6 : 12,51 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\LetIfThenElse01.fs'
     IL_0000:  call       valuetype [mscorlib]System.DateTime [mscorlib]System.DateTime::get_Now()
     IL_0005:  stloc.1
     IL_0006:  ldloca.s   V_1

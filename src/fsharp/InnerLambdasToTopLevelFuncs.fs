@@ -849,7 +849,7 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
         let newTps    = envp.ep_etps @ tps
         let fHatTy =
             let newArgtys = List.map typeOfVal envp.ep_aenvs @ argtys
-            mkLambdaTy newTps newArgtys res
+            mkLambdaTy g newTps newArgtys res
         let fHatArity = MakeSimpleArityInfo newTps (envp.ep_aenvs.Length + wf)
         let fHatName =
             // Ensure that we have an g.CompilerGlobalState
@@ -996,8 +996,8 @@ module Pass4_RewriteAssembly =
             (* REVIEW: is this mutation really, really necessary? *)
             (* Why are we applying TLR if the thing already has an arity? *)
             let fOrig = setValHasNoArity fOrig
-            let fBind =
-               mkMultiLambdaBind fOrig letSeqPtOpt m tps vss
+            let fBind = 
+               mkMultiLambdaBind penv.g fOrig letSeqPtOpt m tps vss
                    (mkApps penv.g
                             ((exprForVal m fHat, fHat.Type),
                              [List.map mkTyparTy (envp.ep_etps @ tps)],
@@ -1012,17 +1012,17 @@ module Pass4_RewriteAssembly =
             // Don't take all the variables - only up to length wf
             let vssTake, vssDrop = List.splitAt wf vss
             // put the variables back on
-            let b, rty = mkMultiLambdasCore b.Range vssDrop (b, rty)
-            // fHat, args
+            let b, rty = mkMultiLambdasCore penv.g b.Range vssDrop (b, rty)
+            // fHat, args 
             let m = fHat.Range
             // Add the type variables to the front
             let fHat_tps  = envp.ep_etps @ tps
             // Add the 'aenv' and original taken variables to the front
             let fHat_args = List.map List.singleton envp.ep_aenvs @ vssTake
-            let fHat_body = mkLetsFromBindings m envp.ep_unpack b
-            let fHat_body = mkLetsFromBindings m shortRecBinds  fHat_body  // bind "f" if have short recursive calls (somewhere)
-            // fHat binding, f rebinding
-            let fHatBind   = mkMultiLambdaBind fHat letSeqPtOpt m fHat_tps fHat_args (fHat_body, rty)
+            let fHat_body = mkLetsFromBindings m envp.ep_unpack b        
+            let fHat_body = mkLetsFromBindings m shortRecBinds fHat_body  // bind "f" if have short recursive calls (somewhere) 
+            // fHat binding, f rebinding 
+            let fHatBind   = mkMultiLambdaBind penv.g fHat letSeqPtOpt m fHat_tps fHat_args (fHat_body,rty)
             fHatBind
         let rebinds = binds |> List.map fRebinding
         let shortRecBinds = rebinds |> List.filter (fun b -> penv.recShortCallS.Contains(b.Var))

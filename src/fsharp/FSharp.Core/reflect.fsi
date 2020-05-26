@@ -18,12 +18,14 @@ open Microsoft.FSharp.Collections
 type UnionCaseInfo =
     /// <summary>The name of the case.</summary>
     member Name : string
+
     /// <summary>The type in which the case occurs.</summary>
     member DeclaringType: Type
     
     /// <summary>Returns the custom attributes associated with the case.</summary>
     /// <returns>An array of custom attributes.</returns>
     member GetCustomAttributes: unit -> obj[]
+
     /// <summary>Returns the custom attributes associated with the case matching the given attribute type.</summary>
     /// <param name="attributeType">The type of attributes to return.</param>
     /// <returns>An array of custom attributes.</returns>
@@ -54,7 +56,7 @@ type FSharpValue =
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>The field from the record.</returns>
     static member GetRecordField:  record:obj * info:PropertyInfo -> obj
-    
+
     /// <summary>Precompute a function for reading a particular field from a record.
     /// Assumes the given type is a RecordType with a field of the given name. 
     /// If not, ArgumentException is raised during pre-computation.</summary>
@@ -101,6 +103,7 @@ type FSharpValue =
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>An optimized reader for the given record type.</returns>
     static member PreComputeRecordReader : recordType:Type  * ?bindingFlags:BindingFlags -> (obj -> obj[])
+
     /// <summary>Precompute a function for constructing a record value. </summary>
     ///
     /// <remarks>Assumes the given type is a RecordType.
@@ -137,7 +140,7 @@ type FSharpValue =
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a union case value.</exception>
     /// <returns>The description of the union case and its fields.</returns>
     static member GetUnionFields:  value:obj * unionType:Type * ?bindingFlags:BindingFlags -> UnionCaseInfo * obj []
-    
+
     /// <summary>Assumes the given type is a union type. 
     /// If not, ArgumentException is raised during pre-computation.</summary>
     ///
@@ -207,8 +210,8 @@ type FSharpValue =
     /// <param name="tuple">The input tuple.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input is not a tuple value.</exception>
     /// <returns>An array of the fields from the given tuple.</returns>
-    static member GetTupleFields: tuple:obj -> obj []
-    
+    static member GetTupleFields: tuple:obj -> obj[]
+
     /// <summary>Precompute a function for reading the values of a particular tuple type</summary>
     ///
     /// <remarks>Assumes the given type is a TupleType.
@@ -217,7 +220,7 @@ type FSharpValue =
     /// <exception cref="System.ArgumentException">Thrown when the given type is not a tuple type.</exception>
     /// <returns>A function to read values of the given tuple type.</returns>
     static member PreComputeTupleReader           : tupleType:Type -> (obj -> obj[])
-    
+
     /// <summary>Gets information that indicates how to read a field of a tuple</summary>
     /// <param name="tupleType">The input tuple type.</param>
     /// <param name="index">The index of the tuple element to describe.</param>
@@ -362,7 +365,8 @@ module FSharpReflectionExtensions =
         /// <param name="allowAccessToPrivateRepresentation">Optional flags that denotes accessibility of the private representation.</param>
         /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
         /// <returns>The created record.</returns>
-        static member MakeRecord: recordType:Type * values:obj [] * ?allowAccessToPrivateRepresentation : bool -> obj
+        static member MakeRecord: recordType:Type * values:obj[] * ?allowAccessToPrivateRepresentation : bool -> obj
+
         /// <summary>Reads all the fields from a record value.</summary>
         ///
         /// <remarks>Assumes the given input is a record value. If not, ArgumentException is raised.</remarks>
@@ -387,6 +391,7 @@ module FSharpReflectionExtensions =
         /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
         /// <returns>An optimized reader for the given record type.</returns>
         static member PreComputeRecordReader : recordType:Type * ?allowAccessToPrivateRepresentation : bool -> (obj -> obj[])
+
         /// <summary>Precompute a function for constructing a record value. </summary>
         ///
         /// <remarks>Assumes the given type is a RecordType.
@@ -402,13 +407,13 @@ module FSharpReflectionExtensions =
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <returns>A ConstructorInfo for the given record type.</returns>
         static member PreComputeRecordConstructorInfo: recordType:Type * ?allowAccessToPrivateRepresentation : bool-> ConstructorInfo
-    
+
         /// <summary>Create a union case value.</summary>
         /// <param name="unionCase">The description of the union case to create.</param>
         /// <param name="args">The array of arguments to construct the given case.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <returns>The constructed union case.</returns>
-        static member MakeUnion: unionCase:UnionCaseInfo * args:obj [] * ?allowAccessToPrivateRepresentation : bool-> obj
+        static member MakeUnion: unionCase:UnionCaseInfo * args:obj[] * ?allowAccessToPrivateRepresentation : bool-> obj
 
         /// <summary>Identify the union case and its fields for an object</summary>
         ///
@@ -422,8 +427,8 @@ module FSharpReflectionExtensions =
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         /// <exception cref="System.ArgumentException">Thrown when the input type is not a union case value.</exception>
         /// <returns>The description of the union case and its fields.</returns>
-        static member GetUnionFields:  value:obj * unionType:Type * ?allowAccessToPrivateRepresentation : bool -> UnionCaseInfo * obj []
-    
+        static member GetUnionFields:  value:obj * unionType:Type * ?allowAccessToPrivateRepresentation : bool -> UnionCaseInfo * obj[]
+
         /// <summary>Assumes the given type is a union type. 
         /// If not, ArgumentException is raised during pre-computation.</summary>
         ///

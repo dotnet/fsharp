@@ -952,7 +952,11 @@ namespace Microsoft.FSharp.Core
         val inline FastGenericComparer<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
 
         /// <summary>Make an F# comparer object for the given type, where it can be null if System.Collections.Generic.Comparer&lt;'T&gt;.Default</summary>
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
+#else
+        val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T>? when 'T : comparison 
+#endif
 
         /// <summary>Make an F# hash/equality object for the given type</summary>
         val inline FastGenericEqualityComparer<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T : equality
@@ -2139,18 +2143,41 @@ namespace Microsoft.FSharp.Core
         val inline (<|||): func:('T1 -> 'T2 -> 'T3 -> 'U) -> arg1:'T1 * arg2:'T2 * arg3:'T3 -> 'U
 
         /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
+        /// <param name="defaultValue">The default value of the argument.</param>
+        /// <param name="arg">An option representing the argument.</param>
+        /// <returns>The argument value. If it is None, the defaultValue is returned.</returns>
+        [<CompiledName("DefaultIfNone")>]
+        val inline defaultIfNone : defaultValue:'T -> arg:'T option -> 'T 
+
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+        /// <summary>Used to specify a default value for a nullable reference argument in the implementation of a function</summary>
+        /// <param name="defaultValue">The default value of the argument.</param>
+        /// <param name="arg">A nullable value representing the argument.</param>
+        /// <returns>The argument value. If it is null, the defaultValue is returned.</returns>
+        [<CompiledName("DefaultIfNull")>]
+        val inline defaultIfNull : defaultValue:'T -> arg:'T? -> 'T when 'T : not struct and 'T : not null
+
+        /// <summary>Used to specify a default value for an nullable value argument in the implementation of a function</summary>
+        /// <param name="defaultValue">The default value of the argument.</param>
+        /// <param name="arg">A nullable value representing the argument.</param>
+        /// <returns>The argument value. If it is null, the defaultValue is returned.</returns>
+        [<CompiledName("DefaultIfNullV")>]
+        val inline defaultIfNullV : defaultValue:'T -> arg:Nullable<'T> -> 'T 
+#endif
+
+        /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
         /// <param name="arg">An option representing the argument.</param>
         /// <param name="defaultValue">The default value of the argument.</param>
         /// <returns>The argument value. If it is None, the defaultValue is returned.</returns>
         [<CompiledName("DefaultArg")>]
-        val defaultArg : arg:'T option -> defaultValue:'T -> 'T 
+        val inline defaultArg : arg:'T option -> defaultValue:'T -> 'T 
 
         /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
         /// <param name="arg">A value option representing the argument.</param>
         /// <param name="defaultValue">The default value of the argument.</param>
         /// <returns>The argument value. If it is None, the defaultValue is returned.</returns>
         [<CompiledName("DefaultValueArg")>]
-        val defaultValueArg : arg:'T voption -> defaultValue:'T -> 'T 
+        val inline defaultValueArg : arg:'T voption -> defaultValue:'T -> 'T 
 
         /// <summary>Concatenate two strings. The operator '+' may also be used.</summary>
         [<CompilerMessage("This construct is for ML compatibility. Consider using the '+' operator instead. This may require a type annotation to indicate it acts on strings. This message can be disabled using '--nowarn:62' or '#nowarn \"62\"'.", 62, IsHidden=true)>]
@@ -2246,17 +2273,80 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is null, false otherwise.</returns>
         [<CompiledName("IsNull")>]
-        val inline isNull : value:'T -> bool when 'T : null
+        val inline isNull : value: 'T -> bool when 'T : null
         
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>A choice indicating whether the value is null or not-null.</returns>
+        [<CompiledName("NullMatchPattern")>]
+        val inline (|Null|NotNull|) : value: 'T? -> Choice<unit, 'T>  when 'T : not null
+        
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>A choice indicating whether the value is null or not-null.</returns>
+        [<CompiledName("NullValueMatchPattern")>]
+        val inline (|NullV|NotNullV|) : value: Nullable<'T> -> Choice<unit, 'T> 
+        
+        /// <summary>When used in a pattern checks the given value is not null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>The non-null value.</returns>
+        [<CompiledName("NonNullPattern")>]
+        val inline (|NonNull|) : value: 'T? -> 'T when 'T : not null 
+        
+        /// <summary>When used in a pattern checks the given value is not null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>The non-null value.</returns>
+        [<CompiledName("NonNullValuePattern")>]
+        val inline (|NonNullV|) : value: Nullable<'T> -> 'T 
+        
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("IsNullV")>]
+        val inline isNullV : value:Nullable<'T> -> bool
+#endif
+
         /// <summary>Determines whether the given value is not null.</summary>
         /// <param name="value">The value to check.</param>
         /// <returns>True when value is not null, false otherwise.</returns>
-        [<CompiledName("IsNotNull")>]
-        val inline internal isNotNull : value:'T -> bool when 'T : null
+        [<CompiledName("IsNonNull")>]
+        val inline internal isNonNull : value:'T -> bool when 'T : null
+
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+        /// <summary>Get the null value for a value type.</summary>
+        /// <returns>The null value for a value type.</returns>
+        [<CompiledName("NullV")>]
+        val inline nullV<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType> :  Nullable<'T>
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>The value when it is not null. If the value is null an exception is raised.</returns>
+        [<CompiledName("NonNull")>]
+        val inline nonNull : value: 'T? -> 'T when 'T : not struct and 'T : not null
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("NonNullV")>]
+        val inline nonNullV : value:Nullable<'T> -> 'T 
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("WithNull")>]
+        val inline withNull : value:'T -> 'T? when 'T : not struct (* and 'T : not null *)
+
+        /// <summary>Asserts that the value is non-null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("WithNullV")>]
+        val inline withNullV : value:'T -> Nullable<'T> 
+#endif
 
         /// <summary>Throw a <c>System.Exception</c> exception.</summary>
         /// <param name="message">The exception message.</param>
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         [<CompiledName("FailWith")>]
         val inline failwith : message:string -> 'T 
 
@@ -2264,15 +2354,23 @@ namespace Microsoft.FSharp.Core
         /// the given argument name and message.</summary>
         /// <param name="argumentName">The argument name.</param>
         /// <param name="message">The exception message.</param>
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         [<CompiledName("InvalidArg")>]
         val inline invalidArg : argumentName:string -> message:string -> 'T 
 
         /// <summary>Throw a <c>System.ArgumentNullException</c> exception</summary>
         /// <param name="argumentName">The argument name.</param>
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         [<CompiledName("NullArg")>]
         val inline nullArg : argumentName:string -> 'T 
+
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+        /// <summary>Throw a <c>System.ArgumentNullException if the given value is null</c> exception</summary>
+        /// <param name="argumentName">The argument name.</param>
+        /// <returns>The result value.</returns>
+        [<CompiledName("NullArgCheck")>]
+        val inline nullArgCheck : argumentName:string -> 'T? -> 'T when 'T : not struct and 'T : not null
+#endif
 
         /// <summary>Throw a <c>System.InvalidOperationException</c> exception</summary>
         /// <param name="message">The exception message.</param>

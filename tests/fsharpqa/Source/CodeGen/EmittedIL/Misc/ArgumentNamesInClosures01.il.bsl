@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly ArgumentNamesInClosures01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.ArgumentNamesInClosures01
 {
-  // Offset: 0x00000000 Length: 0x0000039F
+  // Offset: 0x00000000 Length: 0x0000039B
+}
+.mresource public FSharpSignatureDataB.ArgumentNamesInClosures01
+{
+  // Offset: 0x000003A0 Length: 0x00000021
 }
 .mresource public FSharpOptimizationData.ArgumentNamesInClosures01
 {
-  // Offset: 0x000003A8 Length: 0x0000010D
+  // Offset: 0x000003C8 Length: 0x0000010D
+}
+.mresource public FSharpOptimizationDataB.ArgumentNamesInClosures01
+{
+  // Offset: 0x000004E0 Length: 0x0000000F
 }
 .module ArgumentNamesInClosures01.dll
-// MVID: {59B19213-39CA-41B5-A745-03831392B159}
+// MVID: {5E172EE9-39CA-41B5-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02A00000
+// Image base: 0x06D60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -61,7 +69,7 @@
       // Code size       9 (0x9)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 36,36 : 29,44 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\ArgumentNamesInClosures01.fs'
+      .line 36,36 : 29,44 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\ArgumentNamesInClosures01.fs'
       IL_0000:  ldarg.0
       IL_0001:  tail.
       IL_0003:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()

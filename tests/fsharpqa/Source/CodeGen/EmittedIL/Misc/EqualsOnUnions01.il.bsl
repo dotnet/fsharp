@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly EqualsOnUnions01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.EqualsOnUnions01
 {
-  // Offset: 0x00000000 Length: 0x0000064B
+  // Offset: 0x00000000 Length: 0x0000063B
+}
+.mresource public FSharpSignatureDataB.EqualsOnUnions01
+{
+  // Offset: 0x00000640 Length: 0x0000007B
 }
 .mresource public FSharpOptimizationData.EqualsOnUnions01
 {
-  // Offset: 0x00000650 Length: 0x000001C7
+  // Offset: 0x000006C0 Length: 0x000001C7
+}
+.mresource public FSharpOptimizationDataB.EqualsOnUnions01
+{
+  // Offset: 0x00000890 Length: 0x0000002A
 }
 .module EqualsOnUnions01.exe
-// MVID: {59B19213-BBFB-14A0-A745-03831392B159}
+// MVID: {5E172EE9-BBFB-14A0-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01350000
+// Image base: 0x06840000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -351,7 +359,7 @@
                [7] int32 V_7,
                [8] int32 V_8)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\EqualsOnUnions01.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\EqualsOnUnions01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldnull
       IL_0002:  cgt.un

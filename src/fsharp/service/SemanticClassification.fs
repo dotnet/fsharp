@@ -58,7 +58,7 @@ module TcResolutionsExtensions =
 
                 let (|OptionalArgumentAttribute|_|) ttype =
                     match ttype with
-                    | TType.TType_app(tref, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
+                    | TType.TType_app(tref, _, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
                     | _ -> None
 
                 let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
@@ -90,7 +90,7 @@ module TcResolutionsExtensions =
                     protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
 
                 let isStructTyconRef (tyconRef: TyconRef) = 
-                    let ty = generalizedTyconRef tyconRef
+                    let ty = generalizedTyconRef g tyconRef
                     let underlyingTy = stripTyEqnsAndMeasureEqns g ty
                     isStructTy g underlyingTy
 
@@ -148,7 +148,7 @@ module TcResolutionsExtensions =
                         add m SemanticClassificationType.Interface
                     | Item.Types(_, types), LegitTypeOccurence, _, _, _, m when types |> List.exists (isStructTy g) -> 
                         add m SemanticClassificationType.ValueType
-                    | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
+                    | Item.Types(_, TType_app(tyconRef, (TType_measure _ :: _), _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
                         add m SemanticClassificationType.ValueType
                     | Item.Types(_, types), LegitTypeOccurence, _, _, _, m when types |> List.exists isDisposableTy ->
                         add m SemanticClassificationType.Disposable
