@@ -582,6 +582,12 @@
     <Compile Include="..\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ReactorListener.fsi">
+      <Link>Service/ReactorListener.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ReactorListener.fs">
+      <Link>Service/ReactorListener.fs</Link>
+    </Compile>
     <Compile Include="..\service\Reactor.fsi">
       <Link>Service/Reactor.fsi</Link>
     </Compile>
