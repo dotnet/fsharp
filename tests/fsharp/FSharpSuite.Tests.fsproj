@@ -78,6 +78,10 @@
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Compile Include="Compiler\Regressions\IndexerRegressionTests.fs" />
     <Compile Include="Compiler\Regressions\ForInDoMutableRegressionTest.fs" />
+    <Compile Include="Compiler\Libraries\Core\Collections\IEnumerableTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Collections\MapTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Collections\CollectionTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Collections\ListTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
