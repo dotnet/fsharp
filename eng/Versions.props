@@ -24,7 +24,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <FSPackageMajorVersion>10.10</FSPackageMajorVersion>
-    <FSPackageVersion>$(FSPackageMajorVersion).2</FSPackageVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
