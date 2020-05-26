@@ -589,7 +589,7 @@ type public Fsc () as this =
 
     override fsc.GenerateResponseFileCommands() =
         let builder = generateCommandLineBuilder ()
-        builder.GetCapturedArguments() |> Seq.fold(fun acc f -> acc + f + Environment.NewLine) ""
+        builder.GetCapturedArguments() |> String.concat Environment.NewLine
 
     // expose this to internal components (for nunit testing)
     member internal fsc.InternalGenerateCommandLineCommands() =
