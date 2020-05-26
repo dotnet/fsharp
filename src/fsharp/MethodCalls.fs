@@ -848,8 +848,8 @@ let MakeMethInfoCall amap m minfo minst args =
 let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name), m)
     let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> x.DeclaringType), m))
-    if isAppTy amap.g declaringType then 
-        let declaringEntity = tcrefOfAppTy amap.g declaringType
+    match tryTcrefOfAppTy amap.g declaringType with
+    | ValueSome declaringEntity ->
         if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
             let n = mbase.PUntaint((fun x -> x.GetParameters().Length), m)
             match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, None, methodName, n)) with 
@@ -862,7 +862,7 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: ra
             | _ -> None
         else
             None
-    else
+    | _ ->
         None
 #endif
         
