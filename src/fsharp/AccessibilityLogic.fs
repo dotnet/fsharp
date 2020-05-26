@@ -208,12 +208,13 @@ and IsTypeInstAccessible g amap m ad tinst =
 /// Indicate if a provided member is accessible
 let IsProvidedMemberAccessible (amap:Import.ImportMap) m ad ty access = 
     let g = amap.g
-    let isTyAccessible = IsTypeAccessible g amap m ad ty
-    if not isTyAccessible then false
+    if IsTypeAccessible g amap m ad ty then 
+        match tryTcrefOfAppTy g ty with
+        | ValueNone -> true
+        | ValueSome tcrefOfViewedItem ->
+            IsILMemberAccessible g amap m tcrefOfViewedItem ad access
     else
-        not (isAppTy g ty) ||
-        let tcrefOfViewedItem = tcrefOfAppTy g ty
-        IsILMemberAccessible g amap m tcrefOfViewedItem ad access
+        false
 
 /// Compute the accessibility of a provided member
 let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =

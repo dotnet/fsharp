@@ -542,7 +542,11 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 // printfn "FAILED - not worth compiling an unrecognized immediate yield! %s " (stringOfRange m)
                 None
             else
-                let tyConfirmsToSeq g ty = isAppTy g ty && tyconRefEq g (tcrefOfAppTy g ty) g.tcref_System_Collections_Generic_IEnumerable
+                let tyConfirmsToSeq g ty = 
+                    match tryTcrefOfAppTy g ty with
+                    | ValueSome tcref ->
+                        tyconRefEq g tcref g.tcref_System_Collections_Generic_IEnumerable
+                    | _ -> false 
                 match SearchEntireHierarchyOfType (tyConfirmsToSeq g) g amap m (tyOfExpr g arbitrarySeqExpr) with
                 | None ->
                     // printfn "FAILED - yield! did not yield a sequence! %s" (stringOfRange m)

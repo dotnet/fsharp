@@ -17402,10 +17402,7 @@ and TcSignatureElements cenv parent endm env xml mutRecNSInfo defs =
     }
 
 and TcSignatureElementsNonMutRec cenv parent typeNames endm env defs = 
-    eventually {
-
-        return! Eventually.fold (TcSignatureElementNonMutRec cenv parent typeNames endm) env defs
-    }
+    Eventually.fold (TcSignatureElementNonMutRec cenv parent typeNames endm) env defs
 
 and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (defs: SynModuleSigDecl list) =
     eventually {
