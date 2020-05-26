@@ -86,7 +86,7 @@ type Reactor() =
                             op ctok
                             time.Stop()
                         finally
-                            listener.OnReactorOperationEnd userOpName opName time.Elapsed
+                            listener.OnReactorOperationEnd userOpName opName opArg time.Elapsed
                         return! loop (bgOpOpt, onComplete, false)
                     | Some (WaitForBackgroundOpCompletion channel) -> 
                         match bgOpOpt with 
@@ -122,10 +122,10 @@ type Reactor() =
                                     let res = bgOp ctok bgOpCts.Token
                                     time.Stop()
                                     if bgOpCts.IsCancellationRequested then 
-                                        listener.OnReactorBackgroundCancelled bgUserOpName bgOpName
+                                        listener.OnReactorBackgroundCancelled bgUserOpName bgOpName bgOpArg
                                     res
                                 finally
-                                    listener.OnReactorBackgroundEnd bgUserOpName bgOpName time.Elapsed
+                                    listener.OnReactorBackgroundEnd bgUserOpName bgOpName bgOpArg time.Elapsed
 
                             return! loop ((if res then bgOpOpt else None), onComplete, true)
                         | None, None -> failwith "unreachable, should have used inbox.Receive"

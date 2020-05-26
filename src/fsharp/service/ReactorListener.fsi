@@ -17,7 +17,7 @@ type public IReactorListener =
 
     /// Called when a foreground reactor operation ends.
     /// Always called from the reactor thread.
-    abstract OnReactorOperationEnd : userOpName: string -> opName: string -> elapsed: TimeSpan -> unit
+    abstract OnReactorOperationEnd : userOpName: string -> opName: string -> opArg: string -> elapsed: TimeSpan -> unit
 
     /// Called when a background reactor operation starts.
     /// Always called from the reactor thread.
@@ -25,12 +25,12 @@ type public IReactorListener =
 
     /// Called when a background operation is cancelled.
     /// Always called from the reactor thread.
-    abstract OnReactorBackgroundCancelled : bgUserOpName: string -> bgOpName: string -> unit
+    abstract OnReactorBackgroundCancelled : bgUserOpName: string -> bgOpName: string -> bgOpArg: string -> unit
 
     /// Called when a background operation ends.
     /// This is still called even if the operation was cancelled.
     /// Always called from the reactor thread.
-    abstract OnReactorBackgroundEnd : bgUserOpName: string -> bgOpName: string -> elapsed: TimeSpan -> unit
+    abstract OnReactorBackgroundEnd : bgUserOpName: string -> bgOpName: string -> bgOpArg: string -> elapsed: TimeSpan -> unit
 
     /// Called when a background operation is set.
     /// This can be called from ANY thread - implementations must be thread safe.
