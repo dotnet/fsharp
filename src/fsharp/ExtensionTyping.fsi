@@ -74,20 +74,20 @@ module internal ExtensionTyping =
     [<Sealed>]
     type ProvidedTypeContext =
 
-        member TryGetILTypeRef : System.Type -> ILTypeRef option
+        member TryGetILTypeRef : ProvidedType -> ILTypeRef option
 
-        member TryGetTyconRef : System.Type -> obj option
+        member TryGetTyconRef : ProvidedType -> obj option
 
         static member Empty : ProvidedTypeContext 
 
-        static member Create : Dictionary<System.Type,ILTypeRef> * Dictionary<System.Type,obj (* TyconRef *) > -> ProvidedTypeContext 
+        static member Create : Dictionary<ProvidedType, ILTypeRef> * Dictionary<ProvidedType, obj (* TyconRef *) > -> ProvidedTypeContext 
 
-        member GetDictionaries : unit -> Dictionary<System.Type,ILTypeRef> * Dictionary<System.Type,obj (* TyconRef *) > 
+        member GetDictionaries : unit -> Dictionary<ProvidedType, ILTypeRef> * Dictionary<ProvidedType, obj (* TyconRef *) > 
 
         /// Map the TyconRef objects, if any
         member RemapTyconRefs : (obj -> obj) -> ProvidedTypeContext 
 
-    type [<AllowNullLiteral; Sealed; Class>] 
+    and [<AllowNullLiteral; Sealed; Class>] 
         ProvidedType =
         inherit ProvidedMemberInfo
         member IsSuppressRelocate : bool

@@ -15723,12 +15723,12 @@ module EstablishTypeDefinitionCores =
             tycon.entity_tycon_repr <- repr
             // Record the details so we can map System.Type --> TyconRef
             let ilOrigRootTypeRef = GetOriginalILTypeRefOfProvidedType (theRootTypeWithRemapping, m)
-            theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupTyconRef.Remove(st.RawSystemType)) ; lookupTyconRef.Add(st.RawSystemType, tcref)), m)
+            theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupTyconRef.Remove(st)) ; lookupTyconRef.Add(st, tcref)), m)
 
             // Record the details so we can map System.Type --> ILTypeRef, including the relocation if any
             if not isSuppressRelocate then 
                 let ilTgtRootTyRef = tycon.CompiledRepresentationForNamedType
-                theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupILTypeRef.Remove(st.RawSystemType)) ; lookupILTypeRef.Add(st.RawSystemType, ilTgtRootTyRef)), m)
+                theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupILTypeRef.Remove(st)) ; lookupILTypeRef.Add(st, ilTgtRootTyRef)), m)
 
             // Iterate all nested types and force their embedding, to populate the mapping from System.Type --> TyconRef/ILTypeRef.
             // This is only needed for generated types, because for other types the System.Type objects self-describe
@@ -15761,12 +15761,12 @@ module EstablishTypeDefinitionCores =
                 let ilOrigTypeRef = GetOriginalILTypeRefOfProvidedType (st, m)
                                 
                 // Record the details so we can map System.Type --> TyconRef
-                st.PUntaint ((fun st -> ignore(lookupTyconRef.Remove(st.RawSystemType)) ; lookupTyconRef.Add(st.RawSystemType, nestedTyRef)), m)
+                st.PUntaint ((fun st -> ignore(lookupTyconRef.Remove(st)) ; lookupTyconRef.Add(st, nestedTyRef)), m)
 
                 if isGenerated then 
                     let ilTgtTyRef = nestedTycon.CompiledRepresentationForNamedType
                     // Record the details so we can map System.Type --> ILTypeRef
-                    st.PUntaint ((fun st -> ignore(lookupILTypeRef.Remove(st.RawSystemType)) ; lookupILTypeRef.Add(st.RawSystemType, ilTgtTyRef)), m)
+                    st.PUntaint ((fun st -> ignore(lookupILTypeRef.Remove(st)) ; lookupILTypeRef.Add(st, ilTgtTyRef)), m)
 
                     // Record the details so we can build correct ILTypeDefs during static linking rewriting
                     if not isSuppressRelocate then 
