@@ -248,8 +248,8 @@ module internal ExtensionTyping =
 
     type ProvidedTypeComparer() = 
         let key (ty: ProvidedType) = (ty.Assembly.FullName, ty.FullName)
-        static member Instance = ProvidedTypeComparer()
-        interface IEqualityComparer<ProvidedType> with 
+        static member val Instance = ProvidedTypeComparer()
+        interface IEqualityComparer<ProvidedType> with
             member __.GetHashCode(ty: ProvidedType) = hash (key ty)
             member __.Equals(ty1: ProvidedType, ty2: ProvidedType) = (key ty1 = key ty2)
 
