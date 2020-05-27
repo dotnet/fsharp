@@ -1045,6 +1045,7 @@ namespace Microsoft.FSharp.Core
                      // gives reliable results on null values.
                      System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+                 when 'T : DateTime = System.DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #))
 
 
             /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
@@ -1123,6 +1124,7 @@ namespace Microsoft.FSharp.Core
                      // gives reliable results on null values.
                      System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+                 when 'T : DateTime = System.DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #))
 
             /// Generic less-than with static optimizations for some well-known cases.
             let inline GenericLessThanFast (x:'T) (y:'T) = 
@@ -1142,6 +1144,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32= (# "clt" x y : bool #) 
                 when 'T : char   = (# "clt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : DateTime = DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #)) < 0
               
             /// Generic greater-than with static optimizations for some well-known cases.
             let inline GenericGreaterThanFast (x:'T) (y:'T) = 
@@ -1161,6 +1164,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = (# "cgt" x y : bool #) 
                 when 'T : char       = (# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : DateTime = DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #)) > 0
 
             /// Generic less-than-or-equal with static optimizations for some well-known cases.
             let inline GenericLessOrEqualFast (x:'T) (y:'T) = 
@@ -1180,6 +1184,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = not (# "cgt.un" x y : bool #) 
                 when 'T : char       = not(# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : DateTime = DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #)) <= 0
 
             /// Generic greater-than-or-equal with static optimizations for some well-known cases.
             let inline GenericGreaterOrEqualFast (x:'T) (y:'T) = 
@@ -1199,6 +1204,8 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = not (# "clt.un" x y : bool #)
                 when 'T : char       = not (# "clt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                
+                when 'T : DateTime = DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #)) >= 0
 
 
             //-------------------------------------------------------------------------
@@ -1482,6 +1489,7 @@ namespace Microsoft.FSharp.Core
                   when 'T : char    = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
                   when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
                                
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
@@ -1504,6 +1512,8 @@ namespace Microsoft.FSharp.Core
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
                   when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
+    
                   
             /// A compiler intrinsic generated during optimization of calls to GenericEqualityIntrinsic on tuple values.
             //
@@ -1530,6 +1540,7 @@ namespace Microsoft.FSharp.Core
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))                  
                   when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
                   
 
             let inline GenericInequalityFast (x:'T) (y:'T) = (not(GenericEqualityFast x y) : bool)

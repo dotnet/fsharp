@@ -14,17 +14,17 @@
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <FSLanguageVersion>4.7</FSLanguageVersion>
     <FSCoreMajorVersion>$(FSLanguageVersion)</FSCoreMajorVersion>
-    <FSCorePackageVersion>$(FSCoreMajorVersion).2</FSCorePackageVersion>
+    <FSCorePackageVersion>$(FSCoreMajorVersion).3</FSCorePackageVersion>
     <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersion>4.7.1</FSharpCoreShippedPackageVersion>
+    <FSharpCoreShippedPackageVersion>4.7.2</FSharpCoreShippedPackageVersion>
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <FSPackageMajorVersion>10.9</FSPackageMajorVersion>
-    <FSPackageVersion>$(FSPackageMajorVersion).1</FSPackageVersion>
+    <FSPackageMajorVersion>10.10</FSPackageMajorVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>

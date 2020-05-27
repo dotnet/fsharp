@@ -821,7 +821,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                       let nameOrOneBasedIndexMessage =
                           x.calledArg.NameOpt
                           |> Option.map (fun n -> FSComp.SR.csOverloadCandidateNamedArgumentTypeMismatch n.idText)
-                          |> Option.defaultValue (FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((snd x.calledArg.Position) + 1))
+                          |> Option.defaultValue (FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((Lib.vsnd x.calledArg.Position) + 1)) //snd
                       sprintf " // %s" nameOrOneBasedIndexMessage
                   | _ -> ""
                   
