@@ -198,6 +198,6 @@ Candidates:
  - SomeClass.OverloadedMethodTakingNullableOptionals(?x: Nullable<int64>,?y: string,?d: Nullable<float>) : int
  - SomeClass.OverloadedMethodTakingNullableOptionals(?x: Nullable<int>,?y: string,?d: Nullable<float>) : int
 
-test.fsx(232,15): warning FS0025: Incomplete pattern matches on this expression. For example, the value 'U2 (_, U1 (_, "a"))' may indicate a case not covered by the pattern(s).
+test.fsx(267,15): warning FS0025: Incomplete pattern matches on this expression. For example, the value 'U2 (_, U1 (_, "a"))' may indicate a case not covered by the pattern(s).
 
-test.fsx(249,15): warning FS0025: Incomplete pattern matches on this expression. For example, the value 'U2 (_, U1 (_, "a"))' may indicate a case not covered by the pattern(s).
+test.fsx(284,15): warning FS0025: Incomplete pattern matches on this expression. For example, the value 'U2 (_, U1 (_, "a"))' may indicate a case not covered by the pattern(s).
