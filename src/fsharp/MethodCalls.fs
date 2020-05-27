@@ -61,7 +61,7 @@ type CallerArg<'T> =
     
 /// Represents the information about an argument in the method being called
 type CalledArg = 
-    { Position: (int * int)
+    { Position: struct (int * int)
       IsParamArray : bool
       OptArgInfo : OptionalArgInfo
       CallerInfo : CallerInfo
@@ -303,7 +303,7 @@ let MakeCalledArgs amap m (minfo: MethInfo) minst =
     // Mark up the arguments with their position, so we can sort them back into order later 
     let paramDatas = minfo.GetParamDatas(amap, m, minst)
     paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoFlags, nmOpt, reflArgInfo, typeOfCalledArg))  -> 
-      { Position=(i,j)
+      { Position=struct(i,j)
         IsParamArray=isParamArrayArg
         OptArgInfo=optArgInfo
         CallerInfo = callerInfoFlags
