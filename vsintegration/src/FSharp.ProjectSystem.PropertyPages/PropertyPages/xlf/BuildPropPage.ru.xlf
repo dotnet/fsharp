@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="generalLabel.Text">
         <source>General</source>
-        <target state="translated">Общие</target>
+        <target state="translated">Общее</target>
         <note />
       </trans-unit>
       <trans-unit id="treatWarningsAsErrorsLabel.Text">

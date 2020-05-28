@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="ImplementInterface">
         <source>Implement interface</source>
-        <target state="translated">Arabirim uygulama</target>
+        <target state="translated">Arabirimi uygula</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterfaceWithoutTypeAnnotation">
@@ -150,6 +150,16 @@
       <trans-unit id="6012">
         <source>Advanced</source>
         <target state="translated">Gelişmiş</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6013">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6014">
+        <source>Formatting</source>
+        <target state="translated">Biçimlendirme</target>
         <note />
       </trans-unit>
     </body>

@@ -1,16 +1,16 @@
 ﻿
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
 module FSharp.Compiler.Service.Tests.FsiTests
 #endif
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Interactive.Shell
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.SourceCodeServices
 
 open NUnit.Framework
 open FsUnit
@@ -27,7 +27,7 @@ let errStream = new CompilerOutputStream()
 let argv = [| "C:\\fsi.exe" |]
 let allArgs = Array.append argv [|"--noninteractive"|]
 
-#if NETCOREAPP2_0
+#if NETCOREAPP
 let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
 #else
 let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration(fsi)
@@ -79,7 +79,7 @@ let ``EvalExpression test 1 nothrow``() =
 [<Test>]
 // 'fsi' can be evaluated because we passed it in explicitly up above
 let ``EvalExpression fsi test``() = 
-    evalExpression "fsi" |> shouldEqual "Microsoft.FSharp.Compiler.Interactive.InteractiveSession"
+    evalExpression "fsi" |> shouldEqual "FSharp.Compiler.Interactive.InteractiveSession"
 
 [<Test>]
 // 'fsi' can be evaluated because we passed it in explicitly up above

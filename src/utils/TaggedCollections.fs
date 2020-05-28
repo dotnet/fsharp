@@ -7,12 +7,8 @@ namespace Internal.Utilities.Collections.Tagged
     #nowarn "60" // override implementations in augmentations
 
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-    open System
     open System.Collections.Generic
-    open Internal.Utilities
-    open Internal.Utilities.Collections
 
 
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
@@ -482,15 +478,15 @@ namespace Internal.Utilities.Collections.Tagged
                     not stack.IsEmpty
 
         let toSeq s = 
-            let i = ref (SetIterator s) 
+            let mutable i = SetIterator s
             { new IEnumerator<_> with 
-                  member __.Current = (!i).Current
+                  member _.Current = i.Current
               interface System.Collections.IEnumerator with 
-                  member __.Current = box (!i).Current
-                  member __.MoveNext() = (!i).MoveNext()
-                  member __.Reset() = i :=  SetIterator s
+                  member _.Current = box i.Current
+                  member _.MoveNext() = i.MoveNext()
+                  member _.Reset() = i <- SetIterator s
               interface System.IDisposable with 
-                  member __.Dispose() = () }
+                  member _.Dispose() = () }
 
         //--------------------------------------------------------------------------
         // Set comparison.  This can be expensive.
@@ -549,8 +545,8 @@ namespace Internal.Utilities.Collections.Tagged
             loop s []            
 
         let copyToArray s (arr: _[]) i =
-            let j = ref i 
-            iter (fun x -> arr.[!j] <- x; j := !j + 1) s
+            let mutable j = i 
+            iter (fun x -> arr.[j] <- x; j <- j + 1) s
 
         let toArray s = 
             let n = (count s) 
@@ -1023,8 +1019,8 @@ namespace Internal.Utilities.Collections.Tagged
             mkFromEnumerator comparer empty ie 
           
         let copyToArray s (arr: _[]) i =
-            let j = ref i 
-            s |> iter (fun x y -> arr.[!j] <- KeyValuePair(x,y); j := !j + 1)
+            let mutable j = i 
+            s |> iter (fun x y -> arr.[j] <- KeyValuePair(x,y); j <- j + 1)
 
 
         /// Imperative left-to-right iterators.
@@ -1082,13 +1078,13 @@ namespace Internal.Utilities.Collections.Tagged
                   not stack.IsEmpty
 
         let toSeq s = 
-            let i = ref (MapIterator(s))
+            let mutable i = MapIterator(s)
             { new IEnumerator<_> with 
-                  member self.Current = (!i).Current
+                  member self.Current = i.Current
               interface System.Collections.IEnumerator with
-                  member self.Current = box (!i).Current
-                  member self.MoveNext() = (!i).MoveNext()
-                  member self.Reset() = i :=  MapIterator(s)
+                  member self.Current = box i.Current
+                  member self.MoveNext() = i.MoveNext()
+                  member self.Reset() = i <-  MapIterator(s)
               interface System.IDisposable with 
                   member self.Dispose() = ()}
 

@@ -10,63 +10,63 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Structure
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Structure
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.Structure
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.Structure
+open FSharp.Compiler.SyntaxTree
 
 module internal BlockStructure =
-    let scopeToBlockType scope =
-        if not Settings.Advanced.IsBlockStructureEnabled then BlockTypes.Nonstructural
-        else
-            match scope with
-            | Scope.Open -> BlockTypes.Imports
-            | Scope.Namespace
-            | Scope.Module -> BlockTypes.Namespace 
-            | Scope.Record
-            | Scope.Interface
-            | Scope.TypeExtension
-            | Scope.RecordDefn
-            | Scope.CompExpr
-            | Scope.ObjExpr
-            | Scope.UnionDefn
-            | Scope.Attribute
-            | Scope.Type -> BlockTypes.Type
-            | Scope.New
-            | Scope.RecordField
-            | Scope.Member -> BlockTypes.Member
-            | Scope.LetOrUse
-            | Scope.Match
-            | Scope.MatchClause
-            | Scope.EnumCase
-            | Scope.UnionCase
-            | Scope.MatchLambda
-            | Scope.ThenInIfThenElse
-            | Scope.ElseInIfThenElse
-            | Scope.TryWith
-            | Scope.TryInTryWith
-            | Scope.WithInTryWith
-            | Scope.TryFinally
-            | Scope.TryInTryFinally
-            | Scope.FinallyInTryFinally
-            | Scope.IfThenElse-> BlockTypes.Conditional
-            | Scope.Tuple
-            | Scope.ArrayOrList
-            | Scope.CompExprInternal
-            | Scope.Quote
-            | Scope.SpecialFunc
-            | Scope.Lambda
-            | Scope.LetOrUseBang
-            | Scope.Val
-            | Scope.YieldOrReturn
-            | Scope.YieldOrReturnBang
-            | Scope.TryWith -> BlockTypes.Expression
-            | Scope.Do -> BlockTypes.Statement
-            | Scope.While
-            | Scope.For -> BlockTypes.Loop
-            | Scope.HashDirective -> BlockTypes.PreprocessorRegion
-            | Scope.Comment
-            | Scope.XmlDocComment -> BlockTypes.Comment
+    let scopeToBlockType = function
+        | Scope.Open -> FSharpBlockTypes.Imports
+        | Scope.Namespace
+        | Scope.Module -> FSharpBlockTypes.Namespace 
+        | Scope.Record
+        | Scope.Interface
+        | Scope.TypeExtension
+        | Scope.RecordDefn
+        | Scope.CompExpr
+        | Scope.ObjExpr
+        | Scope.UnionDefn
+        | Scope.Attribute
+        | Scope.Type -> FSharpBlockTypes.Type
+        | Scope.New
+        | Scope.RecordField
+        | Scope.Member -> FSharpBlockTypes.Member
+        | Scope.LetOrUse
+        | Scope.Match
+        | Scope.MatchBang
+        | Scope.MatchClause
+        | Scope.EnumCase
+        | Scope.UnionCase
+        | Scope.MatchLambda
+        | Scope.ThenInIfThenElse
+        | Scope.ElseInIfThenElse
+        | Scope.TryWith
+        | Scope.TryInTryWith
+        | Scope.WithInTryWith
+        | Scope.TryFinally
+        | Scope.TryInTryFinally
+        | Scope.FinallyInTryFinally
+        | Scope.IfThenElse-> FSharpBlockTypes.Conditional
+        | Scope.Tuple
+        | Scope.ArrayOrList
+        | Scope.CompExprInternal
+        | Scope.Quote
+        | Scope.SpecialFunc
+        | Scope.Lambda
+        | Scope.LetOrUseBang
+        | Scope.Val
+        | Scope.YieldOrReturn
+        | Scope.YieldOrReturnBang
+        | Scope.TryWith -> FSharpBlockTypes.Expression
+        | Scope.Do -> FSharpBlockTypes.Statement
+        | Scope.While
+        | Scope.For -> FSharpBlockTypes.Loop
+        | Scope.HashDirective -> FSharpBlockTypes.PreprocessorRegion
+        | Scope.Comment
+        | Scope.XmlDocComment -> FSharpBlockTypes.Comment
 
     let isAutoCollapsible = function
         | Scope.New
@@ -95,6 +95,7 @@ module internal BlockStructure =
         | Scope.Match
         | Scope.MatchClause
         | Scope.MatchLambda
+        | Scope.MatchBang
         | Scope.ThenInIfThenElse
         | Scope.ElseInIfThenElse
         | Scope.TryWith
@@ -118,7 +119,7 @@ module internal BlockStructure =
         | Scope.While
         | Scope.For -> false
 
-    let createBlockSpans (sourceText:SourceText) (parsedInput:Ast.ParsedInput) =
+    let createBlockSpans isBlockStructureEnabled (sourceText:SourceText) (parsedInput:ParsedInput) =
         let linetext = sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray
         
         Structure.getOutliningRanges linetext parsedInput
@@ -135,33 +136,27 @@ module internal BlockStructure =
                     match Option.ofNullable (line.Span.Intersection textSpan) with
                     | Some span -> sourceText.GetSubText(span).ToString()+"..."
                     | None -> "..."
-
-                Some (BlockSpan(scopeToBlockType scopeRange.Scope, true, textSpan, hintSpan, bannerText, autoCollapse = isAutoCollapsible scopeRange.Scope))
+                let blockType = if isBlockStructureEnabled then scopeToBlockType scopeRange.Scope else FSharpBlockTypes.Nonstructural
+                Some (FSharpBlockSpan(blockType, true, textSpan, hintSpan, bannerText, autoCollapse = isAutoCollapsible scopeRange.Scope))
             | _, _ -> None
         )
 
 open BlockStructure
  
-type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
-    inherit BlockStructureService()
+[<Export(typeof<IFSharpBlockStructureService>)>]
+type internal FSharpBlockStructureService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
         
-    static let userOpName = "BlockStructure"
+    static let userOpName = "FSharpBlockStructure"
 
-    override __.Language = FSharpConstants.FSharpLanguageName
+    interface IFSharpBlockStructureService with
  
-    override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
-        asyncMaybe {
-            let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-            let! sourceText = document.GetTextAsync(cancellationToken)
-            let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
-            return createBlockSpans sourceText parsedInput |> Seq.toImmutableArray
-        } 
-        |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
-        |> Async.map BlockStructure
-        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
-
-[<ExportLanguageServiceFactory(typeof<BlockStructureService>, FSharpConstants.FSharpLanguageName); Shared>]
-type internal FSharpBlockStructureServiceFactory [<ImportingConstructor>](checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
-    interface ILanguageServiceFactory with
-        member __.CreateLanguageService(_languageServices) =
-            upcast FSharpBlockStructureService(checkerProvider.Checker, projectInfoManager)
+        member __.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
+            asyncMaybe {
+                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! parsedInput = checkerProvider.Checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
+                return createBlockSpans document.FSharpOptions.Advanced.IsBlockStructureEnabled sourceText parsedInput |> Seq.toImmutableArray
+            } 
+            |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
+            |> Async.map FSharpBlockStructure
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

@@ -1,14 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Morphs 
+module internal FSharp.Compiler.AbstractIL.Morphs 
 
 open System.Collections.Generic
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.IL 
 
 let mutable morphCustomAttributeData = false
 
@@ -50,7 +47,7 @@ let code_instr2instr_ty2ty  (finstr,fty) (c:ILCode) =
            Exceptions = c.Exceptions |> List.map (fun e -> { e with Clause = e.Clause |> (function ILExceptionClause.TypeCatch (ilty, b) -> ILExceptionClause.TypeCatch (fty ilty, b) | cl -> cl) }) } 
 
 // --------------------------------------------------------------------
-// Standard morphisms - mapping tyes etc.
+// Standard morphisms - mapping types etc.
 // -------------------------------------------------------------------- 
 
 let rec ty_tref2tref f x  = 
@@ -59,7 +56,7 @@ let rec ty_tref2tref f x  =
     | ILType.FunctionPointer x -> 
         ILType.FunctionPointer
           { x with 
-                ArgTypes=List.map (ty_tref2tref f) x.ArgTypes;
+                ArgTypes=List.map (ty_tref2tref f) x.ArgTypes
                 ReturnType=ty_tref2tref f x.ReturnType}
     | ILType.Byref t -> ILType.Byref (ty_tref2tref f t)
     | ILType.Boxed cr -> mkILBoxedType (tspec_tref2tref f cr)
@@ -85,7 +82,7 @@ and tspec_scoref2scoref_tyvar2ty fs (x:ILTypeSpec) =
     ILTypeSpec.Create(morphILScopeRefsInILTypeRef (fst fs) x.TypeRef,tys_scoref2scoref_tyvar2ty fs x.GenericArgs)
 and callsig_scoref2scoref_tyvar2ty f x = 
     { x with 
-          ArgTypes=List.map (ty_scoref2scoref_tyvar2ty f) x.ArgTypes;
+          ArgTypes=List.map (ty_scoref2scoref_tyvar2ty f) x.ArgTypes
           ReturnType=ty_scoref2scoref_tyvar2ty f x.ReturnType}
 and tys_scoref2scoref_tyvar2ty f i = List.map (ty_scoref2scoref_tyvar2ty f) i
 and gparams_scoref2scoref_tyvar2ty f i = List.map (gparam_scoref2scoref_tyvar2ty f) i
@@ -95,8 +92,8 @@ and morphILScopeRefsInILTypeRef fscope (x:ILTypeRef) =
 
 
 let callsig_ty2ty f (x: ILCallingSignature) = 
-    { CallingConv=x.CallingConv;
-      ArgTypes=List.map f x.ArgTypes;
+    { CallingConv=x.CallingConv
+      ArgTypes=List.map f x.ArgTypes
       ReturnType=f x.ReturnType}
 
 let gparam_ty2ty f gf = {gf with Constraints = List.map f gf.Constraints}
@@ -113,17 +110,17 @@ let mref_ty2ty (f: ILType -> ILType) (x:ILMethodRef) =
 
 type formal_scopeCtxt =  Choice<ILMethodSpec, ILFieldSpec>
 
-let mspec_ty2ty (((factualty : ILType -> ILType) , (fformalty: formal_scopeCtxt -> ILType -> ILType))) (x: ILMethodSpec) = 
+let mspec_ty2ty (((factualty : ILType -> ILType), (fformalty: formal_scopeCtxt -> ILType -> ILType))) (x: ILMethodSpec) = 
     mkILMethSpecForMethRefInTy(mref_ty2ty (fformalty (Choice1Of2 x)) x.MethodRef,
                                factualty x.DeclaringType, 
                                tys_ty2ty factualty  x.GenericArgs)
 
 let fref_ty2ty (f: ILType -> ILType) x = 
-    { x with DeclaringTypeRef = (f (mkILBoxedType (mkILNonGenericTySpec x.DeclaringTypeRef))).TypeRef;
+    { x with DeclaringTypeRef = (f (mkILBoxedType (mkILNonGenericTySpec x.DeclaringTypeRef))).TypeRef
              Type= f x.Type }
 
 let fspec_ty2ty ((factualty,(fformalty : formal_scopeCtxt -> ILType -> ILType))) x = 
-    { FieldRef=fref_ty2ty (fformalty (Choice2Of2 x)) x.FieldRef;
+    { FieldRef=fref_ty2ty (fformalty (Choice2Of2 x)) x.FieldRef
       DeclaringType= factualty x.DeclaringType }
 
 let rec celem_ty2ty f celem =
@@ -136,7 +133,7 @@ let rec celem_ty2ty f celem =
 let cnamedarg_ty2ty f ((nm, ty, isProp, elem) : ILAttributeNamedArg)  =
     (nm, f ty, isProp, celem_ty2ty f elem) 
 
-let cattr_ty2ty ilg f c =
+let cattr_ty2ty ilg f (c: ILAttribute) =
     let meth = mspec_ty2ty (f, (fun _ -> f)) c.Method
     // dev11 M3 defensive coding: if anything goes wrong with attribute decoding or encoding, then back out.
     if morphCustomAttributeData then
@@ -144,11 +141,11 @@ let cattr_ty2ty ilg f c =
            let elems,namedArgs = IL.decodeILAttribData ilg c 
            let elems = elems |> List.map (celem_ty2ty f)
            let namedArgs = namedArgs |> List.map (cnamedarg_ty2ty f)
-           IL.mkILCustomAttribMethRef ilg (meth, elems, namedArgs)       
-        with _ -> 
-           { c with Method = meth }
+           mkILCustomAttribMethRef ilg (meth, elems, namedArgs)
+        with _ ->
+           c.WithMethod(meth)
     else
-        { c with Method = meth }
+        c.WithMethod(meth)
 
 
 let cattrs_ty2ty ilg f (cs: ILAttributes) =
@@ -213,7 +210,7 @@ let locals_ty2ty f ls = List.map (local_ty2ty f) ls
 
 let ilmbody_instr2instr_ty2ty fs (il: ILMethodBody) = 
     let (finstr,ftye) = fs 
-    {il with Code=code_instr2instr_ty2ty (finstr,ftye) il.Code;
+    {il with Code=code_instr2instr_ty2ty (finstr,ftye) il.Code
              Locals = locals_ty2ty ftye il.Locals }
 
 let morphILMethodBody (filmbody) (x: ILLazyMethodBody) = 
@@ -240,7 +237,7 @@ let fdefs_ty2ty ilg f x = fdefs_fdef2fdef (fdef_ty2ty ilg f) x
 let mdefs_ty2ty_ilmbody2ilmbody ilg fs x = morphILMethodDefs (mdef_ty2ty_ilmbody2ilmbody ilg fs) x
 
 let mimpl_ty2ty f e =
-    { Overrides = ospec_ty2ty f e.Overrides;
+    { Overrides = ospec_ty2ty f e.Overrides
       OverrideBy = mspec_ty2ty (f,(fun _ -> f)) e.OverrideBy; }
 
 let edef_ty2ty ilg f (e: ILEventDef) =
@@ -293,8 +290,8 @@ let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftye: ILModuleDef ->
 
     let ftdefs = tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs ilg [] (ftye m,fmdefs m) 
 
-    { m with TypeDefs=ftdefs m.TypeDefs;
-             CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty ilg (ftye m None None) m.CustomAttrs);
+    { m with TypeDefs=ftdefs m.TypeDefs
+             CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty ilg (ftye m None None) m.CustomAttrs)
              Manifest=Option.map (manifest_ty2ty ilg (ftye m None None)) m.Manifest  }
     
 let module_instr2instr_ty2ty ilg fs x = 

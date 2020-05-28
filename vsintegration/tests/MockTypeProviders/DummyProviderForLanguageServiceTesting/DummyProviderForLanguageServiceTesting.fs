@@ -113,33 +113,39 @@ module internal TPModule =
 
 // Used by unit testing to check that Dispose is being called on the type provider
 module GlobalCounters = 
-    let mutable creations = 0
-    let mutable disposals = 0
-    let mutable configs = ([]: TypeProviderConfig list)
-    let GetTotalCreations() = creations
-    let GetTotalDisposals() = disposals
+    let counterLock = obj()
+    let mutable private creations = 0
+    let mutable private disposals = 0
+    let mutable private configs = ([]: TypeProviderConfig list)
+    let GetTotalCreations() = lock counterLock (fun () -> creations)
+    let GetTotalDisposals() = lock counterLock (fun () -> disposals)
+    let IncrementCreations() = lock counterLock (fun () -> creations <- creations + 1)
+    let IncrementDisposals() = lock counterLock (fun () -> disposals <- disposals + 1)
+    let AddConfig c = lock counterLock (fun () -> configs <- c :: configs)
+    let GetConfigs() = lock counterLock (fun () -> configs)
     let CheckAllConfigsDisposed() = 
-        for c in configs do 
+        let cs = GetConfigs()
+        lock counterLock (fun () -> 
+            configs <- [])
+        for c in cs do 
             try 
                 c.SystemRuntimeContainsType("System.Object") |> ignore
                 failwith "expected configuration object to be disposed"
             with :? System.ObjectDisposedException -> 
                 ()
 
-
-
 [<TypeProvider>]
 type HelloWorldProvider(config: TypeProviderConfig) = 
     inherit TypeProviderForNamespaces(TPModule.namespaceName,TPModule.types)
-    do GlobalCounters.creations <- GlobalCounters.creations + 1                         
+    do GlobalCounters.IncrementCreations()
     let mutable disposed = false
-    do GlobalCounters.configs <- config :: GlobalCounters.configs
+    do GlobalCounters.AddConfig config
     interface System.IDisposable with 
         member x.Dispose() = 
             System.Diagnostics.Debug.Assert(not disposed)
             disposed <- true
-            GlobalCounters.disposals <- GlobalCounters.disposals + 1                         
-            if GlobalCounters.disposals % 5 = 0 then failwith "simulate random error during disposal"
+            do GlobalCounters.IncrementDisposals()
+            if GlobalCounters.GetTotalDisposals() % 5 = 0 then failwith "simulate random error during disposal"
 
 
 // implementation of a poorly behaving TP that sleeps for various numbers of seconds when traversing into members.

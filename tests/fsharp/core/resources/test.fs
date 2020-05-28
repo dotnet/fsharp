@@ -13,8 +13,8 @@ let foreachE (e : System.Collections.IEnumerator) (f : 'a -> unit) =
 
 
 let main() = 
-  let ass = (typeof<Resources>).Assembly in 
-  Printf.printf "ass = %s\n" (ass.ToString());
+  let assembly = (typeof<Resources>).Assembly in 
+  Printf.printf "assembly = %s\n" (assembly.ToString());
   let args = System.Environment.GetCommandLineArgs() in
   let rname = if Array.length args > 1 then args.[1] else "Resources" in 
   let resourceMan = new System.Resources.ResourceManager(rname, (typeof<Resources>).Assembly) in 

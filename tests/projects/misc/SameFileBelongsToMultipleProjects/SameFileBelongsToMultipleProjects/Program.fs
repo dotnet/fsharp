@@ -1,8 +1,8 @@
-﻿// Learn more about F# at http://fsharp.org
+﻿// Learn more about F# at https://fsharp.org
 // See the 'F# Tutorial' project for more help.
 
 [<EntryPoint>]
-let main argv = 
+let main argv =
     printfn "%A" argv
     let c1 = Library1.Class.PropertyAlwaysAvailable
     let c1 = Library2.Class.PropertyAlwaysAvailable

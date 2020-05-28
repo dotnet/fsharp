@@ -15,5 +15,3 @@ using Microsoft.VisualStudio.Shell;
 [assembly: Guid("1EB3E293-6A40-4480-8FE6-7436C4879CA4")]
 
 [assembly: CLSCompliant(true)]
-
-[assembly: Microsoft.VisualStudio.Shell.ProvideCodeBase (CodeBase = @"$PackageFolder$\FSharp.LanguageService.Base.dll")]

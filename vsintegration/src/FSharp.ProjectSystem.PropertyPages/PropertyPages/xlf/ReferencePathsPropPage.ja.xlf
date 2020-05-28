@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="FolderBrowse.AccessibleName">
         <source>Browse</source>
-        <target state="translated">ブラウザー</target>
+        <target state="translated">参照</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.Text">
         <source>...</source>
-        <target state="translated">...</target>
+        <target state="new">...</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUp.AccessibleName">

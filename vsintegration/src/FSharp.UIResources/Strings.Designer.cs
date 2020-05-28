@@ -19,7 +19,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Strings {
@@ -88,6 +88,51 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to CodeLens.
+        /// </summary>
+        public static string CodeLens {
+            get {
+                return ResourceManager.GetString("CodeLens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Annotation prefix.
+        /// </summary>
+        public static string CodeLens_Prefix {
+            get {
+                return ResourceManager.GetString("CodeLens_Prefix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show annotations to the right instead of above the line.
+        /// </summary>
+        public static string CodeLens_Replace_LineLens {
+            get {
+                return ResourceManager.GetString("CodeLens_Replace_LineLens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable CodeLens (Experimental).
+        /// </summary>
+        public static string CodeLens_Switch {
+            get {
+                return ResourceManager.GetString("CodeLens_Switch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use colors in annotations.
+        /// </summary>
+        public static string CodeLens_UseColors {
+            get {
+                return ResourceManager.GetString("CodeLens_UseColors", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Completion Lists.
         /// </summary>
         public static string Completion_Lists {
@@ -102,6 +147,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Dash_underline {
             get {
                 return ResourceManager.GetString("Dash_underline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Diagnostics.
+        /// </summary>
+        public static string Diagnostics {
+            get {
+                return ResourceManager.GetString("Diagnostics", resourceCulture);
             }
         }
         
@@ -129,6 +183,51 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Enable_Stale_IntelliSense_Results {
             get {
                 return ResourceManager.GetString("Enable_Stale_IntelliSense_Results", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Always add new line on enter.
+        /// </summary>
+        public static string Enter_key_always {
+            get {
+                return ResourceManager.GetString("Enter_key_always", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Never add new line on enter.
+        /// </summary>
+        public static string Enter_key_never {
+            get {
+                return ResourceManager.GetString("Enter_key_never", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Only add new line on enter after end of fully typed word.
+        /// </summary>
+        public static string Enter_key_only {
+            get {
+                return ResourceManager.GetString("Enter_key_only", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter key behavior.
+        /// </summary>
+        public static string Enter_Key_Rule {
+            get {
+                return ResourceManager.GetString("Enter_Key_Rule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Re-format indentation on paste.
+        /// </summary>
+        public static string Format_on_paste {
+            get {
+                return ResourceManager.GetString("Format_on_paste", resourceCulture);
             }
         }
         
@@ -232,7 +331,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Show outlining and collapsable nodes for F# code.
+        ///   Looks up a localized string similar to Show outlining and collapsible nodes for F# code.
         /// </summary>
         public static string Show_Outlining {
             get {
@@ -255,6 +354,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Solid_underline {
             get {
                 return ResourceManager.GetString("Solid_underline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Suggest names for unresolved identifiers.
+        /// </summary>
+        public static string Suggest_names_for_errors_code_fix {
+            get {
+                return ResourceManager.GetString("Suggest_names_for_errors_code_fix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Text hover.
+        /// </summary>
+        public static string Text_hover {
+            get {
+                return ResourceManager.GetString("Text_hover", resourceCulture);
             }
         }
         

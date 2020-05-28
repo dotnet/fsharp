@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">и выберите команду "Выполнение в Interactive". Окно F# Interactive можно также открыть из меню "Вид".</target>
+        <target state="translated">и выберите команду "Выполнение в интерактивном режиме".  Интерактивное окно F# можно также открыть из меню "Вид".</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line3">
         <source>and</source>
-        <target state="translated">и</target>
+        <target state="translated">И</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanValues">

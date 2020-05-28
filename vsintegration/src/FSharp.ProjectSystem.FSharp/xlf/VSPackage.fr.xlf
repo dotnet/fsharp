@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Script.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -199,12 +199,12 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">File.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
-        <source>Console Application</source>
-        <target state="translated">Application console</target>
+        <source>Console Application (.NET Framework)</source>
+        <target state="translated">Application console (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5015">
@@ -213,8 +213,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5016">
-        <source>Library</source>
-        <target state="translated">Bibliothèque</target>
+        <source>Library (.NET Framework)</source>
+        <target state="translated">Bibliothèque (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5017">
@@ -223,8 +223,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5018">
-        <source>Tutorial</source>
-        <target state="translated">Didacticiel</target>
+        <source>Tutorial (.NET Framework)</source>
+        <target state="translated">Tutoriel (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5019">
@@ -399,7 +399,7 @@
       </trans-unit>
       <trans-unit id="5054">
         <source>A file for storing resources</source>
-        <target state="translated">Fichier de stockage des ressources</target>
+        <target state="translated">Fichier pour stocker les ressources</target>
         <note />
       </trans-unit>
       <trans-unit id="6000">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.1 for F# 4.1</source>
-        <target state="translated">Microsoft Visual F# Tools 10.1 pour F# 4.1</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Microsoft Visual F# Tools {{FSProductVersion}} pour F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.1 for F# 4.1</source>
-        <target state="translated">Microsoft Visual F# Tools 10.1 pour F# 4.1</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Microsoft Visual F# Tools {{FSProductVersion}} pour F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.1 for F# 4.1</source>
-        <target state="translated">Visual F# Tools 10.1 pour F# 4.1</target>
+        <source>Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Visual F# Tools {{FSProductVersion}} pour F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

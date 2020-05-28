@@ -243,6 +243,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ExactlyOne")>]
         val exactlyOne: array:'T[] -> 'T
 
+        /// <summary>Returns the only element of the array or <c>None</c> if array is empty or contains more than one element.</summary>
+        ///
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The only element of the array or None.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        [<CompiledName("TryExactlyOne")>]
+        val tryExactlyOne: array:'T[] -> 'T option
+
         /// <summary>Returns a new list with the distinct elements of the input array which do not appear in the itemsToExclude sequence,
         /// using generic hash and equality comparisons to compare values.</summary>
         ///

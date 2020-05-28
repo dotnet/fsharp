@@ -306,3 +306,5 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Microsoft.Globalization", "CA1307:SpecifyStringComparison", Scope = "member", Target = "Microsoft.VisualStudio.Package.Web.WAUtilities.#MakeRelativePath(System.String,System.String)", MessageId = "System.String.StartsWith(System.String)")]
 [assembly: SuppressMessage("Microsoft.Naming", "CA1701:ResourceStringCompoundWordsShouldBeCasedCorrectly", Scope = "resource", Target = "Microsoft.VisualStudio.Package.Project.resources", MessageId = "dataset")]
 [assembly: SuppressMessage("Microsoft.Naming", "CA1703:ResourceStringsShouldBeSpelledCorrectly", Scope = "resource", Target = "Microsoft.VisualStudio.Package.Project.resources", MessageId = "msbuild")]
+
+[assembly: SuppressMessage("Reliability", "VSSDK006:Check services exist")]

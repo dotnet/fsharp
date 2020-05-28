@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="Win32ResourceFileBrowse.Text">
         <source>...</source>
-        <target state="translated">...</target>
+        <target state="new">...</target>
         <note />
       </trans-unit>
       <trans-unit id="ResourcesLabel.Text">
         <source>Specify how application resources will be managed:</source>
-        <target state="translated">Verwaltung von Anwendungsressourcen:</target>
+        <target state="translated">Geben Sie an, wie die Anwendungsressourcen verwaltet werden sollen:</target>
         <note />
       </trans-unit>
       <trans-unit id="ResourceLabel.Text">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="TargetFSharpCoreVersionLabel.Text">
         <source>Target F# runtime:</source>
-        <target state="translated">F#-Ziellaufzeit:</target>
+        <target state="translated">F#-Zielruntime:</target>
         <note />
       </trans-unit>
     </body>

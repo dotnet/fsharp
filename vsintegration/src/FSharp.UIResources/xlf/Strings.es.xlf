@@ -7,6 +7,31 @@
         <target state="translated">Colocar siempre las instrucciones open en el nivel superior</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">Mostrar anotaciones a la derecha en lugar de encima de la línea</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">Habilitar CodeLens (experimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">Prefijo de anotación</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">Usar colores en anotaciones</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">Correcciones de código</target>
@@ -15,6 +40,11 @@
       <trans-unit id="Completion_Lists">
         <source>Completion Lists</source>
         <target state="translated">Listas de finalización</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="translated">Diagnóstico</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -49,7 +79,7 @@
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
-        <target state="translated">_Mostrar la lista de finalización después de escribir un carácter</target>
+        <target state="translated">_Mostrar lista de finalización después de escribir un carácter</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_in_memory_cross_project_references">
@@ -75,6 +105,11 @@
       <trans-unit id="Solid_underline">
         <source>_Solid underline</source>
         <target state="translated">Su_brayado sólido</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="translated">Texto al pasar el puntero</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -104,7 +139,7 @@
       </trans-unit>
       <trans-unit id="Show_Outlining">
         <source>Show outlining and collapsible nodes for F# code</source>
-        <target state="translated">Mostrar los nodos de esquematización y contraíbles del código F#</target>
+        <target state="translated">Mostrar los nodos de esquematización y contraíbles del código de F#</target>
         <note />
       </trans-unit>
       <trans-unit id="Time_until_stale_completion">
@@ -135,6 +170,36 @@
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
         <target state="translated">Los datos de proyecto se almacenan en caché para que funcionen las características del IDE. Los valores más altos utilizan más memoria porque se almacenan en caché más proyectos. El ajuste de este valor no debería afectar a soluciones de tamaño pequeño o medio.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="translated">Siempre agregar una nueva línea al pulsar Intro</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="translated">Nunca agregar una nueva línea al pulsar Intro</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="translated">Solo agregar una nueva línea al pulsar Intro cuando se haya terminado de escribir completamente una palabra</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="translated">Comportamiento de la tecla Intro</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Format_on_paste">
+        <source>Re-format indentation on paste</source>
+        <target state="translated">Cambiar formato de sangría al pegar</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Suggest_names_for_errors_code_fix">
+        <source>Suggest names for unresolved identifiers</source>
+        <target state="translated">Sugerir nombres para los identificadores no resueltos</target>
         <note />
       </trans-unit>
     </body>

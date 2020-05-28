@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
+using FSLib = FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.CodeDom.Compiler;
 using System.Collections;
@@ -35,7 +35,6 @@ using Microsoft.Win32;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.Build.Execution;
-
 using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
@@ -2157,7 +2156,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 BuildEngine.OnlyLogCriticalEvents = engineLogOnlyCritical;
             }
         }
-        internal virtual void BuildAsync(uint vsopts, ConfigCanonicalName configCanonicalName, IVsOutputWindowPane output, string target, MSBuildCoda coda)
+        internal virtual void Build(uint vsopts, ConfigCanonicalName configCanonicalName, IVsOutputWindowPane output, string target, MSBuildCoda coda)
         {
             bool engineLogOnlyCritical = BuildPrelude(output);
             MSBuildCoda fullCoda = (res,instance) =>
@@ -3251,12 +3250,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.SetHostObject("CoreCompile", "Fsc", this);
 
                 // Do the actual Build
-                var loggerList = new System.Collections.Generic.List<Microsoft.Build.Framework.ILogger>(this.buildEngine.Loggers);
-                if (buildLogger != null)
-                    loggerList.Add(buildLogger);
-                if (myDebugLogger != null)
-                    loggerList.Add(myDebugLogger);
-
+                var loggerList = new System.Collections.Generic.List<Microsoft.Build.Framework.ILogger>();
+                if (buildLogger != null) loggerList.Add(buildLogger);
+                if (myDebugLogger != null) loggerList.Add(myDebugLogger);
                 loggers = loggerList.ToArray();
 
                 var ba = new BuildAccessorAccess(buildKind, accessor);

@@ -1,5 +1,5 @@
 // #Conformance #LexFilter #ReqNOMT 
-//<Expects status=notin>#light</Expects>
+//<Expects status="notin">#light</Expects>
 module TestModule 
 let SimpleSample() =
     let x = 10 + 12 - 3 

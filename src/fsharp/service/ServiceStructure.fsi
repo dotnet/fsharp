@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler.Ast
-open System.Collections.Generic
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 
 module public Structure =
 
@@ -17,7 +15,7 @@ module public Structure =
         | Below
         | Same
 
-    /// Tag to identify the constuct that can be stored alongside its associated ranges
+    /// Tag to identify the construct that can be stored alongside its associated ranges
     [<RequireQualifiedAccess>]
     type Scope =
         | Open
@@ -42,6 +40,7 @@ module public Structure =
         | For
         | While
         | Match
+        | MatchBang
         | MatchLambda
         | MatchClause
         | Lambda

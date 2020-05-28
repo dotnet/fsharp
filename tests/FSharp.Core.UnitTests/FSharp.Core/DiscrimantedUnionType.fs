@@ -1,5 +1,5 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Core.DiscriminatedUnionTypes
+module FSharp.Core.UnitTests.DiscriminatedUnionTypes
 
 open System
 open System.Numerics
@@ -9,17 +9,6 @@ open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
 open FsCheck
 open FsCheck.PropOperators
-
-#if FX_RESHAPED_REFLECTION
-open FSharp.Reflection.FSharpReflectionExtensions
-
-[<AutoOpen>]
-module PrimReflectionAdapters =
-    
-    type System.Type with
-        member this.IsValueType = this.GetTypeInfo().IsValueType
-#endif
-
 
 type EnumUnion = 
     | A
@@ -249,3 +238,10 @@ let [<Test>] ``can properly construct a struct union using FSharpValue.MakeUnion
     let c2 = (fieldVals.[1] :?> int)
     Assert.AreEqual (3456, c2)
 
+let [<Test>] ``struct unions does optimization correctly on pattern matching`` () =
+    let arr = ResizeArray()
+    match arr.Add(1); ValueSome () with
+    | ValueSome () -> ()
+    | ValueNone -> ()
+
+    Assert.AreEqual(1, arr.Count)

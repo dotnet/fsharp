@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Unions 
 // Constructing DUs with named fields
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 type Lunch = 
   | Sandwich of meat : string * pickles : bool * layers : int
   | Soup of Ounces : float * string

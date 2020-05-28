@@ -1,18 +1,19 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The basic logic of private/internal/protected/InternalsVisibleTo/public accessibility
-module internal Microsoft.FSharp.Compiler.AccessibilityLogic
+module internal FSharp.Compiler.AccessibilityLogic
 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler 
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Infos
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 #endif
 
 /// Represents the 'keys' a particular piece of code can use to access other constructs?.
@@ -136,7 +137,7 @@ let private IsILTypeInfoAccessible amap m ad (tcrefOfViewedItem : TyconRef) =
                 match path with
                 | [] -> assert false; true // in this case path should have at least one element
                 | [x] -> IsILTypeDefAccessible amap m ad None x // shortcut for non-nested types
-                | x::xs -> 
+                | x :: xs -> 
                     // check if enclosing type x is accessible.
                     // if yes - create parent tycon for type 'x' and continue with the rest of the path
                     IsILTypeDefAccessible amap m ad None x && 
@@ -148,7 +149,7 @@ let private IsILTypeInfoAccessible amap m ad (tcrefOfViewedItem : TyconRef) =
             | (Some (parentTycon, parentPath)) -> 
                 match path with
                 | [] -> true // end of path is reached - success
-                | x::xs -> 
+                | x :: xs -> 
                     // check if x is accessible from the parent tycon
                     // if yes - create parent tycon for type 'x' and continue with the rest of the path
                     IsILTypeDefAccessible amap m ad (Some parentTycon) x &&
@@ -194,9 +195,10 @@ let CheckTyconReprAccessible amap m ad tcref =
             
 /// Indicates if a type is accessible (both definition and instantiation)
 let rec IsTypeAccessible g amap m ad ty = 
-    not (isAppTy g ty) ||
-    let tcref, tinst = destAppTy g ty
-    IsEntityAccessible amap m ad tcref && IsTypeInstAccessible g amap m ad tinst
+    match tryAppTy g ty with
+    | ValueNone -> true
+    | ValueSome(tcref, tinst) ->
+        IsEntityAccessible amap m ad tcref && IsTypeInstAccessible g amap m ad tinst
 
 and IsTypeInstAccessible g amap m ad tinst = 
     match tinst with 
@@ -206,12 +208,13 @@ and IsTypeInstAccessible g amap m ad tinst =
 /// Indicate if a provided member is accessible
 let IsProvidedMemberAccessible (amap:Import.ImportMap) m ad ty access = 
     let g = amap.g
-    let isTyAccessible = IsTypeAccessible g amap m ad ty
-    if not isTyAccessible then false
+    if IsTypeAccessible g amap m ad ty then 
+        match tryTcrefOfAppTy g ty with
+        | ValueNone -> true
+        | ValueSome tcrefOfViewedItem ->
+            IsILMemberAccessible g amap m tcrefOfViewedItem ad access
     else
-        not (isAppTy g ty) ||
-        let tcrefOfViewedItem, _ = destAppTy g ty
-        IsILMemberAccessible g amap m tcrefOfViewedItem ad access
+        false
 
 /// Compute the accessibility of a provided member
 let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =

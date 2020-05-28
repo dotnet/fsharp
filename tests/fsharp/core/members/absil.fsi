@@ -1271,7 +1271,7 @@ type modul =
 
 val manifest_of_mainmod: modul -> manifest
 val module_is_mainmod: modul -> bool
-val assname_of_mainmod: modul -> AssemblyName
+val assemblyName_of_mainmod: modul -> AssemblyName
 
 (* ====================================================================
  * PART 2
@@ -1285,14 +1285,14 @@ val assname_of_mainmod: modul -> AssemblyName
  * Generate references to existing assemblies and modules
  * -------------------------------------------------------------------- *)
 
-val mk_simple_assref: AssemblyName -> AssemblyRef
+val mk_simple_assemblyRef: AssemblyName -> AssemblyRef
 val mk_simple_modref: ModuleName -> ModuleRef
 
-val mk_simple_scoref_from_assname: AssemblyName -> ScopeRef 
-val mk_simple_scoref_from_assref: AssemblyRef -> ScopeRef 
+val mk_simple_scoref_from_assemblyName: AssemblyName -> ScopeRef 
+val mk_simple_scoref_from_assemblyRef: AssemblyRef -> ScopeRef 
 
-val assref_for_manifest: manifest -> AssemblyRef
-val assref_for_mainmod: modul -> AssemblyRef
+val assemblyRef_for_manifest: manifest -> AssemblyRef
+val assemblyRef_for_mainmod: modul -> AssemblyRef
 
 (* -------------------------------------------------------------------- 
  * Take apart MethodSpecs

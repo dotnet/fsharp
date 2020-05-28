@@ -93,17 +93,14 @@ module NegativeTests =
         let f = fun () -> &x // not allowed
         
         ()
-#endif
-
-module Tests =
-
+        
     type ByRefInterface =
 
         abstract Test : byref<int> * byref<int> -> byref<int>
 
     type Test() =
 
-        member __.Beef() =
+        member __.TestMethod() =
             let mutable a = Unchecked.defaultof<ByRefInterface>
             let obj = { new ByRefInterface with
 
@@ -112,7 +109,7 @@ module Tests =
                     let obj2 =
                         { new ByRefInterface with
 
-                            member __.Test(_x,y) = &x } // is allowed
+                            member __.Test(_x,y) = &x } // is not allowed
                     a <- obj2
                     &y
             }
@@ -120,6 +117,118 @@ module Tests =
             let mutable y = 500
             obj.Test(&x, &y) |> ignore
             a
+            
+    type TestDelegate = delegate of unit-> byref<int>
+    let testFunction () =
+        let mutable x = 1
+        let f = TestDelegate(fun () -> &x) // is not allowed
+        ()
+
+    type TestNegativeOverloading() =
+
+        static member TestMethod(dt: byref<int>) = ()
+
+        static member TestMethod(dt: inref<int>) = ()
+
+        static member TestMethod(dt: outref<int>) = ()
+
+    type NegativeInterface =
+
+        abstract Test : (byref<int> * byref<int>) -> byref<int>
+
+        abstract Test2 : (byref<int> -> unit) -> unit
+
+    let test8 (x: byref<int>) = (&x, 1)
+
+    let test9 (x: byref<int>) =
+        printfn "test9"
+        fun (y: byref<int>) -> ()
+
+    let test10 (x: (byref<int> -> unit) * int) = ()
+
+    let test11 (x: byref<int> -> unit) (y: byref<int> * int) = ()
+
+    type StaticTest private () =
+
+        static member Test (x: inref<int>, y: int) = ()
+
+        static member NegativeTest(tup) =
+            StaticTest.Test(tup)
+
+        static member NegativeTest2(x: byref<int> -> unit) = ()
+
+        static member NegativeTest3(x: byref<int> option) = ()
+
+    let test12 (x: byref<int> option) = ()
+
+    let testHelper1 (x: int) (y: byref<int>) = ()
+
+    let test13 () =
+        let x = testHelper1 1
+        ()
+
+    let test14 () =
+        testHelper1 1
+
+    let test15 () =
+        let x =
+            printfn "test"
+            testHelper1 1
+        ()
+
+    let test16 () =
+        let x = 1
+        testHelper1 1
+        ()
+
+    let test17 () =
+        let x = testHelper1
+        ()
+
+    let test18 () =
+        testHelper1
+
+    let test19 () =
+        let x =
+            printfn "test"
+            testHelper1
+        ()
+
+    let test20 () =
+        let x = 1
+        testHelper1
+        ()
+
+    let test21 () =
+        let x = StaticTest.Test
+        ()
+
+    let test22 () =
+        let x =
+            printfn "test"
+            StaticTest.Test
+        ()
+
+    let test23 () =
+        let x = 1
+        StaticTest.Test
+        ()
+
+    let test24 () : byref<int> * int =
+        let mutable x = 1
+        (&x, 1)
+
+    let test25 () =
+        test24 ()
+        ()
+
+    let test26 () =
+        let x = test24 ()
+        ()
+    
+#endif
+
+module Tests =
 
     let test1 () =
         let x = 1
@@ -132,11 +241,36 @@ module Tests =
             ()
         ()
 
-    type Beef = delegate of unit-> byref<int>
-    let test2 () =
-        let mutable x = 1
-        let f = Beef(fun () -> &x) // is allowed
-        ()
+    type TestPositiveOverloading() =
+
+        static member TestMethod(dt: byref<int>) = ()
+
+        static member TestMethod(dt: inref<float32>) = ()
+
+        static member TestMethod(dt: outref<float>) = ()
+
+    type PositiveInterface =
+
+        abstract Test : byref<int> * byref<int> -> byref<int>
+
+    // This looks like it should fail, but its sig is 'val test2 : x: byref<int> -> y: byref<int> -> unit' 
+    //     unless a signature tells it otherwise, e.g. 'val test2 : (byref<int> -> byref<int>) -> unit'
+    let test2 (x: byref<int>) =
+        fun (y: byref<int>) -> ()
+
+    type StaticTest private () =
+
+        static member Test (x: byref<int>, y: int) = ()
+
+        static member Test2 (x: inref<int>, y: int) = ()
+
+        // This passes because tup becomes 'int ref * int', which is valid and produces valid code.
+        // We include this to test current behavior with inference and byrefs.
+        static member PositiveTest(tup) =
+            StaticTest.Test(tup)
+
+    let test3 () =
+        StaticTest.Test2 // is passing, but probably shouldn't be
 
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 

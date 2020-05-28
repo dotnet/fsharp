@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net461"
 (**
 Compiler Services: Processing typed expression tree
 =================================================
@@ -25,7 +25,8 @@ To use the interactive checker, reference `FSharp.Compiler.Service.dll` and open
 #r "FSharp.Compiler.Service.dll"
 open System
 open System.IO
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 (**
 
 ### Checking code
@@ -41,8 +42,8 @@ let parseAndCheckSingleFile (input) =
     let file = Path.ChangeExtension(System.IO.Path.GetTempFileName(), "fsx")  
     File.WriteAllText(file, input)
     // Get context representing a stand-alone (script) file
-    let projOptions = 
-        checker.GetProjectOptionsFromScript(file, input)
+    let projOptions, _errors = 
+        checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
         |> Async.RunSynchronously
 
     checker.ParseAndCheckProject(projOptions) 
@@ -203,6 +204,8 @@ let rec visitExpr f (e:FSharpExpr) =
         visitExprs f argExprs
     | BasicPatterns.NewRecord(recordType, argExprs) ->  
         visitExprs f argExprs
+    | BasicPatterns.NewAnonRecord(recordType, argExprs) ->  
+        visitExprs f argExprs
     | BasicPatterns.NewTuple(tupleType, argExprs) -> 
         visitExprs f argExprs
     | BasicPatterns.NewUnionCase(unionType, unionCase, argExprs) -> 
@@ -211,6 +214,8 @@ let rec visitExpr f (e:FSharpExpr) =
         visitExpr f quotedExpr
     | BasicPatterns.FSharpFieldGet(objExprOpt, recordOrClassType, fieldInfo) -> 
         visitObjArg f objExprOpt
+    | BasicPatterns.AnonRecordGet(objExpr, recordOrClassType, fieldInfo) -> 
+        visitExpr f objExpr
     | BasicPatterns.FSharpFieldSet(objExprOpt, recordOrClassType, fieldInfo, argExpr) -> 
         visitObjArg f objExprOpt; visitExpr f argExpr
     | BasicPatterns.Sequential(firstExpr, secondExpr) -> 

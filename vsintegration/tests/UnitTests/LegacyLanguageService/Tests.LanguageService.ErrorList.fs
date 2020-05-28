@@ -5,12 +5,19 @@ namespace Tests.LanguageService.ErrorList
 open System
 open System.IO
 open NUnit.Framework
+open Microsoft.VisualStudio.FSharp
 open Salsa.Salsa
 open Salsa.VsOpsUtils
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
+
+[<SetUpFixture>]
+type public AssemblyResolverTestFixture () =
+
+    [<OneTimeSetUp>]
+    member public __.Init () = AssemblyResolver.addResolver ()
 
 [<TestFixture>]
 [<Category "LanguageService">] 
@@ -50,18 +57,41 @@ type UsingMSBuild() as this =
         let ok = errors |> List.exists (fun err -> err.Message = text)
         Assert.IsTrue(ok, sprintf "Error list should contain '%s' message" text)
 
+    let assertExpectedErrorMessages expected (actual: list<Error>) =
+        let normalizeCR input = System.Text.RegularExpressions.Regex.Replace(input, @"\r\n|\n\r|\n|\r", "\r\n")
+        let actual = 
+            actual 
+            |> Seq.map (fun e -> e.Message)
+            |> String.concat Environment.NewLine
+            |> normalizeCR
+        let expected = expected |> String.concat Environment.NewLine |> normalizeCR
+        
+        let message = 
+            sprintf """
+=[ expected ]============
+%s
+=[ actual ]==============
+%s
+=========================""" expected actual
+        Assert.AreEqual(expected, actual, message)
 
     //verify the error list Count
     member private this.VerifyErrorListCountAtOpenProject(fileContents : string, num : int) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
         let errorList = GetErrors(project)
+        let errorTexts = new System.Text.StringBuilder()
         for error in errorList do
             printfn "%A" error.Severity
-            printf "%s\n" (error.ToString()) 
-        if (num = errorList.Length) then 
-                ()
-            else
-                failwithf "The error list number is not the expected %d" num
+            let s = error.ToString()
+            errorTexts.AppendLine s |> ignore
+            printf "%s\n" s 
+
+        if num <> errorList.Length then 
+            failwithf "The error list number is not the expected %d but %d%s%s" 
+                num 
+                errorList.Length
+                System.Environment.NewLine
+                (errorTexts.ToString())
 
     //Verify the warning list Count
     member private this.VerifyWarningListCountAtOpenProject(fileContents : string, expectedNum : int, ?addtlRefAssy : list<string>) = 
@@ -177,18 +207,16 @@ let g (t : T) = t.Count()
         X(1.0)
         """
 
-        let expectedMessages =
-            [ "Possible overload: 'new : bool -> X'."
-              "Possible overload: 'new : int -> X'." ]
+        let expectedMessages = [ """No overloads match for method 'X'.
 
-        CheckErrorList content <|
-            fun errors ->
-                Assert.AreEqual(3, List.length errors)
-                assertContains errors "No overloads match for method 'X'. The available overloads are shown below."
-                for expected in expectedMessages do
-                   errors
-                   |> List.exists (fun e -> e.Message.StartsWith expected)
-                   |> Assert.IsTrue
+Known type of argument: float
+
+Available overloads:
+ - new : bool -> X // Argument at index 1 doesn't match
+ - new : int -> X // Argument at index 1 doesn't match""" ]
+
+        CheckErrorList content (assertExpectedErrorMessages expectedMessages)
+            
 
     [<Test>]
     member public this.``Query.InvalidJoinRelation.GroupJoin``() = 
@@ -264,10 +292,16 @@ let x =
         let content = """
         System.Console.WriteLine(null)
         """
-        CheckErrorList content <|
-            fun errors ->
-                Assert.AreEqual(1, List.length errors)
-                assertContains errors "A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Console.WriteLine(buffer: char []) : unit, System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj []) : unit, System.Console.WriteLine(value: obj) : unit, System.Console.WriteLine(value: string) : unit"
+        let expectedMessages = [ """A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
+
+Known type of argument: 'a0 when 'a0 : null
+
+Candidates:
+ - System.Console.WriteLine(buffer: char []) : unit
+ - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj []) : unit
+ - System.Console.WriteLine(value: obj) : unit
+ - System.Console.WriteLine(value: string) : unit""" ]
+        CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
     [<Test>]
     member public this.``InvalidMethodOverload2``() = 
@@ -281,10 +315,14 @@ type B() =
 let b = B()
 b.Do(1, 1)
         """
-        CheckErrorList content <|
-            fun errors ->
-                Assert.AreEqual(1, List.length errors)
-                assertContains errors "A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: member A.Do : a:int * b:'T -> unit, member A.Do : a:int * b:int -> unit"
+        let expectedMessages = [ """A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed.
+
+Known types of arguments: int * int
+
+Candidates:
+ - member A.Do : a:int * b:'T -> unit
+ - member A.Do : a:int * b:int -> unit""" ]
+        CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
     [<Test; Category("Expensive")>]
     member public this.``NoErrorInErrList``() = 
@@ -365,7 +403,7 @@ type staticInInterface =
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.MultipleErrors")>]
     member public this.``TypeProvider.MultipleErrors`` () =
-        let tpRef = PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+        let tpRef = PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")
         let checkList n = 
             printfn "===TypeProvider.MultipleErrors: %d===" n
             let content = sprintf "type Err = TPErrors.TP<%d>" n
@@ -437,7 +475,7 @@ type staticInInterface =
 but here has type
     'int'    """
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -451,7 +489,7 @@ but here has type
         let expectedStr = "An error occurred applying the static arguments to a provided type"
        
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
    
     [<Test>]
     [<Category("TypeProvider")>]
@@ -465,7 +503,7 @@ but here has type
         let expectedStr = "The static parameter 'ParamIgnored' of the provided type or method 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<ParamIgnored=...>'."
        
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.ProhibitedMethods`` () =
@@ -480,7 +518,7 @@ but here has type
                 (
                     code,
                     sprintf "Array method '%s' is supplied by the runtime and cannot be directly used in code." str,
-                    addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+                    addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]
                 )    
     
     [<Test>]
@@ -505,7 +543,7 @@ but here has type
                             type foo = N1.T< 
                                 const "Hello World",2>""",
             expectedNum = 1,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]) 
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]) 
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -516,7 +554,7 @@ but here has type
          this.VerifyNoErrorListAtOpenProject(
             fileContents = """
                             type foo = N1.T< const "Hello World",2>""",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]) 
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]) 
     
 
     [<Test>]
@@ -533,6 +571,7 @@ but here has type
         Assert.IsTrue(errorList.IsEmpty)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``UnicodeCharactors``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()

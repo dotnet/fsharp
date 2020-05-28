@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
+module internal FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
 
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 [<Struct>]
 type TableName(idx: int) = 
@@ -508,155 +505,155 @@ let i_leave         = 0xdd
 let i_leave_s       = 0xde 
 let i_stind_i       = 0xdf 
 let i_conv_u        = 0xe0 
-let i_arglist        = 0xfe00
-let i_ceq        = 0xfe01
-let i_cgt        = 0xfe02
+let i_arglist       = 0xfe00
+let i_ceq           = 0xfe01
+let i_cgt           = 0xfe02
 let i_cgt_un        = 0xfe03
-let i_clt        = 0xfe04
+let i_clt           = 0xfe04
 let i_clt_un        = 0xfe05
-let i_ldftn        = 0xfe06 
-let i_ldvirtftn    = 0xfe07 
-let i_ldarg          = 0xfe09 
-let i_ldarga         = 0xfe0a 
-let i_starg          = 0xfe0b 
-let i_ldloc          = 0xfe0c 
-let i_ldloca         = 0xfe0d 
-let i_stloc          = 0xfe0e 
-let i_localloc     = 0xfe0f 
-let i_endfilter    = 0xfe11 
-let i_unaligned   = 0xfe12 
-let i_volatile    = 0xfe13 
-let i_constrained    = 0xfe16
-let i_readonly    = 0xfe1e
-let i_tail           = 0xfe14 
-let i_initobj        = 0xfe15 
-let i_cpblk          = 0xfe17 
-let i_initblk        = 0xfe18 
-let i_rethrow        = 0xfe1a 
-let i_sizeof         = 0xfe1c 
-let i_refanytype   = 0xfe1d 
-
-let i_ldelem_any = 0xa3
-let i_stelem_any = 0xa4
-let i_unbox_any = 0xa5
+let i_ldftn         = 0xfe06 
+let i_ldvirtftn     = 0xfe07 
+let i_ldarg         = 0xfe09 
+let i_ldarga        = 0xfe0a 
+let i_starg         = 0xfe0b 
+let i_ldloc         = 0xfe0c 
+let i_ldloca        = 0xfe0d 
+let i_stloc         = 0xfe0e 
+let i_localloc      = 0xfe0f 
+let i_endfilter     = 0xfe11 
+let i_unaligned     = 0xfe12 
+let i_volatile      = 0xfe13 
+let i_constrained   = 0xfe16
+let i_readonly      = 0xfe1e
+let i_tail          = 0xfe14 
+let i_initobj       = 0xfe15 
+let i_cpblk         = 0xfe17 
+let i_initblk       = 0xfe18 
+let i_rethrow       = 0xfe1a 
+let i_sizeof        = 0xfe1c 
+let i_refanytype    = 0xfe1d 
+let i_ldelem_any    = 0xa3
+let i_stelem_any    = 0xa4
+let i_unbox_any     = 0xa5
 
 let mk_ldc i = mkLdcInt32 i
+
 let noArgInstrs  = 
-   lazy [ i_ldc_i4_0,           mk_ldc 0
-          i_ldc_i4_1,           mk_ldc 1
-          i_ldc_i4_2,           mk_ldc 2
-          i_ldc_i4_3,           mk_ldc 3
-          i_ldc_i4_4,           mk_ldc 4
-          i_ldc_i4_5,           mk_ldc 5
-          i_ldc_i4_6,           mk_ldc 6
-          i_ldc_i4_7,           mk_ldc 7
-          i_ldc_i4_8,           mk_ldc 8
-          i_ldc_i4_m1,           mk_ldc -1
-          0x0a,            mkStloc 0us
-          0x0b,            mkStloc 1us
-          0x0c,            mkStloc 2us
-          0x0d,            mkStloc 3us
-          0x06,            mkLdloc 0us
-          0x07,            mkLdloc 1us
-          0x08,            mkLdloc 2us
-          0x09,            mkLdloc 3us
-          0x02,            mkLdarg 0us
-          0x03,            mkLdarg 1us
-          0x04,            mkLdarg 2us
-          0x05,            mkLdarg 3us
-          0x2a,              I_ret
-          0x58,              AI_add
-          0xd6,        AI_add_ovf
-          0xd7,   AI_add_ovf_un
-          0x5f,              AI_and
-          0x5b,              AI_div
-          0x5c,         AI_div_un
-          0xfe01,              AI_ceq
-          0xfe02,              AI_cgt
-          0xfe03,         AI_cgt_un
-          0xfe04,              AI_clt
-          0xfe05,         AI_clt_un
-          0x67,        AI_conv DT_I1
-          0x68,   AI_conv DT_I2 
-          0x69,   AI_conv DT_I4
-          0x6a,   AI_conv DT_I8  
-          0xd3,   AI_conv DT_I  
-          0x6b,   AI_conv DT_R4  
-          0x6c,   AI_conv DT_R8  
-          0xd2,   AI_conv DT_U1  
-          0xd1,   AI_conv DT_U2  
-          0x6d,   AI_conv DT_U4  
-          0x6e,   AI_conv DT_U8  
-          0xe0,   AI_conv DT_U  
-          0x76,   AI_conv DT_R  
-          0xb3,   AI_conv_ovf DT_I1  
-          0xb5,   AI_conv_ovf DT_I2  
-          0xb7,   AI_conv_ovf DT_I4  
-          0xb9,   AI_conv_ovf DT_I8  
-          0xd4,   AI_conv_ovf DT_I  
-          0xb4,   AI_conv_ovf DT_U1  
-          0xb6,   AI_conv_ovf DT_U2  
-          0xb8,   AI_conv_ovf DT_U4  
-          0xba,   AI_conv_ovf DT_U8  
-          0xd5,   AI_conv_ovf DT_U  
-          0x82,   AI_conv_ovf_un DT_I1  
-          0x83,   AI_conv_ovf_un DT_I2  
-          0x84,   AI_conv_ovf_un DT_I4  
-          0x85,   AI_conv_ovf_un DT_I8  
-          0x8a,   AI_conv_ovf_un DT_I  
-          0x86,   AI_conv_ovf_un DT_U1  
-          0x87,   AI_conv_ovf_un DT_U2  
-          0x88,   AI_conv_ovf_un DT_U4  
-          0x89,   AI_conv_ovf_un DT_U8  
-          0x8b,   AI_conv_ovf_un DT_U  
-          0x9c,   I_stelem DT_I1  
-          0x9d,   I_stelem DT_I2
-          0x9e,   I_stelem DT_I4  
-          0x9f,   I_stelem DT_I8  
-          0xa0,   I_stelem DT_R4  
-          0xa1,   I_stelem DT_R8  
-          0x9b,   I_stelem DT_I  
-          0xa2,   I_stelem DT_REF  
-          0x90,   I_ldelem DT_I1
-          0x92,   I_ldelem DT_I2  
-          0x94,   I_ldelem DT_I4  
-          0x96,   I_ldelem DT_I8  
-          0x91,   I_ldelem DT_U1  
-          0x93,   I_ldelem DT_U2  
-          0x95,   I_ldelem DT_U4 
-          0x98,   I_ldelem DT_R4  
-          0x99,   I_ldelem DT_R8  
-          0x97,   I_ldelem DT_I  
-          0x9a,   I_ldelem DT_REF  
-          0x5a,   AI_mul
-          0xd8,   AI_mul_ovf
-          0xd9,   AI_mul_ovf_un
-          0x5d,   AI_rem
-          0x5e,   AI_rem_un
-          0x62,   AI_shl 
-          0x63,   AI_shr
-          0x64,   AI_shr_un
-          0x59,   AI_sub
-          0xda,   AI_sub_ovf
-          0xdb,   AI_sub_ovf_un
-          0x61,   AI_xor
-          0x60,   AI_or
-          0x65,   AI_neg
-          0x66,   AI_not
-          i_ldnull,     AI_ldnull
-          i_dup,        AI_dup
-          i_pop,        AI_pop
-          i_ckfinite,   AI_ckfinite
-          i_nop,        AI_nop
-          i_break,      I_break
-          i_arglist,    I_arglist
-          i_endfilter,  I_endfilter
+   lazy [ i_ldc_i4_0, mk_ldc 0
+          i_ldc_i4_1, mk_ldc 1
+          i_ldc_i4_2, mk_ldc 2
+          i_ldc_i4_3, mk_ldc 3
+          i_ldc_i4_4, mk_ldc 4
+          i_ldc_i4_5, mk_ldc 5
+          i_ldc_i4_6, mk_ldc 6
+          i_ldc_i4_7, mk_ldc 7
+          i_ldc_i4_8, mk_ldc 8
+          i_ldc_i4_m1, mk_ldc -1
+          0x0a, mkStloc 0us
+          0x0b, mkStloc 1us
+          0x0c, mkStloc 2us
+          0x0d, mkStloc 3us
+          0x06, mkLdloc 0us
+          0x07, mkLdloc 1us
+          0x08, mkLdloc 2us
+          0x09, mkLdloc 3us
+          0x02, mkLdarg 0us
+          0x03, mkLdarg 1us
+          0x04, mkLdarg 2us
+          0x05, mkLdarg 3us
+          0x2a, I_ret
+          0x58, AI_add
+          0xd6, AI_add_ovf
+          0xd7, AI_add_ovf_un
+          0x5f, AI_and
+          0x5b, AI_div
+          0x5c, AI_div_un
+          0xfe01, AI_ceq
+          0xfe02, AI_cgt
+          0xfe03, AI_cgt_un
+          0xfe04, AI_clt
+          0xfe05, AI_clt_un
+          0x67, AI_conv DT_I1
+          0x68, AI_conv DT_I2 
+          0x69, AI_conv DT_I4
+          0x6a, AI_conv DT_I8  
+          0xd3, AI_conv DT_I  
+          0x6b, AI_conv DT_R4  
+          0x6c, AI_conv DT_R8  
+          0xd2, AI_conv DT_U1  
+          0xd1, AI_conv DT_U2  
+          0x6d, AI_conv DT_U4  
+          0x6e, AI_conv DT_U8  
+          0xe0, AI_conv DT_U  
+          0x76, AI_conv DT_R  
+          0xb3, AI_conv_ovf DT_I1  
+          0xb5, AI_conv_ovf DT_I2  
+          0xb7, AI_conv_ovf DT_I4  
+          0xb9, AI_conv_ovf DT_I8  
+          0xd4, AI_conv_ovf DT_I  
+          0xb4, AI_conv_ovf DT_U1  
+          0xb6, AI_conv_ovf DT_U2  
+          0xb8, AI_conv_ovf DT_U4  
+          0xba, AI_conv_ovf DT_U8  
+          0xd5, AI_conv_ovf DT_U  
+          0x82, AI_conv_ovf_un DT_I1  
+          0x83, AI_conv_ovf_un DT_I2  
+          0x84, AI_conv_ovf_un DT_I4  
+          0x85, AI_conv_ovf_un DT_I8  
+          0x8a, AI_conv_ovf_un DT_I  
+          0x86, AI_conv_ovf_un DT_U1  
+          0x87, AI_conv_ovf_un DT_U2  
+          0x88, AI_conv_ovf_un DT_U4  
+          0x89, AI_conv_ovf_un DT_U8  
+          0x8b, AI_conv_ovf_un DT_U  
+          0x9c, I_stelem DT_I1  
+          0x9d, I_stelem DT_I2
+          0x9e, I_stelem DT_I4  
+          0x9f, I_stelem DT_I8  
+          0xa0, I_stelem DT_R4  
+          0xa1, I_stelem DT_R8  
+          0x9b, I_stelem DT_I  
+          0xa2, I_stelem DT_REF  
+          0x90, I_ldelem DT_I1
+          0x92, I_ldelem DT_I2  
+          0x94, I_ldelem DT_I4  
+          0x96, I_ldelem DT_I8  
+          0x91, I_ldelem DT_U1  
+          0x93, I_ldelem DT_U2  
+          0x95, I_ldelem DT_U4 
+          0x98, I_ldelem DT_R4  
+          0x99, I_ldelem DT_R8  
+          0x97, I_ldelem DT_I  
+          0x9a, I_ldelem DT_REF  
+          0x5a, AI_mul
+          0xd8, AI_mul_ovf
+          0xd9, AI_mul_ovf_un
+          0x5d, AI_rem
+          0x5e, AI_rem_un
+          0x62, AI_shl 
+          0x63, AI_shr
+          0x64, AI_shr_un
+          0x59, AI_sub
+          0xda, AI_sub_ovf
+          0xdb, AI_sub_ovf_un
+          0x61, AI_xor
+          0x60, AI_or
+          0x65, AI_neg
+          0x66, AI_not
+          i_ldnull, AI_ldnull
+          i_dup, AI_dup
+          i_pop, AI_pop
+          i_ckfinite, AI_ckfinite
+          i_nop, AI_nop
+          i_break, I_break
+          i_arglist, I_arglist
+          i_endfilter, I_endfilter
           i_endfinally, I_endfinally
           i_refanytype, I_refanytype
-          i_localloc,   I_localloc
-          i_throw,      I_throw
-          i_ldlen,      I_ldlen
-          i_rethrow,    I_rethrow ]
+          i_localloc, I_localloc
+          i_throw, I_throw
+          i_ldlen, I_ldlen
+          i_rethrow, I_rethrow ]
 
 let isNoArgInstr i = 
   match i with 
@@ -760,36 +757,36 @@ let isNoArgInstr i =
 let ILCmpInstrMap = 
     lazy (
         let dict = Dictionary.newWithSize 12
-        dict.Add (BI_beq     , i_beq     )
-        dict.Add (BI_bgt     , i_bgt     )
-        dict.Add (BI_bgt_un  , i_bgt_un  )
-        dict.Add (BI_bge     , i_bge     )
-        dict.Add (BI_bge_un  , i_bge_un  )
-        dict.Add (BI_ble     , i_ble     )
-        dict.Add (BI_ble_un  , i_ble_un  )
-        dict.Add (BI_blt     , i_blt     )
-        dict.Add (BI_blt_un  , i_blt_un  )
-        dict.Add (BI_bne_un  , i_bne_un  )
-        dict.Add (BI_brfalse , i_brfalse )
-        dict.Add (BI_brtrue  , i_brtrue  )
+        dict.Add (BI_beq, i_beq     )
+        dict.Add (BI_bgt, i_bgt     )
+        dict.Add (BI_bgt_un, i_bgt_un  )
+        dict.Add (BI_bge, i_bge     )
+        dict.Add (BI_bge_un, i_bge_un  )
+        dict.Add (BI_ble, i_ble     )
+        dict.Add (BI_ble_un, i_ble_un  )
+        dict.Add (BI_blt, i_blt     )
+        dict.Add (BI_blt_un, i_blt_un  )
+        dict.Add (BI_bne_un, i_bne_un  )
+        dict.Add (BI_brfalse, i_brfalse )
+        dict.Add (BI_brtrue, i_brtrue  )
         dict
     )
 
 let ILCmpInstrRevMap = 
   lazy (
       let dict = Dictionary.newWithSize 12
-      dict.Add ( BI_beq     , i_beq_s     )
-      dict.Add ( BI_bgt     , i_bgt_s     )
-      dict.Add ( BI_bgt_un  , i_bgt_un_s  )
-      dict.Add ( BI_bge     , i_bge_s     )
-      dict.Add ( BI_bge_un  , i_bge_un_s  )
-      dict.Add ( BI_ble     , i_ble_s     )
-      dict.Add ( BI_ble_un  , i_ble_un_s  )
-      dict.Add ( BI_blt     , i_blt_s     )
-      dict.Add ( BI_blt_un  , i_blt_un_s  )
-      dict.Add ( BI_bne_un  , i_bne_un_s  )
-      dict.Add ( BI_brfalse , i_brfalse_s )
-      dict.Add ( BI_brtrue  , i_brtrue_s  )
+      dict.Add ( BI_beq, i_beq_s     )
+      dict.Add ( BI_bgt, i_bgt_s     )
+      dict.Add ( BI_bgt_un, i_bgt_un_s  )
+      dict.Add ( BI_bge, i_bge_s     )
+      dict.Add ( BI_bge_un, i_bge_un_s  )
+      dict.Add ( BI_ble, i_ble_s     )
+      dict.Add ( BI_ble_un, i_ble_un_s  )
+      dict.Add ( BI_blt, i_blt_s     )
+      dict.Add ( BI_blt_un, i_blt_un_s  )
+      dict.Add ( BI_bne_un, i_bne_un_s  )
+      dict.Add ( BI_brfalse, i_brfalse_s )
+      dict.Add ( BI_brtrue, i_brtrue_s  )
       dict
   )
 
@@ -890,106 +887,106 @@ let vt_BYREF = 0x4000
 
  
 let ILNativeTypeMap = 
- lazy [ nt_CURRENCY , ILNativeType.Currency
-        nt_BSTR , (* COM interop *) ILNativeType.BSTR
-        nt_LPSTR , ILNativeType.LPSTR
-        nt_LPWSTR , ILNativeType.LPWSTR
+ lazy [ nt_CURRENCY, ILNativeType.Currency
+        nt_BSTR, (* COM interop *) ILNativeType.BSTR
+        nt_LPSTR, ILNativeType.LPSTR
+        nt_LPWSTR, ILNativeType.LPWSTR
         nt_LPTSTR, ILNativeType.LPTSTR
         nt_LPUTF8STR, ILNativeType.LPUTF8STR
-        nt_IUNKNOWN , (* COM interop *) ILNativeType.IUnknown
-        nt_IDISPATCH , (* COM interop *) ILNativeType.IDispatch
-        nt_BYVALSTR , ILNativeType.ByValStr
-        nt_TBSTR , ILNativeType.TBSTR
-        nt_LPSTRUCT , ILNativeType.LPSTRUCT
-        nt_INTF , (* COM interop *) ILNativeType.Interface
-        nt_STRUCT , ILNativeType.Struct
-        nt_ERROR , (* COM interop *) ILNativeType.Error               
-        nt_VOID , ILNativeType.Void 
-        nt_BOOLEAN , ILNativeType.Bool
-        nt_I1 , ILNativeType.Int8
-        nt_I2 , ILNativeType.Int16
-        nt_I4 , ILNativeType.Int32
+        nt_IUNKNOWN, (* COM interop *) ILNativeType.IUnknown
+        nt_IDISPATCH, (* COM interop *) ILNativeType.IDispatch
+        nt_BYVALSTR, ILNativeType.ByValStr
+        nt_TBSTR, ILNativeType.TBSTR
+        nt_LPSTRUCT, ILNativeType.LPSTRUCT
+        nt_INTF, (* COM interop *) ILNativeType.Interface
+        nt_STRUCT, ILNativeType.Struct
+        nt_ERROR, (* COM interop *) ILNativeType.Error               
+        nt_VOID, ILNativeType.Void 
+        nt_BOOLEAN, ILNativeType.Bool
+        nt_I1, ILNativeType.Int8
+        nt_I2, ILNativeType.Int16
+        nt_I4, ILNativeType.Int32
         nt_I8, ILNativeType.Int64
-        nt_R4 , ILNativeType.Single
-        nt_R8 , ILNativeType.Double
-        nt_U1 , ILNativeType.Byte
-        nt_U2 , ILNativeType.UInt16
-        nt_U4 , ILNativeType.UInt32
+        nt_R4, ILNativeType.Single
+        nt_R8, ILNativeType.Double
+        nt_U1, ILNativeType.Byte
+        nt_U2, ILNativeType.UInt16
+        nt_U4, ILNativeType.UInt32
         nt_U8, ILNativeType.UInt64
-        nt_INT , ILNativeType.Int
+        nt_INT, ILNativeType.Int
         nt_UINT, ILNativeType.UInt
         nt_ANSIBSTR, (* COM interop *) ILNativeType.ANSIBSTR
         nt_VARIANTBOOL, (* COM interop *) ILNativeType.VariantBool
-        nt_FUNC , ILNativeType.Method
+        nt_FUNC, ILNativeType.Method
         nt_ASANY, ILNativeType.AsAny ]
 
 let ILNativeTypeRevMap = lazy (List.map (fun (x,y) -> (y,x)) (Lazy.force ILNativeTypeMap))
     
 let ILVariantTypeMap = 
- lazy [ ILNativeVariant.Empty                 , vt_EMPTY
-        ILNativeVariant.Null                  , vt_NULL 
-        ILNativeVariant.Variant               , vt_VARIANT       
-        ILNativeVariant.Currency              , vt_CY         
-        ILNativeVariant.Decimal               , vt_DECIMAL   
-        ILNativeVariant.Date                  , vt_DATE       
-        ILNativeVariant.BSTR                  , vt_BSTR       
-        ILNativeVariant.LPSTR                 , vt_LPSTR     
-        ILNativeVariant.LPWSTR                , vt_LPWSTR    
-        ILNativeVariant.IUnknown              , vt_UNKNOWN   
-        ILNativeVariant.IDispatch             , vt_DISPATCH    
-        ILNativeVariant.SafeArray             , vt_SAFEARRAY 
-        ILNativeVariant.Error                 ,  vt_ERROR         
-        ILNativeVariant.HRESULT               , vt_HRESULT   
-        ILNativeVariant.CArray                , vt_CARRAY    
-        ILNativeVariant.UserDefined           , vt_USERDEFINED 
-        ILNativeVariant.Record                , vt_RECORD
-        ILNativeVariant.FileTime              , vt_FILETIME  
-        ILNativeVariant.Blob                  , vt_BLOB       
-        ILNativeVariant.Stream                , vt_STREAM     
-        ILNativeVariant.Storage               , vt_STORAGE          
-        ILNativeVariant.StreamedObject       , vt_STREAMED_OBJECT
-        ILNativeVariant.StoredObject         , vt_STORED_OBJECT 
-        ILNativeVariant.BlobObject           , vt_BLOB_OBJECT 
-        ILNativeVariant.CF                    , vt_CF        
-        ILNativeVariant.CLSID                 , vt_CLSID                    
-        ILNativeVariant.Void                  , vt_VOID          
-        ILNativeVariant.Bool                  , vt_BOOL        
-        ILNativeVariant.Int8                  , vt_I1            
-        ILNativeVariant.Int16                 , vt_I2  
-        ILNativeVariant.Int32                 , vt_I4         
-        ILNativeVariant.Int64                 , vt_I8        
-        ILNativeVariant.Single               , vt_R4         
-        ILNativeVariant.Double               , vt_R8         
-        ILNativeVariant.UInt8         , vt_UI1       
-        ILNativeVariant.UInt16        , vt_UI2       
-        ILNativeVariant.UInt32        , vt_UI4       
-        ILNativeVariant.UInt64        , vt_UI8       
-        ILNativeVariant.PTR                   , vt_PTR       
-        ILNativeVariant.Int                   , vt_INT               
-        ILNativeVariant.UInt                , vt_UINT            ]
+ lazy [ ILNativeVariant.Empty, vt_EMPTY
+        ILNativeVariant.Null, vt_NULL 
+        ILNativeVariant.Variant, vt_VARIANT       
+        ILNativeVariant.Currency, vt_CY         
+        ILNativeVariant.Decimal, vt_DECIMAL   
+        ILNativeVariant.Date, vt_DATE       
+        ILNativeVariant.BSTR, vt_BSTR       
+        ILNativeVariant.LPSTR, vt_LPSTR     
+        ILNativeVariant.LPWSTR, vt_LPWSTR    
+        ILNativeVariant.IUnknown, vt_UNKNOWN   
+        ILNativeVariant.IDispatch, vt_DISPATCH    
+        ILNativeVariant.SafeArray, vt_SAFEARRAY 
+        ILNativeVariant.Error, vt_ERROR         
+        ILNativeVariant.HRESULT, vt_HRESULT   
+        ILNativeVariant.CArray, vt_CARRAY    
+        ILNativeVariant.UserDefined, vt_USERDEFINED 
+        ILNativeVariant.Record, vt_RECORD
+        ILNativeVariant.FileTime, vt_FILETIME  
+        ILNativeVariant.Blob, vt_BLOB       
+        ILNativeVariant.Stream, vt_STREAM     
+        ILNativeVariant.Storage, vt_STORAGE          
+        ILNativeVariant.StreamedObject, vt_STREAMED_OBJECT
+        ILNativeVariant.StoredObject, vt_STORED_OBJECT 
+        ILNativeVariant.BlobObject, vt_BLOB_OBJECT 
+        ILNativeVariant.CF, vt_CF        
+        ILNativeVariant.CLSID, vt_CLSID                    
+        ILNativeVariant.Void, vt_VOID          
+        ILNativeVariant.Bool, vt_BOOL        
+        ILNativeVariant.Int8, vt_I1            
+        ILNativeVariant.Int16, vt_I2  
+        ILNativeVariant.Int32, vt_I4         
+        ILNativeVariant.Int64, vt_I8        
+        ILNativeVariant.Single, vt_R4         
+        ILNativeVariant.Double, vt_R8         
+        ILNativeVariant.UInt8, vt_UI1       
+        ILNativeVariant.UInt16, vt_UI2       
+        ILNativeVariant.UInt32, vt_UI4       
+        ILNativeVariant.UInt64, vt_UI8       
+        ILNativeVariant.PTR, vt_PTR       
+        ILNativeVariant.Int, vt_INT               
+        ILNativeVariant.UInt, vt_UINT            ]
 
 let ILVariantTypeRevMap = lazy (List.map (fun (x,y) -> (y,x)) (Lazy.force ILVariantTypeMap))
 
 let ILSecurityActionMap =
   lazy
-    [ ILSecurityAction.Request , 0x0001
-      ILSecurityAction.Demand , 0x0002
-      ILSecurityAction.Assert , 0x0003
-      ILSecurityAction.Deny , 0x0004
-      ILSecurityAction.PermitOnly  , 0x0005
-      ILSecurityAction.LinkCheck  , 0x0006
-      ILSecurityAction.InheritCheck , 0x0007
-      ILSecurityAction.ReqMin , 0x0008
-      ILSecurityAction.ReqOpt , 0x0009
-      ILSecurityAction.ReqRefuse , 0x000a
-      ILSecurityAction.PreJitGrant , 0x000b
-      ILSecurityAction.PreJitDeny , 0x000c
-      ILSecurityAction.NonCasDemand , 0x000d
-      ILSecurityAction.NonCasLinkDemand , 0x000e
-      ILSecurityAction.NonCasInheritance , 0x000f
-      ILSecurityAction.LinkDemandChoice , 0x0010
-      ILSecurityAction.InheritanceDemandChoice , 0x0011
-      ILSecurityAction.DemandChoice , 0x0012 ]
+    [ ILSecurityAction.Request, 0x0001
+      ILSecurityAction.Demand, 0x0002
+      ILSecurityAction.Assert, 0x0003
+      ILSecurityAction.Deny, 0x0004
+      ILSecurityAction.PermitOnly, 0x0005
+      ILSecurityAction.LinkCheck, 0x0006
+      ILSecurityAction.InheritCheck, 0x0007
+      ILSecurityAction.ReqMin, 0x0008
+      ILSecurityAction.ReqOpt, 0x0009
+      ILSecurityAction.ReqRefuse, 0x000a
+      ILSecurityAction.PreJitGrant, 0x000b
+      ILSecurityAction.PreJitDeny, 0x000c
+      ILSecurityAction.NonCasDemand, 0x000d
+      ILSecurityAction.NonCasLinkDemand, 0x000e
+      ILSecurityAction.NonCasInheritance, 0x000f
+      ILSecurityAction.LinkDemandChoice, 0x0010
+      ILSecurityAction.InheritanceDemandChoice, 0x0011
+      ILSecurityAction.DemandChoice, 0x0012 ]
 
 let ILSecurityActionRevMap = lazy (List.map (fun (x,y) -> (y,x)) (Lazy.force ILSecurityActionMap))
 

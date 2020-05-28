@@ -5,9 +5,8 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RootNamespace>Microsoft.VisualStudio.FSharp.UIResources</RootNamespace>
-    <NoWarn>$(NoWarn);1591</NoWarn>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,19 +25,14 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
 
-  <!-- The following are hacks to allow WPF to build. -->
-  <ItemGroup>
-    <Page Include="**\*.xaml" SubType="Designer" Generator="MSBuild:Compile" />
-    <None Include="@(Page)" />
-    <None Include="@(Resource)" />
-    <Compile Update="**\*.xaml.cs" SubType="Designer" DependentUpon="%(Filename)" />
-    <Compile Update="$(IntermediateOutputPath)**\*.g.cs" Visible="false" />
-  </ItemGroup>
   <ItemGroup>
     <Compile Update="Strings.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+    <Compile Update="FormattingOptionsControl.xaml.cs">
+      <DependentUpon>FormattingOptionsControl.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -48,15 +42,27 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <!-- The following are hacks to allow WPF to build. -->
+  <ItemGroup>
+    <Page Include="**\*.xaml" SubType="Designer" Generator="MSBuild:Compile" />
+    <None Include="@(Page)" />
+    <None Include="@(Resource)" />
+    <Compile Update="**\*.xaml.cs" SubType="Code" DependentUpon="%(Filename)" />
+    <!--<Compile Update="$(IntermediateOutputPath)**\*.g.cs" Visible="false" />-->
+    <UpToDateCheckInput Include="**\*.xaml" />
+  </ItemGroup>
+
   <PropertyGroup>
     <VSMSBuildBinDir>$(VS150COMNTOOLS)\..\..\MSBuild\$(VisualStudioVersion)\Bin</VSMSBuildBinDir>
     <LanguageTargets Condition="Exists('$(VSMSBuildBinDir)')">$(VSMSBuildBinDir)\Microsoft.CSharp.targets</LanguageTargets>
   </PropertyGroup>
-
+  <Target Name="CoreCompile"/>
   <Target Name="WorkaroundForXAMLIntellisenseBuildIssue" AfterTargets="_CheckCompileDesignTimePrerequisite">
     <PropertyGroup>
       <BuildingProject>false</BuildingProject>
     </PropertyGroup>
   </Target>
-  
+
+  <Target Name="CoreCompile">
+  </Target>
 </Project>

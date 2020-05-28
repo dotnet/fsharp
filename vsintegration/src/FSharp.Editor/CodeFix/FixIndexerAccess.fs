@@ -2,15 +2,13 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Immutable
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-open SymbolHelpers
+open FSharp.Compiler.SourceCodeServices
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FixIndexerAccess"); Shared>]
 type internal FSharpFixIndexerAccessCodeFixProvider() =
@@ -33,23 +31,24 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
                     let diagnostics = ImmutableArray.Create diagnostic
                     let span,replacement =
                         try
-                            let span = ref context.Span
-                        
-                            // skip all braces and blanks until we find [
-                            while 
-                                (!span).End < sourceText.Length &&
-                                 let t = TextSpan((!span).Start,(!span).Length + 1)
-                                 let s = sourceText.GetSubText(t).ToString()
-                                 s.[s.Length-1] <> '[' do
-                                span := TextSpan((!span).Start,(!span).Length + 1)
+                            let mutable span = context.Span
 
-                            !span,sourceText.GetSubText(!span).ToString()
+                            let notStartOfBracket (span: TextSpan) =
+                                let t = TextSpan(span.Start, span.Length + 1)
+                                let s = sourceText.GetSubText(t).ToString()
+                                s.[s.Length-1] <> '['
+
+                            // skip all braces and blanks until we find [
+                            while span.End < sourceText.Length && notStartOfBracket span do
+                                span <- TextSpan(span.Start, span.Length + 1)
+
+                            span,sourceText.GetSubText(span).ToString()
                         with
                         | _ -> context.Span,sourceText.GetSubText(context.Span).ToString()
 
                     let codefix = 
-                        createTextChangeCodeFix(
-                            FSComp.SR.addIndexerDot(), 
+                        CodeFixHelpers.createTextChangeCodeFix(
+                            CompilerDiagnostics.getErrorMessage AddIndexerDot, 
                             context,
                             (fun () -> asyncMaybe.Return [| TextChange(span, replacement.TrimEnd() + ".") |]))
 

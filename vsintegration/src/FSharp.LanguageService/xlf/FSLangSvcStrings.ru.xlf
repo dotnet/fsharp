@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="IntelliSenseLoading">
         <source>Loading...</source>
-        <target state="translated">Идет загрузка...</target>
+        <target state="translated">Загрузка...</target>
         <note>displayed when waiting for IntelliSense to load</note>
       </trans-unit>
       <trans-unit id="GotoDefinitionFailed_Generic">

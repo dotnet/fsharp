@@ -120,6 +120,21 @@
   <data name="Always_place_opens_at_top_level" xml:space="preserve">
     <value>Always place open statements at the top level</value>
   </data>
+  <data name="CodeLens" xml:space="preserve">
+    <value>CodeLens</value>
+  </data>
+  <data name="CodeLens_Replace_LineLens" xml:space="preserve">
+    <value>Show annotations to the right instead of above the line</value>
+  </data>
+  <data name="CodeLens_Switch" xml:space="preserve">
+    <value>Enable CodeLens (Experimental)</value>
+  </data>
+  <data name="CodeLens_Prefix" xml:space="preserve">
+    <value>Annotation prefix</value>
+  </data>
+  <data name="CodeLens_UseColors" xml:space="preserve">
+    <value>Use colors in annotations</value>
+  </data>
   <data name="Code_Fixes" xml:space="preserve">
     <value>Code Fixes</value>
   </data>
@@ -197,5 +212,29 @@
   </data>
   <data name="Tooltip_project_check_cache_size" xml:space="preserve">
     <value>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</value>
+  </data>
+  <data name="Enter_key_always" xml:space="preserve">
+    <value>Always add new line on enter</value>
+  </data>
+  <data name="Enter_key_never" xml:space="preserve">
+    <value>Never add new line on enter</value>
+  </data>
+  <data name="Enter_key_only" xml:space="preserve">
+    <value>Only add new line on enter after end of fully typed word</value>
+  </data>
+  <data name="Enter_Key_Rule" xml:space="preserve">
+    <value>Enter key behavior</value>
+  </data>
+  <data name="Format_on_paste" xml:space="preserve">
+    <value>Re-format indentation on paste</value>
+  </data>
+  <data name="Suggest_names_for_errors_code_fix" xml:space="preserve">
+    <value>Suggest names for unresolved identifiers</value>
+  </data>
+  <data name="Text_hover" xml:space="preserve">
+    <value>Text hover</value>
+  </data>
+  <data name="Diagnostics" xml:space="preserve">
+    <value>Diagnostics</value>
   </data>
 </root>

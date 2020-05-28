@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="couldNotFindFsiExe">
         <source>Could not find fsi.exe, the F# Interactive executable.\nThis file does not exist:\n\n{0}\n</source>
-        <target state="translated">F# 대화형 실행 파일 fsi.exe를 찾을 수 없습니다.\n이 파일이 없습니다.\n\n{0}\n</target>
+        <target state="translated">F# Interactive 실행 파일 fsi.exe를 찾을 수 없습니다.\n이 파일이 없습니다.\n\n{0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="killingProcessRaisedException">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="sessionIsNotDebugFriendly">
         <source>The current F# Interactive session is not configured for debugging. For the best experience, enable debugging in F# Interactive settings, then reset the session.\n\nAttempt debugging with current settings?</source>
-        <target state="translated">현재 F# 대화형 세션이 디버깅용으로 구성되지 않았습니다. 최상의 환경을 유지하려면 F# 대화형 설정에서 디버깅을 사용하도록 설정한 다음, 세션을 다시 설정하세요.\n\n현재 설정으로 디버깅을 시도하시겠습니까?</target>
+        <target state="translated">현재 F# Interactive 세션이 디버깅용으로 구성되지 않았습니다. 최상의 환경을 유지하려면 F# Interactive 설정에서 디버깅을 사용하도록 설정한 다음 세션을 다시 설정하세요.\n\n현재 설정으로 디버깅을 시도할까요?</target>
         <note />
       </trans-unit>
       <trans-unit id="doNotShowWarningInFuture">

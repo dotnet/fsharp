@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="VSSDK workaround" Description="Disable improper SDK analyzer that throws" ToolsVersion="15.0">
+  <Rules AnalyzerId="VSSDK006CheckServicesExistAnalyzer" RuleNamespace="Microsoft.VisualStudio.SDK.Analyzers">
+    <Rule Id="VSSDK006" Action="None" />
+  </Rules>
+</RuleSet>

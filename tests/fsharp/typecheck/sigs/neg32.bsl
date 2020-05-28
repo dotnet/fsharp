@@ -7,17 +7,11 @@ neg32.fs(39,17,39,19): typecheck error FS0039: The type parameter 'T is not defi
 
 neg32.fs(40,4,40,23): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
 
-neg32.fs(40,21,40,23): typecheck error FS0039: The type parameter 'U is not defined. Maybe you want one of the following:
+neg32.fs(40,21,40,23): typecheck error FS0039: The type parameter 'U is not defined.
 
-   'T
+neg32.fs(41,21,41,23): typecheck error FS0039: The type parameter 'U is not defined.
 
-neg32.fs(41,21,41,23): typecheck error FS0039: The type parameter 'U is not defined. Maybe you want one of the following:
-
-   'T
-
-neg32.fs(41,27,41,29): typecheck error FS0039: The type parameter 'U is not defined. Maybe you want one of the following:
-
-   'T
+neg32.fs(41,27,41,29): typecheck error FS0039: The type parameter 'U is not defined.
 
 neg32.fs(42,18,42,20): typecheck error FS0039: The type parameter 'U is not defined.
 
@@ -27,17 +21,11 @@ neg32.fs(46,17,46,19): typecheck error FS0039: The type parameter 'T is not defi
 
 neg32.fs(47,4,47,23): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
 
-neg32.fs(47,21,47,23): typecheck error FS0039: The type parameter 'U is not defined. Maybe you want one of the following:
+neg32.fs(47,21,47,23): typecheck error FS0039: The type parameter 'U is not defined.
 
-   'T
+neg32.fs(48,21,48,23): typecheck error FS0039: The type parameter 'U is not defined.
 
-neg32.fs(48,21,48,23): typecheck error FS0039: The type parameter 'U is not defined. Maybe you want one of the following:
-
-   'T
-
-neg32.fs(48,27,48,29): typecheck error FS0039: The type parameter 'U is not defined. Maybe you want one of the following:
-
-   'T
+neg32.fs(48,27,48,29): typecheck error FS0039: The type parameter 'U is not defined.
 
 neg32.fs(49,18,49,20): typecheck error FS0039: The type parameter 'U is not defined.
 

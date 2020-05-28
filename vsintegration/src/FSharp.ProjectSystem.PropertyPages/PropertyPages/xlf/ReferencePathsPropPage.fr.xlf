@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="FolderBrowse.Text">
         <source>...</source>
-        <target state="translated">...</target>
+        <target state="new">...</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUp.AccessibleName">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="RemoveFolder.AccessibleName">
         <source>Delete</source>
-        <target state="translated">Supprimer</target>
+        <target state="translated">supprimer</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderLabel.Text">

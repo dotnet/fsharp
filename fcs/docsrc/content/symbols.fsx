@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net461"
 (**
 Compiler Services: Working with symbols
 ============================================
@@ -18,7 +18,8 @@ of `FSharpChecker`:
 
 open System
 open System.IO
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()
@@ -31,7 +32,7 @@ We now perform type checking on the specified input:
 
 let parseAndTypeCheckSingleFile (file, input) = 
     // Get context representing a stand-alone (script) file
-    let projOptions = 
+    let projOptions, errors = 
         checker.GetProjectOptionsFromScript(file, input)
         |> Async.RunSynchronously
 
@@ -72,7 +73,7 @@ type C() =
     member x.P = 1
       """
 let parseFileResults, checkFileResults = 
-    parseAndTypeCheckSingleFile(file, input2)
+    parseAndTypeCheckSingleFile(file, SourceText.ofString input2)
 
 (**
 Now get the partial assembly signature for the code:
@@ -100,7 +101,7 @@ Now get the value that corresponds to the function defined in the code:
 let fnVal = moduleEntity.MembersFunctionsAndValues.[0]
 
 (**
-Now look around at the properties describing the function value. All fo the following evaluate to `true`:
+Now look around at the properties describing the function value. All of the following evaluate to `true`:
 *)
 fnVal.Attributes.Count = 1
 fnVal.CurriedParameterGroups.Count // 1
@@ -109,8 +110,8 @@ fnVal.CurriedParameterGroups.[0].[0].Name // "x"
 fnVal.CurriedParameterGroups.[0].[1].Name // "y"
 fnVal.DeclarationLocation.StartLine // 3
 fnVal.DisplayName // "foo"
-fnVal.DeclaringEntity.DisplayName // "Test"
-fnVal.DeclaringEntity.DeclarationLocation.StartLine // 1
+fnVal.DeclaringEntity.Value.DisplayName // "Test"
+fnVal.DeclaringEntity.Value.DeclarationLocation.StartLine // 1
 fnVal.GenericParameters.Count // 0
 fnVal.InlineAnnotation // FSharpInlineAnnotation.OptionalInline
 fnVal.IsActivePattern // false
@@ -168,8 +169,8 @@ used in the compilation, called the `ProjectContext`:
 *)
 let projectContext = checkFileResults.ProjectContext
     
-for ass in projectContext.GetReferencedAssemblies() do
-    match ass.FileName with 
+for assembly in projectContext.GetReferencedAssemblies() do
+    match assembly.FileName with 
     | None -> printfn "compilation referenced an assembly without a file" 
     | Some s -> printfn "compilation references assembly '%s'" s
     
@@ -177,9 +178,9 @@ for ass in projectContext.GetReferencedAssemblies() do
 (**
 **Notes:**
 
-  - If incomplete code is present, some or all of the attirbutes may not be quite as expected.
+  - If incomplete code is present, some or all of the attributes may not be quite as expected.
   - If some assembly references are missing (which is actually very, very common), then 'IsUnresolved'  may
-    be true on values, members and/or entites related to external assemblies.  You should be sure to make your
+    be true on values, members and/or entities related to external assemblies.  You should be sure to make your
     code robust against IsUnresolved exceptions.
 
 *)
@@ -193,7 +194,7 @@ the project for a single script. By specifying a different "projOptions" you can
 a specification of a larger project.
 *)
 let parseAndCheckScript (file, input) = 
-    let projOptions = 
+    let projOptions, errors = 
         checker.GetProjectOptionsFromScript(file, input)
         |> Async.RunSynchronously
 

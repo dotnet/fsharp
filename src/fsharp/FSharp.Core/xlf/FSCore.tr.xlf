@@ -707,6 +707,11 @@
         <target state="translated">Bu geçerli bir sorgu ifadesi değil. '{0}' yapısı sorguda kullanıldı, ancak F#-to-LINQ çevirmeni tarafından tanınmıyor. İzin verilen soruların belirtimini denetleyin ve işlemlerden bazılarını sorgu ifadesinin dışına taşımayı düşünün.</target>
         <note />
       </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism pozitif olmalıdır, değeri: {0}</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

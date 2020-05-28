@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 open System.Threading
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 
@@ -22,6 +22,9 @@ type internal IReactorOperations =
 /// Reactor operations
 [<Sealed>]
 type internal Reactor =
+
+    /// Allows to specify the language for error messages
+    member SetPreferredUILang : string option -> unit
 
     /// Set the background building function, which is called repeatedly
     /// until it returns 'false'.  If None then no background operation is used.

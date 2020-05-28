@@ -7,6 +7,31 @@
         <target state="translated">open-Anweisungen immer an oberster Ebene platzieren</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">Anmerkungen nicht oberhalb der Zeile, sondern rechts neben der Zeile anzeigen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">CodeLens aktivieren (experimentell)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">Anmerkungspräfix</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">Farben in Anmerkungen verwenden</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">Codefehlerbehebungen</target>
@@ -15,6 +40,11 @@
       <trans-unit id="Completion_Lists">
         <source>Completion Lists</source>
         <target state="translated">Vervollständigungslisten</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="translated">Diagnose</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -77,6 +107,11 @@
         <target state="translated">_Durchgezogene Unterstreichung</target>
         <note />
       </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="translated">Texthover</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
         <source>Remove unused open statements</source>
         <target state="translated">Nicht verwendete "open"-Anweisungen entfernen</target>
@@ -135,6 +170,36 @@
       <trans-unit id="Tooltip_project_check_cache_size">
         <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
         <target state="translated">Für IDE-Features werden Projektdaten zwischengespeichert. Bei höheren Werten wird mehr Arbeitsspeicher beansprucht, weil mehr Projekte zwischengespeichert werden. Die Optimierung dieses Werts besitzt keine Auswirkungen auf kleine oder mittelgroße Projektmappen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="translated">Nach Drücken der EINGABETASTE immer neue Zeile hinzufügen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="translated">Nach Drücken der EINGABETASTE niemals neue Zeile hinzufügen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="translated">Nach Drücken der EINGABETASTE nur nach dem Ende eines vollständigen Worts neue Zeile hinzufügen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="translated">Eingabetastenverhalten</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Format_on_paste">
+        <source>Re-format indentation on paste</source>
+        <target state="translated">Einzug beim Einfügen neu formatieren</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Suggest_names_for_errors_code_fix">
+        <source>Suggest names for unresolved identifiers</source>
+        <target state="translated">Namen für nicht aufgelöste Bezeichner vorschlagen</target>
         <note />
       </trans-unit>
     </body>

@@ -6,7 +6,7 @@ open NUnit.Framework
 open System
 open System.IO
 open System.Diagnostics
-open Microsoft.FSharp.Build
+open FSharp.Build
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open UnitTests.TestLib.Utils

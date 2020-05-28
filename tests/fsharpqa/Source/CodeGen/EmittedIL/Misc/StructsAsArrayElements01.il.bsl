@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:4:3:0
 }
 .assembly StructsAsArrayElements01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.StructsAsArrayElements01
 {
-  // Offset: 0x00000000 Length: 0x00000764
+  // Offset: 0x00000000 Length: 0x00000758
 }
 .mresource public FSharpOptimizationData.StructsAsArrayElements01
 {
-  // Offset: 0x00000768 Length: 0x0000022C
+  // Offset: 0x00000760 Length: 0x0000022C
 }
 .module StructsAsArrayElements01.dll
-// MVID: {59B19213-29F3-6E68-A745-03831392B159}
+// MVID: {5B17FC4F-29F3-6E68-A745-03834FFC175B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002D0000
+// Image base: 0x00E30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -331,28 +331,26 @@
   .method private specialname rtspecialname static 
           void  .cctor() cil managed
   {
-    // Code size       43 (0x2b)
+    // Code size       35 (0x23)
     .maxstack  4
     .locals init ([0] valuetype StructsAsArrayElements01/T[] a,
              [1] valuetype StructsAsArrayElements01/T V_1)
     .line 11,11 : 1,48 ''
     IL_0000:  ldc.i4.s   10
-    IL_0002:  ldloca.s   V_1
-    IL_0004:  initobj    StructsAsArrayElements01/T
-    IL_000a:  ldloc.1
-    IL_000b:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Create<valuetype StructsAsArrayElements01/T>(int32,
+    IL_0002:  ldloc.1
+    IL_0003:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::Create<valuetype StructsAsArrayElements01/T>(int32,
                                                                                                                                    !!0)
-    IL_0010:  dup
-    IL_0011:  stsfld     valuetype StructsAsArrayElements01/T[] '<StartupCode$StructsAsArrayElements01>'.$StructsAsArrayElements01::a@11
-    IL_0016:  stloc.0
+    IL_0008:  dup
+    IL_0009:  stsfld     valuetype StructsAsArrayElements01/T[] '<StartupCode$StructsAsArrayElements01>'.$StructsAsArrayElements01::a@11
+    IL_000e:  stloc.0
     .line 12,12 : 1,13 ''
-    IL_0017:  call       valuetype StructsAsArrayElements01/T[] StructsAsArrayElements01::get_a()
-    IL_001c:  ldc.i4.0
-    IL_001d:  ldelema    StructsAsArrayElements01/T
-    IL_0022:  ldc.i4.s   27
-    IL_0024:  call       instance void StructsAsArrayElements01/T::Set(int32)
-    IL_0029:  nop
-    IL_002a:  ret
+    IL_000f:  call       valuetype StructsAsArrayElements01/T[] StructsAsArrayElements01::get_a()
+    IL_0014:  ldc.i4.0
+    IL_0015:  ldelema    StructsAsArrayElements01/T
+    IL_001a:  ldc.i4.s   27
+    IL_001c:  call       instance void StructsAsArrayElements01/T::Set(int32)
+    IL_0021:  nop
+    IL_0022:  ret
   } // end of method $StructsAsArrayElements01::.cctor
 
 } // end of class '<StartupCode$StructsAsArrayElements01>'.$StructsAsArrayElements01

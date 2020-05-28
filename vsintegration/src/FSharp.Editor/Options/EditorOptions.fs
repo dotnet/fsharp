@@ -3,10 +3,10 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
-
+open System.Windows
+open System.Windows.Controls
+open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.FSharp.UIResources
-open SettingsPersistence
-open OptionsUIHelpers
 
 module DefaultTuning = 
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
@@ -18,12 +18,24 @@ module DefaultTuning =
     /// Re-tokenizing is fast so we don't need to save this data long.
     let PerDocumentSavedDataSlidingWindow = TimeSpan(0,0,10)(* seconds *)
 
+type EnterKeySetting =
+    | NeverNewline
+    | NewlineOnCompleteWord
+    | AlwaysNewline
+
 // CLIMutable to make the record work also as a view model
 [<CLIMutable>]
 type IntelliSenseOptions =
   { ShowAfterCharIsTyped: bool
     ShowAfterCharIsDeleted: bool
-    ShowAllSymbols : bool }
+    IncludeSymbolsFromUnopenedNamespacesOrModules : bool
+    EnterKeySetting : EnterKeySetting }
+    static member Default =
+      { ShowAfterCharIsTyped = true
+        ShowAfterCharIsDeleted = false
+        IncludeSymbolsFromUnopenedNamespacesOrModules = false
+        EnterKeySetting = EnterKeySetting.NeverNewline}
+
 
 [<RequireQualifiedAccess>]
 type QuickInfoUnderlineStyle = Dot | Dash | Solid
@@ -32,13 +44,25 @@ type QuickInfoUnderlineStyle = Dot | Dash | Solid
 type QuickInfoOptions =
     { DisplayLinks: bool
       UnderlineStyle: QuickInfoUnderlineStyle }
+    static member Default =
+      { DisplayLinks = true
+        UnderlineStyle = QuickInfoUnderlineStyle.Solid }
 
 [<CLIMutable>]
 type CodeFixesOptions =
     { SimplifyName: bool
       AlwaysPlaceOpensAtTopLevel: bool
       UnusedOpens: bool 
-      UnusedDeclarations: bool }
+      UnusedDeclarations: bool
+      SuggestNamesForErrors: bool }
+    static member Default =
+      { // We have this off by default, disable until we work out how to make this low priority 
+        // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
+        SimplifyName = false 
+        AlwaysPlaceOpensAtTopLevel = true
+        UnusedOpens = true 
+        UnusedDeclarations = true
+        SuggestNamesForErrors = true }
 
 [<CLIMutable>]
 type LanguageServicePerformanceOptions = 
@@ -46,52 +70,81 @@ type LanguageServicePerformanceOptions =
       AllowStaleCompletionResults: bool
       TimeUntilStaleCompletion: int
       ProjectCheckCacheSize: int }
+    static member Default =
+      { EnableInMemoryCrossProjectReferences = true
+        AllowStaleCompletionResults = true
+        TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
+        ProjectCheckCacheSize = 200 }
+
+[<CLIMutable>]
+type CodeLensOptions =
+  { Enabled : bool
+    ReplaceWithLineLens: bool
+    UseColors: bool
+    Prefix : string }
+    static member Default =
+      { Enabled = false
+        UseColors = false
+        ReplaceWithLineLens = true
+        Prefix = "// " }
 
 [<CLIMutable>]
 type AdvancedOptions =
-    { IsBlockStructureEnabled: bool 
+    { IsBlockStructureEnabled: bool
       IsOutliningEnabled: bool }
+    static member Default =
+      { IsBlockStructureEnabled = true
+        IsOutliningEnabled = true }
 
-[<Export(typeof<ISettings>)>]
-type internal Settings [<ImportingConstructor>](store: SettingsStore) =
-    do  // Initialize default settings
+[<CLIMutable>]
+type FormattingOptions =
+    { FormatOnPaste: bool }
+    static member Default =
+        { FormatOnPaste = true }
+
+[<Export>]
+[<Export(typeof<IPersistSettings>)>]
+type EditorOptions 
+    [<ImportingConstructor>] 
+    (
+      [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider
+    ) =
+
+    let store = SettingsStore(serviceProvider)
         
-        store.RegisterDefault
-            { ShowAfterCharIsTyped = true
-              ShowAfterCharIsDeleted = true
-              ShowAllSymbols = true }
+    do
+        store.Register QuickInfoOptions.Default
+        store.Register CodeFixesOptions.Default
+        store.Register LanguageServicePerformanceOptions.Default
+        store.Register AdvancedOptions.Default
+        store.Register IntelliSenseOptions.Default
+        store.Register CodeLensOptions.Default
+        store.Register FormattingOptions.Default
 
-        store.RegisterDefault
-            { DisplayLinks = true
-              UnderlineStyle = QuickInfoUnderlineStyle.Solid }
+    member __.IntelliSense : IntelliSenseOptions = store.Get()
+    member __.QuickInfo : QuickInfoOptions = store.Get()
+    member __.CodeFixes : CodeFixesOptions = store.Get()
+    member __.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Get()
+    member __.Advanced: AdvancedOptions = store.Get()
+    member __.CodeLens: CodeLensOptions = store.Get()
+    member __.Formatting : FormattingOptions = store.Get()
 
-        store.RegisterDefault
-            { // We have this off by default, disable until we work out how to make this low priority 
-              // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
-              SimplifyName = false 
-              AlwaysPlaceOpensAtTopLevel = false
-              UnusedOpens = true 
-              UnusedDeclarations = true }
+    interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
-        store.RegisterDefault
-            { EnableInMemoryCrossProjectReferences = true
-              AllowStaleCompletionResults = true
-              TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
-              ProjectCheckCacheSize = 200 }
+    interface IPersistSettings with
+        member __.LoadSettings() = store.LoadSettings()
+        member __.SaveSettings(settings) = store.SaveSettings(settings)
 
-        store.RegisterDefault
-            { IsBlockStructureEnabled = true 
-              IsOutliningEnabled = true }
 
-    interface ISettings
-
-    static member IntelliSense : IntelliSenseOptions = getSettings()
-    static member QuickInfo : QuickInfoOptions = getSettings()
-    static member CodeFixes : CodeFixesOptions = getSettings()
-    static member LanguageServicePerformance : LanguageServicePerformanceOptions = getSettings()
-    static member Advanced: AdvancedOptions = getSettings()
+[<AutoOpen>]
+module internal WorkspaceSettingFromDocumentExtension =
+    type Microsoft.CodeAnalysis.Document with
+        member this.FSharpOptions =
+            this.Project.Solution.Workspace.Services.GetService() : EditorOptions
 
 module internal OptionsUI =
+
+    open OptionsUIHelpers
 
     [<Guid(Guids.intelliSenseOptionPageIdString)>]
     type internal IntelliSenseOptionPage() =
@@ -99,8 +152,14 @@ module internal OptionsUI =
         override this.CreateView() =
             let view = IntelliSenseOptionControl()
             view.charTyped.Unchecked.Add <| fun _ -> view.charDeleted.IsChecked <- System.Nullable false
-            upcast view              
-            
+
+            let path = "EnterKeySetting"
+            bindRadioButton view.nevernewline path EnterKeySetting.NeverNewline 
+            bindRadioButton view.newlinecompleteline path EnterKeySetting.NewlineOnCompleteWord 
+            bindRadioButton view.alwaysnewline path EnterKeySetting.AlwaysNewline
+
+            upcast view
+
     [<Guid(Guids.quickInfoOptionPageIdString)>]
     type internal QuickInfoOptionPage() =
         inherit AbstractOptionPage<QuickInfoOptions>()
@@ -117,7 +176,7 @@ module internal OptionsUI =
     type internal CodeFixesOptionPage() =
         inherit AbstractOptionPage<CodeFixesOptions>()
         override this.CreateView() =
-            upcast CodeFixesOptionControl()            
+            upcast CodeFixesOptionControl()
 
     [<Guid(Guids.languageServicePerformanceOptionPageIdString)>]
     type internal LanguageServicePerformanceOptionPage() =
@@ -125,8 +184,20 @@ module internal OptionsUI =
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
 
+    [<Guid(Guids.codeLensOptionPageIdString)>]
+    type internal CodeLensOptionPage() =
+        inherit AbstractOptionPage<CodeLensOptions>()
+        override this.CreateView() =
+            upcast CodeLensOptionControl()
+
     [<Guid(Guids.advancedSettingsPageIdSring)>]
     type internal AdvancedSettingsOptionPage() =
         inherit AbstractOptionPage<AdvancedOptions>()
         override __.CreateView() =
             upcast AdvancedOptionsControl()
+
+    [<Guid(Guids.formattingOptionPageIdString)>]
+    type internal FormattingOptionPage() =
+        inherit AbstractOptionPage<FormattingOptions>()
+        override __.CreateView() =
+            upcast FormattingOptionsControl()

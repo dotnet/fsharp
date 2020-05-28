@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
 // List
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 let samples = [  [1;1+1] = [1;2];                   // tuples support structural equality
                  [hash (1,1+1)] = [hash (1,2)];     // Function calls return identical values

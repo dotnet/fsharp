@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line3">
         <source>and</source>
-        <target state="translated">및</target>
+        <target state="translated">그리고</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanValues">
@@ -444,7 +444,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line3">
         <source>which make use of Partial Application.</source>
-        <target state="translated">부분 응용 프로그램을 사용합니다.</target>
+        <target state="translated">부분 애플리케이션을 사용합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Pipes-Line4">
@@ -454,7 +454,7 @@
       </trans-unit>
       <trans-unit id="Pipes-Line5">
         <source>To learn more about Partial Application, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/#partial-application-of-arguments</source>
-        <target state="translated">부분 응용 프로그램에 대해 자세히 알아보려면 다음을 참조하세요. https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/#partial-application-of-arguments</target>
+        <target state="translated">부분 애플리케이션에 대해 자세히 알아보려면 다음을 참조하세요. https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/functions/#partial-application-of-arguments</target>
         <note />
       </trans-unit>
       <trans-unit id="Squares">
@@ -589,7 +589,7 @@
       </trans-unit>
       <trans-unit id="PipesComposition-Line10">
         <source>use Partial Application and the input and output types of each data processing operation match</source>
-        <target state="translated">부분 응용 프로그램을 사용하고 각 데이터 처리 작업의 입력 및 출력 형식이 사용 중인 함수의</target>
+        <target state="translated">부분 애플리케이션을 사용하고 각 데이터 처리 작업의 입력 및 출력 형식이 사용 중인 함수의</target>
         <note />
       </trans-unit>
       <trans-unit id="PipesComposition-Line11">
@@ -1259,7 +1259,7 @@
       </trans-unit>
       <trans-unit id="MatchShorthand-Line2">
         <source>which is useful when you're writing functions which make use of Partial Application.</source>
-        <target state="translated">이 구문은 부분 응용 프로그램을 사용하는 함수를 작성할 때 유용합니다.</target>
+        <target state="translated">이 구문은 부분 애플리케이션을 사용하는 함수를 작성할 때 유용합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="ParseHelpers">
@@ -1594,7 +1594,7 @@
       </trans-unit>
       <trans-unit id="Events-Line1">
         <source>Events are a common idiom for .NET programming, especially with WinForms or WPF applications.</source>
-        <target state="translated">이벤트는 특히 WinForms 또는 WPF 응용 프로그램을 사용하는 .NET 프로그래밍에서 일반적으로 사용되는 말입니다.</target>
+        <target state="translated">이벤트는 특히 WinForms 또는 WPF 애플리케이션을 사용하는 .NET 프로그래밍에서 일반적으로 사용되는 말입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Events-Line2">

@@ -1,6 +1,6 @@
 // #Conformance #DeclarationElements #MemberDefinitions #Overloading 
 // As of Beta2, we don't need OverloadIDs anymore!
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 type Foo() =
     member this.SomeMethod (x:int)    = true
     member this.SomeMethod (y:string) = false

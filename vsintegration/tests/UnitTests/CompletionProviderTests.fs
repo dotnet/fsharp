@@ -31,7 +31,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
@@ -56,7 +56,7 @@ let formatCompletions(completions : string seq) =
 let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, fun _ -> []) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
@@ -104,7 +104,7 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     
     let actual = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, fun _ -> []) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.toList
@@ -121,11 +121,6 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
 
 let VerifyNoCompletionList(fileContents: string, marker: string) =
     VerifyCompletionListExactly(fileContents, marker, [])
-
-[<OneTimeSetUp>]
-let usingDefaultSettings() = 
-    SettingsPersistence.setSettings { ShowAfterCharIsTyped = true; ShowAfterCharIsDeleted = false; ShowAllSymbols = true }
-    SettingsPersistence.setSettings { EnableInMemoryCrossProjectReferences = true; AllowStaleCompletionResults = true; TimeUntilStaleCompletion = 2000; ProjectCheckCacheSize = 200 }
 
 [<Test>]
 let ShouldTriggerCompletionAtCorrectMarkers() =
@@ -149,18 +144,18 @@ System.Console.WriteLine(x + y)
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.AreEqual(shouldBeTriggered, triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result")
 
 [<Test>]
-let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertion() = 
-    for triggerKind in [CompletionTriggerKind.Deletion; CompletionTriggerKind.Invoke; CompletionTriggerKind.Snippets ] do
-    let fileContents = "System.Console.WriteLine(123)"
-    let caretPosition = fileContents.IndexOf("System.")
-    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, triggerKind, getInfo)
-    Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertionOrDeletion() = 
+    for triggerKind in [ CompletionTriggerKind.Invoke; CompletionTriggerKind.Snippets ] do
+        let fileContents = "System.Console.WriteLine(123)"
+        let caretPosition = fileContents.IndexOf("rite")
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, triggerKind, getInfo, IntelliSenseOptions.Default)
+        Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
 [<Test>]
 let ShouldNotTriggerCompletionInStringLiterals() =
@@ -168,7 +163,7 @@ let ShouldNotTriggerCompletionInStringLiterals() =
     let caretPosition = fileContents.IndexOf("System.")
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
 [<Test>]
@@ -182,7 +177,7 @@ System.Console.WriteLine()
     let caretPosition = fileContents.IndexOf("System.")
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
 [<Test>]
@@ -195,7 +190,7 @@ System.Console.WriteLine()
     let caretPosition = fileContents.IndexOf("System.")
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
 [<Test>]
@@ -208,7 +203,7 @@ let f() =
     let caretPosition = fileContents.IndexOf("|.")
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger on operators")
 
 [<Test>]
@@ -221,7 +216,7 @@ module Foo = module end
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsTrue(triggered, "Completion should trigger on Attributes.")
 
 [<Test>]
@@ -234,7 +229,7 @@ printfn "%d" !f
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a dereference operator (!).")
 
 [<Test>]
@@ -248,7 +243,7 @@ use ptr = fixed &p
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows an addressOf operator (&).")
 
 [<Test>]
@@ -272,7 +267,7 @@ xVal**y
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let getInfo() = documentId, filePath, []
-        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
         Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
 
 [<Test>]
@@ -284,7 +279,7 @@ l"""
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsTrue(triggered, "Completion should trigger after typing an Insertion character at the top of the file, e.g. a function definition in a new script file.")
 
 [<Test>]
@@ -448,6 +443,14 @@ List().
                     "Remove"; "RemoveAll"; "RemoveAt"; "RemoveRange"; "Reverse"; "Sort"; "ToArray"; "TrimExcess"; "TrueForAll"; "Equals"; "GetHashCode"; "GetType"; "ToString"
                     "ExtensionMeth"]
     VerifyCompletionListExactly(fileContents, "List().", expected)
+
+[<Test>]
+let ``Completion for open contains namespaces and static types``() =
+    let fileContents = """
+open System.Ma
+"""
+    let expected = ["Management"; "Math"] // both namespace and static type
+    VerifyCompletionList(fileContents, "System.Ma", expected, [])
 
 [<Test>]
 let ``No completion on type name at declaration site``() =
@@ -616,6 +619,34 @@ let _ =
     }
 """
     VerifyCompletionList(fileContents, "        join", ["groupJoin"; "join"; "leftOuterJoin"; "joinLocal"], [])
+
+[<Test>]
+let ``Byref Extension Methods`` () =
+    let fileContents = """
+module Extensions =
+    open System
+    open System.Runtime.CompilerServices
+
+    [<Struct>]
+    type Message = Message of String
+
+    [<Sealed; AbstractClass; Extension>]
+    type MessageExtensions private () =
+        let (|Message|) (Message message) = message
+
+        [<Extension>]
+        static member Print (Message message : Message) =
+            printfn "%s" message
+
+        [<Extension>]
+        static member PrintRef (Message message : inref<Message>) =
+            printfn "%s" message
+
+    let wrappedMessage = Message "Hello World"
+
+    wrappedMessage.
+"""
+    VerifyCompletionList(fileContents, "wrappedMessage.", ["PrintRef"], [])
 
 #if EXE
 ShouldDisplaySystemNamespace()
