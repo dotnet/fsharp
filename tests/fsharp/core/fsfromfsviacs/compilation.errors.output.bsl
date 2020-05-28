@@ -68,12 +68,12 @@ Candidates:
  - SomeClass.OverloadedMethodTakingOptionals(?x: int,?y: string,?d: float) : int
  - SomeClass.OverloadedMethodTakingOptionals(?x: int,?y: string,?d: float32) : int
 
-test.fsx(229,34): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
+test.fsx(229,35): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
 Candidates:
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int64>,?y: string,?d: Nullable<float>) : int
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int>,?y: string,?d: Nullable<float>) : int
 
-test.fsx(230,34): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
+test.fsx(230,35): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: y:string
 
@@ -81,7 +81,7 @@ Candidates:
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int64>,?y: string,?d: Nullable<float>) : int
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int>,?y: string,?d: Nullable<float>) : int
 
-test.fsx(231,34): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
+test.fsx(231,35): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: d:Nullable<float>
 
@@ -89,7 +89,7 @@ Candidates:
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int64>,?y: string,?d: Nullable<float>) : int
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int>,?y: string,?d: Nullable<float>) : int
 
-test.fsx(232,35): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
+test.fsx(232,36): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: d:float
 
@@ -97,7 +97,7 @@ Candidates:
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int64>,?y: string,?d: Nullable<float>) : int
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int>,?y: string,?d: Nullable<float>) : int
 
-test.fsx(233,35): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
+test.fsx(233,36): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: d:float option
 
@@ -105,7 +105,7 @@ Candidates:
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int64>,?y: string,?d: Nullable<float>) : int
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int>,?y: string,?d: Nullable<float>) : int
 
-test.fsx(234,35): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
+test.fsx(234,36): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: x:'a option
 
@@ -113,7 +113,7 @@ Candidates:
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int64>,?y: string,?d: Nullable<float>) : int
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int>,?y: string,?d: Nullable<float>) : int
 
-test.fsx(235,35): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
+test.fsx(235,36): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: d:'a option
 
@@ -121,7 +121,7 @@ Candidates:
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int64>,?y: string,?d: Nullable<float>) : int
  - SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x: Nullable<int>,?y: string,?d: Nullable<float>) : int
 
-test.fsx(237,42): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
+test.fsx(237,43): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionalsWithDefaults' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'a0
 
@@ -142,7 +142,7 @@ Candidates:
  - SomeClass.OverloadedMethodTakingNullableOptionals(?x: Nullable<int64>,?y: string,?d: Nullable<float>) : int
  - SomeClass.OverloadedMethodTakingNullableOptionals(?x: Nullable<int>,?y: string,?d: Nullable<float>) : int
 
-test.fsx(241,34): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionals' could not be determined based on type information prior to this program point. A type annotation may be needed.
+test.fsx(241,33): error FS0041: A unique overload for method 'OverloadedMethodTakingNullableOptionals' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: d:float
 
