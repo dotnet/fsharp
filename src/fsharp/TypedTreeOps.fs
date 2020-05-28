@@ -2311,7 +2311,7 @@ let CountEnclosingTyparsOfActualParentOfVal (v: Val) =
 
 let GetTopValTypeInCompiledForm g topValInfo numEnclosingTypars ty m =
     let tps, paramArgInfos, rty, retInfo = GetTopValTypeInFSharpForm g topValInfo ty m
-    let witnessInfos = GetTraitWitnessInfosOfTypars g numEnclosingTypars tps // TODO: parentTypars
+    let witnessInfos = GetTraitWitnessInfosOfTypars g numEnclosingTypars tps
     // Eliminate lone single unit arguments
     let paramArgInfos = 
         match paramArgInfos, topValInfo.ArgInfos with 
@@ -7022,7 +7022,7 @@ let mkCallNewDecimal (g: TcGlobals) m (e1, e2, e3, e4, e5) = mkApps g (typedExpr
 let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety e1 = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
 
 let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
-    let info, tinst = g.makeBuiltInWitnessInfo traitInfo
+    let info, tinst = g.MakeBuiltInWitnessInfo traitInfo
     let vref = ValRefForIntrinsic info
     match vref.TryDeref with
     | ValueSome v -> 

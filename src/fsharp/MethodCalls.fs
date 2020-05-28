@@ -1906,7 +1906,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         | None -> None // the trait has been generalized
         | Some _-> 
         // For these operators, the witness is just a call to the coresponding FSharp.Core operator
-        match g.tryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy traitInfo argExprs with
+        match g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy traitInfo argExprs with
         | Some (info, tyargs, actualArgExprs) -> 
             tryMkCallCoreFunctionAsBuiltInWitness g info tyargs actualArgExprs m
         | None -> 

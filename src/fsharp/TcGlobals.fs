@@ -1474,24 +1474,37 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       ((ValRefForIntrinsic g.call_with_witnesses_info).TryDeref.IsSome && langVersion.SupportsFeature LanguageFeature.WitnessPassing)
 
   member __.FindSysTyconRef path nm = findSysTyconRef path nm
+
   member __.TryFindSysTyconRef path nm = tryFindSysTyconRef path nm
+
   member __.FindSysILTypeRef nm = findSysILTypeRef nm
+
   member __.TryFindSysILTypeRef nm = tryFindSysILTypeRef nm
+
   member __.FindSysAttrib nm = findSysAttrib nm
+
   member __.TryFindSysAttrib nm = tryFindSysAttrib nm
 
-  member val ilxPubCloEnv=EraseClosures.newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs)
+  member val ilxPubCloEnv = 
+      EraseClosures.newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs)
+
   member __.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
+
   member __.AddFieldGeneratedAttrs mdef = addFieldGeneratedAttrs mdef
+
   member __.AddFieldNeverAttrs mdef = addFieldNeverAttrs mdef
-  member __.mkDebuggerHiddenAttribute()      = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerHiddenAttribute, [], [], [])
-  member __.mkDebuggerDisplayAttribute s     = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
-  member __.DebuggerBrowsableNeverAttribute =   mkDebuggerBrowsableNeverAttribute() 
 
-  member __.mkDebuggerStepThroughAttribute() = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
+  member __.mkDebuggerHiddenAttribute() = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerHiddenAttribute, [], [], [])
+
+  member __.mkDebuggerDisplayAttribute s = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerDisplayAttribute, [ilg.typ_String], [ILAttribElem.String (Some s)], [])
+
+  member __.DebuggerBrowsableNeverAttribute = mkDebuggerBrowsableNeverAttribute() 
+
+  member __.mkDebuggerStepThroughAttribute() =
+      mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerStepThroughAttribute, [], [], [])
+
   member __.mkDebuggableAttribute (jitOptimizerDisabled) =
-        mkILCustomAttribute ilg (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
-
+      mkILCustomAttribute ilg (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
   member __.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
         let debuggingMode = 
@@ -1511,7 +1524,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   /// Find an FSharp.Core LaguagePrimitives dynamic function that corresponds to a trait witness, e.g.
   /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
-  member __.makeBuiltInWitnessInfo (t: TraitConstraintInfo) =
+  member __.MakeBuiltInWitnessInfo (t: TraitConstraintInfo) =
       let memberName = 
           let nm = t.MemberName
           let coreName = 
@@ -1539,7 +1552,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       vref, tinst
 
   /// Find an FSharp.Core operator that corresponds to a trait witness
-  member g.tryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) argExprs =
+  member g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) argExprs =
 
     match t.MemberName, t.ArgumentTypes, t.ReturnType, argExprs with 
     | "get_Sign", [aty], _, (objExpr :: _) -> 
@@ -1587,7 +1600,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
         Some (g.getstring_info, [], argExprs)
     | _ ->
         None
-  member __.eraseClassUnionDef = EraseUnions.mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addPropertyNeverAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs, mkDebuggerTypeProxyAttribute) ilg
+
+  member __.EraseClassUnionDef cud =
+     EraseUnions.mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addPropertyNeverAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs, mkDebuggerTypeProxyAttribute) ilg cud
 
 #if DEBUG
 // This global is only used during debug output 
