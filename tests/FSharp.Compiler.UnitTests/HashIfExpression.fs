@@ -7,14 +7,16 @@ open System.Text
 
 open NUnit.Framework
 
+open Internal.Utilities
 open Internal.Utilities.Text.Lexing
+
 open FSharp.Compiler
 open FSharp.Compiler.Lexer
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Ast
-open Internal.Utilities
+open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.SyntaxTree
 
 [<TestFixture>]
 type HashIfExpression()     =
@@ -59,12 +61,11 @@ type HashIfExpression()     =
                     member x.ErrorCount         = errors.Count
             }
 
-        let stack           : LexerIfdefStack = ref []
         let lightSyntax     = LightSyntaxStatus(true, false)
         let resourceManager = LexResourceManager ()
         let defines         = []
         let startPos        = Position.Empty
-        let args            = mkLexargs ("dummy", defines, lightSyntax, resourceManager, stack, errorLogger, PathMap.empty)
+        let args            = mkLexargs ("dummy", defines, lightSyntax, resourceManager, [], errorLogger, PathMap.empty)
 
         CompileThreadStatic.ErrorLogger <- errorLogger
 

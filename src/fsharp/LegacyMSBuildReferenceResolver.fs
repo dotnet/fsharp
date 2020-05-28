@@ -255,12 +255,12 @@ module LegacyMSBuildReferenceResolver
           "Software\Microsoft\.NetFramework", "AssemblyFoldersEx" , ""              
         if Array.isEmpty references then [| |] else
 
-        let backgroundException = ref false
+        let mutable backgroundException = false
 
         let protect f = 
-            if not !backgroundException then 
+            if not backgroundException then 
                 try f() 
-                with _ -> backgroundException := true
+                with _ -> backgroundException <- true
 
         let engine = 
             { new IBuildEngine with 
@@ -344,7 +344,7 @@ module LegacyMSBuildReferenceResolver
 #if ENABLE_MONO_SUPPORT
         // The properties TargetedRuntimeVersion and CopyLocalDependenciesWhenParentReferenceInGac 
         // are not available on Mono. So we only set them if available (to avoid a compile-time dependency). 
-        if not FSharp.Compiler.AbstractIL.IL.runningOnMono then  
+        if not FSharp.Compiler.AbstractIL.Internal.Utils.runningOnMono then
             typeof<ResolveAssemblyReference>.InvokeMember("TargetedRuntimeVersion",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box targetedRuntimeVersionValue |])  |> ignore 
             typeof<ResolveAssemblyReference>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
 #else

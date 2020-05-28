@@ -12,9 +12,7 @@ open NUnit.Framework
 open FsUnit
 open System
 open System.IO
-open System.Collections.Generic
 open System.Text
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Service.Tests.Common
@@ -76,7 +74,7 @@ let UseMyFileSystem() =
 
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``FileSystem compilation test``() = 

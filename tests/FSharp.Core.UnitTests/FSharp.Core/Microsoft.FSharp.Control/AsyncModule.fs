@@ -3,7 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Control.Async module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control
+namespace FSharp.Core.UnitTests.Control
 
 open System
 open System.Threading
@@ -63,7 +63,7 @@ module ChoiceUtils =
     let runChoice (ChoiceWorkflow(ops, cancelAfter)) =
         // Step 1. build a choice workflow from the abstract representation
         let completed = ref 0
-        let returnAfter time f = async {
+        let returnAfter (time: int) f = async {
             do! Async.Sleep time
             let _ = Interlocked.Increment completed
             return f ()
@@ -630,6 +630,7 @@ type AsyncModule() =
     member this.``Parallel with maxDegreeOfParallelism`` () =
         let mutable i = 1
         let action j = async {
+            do! Async.Sleep 1
             Assert.AreEqual(j, i)
             i <- i + 1
         }
@@ -662,14 +663,17 @@ type AsyncModule() =
             Assert.AreEqual("maxDegreeOfParallelism", exc.ParamName)
             Assert.True(exc.Message.Contains("maxDegreeOfParallelism must be positive, was -1"))
 
-//  This has been failing very regularly on LINUX --- issue   :  https://github.com/dotnet/fsharp/issues/7112
-#if !TESTING_ON_LINUX
+    [<Test>]
+    member this.``RaceBetweenCancellationAndError.Parallel(maxDegreeOfParallelism)``() =
+        [| for i in 1 .. 1000 -> async { failwith "boom" } |]
+        |> fun cs -> Async.Parallel(cs, 1)
+        |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel(maxDegreeOfParallelism)"
+
     [<Test>]
     member this.``RaceBetweenCancellationAndError.Parallel``() =
-        [| for i in 1 .. 1000 -> async { return i } |]
-        |> fun cs -> Async.Parallel(cs, 1)
+        [| for i in 1 .. 1000 -> async { failwith "boom" } |]
+        |> fun cs -> Async.Parallel(cs)
         |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel"
-#endif
 
     [<Test>]
     member this.``error on one workflow should cancel all others with maxDegreeOfParallelism``() =
@@ -679,13 +683,11 @@ type AsyncModule() =
                 let job i = async {
                     if i = 55 then failwith "boom"
                     else
-                        do! Async.Sleep 1000
                         incr counter
                 }
 
-                let! _ = Async.Parallel ([ for i in 1 .. 100 -> job i ], 2) |> Async.Catch
-                do! Async.Sleep 5000
+                let! _ = Async.Parallel ([ for i in 1 .. 100 -> job i ], 1) |> Async.Catch
                 return !counter
             } |> Async.RunSynchronously
 
-        Assert.AreEqual(0, counter)
+        Assert.AreEqual(54, counter)

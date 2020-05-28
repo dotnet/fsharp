@@ -11,12 +11,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="ConsoleHelpers.fs" />
+    <Compile Include="TestHelpers.fs" />
+    <Compile Include="DependencyManagerInteractiveTests.fs" />
+    <Compile Include="DependencyManagerLineParserTests.fs" />
     <Compile Include="FSharpScriptTests.fs" />
+    <None Include="housing.csv"  CopyToOutputDirectory="PreserveNewest" />
+    <Compile Include="CompletionTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\Microsoft.DotNet.DependencyManager\Microsoft.DotNet.DependencyManager.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
   </ItemGroup>
 
 </Project>

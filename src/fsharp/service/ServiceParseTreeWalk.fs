@@ -8,8 +8,7 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
- 
+open FSharp.Compiler.SyntaxTree
 
 /// A range of utility functions to assist with traversing an AST
 module public AstTraversal =
@@ -412,8 +411,8 @@ module public AstTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
                 | SynExpr.Lazy (synExpr, _range) -> traverseSynExpr synExpr
-                | SynExpr.SequentialOrImplicitYield (_sequencePointInfoForSeq, synExpr, synExpr2, _, _range) 
-                | SynExpr.Sequential (_sequencePointInfoForSeq, _, synExpr, synExpr2, _range) -> 
+                | SynExpr.SequentialOrImplicitYield (_sequencePointInfoForSequential, synExpr, synExpr2, _, _range) 
+                | SynExpr.Sequential (_sequencePointInfoForSequential, _, synExpr, synExpr2, _range) -> 
                     [dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
@@ -473,10 +472,16 @@ module public AstTraversal =
                 | SynExpr.ImplicitZero (_range) -> None
                 | SynExpr.YieldOrReturn (_, synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.YieldOrReturnFrom (_, synExpr, _range) -> traverseSynExpr synExpr
-                | SynExpr.LetOrUseBang (_sequencePointInfoForBinding, _, _, synPat, synExpr, synExpr2, _range) -> 
-                    [dive synPat synPat.Range traversePat
-                     dive synExpr synExpr.Range traverseSynExpr
-                     dive synExpr2 synExpr2.Range traverseSynExpr]
+                | SynExpr.LetOrUseBang(_sequencePointInfoForBinding, _, _, synPat, synExpr, andBangSynExprs, synExpr2, _range) -> 
+                    [
+                        yield dive synPat synPat.Range traversePat
+                        yield dive synExpr synExpr.Range traverseSynExpr
+                        yield!
+                            [ for (_,_,_,andBangSynPat,andBangSynExpr,_) in andBangSynExprs do
+                                yield (dive andBangSynPat andBangSynPat.Range traversePat)
+                                yield (dive andBangSynExpr andBangSynExpr.Range traverseSynExpr)]
+                        yield dive synExpr2 synExpr2.Range traverseSynExpr
+                    ]
                     |> pick expr
                 | SynExpr.MatchBang (_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
@@ -504,8 +509,8 @@ module public AstTraversal =
                 | SynPat.Attrib (p, _, _) -> traversePat p
                 | SynPat.LongIdent(_, _, _, args, _, _) ->
                     match args with
-                    | SynConstructorArgs.Pats ps -> ps |> List.tryPick traversePat
-                    | SynConstructorArgs.NamePatPairs (ps, _) ->
+                    | SynArgPats.Pats ps -> ps |> List.tryPick traversePat
+                    | SynArgPats.NamePatPairs (ps, _) ->
                         ps |> List.map snd |> List.tryPick traversePat
                 | SynPat.Typed (p, ty, _) ->
                     [ traversePat p; traverseSynType ty ] |> List.tryPick id

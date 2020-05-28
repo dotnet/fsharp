@@ -5,8 +5,8 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks Condition="'$(ProtoTargetFramework)' != ''">$(ProtoTargetFramework)</TargetFrameworks>
-    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;netcoreapp2.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -26,6 +26,7 @@
     <Compile Include="FSharpEmbedResXSource.fs" />
     <Compile Include="WriteCodeFragment.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
+    <Compile Include="SubstituteText.fs" />
     <None Include="Microsoft.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
@@ -41,10 +42,6 @@
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <PackageReference Include="Microsoft.VisualFSharp.Type.Providers.Redist" Version="$(MicrosoftVisualFSharpTypeProvidersRedistVersion)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -17,9 +17,9 @@ open System.Collections.Generic
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.ILAsciiWriter 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
 open FSharp.Core.Printf
@@ -323,6 +323,21 @@ type cenv =
 
     override x.ToString() = "<cenv>"
 
+let convResolveAssemblyRef (cenv: cenv) (asmref: ILAssemblyRef) qualifiedName =
+    let assembly = 
+        match cenv.resolveAssemblyRef asmref with                     
+        | Some (Choice1Of2 path) ->
+            FileSystem.AssemblyLoadFrom path              
+        | Some (Choice2Of2 assembly) ->
+            assembly
+        | None ->
+            let asmName = convAssemblyRef asmref
+            FileSystem.AssemblyLoad asmName
+    let typT = assembly.GetType qualifiedName
+    match typT with 
+    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
+    | res -> res
+
 /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
 // This ought to be an adequate substitute for this whole function, but it needs 
 // to be thoroughly tested.
@@ -334,25 +349,15 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
     let qualifiedName = (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
     match tref.Scope with
     | ILScopeRef.Assembly asmref ->
-        let assembly = 
-            match cenv.resolveAssemblyRef asmref with                     
-            | Some (Choice1Of2 path) ->
-                FileSystem.AssemblyLoadFrom path              
-            | Some (Choice2Of2 assembly) ->
-                assembly
-            | None ->
-                let asmName = convAssemblyRef asmref
-                FileSystem.AssemblyLoad asmName
-        let typT = assembly.GetType qualifiedName
-        match typT with 
-        | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
-        | res -> res
+        convResolveAssemblyRef cenv asmref qualifiedName
     | ILScopeRef.Module _ 
     | ILScopeRef.Local _ ->
         let typT = Type.GetType qualifiedName 
         match typT with 
         | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, "<emitted>"), range0))
         | res -> res
+    | ILScopeRef.PrimaryAssembly ->
+        convResolveAssemblyRef cenv cenv.ilg.primaryAssemblyRef qualifiedName
 
 
 
@@ -2071,11 +2076,9 @@ let buildModuleFragment cenv emEnv (asmB: AssemblyBuilder) (modB: ModuleBuilder)
     m.Resources.AsList |> List.iter (fun r -> 
         let attribs = (match r.Access with ILResourceAccess.Public -> ResourceAttributes.Public | ILResourceAccess.Private -> ResourceAttributes.Private) 
         match r.Location with 
-        | ILResourceLocation.LocalIn (file, start, len) -> 
-            let bytes = FileSystem.ReadAllBytesShim(file).[start .. start + len - 1]
-            modB.DefineManifestResourceAndLog (r.Name, new MemoryStream(bytes), attribs)
-        | ILResourceLocation.LocalOut bytes -> 
-            modB.DefineManifestResourceAndLog (r.Name, new MemoryStream(bytes), attribs)
+        | ILResourceLocation.Local bytes -> 
+            use stream = bytes.AsStream()
+            modB.DefineManifestResourceAndLog (r.Name, stream, attribs)
         | ILResourceLocation.File (mr, _) -> 
            asmB.AddResourceFileAndLog (r.Name, mr.Name, attribs)
         | ILResourceLocation.Assembly _ -> 

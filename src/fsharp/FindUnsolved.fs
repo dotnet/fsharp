@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-
 /// Find unsolved, uninstantiated type variables
 module internal FSharp.Compiler.FindUnsolved
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
@@ -188,6 +188,7 @@ and accDiscrim cenv env d =
     | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _) -> 
         accExpr cenv env exp
         accTypeInst cenv env tys
+    | DecisionTreeTest.Error _ -> ()
 
 and accAttrib cenv env (Attrib(_, _k, args, props, _, _, _m)) = 
     args |> List.iter (fun (AttribExpr(expr1, expr2)) -> 

@@ -66,6 +66,9 @@ properties=""
 docker=false
 args=""
 
+BuildCategory=""
+BuildMessage=""
+
 if [[ $# = 0 ]]
 then
   usage
@@ -150,6 +153,8 @@ done
 . "$scriptroot/common/tools.sh"
 
 function TestUsingNUnit() {
+  BuildCategory="Test"
+  BuildMessage="Error running tests"
   testproject=""
   targetframework=""
   while [[ $# > 0 ]]; do
@@ -176,18 +181,21 @@ function TestUsingNUnit() {
     exit 1
   fi
 
+  filterArgs=""
+  if [[ "${RunningAsPullRequest:-}" != "true" ]]; then
+    filterArgs=" --filter TestCategory!=PullRequest"
+  fi
+
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\""
-  "$DOTNET_INSTALL_DIR/dotnet" $args || {
-    local exit_code=$?
-    Write-PipelineTelemetryError -category 'Test' "dotnet test failed for $testproject:$targetframework (exit code $exit_code)."
-    ExitWithExitCode $exit_code
-  }
+  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\"$filterArgs"
+  "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
 function BuildSolution {
+  BuildCategory="Build"
+  BuildMessage="Error preparing build"
   local solution="FSharp.sln"
   echo "$solution:"
 
@@ -229,33 +237,28 @@ function BuildSolution {
      rm -fr $bootstrap_dir
   fi
   if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
+    BuildMessage="Error building tools"
     MSBuild "$repo_root/src/buildtools/buildtools.proj" \
       /restore \
       /p:Configuration=$bootstrap_config \
-      /t:Publish || {
-        local exit_code=$?
-        Write-PipelineTelemetryError -category 'Build' "Error building buildtools (exit code '$exit_code')."
-        ExitWithExitCode $exit_code
-      }
+      /t:Publish
 
     mkdir -p "$bootstrap_dir"
-    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fslex
-    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsyacc
+    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp3.0/publish $bootstrap_dir/fslex
+    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp3.0/publish $bootstrap_dir/fsyacc
   fi
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
+    BuildMessage="Error building bootstrap"
     MSBuild "$repo_root/proto.proj" \
       /restore \
       /p:Configuration=$bootstrap_config \
-      /t:Publish || {
-        local exit_code=$?
-        Write-PipelineTelemetryError -category 'Build' "Error building bootstrap compiler (exit code '$exit_code')."
-        ExitWithExitCode $exit_code
-      }
+      /t:Publish
 
-    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp2.1/publish $bootstrap_dir/fsc
+    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp3.0/publish $bootstrap_dir/fsc
   fi
 
   # do real build
+  BuildMessage="Error building solution"
   MSBuild $toolset_build_proj \
     $bl \
     /v:$verbosity \
@@ -271,30 +274,30 @@ function BuildSolution {
     /p:ContinuousIntegrationBuild=$ci \
     /p:QuietRestore=$quiet_restore \
     /p:QuietRestoreBinaryLog="$binary_log" \
-    $properties || {
-      local exit_code=$?
-      Write-PipelineTelemetryError -category 'Build' "Error building solution (exit code '$exit_code')."
-      ExitWithExitCode $exit_code
-    }
+    $properties
 }
 
-InitializeDotNetCli $restore
+function TrapAndReportError {
+  local exit_code=$?
+  if [[ ! $exit_code == 0 ]]; then
+    Write-PipelineTelemetryError -category $BuildCategory "$BuildMessage (exit code '$exit_code')."
+    ExitWithExitCode $exit_code
+  fi
+}
 
-# enable us to build netcoreapp2.1 binaries
-if [[ "$source_build" != true ]]; then
-  InstallDotNetSdk $_InitializeDotNetCli 2.1.503
-fi
+# allow early termination to report the appropriate build failure reason
+trap TrapAndReportError EXIT
+
+InitializeDotNetCli $restore
 
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=netcoreapp3.0
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.LanguageServer.UnitTests/FSharp.Compiler.LanguageServer.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
 fi
 
 ExitWithExitCode 0
-

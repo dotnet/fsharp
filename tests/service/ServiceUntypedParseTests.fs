@@ -9,10 +9,10 @@ module Tests.Service.ServiceUntypedParseTests
 
 open System.IO
 open FsUnit
-open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.SyntaxTree
 open NUnit.Framework
 
 let [<Literal>] private Marker = "(* marker *)"
@@ -126,6 +126,9 @@ let foo6 = ()
 
 [<>]
 let foo7 = ()
+
+[<A;>]
+let foo8 = ()
 """
     let (SynModuleOrNamespace (_, _, _, decls, _, _, _, _)) = parseSourceCodeAndGetModule source
     decls |> List.map (fun decl ->
@@ -145,7 +148,8 @@ let foo7 = ()
           [ (1, ((12, 0), (13, 0))) ]
           [ (1, ((15, 0), (15, 4))) ]
           [ (0, ((18, 0), (18, 2))) ]
-          [ (0, ((21, 0), (21, 4))) ] ]
+          [ (0, ((21, 0), (21, 4))) ]
+          [ (1, ((24, 0), (24, 6))) ] ]
 
 
 module TypeMemberRanges =

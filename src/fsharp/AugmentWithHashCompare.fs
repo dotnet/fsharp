@@ -6,12 +6,14 @@ module internal FSharp.Compiler.AugmentWithHashCompare
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Infos
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.XmlDoc
 
 let mkIComparableCompareToSlotSig (g: TcGlobals) = 
     TSlotSig("CompareTo", g.mk_IComparable_ty, [], [], [[TSlotParam(Some("obj"), g.obj_ty, false, false, false, [])]], Some g.int_ty)
@@ -156,10 +158,10 @@ let mkCompareTestConjuncts g m exprs =
         (a, b) ||> List.foldBack (fun e acc -> 
             let nv, ne = mkCompGenLocal m "n" g.int_ty
             mkCompGenLet m nv e
-              (mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.int_ty
+              (mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.int_ty
                  (mkClt g m ne (mkZero g m))
                  ne
-                 (mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.int_ty 
+                 (mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.int_ty 
                     (mkCgt g m ne (mkZero g m))
                     ne
                     acc)))
@@ -170,7 +172,7 @@ let mkEqualsTestConjuncts g m exprs =
     | [h] -> h
     | l -> 
         let a, b = List.frontAndBack l 
-        List.foldBack (fun e acc -> mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty e acc (mkFalse g m)) a b
+        List.foldBack (fun e acc -> mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.bool_ty e acc (mkFalse g m)) a b
 
 let mkMinimalTy (g: TcGlobals) (tcref: TyconRef) = 
     if tcref.Deref.IsExceptionDecl then [], g.exn_ty 
@@ -217,7 +219,6 @@ let mkRecdCompare g tcref (tycon: Tycon) =
     let thatv, expr = mkThatVarBind g m ty thataddrv expr
     thisv, thatv, expr
 
-
 /// Build the comparison implementation for a record type when parameterized by a comparer
 let mkRecdCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_, thate) compe = 
     let m = tycon.Range 
@@ -242,7 +243,6 @@ let mkRecdCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_, thate) 
     // will be optimized away if not necessary
     let expr = mkCompGenLet m tcv thate expr
     expr    
-
 
 /// Build the .Equals(that) equality implementation wrapper for a record type 
 let mkRecdEquality g tcref (tycon: Tycon) = 
@@ -301,17 +301,16 @@ let mkExnEquality (g: TcGlobals) exnref (exnc: Tycon) =
           (mkExnCaseFieldGet(thate, exnref, i, m)) 
     let expr = mkEqualsTestConjuncts g m (List.mapi mkTest exnc.AllInstanceFieldsAsList) 
     let expr =
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m ) 
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m ) 
         let cases = 
             [ mkCase(DecisionTreeTest.IsInst(g.exn_ty, mkAppTy exnref []), 
-                     mbuilder.AddResultTarget(expr, SuppressSequencePointAtTarget)) ]
-        let dflt = Some(mbuilder.AddResultTarget(mkFalse g m, SuppressSequencePointAtTarget))
+                     mbuilder.AddResultTarget(expr, DebugPointForTarget.No)) ]
+        let dflt = Some(mbuilder.AddResultTarget(mkFalse g m, DebugPointForTarget.No))
         let dtree = TDSwitch(thate, cases, dflt, m)
         mbuilder.Close(dtree, m, g.bool_ty)
 
     let expr = mkBindThatNullEquals g m thise thate expr
     thisv, thatv, expr
-    
     
 /// Build the equality implementation for an exception definition when parameterized by a comparer
 let mkExnEqualityWithComparer g exnref (exnc: Tycon) (_thisv, thise) thatobje (thatv, thate) compe = 
@@ -325,11 +324,11 @@ let mkExnEqualityWithComparer g exnref (exnc: Tycon) (_thisv, thise) thatobje (t
           (mkExnCaseFieldGet(thataddre, exnref, i, m))
     let expr = mkEqualsTestConjuncts g m (List.mapi mkTest exnc.AllInstanceFieldsAsList) 
     let expr =
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m ) 
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m ) 
         let cases =
             [ mkCase(DecisionTreeTest.IsInst(g.exn_ty, mkAppTy exnref []), 
-                     mbuilder.AddResultTarget(expr, SuppressSequencePointAtTarget)) ]
-        let dflt = mbuilder.AddResultTarget(mkFalse g m, SuppressSequencePointAtTarget)
+                     mbuilder.AddResultTarget(expr, DebugPointForTarget.No)) ]
+        let dflt = mbuilder.AddResultTarget(mkFalse g m, DebugPointForTarget.No)
         let dtree = TDSwitch(thate, cases, Some dflt, m)
         mbuilder.Close(dtree, m, g.bool_ty)
     let expr = mkBindThatAddr g m g.exn_ty thataddrv thatv thate expr
@@ -348,7 +347,7 @@ let mkUnionCompare g tcref (tycon: Tycon) =
     let compe = mkILCallGetComparer g m
 
     let expr = 
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m ) 
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m ) 
         let mkCase ucase =
             let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
@@ -368,19 +367,19 @@ let mkUnionCompare g tcref (tycon: Tycon) =
                     mkCompGenLet m thisucv (mkUnionCaseProof (thise, cref, tinst, m))
                         (mkCompGenLet m thatucv (mkUnionCaseProof (thataddre, cref, tinst, m))
                             (mkCompareTestConjuncts g m (List.mapi (mkTest thisucve thatucve) rfields)))
-            Some (mkCase(DecisionTreeTest.UnionCase(cref, tinst), mbuilder.AddResultTarget(test, SuppressSequencePointAtTarget)))
+            Some (mkCase(DecisionTreeTest.UnionCase(cref, tinst), mbuilder.AddResultTarget(test, DebugPointForTarget.No)))
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkZero g m else 
         let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
-        let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m, SuppressSequencePointAtTarget))
+        let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m, DebugPointForTarget.No))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.int_ty)
 
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-            mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.int_ty  
+            mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
               expr
               (mkAsmExpr ([ IL.AI_sub  ], [], [thistage; thattage], [g.int_ty], m))in 
@@ -406,7 +405,7 @@ let mkUnionCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_thatobjv
     let thattagv, thattage = mkCompGenLocal m "thatTag" g.int_ty  
 
     let expr = 
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m ) 
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m ) 
         let mkCase ucase =
             let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
@@ -429,19 +428,19 @@ let mkUnionCompareWithComparer g tcref (tycon: Tycon) (_thisv, thise) (_thatobjv
                         (mkCompGenLet m thatucv (mkUnionCaseProof (thataddre, cref, tinst, m))
                             (mkCompareTestConjuncts g m (List.mapi (mkTest thisucve thatucve) rfields)))
 
-            Some (mkCase(DecisionTreeTest.UnionCase(cref, tinst), mbuilder.AddResultTarget(test, SuppressSequencePointAtTarget)))
+            Some (mkCase(DecisionTreeTest.UnionCase(cref, tinst), mbuilder.AddResultTarget(test, DebugPointForTarget.No)))
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkZero g m else 
         let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
-        let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m, SuppressSequencePointAtTarget))
+        let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m, DebugPointForTarget.No))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.int_ty)
 
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-            mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.int_ty  
+            mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
               expr
               (mkAsmExpr ([ IL.AI_sub  ], [], [thistage; thattage], [g.int_ty], m))
@@ -467,7 +466,7 @@ let mkUnionEquality g tcref (tycon: Tycon) =
     let thattagv, thattage = mkCompGenLocal m "thatTag" g.int_ty  
 
     let expr = 
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m ) 
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m ) 
         let mkCase ucase =
             let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
@@ -489,19 +488,19 @@ let mkUnionEquality g tcref (tycon: Tycon) =
                         (mkCompGenLet m thatucv (mkUnionCaseProof (thataddre, cref, tinst, m))
                             (mkEqualsTestConjuncts g m (List.mapi (mkTest thisucve thatucve) rfields)))
 
-            Some (mkCase(DecisionTreeTest.UnionCase(cref, tinst), mbuilder.AddResultTarget(test, SuppressSequencePointAtTarget)))
+            Some (mkCase(DecisionTreeTest.UnionCase(cref, tinst), mbuilder.AddResultTarget(test, DebugPointForTarget.No)))
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkTrue g m else 
         let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
-        let dflt = (if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m, SuppressSequencePointAtTarget)))
+        let dflt = (if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m, DebugPointForTarget.No)))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.bool_ty)
         
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-          mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty  
+          mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.bool_ty  
             (mkILAsmCeq g m thistage thattage)
             expr
             (mkFalse g m)
@@ -526,7 +525,7 @@ let mkUnionEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje 
     let thataddrv, thataddre = mkThatAddrLocal g m ty
 
     let expr = 
-        let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m ) 
+        let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m ) 
         let mkCase ucase =
             let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
@@ -551,19 +550,19 @@ let mkUnionEqualityWithComparer g tcref (tycon: Tycon) (_thisv, thise) thatobje 
                         (mkCompGenLet m thatucv (mkUnionCaseProof (thataddre, cref, tinst, m))
                             (mkEqualsTestConjuncts g m (List.mapi (mkTest thisucve thatucve) rfields)))
 
-            Some (mkCase(DecisionTreeTest.UnionCase(cref, tinst), mbuilder.AddResultTarget (test, SuppressSequencePointAtTarget)))
+            Some (mkCase(DecisionTreeTest.UnionCase(cref, tinst), mbuilder.AddResultTarget (test, DebugPointForTarget.No)))
         
         let nullary, nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
         if isNil nonNullary then mkTrue g m else 
         let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
-        let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m, SuppressSequencePointAtTarget))
+        let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m, DebugPointForTarget.No))
         let dtree = TDSwitch(thise, cases, dflt, m) 
         mbuilder.Close(dtree, m, g.bool_ty)
         
     let expr = 
         if ucases.Length = 1 then expr else
         let tagsEqTested = 
-          mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty  
+          mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.bool_ty  
             (mkILAsmCeq g m thistage thattage)
             expr
             (mkFalse g m)
@@ -626,7 +625,7 @@ let mkUnionHashWithComparer g tcref (tycon: Tycon) compe =
     let ucases = tycon.UnionCasesAsList
     let tinst, ty = mkMinimalTy g tcref
     let thisv, thise = mkThisVar g m ty
-    let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m ) 
+    let mbuilder = new MatchBuilder(NoDebugPointAtInvisibleBinding, m ) 
     let accv, acce = mkMutableCompGenLocal m "i" g.int_ty                  
     let mkCase i ucase1 = 
         let c1ref = tcref.MakeNestedUnionCaseRef ucase1 
@@ -650,7 +649,7 @@ let mkUnionHashWithComparer g tcref (tycon: Tycon) compe =
                         (mkCompGenSequential m 
                             (mkValSet m (mkLocalValRef accv) (mkInt g m i)) 
                             (mkCombineHashGenerators g m (List.mapi (mkHash ucve) ucase1.RecdFields) (mkLocalValRef accv) acce))
-            Some(mkCase(DecisionTreeTest.UnionCase(c1ref, tinst), mbuilder.AddResultTarget(test, SuppressSequencePointAtTarget)))
+            Some(mkCase(DecisionTreeTest.UnionCase(c1ref, tinst), mbuilder.AddResultTarget(test, DebugPointForTarget.No)))
 
     let nullary, nonNullary = ucases
                              |> List.mapi mkCase
@@ -659,7 +658,7 @@ let mkUnionHashWithComparer g tcref (tycon: Tycon) compe =
     let dflt = if isNil nullary then None 
                else 
                    let tag = mkUnionCaseTagGetViaExprAddr (thise, tcref, tinst, m)
-                   Some(mbuilder.AddResultTarget(tag, SuppressSequencePointAtTarget))
+                   Some(mbuilder.AddResultTarget(tag, DebugPointForTarget.No))
     let dtree = TDSwitch(thise, cases, dflt, m)
     let stmt = mbuilder.Close(dtree, m, g.int_ty)
     let expr = mkCompGenLet m accv (mkZero g m) stmt 
@@ -744,10 +743,9 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
 
     // [<NoEquality; NoComparison>] on anything
     | _, _, Some true, None, None, None, Some true, None, None ->
-
         () 
 
-    (* THESE ARE THE ERROR CASES *)
+    // THESE ARE THE ERROR CASES
 
     // [<NoEquality; ...>] 
     | _, _, Some true, _, _, _, None, _, _ ->
@@ -883,15 +881,19 @@ let nonVirtualMethod c : ValMemberInfo =
 let unitArg = ValReprInfo.unitArgData
 let unaryArg = [ ValReprInfo.unnamedTopArg ]
 let tupArg = [ [ ValReprInfo.unnamedTopArg1; ValReprInfo.unnamedTopArg1 ] ]
-let mkValSpec g (tcref: TyconRef) tmty vis  slotsig methn ty argData = 
+let mkValSpec g (tcref: TyconRef) tmty vis slotsig methn ty argData = 
     let m = tcref.Range 
     let tps = tcref.Typars m
-    let final = isUnionTy g tmty || isRecdTy g tmty || isStructTy g tmty 
-    let membInfo = match slotsig with None -> nonVirtualMethod tcref | Some slotsig -> slotImplMethod(final, tcref, slotsig) 
+    let membInfo = 
+        match slotsig with 
+        | None -> nonVirtualMethod tcref 
+        | Some slotsig -> 
+            let final = isUnionTy g tmty || isRecdTy g tmty || isStructTy g tmty 
+            slotImplMethod(final, tcref, slotsig)
     let inl = ValInline.Optional
     let args = ValReprInfo.unnamedTopArg :: argData
     let topValInfo = Some (ValReprInfo (ValReprInfo.InferTyparInfo tps, args, ValReprInfo.unnamedRetVal)) 
-    NewVal (methn, m, None, ty, Immutable, true, topValInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref) 
+    Construct.NewVal (methn, m, None, ty, Immutable, true, topValInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref) 
 
 let MakeValsForCompareAugmentation g (tcref: TyconRef) = 
     let m = tcref.Range
@@ -899,8 +901,8 @@ let MakeValsForCompareAugmentation g (tcref: TyconRef) =
     let tps = tcref.Typars m
     let vis = tcref.TypeReprAccessibility
 
-    mkValSpec g tcref tmty vis  (Some(mkIComparableCompareToSlotSig g)) "CompareTo" (tps +-> (mkCompareObjTy g tmty)) unaryArg, 
-    mkValSpec g tcref tmty vis  (Some(mkGenericIComparableCompareToSlotSig g tmty)) "CompareTo" (tps +-> (mkCompareTy g tmty)) unaryArg
+    mkValSpec g tcref tmty vis (Some(mkIComparableCompareToSlotSig g)) "CompareTo" (tps +-> (mkCompareObjTy g tmty)) unaryArg, 
+    mkValSpec g tcref tmty vis (Some(mkGenericIComparableCompareToSlotSig g tmty)) "CompareTo" (tps +-> (mkCompareTy g tmty)) unaryArg
     
 let MakeValsForCompareWithComparerAugmentation g (tcref: TyconRef) =
     let m = tcref.Range
@@ -915,15 +917,15 @@ let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
     let vis = tcref.TypeReprAccessibility
     let tps = tcref.Typars m
 
-    let objEqualsVal = mkValSpec g tcref tmty vis  (Some(mkEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsObjTy g tmty)) unaryArg
-    let nocEqualsVal = mkValSpec g tcref tmty vis  (if tcref.Deref.IsExceptionDecl then None else Some(mkGenericIEquatableEqualsSlotSig g tmty)) "Equals" (tps +-> (mkEqualsTy g tmty)) unaryArg
+    let objEqualsVal = mkValSpec g tcref tmty vis (Some(mkEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsObjTy g tmty)) unaryArg
+    let nocEqualsVal = mkValSpec g tcref tmty vis (if tcref.Deref.IsExceptionDecl then None else Some(mkGenericIEquatableEqualsSlotSig g tmty)) "Equals" (tps +-> (mkEqualsTy g tmty)) unaryArg
     objEqualsVal, nocEqualsVal
     
 let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
     let _, tmty = mkMinimalTy g tcref
     let vis = tcref.TypeReprAccessibility
     let tps = tcref.Typars tcref.Range
-    let objGetHashCodeVal = mkValSpec g tcref tmty vis  (Some(mkGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashTy g tmty)) unitArg
+    let objGetHashCodeVal = mkValSpec g tcref tmty vis (Some(mkGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashTy g tmty)) unitArg
     let withcGetHashCodeVal = mkValSpec g tcref tmty vis (Some(mkIStructuralEquatableGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashWithComparerTy g tmty)) unaryArg
     let withcEqualsVal  = mkValSpec g tcref tmty vis (Some(mkIStructuralEquatableEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsWithComparerTy g tmty)) tupArg
     objGetHashCodeVal, withcGetHashCodeVal, withcEqualsVal
@@ -1071,23 +1073,28 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) =
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then mkEquals mkRecdEquality 
     else []
 
-let rec TypeDefinitelyHasEquality g ty = 
-    if isAppTy g ty && HasFSharpAttribute g g.attrib_NoEqualityAttribute (tcrefOfAppTy g ty).Attribs then
+let rec TypeDefinitelyHasEquality g ty =
+    let appTy = tryAppTy g ty
+    match appTy with
+    | ValueSome(tcref,_) when HasFSharpAttribute g g.attrib_NoEqualityAttribute tcref.Attribs ->
         false
-    elif isTyparTy g ty && 
-         (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then
-        true
-    else 
-        match ty with 
-        | SpecialEquatableHeadType g tinst -> 
-            tinst |> List.forall (TypeDefinitelyHasEquality g)
-        | SpecialNotEquatableHeadType g _ -> 
-            false
-        | _ -> 
-           // The type is equatable because it has Object.Equals(...)
-           isAppTy g ty &&
-           let tcref, tinst = destAppTy g ty 
-           // Give a good error for structural types excluded from the equality relation because of their fields
-           not (TyconIsCandidateForAugmentationWithEquals g tcref.Deref && Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues) &&
-           // Check the (possibly inferred) structural dependencies
-           (tinst, tcref.TyparsNoRange) ||> List.lengthsEqAndForall2 (fun ty tp -> not tp.EqualityConditionalOn || TypeDefinitelyHasEquality  g ty)
+    | _ ->
+        if isTyparTy g ty && 
+             (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then
+            true
+        else 
+            match ty with 
+            | SpecialEquatableHeadType g tinst -> 
+                tinst |> List.forall (TypeDefinitelyHasEquality g)
+            | SpecialNotEquatableHeadType g _ -> 
+                false
+            | _ -> 
+               // The type is equatable because it has Object.Equals(...)
+               match appTy with
+               | ValueSome(tcref,tinst) ->
+                   // Give a good error for structural types excluded from the equality relation because of their fields
+                   not (TyconIsCandidateForAugmentationWithEquals g tcref.Deref && Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues) &&
+                   // Check the (possibly inferred) structural dependencies
+                   (tinst, tcref.TyparsNoRange) 
+                   ||> List.lengthsEqAndForall2 (fun ty tp -> not tp.EqualityConditionalOn || TypeDefinitelyHasEquality  g ty)
+               | _ -> false

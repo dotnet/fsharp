@@ -3,7 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Core.LanguagePrimitives module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Core
+namespace FSharp.Core.UnitTests
 
 open System
 open System.Numerics 
@@ -15,6 +15,12 @@ type m
 
 [<TestFixture>]
 type LanguagePrimitivesModule() =
+
+    [<Test>]    
+    member _.CastingUint () =
+        let expected = 12u
+        let actual = uint 12
+        Assert.AreEqual(expected, actual)
 
     [<Test>]
     member this.CastingUnits() =

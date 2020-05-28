@@ -19,6 +19,7 @@
       <Action Type="Ngen" Path="FSharp.Compiler.Interactive.Settings.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Server.Shared.dll" />
       <Action Type="Ngen" Path="FSharp.Core.dll" />
+      <Action Type="Ngen" Path="FSharp.DependencyManager.Nuget.dll" />
       <Action Type="Ngen" Path="FSharp.Editor.dll" />
       <Action Type="Ngen" Path="FSharp.Editor.Helpers.dll" />
       <Action Type="Ngen" Path="FSharp.UIResources.dll" />
@@ -28,10 +29,7 @@
       <Action Type="Ngen" Path="FSharp.ProjectSystem.FSharp.dll" />
       <Action Type="Ngen" Path="FSharp.ProjectSystem.PropertyPages.dll" />
       <Action Type="Ngen" Path="FSharp.VS.FSI.dll" />
-      <!-- this Ngen action should be disabled in branch `release/dev16.2`, enabled otherwise -->
-      <!--
-      <Action Type="Ngen" Path="Agent\FSharp.Compiler.LanguageServer.exe" />
-      -->
+      <Action Type="Ngen" Path="Interactive.DependencyManager.dll" />
     </Actions>
   </Installer>
   <Dependencies>

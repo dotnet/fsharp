@@ -2,7 +2,7 @@
 
 // Various tests for Microsoft.FSharp.Core type forwarding
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Type_Forwarding
+namespace FSharp.Core.UnitTests.Type_Forwarding
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx

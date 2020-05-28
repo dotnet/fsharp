@@ -2,20 +2,16 @@
 
 module internal FSharp.Compiler.AbstractIL.Internal.Support
 
-open Internal.Utilities
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Bytes
-open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.NativeRes
+open FSharp.Compiler.AbstractIL.Internal.Utils
 #if FX_NO_CORHOST_SIGNER
 open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 #endif
 
 open System
 open System.IO
-open System.Text
 open System.Reflection
 
 #if !FX_NO_SYMBOLSTORE
@@ -1291,7 +1287,7 @@ let getICLRStrongName () =
     | Some sn -> sn
 
 let signerGetPublicKeyForKeyPair kp =
- if IL.runningOnMono then
+ if runningOnMono then
     let snt = System.Type.GetType("Mono.Security.StrongName")
     let sn = System.Activator.CreateInstance(snt, [| box kp |])
     snt.InvokeMember("PublicKey", (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public), null, sn, [| |], Globalization.CultureInfo.InvariantCulture) :?> byte[]
@@ -1323,7 +1319,7 @@ let signerCloseKeyContainer kc =
     iclrSN.StrongNameKeyDelete kc |> ignore
 
 let signerSignatureSize (pk: byte[]) =
- if IL.runningOnMono then
+ if runningOnMono then
    if pk.Length > 32 then pk.Length - 32 else 128
  else
     let mutable pSize =  0u
@@ -1332,7 +1328,7 @@ let signerSignatureSize (pk: byte[]) =
     int pSize
 
 let signerSignFileWithKeyPair fileName kp =
- if IL.runningOnMono then
+ if runningOnMono then
     let snt = System.Type.GetType("Mono.Security.StrongName")
     let sn = System.Activator.CreateInstance(snt, [| box kp |])
     let conv (x: obj) = if (unbox x: bool) then 0 else -1

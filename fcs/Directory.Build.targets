@@ -29,7 +29,7 @@
   </Target>
 
   <Target Name="_GenerateBuildPropertiesFile"
-          Outputs="$(IntermediateOutputPath)$(ProjectName)\buildproperties.fs"
+          Outputs="$(IntermediateOutputPath)$(ProjectName).BuildProperties.fs"
           BeforeTargets="BeforeBuild"
           Condition="'$(Language)'=='F#'">
 
@@ -44,15 +44,12 @@
       <_BuildPropertyLines Include="let fsLanguageVersion = &quot;$(FSLANGUAGEVERSION)&quot;" />
     </ItemGroup>
 
-    <MakeDir
-      Directories="$(IntermediateOutputPath)$(ProjectName)"
-      Condition="!Exists('$(IntermediateOutputPath)$(ProjectName)')" />
-    <WriteLinesToFile File="$(IntermediateOutputPath)$(ProjectName)\buildproperties.fs" Lines="@(_BuildPropertyLines)" Overwrite="true"  WriteOnlyWhenDifferent="true" />
+    <WriteLinesToFile File="$(IntermediateOutputPath)$(ProjectName).BuildProperties.fs" Lines="@(_BuildPropertyLines)" Overwrite="true"  WriteOnlyWhenDifferent="true" />
 
     <!-- Make sure it will get cleaned  -->
     <ItemGroup>
-      <FileWrites Include="$(IntermediateOutputPath)$(ProjectName)\buildproperties.fs" />
-      <CompileBefore Include="$(IntermediateOutputPath)$(ProjectName)\buildproperties.fs" />
+      <FileWrites Include="$(IntermediateOutputPath)$(ProjectName).BuildProperties.fs" />
+      <CompileBefore Include="$(IntermediateOutputPath)$(ProjectName).BuildProperties.fs" />
     </ItemGroup>
   </Target>
 

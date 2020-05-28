@@ -65,13 +65,13 @@ type WinFormsEventLoop() =
     do mainForm.DoCreateHandle()
     let mutable lcid = None
     // Set the default thread exception handler
-    let restart = ref false
+    let mutable restart = false
     member __.LCID with get () = lcid and set v = lcid <- v
     interface IEventLoop with
          member x.Run() =  
-             restart := false
+             restart <- false
              Application.Run()
-             !restart
+             restart
          member x.Invoke (f: unit -> 'T) : 'T =   
             if not mainForm.InvokeRequired then 
                 f() 
@@ -79,7 +79,7 @@ type WinFormsEventLoop() =
 
                 // Workaround: Mono's Control.Invoke returns a null result.  Hence avoid the problem by 
                 // transferring the resulting state using a mutable location.
-                let mainFormInvokeResultHolder = ref None
+                let mutable mainFormInvokeResultHolder = None
 
                 // Actually, Mono's Control.Invoke isn't even blocking (or wasn't on 1.1.15)!  So use a signal to indicate completion.
                 // Indeed, we should probably do this anyway with a timeout so we can report progress from 
@@ -94,7 +94,7 @@ type WinFormsEventLoop() =
                                               // When we get called back, someone may jack our culture
                                               // So we must reset our UI culture every time
                                               use _scope = SetCurrentUICultureForThread lcid
-                                              mainFormInvokeResultHolder := Some(f ())
+                                              mainFormInvokeResultHolder <- Some(f ())
                                            finally 
                                               doneSignal.Set() |> ignore)) |> ignore
 
@@ -103,9 +103,9 @@ type WinFormsEventLoop() =
                     () // if !progress then fprintf outWriter "." outWriter.Flush()
 
                 //if !progress then fprintfn outWriter "RunCodeOnWinFormsMainThread: Got completion signal, res = %b" (Option.isSome !mainFormInvokeResultHolder)
-                !mainFormInvokeResultHolder |> Option.get
+                mainFormInvokeResultHolder |> Option.get
 
-         member x.ScheduleRestart()  =   restart := true; Application.Exit()  
+         member x.ScheduleRestart() = restart <- true; Application.Exit()  
 
 /// Try to set the unhandled exception mode of System.Windows.Forms
 let internal TrySetUnhandledExceptionMode() =  

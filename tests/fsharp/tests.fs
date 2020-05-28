@@ -1,4 +1,4 @@
-﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test vvvvvvvvvvvvvvvv
+﻿// To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test
 #if INTERACTIVE
 #r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "../../src/scripts/scriptlib.fsx" 
@@ -18,7 +18,7 @@ open Scripting
 open SingleTest
 open HandleExpects
 
-#if FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if NETCOREAPP
 // Use these lines if you want to test CoreCLR
 let FSC_BASIC = FSC_CORECLR
 let FSC_BUILDONLY = FSC_CORECLR_BUILDONLY
@@ -229,7 +229,12 @@ module CoreTests =
     [<Test>]
     let ``recordResolution-FSI_BASIC`` () = singleTestBuildAndRun "core/recordResolution" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let ``SDKTests`` () =
+        let cfg = testConfig "SDKTests"
+        exec cfg cfg.DotNetExe ("msbuild " + Path.Combine(cfg.Directory, "AllSdkTargetsTests.proj"))
+
+#if !NETCOREAPP
     [<Test>]
     let ``attributes-FSC_BASIC`` () = singleTestBuildAndRun "core/attributes" FSC_BASIC
 
@@ -471,7 +476,7 @@ module CoreTests =
     [<Test>]
     let ``enum-FSI_BASIC`` () = singleTestBuildAndRun "core/enum" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
 
     // Requires winforms will not run on coreclr
     [<Test>]
@@ -642,25 +647,47 @@ module CoreTests =
 
         csc cfg """/nologo /target:library /r:"%s" /out:lib3.dll  /langversion:7.2""" cfg.FSCOREDLLPATH ["lib3.cs"]
 
-        fsc cfg "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        // some features missing in 4.7
+        for version in ["4.7"] do
+            let outFile = "compilation.langversion.old.output.txt" 
+            let expectedFile = "compilation.langversion.old.output.bsl" 
+            fscBothToOutExpectFail cfg outFile "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --nologo --define:LANGVERSION_%s --langversion:%s" cfg.fsc_flags (version.Replace(".","_")) version ["test.fsx"]
+
+            let diffs = fsdiff cfg outFile expectedFile 
+            match diffs with
+            | "" -> ()
+            | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outFile expectedFile diffs)
+
+        // all features available in preview
+        fsc cfg "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --define:LANGVERSION_PREVIEW --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
 
         // Same with library references the other way around
-        fsc cfg "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g --define:LANGVERSION_PREVIEW --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
 
         // Same without the reference to lib.dll - testing an incomplete reference set, but only compiling a subset of the code
-        fsc cfg "%s -r:System.Runtime.dll --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -r:System.Runtime.dll --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g --define:LANGVERSION_PREVIEW --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
         exec cfg ("." ++ "test.exe") ""
+
+        // check error messages for some cases
+        let outFile = "compilation.errors.output.txt" 
+        let expectedFile = "compilation.errors.output.bsl" 
+        fscBothToOutExpectFail cfg outFile "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g --nologo --define:LANGVERSION_PREVIEW --langversion:preview --define:CHECK_ERRORS" cfg.fsc_flags ["test.fsx"]
+
+        let diffs = fsdiff cfg outFile expectedFile 
+        match diffs with
+        | "" -> ()
+        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outFile expectedFile diffs)
 
     [<Test>]
     let ``fsi-reference`` () = 
@@ -929,7 +956,7 @@ module CoreTests =
     let ``signedtest-16`` () = signedtest("test-sha1024-full-attributes", "--define:SHA1024", SigningType.PublicSigned)
 #endif
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     [<Test>]
     let quotes () = 
         let cfg = testConfig "core/quotes"
@@ -1328,7 +1355,7 @@ module CoreTests =
     [<Test>]
     let ``fsi_load-FSI_BASIC`` () = singleTestBuildAndRun "core/fsi-load" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     [<Test>]
     let ``measures-AS_DLL`` () = singleTestBuildAndRun "core/measures" AS_DLL
 
@@ -1559,7 +1586,7 @@ module CoreTests =
     [<Test>]
     let ``reflect-FSI_BASIC`` () = singleTestBuildAndRun "core/reflect" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     [<Test>]
     let refnormalization () = 
         let cfg = testConfig "core/refnormalization"
@@ -1808,7 +1835,7 @@ module VersionTests =
     [<Test>]
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI_BASIC "preview"
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
 module ToolsTests = 
 
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
@@ -1858,7 +1885,7 @@ module RegressionTests =
     [<Test >]
     let ``tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS 
+#if !NETCOREAPP 
     [<Test>]
     let ``SRTP doesn't handle calling member hiding hinherited members`` () =
         let cfg = testConfig "regression/5531" 
@@ -1893,7 +1920,7 @@ module RegressionTests =
     [<Test >]
     let ``321`` () = singleTestBuildAndRun "regression/321" FSC_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let ``655`` () = 
@@ -1923,7 +1950,7 @@ module RegressionTests =
         peverify cfg  "pack.exe"
 #endif
                 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     // Requires WinForms
     [<Test>]
     let ``83`` () = singleTestBuildAndRun "regression/83" FSC_BASIC
@@ -1946,7 +1973,7 @@ module RegressionTests =
     [<Test >]
     let ``struct-tuple-bug-1-FSI_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let ``struct-measure-bug-1`` () = 
@@ -1955,8 +1982,7 @@ module RegressionTests =
         fsc cfg "%s --optimize- -o:test.exe -g" cfg.fsc_flags ["test.fs"]
 
         peverify cfg "test.exe"
-#endif
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+
 module OptimizationTests =
 
     [<Test>]
@@ -2099,7 +2125,7 @@ module TypecheckTests =
     [<Test>]
     let misc () = singleTestBuildAndRun "typecheck/misc" FSC_BASIC
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
 
     [<Test>]
     let ``sigs pos26`` () = 
@@ -2154,6 +2180,24 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos32.dll --warnaserror" cfg.fsc_flags ["pos32.fs"]
         peverify cfg "pos32.dll"
+
+    [<Test>]
+    let ``sigs pos33`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos33.dll --warnaserror" cfg.fsc_flags ["pos33.fsi"; "pos33.fs"]
+        peverify cfg "pos33.dll"
+
+    [<Test>]
+    let ``sigs pos34`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos34.dll --warnaserror" cfg.fsc_flags ["pos34.fs"]
+        peverify cfg "pos34.dll"
+
+    [<Test>]
+    let ``sigs pos35`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos35.dll --warnaserror" cfg.fsc_flags ["pos35.fs"]
+        peverify cfg "pos35.dll"
 
     [<Test>]
     let ``sigs pos23`` () = 
@@ -2655,6 +2699,48 @@ module TypecheckTests =
     let ``type check neg115`` () = singleNegTest (testConfig "typecheck/sigs") "neg115"
 
     [<Test>] 
+    let ``type check neg116`` () = singleNegTest (testConfig "typecheck/sigs") "neg116"
+
+    [<Test>] 
+    let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"
+
+    [<Test>] 
+    let ``type check neg118`` () = singleNegTest (testConfig "typecheck/sigs") "neg118"
+
+    [<Test>] 
+    let ``type check neg119`` () = singleNegTest (testConfig "typecheck/sigs") "neg119"
+
+    [<Test>] 
+    let ``type check neg120`` () = singleNegTest (testConfig "typecheck/sigs") "neg120"
+
+    [<Test>] 
+    let ``type check neg121`` () = singleNegTest (testConfig "typecheck/sigs") "neg121"
+
+    [<Test>] 
+    let ``type check neg122`` () = singleNegTest (testConfig "typecheck/sigs") "neg122"
+
+    [<Test>] 
+    let ``type check neg123`` () = singleNegTest (testConfig "typecheck/sigs") "neg123"
+
+    [<Test>] 
+    let ``type check neg124`` () = singleNegTest (testConfig "typecheck/sigs") "neg124"
+
+    [<Test>] 
+    let ``type check neg125`` () = singleNegTest (testConfig "typecheck/sigs") "neg125"
+
+    [<Test>] 
+    let ``type check neg126`` () = singleNegTest (testConfig "typecheck/sigs") "neg126"
+
+    [<Test>] 
+    let ``type check neg127`` () = singleNegTest (testConfig "typecheck/sigs") "neg127"
+
+    [<Test>] 
+    let ``type check neg128`` () = singleNegTest (testConfig "typecheck/sigs") "neg128"
+
+    [<Test>] 
+    let ``type check neg129`` () = singleNegTest (testConfig "typecheck/sigs") "neg129"
+
+    [<Test>] 
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"
 
     [<Test>] 
@@ -2753,7 +2839,7 @@ open System.Reflection
         fv.ProductVersion |> Assert.areEqual "45.2048.main1.2-hotfix (upgrade Second Chance security)"
 
         (fv.ProductMajorPart, fv.ProductMinorPart, fv.ProductBuildPart, fv.ProductPrivatePart) 
-        |> Assert.areEqual (45,2048,0,0)
+        |> Assert.areEqual (45, 2048, 0, 2)
 
 
     [<Test>]
@@ -2866,19 +2952,37 @@ module GeneratedSignatureTests =
     let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
 #endif
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
 module OverloadResolution =
-    module FSharpQAMigrated = 
+    module ``fsharpqa migrated tests`` = 
         let [<Test>] ``Conformance\Expressions\SyntacticSugar (E_Slices01.fs)`` () = singleNegTest (testConfig "conformance/expressions/syntacticsugar") "E_Slices01"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_OneTypeVariable03.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_OneTypeVariable03rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03rec"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoDifferentTypeVariables01.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariables01"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoDifferentTypeVariables01rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariables01rec"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoDifferentTypeVariablesGen00rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariablesGen00rec"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoEqualTypeVariables02.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoEqualTypeVariables02"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_TwoEqualYypeVariables02rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoEqualYypeVariables02rec"
-        let [<Test>] ``Conformance\InferenceProcedures\TypeInference (E_LeftToRightOverloadResolution01.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_LeftToRightOverloadResolution01"
-        let [<Test>] ``Conformance\InferenceProcedures\WellFormednessChecking (E_Clashing_Values_in_AbstractClass01.fs) `` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass01"
-        let [<Test>] ``Conformance\InferenceProcedures\WellFormednessChecking (E_Clashing_Values_in_AbstractClass03.fs) `` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass03"
-        let [<Test>] ``Conformance\InferenceProcedures\WellFormednessChecking (E_Clashing_Values_in_AbstractClass04.fs) `` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass04"
+        let [<Test>] ``Conformance\Expressions\Type-relatedExpressions (E_RigidTypeAnnotation03.fsx)`` () = singleNegTest (testConfig "conformance/expressions/type-relatedexpressions") "E_RigidTypeAnnotation03"
+        let [<Test>] ``Conformance\Inference (E_OneTypeVariable03.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03"
+        let [<Test>] ``Conformance\Inference (E_OneTypeVariable03rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_OneTypeVariable03rec"
+        let [<Test>] ``Conformance\Inference (E_TwoDifferentTypeVariablesGen00.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariablesGen00"
+        let [<Test>] ``Conformance\Inference (E_TwoDifferentTypeVariables01.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariables01"
+        let [<Test>] ``Conformance\Inference (E_TwoDifferentTypeVariables01rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariables01rec"
+        let [<Test>] ``Conformance\Inference (E_TwoDifferentTypeVariablesGen00rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoDifferentTypeVariablesGen00rec"
+        let [<Test>] ``Conformance\Inference (E_TwoEqualTypeVariables02.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoEqualTypeVariables02"
+        let [<Test>] ``Conformance\Inference (E_TwoEqualYypeVariables02rec.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_TwoEqualYypeVariables02rec"
+        let [<Test>] ``Conformance\Inference (E_LeftToRightOverloadResolution01.fs)`` () = singleNegTest (testConfig "conformance/inference") "E_LeftToRightOverloadResolution01"
+        let [<Test>] ``Conformance\WellFormedness (E_Clashing_Values_in_AbstractClass01.fs)`` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass01"
+        let [<Test>] ``Conformance\WellFormedness (E_Clashing_Values_in_AbstractClass03.fs)`` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass03"
+        let [<Test>] ``Conformance\WellFormedness (E_Clashing_Values_in_AbstractClass04.fs)`` () = singleNegTest (testConfig "conformance/wellformedness") "E_Clashing_Values_in_AbstractClass04"
+        // note: this test still exist in fsharpqa to assert the compiler doesn't crash
+        // the part of the code generating a flaky error due to https://github.com/dotnet/fsharp/issues/6725
+        // is elided here to focus on overload resolution error messages
+        let [<Test>] ``Conformance\LexicalAnalysis\SymbolicOperators (E_LessThanDotOpenParen001.fs)`` () = singleNegTest (testConfig "conformance/lexicalanalysis") "E_LessThanDotOpenParen001"
+    
+    module ``error messages using BCL``=
+        let [<Test>] ``neg_System.Convert.ToString.OverloadList``() = singleNegTest (testConfig "typecheck/overloads") "neg_System.Convert.ToString.OverloadList"
+        let [<Test>] ``neg_System.Threading.Tasks.Task.Run.OverloadList``() = singleNegTest (testConfig "typecheck/overloads") "neg_System.Threading.Tasks.Task.Run.OverloadList"
+        let [<Test>] ``neg_System.Drawing.Graphics.DrawRectangleOverloadList.fsx``() = singleNegTest (testConfig "typecheck/overloads") "neg_System.Drawing.Graphics.DrawRectangleOverloadList"
+
+    module ``ad hoc code overload error messages``=
+        let [<Test>] ``neg_many_many_overloads`` () = singleNegTest (testConfig "typecheck/overloads") "neg_many_many_overloads"
+        let [<Test>] ``neg_interface_generics`` () = singleNegTest (testConfig "typecheck/overloads") "neg_interface_generics"
+        let [<Test>] ``neg_known_return_type_and_known_type_arguments`` () = singleNegTest (testConfig "typecheck/overloads") "neg_known_return_type_and_known_type_arguments"
+        let [<Test>] ``neg_generic_known_argument_types`` () = singleNegTest (testConfig "typecheck/overloads") "neg_generic_known_argument_types"
+        let [<Test>] ``neg_tupled_arguments`` () = singleNegTest (testConfig "typecheck/overloads") "neg_tupled_arguments"
 #endif

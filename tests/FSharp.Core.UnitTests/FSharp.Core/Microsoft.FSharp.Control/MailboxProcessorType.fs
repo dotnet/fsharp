@@ -3,7 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Control.MailboxProcessor type
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control
+namespace FSharp.Core.UnitTests.Control
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
@@ -70,6 +70,7 @@ type MailboxProcessorType() =
         ()
 
     [<Test>]
+    [<Category("PullRequest")>]
     member this.``Receive handles cancellation token``() =
         let result = ref None
 
@@ -103,6 +104,7 @@ type MailboxProcessorType() =
         Assert.AreEqual(Some("Received 1 Disposed"), !result)
 
     [<Test>]
+    [<Category("PullRequest")>]
     member this.``Receive with timeout argument handles cancellation token``() =
         let result = ref None
 
@@ -136,6 +138,7 @@ type MailboxProcessorType() =
         Assert.AreEqual(Some("Received 1 Disposed"),!result)
 
     [<Test>]
+    [<Category("PullRequest")>]
     member this.``Scan handles cancellation token``() =
         let result = ref None
 

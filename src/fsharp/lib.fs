@@ -4,8 +4,8 @@ module internal FSharp.Compiler.Lib
 
 open System.IO
 open System.Collections.Generic
+open System.Runtime.InteropServices
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
 
@@ -13,8 +13,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 /// is this the developer-debug build? 
 let debug = false 
 let verbose = false
-let progress = ref false 
-let tracking = ref false // intended to be a general hook to control diagnostic output when tracking down bugs
+let mutable progress = false 
+let mutable tracking = false // intended to be a general hook to control diagnostic output when tracking down bugs
 
 let condition s = 
     try (System.Environment.GetEnvironmentVariable(s) <> null) with _ -> false
@@ -267,11 +267,6 @@ let mapTriple (f1, f2, f3) (a1, a2, a3) = (f1 a1, f2 a2, f3 a3)
 let mapQuadruple (f1, f2, f3, f4) (a1, a2, a3, a4) = (f1 a1, f2 a2, f3 a3, f4 a4)
 let fmap2Of2 f z (a1, a2) = let z, a2 = f z a2 in z, (a1, a2)
 
-module List = 
-    let noRepeats xOrder xs =
-        let s = Zset.addList xs (Zset.empty xOrder) // build set 
-        Zset.elements s // get elements... no repeats
-
 //---------------------------------------------------------------------------
 // Zmap rebinds
 //------------------------------------------------------------------------- 
@@ -313,19 +308,12 @@ let bufs f =
     f buf 
     buf.ToString()
 
-let buff (os: TextWriter) f x = 
+// writing to output stream via a string buffer.
+let writeViaBuffer (os: TextWriter) f x = 
     let buf = System.Text.StringBuilder 100 
     f buf x 
     os.Write(buf.ToString())
 
-// Converts "\n" into System.Environment.NewLine before writing to os. See lib.fs:buff
-let writeViaBufferWithEnvironmentNewLines (os: TextWriter) f x = 
-    let buf = System.Text.StringBuilder 100 
-    f buf x
-    let text = buf.ToString()
-    let text = text.Replace("\n", System.Environment.NewLine)
-    os.Write text
-        
 //---------------------------------------------------------------------------
 // Imperative Graphs 
 //---------------------------------------------------------------------------
@@ -387,14 +375,29 @@ let inline cached cache resF =
     | _ -> 
         cache.cacheVal
 
+let inline cacheOptByref (cache: byref<'T option>) f = 
+    match cache with 
+    | Some v -> v
+    | None -> 
+       let res = f()
+       cache <- Some res
+       res
+
+// REVIEW: this is only used because we want to mutate a record field,
+// and because you cannot take a byref<_> of such a thing directly,
+// we cannot use 'cacheOptByref'. If that is changed, this can be removed.
 let inline cacheOptRef cache f = 
-    match !cache with 
+    match !cache with
     | Some v -> v
     | None -> 
        let res = f()
        cache := Some res
        res 
 
+let inline tryGetCacheValue cache =
+    match box cache.cacheVal with
+    | null -> ValueNone
+    | _ -> ValueSome cache.cacheVal
 
 #if DUMPER
 type Dumper(x:obj) =
@@ -515,7 +518,7 @@ module UnmanagedProcessExecutionOptions =
     // Translation of C# from http://swikb/v1/DisplayOnlineDoc.aspx?entryID=826 and copy in bug://5018
     [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert, UnmanagedCode = true)>] 
     let EnableHeapTerminationOnCorruption() =
-        if (System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&  System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
             System.Environment.Version.Major < 3) then // and CLR not 3.0 or higher 
             // "The flag HeapSetInformation sets is available in Windows XP SP3 and later.
             //  The data structure used for heap information is available on earlier versions of Windows.
@@ -545,3 +548,20 @@ module StackGuard =
     let EnsureSufficientExecutionStack recursionDepth =
         if recursionDepth > MaxUncheckedRecursionDepth then
             RuntimeHelpers.EnsureSufficientExecutionStack ()
+
+[<RequireQualifiedAccess>] 
+type MaybeLazy<'T> =
+    | Strict of 'T
+    | Lazy of Lazy<'T>
+
+    member this.Value: 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Value
+
+    member this.Force() : 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Force()
+
+let inline vsnd ((_, y): struct('T * 'T)) = y

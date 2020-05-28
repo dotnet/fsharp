@@ -1,6 +1,29 @@
-framework: net461
+source https://api.nuget.org/v3/index.json
 
-source https://www.nuget.org/api/v2/
+storage: none
+framework: netstandard2.0
 
-nuget FAKE 5.8.4
-nuget FSharp.Formatting
+nuget FSharp.Core ~> 4.7
+nuget Fake.BuildServer.AppVeyor
+nuget Fake.Core
+nuget Fake.Core.Environment
+nuget Fake.Core.Process
+nuget Fake.Core.ReleaseNotes
+nuget Fake.Core.Target
+nuget Fake.Core.UserInput
+nuget Fake.DotNet.Cli
+nuget Fake.DotNet.Fsi
+nuget Fake.DotNet.Paket
+
+group generate
+
+source https://api.nuget.org/v3/index.json
+
+storage: none
+framework: netstandard2.0
+
+nuget FSharp.Core
+nuget Fake.Core
+nuget Fake.IO.FileSystem
+nuget Fake.Core.Trace
+nuget FSharp.Literate

@@ -8,17 +8,16 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
-open FSharp.Compiler 
-open FSharp.Compiler.Ast
+
 open FSharp.Compiler.Range
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.SyntaxTree
 
 [<Sealed>]
 /// Represents the results of parsing an F# file
 type public FSharpParseFileResults = 
 
     /// The syntax tree resulting from the parse
-    member ParseTree : Ast.ParsedInput option
+    member ParseTree : ParsedInput option
 
     /// Notable parse info for ParameterInfo at a given location
     member FindNoteworthyParamInfoLocations : pos:pos -> FSharpNoteworthyParamInfoLocations option
@@ -41,7 +40,7 @@ type public FSharpParseFileResults =
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors : bool
 
-    internal new: errors: FSharpErrorInfo[] * input: Ast.ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
+    internal new: errors: FSharpErrorInfo[] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
 
 /// Information about F# source file names
 module public SourceFile =
@@ -103,14 +102,21 @@ type public EntityKind =
 // implementation details used by other code in the compiler    
 module public UntypedParseImpl =
     val TryFindExpressionASTLeftOfDotLeftOfCursor : pos * ParsedInput option -> (pos * bool) option
+
     val GetRangeOfExprLeftOfDot : pos  * ParsedInput option -> range option
+
     val TryFindExpressionIslandInPosition : pos * ParsedInput option -> string option
+
     val TryGetCompletionContext : pos * ParsedInput * lineStr: string -> CompletionContext option
+
     val GetEntityKind: pos * ParsedInput -> EntityKind option
+
     val GetFullNameOfSmallestModuleOrNamespaceAtPoint : ParsedInput * pos -> string[]
 
 // implementation details used by other code in the compiler    
 module internal SourceFileImpl =
+
     val IsInterfaceFile : string -> bool 
+
     val AdditionalDefinesForUseInEditor: isInteractive: bool -> string list
 

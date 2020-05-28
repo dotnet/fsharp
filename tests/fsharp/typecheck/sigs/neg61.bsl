@@ -83,17 +83,13 @@ neg61.fs(156,21,156,22): typecheck error FS3147: This 'let' definition may not b
 
 neg61.fs(171,13,171,18): typecheck error FS3099: 'sumBy' is used with an incorrect number of arguments. This is a custom operation in this query or computation expression. Expected 1 argument(s), but given 0.
 
-neg61.fs(174,22,174,23): typecheck error FS0041: No overloads match for method 'Source'. The available overloads are shown below.
-neg61.fs(174,22,174,23): typecheck error FS0041: Possible overload: 'member Linq.QueryBuilder.Source : source:System.Linq.IQueryable<'T> -> Linq.QuerySource<'T,'Q>'. Type constraint mismatch. The type 
-    'int'    
-is not compatible with type
-    'System.Linq.IQueryable<'a>'    
-.
-neg61.fs(174,22,174,23): typecheck error FS0041: Possible overload: 'member Linq.QueryBuilder.Source : source:System.Collections.Generic.IEnumerable<'T> -> Linq.QuerySource<'T,System.Collections.IEnumerable>'. Type constraint mismatch. The type 
-    'int'    
-is not compatible with type
-    'System.Collections.Generic.IEnumerable<'a>'    
-.
+neg61.fs(174,22,174,23): typecheck error FS0041: No overloads match for method 'Source'.
+
+Known type of argument: int
+
+Available overloads:
+ - member Linq.QueryBuilder.Source : source:System.Collections.Generic.IEnumerable<'T> -> Linq.QuerySource<'T,System.Collections.IEnumerable> // Argument 'source' doesn't match
+ - member Linq.QueryBuilder.Source : source:System.Linq.IQueryable<'T> -> Linq.QuerySource<'T,'Q> // Argument 'source' doesn't match
 
 neg61.fs(180,19,180,31): typecheck error FS3153: Arguments to query operators may require parentheses, e.g. 'where (x > y)' or 'groupBy (x.Length / 10)'
 

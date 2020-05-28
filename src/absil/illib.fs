@@ -40,22 +40,22 @@ let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
-/// We set the limit to slightly under that to allow for some 'slop'
-let LOH_SIZE_THRESHOLD_BYTES = 84_900
+/// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
+let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
 //---------------------------------------------------------------------
 // Library: ReportTime
 //---------------------------------------------------------------------
 let reportTime =
-    let tFirst = ref None
-    let tPrev = ref None
+    let mutable tFirst =None
+    let mutable tPrev = None
     fun showTimes descr ->
         if showTimes then 
             let t = Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
-            let prev = match !tPrev with None -> 0.0 | Some t -> t
-            let first = match !tFirst with None -> (tFirst := Some t; t) | Some t -> t
+            let prev = match tPrev with None -> 0.0 | Some t -> t
+            let first = match tFirst with None -> (tFirst <- Some t; t) | Some t -> t
             printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
-            tPrev := Some t
+            tPrev <- Some t
 
 //-------------------------------------------------------------------------
 // Library: projections
@@ -375,11 +375,6 @@ module List =
                           let cxy = eltOrder.Compare(x, y)
                           if cxy=0 then loop xs ys else cxy 
                   loop xs ys }
-    
-    module FrontAndBack = 
-        let (|NonEmpty|Empty|) l = match l with [] -> Empty | _ -> NonEmpty(frontAndBack l)
-
-    let range n m = [ n .. m ]
 
     let indexNotFound() = raise (new KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
@@ -508,9 +503,20 @@ module String =
     let uppercase (s: string) =
         s.ToUpperInvariant()
 
-    let isUpper (s: string) = 
-        s.Length >= 1 && Char.IsUpper s.[0] && not (Char.IsLower s.[0])
-        
+    // Scripts that distinguish between upper and lower case (bicameral) DU Discriminators and Active Pattern identifiers are required to start with an upper case character.
+    // For valid identifiers where the case of the identifier can not be determined because there is no upper and lower case we will allow DU Discriminators and upper case characters 
+    // to be used.  This means that developers using unicameral scripts such as hindi, are not required to prefix these identifiers with an Upper case latin character. 
+    //
+    let isLeadingIdentifierCharacterUpperCase (s:string) =
+        let isUpperCaseCharacter c =
+            // if IsUpper and IsLower return the same value, then we can't tell if it's upper or lower case, so ensure it is a letter
+            // otherwise it is bicameral, so must be upper case
+            let isUpper = Char.IsUpper c
+            if isUpper = Char.IsLower c then Char.IsLetter c
+            else isUpper
+
+        s.Length >= 1 && isUpperCaseCharacter s.[0]
+
     let capitalize (s: string) =
         if s.Length = 0 then s 
         else uppercase s.[0..0] + s.[ 1.. s.Length - 1 ]
@@ -573,10 +579,10 @@ module String =
     let getLines (str: string) =
         use reader = new StringReader(str)
         [|
-            let line = ref (reader.ReadLine())
-            while not (isNull !line) do
-                yield !line
-                line := reader.ReadLine()
+            let mutable line = reader.ReadLine()
+            while not (isNull line) do
+                yield line
+                line <- reader.ReadLine()
             if str.EndsWithOrdinal("\n") then
                 // last trailing space not returned
                 // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
@@ -1361,7 +1367,45 @@ module Shim =
                 directory.Contains("packages\\") || 
                 directory.Contains("lib/mono/")
 
-    let mutable FileSystem = DefaultFileSystem() :> IFileSystem 
+    let mutable FileSystem = DefaultFileSystem() :> IFileSystem
+
+    // The choice of 60 retries times 50 ms is not arbitrary. The NTFS FILETIME structure 
+    // uses 2 second resolution for LastWriteTime. We retry long enough to surpass this threshold 
+    // plus 1 second. Once past the threshold the incremental builder will be able to retry asynchronously based
+    // on plain old timestamp checking.
+    //
+    // The sleep time of 50ms is chosen so that we can respond to the user more quickly for Intellisense operations.
+    //
+    // This is not run on the UI thread for VS but it is on a thread that must be stopped before Intellisense
+    // can return any result except for pending.
+    let private retryDelayMilliseconds = 50
+    let private numRetries = 60
+
+    let private getReader (filename, codePage: int option, retryLocked: bool) =
+        // Retry multiple times since other processes may be writing to this file.
+        let rec getSource retryNumber =
+          try 
+            // Use the .NET functionality to auto-detect the unicode encoding
+            let stream = FileSystem.FileStreamReadShim(filename) 
+            match codePage with 
+            | None -> new  StreamReader(stream,true)
+            | Some n -> new  StreamReader(stream,System.Text.Encoding.GetEncoding(n))
+          with 
+              // We can get here if the file is locked--like when VS is saving a file--we don't have direct
+              // access to the HRESULT to see that this is EONOACCESS.
+              | :? System.IO.IOException as err when retryLocked && err.GetType() = typeof<System.IO.IOException> -> 
+                   // This second check is to make sure the exception is exactly IOException and none of these for example:
+                   //   DirectoryNotFoundException 
+                   //   EndOfStreamException 
+                   //   FileNotFoundException 
+                   //   FileLoadException 
+                   //   PathTooLongException
+                   if retryNumber < numRetries then 
+                       System.Threading.Thread.Sleep (retryDelayMilliseconds)
+                       getSource (retryNumber + 1)
+                   else 
+                       reraise()
+        getSource 0
 
     type File with 
 
@@ -1373,4 +1417,7 @@ module Shim =
             while n < len do 
                 n <- n + stream.Read(buffer, n, len-n)
             buffer
+
+        static member OpenReaderAndRetry (filename, codepage, retryLocked)  =
+            getReader (filename, codepage, retryLocked)
 

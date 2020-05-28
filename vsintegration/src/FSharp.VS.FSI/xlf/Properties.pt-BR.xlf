@@ -27,6 +27,21 @@
         <target state="translated">Diversos</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractivePreview">
+        <source>FSI Preview</source>
+        <target state="translated">Versão prévia do FSI</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewMode">
+        <source>Enable preview language features</source>
+        <target state="translated">Habilitar versões prévias dos recursos de linguagem</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewModeDescr">
+        <source>Enable preview of in-development language features in F# Interactive</source>
+        <target state="translated">Habilitar as versões prévias de recursos de linguagem em desenvolvimento no F# Interativo</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
         <source>Shadow copy assemblies</source>
         <target state="translated">Assemblies de cópia de sombra</target>

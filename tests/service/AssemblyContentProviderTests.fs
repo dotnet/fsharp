@@ -73,7 +73,7 @@ module MyType =
         "Test.MyType.func123"]
         
 [<Test>]
-let ``Module suffix added by an xplicitly applied MuduleSuffix attribute is removed``() =
+let ``Module suffix added by an explicitly applied ModuleSuffix attribute is removed``() =
     """
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MyType =
@@ -83,4 +83,12 @@ module MyType =
          "Test.MyType"
          "Test.MyType.func123" ]
 
-
+[<Test>]
+let ``Property getters and setters are removed``() =
+    """
+    type MyType() =
+        static member val MyProperty = 0 with get,set
+"""
+    => [ "Test"
+         "Test.MyType"
+         "Test.MyType.MyProperty" ]

@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.UnitTests.Utilities
 
 [<TestFixture>]
 module ByrefTests =
@@ -196,3 +197,69 @@ let test1 () =
                 )
             |]
 #endif
+
+#if NETCOREAPP
+    [<Test>]
+    let ``Consume CSharp interface with a method that has a readonly byref`` () =
+        let cs =
+            """
+using System;
+using System.Buffers;
+
+namespace Example
+{
+    public interface IMessageReader
+    {
+        bool TryParseMessage(in byte input);
+    }
+}
+            """
+        let fs =
+            """
+module Module1
+
+open Example
+
+type MyClass() =
+
+  interface IMessageReader with
+      member this.TryParseMessage(input: inref<byte>): bool = 
+          failwith "Not Implemented"
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(cs, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fs, Fsx, Library, cmplRefs = [csCmpl])
+
+        CompilerAssert.Compile fsCmpl
+        
+#endif
+
+    [<Test>]
+    let ``Can take native address to get a nativeptr of a mutable value`` () =
+        CompilerAssert.Pass
+            """
+#nowarn "51"
+
+let test () =
+    let mutable x = 1
+    let y = &&x
+    ()
+            """
+
+    [<Test>]
+    let ``Cannot take native address to get a nativeptr of an immmutable value`` () =
+        CompilerAssert.TypeCheckWithErrors
+            """
+#nowarn "51"
+
+let test () =
+    let x = 1
+    let y = &&x
+    ()
+            """ [|
+                    (FSharpErrorSeverity.Error, 256, (6, 13, 6, 16), "A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'")
+                |]

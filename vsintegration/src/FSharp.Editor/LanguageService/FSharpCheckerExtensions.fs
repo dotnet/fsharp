@@ -3,11 +3,13 @@ module internal Microsoft.VisualStudio.FSharp.Editor.FSharpCheckerExtensions
 
 open System
 open System.Threading.Tasks
+
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
+
 open FSharp.Compiler
-open FSharp.Compiler.Ast
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
 
 type FSharpChecker with
     member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: SourceText, userOpName: string) =

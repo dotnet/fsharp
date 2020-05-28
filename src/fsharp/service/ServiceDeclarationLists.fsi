@@ -1,15 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-//----------------------------------------------------------------------------
-// API for declaration lists and method overload lists
-
+/// API for declaration lists and method overload lists
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Range
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Tastops
-
+open FSharp.Compiler.Range
+open FSharp.Compiler.TypedTreeOps
 
 [<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.
@@ -22,14 +19,6 @@ type public FSharpDeclarationListItem =
 
     /// Get the name for the declaration as it's presented in source code.
     member NameInCode : string
-
-    /// Get the description text for the declaration. Computing this property may require using compiler
-    /// resources and may trigger execution of a type provider method to retrieve documentation.
-    ///
-    /// May return "Loading..." if timeout occurs
-    member StructuredDescriptionText : FSharpStructuredToolTipText
-
-    member DescriptionText : FSharpToolTipText
 
     /// Get the description text, asynchronously.  Never returns "Loading...".
     member StructuredDescriptionTextAsync : Async<FSharpStructuredToolTipText>

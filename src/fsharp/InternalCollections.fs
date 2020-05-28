@@ -2,7 +2,6 @@
 
 namespace Internal.Utilities.Collections
 open System
-open System.Collections.Generic
 
 [<StructuralEquality; NoComparison>]
 type internal ValueStrength<'T when 'T : not struct> =
@@ -183,6 +182,18 @@ type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongl
         match cache.TryGetKeyValue(tok, key) with
         | Some(similarKey, value) -> 
             if areSame(similarKey, key) && isStillValid(key,value) then Some value
+            else None
+        | None -> None
+
+    member bc.TryGetSimilarAny(tok, key) = 
+        match cache.TryGetKeyValue(tok, key) with
+        | Some(_, value) -> Some value
+        | None -> None
+
+    member bc.TryGetSimilar(tok, key) = 
+        match cache.TryGetKeyValue(tok, key) with
+        | Some(_, value) -> 
+            if isStillValid(key,value) then Some value
             else None
         | None -> None
            

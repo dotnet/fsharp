@@ -2,9 +2,159 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ja" original="../FSComp.resx">
     <body>
+      <trans-unit id="chkFeatureNotLanguageSupported">
+        <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
+        <target state="new">Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkFeatureNotRuntimeSupported">
+        <source>Feature '{0}' is not supported by target runtime.</source>
+        <target state="new">Feature '{0}' is not supported by target runtime.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csAvailableOverloads">
+        <source>Available overloads:\n{0}</source>
+        <target state="translated">使用可能なオーバーロード:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
+        <source>Known types of arguments: {0}</source>
+        <target state="translated">既知の型の引数: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixSingular">
+        <source>Known type of argument: {0}</source>
+        <target state="translated">既知の型の引数: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundReturnType">
+        <source>Known return type: {0}</source>
+        <target state="translated">既知の戻り値の型: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixPlural">
+        <source>Known type parameters: {0}</source>
+        <target state="translated">既知の型パラメーター: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixSingular">
+        <source>Known type parameter: {0}</source>
+        <target state="translated">既知の型パラメーター: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
+        <source>Argument at index {0} doesn't match</source>
+        <target state="translated">インデックス {0} の引数が一致しません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
+        <source>Argument '{0}' doesn't match</source>
+        <target state="translated">引数 '{0}' が一致しません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasDesignerAssemblyDependency">
+        <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
+        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasDesignerAssemblyException">
+        <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</source>
+        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasWrongDesignerAssemblyNoPath">
+        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</source>
+        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fSharpBannerVersion">
         <source>{0} for F# {1}</source>
         <target state="translated">F# {1} のための {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureAndBang">
+        <source>applicative computation expressions</source>
+        <target state="new">applicative computation expressions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDefaultInterfaceMemberConsumption">
+        <source>default interface member consumption</source>
+        <target state="new">default interface member consumption</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDotlessFloat32Literal">
+        <source>dotless float32 literal</source>
+        <target state="new">dotless float32 literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureFixedIndexSlice3d4d">
+        <source>fixed-index slice 3d/4d</source>
+        <target state="new">fixed-index slice 3d/4d</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureFromEndSlicing">
+        <source>from-end slicing</source>
+        <target state="new">from-end slicing</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureImplicitYield">
+        <source>implicit yield</source>
+        <target state="new">implicit yield</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNameOf">
+        <source>nameof</source>
+        <target state="new">nameof</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNullableOptionalInterop">
+        <source>nullable optional interop</source>
+        <target state="new">nullable optional interop</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOpenStaticClasses">
+        <source>open static classes</source>
+        <target state="new">open static classes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePackageManagement">
+        <source>package management</source>
+        <target state="new">package management</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRelaxWhitespace">
+        <source>whitespace relexation</source>
+        <target state="new">whitespace relexation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureSingleUnderscorePattern">
+        <source>single underscore pattern</source>
+        <target state="new">single underscore pattern</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWildCardInForLoop">
+        <source>wild card in for loop</source>
+        <target state="new">wild card in for loop</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="formatDashItem">
+        <source> - {0}</source>
+        <target state="translated"> - {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fromEndSlicingRequiresVFive">
+        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
+        <target state="translated">言語バージョン 5.0 が必要な最後からのスライスで、/langversion:preview を使用してください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="translated">ストリームは null リソースでは始まらず、'RES' 形式でもありません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="translated">オフセット {0} で始まるリソース ヘッダーの形式に誤りがあります。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -22,19 +172,14 @@
         <target state="translated">--langversion の値 '{0}' が認識されません。完全なリストについては、--langversion:? を使用してください</target>
         <note />
       </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="translated">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">メンバー定義に予期しない記号 '.' があります。'with'、'=' またはその他のトークンが必要です。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nativeResourceFormatError">
-        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
-        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nativeResourceHeaderMalformed">
-        <source>Resource header beginning at offset {0} is malformed.</source>
-        <target state="new">Resource header beginning at offset {0} is malformed.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsChecksumAlgorithm">
@@ -47,9 +192,49 @@
         <target state="translated">アルゴリズム '{0}' はサポートされていません</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAndBangNotSupported">
+        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
+        <target state="translated">この機能は、このバージョンの F# ではサポートされていません。この機能を使用するには、/langversion:preview の追加が必要な場合があります。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameDifferent">
+        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
+        <target state="translated">この匿名レコードは正しくありません。フィールド {0} を含んでいる必要があります。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSubset">
+        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
+        <target state="translated">この匿名レコードには十分なフィールドがありません。不足しているフィールド {0} を追加してください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSuperset">
+        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
+        <target state="translated">この匿名レコードはフィールドが多すぎます。不要なフィールド {0} を削除してください。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
-        <target state="new">Attributes cannot be applied to type extensions.</target>
+        <target state="translated">属性を型拡張に適用することはできません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
+        <source>use! may not be combined with and!</source>
+        <target state="translated">use! を and! と組み合わせて使用することはできません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRequireMergeSourcesOrBindN">
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
+        <target state="translated">'let! ... and! ...' コンストラクトは、コンピュテーション式ビルダーが '{0}' メソッドまたは適切な 'MergeSource' および 'Bind' メソッドのいずれかを定義している場合にのみ使用できます</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
+        <source>Interface member '{0}' does not have a most specific implementation.</source>
+        <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
+        <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
+        <target state="translated">型 '{0}' は、フィールド、コンストラクター、またはメンバー '{1}' を定義していません。</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -993,8 +1178,8 @@
         <note />
       </trans-unit>
       <trans-unit id="typrelNamedArgumentHasBeenAssignedMoreThenOnce">
-        <source>A named argument has been assigned more than one value</source>
-        <target state="translated">名前付き引数に複数の値が割り当てられました</target>
+        <source>The named argument '{0}' has been assigned more than one value</source>
+        <target state="new">The named argument '{0}' has been assigned more than one value</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGiven">
@@ -1314,7 +1499,7 @@
       </trans-unit>
       <trans-unit id="chkMemberUsedInInvalidWay">
         <source>The member '{0}' is used in an invalid way. A use of '{1}' has been inferred prior to its definition at or near '{2}'. This is an invalid forward reference.</source>
-        <target state="translated">メンバー '{0}' の使用方法に誤りがあります。'{2}' または '{2}' 付近の定義の前に '{1}' の使用が推論されました。これは無効な前方参照です。</target>
+        <target state="translated">メンバー '{0}' の使用方法に誤りがあります。'{2}' またはその付近の定義の前に '{1}' の使用が推論されました。これは無効な前方参照です。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAsTopValue">
@@ -1828,13 +2013,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csCandidates">
-        <source>Candidates: {0}</source>
-        <target state="translated">候補: {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csSeeAvailableOverloads">
-        <source>The available overloads are shown below.</source>
-        <target state="translated">使用できるオーバーロードを以下に示します。</target>
+        <source>Candidates:\n{0}</source>
+        <target state="translated">候補:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="parsDoCannotHaveVisibilityDeclarations">
@@ -1959,7 +2139,7 @@
       </trans-unit>
       <trans-unit id="parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate">
         <source>The '{0}' visibility attribute is not allowed on module abbreviation. Module abbreviations are always private.</source>
-        <target state="translated">モジュールの省略形には '{0}' 可視属性を使用できません。モジュールの省略形は常にプライベートです。</target>
+        <target state="translated">モジュールの省略形には '{0}' 表示範囲属性を使用できません。モジュールの省略形は常にプライベートです。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnClosedBlockInHashLight">
@@ -2064,12 +2244,12 @@
       </trans-unit>
       <trans-unit id="parsInterfacesHaveSameVisibilityAsEnclosingType">
         <source>Interfaces always have the same visibility as the enclosing type</source>
-        <target state="translated">インターフェイスは、それを囲む型と常に同じ可視性を持ちます</target>
+        <target state="translated">インターフェイスは、それを囲む型と常に同じ表示範囲を持ちます</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAccessibilityModsIllegalForAbstract">
         <source>Accessibility modifiers are not allowed on this member. Abstract slots always have the same visibility as the enclosing type.</source>
-        <target state="translated">アクセシビリティ修飾子はこのメンバーでは許可されていません。抽象スロットには、それを囲む型と常に同じ可視性があります。</target>
+        <target state="translated">アクセシビリティ修飾子はこのメンバーでは許可されていません。抽象スロットには、それを囲む型と常に同じ表示範囲があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAttributesIllegalOnInherit">
@@ -2394,12 +2574,12 @@
       </trans-unit>
       <trans-unit id="tcMultipleVisibilityAttributes">
         <source>Multiple visibility attributes have been specified for this identifier</source>
-        <target state="translated">この識別子に複数の可視属性が指定されました</target>
+        <target state="translated">この識別子に複数の表示範囲属性が指定されました</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMultipleVisibilityAttributesWithLet">
         <source>Multiple visibility attributes have been specified for this identifier. 'let' bindings in classes are always private, as are any 'let' bindings inside expressions.</source>
-        <target state="translated">この識別子に複数の可視属性が指定されました。式内のすべての 'let' 束縛と同様に、クラス内の 'let' 束縛は常にプライベートです。</target>
+        <target state="translated">この識別子に複数の表示範囲属性が指定されました。式内のすべての 'let' 束縛と同様に、クラス内の 'let' 束縛は常にプライベートです。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMethodNameForRelationalOperator">
@@ -3584,7 +3764,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalFormForExplicitTypeDeclaration">
         <source>Explicit type declarations for constructors must be of the form 'ty1 * ... * tyN -&gt; resTy'. Parentheses may be required around 'resTy'</source>
-        <target state="translated">コンストラクタ―の明示的な型宣言の形式は 'ty1 * ... * tyN -&gt; resTy' でなければなりません。'resTy' をかっこで囲まなければならない場合があります</target>
+        <target state="translated">コンストラクターの明示的な型宣言の形式は 'ty1 * ... * tyN -&gt; resTy' でなければなりません。'resTy' をかっこで囲まなければならない場合があります</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnTypesForUnionMustBeSameAsType">
@@ -3619,7 +3799,7 @@
       </trans-unit>
       <trans-unit id="tcModuleRequiresQualifiedAccess">
         <source>This declaration opens the module '{0}', which is marked as 'RequireQualifiedAccess'. Adjust your code to use qualified references to the elements of the module instead, e.g. 'List.map' instead of 'map'. This change will ensure that your code is robust as new constructs are added to libraries.</source>
-        <target state="translated">この宣言はモジュール '{0}' を開きます。'{0}' は 'RequireQualifiedAccess' とマークされています。代わりにモジュールの要素に対する限定参照を使用するようにコードを変更してください (たとえば、'map' の代わりに 'List.map')。この変更によってコードが堅牢になり、新しいコンストラクターがライブラリに追加された場合にも対応できます。</target>
+        <target state="translated">この宣言は 'RequireQualifiedAccess' とマークされているモジュール '{0}' を開きます。代わりにモジュールの要素に対する限定参照を使用するようにコードを変更してください (たとえば、'map' の代わりに 'List.map')。この変更によってコードが堅牢になり、新しいコンストラクターがライブラリに追加された場合にも対応できます。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOpenUsedWithPartiallyQualifiedPath">
@@ -4983,8 +5163,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
-        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="translated">これは有効な数値リテラルではありません。有効な数値リテラルの例には、1、0x1、0b0001 (int)、1u (uint32)、1L (int64)、1UL (uint64)、1s (int16)、1y (sbyte)、1uy (byte)、1.0 (float)、1.0f (float32)、1.0m (decimal)、1I (BigInteger) などがあります。</target>
+        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
+        <target state="translated">これは有効な数値リテラルではありません。有効な数値リテラルの例には、1、0x1、0o1、0b1、1l (int)、1u (uint32)、1L (int64)、1UL (uint64)、1s (int16)、1y (sbyte)、1uy (byte)、1.0 (float)、1.0f (float32)、1.0m (decimal)、1I (BigInteger) などがあります。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -5703,8 +5883,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssembly">
-        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. {2}</source>
-        <target state="translated">アセンブリ属性 '{0}' はデザイナー アセンブリ '{1}' を参照していますが、このアセンブリは読み込めないか、存在していません。{2}</target>
+        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</source>
+        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderDoesNotHaveValidConstructor">
@@ -7128,8 +7308,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
-        <target state="translated">2 種類の匿名レコードのフィールド名 '{0}' と '{1}' が一致しません</target>
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="translated">この匿名レコードは、予期された形状と完全には一致していません。不足しているフィールド {0} を追加し、不要なフィールド {1} を削除してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
@@ -7220,6 +7400,26 @@
       <trans-unit id="optsInvalidPathMapFormat">
         <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
         <target state="translated">無効なパス マップです。マッピングはコンマ区切りの 'path=sourcePath' 形式である必要があります</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsCompilerTool">
+        <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
+        <target state="translated">デザイン時ツールを含むアセンブリまたはディレクトリを参照します (短い形式: -t)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerUnknown">
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
+        <target state="translated">パッケージ マネージャー キー '{0}' は {1} に登録されていませんでした。現在登録済み: {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerError">
+        <source>{0}</source>
+        <target state="translated">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotLoadDependencyManagerExtension">
+        <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
+        <target state="translated">依存関係マネージャーの拡張機能 {0} を読み込むことができませんでした。メッセージ: {1}</target>
         <note />
       </trans-unit>
     </body>

@@ -1059,9 +1059,11 @@ module internal PrintfImpl =
         
         static member GenericToStringCore(v: 'T, opts: Microsoft.FSharp.Text.StructuredPrintfImpl.FormatOptions, bindingFlags) = 
             // printfn %0A is considered to mean 'print width zero'
-            match box v with 
-            | null -> "<null>" 
-            | _ -> Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, v.GetType())
+            match box v with
+            | null ->
+                Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, typeof<'T>)
+            | _ ->
+                Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, v.GetType())
 
         static member GenericToString<'T>(spec: FormatSpecifier) = 
             let bindingFlags = 
