@@ -21,6 +21,22 @@ namespace Microsoft.FSharp.NativeInterop
 
         [<Unverifiable>]
         [<NoDynamicInvocation>]
+        [<CompiledName("ToVoidPtrInlined")>]
+        /// <summary>Returns an untyped native pointer for a given typed pointer.</summary>
+        /// <param name="address">The pointer address.</param>
+        /// <returns>A typed pointer.</returns>
+        val inline toVoidPtr : address:nativeptr<'T> -> voidptr
+
+        [<Unverifiable>]
+        [<NoDynamicInvocation>]
+        [<CompiledName("OfVoidPtrInlined")>]
+        /// <summary>Returns a typed native pointer for a untyped native pointer.</summary>
+        /// <param name="address">The untyped pointer.</param>
+        /// <returns>A typed pointer.</returns>
+        val inline ofVoidPtr : voidptr -> nativeptr<'T>
+
+        [<Unverifiable>]
+        [<NoDynamicInvocation>]
         [<CompiledName("ToNativeIntInlined")>]
         /// <summary>Returns a machine address for a given typed native pointer.</summary>
         /// <param name="address">The input pointer.</param>

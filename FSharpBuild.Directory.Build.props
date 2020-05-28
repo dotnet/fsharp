@@ -1,60 +1,111 @@
 <Project>
 
-  <Import Project="build\targets\PackageVersions.props" />
-  <Import Project="build\targets\CommonPackages.targets" />
+  <Import Project="Sdk.props" Sdk="Microsoft.DotNet.Arcade.Sdk" />
+  <Import Project="eng\targets\Settings.props" />
+
+  <PropertyGroup>
+    <BUILD_IN_FSHARP_REPOSITORY>true</BUILD_IN_FSHARP_REPOSITORY>
+  </PropertyGroup>
 
   <!-- directory locations -->
   <PropertyGroup>
-    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
-    <ToolsRoot>$(RepoRoot)Tools</ToolsRoot>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <ProtoOutputPath>$(RepoRoot)Proto\net40\bin</ProtoOutputPath>
+    <SymStoreDirectory>$(ArtifactsDir)\SymStore</SymStoreDirectory>
+    <ProtoOutputPath>$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
+    <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
+    <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
   </PropertyGroup>
 
   <!-- nuget -->
   <PropertyGroup>
+    <PackageIconFullPath>$(MSBuildThisFileDirectory)icon.png</PackageIconFullPath>
+
+    <!-- Point to artifacts folder as an additional nuget package source  -->
+    <RestoreAdditionalProjectSources Condition = "Exists('$(ArtifactsPackagesDir)') and '$(RestoreAdditionalProjectSources)' != ''">$(RestoreAdditionalProjectSources);$(ArtifactsPackagesDir)</RestoreAdditionalProjectSources>
+    <RestoreAdditionalProjectSources Condition = "Exists('$(ArtifactsPackagesDir)') and '$(RestoreAdditionalProjectSources)' == ''">$(ArtifactsPackagesDir)</RestoreAdditionalProjectSources>
+
     <!-- default NuGet package restore location -->
     <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(NUGET_PACKAGES)</NuGetPackageRoot>
-    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(MSBuildThisFileDirectory)packages</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' == 'Windows_NT'">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' != 'Windows_NT'">$(HOME)/.nuget/packages/</NuGetPackageRoot>
+
     <!-- ensure there is a trailing slash -->
     <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' == 'Windows_NT'">$(NuGetPackageRoot)\</NuGetPackageRoot>
     <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' != 'Windows_NT'">$(NuGetPackageRoot)/</NuGetPackageRoot>
+
+    <!-- ensure all NuGet packages come from the `$(NuGetPackageRoot)` variable -->
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+  </PropertyGroup>
+
+  <!-- mono -->
+  <PropertyGroup Condition="'$(OS)' == 'Unix'">
+    <MonoRoot Condition="'$(MonoRoot)' == '' and $([MSBuild]::IsOsPlatform('Linux'))">/usr</MonoRoot>
+    <MonoRoot Condition="'$(MonoRoot)' == '' and $([MSBuild]::IsOsPlatform('OSX'))">/Library/Frameworks/Mono.framework/Versions/Current</MonoRoot>
+    <MonoLibFolder>$(MonoRoot)/lib/mono</MonoLibFolder>
+    <MonoPackaging Condition="$(TargetFramework.StartsWith('net4'))">true</MonoPackaging>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net45'">$(MonoLibFolder)/4.5-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net451'">$(MonoLibFolder)/4.5.1-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net452'">$(MonoLibFolder)/4.5.2-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net46'">$(MonoLibFolder)/4.6-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net461'">$(MonoLibFolder)/4.6.1-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net462'">$(MonoLibFolder)/4.6.2-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net47'">$(MonoLibFolder)/4.7-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net471'">$(MonoLibFolder)/4.7.1-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net472'">$(MonoLibFolder)/4.7.2-api</FrameworkPathOverride>
   </PropertyGroup>
 
   <!-- signing -->
   <PropertyGroup>
-    <SkipSigning>false</SkipSigning>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
-    <StrongNames>true</StrongNames>
-    <DelaySign>true</DelaySign>
+    <StrongNameKeyId>Microsoft</StrongNameKeyId>
   </PropertyGroup>
-
-  <!-- mono -->
-  <PropertyGroup>
-    <MonoPackaging Condition="$(TargetFramework.StartsWith('net4')) and '$(OS)' == 'Unix'">true</MonoPackaging>
+  <PropertyGroup Condition="'$(MonoPackaging)' == 'true'">
+    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\test.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
   <!-- localization -->
   <PropertyGroup>
-    <EnableXlfLocalization Condition="'$(Configuration)' == 'Proto' or '$(MonoPackaging)' == 'true'">false</EnableXlfLocalization>
+    <EnableXlfLocalization Condition="'$(EnableXlfLocalization)' == '' AND ('$(Configuration)' == 'Proto' OR '$(MonoPackaging)' == 'true')">false</EnableXlfLocalization>
     <UpdateXlfOnBuild Condition="'$(CI)' != '1'">true</UpdateXlfOnBuild>
+  </PropertyGroup>
+
+  <!-- source-build workarounds -->
+  <PropertyGroup Condition="'$(FSharpSourceBuild)' == 'true'">
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
+    <PublishWindowsPdb>false</PublishWindowsPdb>
+    <RepositoryUrl Condition="'$(RepositoryUrl)' == ''">https://github.com/Microsoft/visualfsharp</RepositoryUrl>
+    <RepositoryType Condition="'$(RepositoryType)' == ''">git</RepositoryType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(FSharpSourceBuild)' == 'true' AND '$(RepositoryCommit)' == ''">
+    <_DotGitDir>$(RepoRoot).git</_DotGitDir>
+    <_HeadFileContent Condition="Exists('$(_DotGitDir)/HEAD')">$([System.IO.File]::ReadAllText('$(_DotGitDir)/HEAD').Trim())</_HeadFileContent>
+    <_RefPath Condition="$(_HeadFileContent.StartsWith('ref: '))">$(_DotGitDir)/$(_HeadFileContent.Substring(5))</_RefPath>
+    <RepositoryCommit>$(BUILD_SOURCEVERSION)</RepositoryCommit>
+    <RepositoryCommit Condition="'$(RepositoryCommit)' == '' AND '$(_RefPath)' != '' and Exists('$(_RefPath)')">$([System.IO.File]::ReadAllText('$(_RefPath)').Trim())</RepositoryCommit>
   </PropertyGroup>
 
   <!-- other -->
   <PropertyGroup>
-    <DebugType>portable</DebugType>
+    <NoWarn Condition="'$(Language)' == 'F#'">$(NoWarn);FS2003</NoWarn><!-- warning when AssemblyInformationalVersion looks like '1.2.3-dev' -->
+    <NoCompilerStandardLib>true</NoCompilerStandardLib><!-- necessary for resource generation using csc.exe -->
+    <DebugType>embedded</DebugType>
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
     <UseStandardResourceNames>false</UseStandardResourceNames>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(OS)' == 'Unix'">
+    <DefineConstants>$(DefineConstants);TESTING_ON_LINUX</DefineConstants>
+  </PropertyGroup>
+
   <!-- SDK targets override -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-    <ProtoFSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</ProtoFSharpTargetsShim>
-    <FSharpTargetsShim Condition="Exists('$(ProtoFSharpTargetsShim)')">$(ProtoFSharpTargetsShim)</FSharpTargetsShim>
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')">
+    <FSharpTargetsPath>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Targets</FSharpTargetsPath>
+    <FSharpPropsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
+    <FSharpTargetsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
+    <FSharpOverridesTargetsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
   </PropertyGroup>
 
 </Project>

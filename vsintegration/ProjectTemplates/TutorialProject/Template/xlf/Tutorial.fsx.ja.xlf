@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">F# Interactive でコードを実行するには、コードの一部を強調表示して、Alt キーを押しながら Enter キーを押すか、右マウス ボタンをクリックし</target>
+        <target state="translated">F# インタラクティブでコードを実行するには、コードの一部を強調表示して、Alt キーを押しながら Enter キーを押すか、右マウス ボタンをクリックし</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">[対話形式で実行]5D; を選択します。[表示]5D; メニューから F# Interactive ウィンドウを開くことができます。</target>
+        <target state="translated">[対話形式で実行]5D; を選択します。[表示]5D; メニューから F# インタラクティブ ウィンドウを開くことができます。</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
@@ -129,7 +129,7 @@
       </trans-unit>
       <trans-unit id="Computed-Line1">
         <source>This computed a new number by some arithmetic.  Numeric types are converted using</source>
-        <target state="translated">これは、演算によって新しい数値を計算したものです。数値型は、関数 'int'、'double' などを使用して変換されます。</target>
+        <target state="translated">算術によって新しい数値が算出されました。数値型は以下を使用するよう変換されています</target>
         <note />
       </trans-unit>
       <trans-unit id="Computed-Line2">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line3">
         <source>and</source>
-        <target state="translated">」および「</target>
+        <target state="translated">AND</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanValues">
@@ -679,7 +679,7 @@
       </trans-unit>
       <trans-unit id="ListFilter-Line1">
         <source>There are many other list combinations. The following computes the sum of the squares of the</source>
-        <target state="translated">他に多くのリストの組み合わせがあります。次の二乗和を計算します:</target>
+        <target state="translated">他に多くのリストの組み合わせがあります。次の二乗和をコンピューティングします:</target>
         <note />
       </trans-unit>
       <trans-unit id="ListFilter-Line2">
@@ -849,7 +849,7 @@
       </trans-unit>
       <trans-unit id="RecFunDef-Line1">
         <source>This example shows a recursive function that computes the factorial of an</source>
-        <target state="translated">この例では、次の階乗を計算する再帰関数を示します</target>
+        <target state="translated">この例では、次の階乗をコンピューティングする再帰関数を示します</target>
         <note />
       </trans-unit>
       <trans-unit id="RecRunDef-Line2">
@@ -859,7 +859,7 @@
       </trans-unit>
       <trans-unit id="RecGcd-Line1">
         <source>Computes the greatest common factor of two integers.</source>
-        <target state="translated">2 つの整数の最大公約数を計算します。</target>
+        <target state="translated">2 つの整数の最大公約数をコンピューティングします。</target>
         <note />
       </trans-unit>
       <trans-unit id="RecGcd-Line2">
@@ -879,7 +879,7 @@
       </trans-unit>
       <trans-unit id="RecSumList">
         <source>This example computes the sum of a list of integers using recursion.</source>
-        <target state="translated">この例では、再帰を使用して整数のリストの合計を計算します。</target>
+        <target state="translated">この例では、再帰を使用して整数のリストの合計をコンピューティングします。</target>
         <note />
       </trans-unit>
       <trans-unit id="RecSumListTail">
@@ -899,7 +899,7 @@
       </trans-unit>
       <trans-unit id="Records-Line1">
         <source>Records are an aggregate of named values, with optional members (such as methods).</source>
-        <target state="translated">レコードは、オプションのメンバー (メソッドなど) を含む名前付きの値の集合です。</target>
+        <target state="translated">レコードは、オプションのメンバー (メソッドなど) を含む名前付きの値の集約です。</target>
         <note />
       </trans-unit>
       <trans-unit id="Records-Line2">
@@ -949,7 +949,7 @@
       </trans-unit>
       <trans-unit id="ProcessRecord-Line1">
         <source>This example shows how to write a function that processes a record value.</source>
-        <target state="translated">この例では、レコード値を処理する関数を記述する方法を示します。</target>
+        <target state="translated">この例では、レコード値を処理する関数を書き込む方法を示します。</target>
         <note />
       </trans-unit>
       <trans-unit id="ProcessRecord-Line2">
@@ -994,7 +994,7 @@
       </trans-unit>
       <trans-unit id="DiscriminatedUnions-Line2">
         <source>Data stored in DUs can be one of several distinct values.</source>
-        <target state="translated">DU に格納されるデータは、複数の個別の値のいずれかになります。</target>
+        <target state="translated">DU の格納データは、複数の個別の値のいずれかになります。</target>
         <note />
       </trans-unit>
       <trans-unit id="DiscriminatedUnions-Line3">
@@ -1034,7 +1034,7 @@
       </trans-unit>
       <trans-unit id="ComputeFullDeck">
         <source>This computes a list representing all the cards in the deck.</source>
-        <target state="translated">これは、一組のトランプのすべてのカードを表すリストを計算します。</target>
+        <target state="translated">これは、一組のトランプのすべてのカードを表すリストをコンピューティングします。</target>
         <note />
       </trans-unit>
       <trans-unit id="CardToString">
@@ -1099,7 +1099,7 @@
       </trans-unit>
       <trans-unit id="DuRecursiveDef-Line3">
         <source>and the other being a Node with a value and two subtrees.</source>
-        <target state="translated">もう片方は値と 2 つのサブツリーを含むノードです。</target>
+        <target state="translated">もう片方は値と 2 つのサブツリーを含む Node です。</target>
         <note />
       </trans-unit>
       <trans-unit id="SearchBinaryTree-Line1">
@@ -1294,7 +1294,7 @@
       </trans-unit>
       <trans-unit id="Option-Line1">
         <source>Option values are any kind of value tagged with either 'Some' or 'None'.</source>
-        <target state="translated">オプション値とは、'Some' または 'None' が指定されたあらゆる種類の値です。</target>
+        <target state="translated">オプション値とは、'Some' または 'None' がタグされたあらゆる種類の値です。</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line2">
@@ -1324,7 +1324,7 @@
       </trans-unit>
       <trans-unit id="ShippingCalculator-Line1">
         <source>Next, define an interface type that represents an object to compute the shipping zone for the customer's zip code,</source>
-        <target state="translated">次に、オブジェクトを表すインターフェイスの型を定義して、顧客の郵便番号の出荷ゾーンを計算し、</target>
+        <target state="translated">次に、オブジェクトを表すインターフェイスの型を定義して、顧客の郵便番号の出荷ゾーンをコンピューティングし、</target>
         <note />
       </trans-unit>
       <trans-unit id="ShippingCalculator-Line2">
@@ -1389,7 +1389,7 @@
       </trans-unit>
       <trans-unit id="ComputeMileToMeter">
         <source>Compute  metric-system constant</source>
-        <target state="translated">メートル法の定数を計算します</target>
+        <target state="translated">メートル法の定数をコンピューティングします</target>
         <note />
       </trans-unit>
       <trans-unit id="PrintUnitsOfMeasure">
@@ -1434,7 +1434,7 @@
       </trans-unit>
       <trans-unit id="ClassInternalField-Line1">
         <source>This internal field stores the length of the vector, computed when the</source>
-        <target state="translated">この内部フィールドはベクトルの長さを格納します。これは、次の時点でに計算されます:</target>
+        <target state="translated">この内部フィールドはベクトルの長さを格納します。これは、次の時点でにコンピューティングされます:</target>
         <note />
       </trans-unit>
       <trans-unit id="ClassInternalField-Line2">

@@ -3,18 +3,24 @@
 setlocal
 pushd %~dp0%
 
+dotnet tool restore
+
 if errorlevel 1 (
   endlocal
   exit /b %errorlevel%
 )
 
-.paket\paket.exe restore
+dotnet paket restore
 if errorlevel 1 (
   endlocal
   exit /b %errorlevel%
 )
 
-packages\FAKE\tools\FAKE.exe build.fsx %*
+:: don't care if this fails
+dotnet build-server shutdown >NUL 2>&1
+
+dotnet fake build -t %*
+
 if errorlevel 1 (
   endlocal
   exit /b %errorlevel%

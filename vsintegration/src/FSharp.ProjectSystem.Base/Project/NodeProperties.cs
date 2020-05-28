@@ -20,7 +20,6 @@ using System.Diagnostics;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.VisualStudio.FSharp.LanguageService;
 using System.Runtime.Versioning;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem

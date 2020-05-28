@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
 // Structs
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 type S<'a> = struct
                  new ( a:'a ) = { f = a }

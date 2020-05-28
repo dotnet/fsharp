@@ -1,16 +1,27 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler 
+open FSharp.Compiler 
+
+// Prevents warnings of experimental APIs within the signature file itself.
+#nowarn "57"
 
 type Position = int * int
+
 type Range = Position * Position
 
 /// Represents encoded information for the end-of-line continuation of lexing
-type FSharpTokenizerLexState = int64
+[<Struct; CustomEquality; NoComparison>]
+type FSharpTokenizerLexState = 
+    { PosBits: int64
+      OtherBits: int64 }
 
-/// Represents stable information for the state of the laxing engine at the end of a line
+    static member Initial : FSharpTokenizerLexState
+
+    member Equals : FSharpTokenizerLexState -> bool
+
+/// Represents stable information for the state of the lexing engine at the end of a line
 type FSharpTokenizerColorState =
     | Token = 1
     | IfDefSkip = 3
@@ -27,8 +38,7 @@ type FSharpTokenizerColorState =
     | TripleQuoteStringInComment = 14
     | InitialState = 0 
     
-
-/// Gives an indicattion of the color class to assign to the token an IDE
+/// Gives an indication of the color class to assign to the token an IDE
 type FSharpTokenColorKind =
     | Default = 0
     | Text = 0
@@ -129,6 +139,8 @@ module FSharpTokenTag =
     /// Indicates the token is a `..`
     val DOT_DOT : int
     /// Indicates the token is a `..`
+    val DOT_DOT_HAT : int
+    /// Indicates the token is a `..^`
     val INT32_DOT_DOT : int
     /// Indicates the token is a `..`
     val UNDERSCORE : int
@@ -193,21 +205,28 @@ module FSharpTokenTag =
 type FSharpTokenInfo = 
     { /// Left column of the token.
       LeftColumn:int
+
       /// Right column of the token.
       RightColumn:int
+
       ColorClass:FSharpTokenColorKind
+
       /// Gives an indication of the class to assign to the token an IDE
       CharClass:FSharpTokenCharKind
+
       /// Actions taken when the token is typed
       FSharpTokenTriggerClass:FSharpTokenTriggerClass
+
       /// The tag is an integer identifier for the token
       Tag:int
+
       /// Provides additional information about the token
       TokenName:string;
+
       /// The full length consumed by this match, including delayed tokens (which can be ignored in naive lexers)
       FullMatchedLength: int }
 
-/// Object to tokenize a line of F# source code, starting with the given lexState.  The lexState should be 0 for
+/// Object to tokenize a line of F# source code, starting with the given lexState.  The lexState should be FSharpTokenizerLexState.Initial for
 /// the first line of text. Returns an array of ranges of the text and two enumerations categorizing the
 /// tokens and characters covered by that range, i.e. FSharpTokenColorKind and FSharpTokenCharKind.  The enumerations
 /// are somewhat adhoc but useful enough to give good colorization options to the user in an IDE.
@@ -221,7 +240,6 @@ type FSharpLineTokenizer =
     static member ColorStateOfLexState : FSharpTokenizerLexState -> FSharpTokenizerColorState
     static member LexStateOfColorState : FSharpTokenizerColorState -> FSharpTokenizerLexState
     
-
 /// Tokenizer for a source file. Holds some expensive-to-compute resources at the scope of the file.
 [<Sealed>]
 type FSharpSourceTokenizer =
@@ -229,11 +247,13 @@ type FSharpSourceTokenizer =
     member CreateLineTokenizer : lineText:string -> FSharpLineTokenizer
     member CreateBufferTokenizer : bufferFiller:(char[] * int * int -> int) -> FSharpLineTokenizer
     
-
 module internal TestExpose =     
     val TokenInfo : Parser.token -> (FSharpTokenColorKind * FSharpTokenCharKind * FSharpTokenTriggerClass)
 
 module Keywords =
+    /// Checks if adding backticks to identifier is needed.
+    val DoesIdentifierNeedQuotation : string -> bool
+
     /// Add backticks if the identifier is a keyword.
     val QuoteIdentifierIfNeeded : string -> string
 
@@ -242,3 +262,239 @@ module Keywords =
 
     /// Keywords paired with their descriptions. Used in completion and quick info.
     val KeywordsWithDescription : (string * string) list
+
+[<Experimental("This FCS API is experimental and subject to change.")>]
+module public Lexer =
+
+    open System
+    open System.Threading
+    open FSharp.Compiler.Text
+    open FSharp.Compiler.Range
+
+    [<Flags;Experimental("This FCS API is experimental and subject to change.")>]
+    type public FSharpLexerFlags =
+        | Default                       = 0x11011
+        | LightSyntaxOn                 = 0x00001
+        | Compiling                     = 0x00010 
+        | CompilingFSharpCore           = 0x00110
+        | SkipTrivia                    = 0x01000
+        | UseLexFilter                  = 0x10000
+
+    [<RequireQualifiedAccess;Experimental("This FCS API is experimental and subject to change.")>]
+    type public FSharpSyntaxTokenKind =
+        | None
+        | HashIf
+        | HashElse
+        | HashEndIf
+        | CommentTrivia
+        | WhitespaceTrivia
+        | HashLine
+        | HashLight
+        | InactiveCode
+        | LineCommentTrivia
+        | StringText
+        | Fixed
+        | OffsideInterfaceMember
+        | OffsideBlockEnd
+        | OffsideRightBlockEnd
+        | OffsideDeclEnd
+        | OffsideEnd
+        | OffsideBlockSep
+        | OffsideBlockBegin
+        | OffsideReset
+        | OffsideFun
+        | OffsideFunction
+        | OffsideWith
+        | OffsideElse
+        | OffsideThen
+        | OffsideDoBang
+        | OffsideDo
+        | OffsideBinder
+        | OffsideLet
+        | HighPrecedenceTypeApp
+        | HighPrecedenceParenthesisApp
+        | HighPrecedenceBracketApp
+        | Extern
+        | Void
+        | Public
+        | Private
+        | Internal
+        | Global
+        | Static
+        | Member
+        | Class
+        | Abstract
+        | Override
+        | Default
+        | Constructor
+        | Inherit
+        | GreaterRightBracket
+        | Struct
+        | Sig
+        | Bar
+        | RightBracket
+        | RightBrace
+        | Minus
+        | Dollar
+        | BarRightBracket
+        | BarRightBrace
+        | Underscore
+        | Semicolon
+        | SemicolonSemicolon
+        | LeftArrow
+        | Equals
+        | LeftBracket
+        | LeftBracketBar
+        | LeftBraceBar
+        | LeftBracketLess
+        | LeftBrace
+        | QuestionMark
+        | QuestionMarkQuestionMark
+        | Dot
+        | Colon
+        | ColonColon
+        | ColonGreater
+        | ColonQuestionMark
+        | ColonQuestionMarkGreater
+        | ColonEquals
+        | When
+        | While
+        | With
+        | Hash
+        | Ampersand
+        | AmpersandAmpersand
+        | Quote
+        | LeftParenthesis
+        | RightParenthesis
+        | Star
+        | Comma
+        | RightArrow
+        | GreaterBarRightBracket
+        | LeftParenthesisStarRightParenthesis
+        | Open
+        | Or
+        | Rec
+        | Then
+        | To
+        | True
+        | Try
+        | Type
+        | Val
+        | Inline
+        | Interface
+        | Instance
+        | Const
+        | Lazy
+        | OffsideLazy
+        | Match
+        | MatchBang
+        | Mutable
+        | New
+        | Of
+        | Exception
+        | False
+        | For
+        | Fun
+        | Function
+        | If
+        | In
+        | JoinIn
+        | Finally
+        | DoBang
+        | And
+        | As
+        | Assert
+        | OffsideAssert
+        | Begin
+        | Do
+        | Done
+        | DownTo
+        | Else
+        | Elif
+        | End
+        | DotDot
+        | DotDotHat
+        | BarBar
+        | Upcast
+        | Downcast
+        | Null
+        | Reserved
+        | Module
+        | Namespace
+        | Delegate
+        | Constraint
+        | Base
+        | LeftQuote
+        | RightQuote
+        | RightQuoteDot
+        | PercentOperator
+        | Binder
+        | Less
+        | Greater
+        | Let
+        | Yield
+        | YieldBang
+        | BigNumber
+        | Decimal
+        | Char
+        | Ieee64
+        | Ieee32
+        | NativeInt
+        | UNativeInt
+        | UInt64
+        | UInt32
+        | UInt16
+        | UInt8
+        | Int64
+        | Int32
+        | Int32DotDot
+        | Int16
+        | Int8
+        | FunkyOperatorName
+        | AdjacentPrefixOperator
+        | PlusMinusOperator
+        | InfixAmpersandOperator
+        | InfixStarDivideModuloOperator
+        | PrefixOperator
+        | InfixBarOperator
+        | InfixAtHatOperator
+        | InfixCompareOperator
+        | InfixStarStarOperator
+        | Identifier
+        | KeywordString
+        | String
+        | ByteArray
+        | Asr
+        | InfixAsr
+        | InfixLand
+        | InfixLor
+        | InfixLsl
+        | InfixLsr
+        | InfixLxor
+        | InfixMod
+
+    [<Struct;NoComparison;NoEquality;Experimental("This FCS API is experimental and subject to change.")>]
+    type public FSharpSyntaxToken =
+
+        val private tok: Parser.token
+        val private tokRange: range
+
+        member Range: range
+
+        member Kind: FSharpSyntaxTokenKind
+
+        member IsIdentifier: bool
+
+        member IsKeyword: bool
+
+        member IsStringLiteral: bool
+
+        member IsNumericLiteral: bool
+
+        member IsCommentTrivia: bool
+
+    [<AbstractClass;Sealed;Experimental("This FCS API is experimental and subject to change.")>]
+    type public FSharpLexer =
+        
+        [<Experimental("This FCS API is experimental and subject to change.")>]
+        static member Lex: text: ISourceText * tokenCallback: (FSharpSyntaxToken -> unit) * ?langVersion: string * ?filePath: string * ?conditionalCompilationDefines: string list * ?flags: FSharpLexerFlags * ?pathMap: Map<string, string> * ?ct: CancellationToken -> unit

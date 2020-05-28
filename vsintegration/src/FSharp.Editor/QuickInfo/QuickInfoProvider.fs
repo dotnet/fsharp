@@ -17,19 +17,19 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Utilities
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
+open FSharp.Compiler
 
 open Internal.Utilities.StructuredFormat
 
-type private QuickInfo =
+type internal QuickInfo =
     { StructuredText: FSharpStructuredToolTipText
       Span: TextSpan
       Symbol: FSharpSymbol
       SymbolKind: LexerSymbolKind }
 
-module private FSharpQuickInfo =
+module internal FSharpQuickInfo =
 
     let userOpName = "QuickInfo"
 
@@ -56,7 +56,7 @@ module private FSharpQuickInfo =
             let extLineText = (extSourceText.Lines.GetLineFromPosition extSpan.Start).ToString()
 
             // project options need to be retrieved because the signature file could be in another project
-            let! extParsingOptions, _extSite, extProjectOptions = projectInfoManager.TryGetOptionsForProject extDocId.ProjectId
+            let! extParsingOptions, extProjectOptions = projectInfoManager.TryGetOptionsByProject(document.Project, cancellationToken)
             let extDefines = CompilerEnvironment.GetCompilationDefinesForEditing extParsingOptions
             let! extLexerSymbol = Tokenizer.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy, true)
             let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument, extProjectOptions, allowStaleResults=true, sourceText=extSourceText, userOpName = userOpName)
@@ -92,7 +92,7 @@ module private FSharpQuickInfo =
 
         asyncMaybe {
             let! sourceText = document.GetTextAsync cancellationToken
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, true)
             let idRange = lexerSymbol.Ident.idRange  
@@ -159,17 +159,24 @@ module private FSharpQuickInfo =
 
 type internal FSharpAsyncQuickInfoSource
     (
+        statusBar: StatusBar,
         xmlMemberIndexService: IVsXMLMemberIndexService,
         checkerProvider:FSharpCheckerProvider,
         projectInfoManager:FSharpProjectOptionsManager,
-        gotoDefinitionService:FSharpGoToDefinitionService,
-        textBuffer:ITextBuffer
+        textBuffer:ITextBuffer,
+        _settings: EditorOptions
     ) =
 
+    static let joinWithLineBreaks segments =
+        let lineBreak = TaggedTextOps.Literals.lineBreak
+        match segments |> List.filter (Seq.isEmpty >> not) with
+        | [] -> Seq.empty
+        | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
+
     // test helper
-    static member ProvideQuickInfo(checker:FSharpChecker, documentId:DocumentId, sourceText:SourceText, filePath:string, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, textVersionHash:int) =
+    static member ProvideQuickInfo(checker:FSharpChecker, documentId:DocumentId, sourceText:SourceText, filePath:string, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, textVersionHash:int, languageServicePerformanceOptions: LanguageServicePerformanceOptions) =
         asyncMaybe {
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults=true, userOpName=FSharpQuickInfo.userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, languageServicePerformanceOptions, userOpName=FSharpQuickInfo.userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
@@ -181,11 +188,23 @@ type internal FSharpAsyncQuickInfoSource
             | _ ->
                 let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=FSharpQuickInfo.userOpName)
                 let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, symbol.Range)
-                return res, symbolSpan, symbolUse.Symbol, symbol.Kind
+                return { StructuredText = res
+                         Span = symbolSpan
+                         Symbol = symbolUse.Symbol
+                         SymbolKind = symbol.Kind }
         }
+
+    static member BuildSingleQuickInfoItem (documentationBuilder:IDocumentationBuilder) (quickInfo:QuickInfo) =
+        let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText)
+        let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+        (mainDescription, docs)
 
     interface IAsyncQuickInfoSource with
         override __.Dispose() = () // no cleanup necessary
+
+        // This method can be called from the background thread.
+        // Do not call IServiceProvider.GetService here.
         override __.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem> =
             let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
             match triggerPoint.HasValue with
@@ -198,21 +217,14 @@ type internal FSharpAsyncQuickInfoSource
                     let! symbolUse, sigQuickInfo, targetQuickInfo = FSharpQuickInfo.getQuickInfo(checkerProvider.Checker, projectInfoManager, document, triggerPoint.Position, cancellationToken)
                     let getTrackingSpan (span:TextSpan) =
                         textBuffer.CurrentSnapshot.CreateTrackingSpan(span.Start, span.Length, SpanTrackingMode.EdgeInclusive)
-                    let lineBreak = TaggedTextOps.Literals.lineBreak
-                    let joinWithLineBreaks segments =
-                        match segments |> List.filter (Seq.isEmpty >> not) with
-                        | [] -> Seq.empty
-                        | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
 
                     match sigQuickInfo, targetQuickInfo with
                     | None, None -> return null
                     | Some quickInfo, None
                     | None, Some quickInfo->
-                        let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-                        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText)
+                        let mainDescription, docs = FSharpAsyncQuickInfoSource.BuildSingleQuickInfoItem documentationBuilder quickInfo
                         let imageId = Tokenizer.GetImageIdForSymbol(quickInfo.Symbol, quickInfo.SymbolKind)
-                        let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
-                        let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+                        let navigation = QuickInfoNavigation(statusBar, checkerProvider.Checker, projectInfoManager, document, symbolUse.RangeAlternate)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan quickInfo.Span
                         return QuickInfoItem(span, content)
@@ -242,7 +254,7 @@ type internal FSharpAsyncQuickInfoSource
                             ] |> ResizeArray
                         let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
-                        let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
+                        let navigation = QuickInfoNavigation(statusBar, checkerProvider.Checker, projectInfoManager, document, symbolUse.RangeAlternate)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan targetQuickInfo.Span
                         return QuickInfoItem(span, content)
@@ -256,11 +268,16 @@ type internal FSharpAsyncQuickInfoSource
 type internal FSharpAsyncQuickInfoSourceProvider
     [<ImportingConstructor>]
     (
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider:IServiceProvider,
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         checkerProvider:FSharpCheckerProvider,
         projectInfoManager:FSharpProjectOptionsManager,
-        gotoDefinitionService:FSharpGoToDefinitionService
+        settings: EditorOptions
     ) =
+
     interface IAsyncQuickInfoSourceProvider with
         override __.TryCreateQuickInfoSource(textBuffer:ITextBuffer) : IAsyncQuickInfoSource =
-            new FSharpAsyncQuickInfoSource(serviceProvider.XMLMemberIndexService, checkerProvider, projectInfoManager, gotoDefinitionService, textBuffer) :> IAsyncQuickInfoSource
+            // GetService calls must be made on the UI thread
+            // It is safe to do it here (see #4713)
+            let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
+            let xmlMemberIndexService = serviceProvider.XMLMemberIndexService
+            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, checkerProvider, projectInfoManager, textBuffer, settings) :> IAsyncQuickInfoSource

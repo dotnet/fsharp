@@ -1,7 +1,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <Configuration Condition="'$(Configuration)' == ''">release</Configuration>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,5 +14,6 @@
 
   <Target Name="Rebuild" />
   <Target Name="Clean" />
+  <Target Name="Restore" />
 
 </Project>

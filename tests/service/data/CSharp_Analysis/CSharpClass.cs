@@ -126,4 +126,14 @@ namespace FSharp.Compiler.Service.Tests
         }
     }
 
+    public class String
+    {
+    }
+
+    namespace Linq
+    {
+        public class DummyClass
+        {
+        }
+    }
 }

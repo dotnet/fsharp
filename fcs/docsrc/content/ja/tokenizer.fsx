@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../debug/bin/net45/"
+#I "../../../../artifacts/bin/fcs/net461"
 (**
 コンパイラサービス：F#トークナイザを使用する
 ============================================
@@ -21,7 +21,7 @@ F#のソースコードに対して、トークナイザは
 `SourceCodeServices` 名前空間をオープンします：
 *)
 #r "FSharp.Compiler.Service.dll"
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 (**
 すると `FSharpSourceTokenizer` のインスタンスを作成できるようになります。
 このクラスには2つの引数を指定します。
@@ -73,7 +73,7 @@ let rec tokenizeLine (tokenizer:FSharpLineTokenizer) state =
 必要となるような新しい状態を返します。
 初期値としては `0L` を指定します:
 *)
-tokenizeLine tokenizer 0L
+tokenizeLine tokenizer FSharpTokenizerLexState.Initial
 (**
 この結果は LET WHITESPACE IDENT EQUALS INT32 という
 トークン名のシーケンスになります。
@@ -124,7 +124,7 @@ let rec tokenizeLines state count lines =
 *)
 lines
 |> List.ofSeq
-|> tokenizeLines 0L 1
+|> tokenizeLines FSharpTokenizerLexState.Initial 1
 (**
 重要ではない部分(各行の先頭にある空白文字や、1行目のように空白文字しかない行)
 を除けば、このコードを実行すると以下のような出力になります:

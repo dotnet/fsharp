@@ -28,6 +28,9 @@
                                   Content="{x:Static local:Strings.Unused_opens_code_fix}"/>
                         <CheckBox x:Name="unusedDeclaration" IsChecked="{Binding UnusedDeclarations}"
                                   Content="{x:Static local:Strings.Unused_declaration_code_fix}"/>
+
+                        <CheckBox x:Name="suggestNamesForErrors" IsChecked="{Binding SuggestNamesForErrors}"
+                                  Content="{x:Static local:Strings.Suggest_names_for_errors_code_fix}"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>

@@ -267,7 +267,7 @@
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">標準</target>
+        <target state="translated">NORMAL</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -627,7 +627,7 @@
       </trans-unit>
       <trans-unit id="ProjectLocationNotTrusted">
         <source>The project location is not trusted:{0}{0}{1}{0}{0}Running the application may result in security exceptions when it attempts to perform actions which require full trust.{0}{0}Click OK to ignore and continue.</source>
-        <target state="translated">專案位置不受信任:{0}{0}{1}{0}{0}執行應用程式時若嘗試執行需要完全信任的動作，可能會產生安全性例外狀況。{0}{0}按一下 [確定]5D; 以忽略並繼續。</target>
+        <target state="translated">專案位置不受信任:{0}{0}{1}{0}{0}執行應用程式時若嘗試執行需要完全信任的動作，可能會產生安全性例外狀況。{0}{0}按一下 [確定] 以忽略並繼續。</target>
         <note />
       </trans-unit>
       <trans-unit id="BuildEventError">
@@ -667,7 +667,7 @@
       </trans-unit>
       <trans-unit id="SpecificVersionDescription">
         <source>Indicates whether this reference is to a specific version of an assembly.</source>
-        <target state="translated">指出這個參考是否為某一組件的特定版本。</target>
+        <target state="translated">指出這個參考是否指向某一組件的特定版本。</target>
         <note />
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">

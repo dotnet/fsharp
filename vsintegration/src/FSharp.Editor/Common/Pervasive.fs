@@ -3,9 +3,7 @@ module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 
 open System
 open System.IO
-open System.Threading.Tasks
 open System.Diagnostics
-
 
 /// Checks if the filePath ends with ".fsi"
 let isSignatureFile (filePath:string) = 
@@ -16,11 +14,7 @@ let isScriptFile (filePath:string) =
     let ext = Path.GetExtension filePath 
     String.Equals (ext, ".fsx", StringComparison.OrdinalIgnoreCase) || String.Equals (ext, ".fsscript", StringComparison.OrdinalIgnoreCase)
 
-/// Path combination operator
-let (</>) path1 path2 = Path.Combine (path1, path2) 
-
 type internal ISetThemeColors = abstract member SetColors: unit -> unit
-
 
 [<Sealed>]
 type MaybeBuilder () =
@@ -199,6 +193,3 @@ module Async =
                     replyCh.Reply res 
             }
         async { return! agent.PostAndAsyncReply id }
-        
-
-

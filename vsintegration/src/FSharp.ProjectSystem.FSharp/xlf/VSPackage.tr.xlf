@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="OutputType">
         <source>Output Type</source>
-        <target state="translated">Çıktı Türü</target>
+        <target state="translated">Çıkış Türü</target>
         <note />
       </trans-unit>
       <trans-unit id="OutputTypeDescription">
@@ -69,12 +69,12 @@
       </trans-unit>
       <trans-unit id="Project">
         <source>Project</source>
-        <target state="translated">Proje</target>
+        <target state="translated">PROJE</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectFile">
         <source>Project File</source>
-        <target state="translated">Proje Dosyası</target>
+        <target state="translated">Proje dosyası</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectFileDescription">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Script.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -199,12 +199,12 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">File.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
-        <source>Console Application</source>
-        <target state="translated">Konsol Uygulaması</target>
+        <source>Console Application (.NET Framework)</source>
+        <target state="translated">Konsol Uygulaması (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5015">
@@ -213,8 +213,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5016">
-        <source>Library</source>
-        <target state="translated">Kitaplık</target>
+        <source>Library (.NET Framework)</source>
+        <target state="translated">Kitaplık (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5017">
@@ -223,8 +223,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5018">
-        <source>Tutorial</source>
-        <target state="translated">Öğretici</target>
+        <source>Tutorial (.NET Framework)</source>
+        <target state="translated">Öğretici (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5019">
@@ -389,7 +389,7 @@
       </trans-unit>
       <trans-unit id="5052">
         <source>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 259</source>
-        <target state="translated">..NET Framework 4.5, Windows Mağazası, Windows Phone 8.1, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android ve Xamarin.iOS(Classic)'ta çalışabilen bir F# kitaplığı (.dll) oluşturma projesi.  Profil 259</target>
+        <target state="translated">.NET Framework 4.5, Windows Mağazası, Windows Phone 8.1, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android ve Xamarin.iOS(Classic)'ta çalışabilen bir F# kitaplığı (.dll) oluşturma projesi.  Profil 259</target>
         <note />
       </trans-unit>
       <trans-unit id="5053">
@@ -409,7 +409,7 @@
       </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# Etkileşimli</target>
         <note />
       </trans-unit>
       <trans-unit id="6002">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.1 for F# 4.1</source>
-        <target state="translated">F# 4.1 için Microsoft Visual F# Tools 10.1</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">F# {{FSLanguageVersion}} için Microsoft Visual F# Tools {{FSProductVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.1 for F# 4.1</source>
-        <target state="translated">F# 4.1 için Microsoft Visual F# Tools 10.1</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">F# {{FSLanguageVersion}} için Microsoft Visual F# Tools {{FSProductVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,13 +453,13 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.1 for F# 4.1</source>
-        <target state="translated">F# 4.1 için Visual F# Araçları 10.1</target>
+        <source>Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">F# {{FSLanguageVersion}} için Visual F# Tools {{FSProductVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# Etkileşimli</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductRegistryName">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="6005">
         <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">Yolu ve F# Interactive'e geçirilen komut satırı bağımsız değişkenlerini değiştir</target>
+        <target state="translated">Yolu ve F# Etkileşimli'ye geçirilen komut satırı bağımsız değişkenlerini değiştir</target>
         <note />
       </trans-unit>
       <trans-unit id="6006">

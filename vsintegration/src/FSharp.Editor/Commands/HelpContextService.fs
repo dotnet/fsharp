@@ -9,9 +9,9 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.LanguageServices.Implementation.F1Help
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 [<Shared>]
 [<ExportLanguageService(typeof<IHelpContextService>, FSharpConstants.FSharpLanguageName)>]
@@ -23,9 +23,9 @@ type internal FSharpHelpContextService
     ) =
 
     static let userOpName = "ImplementInterfaceCodeFix"
-    static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion) : Async<string option> = 
+    static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion, perfOptions) : Async<string option> = 
         asyncMaybe {
-            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName)
+            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText, options, perfOptions, userOpName = userOpName)
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)
             let line = lineInfo.LineNumber
@@ -34,12 +34,11 @@ type internal FSharpHelpContextService
             let caretColumn = textLines.GetLinePosition(span.Start).Character
 
             let shouldTryToFindSurroundingIdent (token : ClassifiedSpan) =
-                let span = token.TextSpan
-                let content = sourceText.ToString().Substring(span.Start, span.End - span.Start)
+                let content = sourceText.GetSubText(token.TextSpan)
                 match token.ClassificationType with
                 | ClassificationTypeNames.Text
                 | ClassificationTypeNames.WhiteSpace -> true
-                | (ClassificationTypeNames.Operator|ClassificationTypeNames.Punctuation)when content = "." -> true
+                | (ClassificationTypeNames.Operator|ClassificationTypeNames.Punctuation)when content.Length > 0 && content.[0] = '.' -> true
                 | _ -> false
           
             let tokenInformation, col =
@@ -99,13 +98,14 @@ type internal FSharpHelpContextService
 
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) = 
             asyncMaybe {
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
                 let classifiedSpans = Tokenizer.getClassifiedSpans(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
-                return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, projectOptions, textSpan, classifiedSpans, textVersion.GetHashCode())
+                let perfOptions = document.FSharpOptions.LanguageServicePerformance
+                return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, projectOptions, textSpan, classifiedSpans, textVersion.GetHashCode(), perfOptions)
             } 
             |> Async.map (Option.defaultValue "")
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

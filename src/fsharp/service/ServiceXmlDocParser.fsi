@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 
 /// Represent an Xml documentation block in source code
 type public XmlDocable =
@@ -16,6 +15,7 @@ module public XmlDocComment =
     val isBlank : string -> int option
 
 module public XmlDocParser =
+
     /// Get the list of Xml documentation from current source code
-    val getXmlDocables : sourceCodeOfTheFile : string * input : Ast.ParsedInput option -> XmlDocable list
+    val getXmlDocables : ISourceText * input: ParsedInput option -> XmlDocable list
     

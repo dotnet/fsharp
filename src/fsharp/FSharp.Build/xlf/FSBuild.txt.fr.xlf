@@ -2,9 +2,14 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../FSBuild.resx">
     <body>
+      <trans-unit id="fSharpBannerVersion">
+        <source>{0} for F# {1}</source>
+        <target state="translated">{0} pour F# {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="toolpathUnknown">
-        <source>ToolPath is unknown; specify the path to fsc.exe as the ToolPath property.</source>
-        <target state="translated">ToolPath inconnu ; spécifiez le chemin d'accès de fsc.exe en tant que propriété ToolPath.</target>
+        <source>ToolPath is unknown; specify the path to the tool.</source>
+        <target state="translated">ToolPath est inconnu, spécifiez le chemin de l'outil.</target>
         <note />
       </trans-unit>
     </body>

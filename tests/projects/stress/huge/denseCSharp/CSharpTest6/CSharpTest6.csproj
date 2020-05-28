@@ -4,12 +4,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F2D9F440-6B7B-4E94-9F12-B2D30539C173}</ProjectGuid>
+    <ProjectGuid>{3B6411BE-2ACB-4E9B-B1C5-59CA3B2C773E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CSharpTest6</RootNamespace>
     <AssemblyName>CSharpTest6</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -45,23 +45,23 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CSharpTest1\CSharpTest1.csproj">
-      <Project>{c5b6d885-aef3-4fb7-b6c2-82a7be9ec2e7}</Project>
+      <Project>{c7de0031-dd3c-4ad8-b601-b18a81260e61}</Project>
       <Name>CSharpTest1</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest2\CSharpTest2.csproj">
-      <Project>{b76cf45b-f520-4f5b-b7b2-de614a54df49}</Project>
+      <Project>{83415823-6104-4ea9-b9cf-1cdb6a6de481}</Project>
       <Name>CSharpTest2</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest3\CSharpTest3.csproj">
-      <Project>{6ba08b63-6172-489c-9480-73e494fba22a}</Project>
+      <Project>{adfb2484-a994-494e-a296-6b1907f8b776}</Project>
       <Name>CSharpTest3</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest4\CSharpTest4.csproj">
-      <Project>{05266910-54e0-455c-9314-5ab5256361f3}</Project>
+      <Project>{54caaee7-cb4a-4020-9e2c-f038c8718a38}</Project>
       <Name>CSharpTest4</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest5\CSharpTest5.csproj">
-      <Project>{89483220-6880-4bbb-9cf2-7f2f43c6018b}</Project>
+      <Project>{ee62d0c4-0d11-4acc-a058-6d22d3e752be}</Project>
       <Name>CSharpTest5</Name>
     </ProjectReference>
   </ItemGroup>

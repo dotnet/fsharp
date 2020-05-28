@@ -685,8 +685,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         // Implemented in FSharpLanguageService.fs
         internal abstract BackgroundRequest_DEPRECATED CreateBackgroundRequest(int line, int col, TokenInfo info, string sourceText, ITextSnapshot snapshot, MethodTipMiscellany_DEPRECATED methodTipMiscellany, string fname, BackgroundRequestReason reason, IVsTextView view,AuthoringSink sink, ISource source, int timestamp, bool synchronous);
 
-		// Implemented in FSharpLanguageService.fs
-		internal abstract void OnParseFileOrCheckFileComplete(BackgroundRequest_DEPRECATED req);
+        // Implemented in FSharpLanguageService.fs
+        internal abstract void OnParseFileOrCheckFileComplete(BackgroundRequest_DEPRECATED req);
 
         internal void EnsureBackgroundThreadStarted()
         {

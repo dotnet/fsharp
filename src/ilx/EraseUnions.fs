@@ -5,15 +5,13 @@
 // -------------------------------------------------------------------- 
 
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.EraseUnions
+module internal FSharp.Compiler.AbstractIL.Extensions.ILX.EraseUnions
 
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open System.Reflection
 
 
@@ -587,9 +585,9 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
         for (i,case) in cases do dict.[i] <- case
         let failLab = cg.GenerateDelayMark ()
         let emitCase i _ = 
-            let mutable res = Unchecked.defaultof<_>
-            let ok = dict.TryGetValue(i, &res)
-            if ok then res else cg.CodeLabel failLab
+            match dict.TryGetValue i with
+            | true, res -> res
+            | _ -> cg.CodeLabel failLab
 
         let dests = Array.mapi emitCase cuspec.AlternativesArray
         cg.EmitInstrs (mkGetTag ilg cuspec)
@@ -610,14 +608,14 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
 //---------------------------------------------------
 // Generate the union classes
 
-let mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGeneratedAttrs) access attr hasHelpers (typ: ILType) (fields: IlxUnionField[]) = 
+let mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGeneratedAttrs) access attr hasHelpers (ilTy: ILType) (fields: IlxUnionField[]) = 
     let basicProps = 
         fields 
         |> Array.map (fun field -> 
             ILPropertyDef(name = adjustFieldName hasHelpers field.Name,
                           attributes = PropertyAttributes.None,
                           setMethod = None,
-                          getMethod = Some (mkILMethRef (typ.TypeRef, ILCallingConv.Instance, "get_" + adjustFieldName hasHelpers field.Name, 0, [], field.Type)),
+                          getMethod = Some (mkILMethRef (ilTy.TypeRef, ILCallingConv.Instance, "get_" + adjustFieldName hasHelpers field.Name, 0, [], field.Type)),
                           callingConv = ILThisConvention.Instance,
                           propertyType = field.Type,
                           init = None,
@@ -629,7 +627,7 @@ let mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGenerat
 
     let basicMethods = 
         [ for field in fields do 
-              let fspec = mkILFieldSpecInTy(typ,field.LowerName,field.Type)
+              let fspec = mkILFieldSpecInTy(ilTy,field.LowerName,field.Type)
               yield 
                   mkILNonGenericInstanceMethod
                      ("get_" + adjustFieldName hasHelpers field.Name,
@@ -947,7 +945,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                 if isStruct then None else
                 match td.Extends with 
                 | None -> Some ilg.typ_Object.TypeSpec
-                | Some typ -> Some typ.TypeSpec
+                | Some ilTy -> Some ilTy.TypeSpec
 
             let extraParamsForCtor = 
                 if isStruct && takesExtraParams cud.cudAlternatives then 
@@ -986,7 +984,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
         else 
             [ mkILSimpleStorageCtor 
                  (cud.cudWhere,
-                  Some (match td.Extends with None -> ilg.typ_Object | Some typ -> typ).TypeSpec,
+                  Some (match td.Extends with None -> ilg.typ_Object | Some ilTy -> ilTy).TypeSpec,
                   baseTy,
                   [],
                   tagFieldsInObject,

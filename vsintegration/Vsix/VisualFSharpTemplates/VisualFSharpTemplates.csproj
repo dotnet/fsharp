@@ -3,11 +3,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>VisualFSharpTemplate</AssemblyName>
-    <TargetFramework>net46</TargetFramework>
     <OutputType>Library</OutputType>
     <ExtensionInstallationFolder>Microsoft\FSharpTemplates</ExtensionInstallationFolder>
-    <DeployExtension>false</DeployExtension>
+    <TargetFramework>net472</TargetFramework>
+    <IsShipping>true</IsShipping>
   </PropertyGroup>
 
   <ItemGroup>

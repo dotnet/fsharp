@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{AAAAD274-696A-49EC-AAAA-F870BE91AAAA}</ProjectGuid>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="**\*.env" />
+    <Content Include="**\*.lst" />
+    <Content Include="**\*.log" />
+    <Content Include="**\*.fsx" />
+    <Content Include="**\*.fs" />
+    <Content Include="**\*.pl" />
+  </ItemGroup>
+  <Target Name="Build">
+  </Target>
+</Project>

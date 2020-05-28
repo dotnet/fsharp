@@ -40,7 +40,7 @@ open System.Diagnostics
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.VisualStudio.LanguageServices

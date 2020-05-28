@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="NameCanBeSimplified">
         <source>Name can be simplified.</source>
-        <target state="translated">Имя можно упростить.</target>
+        <target state="translated">Имя может быть упрощено.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpFunctionsOrMethodsClassificationType">
@@ -149,7 +149,17 @@
       </trans-unit>
       <trans-unit id="6012">
         <source>Advanced</source>
-        <target state="translated">Дополнительно</target>
+        <target state="translated">Дополнительный</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6013">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="6014">
+        <source>Formatting</source>
+        <target state="translated">Форматирование</target>
         <note />
       </trans-unit>
     </body>

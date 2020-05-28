@@ -1,13 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 open System
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.SourceCodeServices
 
 /// Qualified long name.
 type PartialLongName =
-    { /// Qualifying idents, prior to the last dot, not including the last part.
+    {
+      /// Qualifying idents, prior to the last dot, not including the last part.
       QualifyingIdents: string list
       
       /// Last part of long ident.
@@ -19,10 +21,10 @@ type PartialLongName =
       /// Position of the last dot.
       LastDotPos: int option }
     
-    /// Empty patial long name.
+    /// Empty partial long name.
     static member Empty(endColumn: int) = { QualifyingIdents = []; PartialIdent = ""; EndColumn = endColumn; LastDotPos = None }
 
-/// Methods for cheaply and innacurately parsing F#.
+/// Methods for cheaply and inaccurately parsing F#.
 ///
 /// These methods are very old and are mostly to do with extracting "long identifier islands" 
 ///     A.B.C
@@ -46,7 +48,8 @@ module QuickParse =
     // Adjusts the token tag for the given identifier
     // - if we're inside active pattern name (at the bar), correct the token TAG to be an identifier
     let CorrectIdentifierToken (tokenText: string) (tokenTag: int) = 
-        if tokenText.EndsWith "|" then Microsoft.FSharp.Compiler.Parser.tagOfToken (Microsoft.FSharp.Compiler.Parser.token.IDENT tokenText)
+        if tokenText.EndsWithOrdinal("|") then
+            FSharp.Compiler.Parser.tagOfToken (FSharp.Compiler.Parser.token.IDENT tokenText)
         else tokenTag
 
     let rec isValidStrippedName (name:string) idx = 
@@ -56,14 +59,12 @@ module QuickParse =
 
     // Utility function that recognizes whether a name is valid active pattern name
     // Extracts the 'core' part without surrounding bars and checks whether it contains some identifier
-    // (Note, this doesn't have to be precise, because this is checked by backround compiler,
+    // (Note, this doesn't have to be precise, because this is checked by background compiler,
     // but it has to be good enough to distinguish operators and active pattern names)
     let private isValidActivePatternName (name: string) = 
 
       // Strip the surrounding bars (e.g. from "|xyz|_|") to get "xyz"
-      match name.StartsWith("|", System.StringComparison.Ordinal), 
-            name.EndsWith("|_|", System.StringComparison.Ordinal), 
-            name.EndsWith("|", System.StringComparison.Ordinal) with
+      match name.StartsWithOrdinal("|"), name.EndsWithOrdinal("|_|"), name.EndsWithOrdinal("|") with
       | true, true, _ when name.Length > 4 -> isValidStrippedName (name.Substring(1, name.Length - 4)) 0
       | true, _, true when name.Length > 2 -> isValidStrippedName (name.Substring(1, name.Length - 2)) 0
       | _ -> false
@@ -152,7 +153,7 @@ module QuickParse =
     /// In general, only identifiers composed from upper/lower letters and '.' are supported, but there
     /// are a couple of explicitly handled exceptions to allow some common scenarios:
     /// - When the name contains only letters and '|' symbol, it may be an active pattern, so we 
-    ///   treat it as a valid identifier - e.g. let ( |Identitiy| ) a = a
+    ///   treat it as a valid identifier - e.g. let ( |Identity| ) a = a
     ///   (but other identifiers that include '|' are not allowed - e.g. '||' operator)
     /// - It searches for double tick (``) to see if the identifier could be something like ``a b``
     ///
@@ -186,7 +187,7 @@ module QuickParse =
             let IsDot pos = lineStr.[pos] = '.'
 
             let rec InLeadingIdentifier(pos,right,(prior,residue)) = 
-                let PushName() = ((lineStr.Substring(pos+1,right-pos-1))::prior),residue
+                let PushName() = ((lineStr.Substring(pos+1,right-pos-1)) :: prior),residue
                 if pos < 0 then PushName()
                 elif IsIdentifierPartCharacter pos then InLeadingIdentifier(pos-1,right,(prior,residue))
                 elif IsDot pos then InLeadingIdentifier(pos-1,pos,PushName())
@@ -231,7 +232,7 @@ module QuickParse =
             let rec SkipWhitespaceBeforeDotIdentifier(pos, ident, current, throwAwayNext, lastDotPos) =
                 if pos > index then PartialLongName.Empty(index)  // we're in whitespace after an identifier, if this is where the cursor is, there is no PLID here
                 elif IsWhitespace pos then SkipWhitespaceBeforeDotIdentifier(pos+1,ident,current,throwAwayNext,lastDotPos)
-                elif IsDot pos then AtStartOfIdentifier(pos+1,ident::current,throwAwayNext, Some pos)
+                elif IsDot pos then AtStartOfIdentifier(pos+1,ident :: current,throwAwayNext, Some pos)
                 elif IsStartOfComment pos then EatComment(1, pos + 1, EatCommentCallContext.SkipWhiteSpaces(ident, current, throwAwayNext), lastDotPos)
                 else AtStartOfIdentifier(pos,[],false,None) // Throw away what we have and start over.
 
@@ -269,7 +270,7 @@ module QuickParse =
                     if IsIdentifierPartCharacter pos then InUnquotedIdentifier(left,pos+1,current,throwAwayNext,lastDotPos)
                     elif IsDot pos then 
                         let ident = lineStr.Substring(left,pos-left)
-                        AtStartOfIdentifier(pos+1,ident::current,throwAwayNext, Some pos)
+                        AtStartOfIdentifier(pos+1,ident :: current,throwAwayNext, Some pos)
                     elif IsWhitespace pos || IsStartOfComment pos then 
                         let ident = lineStr.Substring(left,pos-left)
                         SkipWhitespaceBeforeDotIdentifier(pos, ident, current, throwAwayNext, lastDotPos)
@@ -310,7 +311,7 @@ module QuickParse =
                         elif IsDot pos then 
                             if pos = 0 then
                                 // dot on first char of line, currently treat it like empty identifier to the left
-                                AtStartOfIdentifier(pos+1,""::current,throwAwayNext, Some pos)
+                                AtStartOfIdentifier(pos+1,"":: current,throwAwayNext, Some pos)
                             elif not (pos > 0 && (IsIdentifierPartCharacter(pos-1) || IsWhitespace(pos-1))) then
                                 // it's not dots as part.of.a.long.ident, it's e.g. the range operator (..), or some other multi-char operator ending in dot
                                 if lineStr.[pos-1] = ')' then
@@ -322,7 +323,7 @@ module QuickParse =
                                 else
                                     AtStartOfIdentifier(pos+1,[],false,None) // Throw away what we have and start over.
                             else
-                                AtStartOfIdentifier(pos+1,""::current,throwAwayNext, Some pos)
+                                AtStartOfIdentifier(pos+1,"":: current,throwAwayNext, Some pos)
                         else AtStartOfIdentifier(pos+1,[],throwAwayNext, None)
             let partialLongName = AtStartOfIdentifier(0, [], false, None) 
             

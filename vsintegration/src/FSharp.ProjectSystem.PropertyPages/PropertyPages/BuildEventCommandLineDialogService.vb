@@ -10,8 +10,6 @@ Imports System.Diagnostics
 Imports System.Runtime.CompilerServices
 Imports System.Runtime.InteropServices
 
-Imports Interop = Microsoft.VisualStudio.Editors.Interop
-
 Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
     '--------------------------------------------------------------------------
@@ -21,7 +19,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
     '--------------------------------------------------------------------------
     <CLSCompliant(False)> _
     Friend NotInheritable Class BuildEventCommandLineDialogService
-        Implements Interop.IVsBuildEventCommandLineDialogService
+        Implements Microsoft.VisualStudio.Editors.Interop.IVsBuildEventCommandLineDialogService
 
         Private m_serviceProvider As IServiceProvider
 
@@ -29,8 +27,8 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             m_serviceProvider = sp
         End Sub
 
-        Function EditCommandLine(ByVal WindowText As String, ByVal HelpID As String, ByVal OriginalCommandLine As String, ByVal MacroProvider As Interop.IVsBuildEventMacroProvider, ByRef Result As String) As Integer _
-            Implements Interop.IVsBuildEventCommandLineDialogService.EditCommandLine
+        Function EditCommandLine(ByVal WindowText As String, ByVal HelpID As String, ByVal OriginalCommandLine As String, ByVal MacroProvider As Microsoft.VisualStudio.Editors.Interop.IVsBuildEventMacroProvider, ByRef Result As String) As Integer _
+            Implements Microsoft.VisualStudio.Editors.Interop.IVsBuildEventCommandLineDialogService.EditCommandLine
 
             Dim frm As New BuildEventCommandLineDialog
             Dim i As Integer

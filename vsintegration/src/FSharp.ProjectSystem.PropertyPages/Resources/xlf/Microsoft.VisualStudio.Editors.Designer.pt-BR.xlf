@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="PPG_DebugTitle">
         <source>Debug</source>
-        <target state="translated">Depurar</target>
+        <target state="translated">depurar</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_DeployTitle">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="PPG_VdtGeneralTitle">
         <source>Database</source>
-        <target state="translated">Banco de Dados</target>
+        <target state="translated">Banco de dados</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Security">
@@ -59,12 +59,12 @@
       </trans-unit>
       <trans-unit id="PPG_BuildTitle">
         <source>Build</source>
-        <target state="translated">Build</target>
+        <target state="translated">Compilar</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_BuildEventsTitle">
         <source>Build Events</source>
-        <target state="translated">Eventos de Build</target>
+        <target state="translated">Eventos de Compilação</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ReferencePathsTitle">
@@ -74,12 +74,12 @@
       </trans-unit>
       <trans-unit id="PPG_PreBuildCommandLineTitle">
         <source>Pre-build Event Command Line</source>
-        <target state="translated">Linha de Comando de Eventos Pré-build</target>
+        <target state="translated">Linha de comando do evento de pré-compilação</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_PostBuildCommandLineTitle">
         <source>Post-build Event Command Line</source>
-        <target state="translated">Linha de Comando de Eventos Pós-build</target>
+        <target state="translated">Linha de comando do evento de pós-compilação</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_OutputPathNotSecure">
@@ -108,7 +108,7 @@ Clique em OK para ignorar e continuar. Clique em CANCELAR para escolher um camin
       </trans-unit>
       <trans-unit id="PPG_KeyFileBrowseText">
         <source>&lt;Browse...&gt;</source>
-        <target state="translated">&lt;Procurar...&gt;</target>
+        <target state="translated">&lt;Procurar... &gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ComboBoxSelect_None">
@@ -240,7 +240,7 @@ Selecione um caminho da pasta válido.</target>
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_VersionOutOfRange_2Args">
         <source>Each part of the version number for '{0}' must be an integer between 0 and {1}.</source>
-        <target state="translated">Cada parte do número de versão de '{0}' deve ser um inteiro entre 0 e {1}.</target>
+        <target state="translated">Cada parte do número de versão para '{0}' deve ser um inteiro entre 0 e {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_DefaultIconText">
@@ -315,7 +315,7 @@ Selecione um caminho da pasta válido.</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupFormLabelText">
         <source>Startup f&amp;orm:</source>
-        <target state="translated">F&amp;ormulário de Inicialização:</target>
+        <target state="translated">F&amp;ormulário de inicialização:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
@@ -350,12 +350,12 @@ Selecione um caminho da pasta válido.</target>
       </trans-unit>
       <trans-unit id="PPG_AdvancedBuildSettings_InvalidBaseAddress">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, 0x11000000.</source>
-        <target state="translated">O endereço base deve ser um número hexadecimal com 8 ou menos dígitos, por exemplo, 0x11000000.</target>
+        <target state="translated">O endereço base deve ser um número hexadecimal com até 8 dígitos, por exemplo, 0x11000000.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">Nenhum</target>
+        <target state="translated">NENHUM</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -385,7 +385,7 @@ Selecione um caminho da pasta válido.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42020">
         <source>Implicit type; object assumed</source>
-        <target state="translated">Tipo implícito, objeto presumido</target>
+        <target state="translated">Tipo implícito; objeto assumido</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42104">
@@ -405,7 +405,7 @@ Selecione um caminho da pasta válido.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42025">
         <source>Instance variable accesses shared member</source>
-        <target state="translated">A variável de instância acessa o membro compartilhado</target>
+        <target state="translated">Variável de instância acessa membro compartilhado</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42004">
@@ -724,7 +724,7 @@ Erro:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_ExpirationDate">
         <source>Expiration Date</source>
-        <target state="translated">Data de Vencimento</target>
+        <target state="translated">Data de Validade</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_InvalidPassword">
@@ -754,7 +754,7 @@ Erro:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_AllPurposes">
         <source>&lt;All&gt;</source>
-        <target state="translated">&lt;Tudo&gt;</target>
+        <target state="translated">&lt;Todos&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_PasswordMismatch">
@@ -784,12 +784,12 @@ Erro:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
         <source>Enter &amp;password to open file {0}</source>
-        <target state="translated">Insira a senha &amp;para abrir o arquivo {0}</target>
+        <target state="translated">Insira a &amp;senha para abrir o arquivo {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_CreateNewKeyPasswordPrompt">
         <source>Enter &amp;password for new file {0}</source>
-        <target state="translated">Insira a senha &amp;para o novo arquivo {0}</target>
+        <target state="translated">Insira a &amp;senha para o novo arquivo {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_ProjectAlreadyContainsFile">
@@ -950,7 +950,7 @@ Erro:</target>
       </trans-unit>
       <trans-unit id="PropPage_ReferenceNotFound">
         <source>&lt;The system cannot find the reference specified&gt;</source>
-        <target state="translated">&lt;O sistema não encontrou a referência especificada&gt;</target>
+        <target state="translated">&lt;O sistema não pôde encontrar a referência especificada&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceTitle">
@@ -985,7 +985,7 @@ Erro:</target>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">O endereço base deve ser um número hexadecimal com 8 ou menos dígitos, por exemplo, &amp;H11000000.</target>
+        <target state="translated">O endereço básico deve ser um número hexadecimal menor ou igual a 8 dígitos, por exemplo, &amp;H11000000.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -1803,7 +1803,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Filename">
         <source>Filename</source>
-        <target state="translated">Nome do arquivo</target>
+        <target state="translated">Nome do Arquivo</target>
         <note>Columns for the "Details" view of the resource editor</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_ImageType">
@@ -1830,7 +1830,6 @@ CONSIDER: get this from CodeDom</note>
         <source>{0} x {1}</source>
         <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
@@ -1899,7 +1898,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_String">
         <source>New &amp;String</source>
-        <target state="translated">Nova Cadeia de Caractere&amp;s</target>
+        <target state="translated">Nova &amp;Cadeia de Caracteres</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image">
@@ -1909,27 +1908,27 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_PNG">
         <source>&amp;PNG Image...</source>
-        <target state="translated">Imagem &amp;PNG...</target>
+        <target state="translated">&amp;Imagem PNG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_BMP">
         <source>&amp;BMP Image...</source>
-        <target state="translated">Imagem &amp;BMP...</target>
+        <target state="translated">&amp;Imagem BMP...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_GIF">
         <source>&amp;GIF Image...</source>
-        <target state="translated">Imagem &amp;GIF...</target>
+        <target state="translated">&amp;Imagem GIF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_JPEG">
         <source>&amp;JPEG Image...</source>
-        <target state="translated">Imagem &amp;JPEG...</target>
+        <target state="translated">&amp;Imagem JPEG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_TIFF">
         <source>&amp;TIFF Image...</source>
-        <target state="translated">Imagem &amp;TIFF...</target>
+        <target state="translated">&amp;Imagem TIFF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Icon">
@@ -1969,7 +1968,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Type_PNG">
         <source>Portable Network Graphics</source>
-        <target state="translated">formato PNG</target>
+        <target state="translated">Formato PNG</target>
         <note>Friendly Image types</note>
       </trans-unit>
       <trans-unit id="RSE_Type_TIFF">
@@ -2063,7 +2062,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_FilterSave_PNG">
         <source>Portable Network Graphics</source>
-        <target state="translated">formato PNG</target>
+        <target state="translated">Formato PNG</target>
         <note># File dialog filters
 #
 # E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
@@ -2344,19 +2343,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Aplicativo</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">Aplicativo (Web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">Usuário</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">Usuário (Web)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2830,22 +2819,22 @@ Deseja atualizar o valor no arquivo .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
         <source>seconds</source>
-        <target state="translated">segundos</target>
+        <target state="translated">Segundos</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Minutes">
         <source>minutes</source>
-        <target state="translated">minutos</target>
+        <target state="translated">Minutos</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Hours">
         <source>hours</source>
-        <target state="translated">horas</target>
+        <target state="translated">Horas</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">dias</target>
+        <target state="translated">Dias</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">

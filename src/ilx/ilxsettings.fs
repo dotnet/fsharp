@@ -1,29 +1,27 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
+module internal FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
 
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal 
 
 type IlxCallImplementation = 
   | VirtEntriesVirtCode
 
 //++GLOBAL MUTABLE STATE (concurrency-safe because assigned only during F# library compilation)
-let ilxCompilingFSharpCoreLib = ref false
+let mutable ilxCompilingFSharpCoreLib = false
 
 //++GLOBAL MUTABLE STATE (concurrency-safe because assigned only during F# library compilation)
-let ilxFsharpCoreLibAssemRef = ref (None : ILAssemblyRef option)
+let mutable ilxFsharpCoreLibAssemRef = None : ILAssemblyRef option
 
 /// Scope references for FSharp.Core.dll
 let ilxFsharpCoreLibScopeRef () =
-    if !ilxCompilingFSharpCoreLib then 
+    if ilxCompilingFSharpCoreLib then 
         ILScopeRef.Local 
     else 
-        let assref = 
-            match !ilxFsharpCoreLibAssemRef with 
+        let assemblyRef = 
+            match ilxFsharpCoreLibAssemRef with 
             | Some o -> o
             | None -> 
                  // The exact public key token and version used here don't actually matter, or shouldn't.
@@ -34,6 +32,6 @@ let ilxFsharpCoreLibScopeRef () =
                                      Some (PublicKeyToken(Bytes.ofInt32Array [| 0xb0; 0x3f; 0x5f; 0x7f; 0x11; 0xd5; 0x0a; 0x3a |])),
                                      false, 
                                      Some (IL.parseILVersion "0.0.0.0"), None)
-        ILScopeRef.Assembly assref
+        ILScopeRef.Assembly assemblyRef
 
 let ilxNamespace () =  "Microsoft.FSharp.Core"

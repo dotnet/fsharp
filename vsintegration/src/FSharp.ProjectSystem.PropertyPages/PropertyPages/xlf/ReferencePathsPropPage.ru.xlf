@@ -24,22 +24,22 @@
       </trans-unit>
       <trans-unit id="FolderBrowse.Text">
         <source>...</source>
-        <target state="translated">...</target>
+        <target state="new">...</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUp.AccessibleName">
         <source>Move up</source>
-        <target state="translated">Вверх</target>
+        <target state="translated">Переместить вверх</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDown.AccessibleName">
         <source>Move down</source>
-        <target state="translated">Вниз</target>
+        <target state="translated">Переместить вниз</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveFolder.AccessibleName">
         <source>Delete</source>
-        <target state="translated">Удаление.</target>
+        <target state="translated">Удалить</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderLabel.Text">

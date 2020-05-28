@@ -217,7 +217,7 @@ type UsingMSBuild() =
             fileContents,
             marker = "MembersTP(*Marker*)",
             expected = "type HiddenBaseMembersTP =\n  inherit TPBaseTy\n  member ShowThisProp : unit",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     member public this.``QuickInfo.OverriddenMethods``() =
@@ -293,7 +293,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
     [<Category("TypeProvider")>]
     member public this.``TypeProviders.NestedTypesOrder``() = 
         let code = "type t = N1.TypeWithNestedTypes(*M*)"
-        let tpReference = PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+        let tpReference = PathRelativeToTestAssembly( @"DummyProviderForLanguageServiceTesting.dll")
         this.VerifyOrderOfNestedTypesInQuickInfo(
             source = code,
             marker = "(*M*)",
@@ -347,7 +347,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)", "This is a synthetic type created by me!",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -360,7 +360,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic type created by me!. Which is used to test the tool tip of the typeprovider type to check if it shows the right message or not.",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -373,7 +373,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal", 
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -386,7 +386,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\nFull name: N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
          
 
     [<Test>]
@@ -400,7 +400,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic type Localized! ኤፍ ሻርፕ",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("TypeProvider")>]
@@ -412,7 +412,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let foo = new N.T(*Marker*)() """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)", "This is a synthetic .ctor created by me for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -425,7 +425,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic .ctor created by me for N.T. Which is used to test the tool tip of the typeprovider Constructor to check if it shows the right message or not.",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -438,7 +438,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "N.T() : N.T", 
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -451,7 +451,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "N.T() : N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -464,7 +464,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
          "This is a synthetic .ctor Localized! ኤፍ ሻርፕ for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithLocalizedComment.dll")])
         
 
     [<Test>]
@@ -479,7 +479,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "This is a synthetic *event* created by me for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -493,7 +493,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)", 
          "This is a synthetic *event* Localized! ኤፍ ሻርፕ for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("QuickInfo.ParamsAttribute")>]
@@ -517,7 +517,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "This is a synthetic *event* created by me for N.T. Which is used to test the tool tip of the typeprovider Event to check if it shows the right message or not.!",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -531,7 +531,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "event N.T.Event1: IEvent<System.EventHandler,System.EventArgs>", 
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -545,7 +545,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "Event1(*Marker*)",
          "event N.T.Event1: IEvent<System.EventHandler,System.EventArgs>",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
     
 
     [<Test>]
@@ -559,7 +559,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "This is a synthetic *method* created by me!!",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -572,7 +572,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)", 
          "This is a synthetic *method* Localized! ኤፍ ሻርፕ",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("TypeProvider")>]
@@ -585,7 +585,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "This is a synthetic *method* created by me!!. Which is used to test the tool tip of the typeprovider Method to check if it shows the right message or not.!",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -598,7 +598,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "N.T.M() : int []", 
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -611,7 +611,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
          "N.T.M() : int []",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
     
 
     [<Test>]
@@ -625,7 +625,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "This is a synthetic *property* created by me for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithAdequateComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithAdequateComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -638,7 +638,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)", 
          "This is a synthetic *property* Localized! ኤፍ ሻርፕ for N.T",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLocalizedComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithLocalizedComment.dll")])
    
     [<Test>]
     [<Category("TypeProvider")>]
@@ -651,7 +651,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "This is a synthetic *property* created by me for N.T. Which is used to test the tool tip of the typeprovider Property to check if it shows the right message or not.!",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithLongComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithLongComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -664,7 +664,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "property N.T.StaticProp: decimal", 
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]    
@@ -677,7 +677,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "StaticProp(*Marker*)",
          "property N.T.StaticProp: decimal",
-         addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
+         addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
     
 
     [<Test>]
@@ -694,7 +694,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             fileContents,
             marker = "foo(*Marker*)",
             expected = "type foo = N1.T",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -711,7 +711,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             fileContents,
             marker = "foo(*Marker*)",
             expected = "type foo",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -728,7 +728,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             fileContents,
             marker = "foo(*Marker*)",
             expected = "XMLComment",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -739,7 +739,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             fileContents,
             marker = "TTT",
             expected = "type TTT = Samples.FSharp.RegexTypeProvider.RegexTyped<...>\nFull name: File1.TTT",
-            addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -754,7 +754,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             fileContents,
             marker = "reaCode.Val",
             expected = """property Samples.FSharp.RegexTypeProvider.RegexTyped<...>.MatchType.AreaCode: System.Text.RegularExpressions.Group""",
-            addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     // Regression for 2948
     [<Test>]
@@ -762,7 +762,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
       
         let fileContents = """namespace NS
                            type Re(*MarkerRecord*) = { X : int } """
-        let expectedQuickinfoTypeRecored = "type Re =  {X: int;}"
+        let expectedQuickinfoTypeRecored = "type Re =  { X: int }"
         
         this.InfoInDeclarationTestQuickInfoImplWithTrim fileContents "Re(*MarkerRecord*)" expectedQuickinfoTypeRecored
     
@@ -2118,15 +2118,13 @@ query."
     member public this.``GenericDotNetMethodShowsComment``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
-              ["System.Linq.ParallelEnumerable."
-               ] ,
+             ["System.Linq.ParallelEnumerable."] ,
              (* marker *)
              "ParallelEnumerable.",
              (* completed item *)             
              "ElementAt", 
              (* expect to see in order... *)
              [
-              "System.Core";
               "Signature:M:System.Linq.ParallelEnumerable.ElementAt``1(System.Linq.ParallelQuery{``0},System.Int32"
              ]
             )
@@ -2944,7 +2942,8 @@ query."
                              type bar() =
                                  /// <summary> Test for members</summary>
                                  /// <param name="x1">x1 param!</param>
-                                 member this.foo (x1:int)=
+                                 member this.foo
+                                     (x1:int)=
                                      System.Console.WriteLine(x1.ToString())
                              
                              type Uni1 = 
@@ -2958,7 +2957,7 @@ query."
                              exception Ex1 of value: string
 
                              // Methods
-                             let f1 = (new bar()).foo(x1(*Marker1*) = 10)
+                             let f1 = (new bar()).foo(*Marker0*)(x1(*Marker1*) = 10)
                              let f2 = System.String.Concat(1, arg1(*Marker2*) = "") 
                              
                              //Unions
@@ -2978,6 +2977,7 @@ query."
                              type provType = N1.T<Param1(*Marker7*)="hello", ParamIgnored(*Marker8*)=10>
                              """
 
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker0*)", "Test for members")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1*)", "x1 param!")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "[ParamName: arg1]")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3*)", "str of case1")
@@ -2985,9 +2985,9 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5*)", "value param")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker6*)", "value param")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker7*)", "Param1 of string",
-                                                     addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+                                                     addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker8*)", "Ignored",
-                                                     addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+                                                     addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
 
     member private this.VerifyUsingFsTestLib fileContent queries crossProject =
         use _guard = this.UsingNewVS()
@@ -3173,113 +3173,6 @@ query."
                          ("(*Marker4*)", "Gets and sets X")]
         this.VerifyUsingFsTestLib fileContent queries false
 
-    [<Test; Category("Expensive")>]
-    member public this.``Automation.EnumDUInterfacefromFSBrowse``() =
-        let fileContent ="""module Test
-
-                            open FSTestLib
-
-                            type MyTestType() = 
-                                [<DefaultValue>]
-                                val mutable field : int 
-
-                                interface IMyInterface with 
-                                    member this.Represent () = "Implement Interface"
-
-                            [<EntryPoint>]
-                            let Main (args : string []) = 
-                                let MyEnumFieldSeq = 
-                                    seq {
-                                        for i in 1..10 do
-                                            // TC 14	Field	Enum	F# Browse	Comp Expression
-                                            let myEnumField = MyColors.Red(*Marker1*)
-                                            yield myEnumField
-                                        }
-   
-                                let MyDUList = (fun x -> 
-                                                        match x%3 with
-                                                        //TC 15	Self	DiscUnion	F# Browse	Lambda
-                                                        | 0 -> MyDistance(*Marker2*).Kilometers
-                                                        | 1 -> MyDistance.Miles
-                                                        | _ -> MyDistance.NauticalMiles
-                                                        )
-                            
-   
-
-                                //TC 16	Method	Interface	F# Browse	Lambda
-                                let resultString        = new MyTestType()
-                                                              |> fun (x : MyTestType) -> x :> IMyInterface
-                                                              |> fun (x : IMyInterface) -> x.Represent(*Marker3*)      
-                                0"""
-        let queries = [("(*Marker1*)", "Red: MyColors = 0");
-                        ("(*Marker2*)", "type MyDistance =");
-//                        ("(*Marker2*)", "DocComment: This is my discriminated union type");       //Fail: due to DocComments
-                        ("(*Marker2*)", "Full name: FSTestLib.MyDistance");
-//                        ("(*Marker3*)", "DocComment: abstract method in Interface");              //Fail: due to DocComments
-                        ("(*Marker3*)", "abstract member IMyInterface.Represent : unit -> string")
-                        ]
-        this.VerifyUsingFsTestLib fileContent queries true
-
-    [<Test; Category("Expensive")>]
-    member public this.``Automation.RecordAndInterfaceFromFSProj``() =
-        let fileContent ="""module Test
-
-                            open FSTestLib
-
-                            let construct =
-                                seq {
-                                    for i in 1..10 do
-                                        // TC23 - Testing "Record" type from "F# P2P" inside "Comp Expression"
-                                        let a = MyEmployee(*Marker1*).MakeDummy()
-                                        a.Name  <- "Emp" + i.ToString()
-                                        a.Age   <- 20 + i
-                                        a.IsFTE <- System.Convert.ToBoolean(System.Random().Next(2)) 
-            
-                                        // TC25 - Testing "Identifier" of "Record" type from "F# P2P" inside "Quotation"
-                                        let b = <@ a(*Marker2*).Name @>
-            
-                                        yield a
-                                }
-
-                            // TC27 - Testing "Field/Method" of "Record" type from "F# P2P" inside "Lambda"
-                            let fte_count = 
-                                construct
-                                |> Seq.filter (fun a -> a.IsFTE(*Marker3*))
-                                |> Seq.mapi (fun i a -> i.ToString() + a.ToString(*Marker4*)() )
-                                |> Seq.length
-
-                            // TC24 - Testing "Identifier" of "Interface" type from "F# P2P" inside "Pattern Matching"
-                            type MyTestType() = 
-                                [<DefaultValue>]
-                                val mutable x : int
-    
-                                interface IMyInterface with 
-                                    member this.Represent () = this.x.ToString()
-
-                            let res = 
-                                seq { yield MyTestType()
-                                      yield Unchecked.defaultof<MyTestType> }
-                                |> Seq.map (fun a ->
-                                                let myItf = a :> IMyInterface
-                                                match myItf with
-                                                | x when x = Unchecked.defaultof<IMyInterface> -> ""
-                                                | itf(*Marker5*)  -> itf.Represent() )
-                                |> Seq.filter (fun s -> s.Length > 0)
-                                |> Seq.length
-                                |> (=) 1"""
-        let queries =  [("(*Marker1*)", "type MyEmployee =");
-                        ("(*Marker1*)", "mutable IsFTE: bool;");
-//                        ("(*Marker1*)", "DocComment: This is my record type.");           //Fail: due to DocComments
-  //                      ("(*Marker1*)", "Full name: FSTestLib.MyEmployee");    // removed from declaration infos
-    //                    ("(*Marker1*)", "implements: System.IComparable");     // removed from declaration infos
-                        ("(*Marker2*)", "val a : MyEmployee");
-//                        ("(*Marker2*)", "implements: System.IComparable");     // removed from declaration infos
-                        ("(*Marker3*)", "MyEmployee.IsFTE: bool");
-//                        ("(*Marker3*)", "Indicates whether the employee is full time or not");            //Fail: due to DocComments
-                        ("(*Marker5*)", "val itf : IMyInterface")
-                        ]
-        this.VerifyUsingFsTestLib fileContent queries true
-
     [<Test>]
     member public this.``Automation.StructDelegateDUfromOwnCode``() =
         let fileContent ="""module Test
@@ -3374,105 +3267,6 @@ query."
                         ("(*Marker4*)", "val tuplex : 'a * string")
                         ]
         this.VerifyUsingFsTestLib fileContent queries false
-
-    [<Test; Category("Expensive")>]
-    member public this.``Automation.TupleRecordfromFSBrowse``() =
-        let fileContent ="""module Test
-
-                            open FSTestLib
-
-                            let GenerateTuple =  fun x ->   let tuple = (x,x.ToString(),(float)x, ( fun y -> (y.ToString(),y+1)) ) 
-                                                            // TC 19	Identifier	Tuple	F# Browse	Lambda
-                                                            tuple(*Marker3*)
-                            let MyTupleSeq = 
-                                seq {
-                                       for i in 1..9 do
-                                            // TC 17	Identifier	Tuple	F# Browse	Comp Expression
-                                            let myTuple(*Marker1*) = GenerateTuple i
-                                            yield myTuple
-                                    }
-
-                            let GetTupleMethod tuple=
-                                let (intInTuple,stringInTuple,floatInTuple,methodInTuple) = tuple
-                                methodInTuple
-    
-                            // TC 20	method	Tuple	F# Browse	Quotation
-                            let methodSeq(*Marker4*) = Seq.map GetTupleMethod MyTupleSeq
-        
-                            let RecordArray =
-                                [| for x in 1..5
-                                        // TC 18	Method	Record	F# Browse	Imperative
-                                        ->  MyEmployee.MakeDummy(*Marker2*)()|]"""
-        let queries =  [("(*Marker1*)", "val myTuple : int * string * float * (int -> string * int)");
-                        ("(*Marker2*)", "static member MyEmployee.MakeDummy : unit -> MyEmployee");
- //                       ("(*Marker2*)", "DocComment: Method");                    //FAIL due to DocComment.
-                        ("(*Marker3*)", "val tuple : int * string * float * (int -> string * int)");
-                        ("(*Marker4*)", "val methodSeq : seq<(int -> string * int)>");
-                        ("(*Marker4*)", "Full name: Test.methodSeq")
-                        ]
-        this.VerifyUsingFsTestLib fileContent queries true
-
-    [<Test; Category("Expensive")>]
-    member public this.``Automation.UnionAndStructFromFSProj``() =
-        let fileContent ="""module Test
-
-                            open FSTestLib
-
-                            [<EntryPoint>]
-                            let Main (args : string []) = 
-                                let p1 = FSTestLib.MyPoint(1.0, 2.0)
-                                let (p2 : FSTestLib.MyPoint) = FSTestLib.MyPoint(2.0, 3.0)
-    
-                                // TODO: Add active pattern testing
-                                let TC21 = 
-                                    // TC21 - Testing "Identifier" of "Struct" type from "F# P2P" inside "Pattern Matching"
-                                    match p1(*Marker1*) + p2 with
-                                    | p3(*Marker2*) when p3.X = 4.0 -> p2.Len
-                                    | _ as (*Marker3*)Res -> Res.Len
-    
-                                let TCs () = 
-                                    let toSun = Kilometers 149597892.0
-        
-                                    // TC22 - Testing "Identifier" of "Union" type from "F# P2P" inside "Imperative" context
-                                    if MyDistance.toMiles toSun(*Marker4*) > toSun then
-                                        failwith "Distance in miles can't be bigger than in kilometers."
-            
-                                    let distances : MyDistance list = [toSun; toSun.toNautical; MyDistance.toMiles toSun];
-                                    for element(*Marker5*) in distances do
-                                        ()
-
-                                    // TC28 - Testing "Method" of "Union" type from "F# P2P" inside "Pattern Matching"
-                                    match MyDistance.toMiles(*Marker6*) toSun with
-                                    | Miles x ->
-                                        toSun.IncreaseBy(*Marker7*) 1.0
-                                        |> sprintf "Such a distance to Earth [%A] would mean end of world!" |> ignore
-                                    | _ ->
-                                        failwith "the previos method should have returned Miles type"
-        
-                                    // TC26 - Testing "Property" of "Union" type from "F# P2P" inside "Comp Expression"
-                                    async {
-                                        let res = toSun.toNautical(*Marker8*)
-                                        return res
-                                    }
-                                0"""
-        let queries =  [("(*Marker1*)", "val p1 : MyPoint");
-                        //("(*Marker1*)", "implements: System.IComparable");
-                        ("(*Marker2*)", "val p3 : MyPoint");
-                        //("(*Marker2*)", "type: MyPoint");
-                        //("(*Marker2*)", "inherits: System.ValueType");
-                        ("(*Marker4*)", "val toSun : MyDistance");
-                        //("(*Marker4*)", "type: MyDistance");
-                        //("(*Marker4*)", "implements: System.IComparable");
-                        ("(*Marker5*)", "val element : MyDistance");
-                        //("(*Marker5*)", "type: MyDistance");
-                        ("(*Marker6*)", "static member MyDistance.toMiles : x:MyDistance -> MyDistance");
-//                        ("(*Marker6*)", "DocComment: Static Method"); //FAIL due to DocComment
-                        ("(*Marker7*)", "member MyDistance.IncreaseBy : dist:float -> MyDistance");
-//                        ("(*Marker7*)", "DocComment: Method");    //FAIL due to DocComment
-                        ("(*Marker8*)", "property MyDistance.toNautical: MyDistance");
-//                        ("(*Marker8*)", "DocComment: Property");    //FAIL due to DocComment
-                        ]
-        this.VerifyUsingFsTestLib fileContent queries true
 
 (*------------------------------------------IDE Query automation start -------------------------------------------------*)
 

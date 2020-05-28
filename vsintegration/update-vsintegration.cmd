@@ -83,7 +83,7 @@ GOTO :start
 
 echo.
 echo Installs or restores F# SDK bits, which applies system-wide to all Visual Studio
-echo 2017 installations. After running this, each project targeting F# 4.1 will use
+echo 2017 installations. After running this, each project targeting F# 4.5 will use
 echo your locally built FSC.exe. It will not update other F# tools, see remarks below.
 echo.
 echo Requires Administrator privileges for removing/restoring strong-naming.

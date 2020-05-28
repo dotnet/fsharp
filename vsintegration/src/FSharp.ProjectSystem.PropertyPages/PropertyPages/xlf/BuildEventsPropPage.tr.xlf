@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">&amp;Oluşturma sonrası olay komut satırı:</target>
+        <target state="translated">D&amp;erleme sonrası olay komut satırı:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">

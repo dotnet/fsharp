@@ -8,7 +8,9 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Completion
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 open System.Globalization
+open FSharp.Compiler.SourceCodeServices
 
 module internal CompletionUtils =
 
@@ -80,7 +82,7 @@ module internal CompletionUtils =
             | _ -> false
 
     let isStartingNewWord (sourceText, position) =
-        CommonCompletionUtilities.IsStartingNewWord(sourceText, position, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
+        FSharpCommonCompletionUtilities.IsStartingNewWord(sourceText, position, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
 
     let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, sourceText: SourceText, triggerPosition: int) : bool =
         let textLines = sourceText.Lines
@@ -98,3 +100,14 @@ module internal CompletionUtils =
                 | ClassificationTypeNames.NumericLiteral -> false
                 | _ -> true // anything else is a valid classification type
             ))
+
+    let inline getKindPriority kind =
+        match kind with
+        | CompletionItemKind.CustomOperation -> 0
+        | CompletionItemKind.Property -> 1
+        | CompletionItemKind.Field -> 2
+        | CompletionItemKind.Method (isExtension = false) -> 3
+        | CompletionItemKind.Event -> 4
+        | CompletionItemKind.Argument -> 5
+        | CompletionItemKind.Other -> 6
+        | CompletionItemKind.Method (isExtension = true) -> 7

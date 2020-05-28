@@ -32,8 +32,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <PropertyGroup>
     <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!--- Do not glob F# source files -->
     <EnableDefaultNoneItems Condition=" '$(EnableDefaultNoneItems)' == '' ">false</EnableDefaultNoneItems>
-    <DefaultValueTuplePackageVersion>4.3.1</DefaultValueTuplePackageVersion>
-    <DefaultFSharpPackageVersion>4.3.4</DefaultFSharpPackageVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -41,8 +39,9 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <Prefer32Bit Condition="'$(Prefer32Bit)' == '' ">false</Prefer32Bit>
     <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == '' ">false</TreatWarningsAsErrors>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-    <WarningsAsErrors Condition="'$(WarningsAsErrors)' == '' " />
+    <WarningsAsErrors>3239;$(WarningsAsErrors)</WarningsAsErrors>
     <UseStandardResourceNames Condition=" '$(UseStandardResourceNames)' == '' ">true</UseStandardResourceNames>
+    <FsiExec Condition=" '$(FsiExec)' == '' ">true</FsiExec>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -57,24 +56,52 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <Tailcalls Condition="'$(Tailcalls)' == '' ">true</Tailcalls>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(OS)' != 'Unix' and Exists('$(MSBuildThisFileDirectory)\RunFsc.cmd')" >
-    <FscToolPath Condition=" '$(FscToolPath)' == '' ">$(MSBuildThisFileDirectory)</FscToolPath>
-    <FscToolExe Condition=" '$(FscToolExe)' == ''">RunFsc.cmd</FscToolExe>
+  <PropertyGroup Condition="'$(DisableAutoSetFscCompilerPath)' != 'true' and '$(DOTNET_HOST_PATH)' != ''">
+    <FscToolPath Condition="'$(FscToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FscToolPath>
+    <FscToolExe Condition="'$(FscToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FscToolExe>
+    <DotnetFscCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">"$(MSBuildThisFileDirectory)fsc.exe"</DotnetFscCompilerPath>
+
+    <FsiToolPath Condition="'$(FsiToolPath)' == ''">$([System.IO.Path]::GetDirectoryName($(DOTNET_HOST_PATH)))</FsiToolPath>
+    <FsiToolExe Condition="'$(FsiToolExe)' == ''">$([System.IO.Path]::GetFileName($(DOTNET_HOST_PATH)))</FsiToolExe>
+    <DotnetFsiCompilerPath Condition="'$(DotnetFscCompilerPath)' == ''">"$(MSBuildThisFileDirectory)fsi.exe"</DotnetFsiCompilerPath>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(OS)' == 'Unix' and Exists('$(MSBuildThisFileDirectory)\RunFsc.sh')" >
-    <FscToolPath Condition=" '$(FscToolPath)' == '' ">$(MSBuildThisFileDirectory)</FscToolPath>
-    <FscToolExe Condition="'$(OS)' == 'Unix' and '$(FscToolExe)' == ''">RunFsc.sh</FscToolExe>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.ValueTuple" Version="$(DefaultValueTuplePackageVersion)" >
-      <DefaultInclude>true</DefaultInclude>
-    </PackageReference>
-
-    <PackageReference Include="FSharp.Core" Version="$(DefaultFSharpPackageVersion)">
-      <DefaultInclude>true</DefaultInclude>
-    </PackageReference>
+  <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
+                        and ('$(TargetFrameworkIdentifier)' == '.NETStandard' or '$(TargetFrameworkIdentifier)' == '.NETCoreApp')
+                        and !('$(_TargetFrameworkVersionWithoutV)' >= '2.0' )">
+    <PackageReference Include="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <DefaultValueTuplePackageVersion>4.4.0</DefaultValueTuplePackageVersion>
+    <DefaultFSharpCorePackageVersion>{{FSharpCoreShippedPackageVersion}}</DefaultFSharpCorePackageVersion>
+    <DefaultFSharpCorePreviewPackageVersion>{{FSharpCorePreviewPackageVersion}}</DefaultFSharpCorePreviewPackageVersion>
+    <ValueTupleImplicitPackageVersion>$(DefaultValueTuplePackageVersion)</ValueTupleImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePackageVersion)</FSharpCoreImplicitPackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
+                        and ('$(TargetFrameworkIdentifier)' == '.NETFramework'
+                             and ('$(_TargetFrameworkVersionWithoutV)' == ''
+                                  or '$(_TargetFrameworkVersionWithoutV)' == '4.0' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.5' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.5.1' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.5.2' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.1' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.2' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.7')) ">
+    <PackageReference Include="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(DisableImplicitFSharpCoreReference)' != 'true'">
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)" />
+  </ItemGroup>
+
+  <ItemDefinitionGroup>
+    <PackageReference>
+      <GeneratePathProperty>true</GeneratePathProperty>
+    </PackageReference>
+  </ItemDefinitionGroup>
 
 </Project>

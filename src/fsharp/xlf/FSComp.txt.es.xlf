@@ -2,6 +2,241 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../FSComp.resx">
     <body>
+      <trans-unit id="chkFeatureNotLanguageSupported">
+        <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
+        <target state="new">Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkFeatureNotRuntimeSupported">
+        <source>Feature '{0}' is not supported by target runtime.</source>
+        <target state="new">Feature '{0}' is not supported by target runtime.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csAvailableOverloads">
+        <source>Available overloads:\n{0}</source>
+        <target state="translated">Sobrecargas disponibles:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
+        <source>Known types of arguments: {0}</source>
+        <target state="translated">Tipos de argumentos conocidos: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixSingular">
+        <source>Known type of argument: {0}</source>
+        <target state="translated">Tipo de argumento conocido: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundReturnType">
+        <source>Known return type: {0}</source>
+        <target state="translated">Tipo de valor devuelto conocido: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixPlural">
+        <source>Known type parameters: {0}</source>
+        <target state="translated">Parámetros de tipo conocidos: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixSingular">
+        <source>Known type parameter: {0}</source>
+        <target state="translated">Parámetro de tipo conocido: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
+        <source>Argument at index {0} doesn't match</source>
+        <target state="translated">El argumento del índice {0} no coincide.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
+        <source>Argument '{0}' doesn't match</source>
+        <target state="translated">El argumento "{0}" no coincide.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasDesignerAssemblyDependency">
+        <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
+        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasDesignerAssemblyException">
+        <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</source>
+        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasWrongDesignerAssemblyNoPath">
+        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</source>
+        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fSharpBannerVersion">
+        <source>{0} for F# {1}</source>
+        <target state="translated">{0} para F# {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureAndBang">
+        <source>applicative computation expressions</source>
+        <target state="new">applicative computation expressions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDefaultInterfaceMemberConsumption">
+        <source>default interface member consumption</source>
+        <target state="new">default interface member consumption</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDotlessFloat32Literal">
+        <source>dotless float32 literal</source>
+        <target state="new">dotless float32 literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureFixedIndexSlice3d4d">
+        <source>fixed-index slice 3d/4d</source>
+        <target state="new">fixed-index slice 3d/4d</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureFromEndSlicing">
+        <source>from-end slicing</source>
+        <target state="new">from-end slicing</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureImplicitYield">
+        <source>implicit yield</source>
+        <target state="new">implicit yield</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNameOf">
+        <source>nameof</source>
+        <target state="new">nameof</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNullableOptionalInterop">
+        <source>nullable optional interop</source>
+        <target state="new">nullable optional interop</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOpenStaticClasses">
+        <source>open static classes</source>
+        <target state="new">open static classes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePackageManagement">
+        <source>package management</source>
+        <target state="new">package management</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRelaxWhitespace">
+        <source>whitespace relexation</source>
+        <target state="new">whitespace relexation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureSingleUnderscorePattern">
+        <source>single underscore pattern</source>
+        <target state="new">single underscore pattern</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWildCardInForLoop">
+        <source>wild card in for loop</source>
+        <target state="new">wild card in for loop</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="formatDashItem">
+        <source> - {0}</source>
+        <target state="translated"> - {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fromEndSlicingRequiresVFive">
+        <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
+        <target state="translated">La segmentación desde el final requiere la versión de lenguaje 5.0, use /langversion:preview.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceFormatError">
+        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
+        <target state="translated">El flujo no comienza con un recurso nulo ni está en formato ".RES".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nativeResourceHeaderMalformed">
+        <source>Resource header beginning at offset {0} is malformed.</source>
+        <target state="translated">El encabezado de los recursos que comienza en el desplazamiento {0} está mal formado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersion">
+        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
+        <target state="translated">Mostrar los valores permitidos para la versión de idioma, especificar la versión de idioma como "latest" "preview"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSupportedLangVersions">
+        <source>Supported language versions:</source>
+        <target state="translated">Versiones de lenguaje admitidas:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="translated">Valor no reconocido "{0}" para --langversion, use --langversion:? para una lista completa</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="translated">La característica de administración de paquetes requiere la versión de lenguaje 5.0; use /langversion:preview</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnexpectedSymbolDot">
+        <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
+        <target state="translated">Símbolo inesperado "." en la definición de miembro. Se esperaba "with", "=" u otro token.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsChecksumAlgorithm">
+        <source>Specify algorithm for calculating source file checksum stored in PDB. Supported values are: SHA1 or SHA256 (default)</source>
+        <target state="translated">Especifique el algoritmo para calcular la suma de comprobación del archivo de origen almacenada en PDB. Los valores admitidos son SHA1 o SHA256 (predeterminado)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnknownChecksumAlgorithm">
+        <source>Algorithm '{0}' is not supported</source>
+        <target state="translated">No se admite el algoritmo '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAndBangNotSupported">
+        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
+        <target state="translated">Esta versión de F# no admite esta característica. Es posible que tenga que agregar /langversion:preview para usarla.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameDifferent">
+        <source>This is the wrong anonymous record. It should have the fields {0}.</source>
+        <target state="translated">Este es un registro anónimo incorrecto. Debe tener los campos {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSubset">
+        <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
+        <target state="translated">Este registro anónimo no tiene suficientes campos. Agregue los campos que faltan {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameSuperset">
+        <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
+        <target state="translated">Este registro anónimo tiene demasiados campos. Quite los campos adicionales {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAugmentationsCannotHaveAttributes">
+        <source>Attributes cannot be applied to type extensions.</source>
+        <target state="translated">Los atributos no se pueden aplicar a las extensiones de tipo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
+        <source>use! may not be combined with and!</source>
+        <target state="translated">No se puede combinar use! con and!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRequireMergeSourcesOrBindN">
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
+        <target state="translated">La construcción "let! ... and! ..." solo se puede usar si el generador de expresiones de cálculo define un método "{0}" o bien los métodos "MergeSource" y "Bind" adecuados.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
+        <source>Interface member '{0}' does not have a most specific implementation.</source>
+        <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
+        <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
+        <target state="translated">El tipo "{0}" no define el campo, constructor o miembro "{1}".</target>
+        <note />
+      </trans-unit>
       <trans-unit id="undefinedNameNamespace">
         <source>The namespace '{0}' is not defined.</source>
         <target state="translated">El espacio de nombres "{0}" no está definido.</target>
@@ -83,17 +318,17 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
+        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">Todas las ramas de una expresión de constructor de lista deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
+        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">Todos los elementos de una expresión de constructor de matriz deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</source>
+        <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
         <target state="translated">La expresión "if" no tiene una rama "else". La rama "then" tiene el tipo '{0}'. Dado que "if" es una expresión y no una instrucción, agregue una rama "else" que devuelva un valor del mismo tipo.</target>
         <note />
       </trans-unit>
@@ -103,13 +338,13 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
+        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">Todas las ramas de una expresión "if" deben devolver el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Todas las ramas de una expresión de coincidencia de patrones deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
+        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="new">All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -135,6 +370,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">Considere la posibilidad de usar "return!" en lugar de "return".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="useSdkRefs">
+        <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
+        <target state="translated">Use ensamblados de referencia para las referencias de .NET Framework cuando estén disponibles (habilitado de forma predeterminada).</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
@@ -212,16 +452,6 @@
         <target state="translated">Configuración de privacidad '{0}' no reconocida para un recurso administrado. Las opciones válidas son 'public' y 'private'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildMultipleReferencesNotAllowed">
-        <source>Multiple references to '{0}.dll' are not permitted</source>
-        <target state="translated">No se permiten varias referencias a '{0}.dll'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCouldNotReadVersionInfoFromMscorlib">
-        <source>Could not read version from mscorlib.dll</source>
-        <target state="translated">No se pudo leer la versión de mscorlib.dll.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildCannotReadAssembly">
         <source>Unable to read assembly '{0}'</source>
         <target state="translated">No se puede leer el ensamblado '{0}'.</target>
@@ -289,17 +519,17 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashIDirective">
         <source>Invalid directive. Expected '#I \"&lt;path&gt;\"'.</source>
-        <target state="translated">Directiva no válida. Se esperaba '#I \"&lt;ruta de acceso&gt;\"'.</target>
+        <target state="translated">Directiva no válida. Se esperaba "#I \"&lt;path&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashrDirective">
         <source>Invalid directive. Expected '#r \"&lt;file-or-assembly&gt;\"'.</source>
-        <target state="translated">Directiva no válida. Se esperaba '#r \"&lt;archivo-o-ensamblado&gt;\"'.</target>
+        <target state="translated">Directiva no válida. Se esperaba "'#r \"&lt;file-or-assembly&gt;\"'.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashloadDirective">
         <source>Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</source>
-        <target state="translated">Directiva no válida. Se esperaba '#load \"&lt;archivo&gt;\" ... \"&lt;archivo&gt;\"'.</target>
+        <target state="translated">Directiva no válida. Se espera "#load \"&lt;file&gt;\" ... \"&lt;file&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
@@ -410,11 +640,6 @@
       <trans-unit id="tastUnexpectedByRef">
         <source>Unexpected use of a byref-typed variable</source>
         <target state="translated">Uso inesperado de una variable de tipo byref.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tastValueMustBeMutable">
-        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
-        <target state="translated">Un valor debe ser mutable para poder mutar el contenido o tomar la dirección de un tipo de valor; por ejemplo, 'let mutable x = ...'</target>
         <note />
       </trans-unit>
       <trans-unit id="tastInvalidMutationOfConstant">
@@ -534,12 +759,12 @@
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityGenericParametersAreDifferentKinds">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe generic parameters in the signature and implementation have different kinds. Perhaps there is a missing [&lt;Measure&gt;] attribute.</source>
-        <target state="translated">El módulo "{0}" contiene\n    {1}    \npero su signatura especifica\n    {2}    \nLos parámetros genéricos de la signatura y la implementación tienen tipos diferentes. Puede que falte un atributo [&lt;Measure&gt;].</target>
+        <target state="translated">El módulo "{0}" contiene\n    {1}    \npero su firma especifica\n    {2}    \nLos parámetros genéricos en la firma y aplicación tienen diversas clases. Quizá falte un atributo [&lt;Measure&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityAritiesDiffer">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe arities in the signature and implementation differ. The signature specifies that '{3}' is function definition or lambda expression accepting at least {4} argument(s), but the implementation is a computed function value. To declare that a computed function value is a permitted implementation simply parenthesize its type in the signature, e.g.\n\tval {5}: int -&gt; (int -&gt; int)\ninstead of\n\tval {6}: int -&gt; int -&gt; int.</source>
-        <target state="translated">El módulo '{0}' contiene\n    {1}    \npero su signatura especifica\n    {2}    \nLas aridades de la signatura y la implementación difieren. La signatura especifica que '{3}' es una definición de función o una expresión lambda que acepta al menos {4} argumentos, pero la implementación es un valor de función calculado. Para declarar que un valor de función calculado es una implementación permitida, simplemente ponga entre paréntesis el tipo en la signatura; por ejemplo\n\tval {5}: int -&gt; (int -&gt; int)\nen lugar de\n\tval {6}: int -&gt; int -&gt; int.</target>
+        <target state="translated">El módulo "{0}" contiene\n {1} \npero su signatura especifica\n {2} \nLas aridades de la signatura y la implementación difieren. La signatura especifica que "{3}" es una definición de función o una expresión lambda que acepta al menos {4} argumentos, pero la implementación es un valor de función calculado. Para declarar que un valor de función calculado es una implementación permitida, simplemente ponga entre paréntesis el tipo en la signatura; por ejemplo\n\tval {5}: int -&gt; (int -&gt; int)\nen lugar de\n\tval {6}: int -&gt; int -&gt; int.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityDotNetNamesDiffer">
@@ -629,22 +854,22 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">Las definiciones de {0} para el tipo "{1}" en la signatura y la implementación no son compatibles porque el tipo de implementación está sellado y la signatura implica que no lo esté. Considere agregar el atributo [&lt;Sealed&gt;] a la signatura.</target>
+        <target state="translated">Las definiciones {0} para el tipo "{1}" en la firma y la implementación no son compatibles porque el tipo de implementación está sellado pero la firma implica que no lo está. Considere agregar el atributo [&lt;Sealed&gt;] a la firma.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">Las definiciones de {0} para el tipo "{1}" en la signatura y la implementación no son compatibles porque el tipo de implementación no está sellado y la signatura implica que lo esté. Considere agregar el atributo [&lt;Sealed&gt;] a la implementación.</target>
+        <target state="translated">Las definiciones {0} para el tipo "{1}" en la firma y la implementación no son compatibles porque el tipo de implementación no está sellado pero la firma implica que lo está. Considere agregar el atributo [&lt;Sealed&gt;] a la implementación.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation is an abstract class but the signature is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the signature.</source>
-        <target state="translated">Las definiciones de {0} para el tipo "{1}" en la signatura y la implementación no son compatibles porque la implementación es una clase abstracta pero la signatura no. Considere agregar el atributo [&lt;AbstractClass&gt;] a la signatura.</target>
+        <target state="translated">Las definiciones de {0} de tipo "{1}" en la firma y la aplicación no son compatibles porque la aplicación es una clase abstracta, pero la firma no los es. Considere agregar el atributo [&lt;AbstractClass&gt;] a la firma.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature is an abstract class but the implementation is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the implementation.</source>
-        <target state="translated">Las definiciones de {0} para el tipo "{1}" en la signatura y la implementación no son compatibles porque la signatura es una clase abstracta pero la implementación no. Considere agregar el atributo [&lt;AbstractClass&gt;] a la implementación.</target>
+        <target state="translated">Las definiciones {0} para el tipo "{1}" en la firma y la implementación no son compatibles porque la firma es una clase abstracta, pero la implementación no lo es. Considere agregar el atributo [&lt;AbstractClass&gt;] a la implementación.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes">
@@ -953,8 +1178,8 @@
         <note />
       </trans-unit>
       <trans-unit id="typrelNamedArgumentHasBeenAssignedMoreThenOnce">
-        <source>A named argument has been assigned more than one value</source>
-        <target state="translated">Se ha asignado más de un valor a un argumento con nombre.</target>
+        <source>The named argument '{0}' has been assigned more than one value</source>
+        <target state="new">The named argument '{0}' has been assigned more than one value</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGiven">
@@ -1044,12 +1269,12 @@
       </trans-unit>
       <trans-unit id="augRefEqCantHaveObjEquals">
         <source>A type with attribute 'ReferenceEquality' cannot have an explicit implementation of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">Un tipo con el atributo 'ReferenceEquality' no puede tener una implementación explícita de 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' o 'System.Collections.IStructuralEquatable'.</target>
+        <target state="translated">Un tipo con el atributo "ReferenceEquality" no puede tener una implementación explícita de "Object.Equals(obj)", "System.IEquatable&lt;_&gt;" o "System.Collections.IStructuralEquatable"</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomEqNeedsObjEquals">
         <source>A type with attribute 'CustomEquality' must have an explicit implementation of at least one of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">Un tipo con el atributo 'CustomEquality' debe tener una implementación explícita de al menos uno de 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' o 'System.Collections.IStructuralEquatable'.</target>
+        <target state="translated">Un tipo con atributo "CustomEquality" debe tener una implementación explícita de al menos uno de "Object.Equals (obj)", "System.IEquatable&lt;_&gt;"' o "System.Collections.IStructuralEquatable"</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomCompareNeedsIComp">
@@ -1064,7 +1289,7 @@
       </trans-unit>
       <trans-unit id="augNoCompCantImpIComp">
         <source>A type with attribute 'NoComparison' should not usually have an explicit implementation of 'System.IComparable', 'System.IComparable&lt;_&gt;' or 'System.Collections.IStructuralComparable'. Disable this warning if this is intentional for interoperability purposes</source>
-        <target state="translated">Normalmente, un tipo con el atributo 'NoComparison' no debe tener una implementación explícita de 'System.IComparable', 'System.IComparable&lt;_&gt;' o 'System.Collections.IStructuralComparable'. Deshabilite esta advertencia si esto es intencionado con fines de interoperabilidad.</target>
+        <target state="translated">Un tipo con el atributo "NoComparison" normalmente no debería tener una implementación explícita de "System.IComparable", "System.IComparable &amp; lt; _ &amp; gt;" o "System.Collections.IStructuralComparable". Deshabilite esta advertencia si es intencional para fines de interoperabilidad</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomEqNeedsNoCompOrCustomComp">
@@ -1164,7 +1389,7 @@
       </trans-unit>
       <trans-unit id="chkByrefUsedInInvalidWay">
         <source>The byref-typed variable '{0}' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.</source>
-        <target state="translated">La variable '{0}' de tipo byref se usa de forma no válida. Los tipos byref no pueden ser capturados por clausuras ni pasados a funciones internas.</target>
+        <target state="translated">La variable "{0}" de tipo byref se usa de una forma no válida. Los tipos byref no pueden ser capturados por clausuras ni pasados a funciones internas.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkBaseUsedInInvalidWay">
@@ -1184,7 +1409,7 @@
       </trans-unit>
       <trans-unit id="chkSystemVoidOnlyInTypeof">
         <source>'System.Void' can only be used as 'typeof&lt;System.Void&gt;' in F#</source>
-        <target state="translated">'System.Void' se puede usar sólo como 'typeof&lt;System.Void&gt;' en F#.</target>
+        <target state="translated">"System.Void" solo puede utilizarse como "'typeof&lt;System.Void&gt;" en F#</target>
         <note />
       </trans-unit>
       <trans-unit id="chkErrorUseOfByref">
@@ -1284,7 +1509,7 @@
       </trans-unit>
       <trans-unit id="chkReflectedDefCantSplice">
         <source>[&lt;ReflectedDefinition&gt;] terms cannot contain uses of the prefix splice operator '%'</source>
-        <target state="translated">Los términos [&lt;ReflectedDefinition&gt;] no pueden contener usos del operador de inserción de prefijo "%"</target>
+        <target state="translated">Los términos de [&lt; ReflectedDefinition &gt;] no pueden contener usos del operador de inserción de prefijo "%"</target>
         <note />
       </trans-unit>
       <trans-unit id="chkEntryPointUsage">
@@ -1788,13 +2013,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csCandidates">
-        <source>Candidates: {0}</source>
-        <target state="translated">Candidatos: {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csSeeAvailableOverloads">
-        <source>The available overloads are shown below.</source>
-        <target state="translated">Las sobrecargas disponibles se muestran a continuación.</target>
+        <source>Candidates:\n{0}</source>
+        <target state="translated">Candidatos:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="parsDoCannotHaveVisibilityDeclarations">
@@ -1954,7 +2174,7 @@
       </trans-unit>
       <trans-unit id="parsSyntaxError">
         <source>Syntax error</source>
-        <target state="translated">Error de sintaxis</target>
+        <target state="translated">error de sintaxis</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAugmentationsIllegalOnDelegateType">
@@ -2129,12 +2349,12 @@
       </trans-unit>
       <trans-unit id="parsIncompleteIf">
         <source>Incomplete conditional. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Condicional incompleto. Se esperaba 'if &lt;expr&gt; then &lt;expr&gt;' o 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</target>
+        <target state="translated">Condicional incompleta. Se esperaba "if &lt;expr&gt; then &lt;expr&gt;" o "if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAssertIsNotFirstClassValue">
         <source>'assert' may not be used as a first class value. Use 'assert &lt;expr&gt;' instead.</source>
-        <target state="translated">No se puede usar 'assert' como valor de primera clase. Use 'assert &lt;expr&gt;' en su lugar.</target>
+        <target state="translated">"assert" no puede utilizarse como un valor de primera clase. Utilice mejor "assert &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIdentifierExpected">
@@ -2149,7 +2369,7 @@
       </trans-unit>
       <trans-unit id="parsArrowUseIsLimited">
         <source>The use of '-&gt;' in sequence and computation expressions is limited to the form 'for pat in expr -&gt; expr'. Use the syntax 'for ... in ... do ... yield...' to generate elements in more complex sequence expressions.</source>
-        <target state="translated">El uso de '-&gt;' en expresiones de secuencia y de cómputo está limitado a la forma 'for pat in expr -&gt; expr'. Use la sintaxis 'for ... in ... do ... yield...' para generar elementos en expresiones de secuencia más complejas.</target>
+        <target state="translated">El uso de "-&gt;" en secuencia y las expresiones de cálculo se limitan a la forma "for pat in expr -&gt; expr". Use la sintaxis "for ... in ... do ... yield..." para generar elementos en expresiones de secuencia más complejas.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSuccessiveArgsShouldBeSpacedOrTupled">
@@ -2219,7 +2439,7 @@
       </trans-unit>
       <trans-unit id="parsMultiArgumentGenericTypeFormDeprecated">
         <source>The syntax '(typ,...,typ) ident' is not used in F# code. Consider using 'ident&lt;typ,...,typ&gt;' instead</source>
-        <target state="translated">La sintaxis '(typ,...,typ) ident' no se usa en el código de F#. Considere el uso de 'ident&lt;typ,...,typ&gt;' en su lugar.</target>
+        <target state="translated">La sintaxis "(typ,..., typ) ident" no se utiliza en código de F#. Considere el uso de "ident&lt;typ,...,typ&gt;" en lugar</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidLiteralInType">
@@ -2299,7 +2519,7 @@
       </trans-unit>
       <trans-unit id="tcNonZeroConstantCannotHaveGenericUnit">
         <source>Non-zero constants cannot have generic units. For generic zero, write 0.0&lt;_&gt;.</source>
-        <target state="translated">Las constantes distintas de cero no pueden tener unidades genéricas. Para un cero genérico, escriba 0.0&lt;_&gt;.</target>
+        <target state="translated">Las constantes diferentes de cero no pueden tener unidades genéricas. Para cero genérico, escriba 0.0&lt;_&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSeqResultsUseYield">
@@ -2329,7 +2549,7 @@
       </trans-unit>
       <trans-unit id="tcParameterRequiresName">
         <source>A parameter with attributes must also be given a name, e.g. '[&lt;Attribute&gt;] Name : Type'</source>
-        <target state="translated">A un parámetro con atributos se le debe dar también un nombre; por ejemplo, "[&lt;Atributo&gt;] Nombre : Tipo".</target>
+        <target state="translated">Un parámetro con atributos debe también tener un nombre, por ejemplo "[&lt;Attribute&gt;] Name : Type"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnValuesCannotHaveNames">
@@ -2414,7 +2634,7 @@
       </trans-unit>
       <trans-unit id="tcImplementsGenericIComparableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IComparable&lt;_&gt;' explicitly. You must apply the 'CustomComparison' attribute to the type, and should also provide a consistent implementation of the non-generic interface System.IComparable.</source>
-        <target state="translated">El tipo de struct, registro o unión '{0}' implementa la interfaz 'System.IComparable&lt;_&gt;' de forma explícita. Debe aplicar el atributo 'CustomComparison' al tipo y proporcionar también una implementación coherente de la interfaz no genérica System.IComparable.</target>
+        <target state="translated">El tipo de estructura, registro o unión "{0}" implementa la interfaz "System.IComparable&lt;_&gt;" explícitamente. Debe aplicar el atributo "CustomComparison" al tipo y también debe proporcionar una implementación coherente de la interfaz no genérica System.IComparable.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplementsIStructuralComparableExplicitly">
@@ -2464,7 +2684,7 @@
       </trans-unit>
       <trans-unit id="tcTypeParametersInferredAreNotStable">
         <source>The type parameters inferred for this value are not stable under the erasure of type abbreviations. This is due to the use of type abbreviations which drop or reorder type parameters, e.g. \n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nConsider declaring the type parameters for this value explicitly, e.g.\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x).</source>
-        <target state="translated">Los parámetros de tipo inferidos para este valor no son estables al borrar las abreviaciones de tipo. Esto se debe al uso de abreviaciones de tipo que colocan o reordenan parámetros de tipo; por ejemplo: \n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nConsidere declarar los parámetros de tipo para este valor de forma explícita; por ejemplo: \n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x).</target>
+        <target state="translated">Los parámetros de tipo inferidos para este valor no son estables en la eliminación de las abreviaturas de tipo. Esto se debe al uso de abreviaturas de tipo que eliminan o reordenan los parámetros de tipo, por ejemplo,\n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nConsidere declarar explícitamente los parámetros de tipo para este valor, por ejemplo, \n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeParameterInvalid">
@@ -2609,7 +2829,7 @@
       </trans-unit>
       <trans-unit id="tcTypeCannotBeEnumerated">
         <source>The type '{0}' is not a type whose values can be enumerated with this syntax, i.e. is not compatible with either seq&lt;_&gt;, IEnumerable&lt;_&gt; or IEnumerable and does not have a GetEnumerator method</source>
-        <target state="translated">El tipo '{0}' no es un tipo cuyos valores se puedan enumerar con esta sintaxis, es decir, no es compatible con seq&lt;_&gt;, IEnumerable&lt;_&gt; o IEnumerable y no tiene un método GetEnumerator.</target>
+        <target state="translated">El tipo "{0}" no es un tipo cuyos valores se puedan enumerar con esta sintaxis; es decir, no es compatible con seq&lt;_&gt;, IEnumerable&lt;_&gt; or IEnumerable y no tiene un método GetEnumerator</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMixtureOfRecursiveForms">
@@ -2634,7 +2854,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidEnumConstraint">
         <source>An 'enum' constraint must be of the form 'enum&lt;type&gt;'</source>
-        <target state="translated">Una restricción 'enum' debe tener el formato 'enum&lt;tipo&gt;'.</target>
+        <target state="translated">Una restricción "enum" debe tener el formato "enum&lt;type&gt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidNewConstraint">
@@ -2644,12 +2864,12 @@
       </trans-unit>
       <trans-unit id="tcInvalidPropertyType">
         <source>This property has an invalid type. Properties taking multiple indexer arguments should have types of the form 'ty1 * ty2 -&gt; ty3'. Properties returning functions should have types of the form '(ty1 -&gt; ty2)'.</source>
-        <target state="translated">Esta propiedad tiene un tipo no válido. Las propiedades que toman varios argumentos de indizador deben tener tipos con el formato 'ty1 * ty2 -&gt; ty3'. Las propiedades que devuelven funciones deben tener tipos con el formato '(ty1 -&gt; ty2)'.</target>
+        <target state="translated">Esta propiedad tiene un tipo no válido. Las propiedades que toman múltiples argumentos de indexador deben tener tipos de la forma "ty1 * ty2 -&gt; ty3". Las propiedades que devuelven funciones deben tener tipos de la forma "(ty1 -&gt; ty2)".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpectedUnitOfMeasureMarkWithAttribute">
         <source>Expected unit-of-measure parameter, not type parameter. Explicit unit-of-measure parameters must be marked with the [&lt;Measure&gt;] attribute.</source>
-        <target state="translated">Se esperaba un parámetro de unidad de medida, no un parámetro de tipo. Los parámetros de unidad de medida explícitos deben marcarse con el atributo [&lt;Measure&gt;].</target>
+        <target state="translated">Se esperaba un parámetro de unidad de medida, no un parámetro de tipo. Los parámetros explícitos de unidad de medida deben marcarse con el atributo[&lt;Measure&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpectedTypeParameter">
@@ -2734,7 +2954,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidNonPrimitiveLiteralInPatternMatch">
         <source>Non-primitive numeric literal constants cannot be used in pattern matches because they can be mapped to multiple different types through the use of a NumericLiteral module. Consider using replacing with a variable, and use 'when &lt;variable&gt; = &lt;constant&gt;' at the end of the match clause.</source>
-        <target state="translated">No se pueden usar constantes de literal numérico no primitivas en detecciones de patrones porque se pueden asignar a varios tipos diferentes mediante un módulo NumericLiteral. Considere el uso del reemplazo con una variable y use 'when &lt;variable&gt; = &lt;constante&gt;' al final de la cláusula de coincidencia.</target>
+        <target state="translated">Las constantes literales numéricas no primitivas no se pueden usar en las coincidencias de patrones porque se pueden asignar a varios tipos diferentes mediante el uso de un módulo NumericLiteral. Considere la posibilidad de reemplazar por una variable, y usar "when &lt;variable&gt; = &lt;constant&gt;" al final de la cláusula de coincidencia.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeArgumentUsage">
@@ -3184,7 +3404,7 @@
       </trans-unit>
       <trans-unit id="tcConstructorsCannotBeFirstClassValues">
         <source>Constructors must be applied to arguments and cannot be used as first-class values. If necessary use an anonymous function '(fun arg1 ... argN -&gt; new Type(arg1,...,argN))'.</source>
-        <target state="translated">Los constructores deben aplicarse a argumentos y no pueden usarse como valores de primera clase. Si es necesario, use una función anónima '(fun arg1 ... argN -&gt; new Type(arg1,...,argN))'.</target>
+        <target state="translated">Los constructores deben aplicarse a argumentos y no pueden usarse como valores de primera clase. Si es necesario, use una función anónima "(fun arg1 ... argN -&gt; new Type(arg1,...,argN))".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields">
@@ -3284,7 +3504,7 @@
       </trans-unit>
       <trans-unit id="tcMutableValuesSyntax">
         <source>Mutable function values should be written 'let mutable f = (fun args -&gt; ...)'</source>
-        <target state="translated">Los valores de función mutable deben escribirse con el formato 'let mutable f = (fun args -&gt; ...)'.</target>
+        <target state="translated">Los valores de función mutables deben escribirse "let mutable f = (fun args -&gt; ...)"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyFunctionsCanBeInline">
@@ -3294,7 +3514,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalAttributesForLiteral">
         <source>A literal value cannot be given the [&lt;ThreadStatic&gt;] or [&lt;ContextStatic&gt;] attributes</source>
-        <target state="translated">A un valor de literal no se le pueden dar los atributos [&lt;ThreadStatic&gt;] o [&lt;ContextStatic&gt;].</target>
+        <target state="translated">Un valor literal no puede recibir los atributos [&lt;ThreadStatic&gt;] o [&lt;ContextStatic&gt;]</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralCannotBeMutable">
@@ -3389,7 +3609,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBinding">
         <source>'use' bindings must be of the form 'use &lt;var&gt; = &lt;expr&gt;'</source>
-        <target state="translated">Los enlaces 'use' deben tener el formato 'use &lt;var&gt; = &lt;expr&gt;'.</target>
+        <target state="translated">Los enlaces de "use" deben tener el formato "use &lt;var&gt; = &lt;expr&gt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAbstractMembersIllegalInAugmentation">
@@ -3504,17 +3724,17 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
         <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
-        <target state="translated">Una declaración puede ser solo el atributo [&lt;Literal&gt;] si se proporciona también un valor constante; por ejemplo, "val x : int = 1".</target>
+        <target state="translated">Una declaración solo puede ser el atributo [&lt;Literal&gt;] si también se proporciona un valor constante, por ejemplo, "val x: int = 1"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">
         <source>A declaration may only be given a value in a signature if the declaration has the [&lt;Literal&gt;] attribute</source>
-        <target state="translated">A una declaración se le puede dar solo un valor en una signatura si la declaración tiene el atributo [&lt;Literal&gt;].</target>
+        <target state="translated">A una declaración solo se le puede dar un valor en una firma si la declaración tiene el atributo [&lt;Literal&gt;]</target>
         <note />
       </trans-unit>
       <trans-unit id="tcThreadStaticAndContextStaticMustBeStatic">
         <source>Thread-static and context-static variables must be static and given the [&lt;DefaultValue&gt;] attribute to indicate that the value is initialized to the default value on each new thread</source>
-        <target state="translated">Las variables ThreadStatic y ContextStatic deben ser estáticas y se les debe proporcionar el atributo [&lt;DefaultValue&gt;] para indicar que el valor se inicializa con el valor predeterminado en cada nuevo subproceso.</target>
+        <target state="translated">Las variables estáticas de subproceso y estáticas de contexto deben ser estáticas y proporcionarse al atributo [&lt;DefaultValue&gt;] para indicar que el valor se inicializa al valor predeterminado en cada nuevo subproceso</target>
         <note />
       </trans-unit>
       <trans-unit id="tcVolatileFieldsMustBeMutable">
@@ -3524,12 +3744,12 @@
       </trans-unit>
       <trans-unit id="tcUninitializedValFieldsMustBeMutable">
         <source>Uninitialized 'val' fields must be mutable and marked with the '[&lt;DefaultValue&gt;]' attribute. Consider using a 'let' binding instead of a 'val' field.</source>
-        <target state="translated">Los campos "val" no inicializados deben ser mutables y estar marcados con el atributo "[&lt;DefaultValue&gt;]". Considere el uso de un enlace "let" en lugar de un campo "val".</target>
+        <target state="translated">Los campos "val" sin inicializar deben ser mutables y marcarse con el atributo "[&lt;DefaultValue&gt;]". Considere la posibilidad de usar un enlace "let" en lugar de un campo "val".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStaticValFieldsMustBeMutableAndPrivate">
         <source>Static 'val' fields in types must be mutable, private and marked with the '[&lt;DefaultValue&gt;]' attribute. They are initialized to the 'null' or 'zero' value for their type. Consider also using a 'static let mutable' binding in a class type.</source>
-        <target state="translated">Los campos "val" estáticos en tipos deben ser mutables, privados y estar marcados con el atributo "[&lt;DefaultValue&gt;]". Se inicializan con el valor "null" o "cero" para su tipo. Considere también el uso de un enlace "static let mutable" en un tipo de clase.</target>
+        <target state="translated">Los campos "val" estáticos en los tipos deben ser mutables y privados y estar marcados con el atributo "[&amp; lt; DefaultValue &amp; gt;]". Se inicializan en el valor "null" o "zero" para su tipo. Considere también usar un enlace "static let mutable" en un tipo de clase.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldRequiresName">
@@ -3544,7 +3764,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalFormForExplicitTypeDeclaration">
         <source>Explicit type declarations for constructors must be of the form 'ty1 * ... * tyN -&gt; resTy'. Parentheses may be required around 'resTy'</source>
-        <target state="translated">Las declaraciones de tipos explícitos para constructores deben tener el formato 'ty1 * ... * tyN -&gt; resTy'. Pueden ser necesarios paréntesis en 'resTy'.</target>
+        <target state="translated">Las declaraciones de tipo explícito para constructores deben tener el formato ''ty1 * ... * tyN -&gt; resTy". Se podrían requerir paréntesis alrededor de "resTy".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnTypesForUnionMustBeSameAsType">
@@ -3694,7 +3914,7 @@
       </trans-unit>
       <trans-unit id="tcImplementsIEquatableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IEquatable&lt;_&gt;' explicitly. Apply the 'CustomEquality' attribute to the type and provide a consistent implementation of the non-generic override 'System.Object.Equals(obj)'.</source>
-        <target state="translated">El tipo de struct, registro o unión '{0}' implementa la interfaz 'System.IEquatable&lt;_&gt;' de forma explícita. Aplique el atributo 'CustomEquality' al tipo y proporcione una implementación coherente de la invalidación no genérica 'System.Object.Equals(obj)'.</target>
+        <target state="translated">El tipo de estructura, registro o unión "{0}'"implementa la interfaz "System.IEquatable&lt;_&gt;" explícitamente. Aplique el atributo "CustomEquality" al tipo y proporcione una implementación coherente de la anulación no genérica "System.Object.Equals(obj)".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors">
@@ -3759,7 +3979,7 @@
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationHasTypeParametersMissingOnType">
         <source>This type abbreviation has one or more declared type parameters that do not appear in the type being abbreviated. Type abbreviations must use all declared type parameters in the type being abbreviated. Consider removing one or more type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C&lt;'a&gt; = C of ...'.</source>
-        <target state="translated">Esta abreviación de tipo tiene uno o varios parámetros de tipo declarados que no aparecen en el tipo que se va a abreviar. Las abreviaciones de tipo deben usar todos los parámetros de tipo declarados en el tipo que se va a abreviar. Considere quitar uno o varios parámetros de tipo o use una definición de tipo concreto que contenga un tipo subyacente, como 'type C&lt;'a&gt; = C of ...'.</target>
+        <target state="translated">Esta abreviatura de tipo tiene uno o varios parámetros de tipo declarados que no aparecen en el tipo que se está abreviando. Las abreviaturas de tipo deben utilizar todos los parámetros de tipo declarado en el tipo que se está abreviando. Considere la eliminación de uno o más parámetros de tipo, o utilice una definición de tipo concreta que envuelva un tipo subyacente, como "type C&lt;'a&gt; = C of ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes">
@@ -3794,7 +4014,7 @@
       </trans-unit>
       <trans-unit id="tcRepresentationOfTypeHiddenBySignature">
         <source>The representation of this type is hidden by the signature. It must be given an attribute such as [&lt;Sealed&gt;], [&lt;Class&gt;] or [&lt;Interface&gt;] to indicate the characteristics of the type.</source>
-        <target state="translated">La signatura oculta la representación de este tipo. Debe proporcionársele un atributo como [&lt;Sealed&gt;], [&lt;Class&gt;] o [&lt;Interface&gt;] para indicar las características del tipo.</target>
+        <target state="translated">La representación de este tipo está oculta por la firma. Debe recibir un atributo como [&lt;Sealed&gt;], [&lt;Class&gt;] o [&lt;Interface&gt;] para indicar las características del tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyClassesCanHaveAbstract">
@@ -3874,12 +4094,12 @@
       </trans-unit>
       <trans-unit id="tcInvalidDelegateSpecification">
         <source>Delegate specifications must be of the form 'typ -&gt; typ'</source>
-        <target state="translated">Las especificaciones de delegado deben tener el formato 'typ -&gt; typ'.</target>
+        <target state="translated">Las especificaciones del delegado deben tener el formato "typ -&gt; typ"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDelegatesCannotBeCurried">
         <source>Delegate specifications must not be curried types. Use 'typ * ... * typ -&gt; typ' for multi-argument delegates, and 'typ -&gt; (typ -&gt; typ)' for delegates returning function values.</source>
-        <target state="translated">Las especificaciones de delegado no deben ser tipos currificados. Use 'typ * ... * typ -&gt; typ' para delegados con varios argumentos y, 'typ -&gt; (typ -&gt; typ)', para delegados que devuelven valores de función.</target>
+        <target state="translated">Las especificaciones del delegado no deben ser tipos currificados. Utilice "typ * ... * typ -&gt; typ" para delegados de argumentos múltiples, y "typ -&gt; (typ -&gt; typ)" para delegados que devuelven valores de función.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForLiteralEnumeration">
@@ -3899,7 +4119,7 @@
       </trans-unit>
       <trans-unit id="tcReservedSyntaxForAugmentation">
         <source>The syntax 'type X with ...' is reserved for augmentations. Types whose representations are hidden but which have members are now declared in signatures using 'type X = ...'. You may also need to add the '[&lt;Sealed&gt;] attribute to the type definition in the signature</source>
-        <target state="translated">La sintaxis "type X with ..." está reservada para aumentos. Los tipos cuyas representaciones están ocultas pero que tienen miembros se declaran ahora en signaturas con "type X = ...". También puede ser necesario agregar el atributo "[&lt;Sealed&gt;]" a la definición de tipos en la signatura.</target>
+        <target state="translated">La sintaxis "type X with ..." está reservada a las ampliaciones. Los tipos cuyas representaciones están ocultas pero que tienen miembros se declaran ahora en firmas utilizando "type X = ...". Puede que también necesite agregar el atributo "[&lt;Sealed&gt;]" a la definición del tipo de la firma</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMembersThatExtendInterfaceMustBePlacedInSeparateModule">
@@ -4074,7 +4294,7 @@
       </trans-unit>
       <trans-unit id="optsCopyright">
         <source>Copyright (c) Microsoft Corporation. All Rights Reserved.</source>
-        <target state="translated">(C) Microsoft Corporation. Todos los derechos reservados.</target>
+        <target state="translated">Copyright (C) Microsoft Corporation. Todos los derechos reservados.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCopyrightCommunity">
@@ -4209,7 +4429,7 @@
       </trans-unit>
       <trans-unit id="optsLinkresource">
         <source>Link the specified resource to this assembly where the resinfo format is &lt;file&gt;[,&lt;string name&gt;[,public|private]]</source>
-        <target state="translated">Vincular el recurso especificado a este ensamblado donde el formato de resinfo es &lt;archivo&gt;[,&lt;nombre de cadena&gt;[,public|private]].</target>
+        <target state="translated">Vincular el recurso especificado a este ensamblado donde el formato resinfo es &lt;file&gt;[,&lt;string name&gt;[,public|private]]</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDebugPM">
@@ -4294,7 +4514,7 @@
       </trans-unit>
       <trans-unit id="optsResponseFile">
         <source>Read response file for more options</source>
-        <target state="translated">Leer el archivo de respuesta para ver más opciones</target>
+        <target state="translated">Leer el archivo de respuesta para obtener más opciones</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCodepage">
@@ -4524,7 +4744,7 @@
       </trans-unit>
       <trans-unit id="typeInfoField">
         <source>field</source>
-        <target state="translated">campo</target>
+        <target state="translated">Campo</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoEvent">
@@ -4534,12 +4754,12 @@
       </trans-unit>
       <trans-unit id="typeInfoProperty">
         <source>property</source>
-        <target state="translated">propiedad</target>
+        <target state="translated">Propiedad</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoExtension">
         <source>extension</source>
-        <target state="translated">extensión</target>
+        <target state="translated">Extensión</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoCustomOperation">
@@ -4549,7 +4769,7 @@
       </trans-unit>
       <trans-unit id="typeInfoArgument">
         <source>argument</source>
-        <target state="translated">argumento</target>
+        <target state="translated">Argumento</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoPatternVariable">
@@ -4624,7 +4844,7 @@
       </trans-unit>
       <trans-unit id="eventHasNonStandardType">
         <source>The event '{0}' has a non-standard type. If this event is declared in another CLI language, you may need to access this event using the explicit {1} and {2} methods for the event. If this event is declared in F#, make the type of the event an instantiation of either 'IDelegateEvent&lt;_&gt;' or 'IEvent&lt;_,_&gt;'.</source>
-        <target state="translated">El evento '{0}' tiene un tipo no estándar. Si este evento está declarado en otro lenguaje CLI, puede ser necesario obtener acceso a este evento usando los métodos explícitos {1} y {2} para el evento. Si este evento está declarado en F#, convierta el tipo del evento en una creación de instancia de 'IDelegateEvent&lt;_&gt;' o 'IEvent&lt;_,_&gt;'.</target>
+        <target state="translated">El evento "{0}" tiene un tipo no estándar. Si este evento se declara en otro lenguaje CLI, puede que necesite acceder a este evento con los métodos {1} y {2} explícitos para el evento. Si este evento se declara en F#, cree instancias del evento de "IDelegateEvent&lt;_&gt;" o "IEvent&lt;_,_&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="typeIsNotAccessible">
@@ -4929,7 +5149,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidFloat">
         <source>Invalid floating point number</source>
-        <target state="translated">número de punto flotante no válido.</target>
+        <target state="translated">Número de punto flotante no válido.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOusideDecimal">
@@ -4943,8 +5163,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
-        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="translated">Este literal numérico no es válido. Entre los literales numéricos válidos se incluyen 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal) y 1I (BigInteger).</target>
+        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
+        <target state="translated">Este literal numérico no es válido. Entre los literales numéricos válidos se incluyen 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal) y 1I (BigInteger).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -5128,18 +5348,18 @@
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
-        <source>Type parameters must be placed directly adjacent to the type name, e.g. \"type C&lt;'T&gt;\", not     type \"C   &lt;'T&gt;\"</source>
-        <target state="translated">Los parámetros de tipo se deben colocar directamente adyacentes al nombre de tipo; por ejemplo, \"type C&lt;'T&gt;\", no     type \"C   &lt;'T&gt;\".</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="translated">Quite los espacios entre el nombre de tipo y el parámetro de tipo, por ejemplo, \"type C&lt;'T&gt;\", no tipo \"C   &lt;'T&gt;\". Los parámetros de tipo deben colocarse justo al lado del nombre de tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
-        <source>Type arguments must be placed directly adjacent to the type name, e.g. \"C&lt;'T&gt;\", not \"C  &lt;'T&gt;\"</source>
-        <target state="translated">Los argumentos de tipo se deben colocar directamente adyacentes al nombre de tipo; por ejemplo, \"C&lt;'T&gt;\", no \"C  &lt;'T&gt;\".</target>
+        <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
+        <target state="translated">Quite los espacios entre el nombre de tipo y el parámetro de tipo, por ejemplo, \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Los parámetros de tipo deben colocarse justo al lado del nombre de tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
         <source>The use of the type syntax 'int C' and 'C  &lt;int&gt;' is not permitted here. Consider adjusting this type to be written in the form 'C&lt;int&gt;'</source>
-        <target state="translated">Aquí no se permite el uso de la sintaxis de tipos 'int C' y 'C  &lt;int&gt;'. Considere ajustar este tipo para escribirlo con el formato 'C&lt;int&gt;'.</target>
+        <target state="translated">El uso de la sintaxis de tipo "int C" y "C  &lt;int&gt;" no se permite aquí. Considere el ajuste de este tipo para que se escriba en el formato "C&lt;int&gt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="tastUndefinedItemRefModuleNamespace">
@@ -5164,7 +5384,7 @@
       </trans-unit>
       <trans-unit id="tcParameterInferredByref">
         <source>The parameter '{0}' was inferred to have byref type. Parameters of byref type must be given an explicit type annotation, e.g. 'x1: byref&lt;int&gt;'. When used, a byref parameter is implicitly dereferenced.</source>
-        <target state="translated">Se ha inferido que el parámetro '{0}' tiene el tipo byref. A los parámetros de tipo byref se les debe dar una anotación de tipo explícita; por ejemplo, 'x1: byref&lt;int&gt;'. Cuando se usa un parámetro byref, se desreferencia de forma implícita.</target>
+        <target state="translated">Se infirió que el parámetro "{0}" tiene un tipo byref. Los parámetros de tipo byref deben recibir una anotación de tipo explícita, por ejemplo,"x1: byref&lt;int&gt;". Cuando se usa, la referencia de un parámetro byref se elimina de forma implícita.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNonUniformMemberUse">
@@ -5229,12 +5449,12 @@
       </trans-unit>
       <trans-unit id="activePatternChoiceHasFreeTypars">
         <source>Active pattern '{0}' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x'</source>
-        <target state="translated">El patrón activo '{0}' tiene un tipo de resultado que contiene variables de tipo no determinadas por la entrada. La causa habitual es que no se menciona un caso de resultado; por ejemplo, 'let (|A|B|) (x:int) = A x'. Esto se puede corregir con una restricción de tipo; por ejemplo, 'let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x'</target>
+        <target state="translated">El modelo activo "{0}" tiene un tipo de resultado que contiene las variables de tipo que no están determinadas por la entrada. La causa común es cuando un caso de resultado no se menciona, por ejemplo, "let (|A|B|) (x:int) = A x". Esto se puede solucionar con una restricción de tipo, por ejemplo, "let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x"</target>
         <note />
       </trans-unit>
       <trans-unit id="ilFieldHasOffsetForSequentialLayout">
         <source>The FieldOffset attribute can only be placed on members of types marked with the StructLayout(LayoutKind.Explicit)</source>
-        <target state="translated">El atributo FieldOffset sólo se puede colocar en miembros de tipos marcados con StructLayout(LayoutKind.Explicit)</target>
+        <target state="translated">El atributo FieldOffset solo se puede colocar en miembros de tipos marcados con StructLayout(LayoutKind.Explicit)</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOptionalArgsMustComeAfterNonOptionalArgs">
@@ -5254,7 +5474,7 @@
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
         <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">El nombre del archivo MDB debe ser &lt;ensamblado-archivo-nombre&gt;.mdb. La opción --pdb se omitirá.</target>
+        <target state="translated">El nombre del archivo MDB debe ser &lt;nombre de archivo de ensamblado&gt;.mdb. Se omitirá la opción--pdb.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBMemberMissing">
@@ -5282,11 +5502,6 @@
         <target state="translated">Los enlaces DLLImport deben ser miembros estáticos en definiciones de función o clase dentro de un módulo.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildExplicitCoreLibRequiresNoFramework">
-        <source>When mscorlib.dll or FSharp.Core.dll is explicitly referenced the {0} option must also be passed</source>
-        <target state="translated">Cuando se hace referencia de forma explícita a mscorlib.dll o FSharp.Core.dll, debe pasarse también la opción {0}.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildExpectedSigdataFile">
         <source>FSharp.Core.sigdata not found alongside FSharp.Core. File expected in {0}. Consider upgrading to a more recent version of FSharp.Core, where this file is no longer be required.</source>
         <target state="translated">No se encontró FSharp.Core.sigdata junto con FSharp.Core. Archivo esperado en {0}. Considere la posibilidad de actualizar a una versión más reciente de FSharp.Core en la que ya no se requiere el archivo.</target>
@@ -5304,7 +5519,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBinding">
         <source>'use!' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;'</source>
-        <target state="translated">Los enlaces 'use!' deben tener el formato 'use! &lt;var&gt; = &lt;expr&gt;'.</target>
+        <target state="translated">Los enlaces "use!" deben tener el formato "use! &lt;var&gt; = &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="crefNoInnerGenericsInQuotations">
@@ -5339,12 +5554,12 @@
       </trans-unit>
       <trans-unit id="parsMissingGreaterThan">
         <source>Unmatched '&lt;'. Expected closing '&gt;'</source>
-        <target state="translated">'&lt;' desemparejado. Se esperaba un elemento '&gt;' de cierre.</target>
+        <target state="translated">Falta el valor correspondiente de "&lt;". Se esperaba el cierre "&gt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
         <source>Unexpected quotation operator '&lt;@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '&lt;' and '@' characters.</source>
-        <target state="translated">Operador de expresión de código delimitada '&lt;@' inesperado en la definición de tipo. Si desea pasar una cadena textual como argumento estático a un proveedor de tipos, incluya un espacio entre los caracteres '&lt;' y '@'.</target>
+        <target state="translated">Operador de cita inesperada "&lt;@" en definición de tipo. Si desea pasar una cadena textual como un argumento estático a un proveedor de tipos, ponga un espacio entre los caracteres "&lt;" y "@".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsErrorParsingAsOperatorName">
@@ -5439,7 +5654,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">Un {0} ha especificado la versión "{1}", pero este valor no es válido y se ha omitido</target>
+        <target state="translated">El atributo {0} ha especificado la versión "{1}", pero este valor no es válido y se ha omitido</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -5534,7 +5749,7 @@
       </trans-unit>
       <trans-unit id="fscResxSourceFileDeprecated">
         <source>Passing a .resx file ({0}) as a source file to the compiler is deprecated. Use resgen.exe to transform the .resx file into a .resources file to pass as a --resource option. If you are using MSBuild, this can be done via an &lt;EmbeddedResource&gt; item in the .fsproj project file.</source>
-        <target state="translated">El paso de un archivo .resx ({0}) como archivo de código fuente al compilador está en desuso. Use resgen.exe para transformar el archivo .resx en un archivo .resources, que se pasará como opción --resource. Si usa MSBuild, esta operación se puede realizar mediante un elemento &lt;recursoIncrustado&gt; en el archivo de proyecto .fsproj.</target>
+        <target state="translated">Pasar un archivo .resx ({0}) como archivo de origen al compilador está en desuso. Use resgen.exe para transformar el archivo .resx en un archivo .resources para pasarlo como una opción --resource. Si está utilizando MSBuild, esto se puede hacer a través de un elemento &lt;EmbeddedResource&gt; en el archivo de proyecto .fsproj.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoProfileMismatches">
@@ -5548,8 +5763,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
-        <source>Determinstic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Las compilaciones deterministas solo admiten PDB portátiles (--debug:portable o --debug:embedded)</target>
+        <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
+        <target state="translated">Las compilaciones deterministas solo admiten PDB portátiles (--Debug: portable o--Debug: embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -5668,8 +5883,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssembly">
-        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. {2}</source>
-        <target state="translated">El atributo de ensamblado '{0}' hace referencia a un ensamblado de diseñador '{1}' que no se puede cargar o no existe. {2}</target>
+        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</source>
+        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderDoesNotHaveValidConstructor">
@@ -5699,7 +5914,7 @@
       </trans-unit>
       <trans-unit id="etDirectReferenceToGeneratedTypeNotAllowed">
         <source>A direct reference to the generated type '{0}' is not permitted. Instead, use a type definition, e.g. 'type TypeAlias = &lt;path&gt;'. This indicates that a type provider adds generated types to your assembly.</source>
-        <target state="translated">No se permite una referencia directa al tipo '{0}' generado. En su lugar, use una definición de tipo, por ejemplo, "type TypeAlias = &lt;rutaAcceso&gt;". Esto indica que un proveedor de tipos agrega tipos generados al ensamblado.</target>
+        <target state="translated">No se permite una referencia directa al tipo generado "{0}". En su lugar, utilice una definición de tipo, por ejemplo "type TypeAlias = &lt;path&gt;". Esto indica que un proveedor de tipo agrega tipos generados a su ensamblado.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProvidedTypeHasUnexpectedPath">
@@ -5854,7 +6069,7 @@
       </trans-unit>
       <trans-unit id="etStaticParameterRequiresAValue">
         <source>The static parameter '{0}' of the provided type or method '{1}' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. '{2}&lt;{3}=...&gt;'.</source>
-        <target state="translated">El parámetro estático "{0}" del tipo o del método "{1}" proporcionado requiere un valor. Los parámetros estáticos para proveedores de tipo se pueden especificar opcionalmente mediante argumentos con nombre, p. ej. "{2}&lt;{3}=...&gt;".</target>
+        <target state="translated">El parámetro estático "{0}" del tipo o método proporcionado "{1}" requiere un valor. Los parámetros estáticos para los proveedores de tipos pueden especificarse opcionalmente usando argumentos con nombre, por ejemplo, "{2}&lt;{3}=...&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
@@ -5964,27 +6179,27 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedLBrackLess">
         <source>Unmatched '[&lt;'. Expected closing '&gt;]'</source>
-        <target state="translated">"[&lt;'' desemparejado. Se esperaba un elemento "&gt;]" de cierre.</target>
+        <target state="translated">Falta el elemento correspondiente de "[&lt;". Se esperaba un "&gt;]" de cierre</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileMatch">
         <source>Unexpected end of input in 'match' expression. Expected 'match &lt;expr&gt; with | &lt;pat&gt; -&gt; &lt;expr&gt; | &lt;pat&gt; -&gt; &lt;expr&gt; ...'.</source>
-        <target state="translated">Final de entrada inesperado en una expresión 'match'. Se esperaba 'match &lt;expr&gt; with | &lt;pat&gt; -&gt; &lt;expr&gt; | &lt;pat&gt; -&gt; &lt;expr&gt; ...'.</target>
+        <target state="translated">Final inesperado de la entrada en la expresión "match". Se esperaba "'match &lt;expr&gt; with | &lt;pat&gt; -&gt; &lt;expr&gt; | &lt;pat&gt; -&gt; &lt;expr&gt; ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileTry">
         <source>Unexpected end of input in 'try' expression. Expected 'try &lt;expr&gt; with &lt;rules&gt;' or 'try &lt;expr&gt; finally &lt;expr&gt;'.</source>
-        <target state="translated">Final de entrada inesperado en la expresión 'try'. Se esperaba 'try &lt;expr&gt; with &lt;reglas&gt;' o 'try &lt;expr&gt; finally &lt;expr&gt;'.</target>
+        <target state="translated">Final inesperado en la expresión "try". Se esperaba "try &lt;expr&gt; with &lt;rules&gt;" o "try &lt;expr&gt; finally &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileWhile">
         <source>Unexpected end of input in 'while' expression. Expected 'while &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Final de entrada inesperado en la expresión 'while'. Se esperaba 'while &lt;expr&gt; do &lt;expr&gt;'.</target>
+        <target state="translated">Fin de entrada inesperado en la expresión "while". Se esperaba "while &lt;expr&gt; do &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFor">
         <source>Unexpected end of input in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Final de entrada inesperado en una expresión 'for'. Se esperaba 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</target>
+        <target state="translated">Final inesperado de la entrada en la expresión "for". Se esperaba "for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileWith">
@@ -5994,17 +6209,17 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileThen">
         <source>Unexpected end of input in 'then' branch of conditional expression. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Final de entrada inesperado en la bifurcación 'then' de la expresión condicional. Se esperaba 'if &lt;expr&gt; then &lt;expr&gt;' o 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</target>
+        <target state="translated">Final inesperado de la entrada en la rama "then" de la expresión condicional. Se esperaba "if &lt;expr&gt; then &lt;expr&gt;" o "if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElse">
         <source>Unexpected end of input in 'else' branch of conditional expression. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Final de entrada inesperado en la bifurcación 'else' de la expresión condicional. Se esperaba 'if &lt;expr&gt; then &lt;expr&gt;' o 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</target>
+        <target state="translated">Fin de entrada inesperado en la rama "else" de la expresión condicional. Se esperaba "'if &lt;expr&gt; then &lt;expr&gt;" o "if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFunBody">
         <source>Unexpected end of input in body of lambda expression. Expected 'fun &lt;pat&gt; ... &lt;pat&gt; -&gt; &lt;expr&gt;'.</source>
-        <target state="translated">Final de entrada inesperado en el cuerpo de una expresión lambda. Se esperaba 'fun &lt;pat&gt; ... &lt;pat&gt; -&gt; &lt;expr&gt;'.</target>
+        <target state="translated">Final inesperado de la entrada en el cuerpo de la expresión lambda. Se esperaba "fun &lt;pat&gt; ... &lt;pat&gt; -&gt; &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileTypeArgs">
@@ -6064,17 +6279,17 @@
       </trans-unit>
       <trans-unit id="parsWhileDoExpected">
         <source>Missing 'do' in 'while' expression. Expected 'while &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Falta 'do' en la expresión 'while'. Se esperaba 'while &lt;expr&gt; do &lt;expr&gt;'.</target>
+        <target state="translated">Falta "do" en la expresión "while". Se esperaba "while &lt;expr&gt; do &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsForDoExpected">
         <source>Missing 'do' in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Falta 'do' en la expresión 'for'. Se esperaba 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</target>
+        <target state="translated">Falta "do" en la expresión "for". Se espera "for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidRelationInJoin">
         <source>Invalid join relation in '{0}'. Expected 'expr &lt;op&gt; expr', where &lt;op&gt; is =, =?, ?= or ?=?.</source>
-        <target state="translated">Relación de combinación no válida en '{0}'. Se esperaba 'expr &lt;op&gt; expr', donde &lt;op&gt; es =, =?, ?= o ?=?.</target>
+        <target state="translated">Relación de combinación no válida en "{0}". Se esperaba "expr &lt;op&gt; expr", donde &lt;op&gt; es =, =?, ?= o ?=?.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoCallsWord">
@@ -6139,7 +6354,7 @@
       </trans-unit>
       <trans-unit id="chkNoByrefsOfByrefs">
         <source>Type '{0}' is illegal because in byref&lt;T&gt;, T cannot contain byref types.</source>
-        <target state="translated">El tipo '{0}' no es válido porque T no puede contener tipos byref en byref&lt;T&gt;.</target>
+        <target state="translated">El tipo "{0}" no es válido porque en byref&lt;T&gt;, T no puede contener tipos byref.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastopsMaxArrayThirtyTwo">
@@ -6219,7 +6434,7 @@
       </trans-unit>
       <trans-unit id="tcUnrecognizedQueryBinaryOperator">
         <source>Arguments to query operators may require parentheses, e.g. 'where (x &gt; y)' or 'groupBy (x.Length / 10)'</source>
-        <target state="translated">Los argumentos para operadores de consulta pueden requerir paréntesis; por ejemplo, 'where (x &gt; y)' o 'groupBy (x.Length / 10)'.</target>
+        <target state="translated">Los argumentos de los operadores de consulta pueden requerir paréntesis, por ejemplo, "where (x &gt; y)' or 'groupBy (x.Length / 10)"</target>
         <note />
       </trans-unit>
       <trans-unit id="crefNoSetOfHole">
@@ -6333,8 +6548,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">
-        <source>Union case/exception '{0}' does not have field named '{1}'.</source>
-        <target state="translated">La excepción o el caso de unión '{0}' no tiene un campo denominado '{1}'.</target>
+        <source>The union case '{0}' does not have a field named '{1}'.</source>
+        <target state="translated">El caso de unión "{0}" no tiene un campo denominado "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseFieldCannotBeUsedMoreThanOnce">
@@ -6359,7 +6574,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalStructTypeForConstantExpression">
         <source>This is not valid literal expression. The [&lt;Literal&gt;] attribute will be ignored.</source>
-        <target state="translated">Esta no es una expresión literal válida. El atributo [&lt;Literal&gt;] se omitirá.</target>
+        <target state="translated">Esta no es expresión una literal. Se omitirá el atributo [&lt;Literal&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="fscSystemRuntimeInteropServicesIsRequired">
@@ -6404,7 +6619,7 @@
       </trans-unit>
       <trans-unit id="pickleMissingDefinition">
         <source>An error occurred while reading the F# metadata node at position {0} in table '{1}' of assembly '{2}'. The node had no matching declaration. Please report this warning. You may need to recompile the F# assembly you are using.</source>
-        <target state="translated">Error al leer el nodo de metadatos de F# en la posición {0} de la tabla '{1}' del ensamblado '{2}'. El nodo no tiene ninguna declaración coincidente. Informe de esta advertencia. Es posible que necesite volver a compilar el ensamblado de F# que esté usando.</target>
+        <target state="translated">Error al leer el nodo de metadatos de F# en la posición {0} de la tabla "{1}" del ensamblado "{2}". El nodo no tiene ninguna declaración coincidente. Informe de esta advertencia. Es posible que necesite volver a compilar el ensamblado de F# que está usando.</target>
         <note />
       </trans-unit>
       <trans-unit id="checkNotSufficientlyGenericBecauseOfScope">
@@ -6474,7 +6689,7 @@
       </trans-unit>
       <trans-unit id="considerUpcastOperator">
         <source>The conversion from {0} to {1} is a compile-time safe upcast, not a downcast. Consider using the :&gt; (upcast) operator instead of the :?&gt; (downcast) operator.</source>
-        <target state="translated">La conversión de {0} a {1} es una conversión a tipo básico segura en tiempo de compilación, no una conversión a tipo heredado. Considere la posibilidad de usar el operador :&gt; (upcast) en lugar del operador :?&gt; (downcast).</target>
+        <target state="translated">La conversión de {0} a {1} es una conversión de tipo básico segura en tiempo de compilación, no una conversión de tipo heredado. Considere la posibilidad de usar el operador :&gt; (conversión de tipo básico) en lugar del operador :?&gt; (conversión de tipo heredado).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRecImplied">
@@ -6520,11 +6735,6 @@
       <trans-unit id="tcCouldNotFindOffsetToStringData">
         <source>Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression.</source>
         <target state="translated">No se pudo encontrar el método System.Runtime.CompilerServices.OffsetToStringData en las referencias al generar expresión 'fixed'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkNoByrefReturnOfLocal">
-        <source>The address of the variable '{0}' cannot be used at this point. A method or function may not return the address of this local value.</source>
-        <target state="translated">La dirección de la variable '{0}' no se puede usar en este punto. Puede que el método o la función no devuelvan la dirección de este valor local.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamedActivePattern">
@@ -6718,8 +6928,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
-        <source>Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type.</source>
-        <target state="translated">Se usa en flujos de trabajo asincrónicos para enlazar un nombre al resultado de un cálculo asincrónico o, en otras expresiones de cálculo, se usa para enlazar un nombre a un resultado, que es del tipo de cálculo.</target>
+        <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
+        <target state="translated">Utilizado en expresiones de cálculo para enlazar un nombre al resultado de otra expresión de cálculo.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6798,13 +7008,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
-        <source>Used to indicate a value to provide as the result of a computation expression.</source>
-        <target state="translated">Se usa para indicar un valor que se va a proporcionar como resultado de una expresión de cálculo.</target>
+        <source>Used to provide a value for the result of the containing computation expression.</source>
+        <target state="translated">Utilizado para proporcionar un valor para el resultado de la expresión de cálculo que contiene.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
-        <source>Used to indicate a computation expression that, when evaluated, provides the result of the containing computation expression.</source>
-        <target state="translated">Se usa para indicar una expresión de cálculo que, cuando se evalúa, proporciona el resultado de la expresión de cálculo que contiene.</target>
+        <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
+        <target state="translated">Se utiliza para proporcionar un valor para el resultado de la expresión de cálculo que contiene, donde ese propio valor procede del resultado de otra expresión de cálculo.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6848,13 +7058,13 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
-        <source>Used instead of let for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Se usa en lugar de let para los valores que requieren que se llame a Dispose para liberar recursos.</target>
+        <source>Used instead of let for values that implement IDisposable</source>
+        <target state="translated">Utilizado en lugar de let para valores que implementan IDisposable</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
-        <source>Used instead of let! in asynchronous workflows and other computation expressions for values that require Dispose to be called to free resources.</source>
-        <target state="translated">Se usa en lugar de let! en flujos de trabajo asincrónicos y otras expresiones de cálculo para los valores que requieren que se llame a Dispose para liberar recursos.</target>
+        <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
+        <target state="translated">Utilizado en lugar de let! en expresiones de cálculo para resultados de expresiones de cálculo que implementan IDisposable.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -6982,9 +7192,234 @@
         <target state="translated">Esta expresión devuelve un valor de tipo “{0}”, pero se descarta de forma implícita. Considere el uso de “let” para enlazar el resultado a un nombre; por ejemplo, “let result = expression”. Si su intención es utilizar la expresión como un valor en la secuencia, utilice “yield” de forma explícita.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="translated">Se utiliza en expresiones de cálculo para hacer coincidir patrones directamente sobre el resultado de otra expresión de cálculo.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
         <target state="translated">El archivo "{0}" cambió en el disco de manera inesperada; cárguelo de nuevo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="writeToReadOnlyByref">
+        <source>The byref pointer is readonly, so this write is not permitted.</source>
+        <target state="translated">El puntero byref es de solo lectura, por lo que no se permite esta operación de escritura.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeMutable">
+        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
+        <target state="translated">Un valor debe ser mutable para poder mutar el contenido o tomar la dirección de un tipo de valor; por ejemplo, 'let mutable x = ...'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="readOnlyAttributeOnStructWithMutableField">
+        <source>A ReadOnly attribute has been applied to a struct type with a mutable field.</source>
+        <target state="translated">Se ha aplicado el atributo ReadOnly a un tipo de estructura con un campo mutable.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByrefReturnImplicitlyDereferenced">
+        <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
+        <target state="translated">La referencia de un puntero byref devuelto por una función o un método se elimina implícitamente a partir de F# 4.5. Para adquirir el valor de retorno como un puntero, use el operador address-of, por ejemplo, "&amp;f(x)' or '&amp;obj.Method(arg1, arg2)".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByRefLikeNotStruct">
+        <source>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
+        <target state="translated">Un tipo anotado con IsByRefLike también debe ser una estructura. Considere agregar el atributo [&lt;Struct&gt;] al tipo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefAddressOfLocal">
+        <source>The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">En este punto, no se puede usar la dirección de la variable “{0}” o una expresión relacionada. Esto es para asegurar que la dirección del valor local no escape de su ámbito.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoWriteToLimitedSpan">
+        <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
+        <target state="translated">No se puede asignar este valor porque el destino “{0}” puede hacer referencia a memoria local fuera de la pila, mientras que la expresión que se va a asignar podría hacer referencia a memoria local de la pila. Esto es para evitar que los punteros de memoria ligada a la pila escapen de su ámbito.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeLocal">
+        <source>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</source>
+        <target state="translated">Un valor definido en un módulo debe ser mutable para tomar su dirección; por ejemplo, “let mutable x = ...”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIsReadOnlyNotStruct">
+        <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
+        <target state="translated">Un tipo anotado con IsReadOnly también debe ser una estructura. Considere agregar el atributo [&lt;Struct&gt;] al tipo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
+        <source>Struct members cannot return the address of fields of the struct by reference</source>
+        <target state="translated">Los miembros de estructura no pueden devolver la dirección de los campos de la estructura por referencia</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefLikeFunctionCall">
+        <source>The function or method call cannot be used at this point, because one argument that is a byref of a non-stack-local Span or IsByRefLike type is used with another argument that is a stack-local Span or IsByRefLike type. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">En este punto, no se puede usar la función o el método, porque un argumento que es un parámetro byref de un tipo local Span o IsByRefLike fuera de la pila se utiliza con otro argumento que es un tipo local Span o IsByRefLike de la pila. Esto es para asegurar que la dirección del valor local no escape de su ámbito.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefAddressOfValueFromExpression">
+        <source>The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">En este punto, no se puede usar la dirección de un valor devuelto por la expresión. Esto es para asegurar que la dirección del valor local no escape de su ámbito.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoSpanLikeVariable">
+        <source>The Span or IsByRefLike variable '{0}' cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">En este punto, no se puede usar la variable Span o IsByRefLike “{0}”. Esto es para asegurar que la dirección del valor local no escape de su ámbito.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoSpanLikeValueFromExpression">
+        <source>A Span or IsByRefLike value returned from the expression cannot be used at ths point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="translated">En este punto, no se puede usar un valor Span o IsByRefLike devuelto por la expresión. Esto es para asegurar que la dirección del valor local no escape de su ámbito.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastCantTakeAddressOfExpression">
+        <source>Cannot take the address of the value returned from the expression. Assign the returned value to a let-bound value before taking the address.</source>
+        <target state="translated">No se puede tomar la dirección del valor devuelto de la expresión. Asigne el valor devuelto a un valor enlazado con let antes de tomar la dirección.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnmatchedBraceBar">
+        <source>Unmatched '{{|'</source>
+        <target state="translated">A "{{|" le falta el otro elemento correspondiente</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typeInfoAnonRecdField">
+        <source>anonymous record field</source>
+        <target state="translated">campo de registro anónimo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
+        <source>The exception '{0}' does not have a field named '{1}'.</source>
+        <target state="translated">La excepción "{0}" no tiene un campo denominado "{1}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcActivePatternsDoNotHaveFields">
+        <source>Active patterns do not have fields. This syntax is invalid.</source>
+        <target state="translated">Los patrones activos no tienen campos. Esta sintaxis no es válida.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
+        <source>The constructor does not have a field named '{0}'.</source>
+        <target state="translated">El constructor no tiene un campo denominado "{0}".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdCcuMismatch">
+        <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
+        <target state="translated">Dos tipos de registro anónimos provienen de diferentes ensamblados "{0}" y "{1}"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
+        <target state="translated">Este registro anónimo no coincide exactamente con la forma esperada. Agregue los campos que faltan {0} y quite los campos adicionales {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
+        <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
+        <target state="translated">No se puede llamar al método de extensión de byref "{0}". El primer parámetro requiere que el valor sea mutable o un tipo de byref que no sea de solo lectura.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
+        <source>Byref types are not allowed to have optional type extensions.</source>
+        <target state="translated">Los tipos de ByRef no pueden tener extensiones de tipo opcional.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
+        <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
+        <target state="translated">No se puede aplicar parcialmente el método de extensión "{0}" porque el primer parámetro es un tipo byref.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotInheritAttribute">
+        <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
+        <target state="translated">Este tipo no hereda el atributo, que no funciona correctamente con otros lenguajes. NET.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdExpr">
+        <source>Invalid anonymous record expression</source>
+        <target state="translated">Expresión no válida de registro anónimo</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdType">
+        <source>Invalid anonymous record type</source>
+        <target state="translated">Tipo de registro anónimo no válido</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcCopyAndUpdateNeedsRecordType">
+        <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
+        <target state="translated">La entrada a una expresión de copia y actualización que crea un registro anónimo debe ser un registro anónimo o un registro</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionParameterType">
+        <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
+        <target state="translated">El parámetro "{0}" tiene un tipo no válido "{1}". Esto no está permitido por las reglas de Common IL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkInvalidFunctionReturnType">
+        <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
+        <target state="translated">La función o método tiene un tipo de valor devuelto no válido "{0}". Esto no está permitido por las reglas de Common IL.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveral">
+        <source>No implementation was given for those members: {0}</source>
+        <target state="translated">No se ha proporcionado ninguna implementación para esos miembros: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
+        <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
+        <target state="translated">No se ha proporcionado ninguna implementación para esos miembros: {0}Tenga en cuenta que todos los miembros de la interfaz deben implementarse y enumerarse en una declaracón "interface" adecuada; por ejemplo, "interface ... with member ...".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
+        <source>No implementation was given for those members (some results omitted): {0}</source>
+        <target state="translated">No se ofreció ninguna implementación para esos miembros (se omitieron algunos resultados): {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
+        <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
+        <target state="translated">No se ofreció ninguna implementación para esos miembros (se omitieron algunos resultados): {0} Tenga en cuenta que todos los miembros de la interfaz deben implementarse y enumerarse bajo una declaración de "interface" apropiada; por ejemplo, "interface ... with member ...".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="expressionHasNoName">
+        <source>Expression does not have a name.</source>
+        <target state="translated">La expresión no tiene un nombre.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoFirstClassNameOf">
+        <source>Using the 'nameof' operator as a first-class function value is not permitted.</source>
+        <target state="translated">No se permite el uso del operador "nameof" como un valor de función de primera clase.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsPathMap">
+        <source>Maps physical paths to source path names output by the compiler</source>
+        <target state="translated">Asigna rutas físicas de acceso a nombres de ruta de origen resultantes del compilador</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fscPathMapDebugRequiresPortablePdb">
+        <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
+        <target state="translated">--pathmap solo se puede utilizar con PDB portátiles (--Debug:portable o --Debug:embedded)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsInvalidPathMapFormat">
+        <source>Invalid path map. Mappings must be comma separated and of the format 'path=sourcePath'</source>
+        <target state="translated">Mapa de ruta no válido. Las asignaciones deben estar separadas por comas y tener el formato "path=rutaOrigen"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsCompilerTool">
+        <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
+        <target state="translated">Referencia a un ensamblado o directorio que contiene una herramienta de tiempo de diseño (forma corta: -t)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerUnknown">
+        <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
+        <target state="translated">La clave del administrador de paquetes "{0}" no se registró en {1}. Registrada actualmente: {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerError">
+        <source>{0}</source>
+        <target state="translated">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="couldNotLoadDependencyManagerExtension">
+        <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
+        <target state="translated">No se pudo cargar la extensión del administrador de dependencias {0}. Mensaje: {1}</target>
         <note />
       </trans-unit>
     </body>

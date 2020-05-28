@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.AbstractIL.Internal
+namespace FSharp.Compiler.AbstractIL.Internal
 
 open Internal.Utilities
 open Internal.Utilities.Collections.Tagged
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Library 
 open System.Collections.Generic
 
 /// Maps with a specific comparison function

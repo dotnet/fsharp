@@ -3,7 +3,7 @@
 module Core_math_numbers
 #endif
 
-#if NETCOREAPP1_0
+#if NETCOREAPP
 open CoreClrUtilities
 #endif
 

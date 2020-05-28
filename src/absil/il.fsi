@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The "unlinked" view of .NET metadata and code.  Central to the Abstract IL library
-module public Microsoft.FSharp.Compiler.AbstractIL.IL 
+module public FSharp.Compiler.AbstractIL.IL 
 
+open FSharp.Compiler.AbstractIL.Internal
 open System.Collections.Generic
 open System.Reflection
 
@@ -53,7 +54,15 @@ type PublicKey =
     member KeyToken: byte[]
     static member KeyAsToken: byte[] -> PublicKey 
 
-type ILVersionInfo = uint16 * uint16 * uint16 * uint16
+[<Struct>]
+type ILVersionInfo =
+
+    val Major: uint16
+    val Minor: uint16
+    val Build: uint16
+    val Revision: uint16
+
+    new : major: uint16 * minor: uint16 * build: uint16 * revision: uint16 -> ILVersionInfo
 
 [<Sealed>]
 type ILAssemblyRef =
@@ -70,6 +79,9 @@ type ILAssemblyRef =
     member Retargetable: bool
     member Version: ILVersionInfo option
     member Locale: string option
+
+    member EqualsIgnoringVersion: ILAssemblyRef -> bool
+
     interface System.IComparable
 
 [<Sealed>]
@@ -88,12 +100,10 @@ type ILScopeRef =
     /// A reference to a type in a module in the same assembly
     | Module of ILModuleRef   
     /// A reference to a type in another assembly
-    | Assembly of ILAssemblyRef  
+    | Assembly of ILAssemblyRef
+    /// A reference to a type in the primary assembly
+    | PrimaryAssembly
     member IsLocalRef: bool
-    member IsModuleRef: bool
-    member IsAssemblyRef: bool
-    member ModuleRef: ILModuleRef
-    member AssemblyRef: ILAssemblyRef
     member QualifiedName: string
 
 // Calling conventions.  
@@ -720,6 +730,7 @@ type ILMethodBody =
 [<RequireQualifiedAccess>]
 type ILMemberAccess = 
     | Assembly
+    | CompilerControlled
     | FamilyAndAssembly
     | FamilyOrAssembly
     | Family
@@ -751,12 +762,22 @@ type ILAttribElem =
 /// Named args: values and flags indicating if they are fields or properties.
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
-/// Custom attributes.  See 'decodeILAttribData' for a helper to parse the byte[] 
-/// to ILAttribElem's as best as possible.  
+/// Custom attribute.
 type ILAttribute =
-    { Method: ILMethodSpec  
-      Data: byte[] 
-      Elements: ILAttribElem list}
+    /// Attribute with args encoded to a binary blob according to ECMA-335 II.21 and II.23.3.
+    /// 'decodeILAttribData' is used to parse the byte[] blob to ILAttribElem's as best as possible.
+    | Encoded of method: ILMethodSpec * data: byte[] * elements: ILAttribElem list
+
+    /// Attribute with args in decoded form.
+    | Decoded of method: ILMethodSpec * fixedArgs: ILAttribElem list * namedArgs: ILAttributeNamedArg list
+
+    /// Attribute instance constructor.
+    member Method: ILMethodSpec
+
+    /// Decoded arguments. May be empty in encoded attribute form.
+    member Elements: ILAttribElem list
+
+    member WithMethod: method: ILMethodSpec -> ILAttribute
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes =
@@ -795,6 +816,8 @@ type ILReturn =
       MetadataIndex: int32  }
 
     member CustomAttrs: ILAttributes
+
+    member WithCustomAttrs: customAttrs: ILAttributes -> ILReturn
 
 [<RequireQualifiedAccess>]
 type ILSecurityAction = 
@@ -1040,6 +1063,7 @@ type ILMethodDefs =
     member AsArray: ILMethodDef[]
     member AsList: ILMethodDef list
     member FindByName: string -> ILMethodDef list
+    member TryFindInstanceByNameAndCallingSignature: string * ILCallingSignature -> ILMethodDef option
 
 /// Field definitions.
 [<NoComparison; NoEquality>]
@@ -1301,12 +1325,16 @@ and [<NoComparison; NoEquality>]
 /// The information is enough to perform name resolution for the F# compiler, probe attributes
 /// for ExtensionAttribute  etc.  This is key to the on-demand exploration of .NET metadata.
 /// This information has to be "Goldilocks" - not too much, not too little, just right.
-and [<NoEquality; NoComparison; Sealed>] ILPreTypeDef = 
-    member Namespace: string list
-    member Name: string
-    member MetadataIndex: int32 
+and [<NoEquality; NoComparison>] ILPreTypeDef = 
+    abstract Namespace: string list
+    abstract Name: string
     /// Realise the actual full typedef
-    member GetTypeDef : unit -> ILTypeDef
+    abstract GetTypeDef : unit -> ILTypeDef
+
+
+and [<NoEquality; NoComparison; Sealed>] ILPreTypeDefImpl =
+    interface ILPreTypeDef
+
 
 and [<Sealed>] ILTypeDefStored 
 
@@ -1371,7 +1399,8 @@ type ILExportedTypeOrForwarder =
 [<NoEquality; NoComparison>]
 [<Sealed>]
 type ILExportedTypesAndForwarders =
-    member AsList: ILExportedTypeOrForwarder  list
+    member AsList: ILExportedTypeOrForwarder list
+    member TryFindByName: string -> ILExportedTypeOrForwarder option
 
 [<RequireQualifiedAccess>]
 type ILResourceAccess = 
@@ -1380,11 +1409,9 @@ type ILResourceAccess =
 
 [<RequireQualifiedAccess>]
 type ILResourceLocation = 
-    /// Represents a manifest resource that can be read from within the PE file
-    | LocalIn of string * int * int
-
-    /// Represents a manifest resource that is due to be written to the output PE file
-    | LocalOut of byte[]
+    internal
+    /// Represents a manifest resource that can be read or written to a PE file
+    | Local of ReadOnlyByteMemory
 
     /// Represents a manifest resource in an associated file
     | File of ILModuleRef * int32
@@ -1404,7 +1431,7 @@ type ILResource =
       MetadataIndex: int32 }
 
     /// Read the bytes from a resource local to an assembly. Will fail for non-local resources.
-    member GetBytes : unit -> byte[]
+    member internal GetBytes : unit -> ReadOnlyByteMemory
 
     member CustomAttrs: ILAttributes
 
@@ -1537,9 +1564,6 @@ val typeNameForGlobalFunctions: string
 
 val isTypeNameForGlobalFunctions: string -> bool
 
-val ungenericizeTypeName: string -> string (* e.g. List`1 --> List *)
-
-
 // ====================================================================
 // PART 2
 // 
@@ -1554,6 +1578,7 @@ val ungenericizeTypeName: string -> string (* e.g. List`1 --> List *)
 [<NoEquality; NoComparison; Class>]
 type ILGlobals = 
     member primaryAssemblyScopeRef: ILScopeRef
+    member primaryAssemblyRef: ILAssemblyRef
     member primaryAssemblyName: string
     member typ_Object: ILType
     member typ_String: ILType
@@ -1573,10 +1598,20 @@ type ILGlobals =
     member typ_Double: ILType
     member typ_Bool: ILType
     member typ_Char: ILType
+    member typ_TypedReference: ILType
 
+    /// Is the given assembly possibly a primary assembly?
+    /// In practice, a primary assembly is an assembly that contains the System.Object type definition
+    /// and has no referenced assemblies. 
+    /// However, we must consider assemblies that forward the System.Object type definition
+    /// to be possible primary assemblies.
+    /// Therefore, this will return true if the given assembly is the real primary assembly or an assembly that forwards
+    /// the System.Object type definition.
+    /// Assembly equivalency ignores the version here.
+    member IsPossiblePrimaryAssemblyRef: ILAssemblyRef -> bool
 
 /// Build the table of commonly used references given functions to find types in system assemblies
-val mkILGlobals: ILScopeRef -> ILGlobals
+val mkILGlobals: primaryScopeRef: ILScopeRef * assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list -> ILGlobals
 
 val EcmaMscorlibILGlobals: ILGlobals
 
@@ -1595,7 +1630,7 @@ val decodeILAttribData:
       ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
 
 /// Generate simple references to assemblies and modules.
-val mkSimpleAssRef: string -> ILAssemblyRef
+val mkSimpleAssemblyRef: string -> ILAssemblyRef
 
 val mkSimpleModRef: string -> ILModuleRef
 
@@ -1678,6 +1713,8 @@ val mkILCustomAttribute:
        ILAttribElem list (* fixed args: values and implicit types *) * 
        ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
          -> ILAttribute
+
+val getCustomAttrData: ILGlobals -> ILAttribute -> byte[]
 
 val mkPermissionSet: ILGlobals -> ILSecurityAction * (ILTypeRef * (string * ILType * ILAttribElem) list) list -> ILSecurityDecl
 
@@ -1925,24 +1962,25 @@ val instILType: ILGenericArgs -> ILType -> ILType
 val ecmaPublicKey: PublicKey
 
 /// Discriminating different important built-in types.
-val isILObjectTy: ILType -> bool
-val isILStringTy: ILType -> bool
-val isILSByteTy: ILType -> bool
-val isILByteTy: ILType -> bool
-val isILInt16Ty: ILType -> bool
-val isILUInt16Ty: ILType -> bool
-val isILInt32Ty: ILType -> bool
-val isILUInt32Ty: ILType -> bool
-val isILInt64Ty: ILType -> bool
-val isILUInt64Ty: ILType -> bool
-val isILIntPtrTy: ILType -> bool
-val isILUIntPtrTy: ILType -> bool
-val isILBoolTy: ILType -> bool
-val isILCharTy: ILType -> bool
-val isILTypedReferenceTy: ILType -> bool
-val isILDoubleTy: ILType -> bool
-val isILSingleTy: ILType -> bool
+val isILObjectTy: ILGlobals -> ILType -> bool
+val isILStringTy: ILGlobals -> ILType -> bool
+val isILSByteTy: ILGlobals -> ILType -> bool
+val isILByteTy: ILGlobals -> ILType -> bool
+val isILInt16Ty: ILGlobals -> ILType -> bool
+val isILUInt16Ty: ILGlobals -> ILType -> bool
+val isILInt32Ty: ILGlobals -> ILType -> bool
+val isILUInt32Ty: ILGlobals -> ILType -> bool
+val isILInt64Ty: ILGlobals -> ILType -> bool
+val isILUInt64Ty: ILGlobals -> ILType -> bool
+val isILIntPtrTy: ILGlobals -> ILType -> bool
+val isILUIntPtrTy: ILGlobals -> ILType -> bool
+val isILBoolTy: ILGlobals -> ILType -> bool
+val isILCharTy: ILGlobals -> ILType -> bool
+val isILTypedReferenceTy: ILGlobals -> ILType -> bool
+val isILDoubleTy: ILGlobals -> ILType -> bool
+val isILSingleTy: ILGlobals -> ILType -> bool
 
+val sha1HashInt64 : byte[] -> int64
 /// Get a public key token from a public key.
 val sha1HashBytes: byte[] -> byte[] (* SHA1 hash *)
 
@@ -1975,13 +2013,11 @@ type ILPropertyRef =
      member Name: string
      interface System.IComparable
 
-val runningOnMono: bool
-
 type ILReferences = 
     { AssemblyReferences: ILAssemblyRef list 
       ModuleReferences: ILModuleRef list }
 
 /// Find the full set of assemblies referenced by a module.
-val computeILRefs: ILModuleDef -> ILReferences
+val computeILRefs: ILGlobals -> ILModuleDef -> ILReferences
 val emptyILRefs: ILReferences
 

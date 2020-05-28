@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="Instructions-Line1">
         <source>To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click</source>
-        <target state="translated">Para ejecutar el código en F# interactivo, resalte una sección de código y presione Alt-Entrar, o haga clic con el botón secundario</target>
+        <target state="translated">Para ejecutar el código en F# interactivo, resalte una sección de código y presione Alt+Entrar, o bien haga clic con el botón secundario</target>
         <note />
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">y seleccione "Ejecutar en modo interactivo".  Puede abrir la ventana de F# interactivo desde el menú "Ver".</target>
+        <target state="translated">y seleccione "Ejecutar en modo interactivo". Puede abrir la ventana de F# interactivo desde el menú "Ver".</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
@@ -284,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line3">
         <source>and</source>
-        <target state="translated">y</target>
+        <target state="translated">Y</target>
         <note />
       </trans-unit>
       <trans-unit id="BooleanValues">
@@ -1139,7 +1139,7 @@
       </trans-unit>
       <trans-unit id="BinaryTreeInsert-Line4">
         <source>No need to insert, it already exists; return the node.</source>
-        <target state="translated">No es necesario insertarlo, ya existe; vuelve al nodo.</target>
+        <target state="translated">No es necesario insertarlo, ya existe; devuelve el nodo.</target>
         <note />
       </trans-unit>
       <trans-unit id="BinaryTreeInsert-Line5">

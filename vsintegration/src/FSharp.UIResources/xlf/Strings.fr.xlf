@@ -7,6 +7,31 @@
         <target state="translated">Placer toujours les instructions open au niveau supérieur</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">Afficher les annotations à droite plutôt qu'au-dessus de la ligne</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">Activer CodeLens (expérimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">Préfixe d'annotation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">Utiliser des couleurs dans les annotations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">Correctifs du code</target>
@@ -15,6 +40,11 @@
       <trans-unit id="Completion_Lists">
         <source>Completion Lists</source>
         <target state="translated">Listes de saisie semi-automatique</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="translated">Diagnostics</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -58,8 +88,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Project_check_cache_size">
-        <source>Project check cache size</source>
-        <target state="translated">Taille du cache de vérification du projet</target>
+        <source>Number of projects whose data is cached in memory</source>
+        <target state="translated">Nombre de projets dont les données sont mises en cache dans la mémoire</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -75,6 +105,11 @@
       <trans-unit id="Solid_underline">
         <source>_Solid underline</source>
         <target state="translated">Soulig_nement avec un trait uni</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="translated">Survol du texte</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -103,8 +138,68 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
-        <source>Show outlining and collapsable nodes for F# code</source>
-        <target state="translated">Afficher le mode plan et les nœuds réductibles pour le code F#</target>
+        <source>Show outlining and collapsible nodes for F# code</source>
+        <target state="translated">Afficher les nœuds de plan ou réductibles pour le code F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Time_until_stale_completion">
+        <source>Time until stale results are used (in milliseconds)</source>
+        <target state="translated">Délai avant l'utilisation des résultats périmés (en millisecondes)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSense_Performance">
+        <source>IntelliSense Performance Options</source>
+        <target state="translated">Options relatives aux performances d'IntelliSense</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project_Performance">
+        <source>F# Project and Caching Performance Options</source>
+        <target state="translated">Options relatives aux performances de la mise en cache et des projets F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Stale_IntelliSense_Results">
+        <source>Enable stale data for IntelliSense features</source>
+        <target state="translated">Activer les données périmées pour les fonctionnalités IntelliSense</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_in_memory_cross_project_references">
+        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
+        <target state="translated">Les références inter-projets en mémoire stockent les données de niveau projet dans la mémoire pour permettre aux fonctionnalités de l'IDE de fonctionner sur plusieurs projets.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_project_check_cache_size">
+        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
+        <target state="translated">Les données de projet sont mises en cache pour les fonctionnalités de l'IDE. Les valeurs plus élevées utilisent plus de mémoire, car davantage de projets sont mis en cache. L'ajustement de cette valeur ne devrait pas affecter les petites ou moyennes solutions.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="translated">Toujours ajouter une nouvelle ligne en appuyant sur Entrée</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="translated">Ne jamais ajouter de nouvelle ligne en appuyant sur Entrée</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="translated">Ajouter une nouvelle ligne en appuyant sur Entrée seulement après la fin d'un mot entièrement tapé</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="translated">Entrer le comportement de la touche</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Format_on_paste">
+        <source>Re-format indentation on paste</source>
+        <target state="translated">Remettre en forme le retrait au collage</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Suggest_names_for_errors_code_fix">
+        <source>Suggest names for unresolved identifiers</source>
+        <target state="translated">Suggérer des noms pour les identificateurs non résolus</target>
         <note />
       </trans-unit>
     </body>

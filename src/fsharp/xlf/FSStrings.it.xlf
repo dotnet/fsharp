@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../FSStrings.resx">
     <body>
+      <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
+        <source>symbol '..^'</source>
+        <target state="translated">simbolo '..^'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">. Vedere anche {0}.</target>
@@ -63,23 +68,13 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">In genere non è consigliabile usare identificatori di variabili in lettere maiuscole nei criteri perché potrebbero indicare un nome di criterio con ortografia errata.</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="needs-review-translation">In genere non è consigliabile usare identificatori di variabili in lettere maiuscole nei criteri perché potrebbero indicare un nome di criterio con ortografia errata.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">I case di unione discriminati e le etichette di eccezioni devono essere identificatori in lettere maiuscole</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Possibile overload: '{0}'. {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\nPossibile overload migliore: '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -797,6 +792,11 @@
         <target state="translated">parola chiave 'match'</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH.BANG">
+        <source>keyword 'match!'</source>
+        <target state="translated">parola chiave 'match!'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.MUTABLE">
         <source>keyword 'mutable'</source>
         <target state="translated">parola chiave 'mutable'</target>
@@ -1339,7 +1339,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">I riferimenti ricorsivi all'oggetto in fase di definizione verranno controllati per verificare la correttezza dell'inizializzazione al runtime tramite l'utilizzo di un riferimento ritardato. Provare a inserire autoriferimenti nei membri o in un'espressione finale nel formato '&lt;ctor-expr&gt; then &lt;expr&gt;'.</target>
+        <target state="translated">I riferimenti ricorsivi all'oggetto in fase di definizione verranno controllati per verificare la correttezza dell'inizializzazione al runtime tramite l'uso di un riferimento ritardato. Provare a inserire autoriferimenti nei membri o in un'espressione finale nel formato '&lt;ctor-expr&gt; then &lt;expr&gt;'.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1610,6 +1610,21 @@
       <trans-unit id="TargetInvocationExceptionWrapper">
         <source>internal error: {0}</source>
         <target state="translated">errore interno: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.BAR">
+        <source>symbol '{|'</source>
+        <target state="translated">simbolo '{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACE">
+        <source>symbol '|}'</source>
+        <target state="translated">simbolo '|}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="translated">parola chiave 'and!'</target>
         <note />
       </trans-unit>
     </body>

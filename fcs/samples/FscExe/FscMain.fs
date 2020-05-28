@@ -1,18 +1,16 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.CommandLineMain
+module internal FSharp.Compiler.CommandLineMain
 
 open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.AbstractIL.IL // runningOnMono 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.AbstractIL.Internal.Utils // runningOnMono
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.ErrorLogger
 
 #if RESIDENT_COMPILER
 type TypeInThisAssembly() = member x.Dummy = 1
@@ -266,10 +264,6 @@ module Driver =
         if runningOnMono && hasArgument "resident" argv then 
             let argv = stripArgument "resident" argv
 
-            //if not (hasArgument "nologo" argv) then 
-            //    printfn "%s" (FSComp.SR.buildProductName(FSharpEnvironment.FSharpTeamVersionNumber))
-            //    printfn "%s" (FSComp.SR.optsCopyright())
-
             let fscServerExe = typeof<TypeInThisAssembly>.Assembly.Location
             let exitCodeOpt = FSharpResidentCompiler.FSharpCompilationServer.TryCompileUsingServer (fscServerExe, argv)
             match exitCodeOpt with 
@@ -288,9 +282,7 @@ module Driver =
             for error in errors do eprintfn "%s" (error.ToString())
             exitCode
 
-#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
 [<Dependency("FSharp.Compiler",LoadHint.Always)>] 
-#endif
 do ()
 
 [<EntryPoint>]
@@ -307,5 +299,5 @@ let main(argv) =
     try 
         Driver.main(Array.append [| "fsc.exe" |] argv); 
     with e -> 
-        errorRecovery e Microsoft.FSharp.Compiler.Range.range0; 
+        errorRecovery e FSharp.Compiler.Range.range0; 
         1

@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="cmdidDebugSelection|ButtonText">
         <source>Debug In Interactive</source>
-        <target state="translated">Debuguj w programie Interactive</target>
+        <target state="translated">Debuguj w trybie interaktywnym</target>
         <note />
       </trans-unit>
       <trans-unit id="cmdidDebugSelection|CommandName">

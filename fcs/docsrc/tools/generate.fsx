@@ -3,8 +3,11 @@
 // (the generated documentation is stored in the 'docs' directory)
 // --------------------------------------------------------------------------------------
 
+#r "paket: groupref generate //"
+#load "./.fake/generate.fsx/intellisense.fsx"
+
 // Binaries that have XML documentation (in a corresponding generated XML file)
-let referenceBinaries = [ "FSharp.Compiler.Service.dll" ] 
+let referenceBinaries = [ "FSharp.Compiler.Service.dll" ]
 // Web site location for the generated documentation
 let website = "https://fsharp.github.io/FSharp.Compiler.Service"
 
@@ -13,26 +16,24 @@ let info =
   [ "project-name", "F# Compiler Services"
     "project-author", "Microsoft Corporation, Dave Thomas, Anh-Dung Phan, Tomas Petricek"
     "project-summary", "F# compiler services for creating IDE tools, language extensions and for F# embedding"
-    "project-github", "http://github.com/fsharp/FSharp.Compiler.Service"
+    "project-github", "https://github.com/fsharp/FSharp.Compiler.Service"
     "project-nuget", "https://www.nuget.org/packages/FSharp.Compiler.Service" ]
 
 // --------------------------------------------------------------------------------------
 // For typical project, no changes are needed below
 // --------------------------------------------------------------------------------------
 
-#load "../../packages/FSharp.Formatting/FSharp.Formatting.fsx"
-#I "../../packages/FAKE/tools"
-#r "../../packages/FAKE/tools/FakeLib.dll"
 open Fake
 open System.IO
-open Fake.FileHelper
+open Fake.IO.FileSystemOperators
+open Fake.IO
+open Fake.Core
 open FSharp.Literate
-open FSharp.MetadataFormat
 
 let root = "."
 
 // Paths with template/source/output locations
-let bin         = __SOURCE_DIRECTORY__ @@ "../../../release/fcs/net45"
+let bin         = __SOURCE_DIRECTORY__ @@ "../../../release/fcs/net461"
 let content     = __SOURCE_DIRECTORY__ @@ "../content"
 let output      = __SOURCE_DIRECTORY__ @@ "../../../docs"
 let files       = __SOURCE_DIRECTORY__ @@ "../files"
@@ -42,26 +43,27 @@ let docTemplate = formatting @@ "templates/docpage.cshtml"
 
 // Where to look for *.csproj templates (in this order)
 let layoutRoots =
-  [ templates; 
+  [ templates;
     formatting @@ "templates"
     formatting @@ "templates/reference" ]
 
 // Copy static files and CSS + JS from F# Formatting
 let copyFiles () =
-  CopyRecursive files output true |> Log "Copying file: "
-  ensureDirectory (output @@ "content")
-  CopyRecursive (formatting @@ "styles") (output @@ "content") true 
-    |> Log "Copying styles and scripts: "
+  Shell.copyRecursive files output true 
+  |> Trace.tracefn "Copying file: %A"
+  Directory.ensure (output @@ "content")
+  Shell.copyRecursive (formatting @@ "styles") (output @@ "content") true
+  |> Trace.tracefn "Copying styles and scripts: %A"
 
 let clr =  System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 let fsfmt =  __SOURCE_DIRECTORY__ @@ ".." @@ ".." @@ @"packages" @@ "FSharp.Formatting" @@ "lib" @@ "net40"
 
 // Build API reference from XML comments
 let buildReference () =
-  CleanDir (output @@ "reference")
+  Shell.cleanDir (output @@ "reference")
   for lib in referenceBinaries do
-    MetadataFormat.Generate
-      ( bin @@ lib, output @@ "reference", layoutRoots, 
+    RazorMetadataFormat.Generate
+      ( bin @@ lib, output @@ "reference", layoutRoots,
         parameters = ("root", root)::info,
         sourceRepo = "https://github.com/fsharp/FSharp.Compiler.Service/tree/master/src",
         sourceFolder = @"..\..\..\src",
@@ -87,7 +89,7 @@ let buildReference () =
 let buildDocumentation () =
   for dir in [content] do
     let sub = if dir.Length > content.Length then dir.Substring(content.Length + 1) else "."
-    Literate.ProcessDirectory
+    RazorLiterate.ProcessDirectory
       ( dir, docTemplate, output @@ sub, replacements = ("root", root)::info,
         layoutRoots = layoutRoots, generateAnchors = true, processRecursive=false )
 

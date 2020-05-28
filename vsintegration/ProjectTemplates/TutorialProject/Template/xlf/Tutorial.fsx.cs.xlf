@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
         <source>For additional templates to use with F#, see the 'Online Templates' in Visual Studio,</source>
-        <target state="translated">Další šablony, které můžete používat s F#, najdete tak, že ve Visual Studiu vyberete Online šablony,</target>
+        <target state="translated">Další šablony, které můžete používat s F#, najdete tak, že v sadě Visual Studio vyberete Online šablony,</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">

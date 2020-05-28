@@ -1,7 +1,7 @@
 // #Regression #NoMT #EntryPoint 
 // Regression test for FSHARP1.0:2209 - existence of this attribute should not confuse FSI
 // Explicit program entry point: [<ExtryPoint>]
-//<Expected status="success"></Expects>
+//<Expects status="success"></Expects>
 
 module M =
  [<EntryPoint>]

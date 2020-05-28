@@ -1,15 +1,17 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.CheckFormatStrings
+module internal FSharp.Compiler.CheckFormatStrings
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TcGlobals
 
 type FormatItem = Simple of TType | FuncAndVal 
 
@@ -20,7 +22,7 @@ let copyAndFixupFormatTypar m tp =
 let lowestDefaultPriority = 0 (* See comment on TyparConstraint.DefaultsTo *)
 
 let mkFlexibleFormatTypar m tys dflt = 
-    let tp = NewTypar (TyparKind.Type,TyparRigidity.Rigid,Typar(mkSynId m "fmt",HeadTypeStaticReq,true),false,TyparDynamicReq.Yes,[],false,false)
+    let tp = Construct.NewTypar (TyparKind.Type,TyparRigidity.Rigid,Typar(mkSynId m "fmt",HeadTypeStaticReq,true),false,TyparDynamicReq.Yes,[],false,false)
     tp.SetConstraints [ TyparConstraint.SimpleChoice (tys,m); TyparConstraint.DefaultsTo (lowestDefaultPriority,dflt,m)]
     copyAndFixupFormatTypar m tp
 
@@ -33,41 +35,35 @@ let mkFlexibleDecimalFormatTypar (g: TcGlobals) m =
 let mkFlexibleFloatFormatTypar (g: TcGlobals) m = 
     mkFlexibleFormatTypar m [ g.float_ty; g.float32_ty; g.decimal_ty ] g.float_ty
 
-let isDigit c = ('0' <= c && c <= '9')
-
 type FormatInfoRegister = 
   { mutable leftJustify    : bool 
     mutable numPrefixIfPos : char option
     mutable addZeros       : bool
     mutable precision      : bool}
 
-let newInfo ()= 
+let newInfo () = 
   { leftJustify    = false
     numPrefixIfPos = None
     addZeros       = false
     precision      = false}
 
-let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) fmt bty cty = 
+let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringCheckContext option) fmt bty cty = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
     // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
     let (offset, fmt) = 
-        match source with
-        | Some source ->
-            let source = source.Replace("\r\n", "\n").Replace("\r", "\n")
-            let positions =
-                source.Split('\n')
-                |> Seq.map (fun s -> String.length s + 1)
-                |> Seq.scan (+) 0
-                |> Seq.toArray
-            let length = source.Length
-            if m.EndLine < positions.Length then
-                let startIndex = positions.[m.StartLine-1] + m.StartColumn
-                let endIndex = positions.[m.EndLine-1] + m.EndColumn - 1
-                if startIndex < length-3 && source.[startIndex..startIndex+2] = "\"\"\"" then
-                    (3, source.[startIndex+3..endIndex-3])
-                elif startIndex < length-2 && source.[startIndex..startIndex+1] = "@\"" then
-                    (2, source.[startIndex+2..endIndex-1])
-                else (1, source.[startIndex+1..endIndex-1])
+        match context with
+        | Some context ->
+            let sourceText = context.SourceText
+            let lineStartPositions = context.LineStartPositions
+            let length = sourceText.Length
+            if m.EndLine < lineStartPositions.Length then
+                let startIndex = lineStartPositions.[m.StartLine-1] + m.StartColumn
+                let endIndex = lineStartPositions.[m.EndLine-1] + m.EndColumn - 1
+                if startIndex < length-3 && sourceText.SubTextEquals("\"\"\"", startIndex) then
+                    (3, sourceText.GetSubTextString(startIndex + 3, endIndex - startIndex))
+                elif startIndex < length-2 && sourceText.SubTextEquals("@\"", startIndex) then
+                    (2, sourceText.GetSubTextString(startIndex + 2, endIndex + 1 - startIndex))
+                else (1, sourceText.GetSubTextString(startIndex + 1, endIndex - startIndex))
             else (1, fmt)
         | None -> (1, fmt)
 
@@ -120,13 +116,13 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
               let rec digitsPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
-                | c when isDigit c -> digitsPrecision (i+1)
+                | c when System.Char.IsDigit c -> digitsPrecision (i+1)
                 | _ -> i 
 
               let precision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadWidth()
                 match fmt.[i] with
-                | c when isDigit c -> info.precision <- true; false,digitsPrecision (i+1)
+                | c when System.Char.IsDigit c -> info.precision <- true; false,digitsPrecision (i+1)
                 | '*' -> info.precision <- true; true,(i+1)
                 | _ -> failwithf "%s" <| FSComp.SR.forPrecisionMissingAfterDot()
 
@@ -139,20 +135,20 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
               let rec digitsWidthAndPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
-                | c when isDigit c -> digitsWidthAndPrecision (i+1)
+                | c when System.Char.IsDigit c -> digitsWidthAndPrecision (i+1)
                 | _ -> optionalDotAndPrecision i
 
               let widthAndPrecision i = 
                 if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
-                | c when isDigit c -> false,digitsWidthAndPrecision i
+                | c when System.Char.IsDigit c -> false,digitsWidthAndPrecision i
                 | '*' -> true,optionalDotAndPrecision (i+1)
                 | _ -> false,optionalDotAndPrecision i
 
               let rec digitsPosition n i =
                   if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                   match fmt.[i] with
-                  | c when isDigit c -> digitsPosition (n*10 + int c - int '0') (i+1)
+                  | c when System.Char.IsDigit c -> digitsPosition (n*10 + int c - int '0') (i+1)
                   | '$' -> Some n, i+1
                   | _ -> None, i
 
@@ -292,8 +288,8 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
     let results = parseLoop [] (0, 0, m.StartColumn)
     results, Seq.toList specifierLocations
 
-let ParseFormatString m g source fmt bty cty dty = 
-    let argtys, specifierLocations = parseFormatStringInternal m g source fmt bty cty
+let ParseFormatString m g formatStringCheckContext fmt bty cty dty = 
+    let argtys, specifierLocations = parseFormatStringInternal m g formatStringCheckContext fmt bty cty
     let aty = List.foldBack (-->) argtys dty
     let ety = mkRefTupledTy g argtys
     (aty, ety), specifierLocations 

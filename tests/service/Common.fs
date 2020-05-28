@@ -1,15 +1,17 @@
+[<AutoOpen>]
 module internal FSharp.Compiler.Service.Tests.Common
 
+open System
 open System.IO
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
+open FsUnit
+open NUnit.Framework
 
-#if FX_RESHAPED_REFLECTION
-open ReflectionAdapters
-#endif
-
-#if NETCOREAPP2_0
+#if NETCOREAPP
 let readRefs (folder : string) (projectFile: string) =
     let runProcess (workingDir: string) (exePath: string) (args: string) =
         let psi = System.Diagnostics.ProcessStartInfo()
@@ -36,7 +38,7 @@ let readRefs (folder : string) (projectFile: string) =
     match result with
     | Ok(Dotnet.ProjInfo.Inspect.GetResult.FscArgs x) ->
         x
-        |> List.filter (fun s -> s.StartsWith("-r:"))
+        |> List.filter (fun s -> s.StartsWith("-r:", StringComparison.Ordinal))
         |> List.map (fun s -> s.Replace("-r:", ""))
     | _ -> []
 #endif
@@ -56,42 +58,37 @@ type TempFile(ext, contents) =
 
 let getBackgroundParseResultsForScriptText (input) = 
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, input) |> Async.RunSynchronously
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously
     checker.GetBackgroundParseResultsForFileInProject(file.Name, checkOptions)  |> Async.RunSynchronously
 
 
 let getBackgroundCheckResultsForScriptText (input) = 
     use file =  new TempFile("fsx", input)
-    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, input) |> Async.RunSynchronously
+    let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file.Name, FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously
     checker.GetBackgroundCheckResultsForFileInProject(file.Name, checkOptions) |> Async.RunSynchronously
 
 
 let sysLib nm = 
-#if !NETCOREAPP2_0
+#if !NETCOREAPP
     if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
         let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
-        programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\" + nm + ".dll"
+        programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\" + nm + ".dll"
     else
 #endif
-#if FX_NO_RUNTIMEENVIRONMENT
         let sysDir = System.AppContext.BaseDirectory
-#else
-        let sysDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-#endif
         let (++) a b = System.IO.Path.Combine(a,b)
         sysDir ++ nm + ".dll" 
 
 [<AutoOpen>]
 module Helpers = 
-    open System
     type DummyType = A | B
-    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<Microsoft.FSharp.Compiler.SourceCodeServices.FSharpChecker>.Assembly.CodeBase).LocalPath), p)
+    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<FSharp.Compiler.SourceCodeServices.FSharpChecker>.Assembly.CodeBase).LocalPath), p)
 
 let fsCoreDefaultReference() = 
     PathRelativeToTestAssembly "FSharp.Core.dll"
 
 let mkStandardProjectReferences () = 
-#if NETCOREAPP2_0
+#if NETCOREAPP
             let file = "Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj"
             let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0")
             readRefs projDir file
@@ -108,7 +105,7 @@ let mkProjectCommandLineArgsSilent (dllName, fileNames) =
         yield "--noframework" 
         yield "--debug:full" 
         yield "--define:DEBUG" 
-#if NETCOREAPP2_0
+#if NETCOREAPP
         yield "--targetprofile:netcore" 
 #endif
         yield "--optimize-" 
@@ -131,7 +128,7 @@ let mkProjectCommandLineArgs (dllName, fileNames) =
   printfn "dllName = %A, args = %A" dllName args
   args
 
-#if NETCOREAPP2_0
+#if NETCOREAPP
 let mkProjectCommandLineArgsForScript (dllName, fileNames) = 
     [|  yield "--simpleresolution" 
         yield "--noframework" 
@@ -166,13 +163,13 @@ let mkTestFileAndOptions source additionalArgs =
     fileName, options
 
 let parseAndCheckFile fileName source options =
-    match checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously with
+    match checker.ParseAndCheckFileInProject(fileName, 0, FSharp.Compiler.Text.SourceText.ofString source, options) |> Async.RunSynchronously with
     | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
     | _ -> failwithf "Parsing aborted unexpectedly..."
 
 let parseAndCheckScript (file, input) = 
 
-#if NETCOREAPP2_0
+#if NETCOREAPP
     let dllName = Path.ChangeExtension(file, ".dll")
     let projName = Path.ChangeExtension(file, ".fsproj")
     let args = mkProjectCommandLineArgsForScript (dllName, [file])
@@ -180,11 +177,11 @@ let parseAndCheckScript (file, input) =
     let projectOptions = checker.GetProjectOptionsFromCommandLineArgs (projName, args)
 
 #else    
-    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
+    let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously
     printfn "projectOptions = %A" projectOptions
 #endif
 
-    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, input, projectOptions) |> Async.RunSynchronously
+    let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, FSharp.Compiler.Text.SourceText.ofString input, projectOptions) |> Async.RunSynchronously
     
     // if parseResult.Errors.Length > 0 then
     //     printfn "---> Parse Input = %A" input
@@ -197,14 +194,17 @@ let parseAndCheckScript (file, input) =
 let parseSourceCode (name: string, code: string) =
     let location = Path.Combine(Path.GetTempPath(),"test"+string(hash (name, code)))
     try Directory.CreateDirectory(location) |> ignore with _ -> ()
-
-    let projPath = Path.Combine(location, name + ".fsproj")
     let filePath = Path.Combine(location, name + ".fs")
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
-    let parseResults = checker.ParseFile(filePath, code, options) |> Async.RunSynchronously
+    let parseResults = checker.ParseFile(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
     parseResults.ParseTree
+
+let parseSourceCodeAndGetModule (source: string) =
+    match parseSourceCode ("test", source) with
+    | Some (ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, [ moduleOrNamespace ], _))) -> moduleOrNamespace
+    | _ -> failwith "Could not get module decls"
 
 /// Extract range info 
 let tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
@@ -230,6 +230,9 @@ let attribsOfSymbol (s:FSharpSymbol) =
             if v.IsVolatile then yield "volatile"
             if v.IsStatic then yield "static"
             if v.IsLiteral then yield sprintf "%A" v.LiteralValue.Value
+            if v.IsAnonRecordField then 
+                let info, tys, i = v.AnonRecordFieldDetails
+                yield "anon(" + string i + ", [" + info.Assembly.QualifiedName + "/" + String.concat "+" info.EnclosingCompiledTypeNames + "/" + info.CompiledName + "]" + String.concat "," info.SortedFieldNames + ")"
 
 
         | :? FSharpEntity as v -> 
@@ -302,9 +305,71 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
                  yield (x :> FSharpSymbol)
           yield! allSymbolsInEntities compGen e.NestedEntities ]
 
+let getParseAndCheckResults (source: string) =
+    parseAndCheckScript("/home/user/Test.fsx", source)
+
+let inline dumpErrors results =
+    (^TResults: (member Errors: FSharpErrorInfo[]) results)
+    |> Array.map (fun e ->
+        let message =
+            e.Message.Split('\n')
+            |> Array.map (fun s -> s.Trim())
+            |> String.concat " "
+        sprintf "%s: %s" (e.Range.ToShortString()) message)
+    |> List.ofArray
+
+
+let getSymbolUses (results: FSharpCheckFileResults) =
+    results.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+
+let getSymbolUsesFromSource (source: string) =
+    let _, typeCheckResults = getParseAndCheckResults source 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+
+let getSymbols (symbolUses: FSharpSymbolUse[]) =
+    symbolUses |> Array.map (fun symbolUse -> symbolUse.Symbol)
+
+
+let getSymbolName (symbol: FSharpSymbol) =
+    match symbol with
+    | :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv.LogicalName
+    | :? FSharpEntity as entity -> Some entity.LogicalName
+    | :? FSharpGenericParameter as parameter -> Some parameter.Name
+    | :? FSharpParameter as parameter -> parameter.Name
+    | :? FSharpStaticParameter as parameter -> Some parameter.Name
+    | :? FSharpActivePatternCase as case -> Some case.Name
+    | :? FSharpUnionCase as case -> Some case.Name
+    | _ -> None
+
+
+let assertContainsSymbolWithName name source =
+    getSymbols source
+    |> Array.choose getSymbolName
+    |> Array.contains name
+    |> shouldEqual true
+
+let assertContainsSymbolsWithNames (names: string list) source =
+    let symbolNames =
+        getSymbols source
+        |> Array.choose getSymbolName
+
+    for name in names do
+        symbolNames
+        |> Array.contains name
+        |> shouldEqual true
+
+let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults) =
+    let symbolNames =
+        getSymbolUses results
+        |> getSymbols
+        |> Array.choose getSymbolName
+        |> set
+
+    for name in names do
+        Assert.That(Set.contains name symbolNames, name)
 
 let coreLibAssemblyName =
-#if NETCOREAPP2_0
+#if NETCOREAPP
     "System.Runtime"
 #else
     "mscorlib"

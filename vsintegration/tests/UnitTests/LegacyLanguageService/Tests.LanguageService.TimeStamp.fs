@@ -88,6 +88,7 @@ type UsingMSBuild()  =
 
     // In this bug, the referenced project output didn't exist yet. Building dependee should cause update in dependant
     [<Test>]
+    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
     member public this.``Regression.NoContainedString.Timestamps.Bug3368a``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -164,6 +165,7 @@ type UsingMSBuild()  =
 
    // FEATURE: When a referenced assembly's timestamp changes the reference is reread.
     [<Test; Category("Expensive")>]
+    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
     member public this.``Timestamps.ReferenceAssemblyChangeAbsolute``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -198,29 +200,30 @@ type UsingMSBuild()  =
                                 ["#light"
                                  "module File1 = "
                                  "    let Mary x = \"\""]
-        SaveFileToDisk file1      
-        time1 Build project1 "Time to build project1 second time" |> ignore                       
-        TakeCoffeeBreak(this.VS) // Give enough time to catch up             
+        SaveFileToDisk file1
+        time1 Build project1 "Time to build project1 second time" |> ignore
+        TakeCoffeeBreak(this.VS) // Give enough time to catch up
         SwitchToFile this.VS file2
         MoveCursorToEndOfMarker(file2,"File1.File1.")
-        TakeCoffeeBreak(this.VS) // Give enough time to catch up             
+        TakeCoffeeBreak(this.VS) // Give enough time to catch up
         let completions = AutoCompleteAtCursor(file2)
         Assert.AreNotEqual(0, completions.Length)
         printfn "Completions=%A\n" completions
-            
+
     // In this bug, relative paths to referenced assemblies weren't seen.
     [<Test; Category("Expensive")>]
+    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
     member public this.``Timestamps.ReferenceAssemblyChangeRelative``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project1 = CreateProject(solution,"testproject1")
-        
+
         let MakeRelativePath(path1:string, path2) =
             // Pretend to return a path to path1 relative to path2.
             let temp = (System.IO.Path.GetTempPath())
             let tempLen = temp.Length
             ".."+(path1.Substring(tempLen-1))
-        
+
         let file1 = AddFileFromText(project1,"File1.fs",
                                     ["#light"]
                                      )
@@ -231,14 +234,14 @@ type UsingMSBuild()  =
                                      "File1.File1."
                                      "()"])
         let file2 = OpenFile(project2,"File2.fs")
-        
+
         // Build project1 which will later have the type being referenced by project2
         let project1Dll = time1 Build project1 "Time to build project1"
         printfn "Output of building project1 was %s" project1Dll.ExecutableOutput
         printfn "Project2 directory is %s" (ProjectDirectory project2)
         let project1DllRelative = MakeRelativePath(project1Dll.ExecutableOutput, (ProjectDirectory project2))
         printfn "Relative output of building project1 was %s" project1DllRelative
-        
+
         // Add a new reference project2->project1. There should be no completions because Mary doesn't exist yet.
         this.AddAssemblyReference(project2,project1DllRelative)
         TakeCoffeeBreak(this.VS) // Dependencies between projects get registered for file-watching during OnIdle processing
@@ -246,26 +249,25 @@ type UsingMSBuild()  =
         MoveCursorToEndOfMarker(file2,"File1.File1.")
         let completions = AutoCompleteAtCursor(file2)
         Assert.AreEqual(0, completions.Length)
-        
+
         // Now modify project1's file and rebuild.
         ReplaceFileInMemory file1 
                                 ["#light"
                                  "module File1 = "
                                  "    let Mary x = \"\""]
         SaveFileToDisk file1      
-        time1 Build project1 "Time to build project1 second time" |> ignore                       
-        TakeCoffeeBreak(this.VS) // Give enough time to catch up             
+        time1 Build project1 "Time to build project1 second time" |> ignore
+        TakeCoffeeBreak(this.VS) // Give enough time to catch up
         SwitchToFile this.VS file2
         MoveCursorToEndOfMarker(file2,"File1.File1.")
-        TakeCoffeeBreak(this.VS) // Give enough time to catch up             
+        TakeCoffeeBreak(this.VS) // Give enough time to catch up
         let completions = AutoCompleteAtCursor(file2)
         Assert.AreNotEqual(0, completions.Length)
-        printfn "Completions=%A\n" completions         
-        
+        printfn "Completions=%A\n" completions
 
     // FEATURE: When a referenced project's assembly timestamp changes the reference is reread.
-    [<Test>]
-    [<Category("Expensive")>]
+    [<Test; Category("Expensive")>]
+    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
     member public this.``Timestamps.ProjectReferenceAssemblyChange``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()

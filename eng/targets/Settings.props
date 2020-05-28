@@ -1,0 +1,14 @@
+<Project>
+
+  <PropertyGroup>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>Visual F# Compiler FSharp functional programming</PackageTags>
+    <NuspecBasePath>$(ArtifactsBinDir)</NuspecBasePath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- workaround for https://github.com/dotnet/wpf/issues/1718 -->
+    <EmbedUntrackedSources>false</EmbedUntrackedSources>
+  </PropertyGroup>
+
+</Project>

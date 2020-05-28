@@ -42,12 +42,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
     open EnvDTE
 
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Private", CodeBase = @"$PackageFolder$\FSharp.Compiler.Private.dll")>]
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Server.Shared", CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
-    [<assembly:ProvideCodeBase(AssemblyName = "FSharp.UIResources", CodeBase = @"$PackageFolder$\FSharp.UIResources.dll")>]
-    [<assembly:ProvideBindingRedirection(AssemblyName = "FSharp.Core", OldVersionLowerBound = "2.0.0.0", OldVersionUpperBound = "4.4.3.0", NewVersion = "4.4.3.0", CodeBase = @"$PackageFolder$\FSharp.Core.dll")>]
-    do ()
-
     module internal VSHiveUtilities =
             /// For a given sub-hive, check to see if a 3rd party has specified any
             /// custom/extended property pages.
@@ -201,7 +195,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 resourceValue
 
             override this.Initialize() =
-                UIThread.CaptureSynchronizationContext()
+                Microsoft.VisualStudio.FSharp.LanguageService.UIThread.CaptureSynchronizationContext()
+                Microsoft.VisualStudio.FSharp.ProjectSystem.UIThread.CaptureSynchronizationContext()
 
                 base.Initialize()
 
@@ -212,64 +207,63 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             member this.ListAvailableFSharpCoreVersions(_) = Array.empty }
 
                     let service = 
-                        match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with
-                        | None -> nullService
-                        | Some path ->
-                            try
-                                let supportedRuntimesXml = System.Xml.Linq.XDocument.Load(Path.Combine(path, "SupportedRuntimes.xml"))
-                                let tryGetAttr (el : System.Xml.Linq.XElement) attr = 
-                                    match el.Attribute(System.Xml.Linq.XName.Get attr) with
-                                    | null -> None
-                                    | x -> Some x.Value
-                                let flatList = 
-                                    supportedRuntimesXml.Root.Elements(System.Xml.Linq.XName.Get "TargetFramework")
-                                    |> Seq.choose (fun tf ->
-                                        match tryGetAttr tf "Identifier", tryGetAttr tf "Version", tryGetAttr tf "Profile" with
-                                        | Some key1, Some key2, _ 
-                                        | Some key1, _, Some key2 ->
-                                            Some(
-                                                key1, // identifier
-                                                key2, // version or profile
-                                                [|
-                                                    for asm in tf.Elements(System.Xml.Linq.XName.Get "Assembly") do
-                                                        let version = asm.Attribute(System.Xml.Linq.XName.Get "Version")
-                                                        let description = asm.Attribute(System.Xml.Linq.XName.Get "Description")
-                                                        match version, description with
-                                                        | null, _ | _, null -> ()
-                                                        | version, description ->
-                                                            yield Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpCoreVersion(version.Value, description.Value)
-                                                |]
-                                            )
-                                        | _ -> None
-                                     )
-                                     
-                                    |> Seq.toList
-                                let (_, _, v2) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v20)
-                                let (_, _, v4) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v40)
-                                let (_, _, v45) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v45)
-                                {
-                                    new Microsoft.VisualStudio.FSharp.ProjectSystem.IFSharpCoreVersionLookupService with
-                                        member this.ListAvailableFSharpCoreVersions(targetFramework) =
-                                            if targetFramework.Identifier = FSharpSDKHelper.NETFramework
-                                            then 
-                                                // for .NETFramework we distinguish between 2.0, 4.0 and 4.5
-                                                if targetFramework.Version.Major < 4 then v2 
-                                                elif targetFramework.Version.Major = 4 && targetFramework.Version.Minor < 5 then v4 
-                                                else v45
-                                            else 
-                                                // for other target frameworks we assume that they are distinguished by the profile
-                                                let result = 
-                                                    flatList
-                                                    |> List.tryPick(fun (k1, k2, list) -> 
-                                                        if k1 = targetFramework.Identifier && k2 = targetFramework.Profile then Some list else None
-                                                    )
-                                                match result with
-                                                | Some list -> list
-                                                | None ->
-                                                    Debug.Assert(false, sprintf "Unexpected target framework identifier '%O'" targetFramework)
-                                                    [||]
-                                }
-                            with _ -> nullService
+                        try
+                            // SupportedRuntimes is deployed alongside the ProjectSystem dll
+                            let path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+                            let supportedRuntimesXml = System.Xml.Linq.XDocument.Load(Path.Combine(path, "SupportedRuntimes.xml"))
+                            let tryGetAttr (el : System.Xml.Linq.XElement) attr = 
+                                match el.Attribute(System.Xml.Linq.XName.Get attr) with
+                                | null -> None
+                                | x -> Some x.Value
+                            let flatList = 
+                                supportedRuntimesXml.Root.Elements(System.Xml.Linq.XName.Get "TargetFramework")
+                                |> Seq.choose (fun tf ->
+                                    match tryGetAttr tf "Identifier", tryGetAttr tf "Version", tryGetAttr tf "Profile" with
+                                    | Some key1, Some key2, _ 
+                                    | Some key1, _, Some key2 ->
+                                        Some(
+                                            key1, // identifier
+                                            key2, // version or profile
+                                            [|
+                                                for asm in tf.Elements(System.Xml.Linq.XName.Get "Assembly") do
+                                                    let version = asm.Attribute(System.Xml.Linq.XName.Get "Version")
+                                                    let description = asm.Attribute(System.Xml.Linq.XName.Get "Description")
+                                                    match version, description with
+                                                    | null, _ | _, null -> ()
+                                                    | version, description ->
+                                                        yield Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpCoreVersion(version.Value, description.Value)
+                                            |]
+                                        )
+                                    | _ -> None
+                                 )
+                                 
+                                |> Seq.toList
+                            let (_, _, v2) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v20)
+                            let (_, _, v4) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v40)
+                            let (_, _, v45) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v45)
+                            {
+                                new Microsoft.VisualStudio.FSharp.ProjectSystem.IFSharpCoreVersionLookupService with
+                                    member this.ListAvailableFSharpCoreVersions(targetFramework) =
+                                        if targetFramework.Identifier = FSharpSDKHelper.NETFramework
+                                        then 
+                                            // for .NETFramework we distinguish between 2.0, 4.0 and 4.5
+                                            if targetFramework.Version.Major < 4 then v2 
+                                            elif targetFramework.Version.Major = 4 && targetFramework.Version.Minor < 5 then v4 
+                                            else v45
+                                        else 
+                                            // for other target frameworks we assume that they are distinguished by the profile
+                                            let result = 
+                                                flatList
+                                                |> List.tryPick(fun (k1, k2, list) -> 
+                                                    if k1 = targetFramework.Identifier && k2 = targetFramework.Profile then Some list else None
+                                                )
+                                            match result with
+                                            | Some list -> list
+                                            | None ->
+                                                Debug.Assert(false, sprintf "Unexpected target framework identifier '%O'" targetFramework)
+                                                [||]
+                            }
+                        with _ -> nullService
                     (this :> IServiceContainer).AddService(typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.IFSharpCoreVersionLookupService>, service, promote = true)
 
 
@@ -366,8 +360,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             let mutable sourcesAndFlags : option<(string[] * string[])> = None
 
             let mutable normalizedRefs : string[] option = None
-
-            let mutable binOutputPath : string option = None
 
 #if DEBUG
             let logger = new Microsoft.Build.Logging.ConsoleLogger(Microsoft.Build.Framework.LoggerVerbosity.Diagnostic,
@@ -800,7 +792,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             /// <param name="source">Full path to template file</param>
             /// <param name="target">Full path to destination file</param>
             override x.AddFileFromTemplate(source:string, target:string ) =
-                if not (Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.Shim.FileSystem.SafeExists(source)) then
+                if not (FSharp.Compiler.AbstractIL.Internal.Library.Shim.FileSystem.SafeExists(source)) then
                     raise <| new FileNotFoundException(String.Format(FSharpSR.TemplateNotFound(), source))
 
                 // We assume that there is no token inside the file because the only
@@ -1261,23 +1253,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let updatedNormalizedRefs = flags |> Array.choose (fun flag -> if flag.StartsWith("-r:") then Some flag.[3..] else None) |> Array.map (fun fn -> Path.GetFullPath(Path.Combine(x.ProjectFolder, fn)))
                 sourcesAndFlags <- Some (updatedNormalizedSources, flags)
                 normalizedRefs <- Some updatedNormalizedRefs
-                binOutputPath <- x.GetCurrentOutputAssembly() |> Option.ofObj
 
                 if projectSite.State = ProjectSiteOptionLifetimeState.Opening then
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
-
-            // =====================================================================================================
-            // Todo: x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) for VS2017.7
-            // Earlier buildtasks usesd System.Converter<int,int> for cross platform we are moving to Func<int>
-            // This is so that during the interim, earlier VS's will still load the OSS project
-            // =====================================================================================================
-            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) =
-                x.CoreCompile(flags, sources)
-                if actuallyBuild then
-                    compile.Invoke(0)
-                else
-                    0
 
             member x.Compile(compile:Func<int>, flags:string[], sources:string[]) =
                 x.CoreCompile(flags, sources)
@@ -1289,7 +1268,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member __.CompilationSourceFiles = match sourcesAndFlags with None -> [| |] | Some (sources,_) -> sources
             member __.CompilationOptions = match sourcesAndFlags with None -> [| |] | Some (_,flags) -> flags
             member __.CompilationReferences = match normalizedRefs with None -> [| |] | Some refs -> refs
-            member __.CompilationBinOutputPath = binOutputPath
 
             override x.ComputeSourcesAndFlags() =
 
@@ -1411,7 +1389,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.CompilationSourceFiles = x.CompilationSourceFiles
                     member __.CompilationOptions = x.CompilationOptions
                     member __.CompilationReferences = x.CompilationReferences
-                    member __.CompilationBinOutputPath = x.CompilationBinOutputPath
+                    member __.CompilationBinOutputPath = 
+                        let outputPath = x.GetCurrentOutputAssembly()
+                        if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
 
                     member __.Description = 
                         match sourcesAndFlags with
@@ -1438,7 +1418,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // that does _not_ reference "this" to get its information.
             // CreateStaticProjectSite can be called on a project that failed to load (as in Close)
             member private x.CreateStaticProjectSite() =
-                let outputPath = x.CompilationBinOutputPath
+                let outputPath = x.GetCurrentOutputAssembly()
                 let sourceFiles = x.CompilationSourceFiles
                 let options = x.CompilationOptions
                 let refs = x.CompilationReferences
@@ -1454,7 +1434,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.CompilationSourceFiles = sourceFiles
                     member __.CompilationOptions = options
                     member __.CompilationReferences = refs
-                    member __.CompilationBinOutputPath = outputPath
+                    member __.CompilationBinOutputPath = if String.IsNullOrWhiteSpace(outputPath) then None else Some(outputPath)
                     member __.ProjectFileName = projFileName
                     member __.BuildErrorReporter 
                         with get() = staticBuildErrorReporter

@@ -1,6 +1,6 @@
 ﻿open System
 open System.IO
-open Microsoft.FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.Interactive.Shell
 
 let sbOut = new Text.StringBuilder()
 let sbErr = new Text.StringBuilder()

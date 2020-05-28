@@ -146,6 +146,24 @@ module LeafExpressionEvaluationTests =
     checkEval "2ver9ewrx" (<@ (1,2,3,4,5,6,7,8,9,10) @>) (1,2,3,4,5,6,7,8,9,10)
     checkEval "2ver9ewrc" (<@ (1,2,3,4,5,6,7,8,9,10,11) @>) (1,2,3,4,5,6,7,8,9,10,11)
     checkEval "2ver9ewrv" (<@ (1,2,3,4,5,6,7,8,9,10,11,12) @>) (1,2,3,4,5,6,7,8,9,10,11,12)
+
+
+    check "2ver9ewrsf" (let v2 = struct(3,4) in Eval <@ v2 @>) struct(3,4)
+    
+    check "2ver9ewrsg" (let v2 = struct(3,4) in Eval <@ struct(v2,v2) @>) struct(struct(3,4),struct(3,4))
+
+    checkEval "2ver9ewrst" (<@ struct(1,2) @>) struct(1,2)
+    checkEval "2ver9ewvsk" (<@ struct(1,2,3) @>) struct(1,2,3)
+    checkEval "2ver9ewrsh" (<@ struct(1,2,3,4) @>) struct(1,2,3,4)
+    checkEval "2ver9ewrsj" (<@ struct(1,2,3,4,5) @>) struct(1,2,3,4,5)
+    checkEval "2ver9ewrsk" (<@ struct(1,2,3,4,5,6) @>) struct(1,2,3,4,5,6)
+    checkEval "2ver9ewrsl" (<@ struct(1,2,3,4,5,6,7) @>) struct(1,2,3,4,5,6,7)
+    checkEval "2ver9ewrsa" (<@ struct(1,2,3,4,5,6,7,8) @>) struct(1,2,3,4,5,6,7,8)
+    checkEval "2ver9ewrss" (<@ struct(1,2,3,4,5,6,7,8,9) @>) struct(1,2,3,4,5,6,7,8,9)
+    checkEval "2ver9ewrsx" (<@ struct(1,2,3,4,5,6,7,8,9,10) @>) struct(1,2,3,4,5,6,7,8,9,10)
+    checkEval "2ver9ewrsc" (<@ struct(1,2,3,4,5,6,7,8,9,10,11) @>) struct(1,2,3,4,5,6,7,8,9,10,11)
+    checkEval "2ver9ewrsv" (<@ struct(1,2,3,4,5,6,7,8,9,10,11,12) @>) struct(1,2,3,4,5,6,7,8,9,10,11,12)
+
     checkEval "2ver9ewrb" (<@ System.DateTime.Now.DayOfWeek @>) System.DateTime.Now.DayOfWeek
     checkEval "2ver9ewrn" (<@ Checked.(+) 1 1 @>) 2
     checkEval "2ver9ewrm" (<@ Checked.(-) 1 1 @>) 0
@@ -565,7 +583,7 @@ module LeafExpressionEvaluationTests =
         checkEval "vrewoinrv09c" (<@ ceil 2.0 @>) (ceil 2.0)
         checkEval "vrewoinrv09v" (<@ sqrt 2.0 @>) (sqrt 2.0)
         checkEval "vrewoinrv09b" (<@ sign 2.0 @>) (sign 2.0)
-#if !NETCOREAPP1_0
+#if !NETCOREAPP
         checkEval "vrewoinrv09n" (<@ truncate 2.3 @>) (truncate 2.3)
 #endif
         checkEval "vrewoinrv09m" (<@ floor 2.3 @>) (floor 2.3)
@@ -585,7 +603,7 @@ module LeafExpressionEvaluationTests =
         checkEval "vrewoinrv09D" (<@ ceil 2.0f @>) (ceil 2.0f)
         checkEval "vrewoinrv09F" (<@ sqrt 2.0f @>) (sqrt 2.0f)
         checkEval "vrewoinrv09G" (<@ sign 2.0f @>) (sign 2.0f)
-#if !NETCOREAPP1_0
+#if !NETCOREAPP
         checkEval "vrewoinrv09H" (<@ truncate 2.3f @>) (truncate 2.3f)
 #endif
         checkEval "vrewoinrv09J" (<@ floor 2.3f @>) (floor 2.3f)
@@ -597,7 +615,7 @@ module LeafExpressionEvaluationTests =
 
         checkEval "vrewoinrv09V" (<@ ceil 2.0M @>) (ceil 2.0M)
         checkEval "vrewoinrv09B" (<@ sign 2.0M @>) (sign 2.0M)
-#if !NETCOREAPP1_0
+#if !NETCOREAPP
         checkEval "vrewoinrv09N" (<@ truncate 2.3M @>) (truncate 2.3M)
 #endif
         checkEval "vrewoinrv09M" (<@ floor 2.3M @>) (floor 2.3M)
@@ -617,7 +635,7 @@ module LeafExpressionEvaluationTests =
         checkEval "vrewoinrv09SS" (<@ [ 0UL .. 10UL ] @>) [ 0UL .. 10UL ]
         
         //Comment this testcase under portable due to bug 500323:[FSharp] portable library can't run "round" function
-#if !NETCOREAPP1_0
+#if !NETCOREAPP
         // Round dynamic dispatch on Decimal
         checkEval "vrewoinrv09FF" (<@ round 2.3M @>) (round 2.3M)
 #endif

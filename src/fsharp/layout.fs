@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module Microsoft.FSharp.Compiler.Layout
+module FSharp.Compiler.Layout
 
 open System
-open System.Collections.Generic
 open System.IO
 open Internal.Utilities.StructuredFormat
 open Microsoft.FSharp.Core.Printf
@@ -19,9 +18,10 @@ type NavigableTaggedText(taggedText: TaggedText, range: Range.range) =
     interface TaggedText with
         member x.Tag = taggedText.Tag
         member x.Text = taggedText.Text
+
 let mkNav r t = NavigableTaggedText(t, r) :> TaggedText
 
-let spaces n = new String(' ',n)
+let spaces n = new String(' ', n)
 
 
 //--------------------------------------------------------------------------
@@ -29,20 +29,20 @@ let spaces n = new String(' ',n)
 //--------------------------------------------------------------------------
 
 let rec juxtLeft = function
-  | ObjLeaf (jl,_text,_jr)         -> jl
-  | Leaf (jl,_text,_jr)            -> jl
-  | Node (jl,_l,_jm,_r,_jr,_joint) -> jl
-  | Attr (_tag,_attrs,l)           -> juxtLeft l
+  | ObjLeaf (jl, _text, _jr)         -> jl
+  | Leaf (jl, _text, _jr)            -> jl
+  | Node (jl, _l, _jm, _r, _jr, _joint) -> jl
+  | Attr (_tag, _attrs, l)           -> juxtLeft l
 
 let rec juxtRight = function
-  | ObjLeaf (_jl,_text,jr)         -> jr
-  | Leaf (_jl,_text,jr)            -> jr
-  | Node (_jl,_l,_jm,_r,jr,_joint) -> jr
-  | Attr (_tag,_attrs,l)           -> juxtRight l
+  | ObjLeaf (_jl, _text, jr)         -> jr
+  | Leaf (_jl, _text, jr)            -> jr
+  | Node (_jl, _l, _jm, _r, jr, _joint) -> jr
+  | Attr (_tag, _attrs, l)           -> juxtRight l
 
 // NOTE: emptyL might be better represented as a constructor, so then (Sep"") would have true meaning
-let emptyL = Leaf (true,Internal.Utilities.StructuredFormat.TaggedTextOps.tag LayoutTag.Text "",true)
-let isEmptyL = function Leaf(true,tag,true) when tag.Text = "" -> true | _ -> false
+let emptyL = Leaf (true, Internal.Utilities.StructuredFormat.TaggedTextOps.tag LayoutTag.Text "", true)
+let isEmptyL = function Leaf(true, tag, true) when tag.Text = "" -> true | _ -> false
       
 let mkNode l r joint =
    if isEmptyL l then r else
@@ -50,17 +50,17 @@ let mkNode l r joint =
    let jl = juxtLeft  l 
    let jm = juxtRight l || juxtLeft r 
    let jr = juxtRight r 
-   Node(jl,l,jm,r,jr,joint)
+   Node(jl, l, jm, r, jr, joint)
 
 
 //--------------------------------------------------------------------------
 //INDEX: constructors
 //--------------------------------------------------------------------------
 
-let wordL  (str:TaggedText) = Leaf (false,str,false)
-let sepL   (str:TaggedText) = Leaf (true ,str,true)   
-let rightL (str:TaggedText) = Leaf (true ,str,false)   
-let leftL  (str:TaggedText) = Leaf (false,str,true)
+let wordL  (str:TaggedText) = Leaf (false, str, false)
+let sepL   (str:TaggedText) = Leaf (true, str, true)   
+let rightL (str:TaggedText) = Leaf (true, str, false)   
+let leftL  (str:TaggedText) = Leaf (false, str, true)
 
 module TaggedTextOps =
     let tagActivePatternCase = Internal.Utilities.StructuredFormat.TaggedTextOps.tag LayoutTag.ActivePatternCase
@@ -109,6 +109,8 @@ module TaggedTextOps =
         let rightBracket = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.rightBracket
         let leftBrace = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.leftBrace
         let rightBrace = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.rightBrace
+        let leftBraceBar = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.leftBraceBar
+        let rightBraceBar = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.rightBraceBar
         let equals = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.equals
         let arrow = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.arrow
         let questionMark = Internal.Utilities.StructuredFormat.TaggedTextOps.Literals.questionMark
@@ -214,7 +216,7 @@ module RightL =
 
 let aboveL  l r = mkNode l r (Broken 0)
 
-let tagAttrL str attrs ly = Attr (str,attrs,ly)
+let tagAttrL str attrs ly = Attr (str, attrs, ly)
 
 //--------------------------------------------------------------------------
 //INDEX: constructors derived
@@ -236,10 +238,10 @@ let (@@--)  l r = apply2 (fun l r -> mkNode l r (Broken 2)) l r
 let tagListL tagger = function
   | []    -> emptyL
   | [x]   -> x
-  | x::xs ->
+  | x :: xs ->
       let rec process' prefixL = function
       | []    -> prefixL
-      | y::ys -> process' ((tagger prefixL) ++ y) ys in
+      | y :: ys -> process' ((tagger prefixL) ++ y) ys in
       process' x xs
 
 let commaListL x = tagListL (fun prefixL -> prefixL ^^ rightL Literals.comma) x
@@ -252,7 +254,7 @@ let tupleL xs = bracketL (sepListL (sepL Literals.comma) xs)
 let aboveListL = function
   | []    -> emptyL
   | [x]   -> x
-  | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
+  | x :: ys -> List.fold (fun pre y -> pre @@ y) x ys
 
 let optionL xL = function
   | None   -> wordL (tagUnionCase "None")
@@ -279,23 +281,23 @@ type breaks = Breaks of
 // - if all breaks forced, then outer=next.
 // - popping under these conditions needs to reduce outer and next.
 let chunkN = 400      
-let breaks0 () = Breaks(0,0,Array.create chunkN 0)
-let pushBreak saving (Breaks(next,outer,stack)) =
+let breaks0 () = Breaks(0, 0, Array.create chunkN 0)
+let pushBreak saving (Breaks(next, outer, stack)) =
     let stack = if next = stack.Length then
                   Array.append stack (Array.create chunkN 0) (* expand if full *)
                 else
                   stack
     stack.[next] <- saving
-    Breaks(next+1,outer,stack)
+    Breaks(next+1, outer, stack)
 
-let popBreak (Breaks(next,outer,stack)) =
+let popBreak (Breaks(next, outer, stack)) =
     if next=0 then raise (Failure "popBreak: underflow")
     let topBroke = stack.[next-1] < 0 
     let outer = if outer=next then outer-1 else outer   (* if all broken, unwind *)
     let next  = next - 1 
-    Breaks(next,outer,stack),topBroke
+    Breaks(next, outer, stack), topBroke
 
-let forceBreak (Breaks(next,outer,stack)) =
+let forceBreak (Breaks(next, outer, stack)) =
     if outer=next then
       (* all broken *)
       None
@@ -303,7 +305,7 @@ let forceBreak (Breaks(next,outer,stack)) =
       let saving = stack.[outer] 
       stack.[outer] <- -stack.[outer]    
       let outer = outer+1 
-      Some (Breaks(next,outer,stack),saving)
+      Some (Breaks(next, outer, stack), saving)
 
 let squashTo maxWidth layout =
    // breaks = break context, can force to get indentation savings.
@@ -316,111 +318,111 @@ let squashTo maxWidth layout =
    // pos    - current pos in line = rightmost position of last line of block.
    // offset - width of last line of block
    // NOTE: offset <= pos -- depending on tabbing of last block
-   let rec fit breaks (pos,layout) =
+   let rec fit breaks (pos, layout) =
        (*printf "\n\nCalling pos=%d layout=[%s]\n" pos (showL layout)*)
-       let breaks,layout,pos,offset =
+       let breaks, layout, pos, offset =
            match layout with
            | ObjLeaf _ -> failwith "ObjLeaf should not appear here"
-           | Attr (tag,attrs,l) ->
-               let breaks,layout,pos,offset = fit breaks (pos,l) 
-               let layout = Attr (tag,attrs,layout) 
-               breaks,layout,pos,offset
-           | Leaf (_jl,taggedText,_jr) ->
+           | Attr (tag, attrs, l) ->
+               let breaks, layout, pos, offset = fit breaks (pos, l) 
+               let layout = Attr (tag, attrs, layout) 
+               breaks, layout, pos, offset
+           | Leaf (_jl, taggedText, _jr) ->
                let textWidth = taggedText.Text.Length 
                let rec fitLeaf breaks pos =
                  if pos + textWidth <= maxWidth then
-                   breaks,layout,pos + textWidth,textWidth (* great, it fits *)
+                   breaks, layout, pos + textWidth, textWidth (* great, it fits *)
                  else
                    match forceBreak breaks with
-                     None                 -> (breaks,layout,pos + textWidth,textWidth (* tough, no more breaks *))
-                   | Some (breaks,saving) -> (let pos = pos - saving in fitLeaf breaks pos) 
+                     None                 -> (breaks, layout, pos + textWidth, textWidth (* tough, no more breaks *))
+                   | Some (breaks, saving) -> (let pos = pos - saving in fitLeaf breaks pos) 
                fitLeaf breaks pos
 
-           | Node (jl,l,jm,r,jr,joint) ->
+           | Node (jl, l, jm, r, jr, joint) ->
                let mid = if jm then 0 else 1 
                match joint with
                | Unbreakable    ->
-                   let breaks,l,pos,offsetl = fit breaks (pos,l)     (* fit left *)
+                   let breaks, l, pos, offsetl = fit breaks (pos, l)     (* fit left *)
                    let pos = pos + mid                               (* fit space if juxt says so *)
-                   let breaks,r,pos,offsetr = fit breaks (pos,r)     (* fit right *)
-                   breaks,Node (jl,l,jm,r,jr,Unbreakable),pos,offsetl + mid + offsetr
+                   let breaks, r, pos, offsetr = fit breaks (pos, r)     (* fit right *)
+                   breaks, Node (jl, l, jm, r, jr, Unbreakable), pos, offsetl + mid + offsetr
                | Broken indent ->
-                   let breaks,l,pos,offsetl = fit breaks (pos,l)     (* fit left *)
+                   let breaks, l, pos, offsetl = fit breaks (pos, l)     (* fit left *)
                    let pos = pos - offsetl + indent                  (* broken so - offset left + indent *)
-                   let breaks,r,pos,offsetr = fit breaks (pos,r)     (* fit right *)
-                   breaks,Node (jl,l,jm,r,jr,Broken indent),pos,indent + offsetr
+                   let breaks, r, pos, offsetr = fit breaks (pos, r)     (* fit right *)
+                   breaks, Node (jl, l, jm, r, jr, Broken indent), pos, indent + offsetr
                | Breakable indent ->
-                   let breaks,l,pos,offsetl = fit breaks (pos,l)     (* fit left *)
+                   let breaks, l, pos, offsetl = fit breaks (pos, l)     (* fit left *)
                    (* have a break possibility, with saving *)
                    let saving = offsetl + mid - indent 
                    let pos = pos + mid 
                    if saving>0 then
                      let breaks = pushBreak saving breaks 
-                     let breaks,r,pos,offsetr = fit breaks (pos,r) 
-                     let breaks,broken = popBreak breaks 
+                     let breaks, r, pos, offsetr = fit breaks (pos, r) 
+                     let breaks, broken = popBreak breaks 
                      if broken then
-                       breaks,Node (jl,l,jm,r,jr,Broken indent)   ,pos,indent + offsetr
+                       breaks, Node (jl, l, jm, r, jr, Broken indent), pos, indent + offsetr
                      else
-                       breaks,Node (jl,l,jm,r,jr,Breakable indent),pos,offsetl + mid + offsetr
+                       breaks, Node (jl, l, jm, r, jr, Breakable indent), pos, offsetl + mid + offsetr
                    else
                      (* actually no saving so no break *)
-                     let breaks,r,pos,offsetr = fit breaks (pos,r) 
-                     breaks,Node (jl,l,jm,r,jr,Breakable indent)  ,pos,offsetl + mid + offsetr
+                     let breaks, r, pos, offsetr = fit breaks (pos, r) 
+                     breaks, Node (jl, l, jm, r, jr, Breakable indent), pos, offsetl + mid + offsetr
        (*printf "\nDone:     pos=%d offset=%d" pos offset*)
-       breaks,layout,pos,offset
+       breaks, layout, pos, offset
    let breaks = breaks0 () 
    let pos = 0 
-   let _breaks,layout,_pos,_offset = fit breaks (pos,layout) 
+   let _breaks, layout, _pos, _offset = fit breaks (pos, layout) 
    layout
 
 //--------------------------------------------------------------------------
 //INDEX: LayoutRenderer
 //--------------------------------------------------------------------------
 
-type LayoutRenderer<'a,'b> =
+type LayoutRenderer<'a, 'b> =
     abstract Start    : unit -> 'b
     abstract AddText  : 'b -> TaggedText -> 'b
     abstract AddBreak : 'b -> int -> 'b
     abstract AddTag   : 'b -> string * (string * string) list * bool -> 'b
     abstract Finish   : 'b -> 'a
       
-let renderL (rr: LayoutRenderer<_,_>) layout =
+let renderL (rr: LayoutRenderer<_, _>) layout =
     let rec addL z pos i layout k = 
       match layout with
-      | ObjLeaf _ -> failwith "ObjLeaf should never apper here"
+      | ObjLeaf _ -> failwith "ObjLeaf should never appear here"
         (* pos is tab level *)
-      | Leaf (_,text,_)                 -> 
-          k(rr.AddText z text,i + text.Text.Length)
-      | Node (_,l,_,r,_,Broken indent) -> 
+      | Leaf (_, text, _)                 -> 
+          k(rr.AddText z text, i + text.Text.Length)
+      | Node (_, l, _, r, _, Broken indent) -> 
           addL z pos i l <|
-            fun (z,_i) ->
-              let z,i = rr.AddBreak z (pos+indent),(pos+indent) 
+            fun (z, _i) ->
+              let z, i = rr.AddBreak z (pos+indent), (pos+indent) 
               addL z (pos+indent) i r k
-      | Node (_,l,jm,r,_,_)             -> 
+      | Node (_, l, jm, r, _, _)             -> 
           addL z pos i l <|
             fun (z, i) ->
-              let z,i = if jm then z,i else rr.AddText z Literals.space, i+1 
+              let z, i = if jm then z, i else rr.AddText z Literals.space, i+1 
               let pos = i 
               addL z pos i r k
-      | Attr (tag,attrs,l)                -> 
-          let z   = rr.AddTag z (tag,attrs,true) 
+      | Attr (tag, attrs, l)                -> 
+          let z   = rr.AddTag z (tag, attrs, true) 
           addL z pos i l <|
             fun (z, i) ->
-              let z   = rr.AddTag z (tag,attrs,false) 
-              k(z,i)
+              let z   = rr.AddTag z (tag, attrs, false) 
+              k(z, i)
     let pos = 0 
-    let z,i = rr.Start(),0 
-    let z,_i = addL z pos i layout id
+    let z, i = rr.Start(), 0 
+    let z, _i = addL z pos i layout id
     rr.Finish z
 
 /// string render 
 let stringR =
-  { new LayoutRenderer<string,string list> with 
+  { new LayoutRenderer<string, string list> with 
       member x.Start () = []
-      member x.AddText rstrs taggedText = taggedText.Text::rstrs
+      member x.AddText rstrs taggedText = taggedText.Text :: rstrs
       member x.AddBreak rstrs n = (spaces n) :: "\n" ::  rstrs 
-      member x.AddTag z (_,_,_) = z
-      member x.Finish rstrs = String.Join("",Array.ofList (List.rev rstrs)) }
+      member x.AddTag z (_, _, _) = z
+      member x.Finish rstrs = String.Join("", Array.ofList (List.rev rstrs)) }
 
 type NoState = NoState
 type NoResult = NoResult
@@ -431,26 +433,26 @@ let taggedTextListR collector =
       member x.Start () = NoState
       member x.AddText z text = collector text; z
       member x.AddBreak rstrs n = collector Literals.lineBreak; collector (tagSpace(spaces n)); rstrs 
-      member x.AddTag z (_,_,_) = z
+      member x.AddTag z (_, _, _) = z
       member x.Finish rstrs = NoResult }
 
 
 /// channel LayoutRenderer
 let channelR (chan:TextWriter) =
-  { new LayoutRenderer<NoResult,NoState> with 
+  { new LayoutRenderer<NoResult, NoState> with 
       member r.Start () = NoState
       member r.AddText z s = chan.Write s.Text; z
       member r.AddBreak z n = chan.WriteLine(); chan.Write (spaces n); z
-      member r.AddTag z (tag,attrs,start) =  z
+      member r.AddTag z (tag, attrs, start) =  z
       member r.Finish z = NoResult }
 
 /// buffer render
 let bufferR os =
-  { new LayoutRenderer<NoResult,NoState> with 
+  { new LayoutRenderer<NoResult, NoState> with 
       member r.Start () = NoState
       member r.AddText z s = bprintf os "%s" s.Text; z
       member r.AddBreak z n = bprintf os "\n"; bprintf os "%s" (spaces n); z
-      member r.AddTag z (tag,attrs,start) = z
+      member r.AddTag z (tag, attrs, start) = z
       member r.Finish z = NoResult }
 
 //--------------------------------------------------------------------------

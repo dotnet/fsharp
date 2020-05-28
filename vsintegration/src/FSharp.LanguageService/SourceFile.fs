@@ -4,10 +4,10 @@
 
 //------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
 
-namespace Microsoft.FSharp.Compiler.VsLanguageService
+namespace FSharp.Compiler.VsLanguageService
 open System
 open System.IO
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 
 /// Methods for dealing with F# sources files.
 module (*internal*) SourceFile =

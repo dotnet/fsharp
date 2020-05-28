@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <UnitTestType>nunit</UnitTestType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="NunitHelpers.fs" />
+    <Compile Include="CompilerTestHelpers.fs" />
+    <Compile Include="ManglingNameOfProvidedTypes.fs" />
+    <Compile Include="HashIfExpression.fs" />
+    <Compile Include="ProductVersion.fs" />
+    <Compile Include="EditDistance.fs" />
+    <Compile Include="SuggestionBuffer.fs" />
+    <Compile Include="FsiTests.fs" />
+    <Compile Include="ByteMemoryTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+</Project>

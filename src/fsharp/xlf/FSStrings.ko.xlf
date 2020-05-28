@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../FSStrings.resx">
     <body>
+      <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
+        <source>symbol '..^'</source>
+        <target state="translated">기호 '..^'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">{0}도 참조하세요.</target>
@@ -63,23 +68,13 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">일반적으로 대문자 변수 식별자는 패턴에 사용하지 말아야 합니다. 이러한 식별자는 철자가 잘못된 패턴 이름을 나타낼 수 있습니다.</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="needs-review-translation">일반적으로 대문자 변수 식별자는 패턴에 사용하지 말아야 합니다. 이러한 식별자는 철자가 잘못된 패턴 이름을 나타낼 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">구분된 공용 구조체 케이스 및 예외 레이블은 대문자로 된 식별자여야 합니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">가능한 오버로드: '{0}'. {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\n가능한 최적의 오버로드: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -254,7 +249,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.GREATER">
         <source>symbol ':&gt;'</source>
-        <target state="translated">':&gt;' 기호</target>
+        <target state="translated">기호 ':&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.COLON">
@@ -289,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.QMARK.GREATER">
         <source>symbol ':?&gt;'</source>
-        <target state="translated">':?&gt;' 기호</target>
+        <target state="translated">기호 ':?&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INFIX.STAR.DIV.MOD.OP">
@@ -304,12 +299,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP">
         <source>symbol '&amp;'</source>
-        <target state="translated">'&amp;' 기호</target>
+        <target state="translated">기호 '&amp;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP.AMP">
         <source>symbol '&amp;&amp;'</source>
-        <target state="translated">'&amp;&amp;' 기호</target>
+        <target state="translated">기호 '&amp;&amp;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.BAR">
@@ -319,12 +314,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LESS">
         <source>symbol '&lt;'</source>
-        <target state="translated">'&lt;' 기호</target>
+        <target state="translated">기호 '&lt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER">
         <source>symbol '&gt;'</source>
-        <target state="translated">'&gt;' 기호</target>
+        <target state="translated">기호 '&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.QMARK">
@@ -364,7 +359,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.TYAPP">
         <source>type application </source>
-        <target state="translated">형식 적용 </target>
+        <target state="translated">형식 적용</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON">
@@ -379,7 +374,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LARROW">
         <source>symbol '&lt;-'</source>
-        <target state="translated">'&lt;-' 기호</target>
+        <target state="translated">기호 '&lt;-'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.EQUALS">
@@ -389,7 +384,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.BAR.RBRACK">
         <source>symbol '&gt;|]'</source>
-        <target state="translated">'&gt;|]' 기호</target>
+        <target state="translated">기호 '&gt;|]'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.MINUS">
@@ -474,7 +469,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACK.LESS">
         <source>symbol '[&lt;'</source>
-        <target state="translated">'[&lt;' 기호</target>
+        <target state="translated">기호 '[&lt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE">
@@ -484,7 +479,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.LESS">
         <source>symbol '{&lt;'</source>
-        <target state="translated">'{&lt;' 기호</target>
+        <target state="translated">기호 '{&lt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACK">
@@ -494,12 +489,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.RBRACE">
         <source>symbol '&gt;}'</source>
-        <target state="translated">'&gt;}' 기호</target>
+        <target state="translated">기호 '&gt;}'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.RBRACK">
         <source>symbol '&gt;]'</source>
-        <target state="translated">'&gt;]' 기호</target>
+        <target state="translated">기호 '&gt;]'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RQUOTE">
@@ -694,7 +689,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RARROW">
         <source>symbol '-&gt;'</source>
-        <target state="translated">'-&gt;' 기호</target>
+        <target state="translated">기호 '-&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.SIG">
@@ -795,6 +790,11 @@
       <trans-unit id="Parser.TOKEN.MATCH">
         <source>keyword 'match'</source>
         <target state="translated">'match' 키워드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH.BANG">
+        <source>keyword 'match!'</source>
+        <target state="translated">'match!' 키워드</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.MUTABLE">
@@ -1284,7 +1284,7 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
         <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">이 식의 결과는 ‘{0}’ 형식이며 암시적으로 무시됩니다. 'ignore'를 사용하여 이 값을 명시적으로 버리거나(예: 'expr |&gt; ignore'), 'let'을 사용하여 결과를 이름에 바인딩하세요(예: 'let result = expr').</target>
+        <target state="translated">이 식의 결과는 '{0}' 형식이며 암시적으로 무시됩니다. 'ignore'를 사용하여 이 값을 명시적으로 버리거나(예: 'expr |&gt; ignore'), 'let'을 사용하여 결과를 이름에 바인딩하세요(예: 'let result = expr').</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
@@ -1294,17 +1294,17 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">이 같음 식의 결과는 ‘{0}’ 형식이며 암시적으로 삭제됩니다. 결과를 이름에 바인딩하려면 'let'을 사용하세요(예: 'let result = expression'). 값을 속성으로 설정하려면 '&lt;-' 연산자를 사용하세요(예: '{1}.{2} &lt;- expression').</target>
+        <target state="translated">이 같음 식의 결과는 '{0}' 형식이며 암시적으로 삭제됩니다. 결과를 이름에 바인딩하려면 'let'을 사용하세요(예: 'let result = expression'). 값을 속성으로 설정하려면 '&lt;-' 연산자를 사용하세요(예: '{1}.{2} &lt;- expression').</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">이 같음 식의 결과는 ‘{0}’ 형식이며 암시적으로 삭제됩니다. 결과를 이름에 바인딩하려면 'let'을 사용하세요(예: 'let result = expression'). 값을 변경하려면 값을 'mutable'로 표시하고 '&lt;-' 연산자를 사용하세요(예: '{1} &lt;- expression').</target>
+        <target state="translated">이 같음 식의 결과는 '{0}' 형식이며 암시적으로 삭제됩니다. 결과를 이름에 바인딩하려면 'let'을 사용하세요(예: 'let result = expression'). 값을 변경하려면 값을 'mutable'로 표시하고 '&lt;-' 연산자를 사용하세요(예: '{1} &lt;- expression').</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">이 같음 식의 결과는 ‘{0}’ 형식이며 암시적으로 삭제됩니다. 결과를 이름에 바인딩하려면 'let'을 사용하세요(예: 'let result = expression'). 값을 변경하려면 '&lt;-' 연산자를 사용하세요(예: '{1} &lt;- expression').</target>
+        <target state="translated">이 같음 식의 결과는 '{0}' 형식이며 암시적으로 삭제됩니다. 결과를 이름에 바인딩하려면 'let'을 사용하세요(예: 'let result = expression'). 값을 변경하려면 '&lt;-' 연산자를 사용하세요(예: '{1} &lt;- expression').</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
@@ -1449,7 +1449,7 @@
       </trans-unit>
       <trans-unit id="Obsolete2">
         <source>. {0}</source>
-        <target state="translated">{0}</target>
+        <target state="translated">. {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="Experimental">
@@ -1610,6 +1610,21 @@
       <trans-unit id="TargetInvocationExceptionWrapper">
         <source>internal error: {0}</source>
         <target state="translated">내부 오류: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.BAR">
+        <source>symbol '{|'</source>
+        <target state="translated">기호 '{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACE">
+        <source>symbol '|}'</source>
+        <target state="translated">기호 '|}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="translated">키워드 'and!'</target>
         <note />
       </trans-unit>
     </body>

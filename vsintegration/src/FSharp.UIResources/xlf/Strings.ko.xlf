@@ -7,6 +7,31 @@
         <target state="translated">항상 최상위에 open 문 배치</target>
         <note />
       </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="translated">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="translated">선 위가 아니라 오른쪽에 주석 표시</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Enable CodeLens (Experimental)</source>
+        <target state="translated">CodeLens 사용(실험적)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="translated">주석 접두사</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="translated">주석에서 색 사용</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">코드 수정 사항</target>
@@ -15,6 +40,11 @@
       <trans-unit id="Completion_Lists">
         <source>Completion Lists</source>
         <target state="translated">완성 목록</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="translated">진단</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -58,8 +88,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Project_check_cache_size">
-        <source>Project check cache size</source>
-        <target state="translated">프로젝트 검사 캐시 크기</target>
+        <source>Number of projects whose data is cached in memory</source>
+        <target state="translated">메모리에 데이터가 캐시된 프로젝트 수</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -75,6 +105,11 @@
       <trans-unit id="Solid_underline">
         <source>_Solid underline</source>
         <target state="translated">실선 밑줄(_S)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="translated">텍스트 호버</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -103,8 +138,68 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
-        <source>Show outlining and collapsable nodes for F# code</source>
+        <source>Show outlining and collapsible nodes for F# code</source>
         <target state="translated">F# 코드에 대한 개요 및 축소 가능한 노드 표시</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Time_until_stale_completion">
+        <source>Time until stale results are used (in milliseconds)</source>
+        <target state="translated">부실 결과가 사용될 때까지 시간(밀리초)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSense_Performance">
+        <source>IntelliSense Performance Options</source>
+        <target state="translated">IntelliSense 성능 옵션</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project_Performance">
+        <source>F# Project and Caching Performance Options</source>
+        <target state="translated">F# 프로젝트 및 캐싱 성능 옵션</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Stale_IntelliSense_Results">
+        <source>Enable stale data for IntelliSense features</source>
+        <target state="translated">IntelliSense 기능에 대해 부실 데이터 사용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_in_memory_cross_project_references">
+        <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
+        <target state="translated">메모리 내 크로스 프로젝트 참조가 메모리에 프로젝트 수준 데이터를 저장하여 IDE 기능이 프로젝트에서 작동하도록 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Tooltip_project_check_cache_size">
+        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
+        <target state="translated">프로젝트 데이터가 IDE 기능에 대해 캐시됩니다. 값이 클수록 프로제트가 더 많이 캐시되므로 메모리를 더 많이 사용합니다. 이 값을 조정해도 중소 규모 솔루션에 영향을 미치지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_always">
+        <source>Always add new line on enter</source>
+        <target state="translated">입력 시 새 줄 항상 추가</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_never">
+        <source>Never add new line on enter</source>
+        <target state="translated">입력 시 새 줄 추가 안 함</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_key_only">
+        <source>Only add new line on enter after end of fully typed word</source>
+        <target state="translated">단어를 모두 입력하고 &lt;Enter&gt; 키를 누르면 새 줄 추가</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enter_Key_Rule">
+        <source>Enter key behavior</source>
+        <target state="translated">키 동작 입력</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Format_on_paste">
+        <source>Re-format indentation on paste</source>
+        <target state="translated">붙여넣을 때 들여쓰기 서식 다시 지정</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Suggest_names_for_errors_code_fix">
+        <source>Suggest names for unresolved identifiers</source>
+        <target state="translated">확인되지 않은 식별자의 이름 제안</target>
         <note />
       </trans-unit>
     </body>

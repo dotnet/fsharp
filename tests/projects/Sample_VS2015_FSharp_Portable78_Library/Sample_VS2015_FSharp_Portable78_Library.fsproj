@@ -39,7 +39,7 @@
     <Reference Include="FSharp.Core">
       <Name>FSharp.Core</Name>
       <AssemblyName>FSharp.Core.dll</AssemblyName>
-      <HintPath>..\..\..\packages\Microsoft.Portable.FSharp.Core.$(FSharpCoreFrozenPortablePackageVersion)\lib\profiles\portable-net45+netcore45+wp8\FSharp.Core.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.Portable.FSharp.Core.10.1.0\lib\profiles\portable-net45+netcore45+wp8\FSharp.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+// NOTE: the code in this file is a drop-in replacement runtime for Parsing.fsi from the FsLexYacc repository
+
 namespace Internal.Utilities.Text.Parsing
+
 open Internal.Utilities
 open Internal.Utilities.Text.Lexing
 
@@ -8,22 +11,31 @@ open System.Collections.Generic
 
 [<Sealed>]
 type internal IParseState = 
+
     /// Get the start and end position for the terminal or non-terminal at a given index matched by the production.
     member InputRange: index:int -> Position * Position
+
     /// Get the end position for the terminal or non-terminal at a given index matched by the production.
     member InputEndPosition: int -> Position 
+
     /// Get the start position for the terminal or non-terminal at a given index matched by the production.
     member InputStartPosition: int -> Position 
+
     /// Get the start of the range of positions matched by the production.
     member ResultStartPosition: Position
+
     /// Get the end of the range of positions matched by the production.
     member ResultEndPosition: Position 
+
     /// Get the full range of positions matched by the production.
     member ResultRange: Position * Position
+
     /// Get the value produced by the terminal or non-terminal at the given position.
     member GetInput   : int -> obj 
+
     /// Raise an error in this parse context.
     member RaiseError<'b> : unit -> 'b 
+
     /// Return the LexBuffer for this parser instance.
     member LexBuffer : LexBuffer<char>
 
@@ -33,16 +45,22 @@ type internal IParseState =
 type internal ParseErrorContext<'tok> =
       /// The stack of state indexes active at the parse error .
       member StateStack  : int list
+
       /// The state active at the parse error.
       member ParseState : IParseState
+
       /// The tokens that would cause a reduction at the parse error.
       member ReduceTokens: int list
+
       /// The stack of productions that would be reduced at the parse error.
       member ReducibleProductions : int list list
+
       /// The token that caused the parse error.
       member CurrentToken : 'tok option
+
       /// The token that would cause a shift at the parse error.
       member ShiftTokens : int list
+
       /// The message associated with the parse error.
       member Message : string
 
@@ -51,35 +69,50 @@ type internal ParseErrorContext<'tok> =
 type internal Tables<'tok> = 
     { 
       /// The reduction table.
-      reductions: (IParseState -> obj) array ;
+      reductions: (IParseState -> obj)[] 
+
       /// The token number indicating the end of input.
-      endOfInputTag: int;
+      endOfInputTag: int
+
       /// A function to compute the tag of a token.
-      tagOfToken: 'tok -> int;
+      tagOfToken: 'tok -> int
+
       /// A function to compute the data carried by a token.
-      dataOfToken: 'tok -> obj; 
+      dataOfToken: 'tok -> obj 
+
       /// The sparse action table elements.
-      actionTableElements: uint16[];
+      actionTableElements: uint16[]
+
       /// The sparse action table row offsets.
-      actionTableRowOffsets: uint16[];
+      actionTableRowOffsets: uint16[]
+
       /// The number of symbols for each reduction.
-      reductionSymbolCounts: uint16[];
+      reductionSymbolCounts: uint16[]
+
       /// The immediate action table.
-      immediateActions: uint16[];      
+      immediateActions: uint16[]      
+
       /// The sparse goto table.
-      gotos: uint16[];
+      gotos: uint16[]
+
       /// The sparse goto table row offsets.
-      sparseGotoTableRowOffsets: uint16[];
+      sparseGotoTableRowOffsets: uint16[]
+
       /// The sparse table for the productions active for each state.
-      stateToProdIdxsTableElements: uint16[];  
+      stateToProdIdxsTableElements: uint16[]  
+
       /// The sparse table offsets for the productions active for each state.
-      stateToProdIdxsTableRowOffsets: uint16[];  
+      stateToProdIdxsTableRowOffsets: uint16[]  
+
       /// This table is logically part of the Goto table.
-      productionToNonTerminalTable: uint16[];
+      productionToNonTerminalTable: uint16[]
+
       /// This function is used to hold the user specified "parse_error" or "parse_error_rich" functions.
-      parseError:  ParseErrorContext<'tok> -> unit;
+      parseError:  ParseErrorContext<'tok> -> unit
+
       /// The total number of terminals.
-      numTerminals: int;
+      numTerminals: int
+
       /// The tag of the error terminal.
       tagOfErrorTerminal: int }
 
@@ -89,6 +122,7 @@ type internal Tables<'tok> =
 
 /// Indicates an accept action has occurred.
 exception internal Accept of obj
+
 /// Indicates a parse error has occurred and parse recovery is in progress.
 exception internal RecoverableParseError
 
@@ -99,8 +133,10 @@ module internal Flags =
 
 /// Helpers used by generated parsers.
 module internal ParseHelpers = 
+
    /// The default implementation of the parse_error_rich function.
    val parse_error_rich: (ParseErrorContext<'tok> -> unit) option
+
    /// The default implementation of the parse_error function.
    val parse_error: string -> unit
 

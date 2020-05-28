@@ -2,22 +2,23 @@
 
 /// Logic associated with checking "ObsoleteAttribute" and other attributes 
 /// on items from name resolution
-module internal Microsoft.FSharp.Compiler.AttributeChecking
+module internal FSharp.Compiler.AttributeChecking
 
+open System
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal.Library
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler 
+open FSharp.Compiler.Range
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Infos
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
 
@@ -52,7 +53,7 @@ let rec private evalILAttribElem e =
 
 let rec private evalFSharpAttribArg g e = 
     match e with
-    | Expr.Const(c, _, _) -> 
+    | Expr.Const (c, _, _) -> 
         match c with 
         | Const.Bool b -> box b
         | Const.SByte i  -> box i
@@ -246,30 +247,37 @@ let MethInfoHasAttribute g m attribSpec minfo  =
         |> Option.isSome
 
 
-
 /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
-let private CheckILAttributes (g: TcGlobals) cattrs m = 
-    let (AttribInfo(tref, _)) = g.attrib_SystemObsolete
+let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m = 
+    let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
     match TryDecodeILAttribute g tref cattrs with 
-    | Some ([ILAttribElem.String (Some msg) ], _) -> 
+    | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef -> 
             WarnD(ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) -> 
+    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef  -> 
         if isError then 
             ErrorD (ObsoleteError(msg, m))
         else 
             WarnD (ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String None ], _) -> 
+    | Some ([ILAttribElem.String None ], _) when not isByrefLikeTyconRef -> 
         WarnD(ObsoleteWarning("", m))
-    | Some _ -> 
+    | Some _ when not isByrefLikeTyconRef -> 
         WarnD(ObsoleteWarning("", m))
-    | None -> 
+    | _ -> 
         CompleteD
+
+let langVersionPrefix = "--langversion:preview"
 
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
-let CheckFSharpAttributes g attribs m = 
-    if isNil attribs then CompleteD 
-    else 
+let CheckFSharpAttributes (g:TcGlobals) attribs m =
+    let isExperimentalAttributeDisabled (s:string) =
+        if g.compilingFslib then
+            true
+        else
+            g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
+
+    if isNil attribs then CompleteD
+    else
         (match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
         | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) ->
             WarnD(ObsoleteWarning(s, m))
@@ -283,28 +291,30 @@ let CheckFSharpAttributes g attribs m =
         | None -> 
             CompleteD
         ) ++ (fun () -> 
-            
+
         match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-        | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) -> 
+        | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) ->
             let msg = UserCompilerMessage(s, n, m)
             let isError = 
                 match namedArgs with 
                 | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
                 | _ -> false 
-            if isError then ErrorD msg else WarnD msg
-                 
+            if isError && (not g.compilingFslib || n <> 1204) then ErrorD msg else WarnD msg
         | _ -> 
             CompleteD
         ) ++ (fun () -> 
-            
+
         match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
-        | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) -> 
-            WarnD(Experimental(s, m))
-        | Some _ -> 
+        | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) ->
+            if isExperimentalAttributeDisabled s then
+                CompleteD
+            else
+                WarnD(Experimental(s, m))
+        | Some _ ->
             WarnD(Experimental(FSComp.SR.experimentalConstruct (), m))
-        | _ ->  
+        | _ ->
             CompleteD
-        ) ++ (fun () -> 
+        ) ++ (fun () ->
 
         match TryFindFSharpAttribute g g.attrib_UnverifiableAttribute attribs with
         | Some _ -> 
@@ -374,7 +384,7 @@ let CheckProvidedAttributesForUnseen (provAttribs: Tainted<IProvidedCustomAttrib
 /// Check the attributes associated with a property, returning warnings and errors as data.
 let CheckPropInfoAttributes pinfo m = 
     match pinfo with
-    | ILProp(ILPropInfo(_, pdef)) -> CheckILAttributes pinfo.TcGlobals pdef.CustomAttrs m
+    | ILProp(ILPropInfo(_, pdef)) -> CheckILAttributes pinfo.TcGlobals false pdef.CustomAttrs m
     | FSProp(g, _, Some vref, _) 
     | FSProp(g, _, _, Some vref) -> CheckFSharpAttributes g vref.Attribs m
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"
@@ -389,7 +399,7 @@ let CheckPropInfoAttributes pinfo m =
 let CheckILFieldAttributes g (finfo:ILFieldInfo) m = 
     match finfo with 
     | ILFieldInfo(_, pd) -> 
-        CheckILAttributes g pd.CustomAttrs m |> CommitOperationResult
+        CheckILAttributes g false pd.CustomAttrs m |> CommitOperationResult
 #if !NO_EXTENSIONTYPING
     | ProvidedField (amap, fi, m) -> 
         CheckProvidedAttributes amap.g m (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) |> CommitOperationResult
@@ -399,7 +409,7 @@ let CheckILFieldAttributes g (finfo:ILFieldInfo) m =
 let CheckMethInfoAttributes g m tyargsOpt minfo = 
     let search = 
         BindMethInfoAttributes m minfo 
-            (fun ilAttribs -> Some(CheckILAttributes g ilAttribs m)) 
+            (fun ilAttribs -> Some(CheckILAttributes g false ilAttribs m)) 
             (fun fsAttribs -> 
                 let res = 
                     CheckFSharpAttributes g fsAttribs m ++ (fun () -> 
@@ -419,7 +429,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo =
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
 /// Used to suppress the item in intellisense.
-let MethInfoIsUnseen g m typ minfo = 
+let MethInfoIsUnseen g m ty minfo = 
     let isUnseenByObsoleteAttrib () = 
         match BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributesForUnseen g ilAttribs m)) 
@@ -435,10 +445,10 @@ let MethInfoIsUnseen g m typ minfo =
 
     let isUnseenByHidingAttribute () = 
 #if !NO_EXTENSIONTYPING
-        not (isObjTy g typ) &&
-        isAppTy g typ &&
+        not (isObjTy g ty) &&
+        isAppTy g ty &&
         isObjTy g minfo.ApparentEnclosingType &&
-        let tcref = tcrefOfAppTy g typ 
+        let tcref = tcrefOfAppTy g ty 
         match tcref.TypeReprInfo with 
         | TProvidedTypeExtensionPoint info -> 
             info.ProvidedType.PUntaint((fun st -> (st :> IProvidedCustomAttributeProvider).GetHasTypeProviderEditorHideMethodsAttribute(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))), m)
@@ -449,16 +459,16 @@ let MethInfoIsUnseen g m typ minfo =
         // We are only interested in filtering out the method on System.Object, so it is sufficient
         // just to look at the attributes on IL methods.
         if tcref.IsILTycon then 
-                tcref.ILTyconRawMetadata.CustomAttrs.AsList 
-                |> List.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
+                tcref.ILTyconRawMetadata.CustomAttrs.AsArray 
+                |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
         else 
             false
 #else
-        typ |> ignore
+        ty |> ignore
         false
 #endif
 
-    //let isUnseenByBeingTupleMethod () = isAnyTupleTy g typ
+    //let isUnseenByBeingTupleMethod () = isAnyTupleTy g ty
 
     isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute () //|| isUnseenByBeingTupleMethod ()
 
@@ -481,7 +491,7 @@ let PropInfoIsUnseen m pinfo =
 /// Check the attributes on an entity, returning errors and warnings as data.
 let CheckEntityAttributes g (x:TyconRef) m = 
     if x.IsILTycon then 
-        CheckILAttributes g x.ILTyconRawMetadata.CustomAttrs m
+        CheckILAttributes g (isByrefLikeTyconRef g m x) x.ILTyconRawMetadata.CustomAttrs m
     else 
         CheckFSharpAttributes g x.Attribs m
 
@@ -511,15 +521,15 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
     | None -> false
     | Some attr ->
         match attr.TyconRef.TryDeref with
-        | VSome _ -> 
+        | ValueSome _ -> 
             let tcs = tcref.Stamp
-            match casmap.TryGetValue(tcs) with
+            match casmap.TryGetValue tcs with
             | true, c -> c
             | _ ->
                 let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
                 casmap.[tcs] <- exists
                 exists
-        | VNone -> false  
+        | ValueNone -> false  
 
 let IsSecurityCriticalAttribute g (Attrib(tcref, _, _, _, _, _, _)) =
     (tyconRefEq g tcref g.attrib_SecurityCriticalAttribute.TyconRef || tyconRefEq g tcref g.attrib_SecuritySafeCriticalAttribute.TyconRef)

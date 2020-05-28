@@ -42,7 +42,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="FSharp.Core">
-      <HintPath>..\..\..\..\..\packages\Microsoft.Portable.FSharp.Core.$(FSharpCoreFrozenPortablePackageVersion)\lib\profiles\net40\FSharp.Core.dll</HintPath>
+      <HintPath>..\..\..\..\..\packages\Microsoft.Portable.FSharp.Core.10.1.0\lib\profiles\net40\FSharp.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="FSharp.Configuration">

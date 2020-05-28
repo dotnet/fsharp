@@ -4,7 +4,7 @@
 // The with/end tokens can be omitted when using the #light syntax option as long as the 
 // type-defn-elements vertically aligns with the first ‘|’ in the  union-cases
 // Regression test for FSHARP1.0:3707
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 (* extra space *) type Message = 

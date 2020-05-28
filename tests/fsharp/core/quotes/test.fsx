@@ -1,10 +1,10 @@
-﻿// #Conformance #Quotations #Interop #Classes #ObjectConstructors #Attributes #Reflection 
+﻿// #Conformance #Quotations #Interop #Classes #ObjectConstructors #Attributes #Reflection #ComputationExpression
 #if TESTS_AS_APP
 module Core_quotes
 #endif
 #light
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETCOREAPP
 #r "cslib.dll"
 #endif
 
@@ -352,7 +352,7 @@ module TypedTest = begin
     test "check  PropertyGet (static)" ((<@ System.DateTime.Now @> |> (function PropertyGet(None,_,[]) -> true | _ -> false))) 
     test "check  PropertyGet (instance)" ((<@ ("1").Length @> |> (function PropertyGet(Some(String("1")),_,[]) -> true | _ -> false))) 
 
-#if !NETCOREAPP1_0
+#if !NETCOREAPP
     test "check  PropertySet (static)" ((<@ System.Environment.ExitCode <- 1 @> |> (function PropertySet(None,_,[],Int32(1)) -> true | _ -> false))) 
 #endif
     test "check  PropertySet (instance)" ((<@ ("1").Length @> |> (function PropertyGet(Some(String("1")),_,[]) -> true | _ -> false))) 
@@ -543,7 +543,7 @@ module TypedTest = begin
             |   _ -> false
         end
 
-#if !FSHARP_CORE_31 && !TESTS_AS_APP && !NETCOREAPP1_0
+#if !FSHARP_CORE_31 && !TESTS_AS_APP && !NETCOREAPP
     test "check accesses to readonly fields in ReflectedDefinitions" 
         begin
             let c1 = Class1("a")
@@ -1681,7 +1681,7 @@ module QuotationConstructionTests =
     check "vcknwwe066" (try let _ = Expr.PropertyGet(getof <@@ System.DateTime.Now @@>,[ <@@ 1 @@> ]) in false with :? ArgumentException -> true) true
     check "vcknwwe077" (Expr.PropertyGet(<@@ "3" @@>, getof <@@ "1".Length @@>)) <@@ "3".Length @@>
     check "vcknwwe088" (Expr.PropertyGet(<@@ "3" @@>, getof <@@ "1".Length @@>,[  ])) <@@ "3".Length @@>
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETCOREAPP
     check "vcknwwe099" (Expr.PropertySet(<@@ (new System.Windows.Forms.Form()) @@>, setof <@@ (new System.Windows.Forms.Form()).Text <- "2" @@>, <@@ "3" @@> )) <@@ (new System.Windows.Forms.Form()).Text <- "3" @@>
 #endif
     check "vcknwwe099" (Expr.PropertySet(<@@ (new Foo()) @@>, setof <@@ (new Foo()).[3] <- 1 @@>, <@@ 2 @@> , [ <@@ 3 @@> ] )) <@@ (new Foo()).[3] <- 2 @@>
@@ -2007,7 +2007,6 @@ module TestQuotationOfCOnstructors =
                 
         | _ -> false)
 
-#if !FX_RESHAPED_REFLECTION
     // Also test getting the reflected definition for private members implied by "let f() = ..." bindings
     let fMethod = (typeof<MyClassWithAsLetMethod>.GetMethod("f", Reflection.BindingFlags.Instance ||| Reflection.BindingFlags.Public ||| Reflection.BindingFlags.NonPublic))
 
@@ -2020,9 +2019,7 @@ module TestQuotationOfCOnstructors =
             -> unitVar.Type = typeof<unit>
         | _ -> false)
 
-    
     Expr.TryGetReflectedDefinition fMethod |> printfn "%A"
-#endif
 
     test "vkjnkvrw0"
        (match Expr.TryGetReflectedDefinition (typeof<MyClassWithNoFields>.GetConstructors().[0]) with 
@@ -2303,7 +2300,7 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
    module M = 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       type R = { x:int; y:string; z:System.DateTime }
-#if NETCOREAPP1_0
+#if NETCOREAPP
       for m in typeof<R>.GetMethods() do 
 #else
       for m in typeof<R>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
@@ -2312,32 +2309,20 @@ module ReflectedDefinitionOnTypesWithImplicitCodeGen =
 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       type U = A of int | B of string | C of System.DateTime 
-#if FX_RESHAPED_REFLECTION
-      for m in typeof<R>.GetMethods() do 
-#else
       for m in typeof<U>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
-#endif
           check "celnwer33" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
       // This type has some implicit codegen
       exception X of string * int
-#if FX_RESHAPED_REFLECTION
-      for m in typeof<R>.GetMethods() do 
-#else
       for m in typeof<X>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
-#endif
           check "celnwer34" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
       // This type has an implicit IComparable implementation, it is not accessible as a reflected definition
       [<Struct>] type SR = { x:int; y:string; z:System.DateTime }
-#if FX_RESHAPED_REFLECTION
-      for m in typeof<SR>.GetMethods() do 
-#else
       for m in typeof<SR>.GetMethods(System.Reflection.BindingFlags.DeclaredOnly) do 
-#endif
           check "celnwer35" (Quotations.Expr.TryGetReflectedDefinition(m).IsNone) true
 
-#if !NETCOREAPP1_0
+#if !NETCOREAPP
 module BasicUsingTEsts = 
     let q1() = 
       let a = ResizeArray<_>()
@@ -3152,12 +3137,33 @@ module TestFuncNoArgs =
         check "clew0mmlvew" (foo.ToString()) "() => new SomeType()"
 
     testFunc2()
-    
 
-#if !FX_RESHAPED_REFLECTION
+module TestMatchBang =
+    let myAsync = async {
+        do! Async.Sleep 1
+        return Some 42 }
+
+    /// Unpacks code quotations containing computation expressions (CE)
+    let (|CEDelay|CEBind|Expr|) expr =
+        match expr with
+        | Application (Lambda (_, Call (_, mDelay, [Lambda (_, innerExpr)])), _) when mDelay.Name = "Delay" -> CEDelay innerExpr
+        | Call (_, mBind, [_; Lambda (_, innerExpr)]) when mBind.Name = "Bind" -> CEBind innerExpr
+        | _ -> Expr expr
+
+    let testSimpleMatchBang() =
+        let quot1 = <@ async { match! myAsync with | Some (x: int) -> () | None -> () } @>
+        check "matchbangquot1"
+            (match quot1 with
+            | CEDelay(CEBind(IfThenElse expr)) -> Ok ()
+            | CEDelay(CEBind(expr)) -> Error "if statement (representing `match`) is missing"
+            | CEDelay(expr) -> Error "Bind is incorrect"
+            | expr -> Error "Delay is incorrect")
+            (Ok ())
+
+    testSimpleMatchBang()
+
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
-#endif
 
 #if TESTS_AS_APP
 let RUN() = !failures

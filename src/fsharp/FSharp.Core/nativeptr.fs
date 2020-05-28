@@ -26,6 +26,14 @@ module NativePtr =
     let inline toNativeInt (address: nativeptr<'T>) = (# "" address : nativeint    #)
 
     [<NoDynamicInvocation>]
+    [<CompiledName("ToVoidPtrInlined")>]
+    let inline toVoidPtr (address: nativeptr<'T>) = (# "" address : voidptr #)
+
+    [<NoDynamicInvocation>]
+    [<CompiledName("OfVoidPtrInlined")>]
+    let inline ofVoidPtr (address: voidptr) = (# "" address : nativeptr<'T> #)
+
+    [<NoDynamicInvocation>]
     [<CompiledName("AddPointerInlined")>]
     let inline add (address : nativeptr<'T>) (index:int) : nativeptr<'T> = toNativeInt address + nativeint index * (# "sizeof !0" type('T) : nativeint #) |> ofNativeInt
     

@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Unions 
 // RegressionTest for bug 6308 
-//<Expects status="error" id="FS1219" span="(7,7-7,19)">The union case named 'Tags' conflicts with the generated type 'Tags'</Expects>
+//<Expects status="error" id="FS1219" span="(7,7-7,11)">The union case named 'Tags' conflicts with the generated type 'Tags'</Expects>
 [<DefaultAugmentation(false)>]
 type BigUnion2 = 
     | Case0

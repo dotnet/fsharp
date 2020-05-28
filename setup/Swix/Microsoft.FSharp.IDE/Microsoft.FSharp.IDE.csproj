@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SwrProperty Include="SetupResourcesDir=$(MSBuildThisFileDirectory)..\..\resources" />
+    <SwrProperty Include="VsixVersion=$(VsixVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <SwrFile Include="Package.swr" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_Dependency Include="FSharp.Build" Version="$(FSProductVersion)" />
+    <_Dependency Include="FSharp.Compiler.Interactive.Settings" Version="$(FSProductVersion)" />
+    <_Dependency Include="FSharp.Compiler.Private" Version="$(FSProductVersion)" />
+    <_Dependency Include="Microsoft.DotNet.DependencyManager" Version="$(FSProductVersion)" />
+    <_Dependency Include="FSharp.DependencyManager.Nuget" Version="$(FSProductVersion)" />
+    <_Dependency Include="FSharp.Compiler.Server.Shared" Version="$(FSProductVersion)" />
+    <_Dependency Include="FSharp.Core" Version="$(FSCoreVersion)" />
+    <_Dependency Include="FSharp.Editor" Version="$(VSAssemblyVersion)" />
+    <_Dependency Include="FSharp.LanguageService.Base" Version="$(VSAssemblyVersion)" />
+    <_Dependency Include="FSharp.LanguageService" Version="$(VSAssemblyVersion)" />
+    <_Dependency Include="FSharp.PatternMatcher" Version="$(VSAssemblyVersion)" />
+    <_Dependency Include="FSharp.ProjectSystem.Base" Version="$(VSAssemblyVersion)" />
+    <_Dependency Include="FSharp.ProjectSystem.FSharp" Version="$(VSAssemblyVersion)" />
+    <_Dependency Include="FSharp.ProjectSystem.PropertyPages" Version="$(VSAssemblyVersion)" />
+    <_Dependency Include="FSharp.UIResources" Version="$(VSAssemblyVersion)" />
+    <_Dependency Include="FSharp.VS.FSI" Version="$(VSAssemblyVersion)" />
+  </ItemGroup>
+
+  <Target Name="GenerateDependentAssemblyVersions"
+          AfterTargets="Build">
+    <PropertyGroup>
+      <DevDivPackagesDir>$(InsertionDir)\DevDivPackages</DevDivPackagesDir>
+      <DependentAssemblyVersionsFile>$(DevDivPackagesDir)\DependentAssemblyVersions.csv</DependentAssemblyVersionsFile>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(DevDivPackagesDir)" />
+    <WriteLinesToFile Lines="@(_Dependency->'%(Identity),%(Version)')" File="$(DependentAssemblyVersionsFile)" Overwrite="true" />
+
+    <ItemGroup>
+      <FileWrites Include="$(DependentAssemblyVersionsFile)" />
+    </ItemGroup>
+  </Target>
+
+</Project>

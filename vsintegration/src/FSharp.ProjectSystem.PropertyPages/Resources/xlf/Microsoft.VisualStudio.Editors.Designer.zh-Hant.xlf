@@ -315,7 +315,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupFormLabelText">
         <source>Startup f&amp;orm:</source>
-        <target state="translated">啟動表單(&amp;O):</target>
+        <target state="translated">起始形式(&amp;O):</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
@@ -452,7 +452,7 @@ Changing this setting will reset the settings in all configurations.</source>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_Calculate">
         <source>&amp;Calculate Permissions</source>
-        <target state="translated">計算使用權限(&amp;C)</target>
+        <target state="translated">計算權限(&amp;C)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_MgdStatus_Stopped">
@@ -985,7 +985,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">基底位址必須是少於或等於 8 位數的十六進位數字，例如 &amp;H11000000。</target>
+        <target state="translated">基底位址 (Base Address) 必須是少於或等於 8 位數的十六進位數字，例如 &amp;H11000000。</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -1617,7 +1617,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="RSE_TypeColumn">
         <source>Type</source>
-        <target state="translated">類型</target>
+        <target state="translated">型別</target>
         <note>Column names for the string table</note>
       </trans-unit>
       <trans-unit id="RSE_ResourceColumn">
@@ -1808,7 +1808,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_ImageType">
         <source>Type</source>
-        <target state="translated">類型</target>
+        <target state="translated">型別</target>
         <note>Columns for the "Details" view of the resource editor</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Size">
@@ -1830,7 +1830,6 @@ CONSIDER: get this from CodeDom</note>
         <source>{0} x {1}</source>
         <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
@@ -2233,7 +2232,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_CategiesLabel">
         <source>&amp;Categories:</source>
-        <target state="translated">分類(&amp;C):</target>
+        <target state="translated">類別(&amp;C):</target>
         <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
       </trans-unit>
       <trans-unit id="RSE_PropDesc_Name">
@@ -2344,19 +2343,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">應用程式</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">應用程式 (Web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">使用者</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">使用者 (Web)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2366,7 +2355,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="SD_GridViewTypeColumnHeaderText">
         <source>Type</source>
-        <target state="translated">類型</target>
+        <target state="translated">型別</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewScopeColumnHeaderText">
@@ -2725,7 +2714,7 @@ app.config 檔的新值是 '{1}'
       </trans-unit>
       <trans-unit id="PPG_Application_StartupObjectLabelText">
         <source>Startup &amp;object:</source>
-        <target state="translated">啟始物件(&amp;O):</target>
+        <target state="translated">啟動物件(&amp;O):</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">
@@ -2845,7 +2834,7 @@ app.config 檔的新值是 '{1}'
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">天數</target>
+        <target state="translated">日</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">

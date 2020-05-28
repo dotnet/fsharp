@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items">
         <source>Always</source>
-        <target state="translated">常時</target>
+        <target state="translated">常に行う</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items1">

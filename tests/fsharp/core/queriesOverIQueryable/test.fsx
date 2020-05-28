@@ -142,18 +142,28 @@ module QueryExecutionOverIQueryable =
         (query { let q = query { for i in db -> i.Name } in for v in q do yield v } )  
         "db.Select(_arg1 => _arg1.Name).Select(_arg2 => _arg2)"
 
+    open FSharp.Reflection
+
+    let t = typeof< {| Name1: string; Name2: string |} >
+    check "wkcwe09" (FSharpType.IsRecord t) true
+    check "wkcwe09" (FSharpType.GetRecordFields t |> Array.forall (fun f -> f.CanWrite)) false
+
+//    checkLinqQueryText "ltcjhnwec6" 
+//        (query { for i in db -> {| Name1 = i.Name; Name2 = i.Name |} } )  
+//        "db.Select(_arg1 => _arg1.Name).Select(_arg2 => _arg2)"
+//        "System.Linq.Enumerable+WhereSelectEnumerableIterator`2[Microsoft.FSharp.Linq.RuntimeHelpers.AnonymousObject`2[System.String,System.String],<>f__AnonymousType3691853213`2'[System.String,System.String]].Select(_arg2 => _arg2)"
+
     checkCommuteSeq "cnewnc03nested" 
         (query { let q = query { for i in db -> i.Name } in for v in q do yield v } ) 
         (seq { for i in db -> i.Name })
 
-    //type R = { A : int; B : int }
-    //let db2 = [ { A = 1; B = 2 } ]
-    //let results = query { for (i: MutTup<int,int>) in db2 -> (i,i) }
-
-    //System.Linq.Queryable.GroupBy(
     checkCommuteSeq "cnewnc06y" 
         (query { for i in db do for j in db do yield (i.Name,j.Name)  })  
         (seq   { for i in db do for j in db do yield (i.Name,j.Name)  })
+
+    checkCommuteSeq "cnewnc06y" 
+        (query { for i in db do for j in db do yield {| Name1 = i.Name; Name2 = j.Name |}  })  
+        (seq   { for i in db do for j in db do yield {| Name1 = i.Name; Name2 = j.Name |}  })
 
     checkCommuteSeq "cnewnc06ynested" 
         (query { let q = query { for i in db do for j in db do yield (i.Name,j.Name) } in for v in q do yield v })  
@@ -286,44 +296,10 @@ module QueryExecutionOverIQueryable =
                   take 2 }) 
         ["Don"; "Peter"]
 
-    (*
-    checkCommuteSeq "cnewnc06ya3b" 
-        (query { for i in db do 
-                  yield i.Name
-                  distinct } |> Seq.toList) 
-        ["Don"; "Peter"; "Freddy"; "Freddi"]
-    *)
-
-#if ZIP
-    checkCommuteSeq "cnewnc06ya3c" 
-        (query { for i in [1;2;3;4] do 
-                 zip  [4;3;2;1] into j
-                 yield (i,j) } |> Seq.toList) 
-        [(1, 4); (2, 3); (3, 2); (4, 1)]
-
-    checkCommuteSeq "cnewnc06y43" 
-        (query { for i in [1;2;3;4] do 
-                 zip  [4;3;2;1;0] into j
-                 yield (i,j) } |> Seq.toList) 
-        [(1, 4); (2, 3); (3, 2); (4, 1)]
-
-    checkCommuteSeq "cnewnc06y43b" 
-        (query { for i in [1;2;3;4] do 
-                 zip  [4;3;2] into j
-                 yield (i,j) } |> Seq.toList) 
-        [(1, 4); (2, 3); (3, 2)]
-
-    checkCommuteSeq "cnewnc06y43c" 
-        (query { for i in db do 
-                 zip db into j
-                 yield (i.Name,j.Name.Length) } |> Seq.toList) 
-        [("Don", 3); ("Peter", 5); ("Freddy", 6); ("Freddi", 6); ("Don", 3)]
-
-#endif
-
     checkLinqQueryText "ltcjhnwecd" 
         (query { for i in db do where true; take 3 })  
         "db.Where(i => True).Take(3)"
+
     checkCommuteSeq "cnewnc06yb" 
         (query { for i in db do groupBy i.Name } |> Seq.map (fun g -> (g.Key,Seq.toList g)) |> System.Linq.Queryable.AsQueryable)
         (seq   { for i in db do yield i } |> Seq.groupBy (fun i -> i.Name) |> Seq.map (fun (key,g) -> (key, Seq.toList g)))
@@ -894,8 +870,6 @@ module QueryExecutionOverIQueryable =
         (query { for i in db do groupValBy i i.Name })
         "db.GroupBy(i => i.Name, i => i)"
 
-
-
     checkLinqQueryText "ltcnewnc06yb2x" 
         (query { for i in db do for j in db do groupValBy j i.Name })
         "db.SelectMany(_arg1 => db, (_arg1, _arg2) => new AnonymousObject`2(Item1 = _arg1, Item2 = _arg2)).GroupBy(tupledArg => tupledArg.Item1.Name, tupledArg => tupledArg.Item2)"
@@ -980,9 +954,6 @@ module QueryExecutionOverIQueryable =
                  yield (i.Cost + j.Cost) }) 
         "db.Join(db, i => i.Quantity, j => j.Quantity, (i, j) => new AnonymousObject`2(Item1 = i, Item2 = j)).Select(_arg1 => (_arg1.Item1.Cost + _arg1.Item2.Cost))"
 
-
-
-
     checkLinqQueryText "ltcnewnc06yh9Q5" 
         (query { for i in db do 
                  groupJoin j in db on (i.Name = j.Name) into group
@@ -995,8 +966,6 @@ module QueryExecutionOverIQueryable =
                  groupJoin j in db on (iname = j.Name) into group
                  yield group } ) 
           "db.Select(_arg1 => new AnonymousObject`2(Item1 = _arg1, Item2 = _arg1.Name)).GroupJoin(db, tupledArg => tupledArg.Item2, j => j.Name, (tupledArg, group) => new AnonymousObject`3(Item1 = tupledArg.Item1, Item2 = tupledArg.Item2, Item3 = group)).Select(_arg2 => _arg2.Item3)"
-
-
 
     checkLinqQueryText "ltcnewnc06yh9Q6" 
         (query { for i in db do 
@@ -1027,8 +996,6 @@ module QueryExecutionOverIQueryable =
                  yield group } ) 
         "db.Select(_arg1 => new AnonymousObject`2(Item1 = _arg1, Item2 = _arg1.Name)).GroupJoin(db, tupledArg => tupledArg.Item2, j => j.Name, (tupledArg, group) => new AnonymousObject`3(Item1 = tupledArg.Item1, Item2 = tupledArg.Item2, Item3 = group.DefaultIfEmpty())).Select(_arg2 => _arg2.Item3)"
 
-
-
     check "cnewnc06yh9Q5" 
         (query { for i in db do 
                  groupJoin j in db on (i.Name = j.Name) into group
@@ -1052,10 +1019,6 @@ module QueryExecutionOverIQueryable =
         (query { for i in db do groupJoin j in db on (i.Quantity ?=? j.Quantity) into group; yield group |> Seq.map (fun x -> x.Name) |> Seq.toList } |> Seq.toList) 
         [[]; ["Peter"]; []; ["Freddi"]; []]
 
-
-
-
-
     check "cnewnc06yh9Q5left1" 
         (query { for i in db do 
                  leftOuterJoin j in db on (i.Name = j.Name) into group
@@ -1067,9 +1030,6 @@ module QueryExecutionOverIQueryable =
                  leftOuterJoin j in ["1";"12"] on (i.[0] = j.[0]) into group
                  yield (i, group |> Seq.toList) } |> Seq.toList) 
         [("1", ["1";"12"]); ("2", [null]) ]
-
-
-
 
     // Smoke test for returning a tuple
     checkCommuteSeq "smcnewnc01a" 
@@ -1162,8 +1122,6 @@ module QueryExecutionOverIQueryable =
         (query { for x in db do yield (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16) }) 
         (seq { for x in db do yield (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16) }) 
 
-
-
     // Smoke test for returning a tuple, nested for loops
     checkCommuteSeq "smcnewnc01xx" 
         (query { for x in db do for y in db do yield (1,1) }) 
@@ -1194,11 +1152,9 @@ module QueryExecutionOverIQueryable =
         (query { for x in db do for y in db do yield (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16) }) 
         (seq { for x in db do for y in db do yield (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16) }) 
 
-
     type R1 =  { V1 : int }
     type R7 =  { V1 : int; V2 : int; V3 : int; V4 : int; V5 : int; V6 : int; V7 : int }
     type R8 =  { V1 : int; V2 : int; V3 : int; V4 : int; V5 : int; V6 : int; V7 : int; V8 : int }
-
 
     // Smoke test for returning an immutable record object, size = 1
     checkCommuteSeq "rsmcnewnc01" 
@@ -1262,7 +1218,6 @@ module QueryExecutionOverIQueryable =
         (query { yield { MR8.V1=1; MR8.V2=2; MR8.V3=3; MR8.V4=4; MR8.V5=5; MR8.V6=6; MR8.V7=7; MR8.V8=8 } } |> qmap (fun r -> r.V1, r.V2)) 
         [1,2;]
 
-
     // Smoke test for returning a mutable record object, size = 1
     checkCommuteSeq "mrsmcnewnc01x" 
         (query { for x in db do yield { MR1.V1=1 } } |> qmap (fun r -> r.V1)) 
@@ -1289,6 +1244,37 @@ module QueryExecutionOverIQueryable =
         (seq   { for x in db do yield { MR8.V1=1; MR8.V2=2; MR8.V3=3; MR8.V4=4; MR8.V5=5; MR8.V6=6; MR8.V7=7; MR8.V8=8 } } |> Seq.map (fun r -> r.V1, r.V2)) 
 
 
+    // Smoke test for returning an immutable anonymous record object, size = 1
+    checkCommuteSeq "rsmcnewnc01" 
+        (query { yield {| V1=1 |} } |> Seq.map (fun r -> r.V1) |> System.Linq.Queryable.AsQueryable) 
+        [1;]
+
+    // Smoke test for returning an immutable anonymous record object, size = 7
+    checkCommuteSeq "rsmcnewnc07" 
+        (query { yield {| V1=1; V2=2; V3=3; V4=4; V5=5; V6=6; V7=7 |} } |> qmap (fun r -> r.V1, r.V2) |> System.Linq.Queryable.AsQueryable) 
+        [1,2;]
+
+   // Smoke test for returning an immutable anonymous record object, size = 8
+    checkCommuteSeq "rsmcnewnc08" 
+        (query { yield {| V1=1; V2=2; V3=3; V4=4; V5=5; V6=6; V7=7; V8=8 |} } |> qmap (fun r -> r.V1, r.V2) |> System.Linq.Queryable.AsQueryable) 
+        [1,2;]
+
+
+    // Smoke test for returning an immutable anonymous record object, size = 1
+    checkCommuteSeq "rsmcnewnc01x" 
+        (query { for x in db do yield {| V1=1 |} } |> qmap (fun r -> r.V1)) 
+        (seq { for x in db do yield {| V1=1 |} } |> Seq.map (fun r -> r.V1)) 
+
+    // Smoke test for returning an immutable anonymous record object, size = 7
+    checkCommuteSeq "rsmcnewnc07x" 
+        (query { for x in db do yield {| V1=1; V2=2; V3=3; V4=4; V5=5; V6=6; V7=7 |} } |> qmap (fun r -> r.V1, r.V2) |> System.Linq.Queryable.AsQueryable) 
+        (seq { for x in db do yield {| V1=1; V2=2; V3=3; V4=4; V5=5; V6=6; V7=7 |} } |> Seq.map (fun r -> r.V1, r.V2)) 
+
+    // Smoke test for returning an immutable anonymous record object, size = 8
+    checkCommuteSeq "rsmcnewnc08x" 
+        (query { for x in db do yield {| V1=1; V2=2; V3=3; V4=4; V5=5; V6=6; V7=7; V8=8 |} } |> qmap (fun r -> r.V1, r.V2)) 
+        (seq { for x in db do yield {| V1=1; V2=2; V3=3; V4=4; V5=5; V6=6; V7=7; V8=8 |} } |> Seq.map (fun r -> r.V1, r.V2)) 
+
     // Smoke test for returning an object using property-set notation for member init, size = 8
     type C1() = 
         let mutable v1 = 0
@@ -1301,8 +1287,6 @@ module QueryExecutionOverIQueryable =
     checkCommuteSeq "smcnewnc01x" 
         (query { for x in db do yield C1(V1=1) } |> qmap (fun r -> r.V1)) 
         (seq { for x in db do yield C1(V1=1) } |> Seq.map (fun r -> r.V1)) 
-
-        //<@ C1(V1=1) @>
 
     // Smoke test for returning an object using property-set notation for member init
     type C2() = 
@@ -1351,8 +1335,6 @@ module QueryExecutionOverIQueryable =
         (query { for i in db -> (i, i) }) 
         (seq { for i in db -> (i,i) })
 
-
-
     checkCommuteSeq "smcnewnc022df1" 
        (query { for p in db do
                 groupBy p.Name into g
@@ -1366,9 +1348,6 @@ module QueryExecutionOverIQueryable =
                 let s = query { for a in g do sumBy a.SomeInt16Value }
                 select (g.Key, s) })
         [("Don", 0s); ("Peter", 10s); ("Freddy", 0s); ("Freddi", 32s)]
-
-
-
 
 module QueryExecutionOverIQueryableWhereDataIsRecord =
     open System
@@ -1389,7 +1368,6 @@ module QueryExecutionOverIQueryableWhereDataIsRecord =
 
     let dbEmpty = System.Linq.Queryable.AsQueryable<int>([] |> List.toSeq)
     let dbOne = System.Linq.Queryable.AsQueryable<int>([1] |> List.toSeq)
-
 
     checkCommuteSeq "rrcnewnc01" 
         (query { yield! db }) 

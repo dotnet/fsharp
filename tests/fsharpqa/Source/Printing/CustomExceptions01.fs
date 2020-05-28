@@ -16,7 +16,7 @@ exception WeekendEx of WeekendDay
 if  sprintf "%A" (Foo) <> "Foo"
     || sprintf "%A" (Bar 10) <> "Bar 10"
     || sprintf "%A" (FooBaz System.DateTime.Today) <> ("FooBaz " + System.DateTime.Today.ToString())
-    || sprintf "%A" (MarkupEx {Body = "<body>"}) <> "MarkupEx {Body = \"<body>\";}"
+    || sprintf "%A" (MarkupEx {Body = "<body>"}) <> "MarkupEx { Body = \"<body>\" }"
     || sprintf "%A" (WeekendEx Saturday) <> "WeekendEx Saturday"
 then exit 1
 

@@ -7,8 +7,8 @@ open System
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Salsa.Salsa
 open Salsa
@@ -100,25 +100,6 @@ type UsingMSBuild() =
                                     Assert.Fail(sprintf "Type %s is internal, but also ClassInterface(<something-other-than-none>)" t.FullName)
                             n
                    ) 0
-
-
-    [<Test>]
-    member public this.``PublicSurfaceArea.DotNetReflection``() =
-        let ps = publicTypesInAsm @"FSharp.ProjectSystem.FSharp.dll"
-        Assert.AreEqual(1, ps)  // BuildPropertyDescriptor
-        let ls = publicTypesInAsm @"FSharp.LanguageService.dll"
-        Assert.AreEqual(0, ls)
-        let compis = publicTypesInAsm @"FSharp.Compiler.Interactive.Settings.dll"
-        Assert.AreEqual(4, compis)
-        let compserver = publicTypesInAsm @"FSharp.Compiler.Server.Shared.dll"
-        Assert.AreEqual(0, compserver)
-        let lsbase = publicTypesInAsm @"FSharp.LanguageService.Base.dll"
-        Assert.AreEqual(0, lsbase)
-        let psbase = publicTypesInAsm @"FSharp.ProjectSystem.Base.dll"
-        Assert.AreEqual(19, psbase)
-        let fsi = publicTypesInAsm @"FSharp.VS.FSI.dll"
-        Assert.AreEqual(1, fsi)
-
 
     [<Test>]
     member public this.``ReconcileErrors.Test1``() = 

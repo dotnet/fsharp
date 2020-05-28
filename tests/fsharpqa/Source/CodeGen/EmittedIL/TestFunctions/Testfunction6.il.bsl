@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:4:3:0
 }
 .assembly TestFunction6
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction6
 {
-  // Offset: 0x00000000 Length: 0x000001FD
+  // Offset: 0x00000000 Length: 0x00000205
 }
 .mresource public FSharpOptimizationData.TestFunction6
 {
-  // Offset: 0x00000208 Length: 0x00000088
+  // Offset: 0x00000210 Length: 0x00000088
 }
 .module TestFunction6.exe
-// MVID: {59B19208-6591-8929-A745-03830892B159}
+// MVID: {5B17FC67-6591-8929-A745-038367FC175B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00690000
+// Image base: 0x03360000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -51,7 +51,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable sealed nested assembly beforefieldinit 'f@11-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit f@11
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>
   {
     .method assembly specialname rtspecialname 
@@ -64,7 +64,7 @@
       IL_0000:  ldarg.0
       IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor()
       IL_0006:  ret
-    } // end of method 'f@11-1'::.ctor
+    } // end of method f@11::.ctor
 
     .method public strict virtual instance int32 
             Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar0) cil managed
@@ -86,9 +86,9 @@
       IL_0017:  ldloc.0
       IL_0018:  add
       IL_0019:  ret
-    } // end of method 'f@11-1'::Invoke
+    } // end of method f@11::Invoke
 
-  } // end of class 'f@11-1'
+  } // end of class f@11
 
   .method public static int32  TestFunction1() cil managed
   {
@@ -117,7 +117,7 @@
     .maxstack  5
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32> f)
     .line 100001,100001 : 0,0 ''
-    IL_0000:  newobj     instance void TestFunction6/'f@11-1'::.ctor()
+    IL_0000:  newobj     instance void TestFunction6/f@11::.ctor()
     IL_0005:  stloc.0
     .line 14,14 : 5,14 ''
     IL_0006:  ldloc.0

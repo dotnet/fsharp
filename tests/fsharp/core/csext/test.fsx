@@ -40,7 +40,6 @@ type S(v:int) =
         member x.GetEnumerator() = ((Seq.singleton v).GetEnumerator() :> System.Collections.IEnumerator)
 
 let s : S = S(3)
-
 s.Average()
 
         

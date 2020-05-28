@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net461"
 (**
 Compiler Services: Using the F# tokenizer
 =========================================
@@ -20,7 +20,7 @@ To use the tokenizer, reference `FSharp.Compiler.Service.dll` and open the
 `SourceCodeServices` namespace:
 *)
 #r "FSharp.Compiler.Service.dll"
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 (**
 Now you can create an instance of `FSharpSourceTokenizer`. The class takes two 
 arguments - the first is the list of defined symbols and the second is the
@@ -49,7 +49,7 @@ on the `FSharpSourceTokenizer` object that we created earlier:
 let tokenizer = sourceTok.CreateLineTokenizer("let answer=42")
 (**
 Now, we can write a simple recursive function that calls `ScanToken` on the `tokenizer`
-until it returns `None` (indicating the end of line). When the function suceeds, it 
+until it returns `None` (indicating the end of line). When the function succeeds, it 
 returns `FSharpTokenInfo` object with all the interesting details:
 *)
 /// Tokenize a single line of F# code
@@ -65,7 +65,7 @@ let rec tokenizeLine (tokenizer:FSharpLineTokenizer) state =
 The function returns the new state, which is needed if you need to tokenize multiple lines
 and an earlier line ends with a multi-line comment. As an initial state, we can use `0L`:
 *)
-tokenizeLine tokenizer 0L
+tokenizeLine tokenizer FSharpTokenizerLexState.Initial
 (**
 The result is a sequence of tokens with names LET, WHITESPACE, IDENT, EQUALS and INT32.
 There is a number of interesting properties on `FSharpTokenInfo` including:
@@ -111,7 +111,7 @@ state and `1` as the number of the first line:
 *)
 lines
 |> List.ofSeq
-|> tokenizeLines 0L 1
+|> tokenizeLines FSharpTokenizerLexState.Initial 1
 (**
 Ignoring some unimportant details (like whitespace at the beginning of each line and
 the first line which is just whitespace), the code generates the following output:

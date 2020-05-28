@@ -1,62 +1,53 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
-    <ProjectLanguage>FSharp</ProjectLanguage>
-    <UseFSharpProductVersion>true</UseFSharpProductVersion>
-  </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
+    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
-    <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
-    <NoWarn>$(NoWarn);62;9</NoWarn>
-    <ProjectGuid>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</ProjectGuid>
+    <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <BaseAddress>0x06800000</BaseAddress>
-    <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
+    <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
+    <DefineConstants>$(DefineConstants);MSBUILD_AT_LEAST_15</DefineConstants>
+    <DefineConstants>$(DefineConstants);LOCALIZATION_FCOMP</DefineConstants>
+    <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
+    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
   </PropertyGroup>
-  <!-- References -->
-  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
+
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
+    <PropertyGroup>
+      <BuildOutputGroupLocation>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</BuildOutputGroupLocation>
+    </PropertyGroup>
     <ItemGroup>
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Framework.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Conversion.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Engine.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Utilities.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Tasks.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.Reflection.Metadata.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.Collections.Immutable.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.ValueTuple.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Framework.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Utilities.Core.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Tasks.Core.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Buffers.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Collections.Immutable.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Memory.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Numerics.Vectors.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Reflection.Metadata.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Resources.Extensions.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Runtime.CompilerServices.Unsafe.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Threading.Tasks.Dataflow.dll" />
     </ItemGroup>
   </Target>
-  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
+
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
-    <InternalsVisibleTo Include="FSharp.Build" />
-    <InternalsVisibleTo Include="fsi" />
-    <InternalsVisibleTo Include="fsiAnyCpu" />
-    <InternalsVisibleTo Include="FSharp.LanguageService" />
-    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
-    <InternalsVisibleTo Include="FSharp.Editor" />
     <InternalsVisibleTo Include="HostedCompilerServer" />
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
+    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
   </ItemGroup>
+
   <ItemGroup>
     <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
@@ -70,12 +61,6 @@
     <Compile Include="..\Logger.fs">
       <Link>Logger.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshapedreflection.fs">
-      <Link>Reflection\reshapedreflection.fs</Link>
-    </Compile>
-    <Compile Include="..\..\utils\reshapedmsbuild.fs">
-      <Link>Reflection\reshapedmsbuild.fs</Link>
-    </Compile>
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>
@@ -87,6 +72,12 @@
     </Compile>
     <Compile Include="..\sr.fs">
       <Link>ErrorText\sr.fs</Link>
+    </Compile>
+    <Compile Include="..\LanguageFeatures.fsi">
+      <Link>Driver\LanguageFeatures.fsi</Link>
+    </Compile>
+    <Compile Include="..\LanguageFeatures.fs">
+      <Link>Driver\LanguageFeatures.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\prim-lexing.fsi">
       <Link>LexYaccRuntime\prim-lexing.fsi</Link>
@@ -154,6 +145,9 @@
     <Compile Include="..\..\absil\bytes.fs">
       <Link>Utilities\bytes.fs</Link>
     </Compile>
+    <Compile Include="..\XmlAdapters.fs">
+      <Link>Utilities\XmlAdapters.fs</Link>
+    </Compile>
     <Compile Include="..\InternalCollections.fsi">
       <Link>Utilities\InternalCollections.fsi</Link>
     </Compile>
@@ -172,6 +166,12 @@
     <Compile Include="..\rational.fs">
       <Link>Utilities\rational.fs</Link>
     </Compile>
+    <Compile Include="..\..\utils\PathMap.fsi">
+      <Link>Utilities\PathMap.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\utils\PathMap.fs">
+      <Link>Utilities\PathMap.fs</Link>
+    </Compile>
     <Compile Include="..\range.fsi">
       <Link>ErrorLogging\range.fsi</Link>
     </Compile>
@@ -184,15 +184,12 @@
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
     </Compile>
-    <Compile Include="..\ReferenceResolver.fs">
-      <Link>ReferenceResolution\ReferenceResolver.fs</Link>
-    </Compile>
     <FsLex Include="..\..\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbsIL\illex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\..\absil\ilpars.fsy">
-      <OtherFlags>--module Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser --open Microsoft.FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.Internal.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>AbsIL\ilpars.fsy</Link>
     </FsYacc>
     <Compile Include="..\..\absil\il.fsi">
@@ -225,8 +222,14 @@
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>AbsIL\ilmorph.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilsign.fs" Condition=" '$(TargetDotnetProfile)'=='coreclr'">
+    <Compile Include="..\..\absil\ilsign.fs" Condition="$(TargetFramework.StartsWith('netstandard'))">
       <Link>AbsIL\ilsign.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilnativeres.fsi">
+      <Link>AbsIL\ilnativeres.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilnativeres.fs">
+      <Link>AbsIL\ilnativeres.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
       <Link>AbsIL\ilsupp.fsi</Link>
@@ -252,20 +255,37 @@
     <Compile Include="..\..\absil\ilread.fs">
       <Link>AbsIL\ilread.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilwrite.fsi">
-      <Link>AbsIL\ilwrite.fsi</Link>
-    </Compile>
     <Compile Include="..\..\absil\ilwritepdb.fsi">
       <Link>AbsIL\ilwritepdb.fsi</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwritepdb.fs">
       <Link>AbsIL\ilwritepdb.fs</Link>
     </Compile>
+    <Compile Include="..\..\absil\ilwrite.fsi">
+      <Link>AbsIL\ilwrite.fsi</Link>
+    </Compile>
     <Compile Include="..\..\absil\ilwrite.fs">
       <Link>AbsIL\ilwrite.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilreflect.fs">
       <Link>AbsIL\ilreflect.fs</Link>
+    </Compile>
+    <Compile Include="..\ReferenceResolver.fs">
+      <Link>ReferenceResolution\ReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="..\..\utils\reshapedmsbuild.fs">
+      <Link>ReferenceResolution/reshapedmsbuild.fs</Link>
+    </Compile>
+    <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
+    <Compile Include="..\LegacyMSBuildReferenceResolver.fsi">
+      <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fsi</Link>
+    </Compile>
+    <Compile Include="..\LegacyMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
+      <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fs</Link>
+    </Compile>
+    
+    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
+      <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocation\CompilerLocationUtils.fs</Link>
@@ -293,7 +313,7 @@
       <Link>ParserAndUntypedAST\pplex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pppars.fsy">
-      <OtherFlags>--module Microsoft.FSharp.Compiler.PPParser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pppars.fsy</Link>
     </FsYacc>
     <FsLex Include="..\lex.fsl">
@@ -301,7 +321,7 @@
       <Link>ParserAndUntypedAST\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pars.fsy">
-      <OtherFlags>--module Microsoft.FSharp.Compiler.Parser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pars.fsy</Link>
     </FsYacc>
     <Compile Include="..\UnicodeLexing.fsi">
@@ -316,8 +336,17 @@
     <Compile Include="..\layout.fs">
       <Link>ParserAndUntypedAST\layout.fs</Link>
     </Compile>
-    <Compile Include="..\ast.fs">
-      <Link>ParserAndUntypedAST\ast.fs</Link>
+    <Compile Include="..\XmlDoc.fs">
+      <Link>ParserAndUntypedAST\XmlDoc.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree.fs">
+      <Link>ParserAndUntypedAST\SyntaxTree.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTreeOps.fs">
+      <Link>ParserAndUntypedAST\SyntaxTreeOps.fs</Link>
+    </Compile>
+    <Compile Include="..\ParseHelpers.fs">
+      <Link>ParserAndUntypedAST\ParseHelpers.fs</Link>
     </Compile>
     <Compile Include="pppars.fs">
       <Link>ParserAndUntypedAST\pppars.fs</Link>
@@ -341,40 +370,46 @@
       <Link>ParserAndUntypedAST\lexfilter.fs</Link>
     </Compile>
     <Compile Include="..\tainted.fsi">
-      <Link>TypedAST\tainted.fsi</Link>
+      <Link>TypedTree\tainted.fsi</Link>
     </Compile>
     <Compile Include="..\tainted.fs">
-      <Link>TypedAST\tainted.fs</Link>
+      <Link>TypedTree\tainted.fs</Link>
     </Compile>
     <Compile Include="..\ExtensionTyping.fsi">
-      <Link>TypedAST\ExtensionTyping.fsi</Link>
+      <Link>TypedTree\ExtensionTyping.fsi</Link>
     </Compile>
     <Compile Include="..\ExtensionTyping.fs">
-      <Link>TypedAST\ExtensionTyping.fs</Link>
+      <Link>TypedTree\ExtensionTyping.fs</Link>
     </Compile>
     <Compile Include="..\QuotationPickler.fsi">
-      <Link>TypedAST\QuotationPickler.fsi</Link>
+      <Link>TypedTree\QuotationPickler.fsi</Link>
     </Compile>
     <Compile Include="..\QuotationPickler.fs">
-      <Link>TypedAST\QuotationPickler.fs</Link>
+      <Link>TypedTree\QuotationPickler.fs</Link>
     </Compile>
-    <Compile Include="..\tast.fs">
-      <Link>TypedAST\tast.fs</Link>
+    <Compile Include="..\CompilerGlobalState.fs">
+      <Link>TypedTree\CompilerGlobalState.fs</Link>
+    </Compile>
+    <Compile Include="..\TypedTree.fs">
+      <Link>TypedTree\TypedTree.fs</Link>
+    </Compile>
+    <Compile Include="..\TypedTreeBasics.fs">
+      <Link>TypedTree\TypedTreeBasics.fs</Link>
     </Compile>
     <Compile Include="..\TcGlobals.fs">
-      <Link>TypedAST\TcGlobals.fs</Link>
+      <Link>TypedTree\TcGlobals.fs</Link>
     </Compile>
-    <Compile Include="..\TastOps.fsi">
-      <Link>TypedAST\TastOps.fsi</Link>
+    <Compile Include="..\TypedTreeOps.fsi">
+      <Link>TypedTree\TypedTreeOps.fsi</Link>
     </Compile>
-    <Compile Include="..\TastOps.fs">
-      <Link>TypedAST\TastOps.fs</Link>
+    <Compile Include="..\TypedTreeOps.fs">
+      <Link>TypedTree\TypedTreeOps.fs</Link>
     </Compile>
-    <Compile Include="..\TastPickle.fsi">
-      <Link>TypedAST\TastPickle.fsi</Link>
+    <Compile Include="..\TypedTreePickle.fsi">
+      <Link>TypedTree\.TypedTreePickle.fsi</Link>
     </Compile>
-    <Compile Include="..\TastPickle.fs">
-      <Link>TypedAST\TastPickle.fs</Link>
+    <Compile Include="..\TypedTreePickle.fs">
+      <Link>TypedTree\.TypedTreePickle.fs</Link>
     </Compile>
     <Compile Include="..\import.fsi">
       <Link>Logic\import.fsi</Link>
@@ -390,6 +425,9 @@
     </Compile>
     <Compile Include="..\AttributeChecking.fs">
       <Link>Logic\AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="..\TypeRelations.fs">
+      <Link>Logic\TypeRelations.fs</Link>
     </Compile>
     <Compile Include="..\InfoReader.fs">
       <Link>Logic\InfoReader.fs</Link>
@@ -408,9 +446,6 @@
     </Compile>
     <Compile Include="..\NameResolution.fs">
       <Link>Logic\NameResolution.fs</Link>
-    </Compile>
-    <Compile Include="..\TypeRelations.fs">
-      <Link>Logic\TypeRelations.fs</Link>
     </Compile>
     <Compile Include="..\SignatureConformance.fs">
       <Link>Logic\SignatureConformance.fs</Link>
@@ -439,6 +474,9 @@
     <Compile Include="..\CheckFormatStrings.fs">
       <Link>Logic\CheckFormatStrings.fs</Link>
     </Compile>
+    <Compile Include="..\FindUnsolved.fsi">
+      <Link>Logic\FindUnsolved.fsi</Link>
+    </Compile>
     <Compile Include="..\FindUnsolved.fs">
       <Link>Logic\FindUnsolved.fs</Link>
     </Compile>
@@ -460,8 +498,6 @@
     <Compile Include="..\TypeChecker.fs">
       <Link>Logic\TypeChecker.fs</Link>
     </Compile>
-
-    <!-- includes the optimizer and code generator -->
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimize\Optimizer.fsi</Link>
     </Compile>
@@ -480,8 +516,14 @@
     <Compile Include="..\InnerLambdasToTopLevelFuncs.fs">
       <Link>Optimize\InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
+    <Compile Include="..\LowerCallsAndSeqs.fsi">
+      <Link>Optimize\LowerCallsAndSeqs.fsi</Link>
+    </Compile>
     <Compile Include="..\LowerCallsAndSeqs.fs">
       <Link>Optimize\LowerCallsAndSeqs.fs</Link>
+    </Compile>
+    <Compile Include="..\autobox.fsi">
+      <Link>Optimize\autobox.fsi</Link>
     </Compile>
     <Compile Include="..\autobox.fs">
       <Link>Optimize\autobox.fs</Link>
@@ -492,8 +534,10 @@
     <Compile Include="..\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
-
     <!-- includes the core of the F# Compiler fsc.exe implementation -->
+    <Compile Include="..\DotNetFrameworkDependencies.fs">
+      <Link>Driver\DotNetFrameworkDependencies.fs</Link>
+    </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
@@ -538,19 +582,37 @@
     <Compile Include="..\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
+    <Compile Include="..\service\Reactor.fsi">
+      <Link>Service/Reactor.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\Reactor.fs">
+      <Link>Service/Reactor.fs</Link>
+    </Compile>
 
     <!-- the incremental builder and service . -->
+    <Compile Include="..\service\SemanticClassification.fsi">
+      <Link>Service/SemanticClassification.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\SemanticClassification.fs">
+      <Link>Service/SemanticClassification.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ItemKey.fsi">
+      <Link>Service/ItemKey.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ItemKey.fs">
+      <Link>Service/ItemKey.fs</Link>
+    </Compile>
     <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
     <Compile Include="..\service\IncrementalBuild.fs">
       <Link>Service/IncrementalBuild.fs</Link>
     </Compile>
-    <Compile Include="..\service\Reactor.fsi">
-      <Link>Service/Reactor.fsi</Link>
+    <Compile Include="..\service\ServiceCompilerDiagnostics.fsi">
+      <Link>Service/ServiceCompilerDiagnostics.fsi</Link>
     </Compile>
-    <Compile Include="..\service\Reactor.fs">
-      <Link>Service/Reactor.fs</Link>
+    <Compile Include="..\service\ServiceCompilerDiagnostics.fs">
+      <Link>Service/ServiceCompilerDiagnostics.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
@@ -600,12 +662,6 @@
     <Compile Include="..\service\ServiceXmlDocParser.fs">
       <Link>Service/ServiceXmlDocParser.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\reshapedmsbuild.fs">
-      <Link>Service/reshapedmsbuild.fs</Link>
-    </Compile>
-    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
-      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
-    </Compile>
     <Compile Include="..\service\ExternalSymbol.fsi">
       <Link>Service/ExternalSymbol.fsi</Link>
     </Compile>
@@ -618,11 +674,23 @@
     <Compile Include="..\service\QuickParse.fs">
       <Link>Service/QuickParse.fs</Link>
     </Compile>
+    <Compile Include="..\..\fsharp\service\FSharpCheckerResults.fsi">
+      <Link>Service/FSharpCheckerResults.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\fsharp\service\FSharpCheckerResults.fs">
+      <Link>Service/FSharpCheckerResults.fs</Link>
+    </Compile>
     <Compile Include="..\service\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
     <Compile Include="..\service\service.fs">
       <Link>Service/service.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceErrorResolutionHints.fsi">
+      <Link>Service/ServiceErrorResolutionHints.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceErrorResolutionHints.fs">
+      <Link>Service/ServiceErrorResolutionHints.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceInterfaceStubGenerator.fsi">
       <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>
@@ -642,7 +710,7 @@
     <Compile Include="..\service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
-    
+
     <!-- the core of the F# Interactive fsi.exe implementation -->
     <EmbeddedText Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
@@ -653,56 +721,51 @@
     <Compile Include="..\fsi\fsi.fs">
       <Link>InteractiveSession/fsi.fs</Link>
     </Compile>
-
-    <Compile Include="..\MSBuildReferenceResolver.fs"  Condition="'$(MonoPackaging)' != 'true'">
-      <Link>Misc/MSBuildReferenceResolver.fs</Link>
-    </Compile>
     <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
     <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
+
   <ItemGroup>
-    <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Microsoft.DotNet.DependencyManager\Microsoft.DotNet.DependencyManager.fsproj" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
-    <None Include="project.json" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="System.Reflection.Metadata">
-      <HintPath>..\..\..\packages\System.Reflection.Metadata.1.4.2\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Collections.Immutable">
-      <HintPath>..\..\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
-    </Reference>
-    <Reference Include="System.ValueTuple">
-      <HintPath>..\..\..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="System.IO.Compression" Version="$(SystemIoCompressionVersion)" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
-    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
-    </Reference>
+
+  <ItemGroup Condition="$(TargetFramework.Startswith('netstandard'))">
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
   </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-      <Name>FSharp.Core</Name>
-    </ProjectReference>
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessVersion)" />
+    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourceVersion)" />
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
+    <PackageReference Include="System.Net.Security" Version="$(SystemNetSecurityVersion)" />
+    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
+    <PackageReference Include="System.Runtime" Version="$(SystemRuntimeVersion)" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesVersion)" />
+    <PackageReference Include="System.Security.Claims" Version="$(SystemSecurityClaimsVersion)" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsVersion)" />
+    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
+    <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
+    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
   </ItemGroup>
+
 </Project>
