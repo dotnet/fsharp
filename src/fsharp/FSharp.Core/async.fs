@@ -282,10 +282,6 @@ namespace Microsoft.FSharp.Control
             else
                 ctxt.HijackCheckThenCall ctxt.cont result
 
-        /// Call the exception continuation directly
-        member ctxt.CallExceptionContinuation edi =
-            contents.aux.econt edi
-
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member ctxt.OnExceptionRaised() =
             contents.aux.trampolineHolder.OnExceptionRaised contents.aux.econt
@@ -515,7 +511,7 @@ namespace Microsoft.FSharp.Control
             MakeAsync (fun ctxt ->
                 match res with
                 | AsyncResult.Ok r -> ctxt.cont r
-                | AsyncResult.Error edi -> ctxt.CallExceptionContinuation edi
+                | AsyncResult.Error edi -> ctxt.econt edi
                 | AsyncResult.Canceled oce -> ctxt.ccont oce)
 
         // Generate async computation which calls its continuation with the given result
@@ -938,10 +934,10 @@ namespace Microsoft.FSharp.Control
                             ctxt.OnCancellation ()
                         else
                             let edi = ExceptionDispatchInfo.Capture(TaskCanceledException completedTask)
-                            ctxt.CallExceptionContinuation edi
+                            ctxt.econt edi
                     elif completedTask.IsFaulted then
                         let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
-                        ctxt.CallExceptionContinuation edi
+                        ctxt.econt edi
                     else
                         ctxt.cont completedTask.Result) |> unfake
 
@@ -957,10 +953,10 @@ namespace Microsoft.FSharp.Control
                             ctxt.OnCancellation ()
                         else
                             let edi = ExceptionDispatchInfo.Capture(TaskCanceledException(completedTask))
-                            ctxt.CallExceptionContinuation edi
+                            ctxt.econt edi
                     elif completedTask.IsFaulted then
                         let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
-                        ctxt.CallExceptionContinuation edi
+                        ctxt.econt edi
                     else
                         ctxt.cont ()) |> unfake
 
@@ -1170,7 +1166,7 @@ namespace Microsoft.FSharp.Control
                         Seq.toArray computations, None   // manually protect eval of seq
                     with exn ->
                         let edi = ExceptionDispatchInfo.RestoreOrCapture exn
-                        null, Some (ctxt.CallExceptionContinuation edi)
+                        null, Some (ctxt.econt edi)
 
                 match result with
                 | Some r -> r
@@ -1278,7 +1274,7 @@ namespace Microsoft.FSharp.Control
                     with exn -> ExceptionDispatchInfo.RestoreOrCapture exn |> Choice2Of2
 
                 match result with
-                | Choice2Of2 edi -> ctxt.CallExceptionContinuation edi
+                | Choice2Of2 edi -> ctxt.econt edi
                 | Choice1Of2 [||] -> ctxt.cont None
                 | Choice1Of2 computations ->
                     ProtectedCode ctxt (fun ctxt ->
@@ -1476,7 +1472,7 @@ namespace Microsoft.FSharp.Control
             MakeAsync (fun ctxt ->
                    (match result with
                     | Ok v -> ctxt.cont v
-                    | Error exn -> ctxt.CallExceptionContinuation exn
+                    | Error exn -> ctxt.econt exn
                     | Canceled exn -> ctxt.ccont exn) )
 
         /// Await and use the result of a result cell. The resulting async doesn't support cancellation
