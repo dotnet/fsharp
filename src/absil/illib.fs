@@ -334,13 +334,6 @@ module List =
             | [] -> None
             | h :: t -> if f h then Some (h, List.rev acc @ t) else loop (h :: acc) t
         loop [] inp
-            
-    let headAndTail l =
-        match l with 
-        | [] -> 
-            Debug.Assert(false, "empty list")
-            failwith "List.headAndTail"
-        | h :: t -> h, t
 
     let zip4 l1 l2 l3 l4 = 
         List.zip l1 (List.zip3 l2 l3 l4) |> List.map (fun (x1, (x2, x3, x4)) -> (x1, x2, x3, x4))
