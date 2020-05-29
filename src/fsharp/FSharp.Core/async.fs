@@ -66,6 +66,8 @@ namespace Microsoft.FSharp.Control
     [<NoEquality; NoComparison>]
     type AsyncReturn =
         | AsyncReturn
+        with
+            static member inline Fake() = Unchecked.defaultof<AsyncReturn>
 
     type cont<'T> = ('T -> AsyncReturn)
     type econt = (ExceptionDispatchInfo -> AsyncReturn)
@@ -73,9 +75,6 @@ namespace Microsoft.FSharp.Control
 
     [<AllowNullLiteral>]
     type Trampoline() =
-
-        let fake ()  = Unchecked.defaultof<AsyncReturn>
-        let unfake (_ : AsyncReturn)  = ()
 
         [<Literal>]
         static let bindLimitBeforeHijack = 300
@@ -95,18 +94,14 @@ namespace Microsoft.FSharp.Control
         [<DebuggerHidden>]
         member __.Execute (firstAction: unit -> AsyncReturn) =
 
-            let thisIsTopTrampoline =
-                if Trampoline.thisThreadHasTrampoline then
-                    false
-                else
-                    Trampoline.thisThreadHasTrampoline <- true
-                    true
+            let thisIsTopTrampoline = not Trampoline.thisThreadHasTrampoline
+            Trampoline.thisThreadHasTrampoline <- true
             try
                 let mutable keepGoing = true
                 let mutable action = firstAction
                 while keepGoing do
                     try
-                        action() |> unfake
+                        action() |> ignore
                         match storedCont with
                         | None ->
                             keepGoing <- false
@@ -124,9 +119,8 @@ namespace Microsoft.FSharp.Control
                             action <- (fun () -> econt edi)
 
             finally
-                if thisIsTopTrampoline then
-                    Trampoline.thisThreadHasTrampoline <- false
-            fake()
+                Trampoline.thisThreadHasTrampoline <- not thisIsTopTrampoline
+            AsyncReturn.Fake()
 
         /// Increment the counter estimating the size of the synchronous stack and
         /// return true if time to jump on trampoline.
@@ -139,7 +133,7 @@ namespace Microsoft.FSharp.Control
             assert storedCont.IsNone
             bindCount <- 0
             storedCont <- Some action
-            fake()
+            AsyncReturn.Fake()
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member __.OnExceptionRaised (action: econt) =
@@ -149,26 +143,24 @@ namespace Microsoft.FSharp.Control
     type TrampolineHolder() as this =
         let mutable trampoline = null
 
-        let fake () = Unchecked.defaultof<AsyncReturn>
-        static let unfake (_: AsyncReturn)  = ()
-
         // Preallocate this delegate and keep it in the trampoline holder.
         let sendOrPostCallbackWithTrampoline =
             SendOrPostCallback (fun o ->
-                let f = unbox<(unit -> AsyncReturn)> o
-                this.ExecuteWithTrampoline f |> unfake)
+                let f = unbox<unit -> AsyncReturn> o
+                // Reminder: the ignore below ignores an AsyncReturn.
+                this.ExecuteWithTrampoline f |> ignore)
 
         // Preallocate this delegate and keep it in the trampoline holder.
         let waitCallbackForQueueWorkItemWithTrampoline =
             WaitCallback (fun o ->
-                let f = unbox<(unit -> AsyncReturn)> o
-                this.ExecuteWithTrampoline f |> unfake)
+                let f = unbox<unit -> AsyncReturn> o
+                this.ExecuteWithTrampoline f |> ignore)
 
         // Preallocate this delegate and keep it in the trampoline holder.
         let threadStartCallbackForStartThreadWithTrampoline =
             ParameterizedThreadStart (fun o ->
-                let f = unbox<(unit -> AsyncReturn)> o
-                this.ExecuteWithTrampoline f |> unfake)
+                let f = unbox<unit -> AsyncReturn> o
+                this.ExecuteWithTrampoline f |> ignore)
 
         /// Execute an async computation after installing a trampoline on its synchronous stack.
         [<DebuggerHidden>]
@@ -178,12 +170,12 @@ namespace Microsoft.FSharp.Control
 
         member this.PostWithTrampoline (syncCtxt: SynchronizationContext)  (f: unit -> AsyncReturn) =
             syncCtxt.Post (sendOrPostCallbackWithTrampoline, state=(f |> box))
-            fake()
+            AsyncReturn.Fake()
 
         member this.QueueWorkItemWithTrampoline (f: unit -> AsyncReturn) =
             if not (ThreadPool.QueueUserWorkItem(waitCallbackForQueueWorkItemWithTrampoline, f |> box)) then
                 failwith "failed to queue user work item"
-            fake()
+            AsyncReturn.Fake()
 
         member this.PostOrQueueWithTrampoline (syncCtxt: SynchronizationContext) f =
             match syncCtxt with
@@ -193,7 +185,7 @@ namespace Microsoft.FSharp.Control
         // This should be the only call to Thread.Start in this library. We must always install a trampoline.
         member __.StartThreadWithTrampoline (f: unit -> AsyncReturn) =
             Thread(threadStartCallbackForStartThreadWithTrampoline, IsBackground=true).Start(f|>box)
-            fake()
+            AsyncReturn.Fake()
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member inline __.OnExceptionRaised econt =
@@ -355,7 +347,7 @@ namespace Microsoft.FSharp.Control
 
         let inline fake () = Unchecked.defaultof<AsyncReturn>
 
-        let unfake (_: AsyncReturn)  = ()
+        let inline unfake (_: AsyncReturn)  = ()
 
         /// The mutable global CancellationTokenSource, see Async.DefaultCancellationToken
         let mutable defaultCancellationTokenSource = new CancellationTokenSource()
