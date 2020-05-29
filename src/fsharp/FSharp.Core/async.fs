@@ -1223,7 +1223,8 @@ namespace Microsoft.FSharp.Control
                     let maxDegreeOfParallelism =
                         match maxDegreeOfParallelism with
                         | None -> None
-                        | Some maxDegreeOfParallelism -> if maxDegreeOfParallelism >= tasks.Length then None else Some maxDegreeOfParallelism
+                        | Some x when x >= tasks.Length -> None
+                        | Some _ as x -> x
 
                     // Simple case (no maxDegreeOfParallelism) just queue all the work, if we have maxDegreeOfParallelism set we start that many workers
                     // which will make progress on the actual computations
