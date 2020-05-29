@@ -264,10 +264,6 @@ module List =
        let rec loop i xs = match xs with [] -> false | h :: t -> f i h || loop (i+1) t
        loop 0 xs
     
-    let existsTrue (xs: bool list) = 
-       let rec loop i xs = match xs with [] -> false | h :: t -> h || loop (i+1) t
-       loop 0 xs
-
     let lengthsEqAndForall2 p l1 l2 = 
         List.length l1 = List.length l2 &&
         List.forall2 p l1 l2
