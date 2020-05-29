@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Compiler.UnitTests.Utilities
+module FSharp.TestHelpers
 
 open System
 open System.IO

@@ -86,6 +86,8 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsiAnyCpu", "src\fsharp\fsi
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsi", "src\fsharp\fsi\fsi.fsproj", "{D0E98C0D-490B-4C61-9329-0862F6E87645}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.TestsHelpers", "tests\FSharp.TestHelpers\FSharp.TestHelpers.fsproj", "{60D275B0-B14A-41CB-A1B2-E815A7448FCB} "
+EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharpSuite.Tests", "tests\fsharp\FSharpSuite.Tests.fsproj", "{C163E892-5BF7-4B59-AA99-B0E8079C67C4}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.UnitTests", "tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj", "{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}"
