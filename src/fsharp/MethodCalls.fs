@@ -1867,12 +1867,15 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
         // Fix bug 1281: If we resolve to an instance method on a struct and we haven't yet taken 
         // the address of the object then go do that 
-        if minfo.IsStruct && minfo.IsInstance && (match argExprs with [] -> false | h :: _ -> not (isByrefTy g (tyOfExpr g h))) then 
-            let h, t = List.headAndTail argExprs
-            let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
-            Some (wrap (Expr.Op (TOp.TraitCall traitInfo, [], (h' :: t), m)))
+        if minfo.IsStruct && minfo.IsInstance then 
+            match argExprs with
+            | h :: t when not (isByrefTy g (tyOfExpr g h)) ->
+                let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
+                Some (wrap (Expr.Op (TOp.TraitCall traitInfo, [], (h' :: t), m)))
+            | _ ->
+                Some (MakeMethInfoCall amap m minfo methArgTys argExprs)
         else        
-            Some (MakeMethInfoCall amap m minfo methArgTys argExprs )
+            Some (MakeMethInfoCall amap m minfo methArgTys argExprs)
 
     | Choice2Of5 (tinst, rfref, isSet) -> 
         match isSet, rfref.RecdField.IsStatic, argExprs.Length with 

@@ -2266,10 +2266,15 @@ type internal FsiInteractionProcessor
 
                 // When the last declaration has a shape of DoExp (i.e., non-binding), 
                 // transform it to a shape of "let it = <exp>", so we can refer it.
-                let defsA = if defsA.Length <= 1 || not (List.isEmpty defsB) then defsA else
-                            match List.headAndTail (List.rev defsA) with
-                            | SynModuleDecl.DoExpr(_,exp,_), rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
-                            | _ -> defsA
+                let defsA =                    
+                    if not (isNil defsB) then defsA else
+                    match defsA with
+                    | [] -> defsA
+                    | [_] -> defsA
+                    | _ ->
+                        match List.rev defsA with
+                        | SynModuleDecl.DoExpr(_,exp,_) :: rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
+                        | _ -> defsA
 
                 Some (IDefns(defsA,m)),Some (IDefns(defsB,m)),istate
 
