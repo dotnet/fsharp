@@ -1479,7 +1479,7 @@ type internal FsiDynamicCompiler
                             for folder in result.Roots do
                                 tcConfigB.AddIncludePath(m, folder, "")
                             let scripts = result.SourceFiles |> Seq.toList
-                            if scripts |> Seq.length > 0 then
+                            if not (isNil scripts) then
                                 fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, errorLogger)
                             else istate
                     with _ ->

@@ -181,7 +181,7 @@ module UnusedOpens =
                 | true, scopes -> openStatement.AppliedScope :: scopes
                 | _ -> [openStatement.AppliedScope]
             usedModules.[openedModule.Entity] <- scopes
-        newlyOpenedModules.Length > 0
+        not (isNil newlyOpenedModules)
                                           
     /// Incrementally filter out the open statements one by one. Filter those whose contents are referred to somewhere in the symbol uses.
     /// Async to allow cancellation.
