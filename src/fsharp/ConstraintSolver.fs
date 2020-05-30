@@ -2418,7 +2418,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
             else
                 if nReqd > nActual then
                     let diff = nReqd - nActual
-                    let missingArgs = List.drop nReqd cmeth.AllUnnamedCalledArgs
+                    let missingArgs = List.skip nReqd cmeth.AllUnnamedCalledArgs
                     match NamesOfCalledArgs missingArgs with 
                     | [] ->
                         if nActual = 0 then 
