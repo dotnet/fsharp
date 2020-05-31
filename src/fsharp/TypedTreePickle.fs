@@ -50,9 +50,11 @@ type PickledDataWithReferences<'rawData> =
     member x.OptionalFixup loader =
         x.FixupThunks
         |> Array.iter(fun reqd->
-            match loader reqd.AssemblyName with
-            | Some loaded -> reqd.Fixup loaded
-            | None -> reqd.FixupOrphaned() )
+            // Only fixup what needs fixing up
+            if reqd.IsUnresolvedReference then
+                match loader reqd.AssemblyName with
+                | Some loaded -> reqd.Fixup loaded
+                | None -> reqd.FixupOrphaned() )
         x.RawData
 
 //---------------------------------------------------------------------------

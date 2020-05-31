@@ -5127,10 +5127,14 @@ type CcuThunk =
         x.target <- 
             match box avail.target with
             | null -> error(Failure("internal error: ccu thunk '"+avail.name+"' not fixed up!"))
-            | _ -> avail.target
-        
+            | _ ->
+                // TBD: is orphanfixup valuable ???
+                // set orphanfixup and target to match avail
+                x.orphanfixup <- avail.orphanfixup
+                avail.target
+
     /// Fixup a CCU to record it as "orphaned", i.e. not available
-    member x.FixupOrphaned() = 
+    member x.FixupOrphaned() =
         match box x.target with
         | null -> x.orphanfixup<-true
         | _ -> errorR(Failure("internal error: FixupOrphaned: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
