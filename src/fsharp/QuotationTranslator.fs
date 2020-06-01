@@ -719,7 +719,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                 if g.generateWitnesses && inWitnessPassingScope then 
                     match env.witnessesInScope.TryGetValue traitInfo.TraitKey with 
                     | true, storage -> Some storage
-                    | _ -> None // failwithf "no storage for witness %s found in scope" w.MemberName
+                    | _ -> None
                 else
                     None
 

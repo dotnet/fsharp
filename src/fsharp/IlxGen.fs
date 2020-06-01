@@ -985,10 +985,7 @@ let ComputeGenerateWitnesses (g: TcGlobals) eenv =
 let TryStorageForWitness (_g: TcGlobals) eenv (w: TraitWitnessInfo) = 
     match eenv.witnessesInScope.TryGetValue w with 
     | true, storage -> Some storage
-    | _ ->
-        //let generateWitnesses = ComputeGenerateWitnesses g eenv
-        //assert not generateWitnesses
-        None
+    | _ -> None
 
 let IsValRefIsDllImport g (vref: ValRef) =
     vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute
@@ -3122,7 +3119,7 @@ and GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo =
         match witnessExpr with
         | Choice1Of2 _traitInfo ->
             System.Diagnostics.Debug.Assert(false, "expected storage for witness")
-            //failwith "unexpected non-generation of witness "
+            failwith "unexpected non-generation of witness "
         | Choice2Of2 arg ->
             let eenv = { eenv with suppressWitnesses = true }
             GenExpr cenv cgbuf eenv SPSuppress arg Continue
@@ -3136,7 +3133,7 @@ and GenWitnessArgFromWitnessInfo cenv cgbuf eenv m witnessInfo =
     match storage with 
     | None ->
         System.Diagnostics.Debug.Assert(false, "expected storage for witness")
-        //failwith "unexpected non-generation of witness "
+        failwith "unexpected non-generation of witness "
     | Some storage -> 
         let ty = GenWitnessTy g witnessInfo
         GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv.amap m eenv.tyenv ty) storage None
@@ -3203,7 +3200,6 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
             let numArgs = List.sum arityInfo
 
-            // TODO: witness argument generation for closures
             for i = numArgs - 1 downto 0 do
                 CG.EmitInstrs cgbuf (pop 1) Push0 [ I_starg (uint16 (cgbuf.PreallocatedArgCount+i)) ]
 
@@ -4744,7 +4740,8 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) eenvouter takenNames ex
     let cloWitnessInfos = 
         let generateWitnesses = ComputeGenerateWitnesses g eenvinner
         if generateWitnesses then 
-            GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars // TODO: 0 may be wrong here
+            // The 0 here represents that a closure doesn't reside within a generic class - there are no "enclosing class type parameters" to lop off.  
+            GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
         else
             []
 
