@@ -94,7 +94,7 @@ namespace Microsoft.FSharp.Control
         [<DebuggerHidden>]
         member __.Execute (firstAction: unit -> AsyncReturn) =
 
-            let thisIsTopTrampoline = not Trampoline.thisThreadHasTrampoline
+            let thisThreadHadTrampoline = Trampoline.thisThreadHasTrampoline
             Trampoline.thisThreadHasTrampoline <- true
             try
                 let mutable keepGoing = true
@@ -119,7 +119,7 @@ namespace Microsoft.FSharp.Control
                             action <- (fun () -> econt edi)
 
             finally
-                Trampoline.thisThreadHasTrampoline <- not thisIsTopTrampoline
+                Trampoline.thisThreadHasTrampoline <- thisThreadHadTrampoline
             AsyncReturn.Fake()
 
         /// Increment the counter estimating the size of the synchronous stack and
@@ -1365,13 +1365,13 @@ namespace Microsoft.FSharp.Control
                 let latch = Latch()
                 let registration =
                     ctxt.token.Register(
-                        (fun _ ->
+                        (fun () ->
                             if latch.Enter() then
                                 match timer with
                                 | None -> ()
                                 | Some t -> t.Dispose()
-                                ctxt.trampolineHolder.ExecuteWithTrampoline (fun () -> ccont(OperationCanceledException(ctxt.token))) |> unfake),
-                        null)
+                                ctxt.trampolineHolder.ExecuteWithTrampoline (fun () -> ccont(OperationCanceledException(ctxt.token))) |> unfake)
+                        )
                 let mutable edi = null
                 try
                     timer <- new Timer((fun _ ->
@@ -1425,7 +1425,7 @@ namespace Microsoft.FSharp.Control
                     let rwh = ref (None: RegisteredWaitHandle option)
                     let latch = Latch()
                     let rec cancelHandler =
-                        Action<obj>(fun _ ->
+                        Action(fun () ->
                             if latch.Enter() then
                                 // if we got here - then we need to unregister RegisteredWaitHandle + trigger cancellation
                                 // entrance to TP callback is protected by latch - so savedCont will never be called
@@ -1435,7 +1435,7 @@ namespace Microsoft.FSharp.Control
                                     | Some rwh -> rwh.Unregister null |> ignore)
                                 Async.Start (async { do (ctxt.ccont (OperationCanceledException(aux.token)) |> unfake) }))
 
-                    and registration: CancellationTokenRegistration = aux.token.Register(cancelHandler, null)
+                    and registration: CancellationTokenRegistration = aux.token.Register(cancelHandler)
 
                     let savedCont = ctxt.cont
                     try
@@ -1526,7 +1526,7 @@ namespace Microsoft.FSharp.Control
 
                     let registration: CancellationTokenRegistration =
 
-                        let onCancel (_:obj) =
+                        let onCancel () =
                             // Call the cancellation routine
                             match cancelAction with
                             | None ->
@@ -1541,7 +1541,7 @@ namespace Microsoft.FSharp.Control
                                 // we assume the operation has already completed.
                                 try cancel() with _ -> ()
 
-                        cancellationToken.Register(Action<obj>(onCancel), null)
+                        cancellationToken.Register(Action(onCancel))
 
                     let callback =
                         System.AsyncCallback(fun iar ->
@@ -1601,7 +1601,7 @@ namespace Microsoft.FSharp.Control
                     // Set up the handlers to listen to events and cancellation
                     let once = Once()
                     let rec registration: CancellationTokenRegistration=
-                        let onCancel _ =
+                        let onCancel () =
                             // We've been cancelled. Call the given cancellation routine
                             match cancelAction with
                             | None ->
@@ -1614,7 +1614,7 @@ namespace Microsoft.FSharp.Control
                                 // If we get an exception from a cooperative cancellation function
                                 // we assume the operation has already completed.
                                 try cancel() with _ -> ()
-                        cancellationToken.Register(Action<obj>(onCancel), null)
+                        cancellationToken.Register(Action(onCancel))
 
                     and del =
                         FuncDelegate<'T>.Create<'Delegate>(fun eventArgs ->
@@ -1648,11 +1648,10 @@ namespace Microsoft.FSharp.Control
                 let innerCTS = new CancellationTokenSource() // innerCTS does not require disposal
                 let mutable ctsRef = innerCTS
                 let reg = cancellationToken.Register(
-                                        (fun _ ->
+                                        (fun () ->
                                             match ctsRef with
                                             | null -> ()
-                                            | otherwise -> otherwise.Cancel()),
-                                        null)
+                                            | otherwise -> otherwise.Cancel()))
                 do QueueAsync
                        innerCTS.Token
                        // since innerCTS is not ever Disposed, can call reg.Dispose() without a safety Latch
@@ -1677,12 +1676,12 @@ namespace Microsoft.FSharp.Control
             async { let! cancellationToken = cancellationTokenAsync
                     // latch protects CancellationTokenRegistration.Dispose from being called twice
                     let latch = Latch()
-                    let rec handler (_ : obj) =
+                    let rec handler () =
                         try
                             if latch.Enter() then registration.Dispose()
                             interruption ()
                         with _ -> ()
-                    and registration: CancellationTokenRegistration = cancellationToken.Register(Action<obj>(handler), null)
+                    and registration: CancellationTokenRegistration = cancellationToken.Register(Action(handler))
                     return { new System.IDisposable with
                                 member this.Dispose() =
                                     // dispose CancellationTokenRegistration only if cancellation was not requested.
