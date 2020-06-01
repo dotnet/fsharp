@@ -3939,7 +3939,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let mutable dllTable: NameMap<ImportedBinary> = NameMap.empty
     let mutable ccuInfos: ImportedAssembly list = []
     let mutable ccuTable: NameMap<ImportedAssembly> = NameMap.empty
+
+    // ccuThunks is a ConcurrentDictionary thus threadsafe
+    // the key is a ccuThunk object, the value is a (unit->unit) func that when executed
+    // the func is used to fix up the func and operates on data captured at the time the func is created.
+    // func() is captured during phase2() of RegisterAndPrepareToImportReferencedDll(..) and PrepareToImportReferencedFSharpAssembly ( .. )
     let mutable ccuThunks = new ConcurrentDictionary<CcuThunk, (unit -> unit)>()
+
     let disposeActions = ResizeArray()
     let mutable disposed = false
     let mutable ilGlobalsOpt = ilGlobalsOpt
@@ -3959,6 +3965,14 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         CheckDisposed()
         (disposal :> IDisposable).Dispose()
 
+    // This is used to fixe up unresolved ccuThunks that were created during assembly import.
+    // the ccuThunks dictionary is a ConcurrentDictionary and thus threadsafe.
+    // Algorithm:
+    //   Get a snapshot of the current unFixedUp ccuThunks.
+    //   for each of those thunks, remove them from the dictionary, so any parallel threads can't do this work
+    //      If it successfully removed it from the dictionary then do the fixup
+    //          If the thunk remains unresolved add it back to the ccuThunks dictionary for further processing
+    //      If not then move on to the next thunk
     let fixupOrphanCcus () =
         let keys = ccuThunks.Keys
         for ccuThunk in keys do
