@@ -2296,7 +2296,7 @@ let GetTraitConstraintInfosOfTypars g (tps: Typars) =
 
 /// Get information about the runtime witnesses needed for a set of generalized typars
 let GetTraitWitnessInfosOfTypars g numParentTypars tps = 
-    let tps = tps |> List.drop numParentTypars
+    let tps = tps |> List.skip numParentTypars
     let cxs = GetTraitConstraintInfosOfTypars g tps
     cxs |> List.map (fun cx -> cx.TraitKey)
 
