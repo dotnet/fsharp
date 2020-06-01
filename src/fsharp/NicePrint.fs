@@ -1473,12 +1473,14 @@ module InfoMemberPrinting =
     let prettifyILMethInfo (amap: Import.ImportMap) m (minfo: MethInfo) typarInst ilMethInfo = 
         let (ILMethInfo(_, apparentTy, dty, mdef, _)) = ilMethInfo
         let (prettyTyparInst, prettyTys), _ = PrettyTypes.PrettifyInstAndTypes amap.g (typarInst, (apparentTy :: minfo.FormalMethodInst))
-        let prettyApparentTy, prettyFormalMethInst = List.headAndTail prettyTys
-        let prettyMethInfo = 
-            match dty with 
-            | None -> MethInfo.CreateILMeth (amap, m, prettyApparentTy, mdef)
-            | Some declaringTyconRef -> MethInfo.CreateILExtensionMeth(amap, m, prettyApparentTy, declaringTyconRef, minfo.ExtensionMemberPriorityOption, mdef)
-        prettyTyparInst, prettyMethInfo, prettyFormalMethInst
+        match prettyTys with
+        | prettyApparentTy :: prettyFormalMethInst ->
+            let prettyMethInfo = 
+                match dty with 
+                | None -> MethInfo.CreateILMeth (amap, m, prettyApparentTy, mdef)
+                | Some declaringTyconRef -> MethInfo.CreateILExtensionMeth(amap, m, prettyApparentTy, declaringTyconRef, minfo.ExtensionMemberPriorityOption, mdef)
+            prettyTyparInst, prettyMethInfo, prettyFormalMethInst
+        | _ -> failwith "prettifyILMethInfo - prettyTys empty"
 
     /// Format a method to a buffer using "standalone" display style. 
     /// For example, these are the formats used when printing signatures of methods that have not been overridden,
