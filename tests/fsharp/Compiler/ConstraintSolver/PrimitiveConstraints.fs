@@ -92,4 +92,4 @@ runTest
     /// This suggestion was resolved as by design,
     /// so the test makes sure, we're emitting error message about 'not being a valid object construction expression'
     let ``Invalid object constructor``() = // Regression test for FSharp1.0:4189
-        CompilerAssert.TypeCheckWithErrorsAndOptionsAgainstBaseLine [| "--test:ErrorRanges" |] __SOURCE_DIRECTORY__ "../../typecheck/constructors/neg_invalid_constructor.fs"
+        CompilerAssert.TypeCheckWithErrorsAndOptionsAgainstBaseLine [| "--test:ErrorRanges" |] (__SOURCE_DIRECTORY__ ++ "../../") "typecheck/constructors/neg_invalid_constructor.fs"
