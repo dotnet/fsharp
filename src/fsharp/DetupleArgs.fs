@@ -465,7 +465,7 @@ let mkTransform g (f: Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list
         | _ -> Some(ValReprInfo (ValReprInfo.InferTyparInfo tps, List.collect ValReprInfoForTS callPattern, ValReprInfo.unnamedRetVal))
     (* type(transformedVal) tyfringes types replace initial arg types of f *)
     let tys1r = List.collect fst tyfringes  (* types for collapsed initial r args *)
-    let tysrN = List.drop tyfringes.Length x1Ntys    (* types for remaining args *)
+    let tysrN = List.skip tyfringes.Length x1Ntys    (* types for remaining args *)
     let argtys = tys1r @ tysrN
     let fCty  = mkLambdaTy tps argtys rty
     let transformedVal =
@@ -784,7 +784,7 @@ let passBind penv (TBind(fOrig, repr, letSeqPtOpt) as bind) =
          let transformedFormals = trans.transformedFormals 
          let p     = transformedFormals.Length
          if (vss.Length < p) then internalError "passBinds: |vss|<p - detuple pass" 
-         let xqNs  = List.drop p vss  
+         let xqNs  = List.skip p vss  
          let x1ps  = List.truncate p vss  
          let y1Ps  = List.concat (List.map2 transFormal transformedFormals x1ps)
          let formals = y1Ps @ xqNs
