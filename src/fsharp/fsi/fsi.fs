@@ -1479,7 +1479,7 @@ type internal FsiDynamicCompiler
                             for folder in result.Roots do
                                 tcConfigB.AddIncludePath(m, folder, "")
                             let scripts = result.SourceFiles |> Seq.toList
-                            if scripts |> Seq.length > 0 then
+                            if not (isNil scripts) then
                                 fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, errorLogger)
                             else istate
                     with _ ->
@@ -2266,10 +2266,15 @@ type internal FsiInteractionProcessor
 
                 // When the last declaration has a shape of DoExp (i.e., non-binding), 
                 // transform it to a shape of "let it = <exp>", so we can refer it.
-                let defsA = if defsA.Length <= 1 || not (List.isEmpty defsB) then defsA else
-                            match List.headAndTail (List.rev defsA) with
-                            | SynModuleDecl.DoExpr(_,exp,_), rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
-                            | _ -> defsA
+                let defsA =                    
+                    if not (isNil defsB) then defsA else
+                    match defsA with
+                    | [] -> defsA
+                    | [_] -> defsA
+                    | _ ->
+                        match List.rev defsA with
+                        | SynModuleDecl.DoExpr(_,exp,_) :: rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
+                        | _ -> defsA
 
                 Some (IDefns(defsA,m)),Some (IDefns(defsB,m)),istate
 
