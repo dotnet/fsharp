@@ -264,10 +264,6 @@ module List =
        let rec loop i xs = match xs with [] -> false | h :: t -> f i h || loop (i+1) t
        loop 0 xs
     
-    let existsTrue (xs: bool list) = 
-       let rec loop i xs = match xs with [] -> false | h :: t -> h || loop (i+1) t
-       loop 0 xs
-
     let lengthsEqAndForall2 p l1 l2 = 
         List.length l1 = List.length l2 &&
         List.forall2 p l1 l2
@@ -334,13 +330,6 @@ module List =
             | [] -> None
             | h :: t -> if f h then Some (h, List.rev acc @ t) else loop (h :: acc) t
         loop [] inp
-            
-    let headAndTail l =
-        match l with 
-        | [] -> 
-            Debug.Assert(false, "empty list")
-            failwith "List.headAndTail"
-        | h :: t -> h, t
 
     let zip4 l1 l2 l3 l4 = 
         List.zip l1 (List.zip3 l2 l3 l4) |> List.map (fun (x1, (x2, x3, x4)) -> (x1, x2, x3, x4))

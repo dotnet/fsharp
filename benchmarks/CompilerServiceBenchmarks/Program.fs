@@ -146,7 +146,6 @@ type CompilerService() =
     let readerOptions =
         {
             pdbDirPath = None
-            ilGlobals = mkILGlobals ILScopeRef.Local
             reduceMemoryUsage = ReduceMemoryFlag.No
             metadataOnly = MetadataOnlyFlag.Yes
             tryGetMetadataSnapshot = fun _ -> None

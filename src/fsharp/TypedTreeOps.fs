@@ -3887,8 +3887,8 @@ module DebugPrint =
 
     and appL g flayout tys args =
         let z = flayout
-        let z = if tys.Length > 0 then z ^^ instL typeL tys else z
-        let z = if args.Length > 0 then z --- spaceListL (List.map (atomL g) args) else z
+        let z = if isNil tys then z else z ^^ instL typeL tys
+        let z = if isNil args then z else z --- spaceListL (List.map (atomL g) args)
         z
 
     and implFileL g (TImplFile (_, _, mexpr, _, _, _)) =
