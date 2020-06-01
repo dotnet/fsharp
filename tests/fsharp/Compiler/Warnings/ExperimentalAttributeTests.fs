@@ -2,6 +2,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open FSharp.TestHelpers
 open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
