@@ -1136,7 +1136,7 @@ module UntypedParseImpl =
             | Some m -> m.End
             | None -> id.idRange.End
 
-        let (|NewObjectOrMethodCall|_|) (e) =
+        let (|NewObjectOrMethodCall|_|) e =
             match e with
             | (SynExpr.New (_, SynType.LongIdent typeName, arg, _)) -> 
                 // new A()
