@@ -33,8 +33,6 @@ open System.Reflection
 
 #nowarn "9"
 
-let primaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [])
-
 let checking = false  
 let logging = false
 let _ = if checking then dprintn "warning: ILBinaryReader.checking is on"
