@@ -5064,28 +5064,21 @@ type CcuReference = string // ILAssemblyRef
 /// reference that has not had an appropriate fixup applied.  
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type CcuThunk = 
-
     {
+      /// ccu.target is null when a reference is missing in the transitive closure of static references that
+      /// may potentially be required for the metadata of referenced DLLs.
       mutable target: CcuData
-
-      /// ccu.orphanfixup is true when a reference is missing in the transitive closure of static references that
-      /// may potentially be required for the metadata of referenced DLLs. It is set to true if the "loader"
-      /// used in the F# metadata-deserializer or the .NET metadata reader returns a failing value (e.g. None).
-      /// Note: When used from Visual Studio, the loader will not automatically chase down transitively referenced DLLs - they
-      /// must be in the explicit references in the project.
-      mutable orphanfixup: bool
-
       name: CcuReference
     }
 
     /// Dereference the asssembly reference 
     member ccu.Deref = 
-        if isNull (ccu.target :> obj) || ccu.orphanfixup then 
+        if isNull (ccu.target :> obj) then 
             raise(UnresolvedReferenceNoRange ccu.name)
         ccu.target
    
     /// Indicates if this assembly reference is unresolved
-    member ccu.IsUnresolvedReference = isNull (ccu.target :> obj) || ccu.orphanfixup
+    member ccu.IsUnresolvedReference = isNull (ccu.target :> obj)
 
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.
     member ccu.EnsureDerefable(requiringPath: string[]) = 
@@ -5147,13 +5140,11 @@ type CcuThunk =
     /// Create a CCU with the given name and contents
     static member Create(nm, x) = 
         { target = x 
-          orphanfixup = false
           name = nm }
 
     /// Create a CCU with the given name but where the contents have not yet been specified
     static member CreateDelayed nm = 
         { target = Unchecked.defaultof<_> 
-          orphanfixup = false
           name = nm }
 
     /// Fixup a CCU to have the given contents
@@ -5171,13 +5162,7 @@ type CcuThunk =
             match box avail.target with
             | null -> error(Failure("internal error: ccu thunk '"+avail.name+"' not fixed up!"))
             | _ -> avail.target
-        
-    /// Fixup a CCU to record it as "orphaned", i.e. not available
-    member x.FixupOrphaned() = 
-        match box x.target with
-        | null -> x.orphanfixup<-true
-        | _ -> errorR(Failure("internal error: FixupOrphaned: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
-            
+
     /// Try to resolve a path into the CCU by referencing the .NET/CLI type forwarder table of the CCU
     member ccu.TryForward(nlpath: string[], item: string) : EntityRef option = 
         ccu.EnsureDerefable nlpath
