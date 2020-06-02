@@ -167,7 +167,7 @@ let (|ObjectInitializationCheck|_|) g expr =
             (
                 Expr.Op (TOp.ILAsm ([AI_clt], _), _, [Expr.Op (TOp.ValFieldGet ((RecdFieldRef(_, name))), _, [Expr.Val (selfRef, NormalValUse, _)], _); Expr.Const (Const.Int32 1, _, _)], _), _, _, _
             ),
-           [| TTarget([], Expr.App (Expr.Val (failInitRef, _, _), _, _, _, _), _); _ |], _, resultTy
+           [| TTarget([], Expr.App (Expr.Val (failInitRef, _, _), _, _, _, _), _, _); _ |], _, resultTy
         ) when
             IsCompilerGeneratedName name &&
             name.StartsWithOrdinal("init") &&
@@ -402,7 +402,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     // initialization check
     | Expr.Sequential (ObjectInitializationCheck cenv.g, x1, NormalSeq, _, _) -> ConvExpr cenv env x1
     | Expr.Sequential (x0, x1, NormalSeq, _, _)  -> QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
-    | Expr.Obj (_, ty, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, m) when isDelegateTy cenv.g ty ->
+    | Expr.Obj (_, ty, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, _, m) when isDelegateTy cenv.g ty ->
          let f = mkLambdas m tps tmvs (e, GetFSharpViewOfReturnType cenv.g (returnTyOfMethod cenv.g tmethod))
          let fR = ConvExpr cenv env f
          let tyargR = ConvType cenv env m ctyp
@@ -411,7 +411,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     | Expr.StaticOptimization (_, _, x, _)               -> ConvExpr cenv env x
     | Expr.TyChoose _  -> ConvExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
     | Expr.Sequential  (x0, x1, ThenDoSeq, _, _)                        -> QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
-    | Expr.Obj (_lambdaId, _typ, _basev, _basecall, _overrides, _iimpls, m)      -> wfail(Error(FSComp.SR.crefQuotationsCantContainObjExprs(), m))
+    | Expr.Obj (_lambdaId, _typ, _basev, _basecall, _overrides, _iimpls, _stateVars, m)      -> wfail(Error(FSComp.SR.crefQuotationsCantContainObjExprs(), m))
 
     | Expr.Op (op, tyargs, args, m) ->
         match op, tyargs, args with
@@ -691,7 +691,7 @@ and ConvLValueArgs cenv env args =
     | obj :: rest -> ConvLValueExpr cenv env obj :: ConvExprs cenv env rest
     | [] -> []
 
-and ConvLValueExpr cenv env expr =
+and ConvLValueExpr cenv env (expr: Expr) =
     EmitDebugInfoIfNecessary cenv env expr.Range (ConvLValueExprCore cenv env expr)
 
 // This function has to undo the work of mkExprAddrOfExpr
@@ -940,7 +940,7 @@ and ConvDecisionTree cenv env tgs typR x =
         EmitDebugInfoIfNecessary cenv env m converted
 
       | TDSuccess (args, n) ->
-          let (TTarget(vars, rhs, _)) = tgs.[n]
+          let (TTarget(vars, rhs, _, _)) = tgs.[n]
           // TAST stores pattern bindings in reverse order for some reason
           // Reverse them here to give a good presentation to the user
           let args = List.rev args

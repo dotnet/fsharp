@@ -4259,7 +4259,7 @@ type DecisionTreeTest =
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type DecisionTreeTarget = 
-    | TTarget of Val list * Expr * DebugPointForTarget
+    | TTarget of Val list * Expr * DebugPointForTarget * isStateVarFlags: bool list option
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4457,6 +4457,7 @@ type Expr =
 
     // Object expressions: A closure that implements an interface or a base type. 
     // The base object type might be a delegate type. 
+    // stateVars are extra fields of the object and only populated during codegen.
     | Obj of 
         unique: Unique * 
         objTy: TType * (* <-- NOTE: specifies type parameters for base type *)
@@ -4464,6 +4465,7 @@ type Expr =
         ctorCall:  Expr * 
         overrides: ObjExprMethod list * 
         interfaceImpls: (TType * ObjExprMethod list) list *                   
+        stateVars: ValRef list *                   
         range: range
 
     /// Matches are a more complicated form of "let" with multiple possible destinations 
@@ -4537,7 +4539,7 @@ type Expr =
         | App (f, _, _, args, _) -> "App(" + f.ToDebugString(depth) + ", [" + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + "])"
         | LetRec _ -> "LetRec(..)"
         | Let (bind, body, _, _) -> "Let(" + bind.Var.DisplayName + ", " + bind.Expr.ToDebugString(depth) + ", " + body.ToDebugString(depth) + ")"
-        | Obj (_, _objTy, _, _, _, _, _) -> "Obj(..)"
+        | Obj (_, _objTy, _, _, _, _, _, _) -> "Obj(..)"
         | Match (_, _, _dt, _tgs, _, _) -> "Match(..)"
         | StaticOptimization (_, _, _, _) -> "StaticOptimization(..)"
         | Op (op, _, args, _) -> "Op(" + op.ToString() + ", " + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + ")"
@@ -4664,7 +4666,7 @@ type TOp =
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
-
+    
     override op.ToString() = 
         match op with 
         | UnionCase ucref -> "UnionCase(" + ucref.CaseName + ")"

@@ -519,6 +519,12 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerCallsAndSeqs.fs">
       <Link>Optimize/LowerCallsAndSeqs.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerStateMachines.fsi">
+      <Link>Optimize/LowerStateMachines.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerStateMachines.fs">
+      <Link>Optimize/LowerStateMachines.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/autobox.fsi">
       <Link>Optimize/autobox.fsi</Link>
     </Compile>

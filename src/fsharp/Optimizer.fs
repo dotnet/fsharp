@@ -20,6 +20,7 @@ open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
+open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TypedTree 
@@ -1251,9 +1252,6 @@ let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
 // Misc helpers
 //------------------------------------------------------------------------- 
 
-// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
-let [<Literal>] suffixForVariablesThatMayNotBeEliminated = "$cont"
-
 /// Type applications of F# "type functions" may cause side effects, e.g. 
 /// let x<'a> = printfn "hello"; typeof<'a> 
 /// In this case do not treat them as constants. 
@@ -1394,14 +1392,16 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
        not vspec1.IsCompilerGenerated then 
        None 
     elif vspec1.IsFixed then None 
+    elif vspec1.LogicalName.StartsWith prefixForVariablesThatMayNotBeEliminated ||
+         vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
     else
+
         // Peephole on immediate consumption of single bindings, e.g. "let x = e in x" --> "e" 
         // REVIEW: enhance this by general elimination of bindings to 
         // non-side-effecting expressions that are used only once. 
         // But note the cases below cover some instances of side-effecting expressions as well.... 
         let IsUniqueUse vspec2 args = 
               valEq vspec1 vspec2  
-           && (not (vspec2.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated))
            // REVIEW: this looks slow. Look only for one variable instead 
            && (let fvs = accFreeInExprs CollectLocals args emptyFreeVars
                not (Zset.contains vspec1 fvs.FreeLocals))
@@ -1423,7 +1423,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
 
          // Immediate consumption of value by a pattern match 'let x = e in match x with ...'
          | Expr.Match (spMatch, _exprm, TDSwitch(Expr.Val (VRefLocal vspec2, _, _), cases, dflt, _), targets, m, ty2)
-             when (valEq vspec1 vspec2 && 
+             when (valEq vspec1 vspec2 &&
                    let fvs = accFreeInTargets CollectLocals targets (accFreeInSwitchCases CollectLocals cases dflt emptyFreeVars)
                    not (Zset.contains vspec1 fvs.FreeLocals)) -> 
 
@@ -1433,8 +1433,7 @@ let TryEliminateBinding cenv _env (TBind(vspec1, e1, spBind)) e2 _m =
          // Immediate consumption of value as a function 'let f = e in f ...' and 'let x = e in f ... x ...'
          // Note functions are evaluated before args 
          // Note: do not include functions with a single arg of unit type, introduced by abstractBigTargets 
-         | Expr.App (f, f0ty, tyargs, args, m) 
-               when not (vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated) ->
+         | Expr.App (f, f0ty, tyargs, args, m) ->
              match GetImmediateUseContext [] (f :: args) with 
              | Some([], rargs) -> Some (MakeApplicationAndBetaReduce cenv.g (e1, f0ty, [tyargs], rargs, m))
              | Some(f :: largs, rargs) -> Some (MakeApplicationAndBetaReduce cenv.g (f, f0ty, [tyargs], largs @ (e1 :: rargs), m))
@@ -1486,7 +1485,7 @@ let (|TDBoolSwitch|_|) dtree =
 /// Check target that have a constant bool value
 let (|ConstantBoolTarget|_|) target =
     match target with
-    | TTarget([], Expr.Const (Const.Bool b,_,_),_) -> Some b
+    | TTarget([], Expr.Const (Const.Bool b, _, _), _, _) -> Some b
     | _ -> None
 
 /// Is this a tree, where each decision is a two-way switch (to prevent later duplication of trees), and each branch returns or true/false,
@@ -1500,7 +1499,7 @@ let rec CountBoolLogicTree ((targets: DecisionTreeTarget[], costOuterCaseTree, c
     | TDSuccess([], idx) -> 
         match targets.[idx] with
         | ConstantBoolTarget result -> (if result = testBool then costOuterCaseTree else costOuterDefaultTree), 0
-        | TTarget([], _exp, _) -> costOuterCaseTree + costOuterDefaultTree, 10
+        | TTarget([], _exp, _, _) -> costOuterCaseTree + costOuterDefaultTree, 10
         | _ -> 100, 100 
     | _ -> 100, 100
 
@@ -1516,7 +1515,7 @@ let rec RewriteBoolLogicTree ((targets: DecisionTreeTarget[], outerCaseTree, out
     | TDSuccess([], idx) -> 
         match targets.[idx] with 
         | ConstantBoolTarget result -> if result = testBool then outerCaseTree else outerDefaultTree
-        | TTarget([], exp, _) -> mkBoolSwitch exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
+        | TTarget([], exp, _, _) -> mkBoolSwitch exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
         | _ -> failwith "CountBoolLogicTree should exclude this case"
     | _ -> failwith "CountBoolLogicTree should exclude this case"
 
@@ -1746,10 +1745,10 @@ let rec tryRewriteToSeqCombinators g (e: Expr) =
 
     // match --> match
     | Expr.Match (spBind, exprm, pt, targets, m, _ty) ->
-        let targets = targets |> Array.map (fun (TTarget(vs, e, spTarget)) -> match tryRewriteToSeqCombinators g e with None -> None | Some e -> Some(TTarget(vs, e, spTarget)))
+        let targets = targets |> Array.map (fun (TTarget(vs, e, spTarget, flags)) -> match tryRewriteToSeqCombinators g e with None -> None | Some e -> Some(TTarget(vs, e, spTarget, flags)))
         if targets |> Array.forall Option.isSome then 
             let targets = targets |> Array.map Option.get
-            let ty = targets |> Array.pick (fun (TTarget(_, e, _)) -> Some(tyOfExpr g e))
+            let ty = targets |> Array.pick (fun (TTarget(_, e, _, _)) -> Some(tyOfExpr g e))
             Some (Expr.Match (spBind, exprm, pt, targets, m, ty))
         else
             None
@@ -1884,7 +1883,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
 
-    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, m) -> 
+    | Expr.Obj (_, ty, basev, createExpr, overrides, iimpls, _stateVars, m) -> 
         OptimizeObjectExpr cenv env (ty, basev, createExpr, overrides, iimpls, m)
 
     | Expr.Op (op, tyargs, args, m) -> 
@@ -1934,7 +1933,7 @@ and OptimizeObjectExpr cenv env (ty, baseValOpt, basecall, overrides, iimpls, m)
     let basecallR, basecallinfo = OptimizeExpr cenv env basecall
     let overridesR, overrideinfos = OptimizeMethods cenv env baseValOpt overrides
     let iimplsR, iimplsinfos = OptimizeInterfaceImpls cenv env baseValOpt iimpls
-    let exprR=mkObjExpr(ty, baseValOpt, basecallR, overridesR, iimplsR, m)
+    let exprR = mkObjExpr (ty, baseValOpt, basecallR, overridesR, iimplsR, m)
     exprR, { TotalSize=closureTotalSize + basecallinfo.TotalSize + AddTotalSizes overrideinfos + AddTotalSizes iimplsinfos
              FunctionSize=1 (* a newobj *) 
              HasEffect=true
@@ -2299,6 +2298,24 @@ and OptimizeLinearExpr cenv env expr contf =
     let expr = if cenv.settings.ExpandStructuralValues() then ExpandStructuralBinding cenv expr else expr 
     let expr = stripExpr expr
 
+    // Matching on 'match __resumableEntry() with ...` is really a first-class lanugage construct which we 
+    // donoptimize separately
+    match expr with 
+    | ResumableEntryMatchExpr cenv.g (noneBranchExpr, someVar, someBranchExpr, rebuild) -> 
+        let noneBranchExprR, e1info = OptimizeExpr cenv env noneBranchExpr 
+        let env = BindInternalValToUnknown cenv someVar env 
+        let someBranchExprR, e2info = OptimizeExpr cenv env someBranchExpr 
+        let exprR = rebuild (noneBranchExprR, someBranchExprR)
+        let infoR = 
+            { TotalSize = e1info.TotalSize + e2info.TotalSize
+              FunctionSize = e1info.FunctionSize + e2info.FunctionSize
+              HasEffect = true
+              MightMakeCriticalTailcall = false
+              Info = UnknownValue }
+        contf (exprR, infoR)
+
+    | _ -> 
+
     match expr with 
     | Expr.Sequential (e1, e2, flag, spSeq, m) -> 
       let e1R, e1info = OptimizeExpr cenv env e1 
@@ -2352,7 +2369,7 @@ and OptimizeLinearExpr cenv env expr contf =
              // This ConsiderSplitToMethod is performed because it is present in OptimizeDecisionTreeTarget
              let e2, e2info = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (e2, e2info) 
              let tinfos = [tg1info; e2info]
-             let targetsR = [tg1; TTarget([], e2, spTarget2)]
+             let targetsR = [tg1; TTarget([], e2, spTarget2, None)]
              OptimizeMatchPart2 cenv (spMatch, exprm, dtreeR, targetsR, dinfo, tinfos, m, ty)))
 
     | LinearOpExpr (op, tyargs, argsHead, argLast, m) ->
@@ -3073,12 +3090,12 @@ and RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree, tgs, dinfo, tinfos) =
      expr, einfo
 
 /// Optimize/analyze a target of a decision tree
-and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, expr, spTarget)) = 
+and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs, expr, spTarget, flags)) = 
     let env = BindInternalValsToUnknown cenv vs env 
     let exprR, einfo = OptimizeExpr cenv env expr 
     let exprR, einfo = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (exprR, einfo) 
     let evalueR = AbstractExprInfoByVars (vs, []) einfo.Info 
-    TTarget(vs, exprR, spTarget), 
+    TTarget(vs, exprR, spTarget, flags), 
     { TotalSize=einfo.TotalSize 
       FunctionSize=einfo.FunctionSize
       HasEffect=einfo.HasEffect
