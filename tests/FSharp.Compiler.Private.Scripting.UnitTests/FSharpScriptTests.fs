@@ -302,3 +302,27 @@ let x =
 "
         script.Eval(code) |> ignoreValue
         Assert.False(foundInner)
+
+    [<Test>]
+    member _.``Script with nuget package that yields out of order dependencies works correctly``() =
+        // regression test for: https://github.com/dotnet/fsharp/issues/9217
+
+        let code = """
+#r "nuget: FParsec,1.1.1"
+
+open FParsec
+
+let test p str =
+    match run p str with
+    | Success(result, _, _)   ->
+        printfn "Success: %A" result
+        true
+    | Failure(errorMsg, _, _) ->
+        printfn "Failure: %s" errorMsg
+        false
+test pfloat "1.234"
+"""
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let opt = script.Eval(code)  |> getValue
+        let value = opt.Value
+        Assert.AreEqual(true, value.ReflectionValue :?> bool)
