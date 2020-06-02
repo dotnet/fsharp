@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
-        <target state="new">symbol '..^'</target>
+        <target state="translated">symbole '..^'</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
@@ -68,18 +68,13 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">En règle générale, les identificateurs de variable en majuscules ne doivent pas être utilisés dans les modèles. En outre, ils peuvent indiquer une erreur d'orthographe dans le nom du modèle.</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="needs-review-translation">En règle générale, les identificateurs de variable en majuscules ne doivent pas être utilisés dans les modèles. En outre, ils peuvent indiquer une erreur d'orthographe dans le nom du modèle.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">Les cas d'union discriminés et les étiquettes d'exception doivent être des identificateurs en majuscules</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Surcharge possible : '{0}'. {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -1629,7 +1624,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AND.BANG">
         <source>keyword 'and!'</source>
-        <target state="new">keyword 'and!'</target>
+        <target state="translated">mot clé 'and!'</target>
         <note />
       </trans-unit>
     </body>

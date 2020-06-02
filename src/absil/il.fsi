@@ -1055,6 +1055,7 @@ type ILMethodDefs =
     member AsArray: ILMethodDef[]
     member AsList: ILMethodDef list
     member FindByName: string -> ILMethodDef list
+    member TryFindInstanceByNameAndCallingSignature: string * ILCallingSignature -> ILMethodDef option
 
 /// Field definitions.
 [<NoComparison; NoEquality>]

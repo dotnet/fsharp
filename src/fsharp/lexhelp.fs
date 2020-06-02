@@ -11,12 +11,14 @@ open Internal.Utilities.Text.Lexing
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Ast
-open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
+open FSharp.Compiler.Lib
+open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.XmlDoc
 
 /// The "mock" filename used by fsi.exe when reading from stdin.
 /// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
@@ -36,8 +38,8 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 
 /// Manage lexer resources (string interning)
 [<Sealed>]
-type LexResourceManager() =
-    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(1024)
+type LexResourceManager(?capacity: int) =
+    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(defaultArg capacity 1024)
     member x.InternIdentifierToken(s) = 
         match strings.TryGetValue s with
         | true, res -> res
@@ -443,3 +445,4 @@ module Keywords =
           "@>",        FSComp.SR.keywordDescriptionTypedQuotation()
           "<@@",       FSComp.SR.keywordDescriptionUntypedQuotation()
           "@@>",       FSComp.SR.keywordDescriptionUntypedQuotation() ]
+

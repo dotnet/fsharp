@@ -187,19 +187,30 @@ module internal OpenDeclarationHelper =
 
         let getLineStr line = sourceText.Lines.[line].ToString().Trim()
         let pos = ParsedInput.adjustInsertionPoint getLineStr ctx
-        let docLine = pos.Line - 1
+        let docLine = Line.toZ pos.Line
         let lineStr = (String.replicate pos.Column " ") + "open " + ns
-        let sourceText = sourceText |> insert docLine lineStr
+
+        // If we're at the top of a file (e.g., F# script) then add a newline before adding the open declaration
+        let sourceText =
+            if docLine = 0 then
+                sourceText
+                |> insert docLine Environment.NewLine
+                |> insert docLine lineStr
+            else
+                sourceText |> insert docLine lineStr
+
         // if there's no a blank line between open declaration block and the rest of the code, we add one
         let sourceText = 
             if sourceText.Lines.[docLine + 1].ToString().Trim() <> "" then 
                 sourceText |> insert (docLine + 1) ""
             else sourceText
+
         let sourceText =
             // for top level module we add a blank line between the module declaration and first open statement
             if (pos.Column = 0 || ctx.ScopeKind = ScopeKind.Namespace) && docLine > 0
                 && not (sourceText.Lines.[docLine - 1].ToString().Trim().StartsWith "open") then
                     sourceText |> insert docLine ""
             else sourceText
+
         sourceText, minPos |> Option.defaultValue 0
 

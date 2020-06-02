@@ -1,2 +1,0 @@
-# FSharp.Build resource strings 
-notUsed,"Not used."

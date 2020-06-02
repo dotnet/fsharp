@@ -8,11 +8,12 @@ open Internal.Utilities.Text.Lexing
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Parser
 open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.Parser
+open FSharp.Compiler.SyntaxTree
 let debug = false
 
 let stringOfPos (p: Position) = sprintf "(%d:%d)" p.OriginalLine p.Column
@@ -2258,11 +2259,17 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
                   | MINUS -> true 
                   | _ -> false
               let nextTokenTup = popNextTokenTup()
+
               /// Merge the location of the prefix token and the literal
               let delayMergedToken tok = 
-                  delayToken(let rented = pool.Rent() in rented.Token <- tok; rented.LexbufState <- new LexbufState(tokenTup.LexbufState.StartPos, nextTokenTup.LexbufState.EndPos, nextTokenTup.LexbufState.PastEOF); rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
+                  let rented = pool.Rent()
+                  rented.Token <- tok
+                  rented.LexbufState <- new LexbufState(tokenTup.LexbufState.StartPos, nextTokenTup.LexbufState.EndPos, nextTokenTup.LexbufState.PastEOF)
+                  rented.LastTokenPos <- tokenTup.LastTokenPos
+                  delayToken(rented)
                   pool.Return nextTokenTup
                   pool.Return tokenTup
+
               let noMerge() = 
                   let tokenName = 
                       match tokenTup.Token with 

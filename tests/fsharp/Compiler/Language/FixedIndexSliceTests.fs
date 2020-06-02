@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open FSharp.TestHelpers
 open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
@@ -21,12 +22,12 @@ arr3.[*, 1, *]
 arr3.[*, 1, 1]
             """
             [|
-                FSharpErrorSeverity.Error, 39, (5,1,5,15), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (6,1,6,15), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (7,1,7,15), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (8,1,8,15), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (9,1,9,15), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (10,1,10,15), "The field, constructor or member 'GetSlice' is not defined."
+                FSharpErrorSeverity.Error, 39, (5,1,5,15), "The type '[,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (6,1,6,15), "The type '[,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (7,1,7,15), "The type '[,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (8,1,8,15), "The type '[,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (9,1,9,15), "The type '[,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (10,1,10,15), "The type '[,,]<T>' does not define the field, constructor or member 'GetSlice'."
             |]
 
     [<Test>]
@@ -51,19 +52,19 @@ arr4.[1, 1, 1, *]
 arr4.[*, 1, 1, 1]
             """
             [|
-                FSharpErrorSeverity.Error, 39, (5,1,5,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (6,1,6,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (7,1,7,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (8,1,8,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (9,1,9,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (10,1,10,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (11,1,11,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (12,1,12,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (13,1,13,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (14,1,14,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (15,1,15,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (16,1,16,18), "The field, constructor or member 'GetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (17,1,17,18), "The field, constructor or member 'GetSlice' is not defined."
+                FSharpErrorSeverity.Error, 39, (5,1,5,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (6,1,6,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (7,1,7,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (8,1,8,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (9,1,9,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (10,1,10,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (11,1,11,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (12,1,12,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (13,1,13,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (14,1,14,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (15,1,15,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (16,1,16,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
+                FSharpErrorSeverity.Error, 39, (17,1,17,18), "The type '[,,,]<T>' does not define the field, constructor or member 'GetSlice'."
             |]
             
     [<Test>]
@@ -83,12 +84,12 @@ arr3.[*, 1, *] <- arr1
 arr3.[*, 1, 1] <- arr1
             """
             [|
-                FSharpErrorSeverity.Error, 39, (7,1,7,15), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (8,1,8,15), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (9,1,9,15), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (10,1,10,15), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (11,1,11,15), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (12,1,12,15), "The field, constructor or member 'SetSlice' is not defined."
+                FSharpErrorSeverity.Error, 39, (7,1,7,15), "The type '[,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (8,1,8,15), "The type '[,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (9,1,9,15), "The type '[,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (10,1,10,15), "The type '[,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (11,1,11,15), "The type '[,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (12,1,12,15), "The type '[,,]<T>' does not define the field, constructor or member 'SetSlice'."
             |]
 
     [<Test>]
@@ -117,23 +118,18 @@ arr4.[1, 1, 1, *] <- arr1
 arr4.[*, 1, 1, 1] <- arr1
             """
             [|
-                FSharpErrorSeverity.Error, 39, (8,1,8,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (9,1,9,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (10,1,10,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (11,1,11,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (12,1,12,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (13,1,13,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (14,1,14,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (15,1,15,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (16,1,16,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (17,1,17,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (18,1,18,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (19,1,19,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (20,1,20,18), "The field, constructor or member 'SetSlice' is not defined."
-                FSharpErrorSeverity.Error, 39, (21,1,21,18), "The field, constructor or member 'SetSlice' is not defined."
+                FSharpErrorSeverity.Error, 39, (8,1,8,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (9,1,9,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (10,1,10,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (11,1,11,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (12,1,12,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (13,1,13,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (14,1,14,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (15,1,15,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (16,1,16,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (17,1,17,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (18,1,18,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (19,1,19,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (20,1,20,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
+                FSharpErrorSeverity.Error, 39, (21,1,21,18), "The type '[,,,]<T>' does not define the field, constructor or member 'SetSlice'."
             |]
-
-
-
-
-

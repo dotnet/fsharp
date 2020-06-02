@@ -199,17 +199,17 @@ let seekReadUInt16AsInt32 mdv addr = int32 (seekReadUInt16 mdv addr)
     
 let seekReadCompressedUInt32 mdv addr = 
     let b0 = seekReadByte mdv addr
-    if b0 <= 0x7Fuy then int b0, addr+1
+    if b0 <= 0x7Fuy then struct (int b0, addr+1)
     elif b0 <= 0xBFuy then 
         let b0 = b0 &&& 0x7Fuy
         let b1 = seekReadByteAsInt32 mdv (addr+1) 
-        (int b0 <<< 8) ||| int b1, addr+2
+        struct ((int b0 <<< 8) ||| int b1, addr+2)
     else 
         let b0 = b0 &&& 0x3Fuy
         let b1 = seekReadByteAsInt32 mdv (addr+1) 
         let b2 = seekReadByteAsInt32 mdv (addr+2) 
         let b3 = seekReadByteAsInt32 mdv (addr+3) 
-        (int b0 <<< 24) ||| (int b1 <<< 16) ||| (int b2 <<< 8) ||| int b3, addr+4
+        struct ((int b0 <<< 24) ||| (int b1 <<< 16) ||| (int b2 <<< 8) ||| int b3, addr+4)
 
 let seekReadSByte mdv addr = sbyte (seekReadByte mdv addr)
 let seekReadSingle mdv addr = singleOfBits (seekReadInt32 mdv addr)
@@ -226,11 +226,11 @@ let seekReadUTF8String mdv addr =
     System.Text.Encoding.UTF8.GetString (bytes, 0, bytes.Length)
 
 let seekReadBlob mdv addr = 
-    let len, addr = seekReadCompressedUInt32 mdv addr
+    let struct (len, addr) = seekReadCompressedUInt32 mdv addr
     seekReadBytes mdv addr len
     
 let seekReadUserString mdv addr = 
-    let len, addr = seekReadCompressedUInt32 mdv addr
+    let struct (len, addr) = seekReadCompressedUInt32 mdv addr
     let bytes = seekReadBytes mdv addr (len - 1)
     Encoding.Unicode.GetString(bytes, 0, bytes.Length)
 
@@ -1498,7 +1498,14 @@ and seekReadFile (ctxt: ILMetadataReader) mdv idx =
     ILModuleRef.Create(name = readStringHeap ctxt nameIdx, hasMetadata= ((flags &&& 0x0001) = 0x0), hash= readBlobHeapOption ctxt hashValueIdx)
 
 and seekReadClassLayout (ctxt: ILMetadataReader) mdv idx =
-    match seekReadOptionalIndexedRow (ctxt.getNumRows TableNames.ClassLayout, seekReadClassLayoutRow ctxt mdv, (fun (_, _, tidx) -> tidx), simpleIndexCompare idx, isSorted ctxt TableNames.ClassLayout, (fun (pack, size, _) -> pack, size)) with 
+    let res =
+        seekReadOptionalIndexedRow (ctxt.getNumRows TableNames.ClassLayout,
+            seekReadClassLayoutRow ctxt mdv,
+            (fun (_, _, tidx) -> tidx),
+            simpleIndexCompare idx,
+            isSorted ctxt TableNames.ClassLayout,
+            (fun (pack, size, _) -> pack, size))
+    match res  with 
     | None -> { Size = None; Pack = None }
     | Some (pack, size) -> { Size = Some size; Pack = Some pack }
 
@@ -1543,11 +1550,10 @@ and readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx) =
 
 and seekReadTypeDefRowExtents (ctxt: ILMetadataReader) _info (idx: int) =
     if idx >= ctxt.getNumRows TableNames.TypeDef then 
-        ctxt.getNumRows TableNames.Field + 1, 
-        ctxt.getNumRows TableNames.Method + 1
+        struct (ctxt.getNumRows TableNames.Field + 1, ctxt.getNumRows TableNames.Method + 1)
     else
         let (_, _, _, _, fieldsIdx, methodsIdx) = seekReadTypeDefRow ctxt (idx + 1)
-        fieldsIdx, methodsIdx 
+        struct (fieldsIdx, methodsIdx )
 
 and seekReadTypeDefRowWithExtents ctxt (idx: int) =
     let info= seekReadTypeDefRow ctxt idx
@@ -1571,7 +1577,7 @@ and typeDefReader ctxtH: ILTypeDefStored =
 
            let ((flags, nameIdx, namespaceIdx, extendsIdx, fieldsIdx, methodsIdx) as info) = seekReadTypeDefRow ctxt idx
            let nm = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
-           let (endFieldsIdx, endMethodsIdx) = seekReadTypeDefRowExtents ctxt info idx
+           let struct (endFieldsIdx, endMethodsIdx) = seekReadTypeDefRowExtents ctxt info idx
            let typars = seekReadGenericParams ctxt 0 (tomd_TypeDef, idx)
            let numtypars = typars.Length
            let super = seekReadOptionalTypeDefOrRef ctxt numtypars AsObject extendsIdx
@@ -2728,12 +2734,13 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
 
                  let pdbm = pdbReaderGetMethod pdbr (uncodedToken TableNames.Method idx)
                  let sps = pdbMethodGetSequencePoints pdbm
-                 (*dprintf "#sps for 0x%x = %d\n" (uncodedToken TableNames.Method idx) (Array.length sps) *)
                  (* let roota, rootb = pdbScopeGetOffsets rootScope in *)
                  let seqpoints =
                     let arr = 
                        sps |> Array.map (fun sp -> 
-                           (* It is VERY annoying to have to call GetURL for the document for each sequence point. This appears to be a short coming of the PDB reader API. They should return an index into the array of documents for the reader *)
+                           // It is VERY annoying to have to call GetURL for the document for
+                           // each sequence point. This appears to be a short coming of the PDB
+                           // reader API. They should return an index into the array of documents for the reader
                            let sourcedoc = get_doc (pdbDocumentGetURL sp.pdbSeqPointDocument)
                            let source = 
                              ILSourceMarker.Create(document = sourcedoc, 

@@ -237,16 +237,38 @@ function Make-BootstrapBuild() {
     Create-Directory $dir
 
     # prepare FsLex and Fsyacc and AssemblyCheck
-    Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" "/restore /t:Publish /p:PublishWindowsPdb=false" -logFileName "BuildTools" -configuration $bootstrapConfiguration
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp3.0\publish" -Destination "$dir\fslex" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp3.0\publish" -Destination "$dir\fsyacc" -Force  -Recurse
-    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\netcoreapp3.0\publish" -Destination "$dir\AssemblyCheck" -Force  -Recurse
+    $dotnetPath = InitializeDotNetCli
+    $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+    $buildToolsProject = "$RepoRoot\src\buildtools\buildtools.proj"
+
+    $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
+    $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
+
+    $args = "build $buildToolsProject -c $bootstrapConfiguration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
+    if ($binaryLog) {
+        $logFilePath = Join-Path $LogDir "toolsBootstrapLog.binlog"
+        $args += " /bl:$logFilePath"
+    }
+    Exec-Console $dotnetExe $args
+
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp3.0" -Destination "$dir\fslex" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp3.0" -Destination "$dir\fsyacc" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\netcoreapp3.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
-    $projectPath = "$RepoRoot\proto.proj"
-    Run-MSBuild $projectPath "/restore /t:Publish /p:TargetFramework=$bootstrapTfm;ProtoTargetFramework=$bootstrapTfm /p:PublishWindowsPdb=false" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
-    Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsc" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\publish" -Destination "$dir\fsi" -Force -Recurse
+    $protoProject = "$RepoRoot\proto.proj"
+    $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity -f $bootstrapTfm" + $argNoRestore + $argNoIncremental
+    if ($binaryLog) {
+        $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
+        $args += " /bl:$logFilePath"
+    }
+    Exec-Console $dotnetExe $args
+
+    Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsc" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsi" -Force -Recurse
 
     return $dir
 }
+
+
+

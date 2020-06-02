@@ -1,6 +1,6 @@
 ﻿// Open the namespace with InteractiveChecker type
 open FSharp.Compiler.SourceCodeServices
-
+open FSharp.Compiler.SyntaxTree
 
 // Create a checker instance (ignore notifications)
 let checker = FSharpChecker.Create()
@@ -16,8 +16,6 @@ let getUntypedTree (file, input) =
   | None -> failwith "Something went wrong during parsing!"
 
 // ------------------------------------------------------------------
-
-open FSharp.Compiler.Ast
 
 /// Walk over all module or namespace declarations 
 /// (basically 'module Foo =' or 'namespace Foo.Bar')

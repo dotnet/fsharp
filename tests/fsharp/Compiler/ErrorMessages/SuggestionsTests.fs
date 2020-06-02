@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open FSharp.TestHelpers
 open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
@@ -19,7 +20,7 @@ let x = { Person.Names = "Isaac" }
             FSharpErrorSeverity.Error
             39
             (4, 18, 4, 23)
-            "The field, constructor or member 'Names' is not defined. Maybe you want one of the following:\r\n   Name"
+            "The type 'Person' does not define the field, constructor or member 'Names'. Maybe you want one of the following:\r\n   Name"
 
 
     [<Test>]
@@ -94,7 +95,7 @@ let x = N.MyUnion.``My Case2``
             FSharpErrorSeverity.Error
             39
             (9, 19, 9,31)
-            "The field, constructor or member 'My Case2' is not defined. Maybe you want one of the following:\r\n   My Case1\r\n   Case2"
+            "The type 'MyUnion' does not define the field, constructor or member 'My Case2'. Maybe you want one of the following:\r\n   My Case1\r\n   Case2"
 
 
     [<Test>]
@@ -142,7 +143,7 @@ module Test2 =
             FSharpErrorSeverity.Error
             39
             (9, 7, 9, 14)
-            "The field, constructor or member 'Method2' is not defined. Maybe you want one of the following:\r\n   Method1"
+            "The type 'D' does not define the field, constructor or member 'Method2'. Maybe you want one of the following:\r\n   Method1"
 
 
     [<Test>]
@@ -186,7 +187,7 @@ let x = r.ello
             FSharpErrorSeverity.Error
             39
             (6, 11, 6, 15)
-            "The field, constructor or member 'ello' is not defined. Maybe you want one of the following:\r\n   Hello"
+            "The type 'MyRecord' does not define the field, constructor or member 'ello'. Maybe you want one of the following:\r\n   Hello"
 
 
     [<Test>]
@@ -278,7 +279,7 @@ let u = MyUnion.AntherCase
             FSharpErrorSeverity.Error
             39
             (6, 17, 6, 27)
-            "The field, constructor or member 'AntherCase' is not defined. Maybe you want one of the following:\r\n   AnotherCase"
+            "The type 'MyUnion' does not define the field, constructor or member 'AntherCase'. Maybe you want one of the following:\r\n   AnotherCase"
 
 
     [<Test>]
@@ -317,4 +318,4 @@ let x =
             FSharpErrorSeverity.Error
             39
             (11, 15, 11, 19)
-            "The field, constructor or member 'Cas1' is not defined. Maybe you want one of the following:\r\n   Case1\r\n   Case2"
+            "The type 'MyUnion' does not define the field, constructor or member 'Cas1'. Maybe you want one of the following:\r\n   Case1\r\n   Case2"

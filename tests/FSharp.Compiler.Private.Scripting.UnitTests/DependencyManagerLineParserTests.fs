@@ -3,23 +3,23 @@
 namespace FSharp.DependencyManager.UnitTests
 
 open System.Linq
-open FSharp.DependencyManager
+open FSharp.DependencyManager.Nuget
 open NUnit.Framework
 
 [<TestFixture>]
 type DependencyManagerLineParserTests() =
 
     let parseBinLogPath text =
-        let _, binLogPath = FSharpDependencyManager.parsePackageReference [text]
+        let _, binLogPath = FSharpDependencyManager.parsePackageReference ".fsx" [text]
         binLogPath
 
     let parseSingleReference text =
-        let packageReferences, _ = FSharpDependencyManager.parsePackageReference [text]
+        let packageReferences, _ = FSharpDependencyManager.parsePackageReference ".fsx" [text]
         packageReferences.Single()
 
     [<Test>]
     member __.``Binary logging defaults to disabled``() =
-        let _, binLogPath = FSharpDependencyManager.parsePackageReference []
+        let _, binLogPath = FSharpDependencyManager.parsePackageReference ".fsx" []
         Assert.AreEqual(None, binLogPath)
 
     [<Test>]
@@ -39,32 +39,32 @@ type DependencyManagerLineParserTests() =
 
     [<Test>]
     member __.``Bare binary log argument isn't parsed as a package name: before``() =
-        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ["bl, MyPackage"]
+        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ".fsx" ["bl, MyPackage"]
         Assert.AreEqual("MyPackage", packageReferences.Single().Include)
         Assert.AreEqual(Some (None: string option), binLogPath)
 
     [<Test>]
     member __.``Bare binary log argument isn't parsed as a package name: middle``() =
-        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ["MyPackage, bl, 1.2.3.4"]
+        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ".fsx" ["MyPackage, bl, 1.2.3.4"]
         Assert.AreEqual("MyPackage", packageReferences.Single().Include)
         Assert.AreEqual("1.2.3.4", packageReferences.Single().Version)
         Assert.AreEqual(Some (None: string option), binLogPath)
 
     [<Test>]
     member __.``Bare binary log argument isn't parsed as a package name: after``() =
-        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ["MyPackage, bl"]
+        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ".fsx" ["MyPackage, bl"]
         Assert.AreEqual("MyPackage", packageReferences.Single().Include)
         Assert.AreEqual(Some (None: string option), binLogPath)
 
     [<Test>]
     member __.``Package named 'bl' can be explicitly referenced``() =
-        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ["Include=bl"]
+        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ".fsx" ["Include=bl"]
         Assert.AreEqual("bl", packageReferences.Single().Include)
         Assert.AreEqual(None, binLogPath)
 
     [<Test>]
     member __.``Package named 'bl' can be explicitly referenced with binary logging``() =
-        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ["Include=bl,bl"]
+        let packageReferences, binLogPath = FSharpDependencyManager.parsePackageReference ".fsx" ["Include=bl,bl"]
         Assert.AreEqual("bl", packageReferences.Single().Include)
         Assert.AreEqual(Some (None: string option), binLogPath)
 
@@ -109,6 +109,6 @@ type DependencyManagerLineParserTests() =
         let prs, _ =
             [ "MyPackage, Version=1.2.3.4"
               "Include=MyPackage, Version=1.2.3.4" ]
-            |> FSharpDependencyManager.parsePackageReference
+            |> FSharpDependencyManager.parsePackageReference ".fsx" 
         let pr = prs.Single()
         Assert.AreEqual("MyPackage", pr.Include)

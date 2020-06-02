@@ -4,7 +4,11 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler 
 
+// Prevents warnings of experimental APIs within the signature file itself.
+#nowarn "57"
+
 type Position = int * int
+
 type Range = Position * Position
 
 /// Represents encoded information for the end-of-line continuation of lexing
@@ -12,7 +16,9 @@ type Range = Position * Position
 type FSharpTokenizerLexState = 
     { PosBits: int64
       OtherBits: int64 }
+
     static member Initial : FSharpTokenizerLexState
+
     member Equals : FSharpTokenizerLexState -> bool
 
 /// Represents stable information for the state of the lexing engine at the end of a line
@@ -256,3 +262,239 @@ module Keywords =
 
     /// Keywords paired with their descriptions. Used in completion and quick info.
     val KeywordsWithDescription : (string * string) list
+
+[<Experimental("This FCS API is experimental and subject to change.")>]
+module public Lexer =
+
+    open System
+    open System.Threading
+    open FSharp.Compiler.Text
+    open FSharp.Compiler.Range
+
+    [<Flags;Experimental("This FCS API is experimental and subject to change.")>]
+    type public FSharpLexerFlags =
+        | Default                       = 0x11011
+        | LightSyntaxOn                 = 0x00001
+        | Compiling                     = 0x00010 
+        | CompilingFSharpCore           = 0x00110
+        | SkipTrivia                    = 0x01000
+        | UseLexFilter                  = 0x10000
+
+    [<RequireQualifiedAccess;Experimental("This FCS API is experimental and subject to change.")>]
+    type public FSharpSyntaxTokenKind =
+        | None
+        | HashIf
+        | HashElse
+        | HashEndIf
+        | CommentTrivia
+        | WhitespaceTrivia
+        | HashLine
+        | HashLight
+        | InactiveCode
+        | LineCommentTrivia
+        | StringText
+        | Fixed
+        | OffsideInterfaceMember
+        | OffsideBlockEnd
+        | OffsideRightBlockEnd
+        | OffsideDeclEnd
+        | OffsideEnd
+        | OffsideBlockSep
+        | OffsideBlockBegin
+        | OffsideReset
+        | OffsideFun
+        | OffsideFunction
+        | OffsideWith
+        | OffsideElse
+        | OffsideThen
+        | OffsideDoBang
+        | OffsideDo
+        | OffsideBinder
+        | OffsideLet
+        | HighPrecedenceTypeApp
+        | HighPrecedenceParenthesisApp
+        | HighPrecedenceBracketApp
+        | Extern
+        | Void
+        | Public
+        | Private
+        | Internal
+        | Global
+        | Static
+        | Member
+        | Class
+        | Abstract
+        | Override
+        | Default
+        | Constructor
+        | Inherit
+        | GreaterRightBracket
+        | Struct
+        | Sig
+        | Bar
+        | RightBracket
+        | RightBrace
+        | Minus
+        | Dollar
+        | BarRightBracket
+        | BarRightBrace
+        | Underscore
+        | Semicolon
+        | SemicolonSemicolon
+        | LeftArrow
+        | Equals
+        | LeftBracket
+        | LeftBracketBar
+        | LeftBraceBar
+        | LeftBracketLess
+        | LeftBrace
+        | QuestionMark
+        | QuestionMarkQuestionMark
+        | Dot
+        | Colon
+        | ColonColon
+        | ColonGreater
+        | ColonQuestionMark
+        | ColonQuestionMarkGreater
+        | ColonEquals
+        | When
+        | While
+        | With
+        | Hash
+        | Ampersand
+        | AmpersandAmpersand
+        | Quote
+        | LeftParenthesis
+        | RightParenthesis
+        | Star
+        | Comma
+        | RightArrow
+        | GreaterBarRightBracket
+        | LeftParenthesisStarRightParenthesis
+        | Open
+        | Or
+        | Rec
+        | Then
+        | To
+        | True
+        | Try
+        | Type
+        | Val
+        | Inline
+        | Interface
+        | Instance
+        | Const
+        | Lazy
+        | OffsideLazy
+        | Match
+        | MatchBang
+        | Mutable
+        | New
+        | Of
+        | Exception
+        | False
+        | For
+        | Fun
+        | Function
+        | If
+        | In
+        | JoinIn
+        | Finally
+        | DoBang
+        | And
+        | As
+        | Assert
+        | OffsideAssert
+        | Begin
+        | Do
+        | Done
+        | DownTo
+        | Else
+        | Elif
+        | End
+        | DotDot
+        | DotDotHat
+        | BarBar
+        | Upcast
+        | Downcast
+        | Null
+        | Reserved
+        | Module
+        | Namespace
+        | Delegate
+        | Constraint
+        | Base
+        | LeftQuote
+        | RightQuote
+        | RightQuoteDot
+        | PercentOperator
+        | Binder
+        | Less
+        | Greater
+        | Let
+        | Yield
+        | YieldBang
+        | BigNumber
+        | Decimal
+        | Char
+        | Ieee64
+        | Ieee32
+        | NativeInt
+        | UNativeInt
+        | UInt64
+        | UInt32
+        | UInt16
+        | UInt8
+        | Int64
+        | Int32
+        | Int32DotDot
+        | Int16
+        | Int8
+        | FunkyOperatorName
+        | AdjacentPrefixOperator
+        | PlusMinusOperator
+        | InfixAmpersandOperator
+        | InfixStarDivideModuloOperator
+        | PrefixOperator
+        | InfixBarOperator
+        | InfixAtHatOperator
+        | InfixCompareOperator
+        | InfixStarStarOperator
+        | Identifier
+        | KeywordString
+        | String
+        | ByteArray
+        | Asr
+        | InfixAsr
+        | InfixLand
+        | InfixLor
+        | InfixLsl
+        | InfixLsr
+        | InfixLxor
+        | InfixMod
+
+    [<Struct;NoComparison;NoEquality;Experimental("This FCS API is experimental and subject to change.")>]
+    type public FSharpSyntaxToken =
+
+        val private tok: Parser.token
+        val private tokRange: range
+
+        member Range: range
+
+        member Kind: FSharpSyntaxTokenKind
+
+        member IsIdentifier: bool
+
+        member IsKeyword: bool
+
+        member IsStringLiteral: bool
+
+        member IsNumericLiteral: bool
+
+        member IsCommentTrivia: bool
+
+    [<AbstractClass;Sealed;Experimental("This FCS API is experimental and subject to change.")>]
+    type public FSharpLexer =
+        
+        [<Experimental("This FCS API is experimental and subject to change.")>]
+        static member Lex: text: ISourceText * tokenCallback: (FSharpSyntaxToken -> unit) * ?langVersion: string * ?filePath: string * ?conditionalCompilationDefines: string list * ?flags: FSharpLexerFlags * ?pathMap: Map<string, string> * ?ct: CancellationToken -> unit

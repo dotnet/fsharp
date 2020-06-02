@@ -14,14 +14,13 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
-
-open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
 
@@ -250,7 +249,7 @@ type ScriptClosureCacheToken() = interface LockToken
 
 
 // There is only one instance of this type, held in FSharpChecker
-type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses) as self =
+type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification) as self =
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.reactor: The one and only Reactor
     let reactor = Reactor.Singleton
     let beforeFileChecked = Event<string * obj option>()
@@ -307,7 +306,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                   (ctok, legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.SourceFiles, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
                    options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, FSharpCheckerResultsSettings.maxTimeShareMilliseconds,
-                   tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses)
+                   tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification)
 
         match builderOpt with 
         | None -> ()
@@ -357,6 +356,19 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
               incrementalBuildersCache.Set (ctok, options, info)
               return builderOpt, creationErrors
       }
+
+    let getSimilarOrCreateBuilder (ctok, options, userOpName) =
+        RequireCompilationThread ctok
+        match incrementalBuildersCache.TryGetSimilar (ctok, options) with
+        | Some res -> Cancellable.ret res
+        // The builder does not exist at all. Create it.
+        | None -> getOrCreateBuilder (ctok, options, userOpName)
+
+    let getOrCreateBuilderWithInvalidationFlag (ctok, options, canInvalidateProject, userOpName) =
+        if canInvalidateProject then
+            getOrCreateBuilder (ctok, options, userOpName)
+        else
+            getSimilarOrCreateBuilder (ctok, options, userOpName)
 
     let parseCacheLock = Lock<ParseCacheLockToken>()
     
@@ -700,6 +712,33 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 return (parseResults, typedResults)
            })
 
+    member __.FindReferencesInFile(filename: string, options: FSharpProjectOptions, symbol: FSharpSymbol, canInvalidateProject: bool, userOpName: string) =
+        reactor.EnqueueAndAwaitOpAsync(userOpName, "FindReferencesInFile", filename, fun ctok -> 
+          cancellable {
+            let! builderOpt, _ = getOrCreateBuilderWithInvalidationFlag (ctok, options, canInvalidateProject, userOpName)
+            match builderOpt with
+            | None -> return Seq.empty
+            | Some builder -> 
+                if builder.ContainsFile filename then
+                    let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
+                    return 
+                        match checkResults.ItemKeyStore with
+                        | None -> Seq.empty
+                        | Some reader -> reader.FindAll symbol.Item
+                else
+                    return Seq.empty })
+
+
+    member __.GetSemanticClassificationForFile(filename: string, options: FSharpProjectOptions, userOpName: string) =
+        reactor.EnqueueAndAwaitOpAsync(userOpName, "GetSemanticClassificationForFile", filename, fun ctok -> 
+            cancellable {
+            let! builderOpt, _ = getOrCreateBuilder (ctok, options, userOpName)
+            match builderOpt with
+            | None -> return [||]
+            | Some builder -> 
+                let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
+                return checkResults.SemanticClassification })
+
 
     /// Try to get recent approximate type check results for a file. 
     member __.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string) =
@@ -824,6 +863,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 if startBackgroundCompileIfAlreadySeen then 
                    bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile"))
 
+    member bc.ClearCache(options : FSharpProjectOptions seq, userOpName) =
+        // This operation can't currently be cancelled nor awaited
+        reactor.EnqueueOp(userOpName, "ClearCache", String.Empty, fun ctok -> 
+            options
+            |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(ctok, options)))
+
     member __.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "NotifyProjectCleaned", options.ProjectFileName, fun ctok -> 
          cancellable {
@@ -913,9 +958,10 @@ type FSharpChecker(legacyReferenceResolver,
                     keepAllBackgroundResolutions,
                     tryGetMetadataSnapshot,
                     suggestNamesForErrors,
-                    keepAllBackgroundSymbolUses) =
+                    keepAllBackgroundSymbolUses,
+                    enableBackgroundItemKeyStoreAndSemanticClassification) =
 
-    let backgroundCompiler = BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses)
+    let backgroundCompiler = BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification)
 
     static let globalInstance = lazy FSharpChecker.Create()
             
@@ -932,7 +978,7 @@ type FSharpChecker(legacyReferenceResolver,
     let maxMemEvent = new Event<unit>()
 
     /// Instantiate an interactive checker.    
-    static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?legacyReferenceResolver, ?tryGetMetadataSnapshot, ?suggestNamesForErrors, ?keepAllBackgroundSymbolUses) = 
+    static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?legacyReferenceResolver, ?tryGetMetadataSnapshot, ?suggestNamesForErrors, ?keepAllBackgroundSymbolUses, ?enableBackgroundItemKeyStoreAndSemanticClassification) = 
 
         let legacyReferenceResolver = 
             match legacyReferenceResolver with
@@ -945,7 +991,8 @@ type FSharpChecker(legacyReferenceResolver,
         let tryGetMetadataSnapshot = defaultArg tryGetMetadataSnapshot (fun _ -> None)
         let suggestNamesForErrors = defaultArg suggestNamesForErrors false
         let keepAllBackgroundSymbolUses = defaultArg keepAllBackgroundSymbolUses true
-        new FSharpChecker(legacyReferenceResolver, projectCacheSizeReal,keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses)
+        let enableBackgroundItemKeyStoreAndSemanticClassification = defaultArg enableBackgroundItemKeyStoreAndSemanticClassification false
+        new FSharpChecker(legacyReferenceResolver, projectCacheSizeReal,keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification)
 
     member __.ReferenceResolver = legacyReferenceResolver
 
@@ -1118,6 +1165,11 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.InvalidateConfiguration(options, startBackgroundCompile, userOpName)
 
+    /// Clear the internal cache of the given projects.
+    member __.ClearCache(options: FSharpProjectOptions seq, ?userOpName: string) =
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.ClearCache(options, userOpName)
+
     /// This function is called when a project has been cleaned, and thus type providers should be refreshed.
     member __.NotifyProjectCleaned(options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
@@ -1147,6 +1199,17 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         ic.CheckMaxMemoryReached()
         backgroundCompiler.ParseAndCheckProject(options, userOpName)
+
+    member ic.FindBackgroundReferencesInFile(filename:string, options: FSharpProjectOptions, symbol: FSharpSymbol, ?canInvalidateProject: bool, ?userOpName: string) =
+        let canInvalidateProject = defaultArg canInvalidateProject true
+        let userOpName = defaultArg userOpName "Unknown"
+        ic.CheckMaxMemoryReached()
+        backgroundCompiler.FindReferencesInFile(filename, options, symbol, canInvalidateProject, userOpName)
+
+    member ic.GetBackgroundSemanticClassificationForFile(filename:string, options: FSharpProjectOptions, ?userOpName) =
+        let userOpName = defaultArg userOpName "Unknown"
+        ic.CheckMaxMemoryReached()
+        backgroundCompiler.GetSemanticClassificationForFile(filename, options, userOpName)
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
     member __.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 

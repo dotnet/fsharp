@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.CompileOps
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
@@ -14,6 +15,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Filename
 open Internal.Utilities.Text
 
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -23,12 +25,11 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
-
-open FSharp.Compiler
-open FSharp.Compiler.Ast
 open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticMessage
+open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Import
@@ -38,18 +39,23 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Range
 open FSharp.Compiler.ReferenceResolver
 open FSharp.Compiler.SignatureConformance
-open FSharp.Compiler.TastPickle
+open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypeChecker
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.XmlDoc
 
-open FSharp.Compiler.DotNetFrameworkDependencies
+open Microsoft.DotNet.DependencyManager
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -148,7 +154,6 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | NumberedError (_, m)
       | SyntaxError (_, m) 
       | InternalError (_, m)
-      | FullAbstraction(_, m)
       | InterfaceNotRevealed(_, _, m) 
       | WrappedError (_, m)
       | PatternMatchCompilation.MatchIncomplete (_, _, m)
@@ -188,7 +193,6 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | NameClash(_, _, _, m, _, _, _) 
       | UnresolvedOverloading(_, _, _, m) 
       | UnresolvedConversionOperator (_, _, _, m)
-      | PossibleOverload(_, _, _, m) 
       | VirtualAugmentationOnNullValuedType m
       | NonVirtualAugmentationOnNullValuedType m
       | NonRigidTypar(_, _, _, _, _, m)
@@ -240,7 +244,7 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
   RangeFromException err.Exception
 
 let GetDiagnosticNumber(err: PhasedDiagnostic) = 
-   let rec GetFromException(e: exn) = 
+    let rec GetFromException(e: exn) = 
       match e with
       (* DO NOT CHANGE THESE NUMBERS *)
       | ErrorFromAddingTypeEquation _ -> 1
@@ -290,7 +294,6 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       | LibraryUseOnly _ -> 42
       | ErrorFromAddingConstraint _ -> 43
       | ObsoleteWarning _ -> 44
-      | FullAbstraction _ -> 45
       | ReservedKeyword _ -> 46
       | SelfRefObjCtor _ -> 47
       | VirtualAugmentationOnNullValuedType _ -> 48
@@ -373,25 +376,25 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
 #endif
       | ErrorsFromAddingSubsumptionConstraint (_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) -> fst (FSComp.SR.considerUpcast("", ""))
       | _ -> 193
-   GetFromException err.Exception
+    GetFromException err.Exception
    
 let GetWarningLevel err = 
-  match err.Exception with 
-  // Level 5 warnings
-  | RecursiveUseCheckedAtRuntime _
-  | LetRecEvaluatedOutOfOrder _
-  | DefensiveCopyWarning _
-  | FullAbstraction _ -> 5
-  | NumberedError((n, _), _) 
-  | ErrorWithSuggestions((n, _), _, _, _) 
-  | Error((n, _), _) -> 
-      // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
-      // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
-      // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint..."
-      // 1178, tcNoEqualityNeeded2, "The struct, record or union type '%s' does not support structural equality because the type '%s' does not satisfy the 'equality' constraint...."
-      if (n = 1178) then 5 else 2
-  // Level 2 
-  | _ -> 2
+    match err.Exception with 
+    // Level 5 warnings
+    | RecursiveUseCheckedAtRuntime _
+    | LetRecEvaluatedOutOfOrder _
+    | DefensiveCopyWarning _  -> 5
+
+    | NumberedError((n, _), _)
+    | ErrorWithSuggestions((n, _), _, _, _) 
+    | Error((n, _), _) -> 
+        // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
+        // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
+        // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint..."
+        // 1178, tcNoEqualityNeeded2, "The struct, record or union type '%s' does not support structural equality because the type '%s' does not satisfy the 'equality' constraint...."
+        if (n = 1178) then 5 else 2
+    // Level 2 
+    | _ -> 2
 
 let warningOn err level specificWarnOn = 
     let n = GetDiagnosticNumber err
@@ -403,12 +406,9 @@ let warningOn err level specificWarnOn =
     | 3180 -> false // abImplicitHeapAllocation - off by default
     | _ -> level >= GetWarningLevel err 
 
-let SplitRelatedDiagnostics(err: PhasedDiagnostic) = 
+let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list = 
     let ToPhased e = {Exception=e; Phase = err.Phase}
     let rec SplitRelatedException = function
-      | UnresolvedOverloading(a, overloads, b, c) -> 
-           let related = overloads |> List.map ToPhased
-           UnresolvedOverloading(a, [], b, c)|>ToPhased, related
       | ConstraintSolverRelatedInformation(fopt, m2, e) -> 
           let e, related = SplitRelatedException e
           ConstraintSolverRelatedInformation(fopt, m2, e.Exception)|>ToPhased, related
@@ -452,7 +452,6 @@ let ErrorFromApplyingDefault2E() = DeclareResourceString("ErrorFromApplyingDefau
 let ErrorsFromAddingSubsumptionConstraintE() = DeclareResourceString("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
 let UpperCaseIdentifierInPatternE() = DeclareResourceString("UpperCaseIdentifierInPattern", "")
 let NotUpperCaseConstructorE() = DeclareResourceString("NotUpperCaseConstructor", "")
-let PossibleOverloadE() = DeclareResourceString("PossibleOverload", "%s%s")
 let FunctionExpectedE() = DeclareResourceString("FunctionExpected", "")
 let BakedInMemberConstraintNameE() = DeclareResourceString("BakedInMemberConstraintName", "%s")
 let BadEventTransformationE() = DeclareResourceString("BadEventTransformation", "")
@@ -554,7 +553,6 @@ let NonUniqueInferredAbstractSlot3E() = DeclareResourceString("NonUniqueInferred
 let NonUniqueInferredAbstractSlot4E() = DeclareResourceString("NonUniqueInferredAbstractSlot4", "")
 let Failure3E() = DeclareResourceString("Failure3", "%s")
 let Failure4E() = DeclareResourceString("Failure4", "%s")
-let FullAbstractionE() = DeclareResourceString("FullAbstraction", "%s")
 let MatchIncomplete1E() = DeclareResourceString("MatchIncomplete1", "")
 let MatchIncomplete2E() = DeclareResourceString("MatchIncomplete2", "%s")
 let MatchIncomplete3E() = DeclareResourceString("MatchIncomplete3", "%s")
@@ -714,7 +712,8 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                 os.Append(System.Environment.NewLine + FSComp.SR.derefInsteadOfNot()) |> ignore
           | _ -> os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
 
-      | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInEqualityRelation (_, _, _, _, _, contextInfo) ) as e), _) when (match contextInfo with ContextInfo.NoContext -> false | _ -> true) ->  
+      | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInEqualityRelation (_, _, _, _, _, contextInfo) ) as e), _)
+              when (match contextInfo with ContextInfo.NoContext -> false | _ -> true) ->  
           OutputExceptionR os e
 
       | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _ ) as e), _) ->  
@@ -770,19 +769,99 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           os.Append(e.ContextualErrorMessage) |> ignore
 #endif
 
-      | UnresolvedOverloading(_, _, mtext, _) -> 
-          os.Append mtext |> ignore
+      | UnresolvedOverloading(denv, callerArgs, failure, m) ->
+          
+          // extract eventual information (return type and type parameters)
+          // from ConstraintTraitInfo
+          let knownReturnType, genericParameterTypes =
+              match failure with
+              | NoOverloadsFound (cx=Some cx)
+              | PossibleCandidates (cx=Some cx) -> cx.ReturnType, cx.ArgumentTypes
+              | _ -> None, []
+         
+          // prepare message parts (known arguments, known return type, known generic parameters)
+          let argsMessage, returnType, genericParametersMessage =
+              
+              let retTy =
+                  knownReturnType
+                  |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked()))
+              
+              let argRepr = 
+                  callerArgs.ArgumentNamesAndTypes
+                  |> List.map (fun (name,tTy) -> tTy, {ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero)); ArgReprInfo.Attribs = []})
+                  
+              let argsL,retTyL,genParamTysL = NicePrint.prettyLayoutsOfUnresolvedOverloading denv argRepr retTy genericParameterTypes
+              
+              match callerArgs.ArgumentNamesAndTypes with
+              | [] -> None, Layout.showL retTyL, Layout.showL genParamTysL
+              | items ->
+                  let args = Layout.showL argsL  
+                  let prefixMessage =
+                      match items with
+                      | [_] -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular
+                      | _ -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural
+                  Some (prefixMessage args)
+                  , Layout.showL retTyL
+                  , Layout.showL genParamTysL
+
+          let knownReturnType =
+              match knownReturnType with
+              | None -> None
+              | Some _ -> Some (FSComp.SR.csNoOverloadsFoundReturnType returnType)
+
+          let genericParametersMessage =
+              match genericParameterTypes with
+              | [] -> None
+              | [_] -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixSingular genericParametersMessage)
+              | _ -> Some (FSComp.SR.csNoOverloadsFoundTypeParametersPrefixPlural genericParametersMessage)
+
+          let overloadMethodInfo displayEnv m (x: OverloadInformation) =
+              let paramInfo =
+                  match x.error with
+                  | :? ArgDoesNotMatchError as x ->
+                      let nameOrOneBasedIndexMessage =
+                          x.calledArg.NameOpt
+                          |> Option.map (fun n -> FSComp.SR.csOverloadCandidateNamedArgumentTypeMismatch n.idText)
+                          |> Option.defaultValue (FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((Lib.vsnd x.calledArg.Position) + 1)) //snd
+                      sprintf " // %s" nameOrOneBasedIndexMessage
+                  | _ -> ""
+                  
+              (NicePrint.stringOfMethInfo x.amap m displayEnv x.methodSlot.Method) + paramInfo
+              
+          let nl = System.Environment.NewLine
+          let formatOverloads (overloads: OverloadInformation list) =
+              overloads
+              |> List.map (overloadMethodInfo denv m)
+              |> List.sort
+              |> List.map FSComp.SR.formatDashItem
+              |> String.concat nl
+         
+          // assemble final message composing the parts
+          let msg =
+              let optionalParts =
+                [knownReturnType; genericParametersMessage; argsMessage]
+                |> List.choose id
+                |> String.concat (nl + nl)
+                |> function | "" -> nl
+                            | result -> nl + nl + result + nl + nl
+              
+              match failure with
+              | NoOverloadsFound (methodName, overloads, _) ->
+                  FSComp.SR.csNoOverloadsFound methodName
+                      + optionalParts                      
+                      + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
+              | PossibleCandidates (methodName, [], _) ->
+                  FSComp.SR.csMethodIsOverloaded methodName
+              | PossibleCandidates (methodName, overloads, _) ->
+                  FSComp.SR.csMethodIsOverloaded methodName
+                      + optionalParts
+                      + FSComp.SR.csCandidates (formatOverloads overloads)
+          
+          os.Append msg |> ignore
 
       | UnresolvedConversionOperator(denv, fromTy, toTy, _) -> 
           let t1, t2, _tpcs = NicePrint.minimalStringsOfTwoTypes denv fromTy toTy
           os.Append(FSComp.SR.csTypeDoesNotSupportConversion(t1, t2)) |> ignore
-
-      | PossibleOverload(_, minfo, originalError, _) -> 
-          // print original error that describes reason why this overload was rejected
-          let buf = new StringBuilder()
-          OutputExceptionR buf originalError
-
-          os.Append(PossibleOverloadE().Format minfo (buf.ToString())) |> ignore
 
       | FunctionExpected _ ->
           os.Append(FunctionExpectedE().Format) |> ignore
@@ -1257,7 +1336,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   match types with
                   | TType_app (maybeUnit, []) :: ts -> 
                       match maybeUnit.TypeAbbrev with
-                      | Some ttype when Tastops.isUnitTy g ttype -> true
+                      | Some ttype when isUnitTy g ttype -> true
                       | _ -> hasUnitTType_app ts
                   | _ :: ts -> hasUnitTType_app ts
                   | [] -> false
@@ -1398,8 +1477,6 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           if !showAssertForUnexpectedException then 
               System.Diagnostics.Debug.Assert(false, sprintf "Unexpected exception seen in compiler: %s\n%s" s (exn.ToString()))
 #endif
-
-      | FullAbstraction(s, _) -> os.Append(FullAbstractionE().Format s) |> ignore
 
       | WrappedError (exn, _) -> OutputExceptionR os exn
 
@@ -2122,7 +2199,7 @@ type TcConfigBuilder =
       mutable productNameForBannerText: string
       /// show the MS (c) notice, e.g. with help or fsi? 
       mutable showBanner: bool
-        
+
       /// show times between passes? 
       mutable showTimes: bool
       mutable showLoadedAssemblies: bool
@@ -2152,7 +2229,7 @@ type TcConfigBuilder =
       mutable emitDebugInfoInQuotations: bool
 
       mutable exename: string option
-      
+
       // If true - the compiler will copy FSharp.Core.dll along the produced binaries
       mutable copyFSharpCore: CopyFSharpCoreFlag
 
@@ -2160,8 +2237,8 @@ type TcConfigBuilder =
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
 
-     /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
-     /// and from which we can read the metadata. Only used when metadataOnly=true.
+      /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
+      /// and from which we can read the metadata. Only used when metadataOnly=true.
       mutable tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
 
       mutable internalTestSpanStackReferring: bool
@@ -2171,6 +2248,8 @@ type TcConfigBuilder =
       mutable pathMap: PathMap
 
       mutable langVersion: LanguageVersion
+
+      mutable dependencyProvider: DependencyProvider
       }
 
     static member Initial =
@@ -2311,7 +2390,23 @@ type TcConfigBuilder =
           noConditionalErasure = false
           pathMap = PathMap.empty
           langVersion = LanguageVersion("default")
+          dependencyProvider = Unchecked.defaultof<DependencyProvider>
         }
+
+    // Directories to start probing in
+    // Algorithm:
+    //  Search for native libraries using:
+    //  1. Include directories
+    //  2. compilerToolPath directories
+    //  3. reference dll's
+    //  4. The implicit include directory
+    member private tcConfigB.nativeProbingRoots () =
+        seq {
+            yield! tcConfigB.includes
+            yield! tcConfigB.compilerToolPaths
+            yield! (tcConfigB.referencedDLLs |> Seq.map(fun ref -> Path.GetDirectoryName(ref.Text)))
+            yield tcConfigB.implicitIncludeDir
+        } |> Seq.distinct
 
     static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
                             isInteractive, isInvalidationSupported, defaultCopyFSharpCore, tryGetMetadataSnapshot) =
@@ -2321,17 +2416,20 @@ type TcConfigBuilder =
         if (String.IsNullOrEmpty defaultFSharpBinariesDir) then
             failwith "Expected a valid defaultFSharpBinariesDir"
 
-        { TcConfigBuilder.Initial with 
-            implicitIncludeDir = implicitIncludeDir
-            defaultFSharpBinariesDir = defaultFSharpBinariesDir
-            reduceMemoryUsage = reduceMemoryUsage
-            legacyReferenceResolver = legacyReferenceResolver
-            isInteractive = isInteractive
-            isInvalidationSupported = isInvalidationSupported
-            copyFSharpCore = defaultCopyFSharpCore
-            tryGetMetadataSnapshot = tryGetMetadataSnapshot
-            useFsiAuxLib = isInteractive
-        }
+        let tcConfigBuilder =
+            { TcConfigBuilder.Initial with 
+                implicitIncludeDir = implicitIncludeDir
+                defaultFSharpBinariesDir = defaultFSharpBinariesDir
+                reduceMemoryUsage = reduceMemoryUsage
+                legacyReferenceResolver = legacyReferenceResolver
+                isInteractive = isInteractive
+                isInvalidationSupported = isInvalidationSupported
+                copyFSharpCore = defaultCopyFSharpCore
+                tryGetMetadataSnapshot = tryGetMetadataSnapshot
+                useFsiAuxLib = isInteractive
+            }
+        tcConfigBuilder.dependencyProvider <- new DependencyProvider(NativeResolutionProbe(tcConfigBuilder.nativeProbingRoots))
+        tcConfigBuilder
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -2420,7 +2518,6 @@ type TcConfigBuilder =
             if not (List.contains path (List.map (fun (_, _, path) -> path) tcConfigB.loadedSources)) then
                 tcConfigB.loadedSources <- tcConfigB.loadedSources ++ (m, originalPath, path)
 
-
     member tcConfigB.AddEmbeddedSourceFile (file) = 
         tcConfigB.embedSourceList <- tcConfigB.embedSourceList ++ file
 
@@ -2440,8 +2537,8 @@ type TcConfigBuilder =
              let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m, path, projectReference)
              
-    member tcConfigB.AddDependencyManagerText (packageManager:DependencyManagerIntegration.IDependencyManagerProvider, m, path:string) = 
-        let path = DependencyManagerIntegration.removeDependencyManagerKey packageManager.Key path
+    member tcConfigB.AddDependencyManagerText (packageManager:IDependencyManagerProvider, m, path:string) = 
+        let path = tcConfigB.dependencyProvider.RemoveDependencyManagerKey(packageManager.Key, path)
 
         match tcConfigB.packageManagerLines |> Map.tryFind packageManager.Key with
         | Some lines -> tcConfigB.packageManagerLines <- Map.add packageManager.Key (lines ++ (false, path, m)) tcConfigB.packageManagerLines
@@ -2828,6 +2925,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         TcConfig(builder, validate)
 
     member x.legacyReferenceResolver = data.legacyReferenceResolver
+
+    member x.dependencyProvider = data.dependencyProvider
+
     member tcConfig.CloneOfOriginalBuilder = 
         { data with conditionalCompilationDefines=data.conditionalCompilationDefines }
 
@@ -2842,8 +2942,11 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
           [ 
             // Check if we are given an explicit framework root - if so, use that
             match tcConfig.clrRoot with 
-            | Some x -> 
-                yield tcConfig.MakePathAbsolute x
+            | Some x ->
+                let clrRoot = tcConfig.MakePathAbsolute x
+                yield clrRoot
+                let clrFacades = Path.Combine(clrRoot, "Facades")
+                if Directory.Exists(clrFacades) then yield clrFacades
 
             | None -> 
 // "there is no really good notion of runtime directory on .NETCore"
@@ -3057,7 +3160,11 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     // it must return warnings and errors as data
     //
     // NOTE!! if mode=ReportErrors then this method must not raise exceptions. It must just report the errors and recover
-    static member TryResolveLibsUsingMSBuildRules (tcConfig: TcConfig, originalReferences: AssemblyReference list, errorAndWarningRange: range, mode: ResolveAssemblyReferenceMode) : AssemblyResolution list * UnresolvedAssemblyReference list =
+    static member TryResolveLibsUsingMSBuildRules (tcConfig: TcConfig, 
+            originalReferences: AssemblyReference list,
+            errorAndWarningRange: range,
+            mode: ResolveAssemblyReferenceMode) : AssemblyResolution list * UnresolvedAssemblyReference list =
+
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         if tcConfig.useSimpleResolution then
             failwith "MSBuild resolution is not supported."
@@ -3295,8 +3402,11 @@ let PrependPathToSpec x (SynModuleOrNamespaceSig(p, b, c, d, e, f, g, h)) = SynM
 
 let PrependPathToInput x inp = 
     match inp with 
-    | ParsedInput.ImplFile (ParsedImplFileInput (b, c, q, d, hd, impls, e)) -> ParsedInput.ImplFile (ParsedImplFileInput (b, c, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToImpl x) impls, e))
-    | ParsedInput.SigFile (ParsedSigFileInput (b, q, d, hd, specs)) -> ParsedInput.SigFile (ParsedSigFileInput (b, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToSpec x) specs))
+    | ParsedInput.ImplFile (ParsedImplFileInput (b, c, q, d, hd, impls, e)) ->
+        ParsedInput.ImplFile (ParsedImplFileInput (b, c, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToImpl x) impls, e))
+
+    | ParsedInput.SigFile (ParsedSigFileInput (b, q, d, hd, specs)) ->
+        ParsedInput.SigFile (ParsedSigFileInput (b, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToSpec x) specs))
 
 let ComputeAnonModuleName check defaultNamespace filename (m: range) = 
     let modname = CanonicalizeFilename filename
@@ -3890,6 +4000,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let mutable dllTable: NameMap<ImportedBinary> = NameMap.empty
     let mutable ccuInfos: ImportedAssembly list = []
     let mutable ccuTable: NameMap<ImportedAssembly> = NameMap.empty
+
+    /// ccuThunks is a ConcurrentDictionary thus threadsafe
+    /// the key is a ccuThunk object, the value is a (unit->unit) func that when executed
+    /// the func is used to fix up the func and operates on data captured at the time the func is created.
+    /// func() is captured during phase2() of RegisterAndPrepareToImportReferencedDll(..) and PrepareToImportReferencedFSharpAssembly ( .. )
+    let mutable ccuThunks = new ConcurrentDictionary<CcuThunk, (unit -> unit)>()
+
     let disposeActions = ResizeArray()
     let mutable disposed = false
     let mutable ilGlobalsOpt = ilGlobalsOpt
@@ -3901,13 +4018,32 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #endif
 
     let disposal = new TcImportsSafeDisposal(disposeActions, disposeTypeProviderActions, compilationThread)
-    
+
     let CheckDisposed() =
         if disposed then assert false
 
     let dispose () =
         CheckDisposed()
         (disposal :> IDisposable).Dispose()
+
+    // This is used to fixe up unresolved ccuThunks that were created during assembly import.
+    // the ccuThunks dictionary is a ConcurrentDictionary and thus threadsafe.
+    // Algorithm:
+    //   Get a snapshot of the current unFixedUp ccuThunks.
+    //   for each of those thunks, remove them from the dictionary, so any parallel threads can't do this work
+    //      If it successfully removed it from the dictionary then do the fixup
+    //          If the thunk remains unresolved add it back to the ccuThunks dictionary for further processing
+    //      If not then move on to the next thunk
+    let fixupOrphanCcus () =
+        let keys = ccuThunks.Keys
+        for ccuThunk in keys do
+            match ccuThunks.TryRemove(ccuThunk) with
+            | true, func ->
+                if ccuThunk.IsUnresolvedReference then
+                    func()
+                if ccuThunk.IsUnresolvedReference then
+                    ccuThunks.TryAdd(ccuThunk, func) |> ignore
+            | _ -> ()
 
     static let ccuHasType (ccu: CcuThunk) (nsname: string list) (tname: string) =
         let matchNameSpace (entityOpt: Entity option) n =
@@ -3940,13 +4076,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             CheckDisposed()
             tcImportsWeak
 #endif
-        
+
     member tcImports.RegisterCcu ccuInfo =
         CheckDisposed()
         ccuInfos <- ccuInfos ++ ccuInfo
         // Assembly Ref Resolution: remove this use of ccu.AssemblyName
         ccuTable <- NameMap.add (ccuInfo.FSharpViewOfMetadata.AssemblyName) ccuInfo ccuTable
-    
+
     member tcImports.RegisterDll dllInfo =
         CheckDisposed()
         dllInfos <- dllInfos ++ dllInfo
@@ -3989,24 +4125,24 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | Some res -> res
         | None -> error(Error(FSComp.SR.buildCouldNotResolveAssembly assemblyName, m))
 
-    member tcImports.GetImportedAssemblies() = 
+    member tcImports.GetImportedAssemblies() =
         CheckDisposed()
-        match importsBase with 
+        match importsBase with
         | Some importsBase-> List.append (importsBase.GetImportedAssemblies()) ccuInfos
-        | None -> ccuInfos        
-        
-    member tcImports.GetCcusExcludingBase() = 
-        CheckDisposed()
-        ccuInfos |> List.map (fun x -> x.FSharpViewOfMetadata)        
+        | None -> ccuInfos
 
-    member tcImports.GetCcusInDeclOrder() =         
+    member tcImports.GetCcusExcludingBase() =
+        CheckDisposed()
+        ccuInfos |> List.map (fun x -> x.FSharpViewOfMetadata)
+
+    member tcImports.GetCcusInDeclOrder() =
         CheckDisposed()
         List.map (fun x -> x.FSharpViewOfMetadata) (tcImports.GetImportedAssemblies())  
-        
+
     // This is the main "assembly reference --> assembly" resolution routine. 
-    member tcImports.FindCcuInfo (ctok, m, assemblyName, lookupOnly) = 
+    member tcImports.FindCcuInfo (ctok, m, assemblyName, lookupOnly) =
         CheckDisposed()
-        let rec look (t: TcImports) = 
+        let rec look (t: TcImports) =
             match NameMap.tryFind assemblyName t.CcuTable with
             | Some res -> Some res
             | None -> 
@@ -4021,9 +4157,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             match look tcImports with 
             | Some res -> ResolvedImportedAssembly res
             | None -> UnresolvedImportedAssembly assemblyName
-        
 
-    member tcImports.FindCcu (ctok, m, assemblyName, lookupOnly) = 
+    member tcImports.FindCcu (ctok, m, assemblyName, lookupOnly) =
         CheckDisposed()
         match tcImports.FindCcuInfo(ctok, m, assemblyName, lookupOnly) with
         | ResolvedImportedAssembly importedAssembly -> ResolvedCcu(importedAssembly.FSharpViewOfMetadata)
@@ -4076,18 +4211,21 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                   ILScopeRef = ilScopeRef
                   ILAssemblyRefs = ilAssemblyRefs }
             tcImports.RegisterDll dllinfo
+
+            let ccuContents = Construct.NewCcuContents ilScopeRef m ilShortAssemName (Construct.NewEmptyModuleOrNamespaceType Namespace) 
+
             let ccuData: CcuData = 
               { IsFSharp=false
                 UsesFSharp20PlusQuotations=false
                 InvalidateEvent=(new Event<_>()).Publish
                 IsProviderGenerated = true
                 QualifiedName= Some (assembly.PUntaint((fun a -> a.FullName), m))
-                Contents = NewCcuContents ilScopeRef m ilShortAssemName (NewEmptyModuleOrNamespaceType Namespace) 
+                Contents = ccuContents
                 ILScopeRef = ilScopeRef
                 Stamp = newStamp()
                 SourceCodeDirectory = ""  
                 FileName = Some fileName
-                MemberSignatureEquality = (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll g ty1 ty2)
+                MemberSignatureEquality = (fun ty1 ty2 -> typeEquivAux EraseAll g ty1 ty2)
                 ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
                 TryGetILModuleDef = (fun () -> Some ilModule)
                 TypeForwarders = Map.empty }
@@ -4241,7 +4379,9 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             | None -> 
                 // Build up the artificial namespace if there is not a real one.
                 let cpath = CompPath(ILScopeRef.Local, injectedNamespace |> List.rev |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace)) )
-                let newNamespace = NewModuleOrNamespace (Some cpath) taccessPublic (ident(next, rangeStartup)) XmlDoc.Empty [] (MaybeLazy.Strict (NewEmptyModuleOrNamespaceType Namespace)) 
+                let mid = ident (next, rangeStartup)
+                let mty = Construct.NewEmptyModuleOrNamespaceType Namespace
+                let newNamespace = Construct.NewModuleOrNamespace (Some cpath) taccessPublic mid XmlDoc.Empty [] (MaybeLazy.Strict mty) 
                 entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation newNamespace
                 tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, newNamespace, next :: injectedNamespace, rest, provider, st)
         | [] -> 
@@ -4456,7 +4596,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #endif
               FSharpOptimizationData = notlazy None }
         tcImports.RegisterCcu ccuinfo
-        let phase2 () = 
+        let phase2 () =
 #if !NO_EXTENSIONTYPING
             ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
 #endif
@@ -4505,7 +4645,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #endif
                       TryGetILModuleDef = ilModule.TryGetILModuleDef
                       UsesFSharp20PlusQuotations = minfo.usesQuotations
-                      MemberSignatureEquality= (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
+                      MemberSignatureEquality= (fun ty1 ty2 -> typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
                       TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders()) }
 
                 let ccu = CcuThunk.Create(ccuName, ccuData)
@@ -4516,12 +4656,20 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                          | None -> 
                             if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName 
                             None
-                         | Some info -> 
+                         | Some info ->
                             let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), info)
-                            let res = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) 
-                            if verbose then dprintf "found optimization data for CCU %s\n" ccuName 
-                            Some res)
+                            let fixupThunk () = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false)))
+
+                            // Make a note of all ccuThunks that may still need to be fixed up when other dlls are loaded
+                            for ccuThunk in data.FixupThunks do
+                                if ccuThunk.IsUnresolvedReference then
+                                    ccuThunks.TryAdd(ccuThunk, fun () -> fixupThunk () |> ignore) |> ignore
+
+                            if verbose then dprintf "found optimization data for CCU %s\n" ccuName
+                            Some (fixupThunk ()))
+
                 let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
+
                 let ccuinfo = 
                     { FSharpViewOfMetadata=ccu 
                       AssemblyAutoOpenAttributes = ilModule.GetAutoOpenAttributes ilg
@@ -4532,29 +4680,37 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                       TypeProviders = []
 #endif
                       ILScopeRef = ilScopeRef }  
+
                 let phase2() = 
 #if !NO_EXTENSIONTYPING
                      match ilModule.TryGetILModuleDef() with 
                      | None -> () // no type providers can be used without a real IL Module present
                      | Some ilModule ->
-                         ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
+                         let tps = tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
+                         ccuinfo.TypeProviders <- tps
 #else
                      ()
 #endif
                 data, ccuinfo, phase2)
-                     
+
         // Register all before relinking to cope with mutually-referential ccus 
         ccuRawDataAndInfos |> List.iter (p23 >> tcImports.RegisterCcu)
-        let phase2 () = 
+        let phase2 () =
             (* Relink *)
             (* dprintf "Phase2: %s\n" filename; REMOVE DIAGNOSTICS *)
-            ccuRawDataAndInfos |> List.iter (fun (data, _, _) -> data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) |> ignore)
+            ccuRawDataAndInfos
+            |> List.iter (fun (data, _, _) ->
+                let fixupThunk () = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) |> ignore
+                fixupThunk()
+                for ccuThunk in data.FixupThunks do
+                    if ccuThunk.IsUnresolvedReference then
+                        ccuThunks.TryAdd(ccuThunk, fixupThunk) |> ignore
+                )
 #if !NO_EXTENSIONTYPING
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2())
 #endif
-            ccuRawDataAndInfos |> List.map p23 |> List.map ResolvedImportedAssembly  
+            ccuRawDataAndInfos |> List.map p23 |> List.map ResolvedImportedAssembly
         phase2
-         
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
     member tcImports.RegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : Cancellable<_ * (unit -> AvailableImportedAssembly list)> =
@@ -4596,16 +4752,16 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                   ILAssemblyRefs = assemblyData.ILAssemblyRefs }
             tcImports.RegisterDll dllinfo
             let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
-            let phase2 = 
+            let phase2 =
                 if assemblyData.HasAnyFSharpSignatureDataAttribute then 
                     if not (assemblyData.HasMatchingFSharpSignatureDataAttribute ilg) then 
-                      errorR(Error(FSComp.SR.buildDifferentVersionMustRecompile filename, m))
-                      tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo)
+                        errorR(Error(FSComp.SR.buildDifferentVersionMustRecompile filename, m))
+                        tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo)
                     else 
-                      try
+                        try
                         tcImports.PrepareToImportReferencedFSharpAssembly (ctok, m, filename, dllinfo)
-                      with e -> error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), m))
-                else 
+                        with e -> error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), m))
+                else
                     tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo)
             return dllinfo, phase2
          }
@@ -4626,6 +4782,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                })
 
         let dllinfos, phase2s = results |> List.choose id |> List.unzip
+        fixupOrphanCcus()
         let ccuinfos = (List.collect (fun phase2 -> phase2()) phase2s) 
         return dllinfos, ccuinfos
       }
@@ -4910,7 +5067,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file) =
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
       dllRequireF: 'state -> range * string -> 'state,
-      packageRequireF: 'state -> DependencyManagerIntegration.IDependencyManagerProvider * range * string -> 'state,
+      packageRequireF: 'state -> IDependencyManagerProvider * range * string -> 'state,
       loadSourceF: 'state -> range * string -> unit)
      (tcConfig:TcConfigBuilder, inp, pathOfMetaCommandSource, state0) =
 
@@ -4930,7 +5087,7 @@ let ProcessMetaCommandsFromInput
                    errorR(HashIncludeNotAllowedInNonScript m)
                match args with 
                | [path] -> 
-                   matchedm<-m
+                   matchedm <- m
                    tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
                    state
                | _ -> 
@@ -4940,27 +5097,39 @@ let ProcessMetaCommandsFromInput
                List.fold (fun state d -> nowarnF state (m,d)) state numbers
 
             | ParsedHashDirective(("reference" | "r"),args,m) -> 
-               if not canHaveScriptMetaCommands then
-                   errorR(HashReferenceNotAllowedInNonScript m)
+                if not canHaveScriptMetaCommands then
+                    errorR(HashReferenceNotAllowedInNonScript m)
 
-               match args with
-               | [path] ->
-                   matchedm <- m
-                   match DependencyManagerIntegration.tryFindDependencyManagerInPath tcConfig.compilerToolPaths tcConfig.outputDir m (path:string) with
-                   | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager ->
-                       if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                           packageRequireF state (packageManager,m,path)
-                       else
-                           errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
-                           state
+                let reportError =
+                    let report errorType err msg =
+                        let error = err, msg
+                        match errorType with
+                        | ErrorReportType.Warning -> warning(Error(error, m))
+                        | ErrorReportType.Error -> errorR(Error(error, m))
+                    ResolvingErrorReport (report)
 
-                   // #r "Assembly"
-                   | DependencyManagerIntegration.ReferenceType.Library path ->
-                       dllRequireF state (m,path)
+                match args with
+                | [path] ->
+                    matchedm <- m
+                    let output = tcConfig.outputDir |> Option.defaultValue ""
+                    let dm = tcConfig.dependencyProvider.TryFindDependencyManagerInPath(tcConfig.compilerToolPaths, output , reportError, path)
+                    match dm with
+                    | _, dependencyManager when not(isNull dependencyManager) ->
+                        if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
+                            packageRequireF state (dependencyManager, m, path)
+                        else
+                            errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
+                            state
 
-                   | DependencyManagerIntegration.ReferenceType.UnknownType ->
-                       state // error already reported
-               | _ ->
+                    // #r "Assembly"
+                    | path, _ ->
+                        let p =
+                            if String.IsNullOrWhiteSpace(path) then ""
+                            else path
+
+                        dllRequireF state (m, p)
+
+                | _ ->
                    errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
                    state
 
@@ -5213,10 +5382,10 @@ module ScriptPreprocessClosure =
             // Recover by using a default TcConfig.
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false), nowarns
-    
-    let FindClosureFiles(_mainFile, _m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager: Lexhelp.LexResourceManager) =
+
+    let FindClosureFiles(mainFile, _m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager: Lexhelp.LexResourceManager) =
         let mutable tcConfig = origTcConfig
-        
+
         let observedSources = Observed()
         let loadScripts = HashSet<_>()
 
@@ -5228,41 +5397,47 @@ module ScriptPreprocessClosure =
                     match packageManagerLines with
                     | [] -> ()
                     | (_, _, m)::_ ->
+                        let reportError =
+                            let report errorType err msg =
+                                let error = err, msg
+                                match errorType with
+                                | ErrorReportType.Warning -> warning(Error(error, m))
+                                | ErrorReportType.Error -> errorR(Error(error, m))
+                            ResolvingErrorReport (report)
+
                         match origTcConfig.packageManagerLines |> Map.tryFind packageManagerKey with
                         | Some oldDependencyManagerLines when oldDependencyManagerLines = packageManagerLines -> ()
                         | _ ->
-                            match DependencyManagerIntegration.tryFindDependencyManagerByKey tcConfig.compilerToolPaths tcConfig.outputDir m packageManagerKey with
-                            | None ->
-                                errorR(DependencyManagerIntegration.createPackageManagerUnknownError tcConfig.compilerToolPaths tcConfig.outputDir packageManagerKey m)
-                            | Some packageManager ->
+                            let outputDir =  tcConfig.outputDir |> Option.defaultValue ""
+                            match tcConfig.dependencyProvider.TryFindDependencyManagerByKey(tcConfig.compilerToolPaths, outputDir, reportError, packageManagerKey) with
+                            | null ->
+                                errorR(Error(tcConfig.dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
+
+                            | dependencyManager ->
                                 let inline snd3 (_, b, _) = b
                                 let packageManagerTextLines = packageManagerLines |> List.map snd3
-
-                                match DependencyManagerIntegration.resolve packageManager ".fsx" m packageManagerTextLines with
-                                | None -> () // error already reported
-                                | Some (succeeded, generatedScripts, additionalIncludeFolders) ->  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-                                    // This may incrementally update tcConfig too with new #r references
-                                    // New package text is ignored on this second phase
-                                    match succeeded with
-                                    | true ->
-                                        // Resolution produced no errors
-                                        if not (isNil additionalIncludeFolders) then
-                                            let tcConfigB = tcConfig.CloneOfOriginalBuilder
-                                            for folder in additionalIncludeFolders do 
-                                                tcConfigB.AddIncludePath(m, folder, "")
-                                            tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
-                                            tcConfig <- TcConfig.Create(tcConfigB, validate=false)
-                                        for script in generatedScripts do
-                                            let scriptText = File.ReadAllText script
-                                            loadScripts.Add script |> ignore
-                                            let iSourceText = SourceText.ofString scriptText
-                                            yield! loop (ClosureSource(script, m, iSourceText, true))
-                                    | false ->
-                                        // Resolution produced errors update packagerManagerLines entries to note these failure
-                                        // failed resolutions will no longer be considered
+                                let result = tcConfig.dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, executionRid, tcConfig.implicitIncludeDir, mainFile, scriptName)
+                                match result.Success with
+                                | true ->
+                                    // Resolution produced no errors
+                                    if not (Seq.isEmpty result.Roots) then
                                         let tcConfigB = tcConfig.CloneOfOriginalBuilder
-                                        tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
-                                        tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
+                                        for folder in result.Roots do 
+                                            tcConfigB.AddIncludePath(m, folder, "")
+                                        tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
+                                        tcConfig <- TcConfig.Create(tcConfigB, validate=false)
+                                    for script in result.SourceFiles do
+                                        let scriptText = File.ReadAllText script
+                                        loadScripts.Add script |> ignore
+                                        let iSourceText = SourceText.ofString scriptText
+                                        yield! loop (ClosureSource(script, m, iSourceText, true))
+
+                                | false ->
+                                    // Resolution produced errors update packagerManagerLines entries to note these failure
+                                    // failed resolutions will no longer be considered
+                                    let tcConfigB = tcConfig.CloneOfOriginalBuilder
+                                    tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
+                                    tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
             else []
 
         and loop (ClosureSource(filename, m, sourceText, parseRequired)) = 
@@ -5512,7 +5687,8 @@ type RootImpls = Zset<QualifiedNameOfFile >
 let qnameOrder = Order.orderBy (fun (q: QualifiedNameOfFile) -> q.Text)
 
 type TcState = 
-    { tcsCcu: CcuThunk
+    {
+      tcsCcu: CcuThunk
       tcsCcuType: ModuleOrNamespace
       tcsNiceNameGen: NiceNameGenerator
       tcsTcSigEnv: TcEnv
@@ -5520,7 +5696,8 @@ type TcState =
       tcsCreatesGeneratedProvidedTypes: bool
       tcsRootSigs: RootSigs 
       tcsRootImpls: RootImpls 
-      tcsCcuSig: ModuleOrNamespaceType }
+      tcsCcuSig: ModuleOrNamespaceType
+    }
 
     member x.NiceNameGenerator = x.tcsNiceNameGen
 
@@ -5548,7 +5725,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
     ignore tcImports
 
     // Create a ccu to hold all the results of compilation 
-    let ccuType = NewCcuContents ILScopeRef.Local m ccuName (NewEmptyModuleOrNamespaceType Namespace)
+    let ccuContents = Construct.NewCcuContents ILScopeRef.Local m ccuName (Construct.NewEmptyModuleOrNamespaceType Namespace)
 
     let ccuData: CcuData = 
         { IsFSharp=true
@@ -5564,8 +5741,8 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
           QualifiedName= None
           SourceCodeDirectory = tcConfig.implicitIncludeDir 
           ILScopeRef=ILScopeRef.Local
-          Contents=ccuType
-          MemberSignatureEquality= (Tastops.typeEquivAux EraseAll tcGlobals)
+          Contents=ccuContents
+          MemberSignatureEquality= typeEquivAux EraseAll tcGlobals
           TypeForwarders=Map.empty }
 
     let ccu = CcuThunk.Create(ccuName, ccuData)
@@ -5575,16 +5752,14 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
         tcGlobals.fslibCcu.Fixup ccu
 
     { tcsCcu= ccu
-      tcsCcuType=ccuType
+      tcsCcuType=ccuContents
       tcsNiceNameGen=niceNameGen
       tcsTcSigEnv=tcEnv0
       tcsTcImplEnv=tcEnv0
       tcsCreatesGeneratedProvidedTypes=false
       tcsRootSigs = Zmap.empty qnameOrder
       tcsRootImpls = Zset.empty qnameOrder
-      tcsCcuSig = NewEmptyModuleOrNamespaceType Namespace }
-
-
+      tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput) =
@@ -5730,7 +5905,7 @@ let TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcI
 
 let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
     // Publish the latest contents to the CCU 
-    tcState.tcsCcu.Deref.Contents <- NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
+    tcState.tcsCcu.Deref.Contents <- Construct.NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
 
     // Check all interfaces have implementations 
     tcState.tcsRootSigs |> Zmap.iter (fun qualNameOfFile _ ->  

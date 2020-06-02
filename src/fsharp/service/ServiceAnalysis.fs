@@ -119,6 +119,9 @@ module UnusedOpens =
                 // Record fields are used in name resolution
                 true
 
+             | :? FSharpField as field when field.IsUnionCaseField ->
+                 false
+
              | _ ->
                 // For the rest of symbols we pick only those which are the first part of a long ident, because it's they which are
                 // contained in opened namespaces / modules. For example, we pick `IO` from long ident `IO.File.OpenWrite` because
@@ -178,7 +181,7 @@ module UnusedOpens =
                 | true, scopes -> openStatement.AppliedScope :: scopes
                 | _ -> [openStatement.AppliedScope]
             usedModules.[openedModule.Entity] <- scopes
-        newlyOpenedModules.Length > 0
+        not (isNil newlyOpenedModules)
                                           
     /// Incrementally filter out the open statements one by one. Filter those whose contents are referred to somewhere in the symbol uses.
     /// Async to allow cancellation.
@@ -229,10 +232,11 @@ module UnusedOpens =
         }
  
 module SimplifyNames = 
-    type SimplifiableRange = {
-        Range: range
-        RelativeName: string
-    }
+    type SimplifiableRange =
+        {
+          Range: range
+          RelativeName: string
+        }
 
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length    
 
@@ -293,15 +297,19 @@ module SimplifyNames =
 
 module UnusedDeclarations = 
     let isPotentiallyUnusedDeclaration (symbol: FSharpSymbol) : bool =
+
         match symbol with
+
         // Determining that a record, DU or module is used anywhere requires inspecting all their enclosed entities (fields, cases and func / vals)
         // for usages, which is too expensive to do. Hence we never gray them out.
         | :? FSharpEntity as e when e.IsFSharpRecord || e.IsFSharpUnion || e.IsInterface || e.IsFSharpModule || e.IsClass || e.IsNamespace -> false
+
         // FCS returns inconsistent results for override members; we're skipping these symbols.
         | :? FSharpMemberOrFunctionOrValue as f when 
                 f.IsOverrideOrExplicitInterfaceImplementation ||
                 f.IsBaseValue ||
                 f.IsConstructor -> false
+
         // Usage of DU case parameters does not give any meaningful feedback; we never gray them out.
         | :? FSharpParameter -> false
         | _ -> true
