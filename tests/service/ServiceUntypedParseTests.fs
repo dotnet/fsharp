@@ -130,16 +130,11 @@ let foo7 = ()
 [<A;>]
 let foo8 = ()
 """
-    let (SynModuleOrNamespace (_, _, _, decls, _, _, _, _)) = parseSourceCodeAndGetModule source
+    let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
     decls |> List.map (fun decl ->
         match decl with
-        | SynModuleDecl.Let (_,[Binding(_,_,_,_,attributeLists,_,_,_,_,_,_,_)],_) ->
-            attributeLists |> List.map (fun list ->
-                let r = list.Range
-
-                list.Attributes.Length,
-                ((r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)))
-
+        | SynModuleDecl.Let (_, [Binding (attributes = attributeLists)], _) ->
+            attributeLists |> List.map (fun list -> list.Attributes.Length, getRangeCoords list.Range)
         | _ -> failwith "Could not get binding")
     |> shouldEqual
         [ [ (1, ((2,  0),  (2, 5))) ]
@@ -201,13 +196,10 @@ let ``SynType.Paren ranges`` () =
 module TypeMemberRanges =
 
     let getTypeMemberRange source =
-        let (SynModuleOrNamespace (_, _, _, decls, _, _, _, _)) = parseSourceCodeAndGetModule source
+        let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
         match decls with
         | [ SynModuleDecl.Types ([ TypeDefn (_, SynTypeDefnRepr.ObjectModel (_, memberDecls, _), _, _) ], _) ] ->
-            memberDecls |> List.map (fun memberDecl ->
-                let range = memberDecl.Range
-                (range.StartLine, range.StartColumn), (range.EndLine, range.EndColumn))
-
+            memberDecls |> List.map (fun memberDecl -> getRangeCoords memberDecl.Range)
         | _ -> failwith "Could not get member"
 
     
