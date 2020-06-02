@@ -4,7 +4,7 @@ namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open System.IO
 open System.Reflection
-open FSharp.Compiler.UnitTests
+open FSharp.TestHelpers
 open NUnit.Framework
 
 [<TestFixture>]
