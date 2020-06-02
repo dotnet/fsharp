@@ -21,17 +21,20 @@ type IsReflectedDefinition =
 [<RequireQualifiedAccess>]
 type QuotationSerializationFormat =
     { 
+      /// Indicates that witness parameters are recorded
+      SupportsWitnesses: bool 
+      
       /// Indicates that type references are emitted as integer indexes into a supplied table
       SupportsDeserializeEx: bool 
     }
 
 [<Sealed>]
 type QuotationGenerationScope  =
-    static member Create: TcGlobals * ImportMap * CcuThunk * IsReflectedDefinition -> QuotationGenerationScope
-    member Close: unit -> ILTypeRef list * (TType * range) list * (Expr * range) list 
+    static member Create: TcGlobals * ImportMap * CcuThunk * ConstraintSolver.TcValF * IsReflectedDefinition -> QuotationGenerationScope
+    member Close: unit -> ILTypeRef list * (TType * range) list * (Expr * range) list
     static member ComputeQuotationFormat : TcGlobals -> QuotationSerializationFormat
 
-val ConvExprPublic : QuotationGenerationScope -> Expr -> QuotationPickler.ExprData 
+val ConvExprPublic : QuotationGenerationScope -> suppressWitnesses: bool -> Expr -> QuotationPickler.ExprData 
 val ConvReflectedDefinition: QuotationGenerationScope -> string -> Val -> Expr -> QuotationPickler.MethodBaseData * QuotationPickler.ExprData
 
 val (|ModuleValueOrMemberUse|_|) : TcGlobals -> Expr -> (ValRef * ValUseFlag * Expr * TType * TypeInst * Expr list) option
