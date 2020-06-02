@@ -9,6 +9,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 
 /// A range of utility functions to assist with traversing an AST
 module public AstTraversal =
@@ -518,7 +519,7 @@ module public AstTraversal =
                 
             visitor.VisitPat (defaultTraverse, pat)
 
-        and traverseSynType (ty: SynType) =
+        and traverseSynType (StripParenTypes ty) =
             let defaultTraverse ty =
                 match ty with
                 | SynType.App (typeName, _, typeArgs, _, _, _, _)
