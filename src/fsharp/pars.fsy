@@ -4956,12 +4956,12 @@ atomType:
   | UNDERSCORE 
      { SynType.Anon (lhs parseState) }
 
-  | LPAREN typ rparen 
-     {  $2 }
+  | LPAREN typ rparen
+     { SynType.Paren ($2, lhs parseState) }
 
-  | LPAREN typ recover      
-     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()) 
-       $2 }  
+  | LPAREN typ recover
+     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen ())
+       SynType.Paren ($2, lhs parseState) }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  rparen 
     { SynType.Tuple(true, (false, $3) :: $5, lhs parseState) }
