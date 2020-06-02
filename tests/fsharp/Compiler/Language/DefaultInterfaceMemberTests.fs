@@ -3,7 +3,8 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Compiler.UnitTests.Utilities
+open FSharp.TestHelpers
+open FSharp.TestHelpers.Utilities
 open FSharp.Compiler.SourceCodeServices
 
 [<AutoOpen>]

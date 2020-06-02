@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-[<AutoOpen>]
-module FSharp.Compiler.UnitTests.CompilerAssert
+namespace FSharp.TestHelpers
 
 open System
 open System.Diagnostics
@@ -20,7 +19,7 @@ open NUnit.Framework
 open System.Reflection.Emit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
-open FSharp.Compiler.UnitTests.Utilities
+open FSharp.TestHelpers.Utilities
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
@@ -56,8 +55,8 @@ type CompileOutput =
     | Library
     | Exe
 
-type CompilationReference = 
-    private 
+type CompilationReference =
+    private
     | CompilationReference of Compilation * staticLink: bool
     | TestCompilationReference of TestCompilation
 
@@ -254,11 +253,11 @@ let main argv = 0"""
             |> Array.map (fun info ->
                 (info.Severity, info.ErrorNumber, (info.StartLineAlternate - libAdjust, info.StartColumn + 1, info.EndLineAlternate - libAdjust, info.EndColumn + 1), info.Message))
 
-        let checkEqual k a b = 
-            if a <> b then 
+        let checkEqual k a b =
+            if a <> b then
                 Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
 
-        checkEqual "Errors"  (Array.length expectedErrors) errors.Length 
+        checkEqual "Errors"  (Array.length expectedErrors) errors.Length
 
         Array.zip errors expectedErrors
         |> Array.iter (fun (actualError, expectedError) ->
@@ -280,16 +279,16 @@ let main argv = 0"""
         let compilationRefs, deps =
             match cmpl with
             | Compilation(_, _, _, _, cmpls, _) ->
-                let compiledRefs =               
+                let compiledRefs =
                     cmpls
                     |> List.map (fun cmpl ->
                             match cmpl with
                             | CompilationReference (cmpl, staticLink) ->
                                 compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
-                            | TestCompilationReference (cmpl) -> 
+                            | TestCompilationReference (cmpl) ->
                                 let tmp = Path.Combine(outputPath, Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
-                                disposals.Add({ new IDisposable with 
-                                                    member _.Dispose() = 
+                                disposals.Add({ new IDisposable with
+                                                    member _.Dispose() =
                                                         try File.Delete tmp with | _ -> () })
                                 cmpl.EmitAsFile tmp
                                 (([||], tmp), []), false)
@@ -332,14 +331,14 @@ let main argv = 0"""
             match cmpl with
             | Compilation(source, _, _, _, _, _) -> source
 
-        let options = 
+        let options =
             match cmpl with
             | Compilation(_, _, _, options, _, _) -> options
 
         let nameOpt =
             match cmpl with
             | Compilation(_, _, _, _, _, nameOpt) -> nameOpt
-                    
+
         let disposal, res = compileDisposable outputPath isScript isExe (Array.append options compilationRefs) nameOpt source
         disposals.Add disposal
 
@@ -364,7 +363,7 @@ let main argv = 0"""
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
-        lock gate (fun () -> 
+        lock gate (fun () ->
             compileCompilation ignoreWarnings cmpl (fun ((errors, _), _) ->
                 assertErrors 0 ignoreWarnings errors expectedErrors))
 
@@ -376,7 +375,7 @@ let main argv = 0"""
         let beforeExecute = defaultArg beforeExecute (fun _ _ -> ())
         let newProcess = defaultArg newProcess false
         let onOutput = defaultArg onOutput (fun _ -> ())
-        lock gate (fun () -> 
+        lock gate (fun () ->
             compileCompilation ignoreWarnings cmpl (fun ((errors, outputFilePath), deps) ->
                 assertErrors 0 ignoreWarnings errors [||]
                 beforeExecute outputFilePath deps
@@ -449,9 +448,9 @@ let main argv = 0"""
 
             Assert.IsEmpty(typeCheckResults.Errors, sprintf "Type Check errors: %A" typeCheckResults.Errors)
 
-    static member TypeCheckWithErrorsAndOptionsAgainstBaseLine options (sourceFile: string) =
+    static member TypeCheckWithErrorsAndOptionsAgainstBaseLine options (sourceDirectory:string) (sourceFile: string) =
         lock gate <| fun () ->
-            let absoluteSourceFile = System.IO.Path.Combine(__SOURCE_DIRECTORY__, "..", sourceFile)
+            let absoluteSourceFile = System.IO.Path.Combine(sourceDirectory, sourceFile)
             let parseResults, fileAnswer =
                 checker.ParseAndCheckFileInProject(
                     sourceFile,
@@ -475,7 +474,7 @@ let main argv = 0"""
             let errorsActual =
                 typeCheckResults.Errors
                 |> Array.map (sprintf "%A")
-                |> String.concat "\n" 
+                |> String.concat "\n"
             File.WriteAllText(Path.ChangeExtension(absoluteSourceFile,"err"), errorsActual)
 
             Assert.AreEqual(errorsExpectedBaseLine.Replace("\r\n","\n"), errorsActual.Replace("\r\n","\n"))
@@ -491,7 +490,7 @@ let main argv = 0"""
                         { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
                     |> Async.RunSynchronously
 
-                if parseResults.Errors.Length > 0 then 
+                if parseResults.Errors.Length > 0 then
                     parseResults.Errors
                 else
 
