@@ -1715,7 +1715,7 @@ and seekReadTypeDefOrRefAsTypeRef (ctxt: ILMetadataReader) (TaggedIndex(tag, idx
     | tag when tag = tdor_TypeRef -> seekReadTypeRef ctxt idx
     | tag when tag = tdor_TypeSpec -> 
         dprintn ("type spec used where a type ref or def is required")
-        primaryAssemblyILGlobals.typ_Object.TypeRef
+        PrimaryAssemblyILGlobals.typ_Object.TypeRef
     | _ -> failwith "seekReadTypeDefOrRefAsTypeRef_readTypeDefOrRefOrSpec"
 
 and seekReadMethodRefParent (ctxt: ILMetadataReader) mdv numtypars (TaggedIndex(tag, idx)) =
@@ -1833,22 +1833,22 @@ and sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr =
 
 and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr = 
     let b0, sigptr = sigptrGetByte bytes sigptr
-    if b0 = et_OBJECT then primaryAssemblyILGlobals.typ_Object, sigptr
-    elif b0 = et_STRING then primaryAssemblyILGlobals.typ_String, sigptr
-    elif b0 = et_I1 then primaryAssemblyILGlobals.typ_SByte, sigptr
-    elif b0 = et_I2 then primaryAssemblyILGlobals.typ_Int16, sigptr
-    elif b0 = et_I4 then primaryAssemblyILGlobals.typ_Int32, sigptr
-    elif b0 = et_I8 then primaryAssemblyILGlobals.typ_Int64, sigptr
-    elif b0 = et_I then primaryAssemblyILGlobals.typ_IntPtr, sigptr
-    elif b0 = et_U1 then primaryAssemblyILGlobals.typ_Byte, sigptr
-    elif b0 = et_U2 then primaryAssemblyILGlobals.typ_UInt16, sigptr
-    elif b0 = et_U4 then primaryAssemblyILGlobals.typ_UInt32, sigptr
-    elif b0 = et_U8 then primaryAssemblyILGlobals.typ_UInt64, sigptr
-    elif b0 = et_U then primaryAssemblyILGlobals.typ_UIntPtr, sigptr
-    elif b0 = et_R4 then primaryAssemblyILGlobals.typ_Single, sigptr
-    elif b0 = et_R8 then primaryAssemblyILGlobals.typ_Double, sigptr
-    elif b0 = et_CHAR then primaryAssemblyILGlobals.typ_Char, sigptr
-    elif b0 = et_BOOLEAN then primaryAssemblyILGlobals.typ_Bool, sigptr
+    if b0 = et_OBJECT then PrimaryAssemblyILGlobals.typ_Object, sigptr
+    elif b0 = et_STRING then PrimaryAssemblyILGlobals.typ_String, sigptr
+    elif b0 = et_I1 then PrimaryAssemblyILGlobals.typ_SByte, sigptr
+    elif b0 = et_I2 then PrimaryAssemblyILGlobals.typ_Int16, sigptr
+    elif b0 = et_I4 then PrimaryAssemblyILGlobals.typ_Int32, sigptr
+    elif b0 = et_I8 then PrimaryAssemblyILGlobals.typ_Int64, sigptr
+    elif b0 = et_I then PrimaryAssemblyILGlobals.typ_IntPtr, sigptr
+    elif b0 = et_U1 then PrimaryAssemblyILGlobals.typ_Byte, sigptr
+    elif b0 = et_U2 then PrimaryAssemblyILGlobals.typ_UInt16, sigptr
+    elif b0 = et_U4 then PrimaryAssemblyILGlobals.typ_UInt32, sigptr
+    elif b0 = et_U8 then PrimaryAssemblyILGlobals.typ_UInt64, sigptr
+    elif b0 = et_U then PrimaryAssemblyILGlobals.typ_UIntPtr, sigptr
+    elif b0 = et_R4 then PrimaryAssemblyILGlobals.typ_Single, sigptr
+    elif b0 = et_R8 then PrimaryAssemblyILGlobals.typ_Double, sigptr
+    elif b0 = et_CHAR then PrimaryAssemblyILGlobals.typ_Char, sigptr
+    elif b0 = et_BOOLEAN then PrimaryAssemblyILGlobals.typ_Bool, sigptr
     elif b0 = et_WITH then 
         let b0, sigptr = sigptrGetByte bytes sigptr
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
@@ -1894,7 +1894,7 @@ and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr =
         
     elif b0 = et_VOID then ILType.Void, sigptr
     elif b0 = et_TYPEDBYREF then 
-        primaryAssemblyILGlobals.typ_TypedReference, sigptr
+        PrimaryAssemblyILGlobals.typ_TypedReference, sigptr
     elif b0 = et_CMOD_REQD || b0 = et_CMOD_OPT then 
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
         let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr

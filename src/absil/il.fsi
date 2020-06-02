@@ -2022,5 +2022,3 @@ type ILReferences =
 val computeILRefs: ILGlobals -> ILModuleDef -> ILReferences
 val emptyILRefs: ILReferences
 
-val primaryAssemblyILGlobals: ILGlobals
-
