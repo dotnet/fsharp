@@ -355,7 +355,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
                   | SynMemberDefn.AutoProperty(_attribs, _isStatic, _id, _tyOpt, _propKind, _, _xmlDoc, _access, synExpr, _, _) -> yield! walkExpr true synExpr
                   | SynMemberDefn.ImplicitCtor(_, _, _, _, m) -> yield! checkRange m
                   | SynMemberDefn.Member(bind, _) -> yield! walkBind bind
-                  | SynMemberDefn.Interface(_synty, Some membs, _) -> for m in membs do yield! walkMember m
+                  | SynMemberDefn.Interface(_, Some membs, _) -> for m in membs do yield! walkMember m
                   | SynMemberDefn.Inherit(_, _, m) -> 
                       // can break on the "inherit" clause
                       yield! checkRange m
@@ -810,6 +810,7 @@ module UntypedParseImpl =
             | SynType.HashConstraint(t, _) -> walkType t
             | SynType.MeasureDivide(t1, t2, _) -> walkType t1 |> Option.orElse (walkType t2)
             | SynType.MeasurePower(t, _, _) -> walkType t
+            | SynType.Paren(t, _) -> walkType t
             | _ -> None
 
         and walkClause (Clause(pat, e1, e2, _, _)) =
@@ -1140,7 +1141,7 @@ module UntypedParseImpl =
             | (SynExpr.New (_, SynType.LongIdent typeName, arg, _)) -> 
                 // new A()
                 Some (endOfLastIdent typeName, findSetters arg)
-            | (SynExpr.New (_, SynType.App(SynType.LongIdent typeName, _, _, _, mGreaterThan, _, _), arg, _)) -> 
+            | (SynExpr.New (_, SynType.App(StripParenTypes (SynType.LongIdent typeName), _, _, _, mGreaterThan, _, _), arg, _)) -> 
                 // new A<_>()
                 Some (endOfClosingTokenOrLastIdent mGreaterThan typeName, findSetters arg)
             | (SynExpr.App (_, false, SynExpr.Ident id, arg, _)) -> 

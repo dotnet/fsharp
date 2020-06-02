@@ -130,16 +130,11 @@ let foo7 = ()
 [<A;>]
 let foo8 = ()
 """
-    let (SynModuleOrNamespace (_, _, _, decls, _, _, _, _)) = parseSourceCodeAndGetModule source
+    let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
     decls |> List.map (fun decl ->
         match decl with
-        | SynModuleDecl.Let (_,[Binding(_,_,_,_,attributeLists,_,_,_,_,_,_,_)],_) ->
-            attributeLists |> List.map (fun list ->
-                let r = list.Range
-
-                list.Attributes.Length,
-                ((r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)))
-
+        | SynModuleDecl.Let (_, [Binding (attributes = attributeLists)], _) ->
+            attributeLists |> List.map (fun list -> list.Attributes.Length, getRangeCoords list.Range)
         | _ -> failwith "Could not get binding")
     |> shouldEqual
         [ [ (1, ((2,  0),  (2, 5))) ]
@@ -152,16 +147,59 @@ let foo8 = ()
           [ (1, ((24, 0), (24, 6))) ] ]
 
 
+let rec getParenTypes (synType: SynType): SynType list =
+    [ match synType with
+      | SynType.Paren (innerType, _) ->
+          yield synType
+          yield! getParenTypes innerType
+
+      | SynType.Fun (argType, returnType, _) ->
+          yield! getParenTypes argType
+          yield! getParenTypes returnType
+
+      | SynType.Tuple (_, types, _) ->
+          for _, synType in types do
+              yield! getParenTypes synType
+
+      | SynType.AnonRecd (_, fields, _) ->
+          for _, synType in fields do
+              yield! getParenTypes synType
+
+      | SynType.App (typeName = typeName; typeArgs = typeArgs)
+      | SynType.LongIdentApp (typeName = typeName; typeArgs = typeArgs) ->
+          yield! getParenTypes typeName
+          for synType in typeArgs do
+              yield! getParenTypes synType
+
+      | _ -> () ]
+
+[<Test>]
+let ``SynType.Paren ranges`` () =
+    let source = """
+((): int * (int * int))
+((): (int -> int) -> int)
+((): ((int)))
+"""
+    let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
+    decls |> List.map (fun decl ->
+        match decl with
+        | SynModuleDecl.DoExpr (expr = SynExpr.Paren (expr = SynExpr.Typed (_, synType ,_))) ->
+            getParenTypes synType
+            |> List.map (fun synType -> getRangeCoords synType.Range)
+        | _ -> failwith "Could not get binding")
+    |> shouldEqual
+        [ [ (2, 11), (2, 22) ]
+          [ (3, 5), (3, 17) ]
+          [ (4, 5), (4, 12); (4, 6), (4, 11) ] ]
+
+
 module TypeMemberRanges =
 
     let getTypeMemberRange source =
-        let (SynModuleOrNamespace (_, _, _, decls, _, _, _, _)) = parseSourceCodeAndGetModule source
+        let (SynModuleOrNamespace (decls = decls)) = parseSourceCodeAndGetModule source
         match decls with
         | [ SynModuleDecl.Types ([ TypeDefn (_, SynTypeDefnRepr.ObjectModel (_, memberDecls, _), _, _) ], _) ] ->
-            memberDecls |> List.map (fun memberDecl ->
-                let range = memberDecl.Range
-                (range.StartLine, range.StartColumn), (range.EndLine, range.EndColumn))
-
+            memberDecls |> List.map (fun memberDecl -> getRangeCoords memberDecl.Range)
         | _ -> failwith "Could not get member"
 
     
