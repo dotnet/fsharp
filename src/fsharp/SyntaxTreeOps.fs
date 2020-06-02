@@ -397,13 +397,13 @@ let (|Attributes|) synAttributes =
 let rangeOfNonNilAttrs (attrs: SynAttributes) =
     (attrs.Head.Range, attrs.Tail) ||> unionRangeWithListBy (fun a -> a.Range)
 
-let rec skipParenTypes synType =
+let rec stripParenTypes synType =
     match synType with
-    | SynType.Paren (innerType, _) -> skipParenTypes innerType
+    | SynType.Paren (innerType, _) -> stripParenTypes innerType
     | _ -> synType
 
-let rec (|SkipParenTypes|) synType =
-    skipParenTypes synType
+let (|StripParenTypes|) synType =
+    stripParenTypes synType
 
 /// Operations related to the syntactic analysis of arguments of value, function and member definitions and signatures.
 module SynInfo =

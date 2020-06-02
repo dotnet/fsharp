@@ -1141,7 +1141,7 @@ module UntypedParseImpl =
             | (SynExpr.New (_, SynType.LongIdent typeName, arg, _)) -> 
                 // new A()
                 Some (endOfLastIdent typeName, findSetters arg)
-            | (SynExpr.New (_, SynType.App(SkipParenTypes (SynType.LongIdent typeName), _, _, _, mGreaterThan, _, _), arg, _)) -> 
+            | (SynExpr.New (_, SynType.App(StripParenTypes (SynType.LongIdent typeName), _, _, _, mGreaterThan, _, _), arg, _)) -> 
                 // new A<_>()
                 Some (endOfClosingTokenOrLastIdent mGreaterThan typeName, findSetters arg)
             | (SynExpr.App (_, false, SynExpr.Ident id, arg, _)) -> 

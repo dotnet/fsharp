@@ -113,8 +113,8 @@ type InterfaceData =
             ty.Range
     member x.TypeParameters = 
         match x with
-        | InterfaceData.Interface(SkipParenTypes ty, _)
-        | InterfaceData.ObjExpr(SkipParenTypes ty, _) ->
+        | InterfaceData.Interface(StripParenTypes ty, _)
+        | InterfaceData.ObjExpr(StripParenTypes ty, _) ->
             let rec (|RationalConst|) = function
                 | SynRationalConst.Integer i ->
                     string i

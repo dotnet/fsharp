@@ -4657,7 +4657,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
         | _, TyparKind.Type ->
             TcTypeApp cenv newOk checkCxs occ env tpenv m tcref [] []
 
-    | SynType.App (SkipParenTypes (SynType.LongIdent(LongIdentWithDots(tc, _))), _, args, _commas, _, postfix, m) -> 
+    | SynType.App (StripParenTypes (SynType.LongIdent(LongIdentWithDots(tc, _))), _, args, _commas, _, postfix, m) -> 
         let ad = env.eAccessRights
 
         let tcref = 
@@ -4793,7 +4793,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
             let ms2, tpenv = TcMeasure cenv newOk checkCxs occ env tpenv typ2 m
             TType_measure (Measure.Prod(ms1, Measure.Inv ms2)), tpenv
 
-    | SynType.App(SkipParenTypes (SynType.Var(_, m1) | (SynType.MeasurePower(_, _, m1))) as arg1, _, args, _commas, _, postfix, m) ->
+    | SynType.App(StripParenTypes (SynType.Var(_, m1) | (SynType.MeasurePower(_, _, m1))) as arg1, _, args, _commas, _, postfix, m) ->
         match optKind, args, postfix with
         | (None | Some TyparKind.Measure), [arg2], true ->
             let ms1, tpenv = TcMeasure cenv newOk checkCxs occ env tpenv arg1 m1
@@ -4814,7 +4814,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
 and TcType cenv newOk checkCxs occ env (tpenv: SyntacticUnscopedTyparEnv) ty = 
     TcTypeOrMeasure (Some TyparKind.Type) cenv newOk checkCxs occ env tpenv ty
 
-and TcMeasure cenv newOk checkCxs occ env (tpenv: SyntacticUnscopedTyparEnv) (SkipParenTypes ty) m = 
+and TcMeasure cenv newOk checkCxs occ env (tpenv: SyntacticUnscopedTyparEnv) (StripParenTypes ty) m = 
     match ty with
     | SynType.Anon m ->
         error(Error(FSComp.SR.tcAnonymousUnitsOfMeasureCannotBeNested(), m))
@@ -4872,7 +4872,7 @@ and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =
     tpenv
 
 #if !NO_EXTENSIONTYPING
-and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (SkipParenTypes v) idOpt container =
+and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) idOpt container =
     let g = cenv.g
     let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv kind), v.Range)) 
     let record ttype =
@@ -4941,7 +4941,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (SkipParenTypes v) id
 and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedParameterInfo>[], args: SynType list, container, containerName, m) =
     let args = 
         args |> List.map (function 
-            | SkipParenTypes (SynType.StaticConstantNamed(SkipParenTypes (SynType.LongIdent(LongIdentWithDots([id], _))), v, _)) -> Some id, v
+            | StripParenTypes (SynType.StaticConstantNamed(StripParenTypes (SynType.LongIdent(LongIdentWithDots([id], _))), v, _)) -> Some id, v
             | v -> None, v)
 
     let unnamedArgs = args |> Seq.takeWhile (fst >> Option.isNone) |> Seq.toArray |> Array.map snd
@@ -15348,7 +15348,7 @@ module EstablishTypeDefinitionCores =
 
     let private (|TyconCoreAbbrevThatIsReallyAUnion|_|) (hasMeasureAttr, envinner, id: Ident) (synTyconRepr) =
         match synTyconRepr with 
-        | SynTypeDefnSimpleRepr.TypeAbbrev(_, SkipParenTypes (SynType.LongIdent(LongIdentWithDots([unionCaseName], _))), m) 
+        | SynTypeDefnSimpleRepr.TypeAbbrev(_, StripParenTypes (SynType.LongIdent(LongIdentWithDots([unionCaseName], _))), m) 
                               when 
                                 (not hasMeasureAttr && 
                                  (isNil (LookupTypeNameInEnvNoArity OpenQualified unionCaseName.idText envinner.eNameResEnv) || 
@@ -15631,11 +15631,11 @@ module EstablishTypeDefinitionCores =
 
 #if !NO_EXTENSIONTYPING
     /// Get the items on the r.h.s. of a 'type X = ABC<...>' definition
-    let private TcTyconDefnCore_GetGenerateDeclaration_Rhs (SkipParenTypes rhsType) =
+    let private TcTyconDefnCore_GetGenerateDeclaration_Rhs (StripParenTypes rhsType) =
         match rhsType with 
-        | SynType.App (SkipParenTypes (SynType.LongIdent(LongIdentWithDots(tc, _))), _, args, _commas, _, _postfix, m) -> Some(tc, args, m)
+        | SynType.App (StripParenTypes (SynType.LongIdent(LongIdentWithDots(tc, _))), _, args, _commas, _, _postfix, m) -> Some(tc, args, m)
         | SynType.LongIdent (LongIdentWithDots(tc, _) as lidwd) -> Some(tc, [], lidwd.Range)
-        | SynType.LongIdentApp (SkipParenTypes (SynType.LongIdent (LongIdentWithDots(tc, _))), LongIdentWithDots(longId, _), _, args, _commas, _, m) -> Some(tc@longId, args, m)
+        | SynType.LongIdentApp (StripParenTypes (SynType.LongIdent (LongIdentWithDots(tc, _))), LongIdentWithDots(longId, _), _, args, _commas, _, m) -> Some(tc@longId, args, m)
         | _ -> None
 
     /// Check whether 'type X = ABC<...>' is a generative provided type definition
@@ -17150,7 +17150,7 @@ module TcDeclarations =
                         memberFlags.MemberKind=MemberKind.Constructor && 
                         // REVIEW: This is a syntactic approximation
                         (match valSpfn.SynType, valSpfn.SynInfo.ArgInfos with 
-                         | SkipParenTypes (SynType.Fun (SkipParenTypes (SynType.LongIdent (LongIdentWithDots([id], _))), _, _)), [[_]] when id.idText = "unit" -> true
+                         | StripParenTypes (SynType.Fun (StripParenTypes (SynType.LongIdent (LongIdentWithDots([id], _))), _, _)), [[_]] when id.idText = "unit" -> true
                          | _ -> false) 
                     | _ -> false) 
 
