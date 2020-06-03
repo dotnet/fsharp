@@ -2809,11 +2809,18 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let fsiInteractionProcessor = FsiInteractionProcessor(fsi, tcConfigB, fsiOptions, fsiDynamicCompiler, fsiConsolePrompt, fsiConsoleOutput, fsiInterruptController, fsiStdinLexerProvider, lexResourceManager, initialInteractiveState) 
 
+    // Raising an exception throws away the exception stack making diagnosis hard
+    // this wraps the existing exception as the inner exception
+    let makeNestedException (userExn: #Exception) =
+        // clone userExn -- make userExn the inner exception, to retain the stacktrace on raise
+        let arguments = [| userExn.Message :> obj; userExn :> obj |]
+        Activator.CreateInstance(userExn.GetType(), arguments) :?> Exception
+
     let commitResult res =
         match res with
         | Choice1Of2 r -> r
         | Choice2Of2 None -> raise (FsiCompilationException(FSIstrings.SR.fsiOperationFailed(), None))
-        | Choice2Of2 (Some userExn) -> raise userExn
+        | Choice2Of2 (Some userExn) -> raise (makeNestedException userExn)
 
     let commitResultNonThrowing errorOptions scriptFile (errorLogger: CompilationErrorLogger) res =
         let errs = errorLogger.GetErrors()
