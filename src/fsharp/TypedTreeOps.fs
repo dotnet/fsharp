@@ -3,7 +3,8 @@
 /// Defines derived expression manipulation and construction functions.
 module internal FSharp.Compiler.TypedTreeOps
 
-open System.Collections.Generic 
+open System.Collections.Generic
+open System.Collections.Immutable
 open Internal.Utilities
 
 open FSharp.Compiler 
@@ -252,7 +253,7 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.CoercesTo(ty, m) -> 
              Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty, m))
          | TyparConstraint.MayResolveMember(traitInfo, m) -> 
-             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo, m))
+             Some(TyparConstraint.MayResolveMember (remapTraitInfo tyenv traitInfo, m))
          | TyparConstraint.DefaultsTo(priority, ty, m) ->
              Some(TyparConstraint.DefaultsTo(priority, remapTypeAux tyenv ty, m))
          | TyparConstraint.IsEnum(uty, m) -> 
@@ -269,7 +270,13 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.IsReferenceType _ 
          | TyparConstraint.RequiresDefaultConstructor _ -> Some x)
 
-and remapTraitAux tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell)) =
+and remapTraitWitnessInfo tyenv (TraitWitnessInfo(tys, nm, mf, argtys, rty)) =
+    let tysR = remapTypesAux tyenv tys
+    let argtysR = remapTypesAux tyenv argtys
+    let rtyR = Option.map (remapTypeAux tyenv) rty
+    TraitWitnessInfo(tysR, nm, mf, argtysR, rtyR)
+
+and remapTraitInfo tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell)) =
     let slnCell = 
         match !slnCell with 
         | None -> None
@@ -396,7 +403,7 @@ let mkInstRemap tpinst =
 // entry points for "typar -> TType" instantiation 
 let instType tpinst x = if isNil tpinst then x else remapTypeAux (mkInstRemap tpinst) x
 let instTypes tpinst x = if isNil tpinst then x else remapTypesAux (mkInstRemap tpinst) x
-let instTrait tpinst x = if isNil tpinst then x else remapTraitAux (mkInstRemap tpinst) x
+let instTrait tpinst x = if isNil tpinst then x else remapTraitInfo (mkInstRemap tpinst) x
 let instTyparConstraints tpinst x = if isNil tpinst then x else remapTyparConstraintsAux (mkInstRemap tpinst) x
 let instSlotSig tpinst ss = remapSlotSig (fun _ -> []) (mkInstRemap tpinst) ss
 let copySlotSig ss = remapSlotSig (fun _ -> []) Remap.Empty ss
@@ -911,6 +918,13 @@ let rec traitsAEquivAux erasureFlag g aenv traitInfo1 traitInfo2 =
    returnTypesAEquivAux erasureFlag g aenv rty rty2 &&
    List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argtys argtys2
 
+and traitKeysAEquivAux erasureFlag g aenv (TraitWitnessInfo(tys1, nm, mf1, argtys, rty)) (TraitWitnessInfo(tys2, nm2, mf2, argtys2, rty2)) =
+   mf1 = mf2 &&
+   nm = nm2 &&
+   ListSet.equals (typeAEquivAux erasureFlag g aenv) tys1 tys2 &&
+   returnTypesAEquivAux erasureFlag g aenv rty rty2 &&
+   List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argtys argtys2
+
 and returnTypesAEquivAux erasureFlag g aenv rty rty2 =
     match rty, rty2 with  
     | None, None -> true
@@ -1026,6 +1040,7 @@ and typeEquivAux erasureFlag g ty1 ty2 = typeAEquivAux erasureFlag g TypeEquivEn
 let typeAEquiv g aenv ty1 ty2 = typeAEquivAux EraseNone g aenv ty1 ty2
 let typeEquiv g ty1 ty2 = typeEquivAux EraseNone g ty1 ty2
 let traitsAEquiv g aenv t1 t2 = traitsAEquivAux EraseNone g aenv t1 t2
+let traitKeysAEquiv g aenv t1 t2 = traitKeysAEquivAux EraseNone g aenv t1 t2
 let typarConstraintsAEquiv g aenv c1 c2 = typarConstraintsAEquivAux EraseNone g aenv c1 c2
 let typarsAEquiv g aenv d1 d2 = typarsAEquivAux EraseNone g aenv d1 d2
 let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
@@ -1150,6 +1165,7 @@ let rec rangeOfExpr x =
     | Expr.Val (_, _, m) | Expr.Op (_, _, _, m) | Expr.Const (_, m, _) | Expr.Quote (_, _, _, m, _)
     | Expr.Obj (_, _, _, _, _, _, _, m) | Expr.App (_, _, _, _, m) | Expr.Sequential (_, _, _, _, m) 
     | Expr.StaticOptimization (_, _, _, m) | Expr.Lambda (_, _, _, _, _, m, _) 
+    | Expr.WitnessArg (_, m)
     | Expr.TyLambda (_, _, _, m, _)| Expr.TyChoose (_, _, m) | Expr.LetRec (_, _, m, _) | Expr.Let (_, _, m, _) | Expr.Match (_, _, _, _, m, _) -> m
     | Expr.Link eref -> rangeOfExpr (!eref)
 
@@ -1554,7 +1570,10 @@ let tryDestRefTupleTy g ty =
     if isRefTupleTy g ty then destRefTupleTy g ty else [ty]
 
 type UncurriedArgInfos = (TType * ArgReprInfo) list 
+
 type CurriedArgInfos = (TType * ArgReprInfo) list list
+
+type TraitWitnessInfos = TraitWitnessInfo list
 
 // A 'tau' type is one with its type parameters stripped off 
 let GetTopTauTypeInFSharpForm g (curriedArgInfos: ArgReprInfo list list) tau m =
@@ -2053,6 +2072,11 @@ and accFreeInTrait opts (TTrait(tys, _, _, argtys, rty, sln)) acc =
          (accFreeInTypes opts argtys 
            (Option.foldBack (accFreeInType opts) rty acc)))
 
+and accFreeInWitnessArg opts (TraitWitnessInfo(tys, _nm, _mf, argtys, rty)) acc = 
+       accFreeInTypes opts tys 
+         (accFreeInTypes opts argtys 
+           (Option.foldBack (accFreeInType opts) rty acc))
+
 and accFreeInTraitSln opts sln acc = 
     match sln with 
     | ILMethSln(ty, _, _, minst) ->
@@ -2259,8 +2283,35 @@ let checkMemberVal membInfo arity m =
 let checkMemberValRef (vref: ValRef) =
     checkMemberVal vref.MemberInfo vref.ValReprInfo vref.Range
      
-let GetTopValTypeInCompiledForm g topValInfo ty m =
+/// Get information about the trait constraints for a set of typars.
+/// Put these in canonical order.
+let GetTraitConstraintInfosOfTypars g (tps: Typars) = 
+    [ for tp in tps do 
+            for cx in tp.Constraints do
+            match cx with 
+            | TyparConstraint.MayResolveMember(traitInfo, _) -> yield traitInfo 
+            | _ -> () ]
+    |> ListSet.setify (traitsAEquiv g TypeEquivEnv.Empty)
+    |> List.sortBy (fun traitInfo -> traitInfo.MemberName, traitInfo.ArgumentTypes.Length)
+
+/// Get information about the runtime witnesses needed for a set of generalized typars
+let GetTraitWitnessInfosOfTypars g numParentTypars tps = 
+    let tps = tps |> List.skip numParentTypars
+    let cxs = GetTraitConstraintInfosOfTypars g tps
+    cxs |> List.map (fun cx -> cx.TraitKey)
+
+/// Count the number of type parameters on the enclosing type
+let CountEnclosingTyparsOfActualParentOfVal (v: Val) = 
+    match v.ValReprInfo with 
+    | None -> 0
+    | Some _ -> 
+        if v.IsExtensionMember then 0
+        elif not v.IsMember then 0
+        else v.MemberApparentEntity.TyparsNoRange.Length
+
+let GetTopValTypeInCompiledForm g topValInfo numEnclosingTypars ty m =
     let tps, paramArgInfos, rty, retInfo = GetTopValTypeInFSharpForm g topValInfo ty m
+    let witnessInfos = GetTraitWitnessInfosOfTypars g numEnclosingTypars tps
     // Eliminate lone single unit arguments
     let paramArgInfos = 
         match paramArgInfos, topValInfo.ArgInfos with 
@@ -2275,7 +2326,7 @@ let GetTopValTypeInCompiledForm g topValInfo ty m =
         | _ -> 
             paramArgInfos
     let rty = if isUnitTy g rty then None else Some rty
-    (tps, paramArgInfos, rty, retInfo)
+    (tps, witnessInfos, paramArgInfos, rty, retInfo)
      
 // Pull apart the type for an F# value that represents an object model method
 // and see the "member" form for the type, i.e. 
@@ -2285,8 +2336,9 @@ let GetTopValTypeInCompiledForm g topValInfo ty m =
 // This is used not only for the compiled form - it's also used for all type checking and object model
 // logic such as determining if abstract methods have been implemented or not, and how
 // many arguments the method takes etc.
-let GetMemberTypeInMemberForm g memberFlags topValInfo ty m =
+let GetMemberTypeInMemberForm g memberFlags topValInfo numEnclosingTypars ty m =
     let tps, paramArgInfos, rty, retInfo = GetMemberTypeInFSharpForm g memberFlags topValInfo ty m
+    let witnessInfos = GetTraitWitnessInfosOfTypars g numEnclosingTypars tps
     // Eliminate lone single unit arguments
     let paramArgInfos = 
         match paramArgInfos, topValInfo.ArgInfos with 
@@ -2301,12 +2353,13 @@ let GetMemberTypeInMemberForm g memberFlags topValInfo ty m =
         | _ -> 
             paramArgInfos
     let rty = if isUnitTy g rty then None else Some rty
-    (tps, paramArgInfos, rty, retInfo)
+    (tps, witnessInfos, paramArgInfos, rty, retInfo)
 
 let GetTypeOfMemberInMemberForm g (vref: ValRef) =
     //assert (not vref.IsExtensionMember)
     let membInfo, topValInfo = checkMemberValRef vref
-    GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo vref.Type vref.Range
+    let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
+    GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo numEnclosingTypars vref.Type vref.Range
 
 let GetTypeOfMemberInFSharpForm g (vref: ValRef) =
     let membInfo, topValInfo = checkMemberValRef vref
@@ -2343,7 +2396,8 @@ let PartitionValRefTypars g (vref: ValRef) = PartitionValTypars g vref.Deref
 /// Get the arguments for an F# value that represents an object model method 
 let ArgInfosOfMemberVal g (v: Val) = 
     let membInfo, topValInfo = checkMemberVal v.MemberInfo v.ValReprInfo v.Range
-    let _, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
+    let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+    let _, _, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo numEnclosingTypars v.Type v.Range
     arginfos
 
 let ArgInfosOfMember g (vref: ValRef) = 
@@ -2361,13 +2415,15 @@ let ReturnTypeOfPropertyVal g (v: Val) =
     let membInfo, topValInfo = checkMemberVal v.MemberInfo v.ValReprInfo v.Range
     match membInfo.MemberFlags.MemberKind with 
     | MemberKind.PropertySet ->
-        let _, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
+        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+        let _, _, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo numEnclosingTypars v.Type v.Range
         if not arginfos.IsEmpty && not arginfos.Head.IsEmpty then
             arginfos.Head |> List.last |> fst 
         else
             error(Error(FSComp.SR.tastValueDoesNotHaveSetterType(), v.Range))
     | MemberKind.PropertyGet ->
-        let _, _, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
+        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+        let _, _, _, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo numEnclosingTypars v.Type v.Range
         GetFSharpViewOfReturnType g rty
     | _ -> error(InternalError("ReturnTypeOfPropertyVal", v.Range))
 
@@ -2380,7 +2436,8 @@ let ArgInfosOfPropertyVal g (v: Val) =
     | MemberKind.PropertyGet ->
         ArgInfosOfMemberVal g v |> List.concat
     | MemberKind.PropertySet ->
-        let _, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo v.Type v.Range
+        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+        let _, _, arginfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags topValInfo numEnclosingTypars v.Type v.Range
         if not arginfos.IsEmpty && not arginfos.Head.IsEmpty then
             arginfos.Head |> List.frontAndBack |> fst 
         else
@@ -3873,6 +3930,7 @@ module DebugPrint =
                 @@
                 rightL (tagText "}")
 
+            | Expr.WitnessArg _ -> wordL (tagText "<witnessarg>")
             | Expr.StaticOptimization (_tcs, csx, x, _) -> 
                 (wordL(tagText "opt") @@- (exprL x)) @@--
                    (wordL(tagText "|") ^^ exprL csx --- (wordL(tagText "when...") ))
@@ -4377,6 +4435,8 @@ let accFreevarsInVal opts v acc = accFreeTyvars opts accFreeInVal v acc
     
 let accFreeVarsInTraitSln opts tys acc = accFreeTyvars opts accFreeInTraitSln tys acc 
 
+let accFreeVarsInTraitInfo opts tys acc = accFreeTyvars opts accFreeInTrait tys acc 
+
 let boundLocalVal opts v fvs =
     if not opts.includeLocals then fvs else
     let fvs = accFreevarsInVal opts v fvs
@@ -4557,14 +4617,16 @@ and accFreeInExprNonLinear opts x acc =
     | Expr.Val (lvr, flags, _) ->  
         accFreeInValFlags opts flags (accFreeValRef opts lvr acc)
 
-    | Expr.Quote (ast, {contents=Some(_, argTypes, argExprs, _data)}, _, _, ty) ->  
-        accFreeInExpr opts ast 
-            (accFreeInExprs opts argExprs
-               (accFreeVarsInTys opts argTypes
-                  (accFreeVarsInTy opts ty acc))) 
+    | Expr.Quote (ast, dataCell, _, _, ty) ->  
+        match dataCell.Value with 
+        | Some (_, (_, argTypes, argExprs, _data)) ->
+            accFreeInExpr opts ast 
+                (accFreeInExprs opts argExprs
+                   (accFreeVarsInTys opts argTypes
+                      (accFreeVarsInTy opts ty acc))) 
 
-    | Expr.Quote (ast, {contents=None}, _, _, ty) ->  
-        accFreeInExpr opts ast (accFreeVarsInTy opts ty acc)
+        | None ->
+            accFreeInExpr opts ast (accFreeVarsInTy opts ty acc)
 
     | Expr.App (f0, f0ty, tyargs, args, _) -> 
         accFreeVarsInTy opts f0ty
@@ -4604,6 +4666,9 @@ and accFreeInExprNonLinear opts x acc =
          let acc = accFreeInOp opts op acc
          let acc = accFreeVarsInTys opts tinst acc
          accFreeInExprs opts args acc
+
+    | Expr.WitnessArg (traitInfo, _) ->
+         accFreeVarsInTraitInfo opts traitInfo acc
 
 and accFreeInOp opts op acc =
     match op with
@@ -4863,8 +4928,12 @@ type StaticOptimizationAnswer =
     | No = -1y
     | Unknown = 0y
 
-let decideStaticOptimizationConstraint g c = 
+let decideStaticOptimizationConstraint g c haveWitnesses = 
     match c with 
+    // When witnesses are available in generic code during codegen, "when ^T : ^T" resolves StaticOptimizationAnswer.Yes
+    // This doesn't apply to "when 'T : 'T" use for "FastGenericEqualityComparer" and others.
+    | TTyconEqualsTycon (a, b) when haveWitnesses && typeEquiv g a b && (match tryDestTyparTy g a with ValueSome tp -> tp.StaticReq = TyparStaticReq.HeadTypeStaticReq | _ -> false) ->
+         StaticOptimizationAnswer.Yes
     | TTyconEqualsTycon (a, b) ->
         // Both types must be nominal for a definite result
        let rec checkTypes a b =
@@ -4900,17 +4969,17 @@ let decideStaticOptimizationConstraint g c =
        | ValueSome tcref1 -> if tcref1.IsStructOrEnumTycon then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
        | ValueNone -> StaticOptimizationAnswer.Unknown
             
-let rec DecideStaticOptimizations g cs = 
+let rec DecideStaticOptimizations g cs haveWitnesses = 
     match cs with 
     | [] -> StaticOptimizationAnswer.Yes
     | h :: t -> 
-        let d = decideStaticOptimizationConstraint g h 
+        let d = decideStaticOptimizationConstraint g h haveWitnesses
         if d = StaticOptimizationAnswer.No then StaticOptimizationAnswer.No 
-        elif d = StaticOptimizationAnswer.Yes then DecideStaticOptimizations g t 
+        elif d = StaticOptimizationAnswer.Yes then DecideStaticOptimizations g t haveWitnesses
         else StaticOptimizationAnswer.Unknown
 
 let mkStaticOptimizationExpr g (cs, e1, e2, m) = 
-    let d = DecideStaticOptimizations g cs in 
+    let d = DecideStaticOptimizations g cs false
     if d = StaticOptimizationAnswer.No then e2
     elif d = StaticOptimizationAnswer.Yes then e1
     else Expr.StaticOptimization (cs, e1, e2, m)
@@ -5077,13 +5146,15 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
         if vr === vr' && vf === vf' then expr 
         else Expr.Val (vr', vf', m)
 
-    | Expr.Quote (a, {contents=Some(typeDefs, argTypes, argExprs, data)}, isFromQueryExpression, m, ty) ->  
-        // fix value of compgen for both original expression and pickled AST
+    | Expr.Quote (a, dataCell, isFromQueryExpression, m, ty) ->  
+        let doData (typeDefs, argTypes, argExprs, res) = (typeDefs, remapTypesAux tmenv argTypes, remapExprs g compgen tmenv argExprs, res)
+        let data' =
+            match dataCell.Value with 
+            | None -> None
+            | Some (data1, data2) -> Some (doData data1, doData data2)
+            // fix value of compgen for both original expression and pickled AST
         let compgen = fixValCopyFlagForQuotations compgen
-        Expr.Quote (remapExpr g compgen tmenv a, {contents=Some(typeDefs, remapTypesAux tmenv argTypes, remapExprs g compgen tmenv argExprs, data)}, isFromQueryExpression, m, remapType tmenv ty)
-
-    | Expr.Quote (a, {contents=None}, isFromQueryExpression, m, ty) ->  
-        Expr.Quote (remapExpr g (fixValCopyFlagForQuotations compgen) tmenv a, {contents=None}, isFromQueryExpression, m, remapType tmenv ty)
+        Expr.Quote (remapExpr g compgen tmenv a, ref data', isFromQueryExpression, m, remapType tmenv ty)
 
     | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, m) -> 
         let basev', tmenvinner = Option.mapFold (copyAndRemapAndBindVal g compgen) tmenv basev 
@@ -5140,6 +5211,10 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
     | Expr.Const (c, m, ty) -> 
         let ty' = remapType tmenv ty 
         if ty === ty' then expr else Expr.Const (c, m, ty')
+
+    | Expr.WitnessArg (traitInfo, m) ->
+        let traitInfoR = remapTraitInfo tmenv traitInfo
+        Expr.WitnessArg (traitInfoR, m)
 
 and remapTarget g compgen tmenv (TTarget(vs, e, spTarget, flags)) = 
     let vs', tmenvinner = copyAndRemapAndBindVals g compgen tmenv vs 
@@ -5205,7 +5280,7 @@ and remapOp tmenv op =
         let tys2 = remapTypes tmenv tys
         if tys === tys2 then op else
         TOp.ILAsm (instrs, tys2)
-    | TOp.TraitCall traitInfo -> TOp.TraitCall (remapTraitAux tmenv traitInfo)
+    | TOp.TraitCall traitInfo -> TOp.TraitCall (remapTraitInfo tmenv traitInfo)
     | TOp.LValueOp (kind, lvr) -> TOp.LValueOp (kind, remapValRef tmenv lvr)
     | TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, valUseFlags, isProperty, noTailCall, ilMethRef, enclTypeArgs, methTypeArgs, tys) -> 
        TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, remapValFlags tmenv valUseFlags, 
@@ -5590,8 +5665,12 @@ let rec remarkExpr m x =
     | Expr.StaticOptimization (eqns, e2, e3, _) ->
         Expr.StaticOptimization (eqns, remarkExpr m e2, remarkExpr m e3, m)
 
-    | Expr.Const (c, _, ty) -> Expr.Const (c, m, ty)
+    | Expr.Const (c, _, ty) ->
+        Expr.Const (c, m, ty)
   
+    | Expr.WitnessArg (witnessInfo, _) ->
+        Expr.WitnessArg (witnessInfo, m)
+
 and remarkObjExprMethod m (TObjExprMethod(slotsig, attribs, tps, vs, e, _)) = 
     TObjExprMethod(slotsig, attribs, tps, vs, remarkExpr m e, m)
 
@@ -5697,6 +5776,27 @@ let mkArrayType (g: TcGlobals) ty = TType_app (g.array_tcr_nice, [ty])
 
 let mkByteArrayTy (g: TcGlobals) = mkArrayType g g.byte_ty
 
+//---------------------------------------------------------------------------
+// Witnesses
+//---------------------------------------------------------------------------
+
+let GenWitnessArgTys (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
+    let (TraitWitnessInfo(_tys, _nm, _memFlags, argtys, _rty)) = traitInfo
+    let argtys = if argtys.IsEmpty then [g.unit_ty] else argtys
+    let argtysl = List.map List.singleton argtys
+    argtysl
+
+let GenWitnessTy (g: TcGlobals) (traitInfo: TraitWitnessInfo) =
+    let rty = match traitInfo.ReturnType with None -> g.unit_ty | Some ty -> ty
+    let argtysl = GenWitnessArgTys g traitInfo
+    mkMethodTy g argtysl rty 
+
+let GenWitnessTys (g: TcGlobals) (cxs: TraitWitnessInfos) =
+    if g.generateWitnesses then 
+        cxs |> List.map (GenWitnessTy g)
+    else
+        []
+
 //--------------------------------------------------------------------------
 // tyOfExpr
 //--------------------------------------------------------------------------
@@ -5751,6 +5851,7 @@ let rec tyOfExpr g e =
             //errorR(InternalError("unexpected goto/label/return in tyOfExpr", m))
             // It doesn't matter what type we return here. This is only used in free variable analysis in the code generator
             g.unit_ty
+    | Expr.WitnessArg (traitInfo, _m) -> GenWitnessTy g traitInfo.TraitKey
 
 //--------------------------------------------------------------------------
 // Make applications
@@ -6419,12 +6520,11 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
             // tailcall
             targetF z targets.[targets.Length - 1]
                 
-        | Expr.Quote (e, {contents=Some(_typeDefs, _argTypes, argExprs, _)}, _, _, _) -> 
+        | Expr.Quote (e, dataCell, _, _, _) -> 
             let z = exprF z e
-            exprsF z argExprs
-
-        | Expr.Quote (e, {contents=None}, _, _m, _) -> 
-            exprF z e
+            match dataCell.Value with 
+            | None -> z
+            | Some ((_typeDefs, _argTypes, argExprs, _), _) -> exprsF z argExprs
 
         | Expr.Obj (_n, _typ, _basev, basecall, overrides, iimpls, _stateVars, _m) -> 
             let z = exprF z basecall
@@ -6433,6 +6533,9 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
 
         | Expr.StaticOptimization (_tcs, csx, x, _) -> 
             exprsF z [csx;x]
+
+        | Expr.WitnessArg (_witnessInfo, _m) ->
+            z
 
     and valBindF dtree z bind =
         let z = folders.nonRecBindingsIntercept z bind
@@ -6920,6 +7023,25 @@ let mkCallNewDecimal (g: TcGlobals) m (e1, e2, e3, e4, e5) = mkApps g (typedExpr
 
 let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety e1 = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
 
+let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
+    let info, tinst = g.MakeBuiltInWitnessInfo traitInfo
+    let vref = ValRefForIntrinsic info
+    match vref.TryDeref with
+    | ValueSome v -> 
+        let f = exprForValRef m vref
+        mkApps g ((f, v.Type), [tinst], argExprs, m) |> Some
+    | ValueNone -> 
+        None
+
+let tryMkCallCoreFunctionAsBuiltInWitness (g: TcGlobals) info tyargs argExprs m =
+    let vref = ValRefForIntrinsic info
+    match vref.TryDeref with
+    | ValueSome v -> 
+        let f = exprForValRef m vref
+        mkApps g ((f, v.Type), [tyargs], argExprs, m) |> Some
+    | ValueNone -> 
+        None
+
 let TryEliminateDesugaredConstants g m c = 
     match c with 
     | Const.Decimal d -> 
@@ -6987,6 +7109,9 @@ let mkCallDeserializeQuotationFSharp40Plus g m e1 e2 e3 e4 e5 =
 let mkCallCastQuotation g m ty e1 = 
     mkApps g (typedExprForIntrinsic g m g.cast_quotation_info, [[ty]], [ e1 ], m)
 
+let mkCallLiftValue (g: TcGlobals) m ty e1 = 
+    mkApps g (typedExprForIntrinsic g m g.lift_value_info, [[ty]], [e1], m)
+
 let mkCallLiftValueWithName (g: TcGlobals) m ty nm e1 = 
     let vref = ValRefForIntrinsic g.lift_value_with_name_info 
     // Use "Expr.ValueWithName" if it exists in FSharp.Core
@@ -6994,7 +7119,7 @@ let mkCallLiftValueWithName (g: TcGlobals) m ty nm e1 =
     | ValueSome _ ->
         mkApps g (typedExprForIntrinsic g m g.lift_value_with_name_info, [[ty]], [mkRefTupledNoTypes g m [e1; mkString g m nm]], m)
     | ValueNone ->
-        mkApps g (typedExprForIntrinsic g m g.lift_value_info, [[ty]], [e1], m)
+        mkCallLiftValue g m ty e1
 
 let mkCallLiftValueWithDefn g m qty e1 = 
     assert isQuotedExprTy g qty
@@ -7790,7 +7915,6 @@ let LinearizeTopMatch g parent = function
 // XmlDoc signatures
 //---------------------------------------------------------------------------
 
-
 let commaEncs strs = String.concat "," strs
 let angleEnc str = "{" + str + "}" 
 let ticksAndArgCountTextOfTyconRef (tcref: TyconRef) =
@@ -7869,9 +7993,9 @@ and tyargsEnc g (gtpsType, gtpsMethod) args =
      | [a] when (match (stripTyEqns g a) with TType_measure _ -> true | _ -> false) -> ""  // float<m> should appear as just "float" in the generated .XML xmldoc file
      | _ -> angleEnc (commaEncs (List.map (typeEnc g (gtpsType, gtpsMethod)) args)) 
 
-let XmlDocArgsEnc g (gtpsType, gtpsMethod) argTs =
-  if isNil argTs then "" 
-  else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTs) + ")"
+let XmlDocArgsEnc g (gtpsType, gtpsMethod) argTys =
+  if isNil argTys then "" 
+  else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTys) + ")"
 
 let buildAccessPath (cp: CompilationPath option) =
     match cp with
@@ -7881,8 +8005,8 @@ let buildAccessPath (cp: CompilationPath option) =
     | None -> "Extension Type"
 let prependPath path name = if path = "" then name else path + "." + name
 
-let XmlDocSigOfVal g path (v: Val) =
-  let parentTypars, methTypars, argInfos, prefix, path, name = 
+let XmlDocSigOfVal g full path (v: Val) =
+  let parentTypars, methTypars, cxs, argInfos, rty, prefix, path, name = 
 
     // CLEANUP: this is one of several code paths that treat module values and members 
     // separately when really it would be cleaner to make sure GetTopValTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
@@ -7890,8 +8014,9 @@ let XmlDocSigOfVal g path (v: Val) =
     
     match v.MemberInfo with 
     | Some membInfo when not v.IsExtensionMember -> 
-        (* Methods, Properties etc. *)
-        let tps, argInfos, _, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags (Option.get v.ValReprInfo) v.Type v.Range
+        // Methods, Properties etc.
+        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+        let tps, witnessInfos, argInfos, rty, _ = GetMemberTypeInMemberForm g membInfo.MemberFlags (Option.get v.ValReprInfo) numEnclosingTypars v.Type v.Range
         let prefix, name = 
           match membInfo.MemberFlags.MemberKind with 
           | MemberKind.ClassConstructor 
@@ -7905,18 +8030,22 @@ let XmlDocSigOfVal g path (v: Val) =
           match PartitionValTypars g v with
           | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
           | None -> [], tps
-        parentTypars, methTypars, argInfos, prefix, path, name
+        parentTypars, methTypars, witnessInfos, argInfos, rty, prefix, path, name
     | _ ->
         // Regular F# values and extension members 
         let w = arityOfVal v
-        let tps, argInfos, _, _ = GetTopValTypeInCompiledForm g w v.Type v.Range
+        let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
+        let tps, witnessInfos, argInfos, rty, _ = GetTopValTypeInCompiledForm g w numEnclosingTypars v.Type v.Range
         let name = v.CompiledName g.CompilerGlobalState
         let prefix =
           if w.NumCurriedArgs = 0 && isNil tps then "P:"
           else "M:"
-        [], tps, argInfos, prefix, path, name
-  let argTs = argInfos |> List.concat |> List.map fst
-  let args = XmlDocArgsEnc g (parentTypars, methTypars) argTs
+        [], tps, witnessInfos, argInfos, rty, prefix, path, name
+
+  let witnessArgTys = GenWitnessTys g cxs
+  let argTys = argInfos |> List.concat |> List.map fst
+  let argTys = witnessArgTys @ argTys @ (match rty with Some t when full -> [t] | _ -> []) 
+  let args = XmlDocArgsEnc g (parentTypars, methTypars) argTys
   let arity = List.length methTypars in (* C# XML doc adds ``<arity> to *generic* member names *)
   let genArity = if arity=0 then "" else sprintf "``%d" arity
   prefix + prependPath path name + genArity + args
@@ -8331,11 +8460,12 @@ and rewriteExprStructure env expr =
       if f0 === f0' && args === args' then expr
       else Expr.App (f0', f0ty, tyargs, args', m)
 
-  | Expr.Quote (ast, {contents=Some(typeDefs, argTypes, argExprs, data)}, isFromQueryExpression, m, ty) -> 
-      Expr.Quote ((if env.IsUnderQuotations then RewriteExpr env ast else ast), {contents=Some(typeDefs, argTypes, rewriteExprs env argExprs, data)}, isFromQueryExpression, m, ty)
-
-  | Expr.Quote (ast, {contents=None}, isFromQueryExpression, m, ty) -> 
-      Expr.Quote ((if env.IsUnderQuotations then RewriteExpr env ast else ast), {contents=None}, isFromQueryExpression, m, ty)
+  | Expr.Quote (ast, dataCell, isFromQueryExpression, m, ty) -> 
+      let data = 
+          match dataCell.Value with
+          | None -> None
+          | Some (data1, data2) -> Some(map3Of4 (rewriteExprs env) data1, map3Of4 (rewriteExprs env) data2)
+      Expr.Quote ((if env.IsUnderQuotations then RewriteExpr env ast else ast), ref data, isFromQueryExpression, m, ty)
 
   | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, _stateVars, m) -> 
       mkObjExpr(ty, basev, RewriteExpr env basecall, List.map (rewriteObjExprOverride env) overrides, 
@@ -8377,6 +8507,9 @@ and rewriteExprStructure env expr =
 
   | Expr.TyChoose (a, b, m) -> 
       Expr.TyChoose (a, RewriteExpr env b, m)
+
+  | Expr.WitnessArg (witnessInfo, m) ->
+      Expr.WitnessArg (witnessInfo, m)
 
 and rewriteLinearExpr env expr contf =
     // schedule a rewrite on the way back up by adding to the continuation 
@@ -8790,7 +8923,7 @@ let EvalLiteralExprOrAttribArg g x =
 let GetTypeOfIntrinsicMemberInCompiledForm g (vref: ValRef) =
     assert (not vref.IsExtensionMember)
     let membInfo, topValInfo = checkMemberValRef vref
-    let tps, argInfos, rty, retInfo = GetTypeOfMemberInMemberForm g vref
+    let tps, cxs, argInfos, rty, retInfo = GetTypeOfMemberInMemberForm g vref
     let argInfos = 
         // Check if the thing is really an instance member compiled as a static member
         // If so, the object argument counts as a normal argument in the compiled form
@@ -8802,7 +8935,7 @@ let GetTypeOfIntrinsicMemberInCompiledForm g (vref: ValRef) =
                 argInfos
             | h :: _ -> h :: argInfos
         else argInfos
-    tps, argInfos, rty, retInfo
+    tps, cxs, argInfos, rty, retInfo
 
 
 //--------------------------------------------------------------------------
@@ -9128,6 +9261,19 @@ let CombineCcuContentFragments m l =
         | _ -> failwith "CombineModuleOrNamespaceTypeList"
 
     CombineModuleOrNamespaceTypeList [] m l
+
+/// An immutable mappping from witnesses to some data.
+///
+/// Note: this uses an immutable HashMap/Dictionary with an IEqualityComparer that captures TcGlobals, see EmptyTraitWitnessInfoHashMap
+type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
+
+/// Create an empty immutable mapping from witnesses to some data
+let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
+    ImmutableDictionary.Create(
+         { new IEqualityComparer<_> with 
+                member __.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
+                member __.GetHashCode(a) = hash a.MemberName
+         })
 
 let (|WhileExpr|_|) expr = 
     match expr with 

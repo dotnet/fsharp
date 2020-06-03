@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open FSharp.TestHelpers
 
 #if NETCOREAPP
 [<TestFixture>]

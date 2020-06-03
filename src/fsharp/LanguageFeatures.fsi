@@ -20,6 +20,7 @@ type LanguageFeature =
     | ResumableStateMachines
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
+    | WitnessPassing
 
 /// LanguageVersion management
 type LanguageVersion =

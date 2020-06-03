@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.CompileOps
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
@@ -3938,6 +3939,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let mutable dllTable: NameMap<ImportedBinary> = NameMap.empty
     let mutable ccuInfos: ImportedAssembly list = []
     let mutable ccuTable: NameMap<ImportedAssembly> = NameMap.empty
+
+    /// ccuThunks is a ConcurrentDictionary thus threadsafe
+    /// the key is a ccuThunk object, the value is a (unit->unit) func that when executed
+    /// the func is used to fix up the func and operates on data captured at the time the func is created.
+    /// func() is captured during phase2() of RegisterAndPrepareToImportReferencedDll(..) and PrepareToImportReferencedFSharpAssembly ( .. )
+    let mutable ccuThunks = new ConcurrentDictionary<CcuThunk, (unit -> unit)>()
+
     let disposeActions = ResizeArray()
     let mutable disposed = false
     let mutable ilGlobalsOpt = ilGlobalsOpt
@@ -3949,13 +3957,32 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #endif
 
     let disposal = new TcImportsSafeDisposal(disposeActions, disposeTypeProviderActions, compilationThread)
-    
+
     let CheckDisposed() =
         if disposed then assert false
 
     let dispose () =
         CheckDisposed()
         (disposal :> IDisposable).Dispose()
+
+    // This is used to fixe up unresolved ccuThunks that were created during assembly import.
+    // the ccuThunks dictionary is a ConcurrentDictionary and thus threadsafe.
+    // Algorithm:
+    //   Get a snapshot of the current unFixedUp ccuThunks.
+    //   for each of those thunks, remove them from the dictionary, so any parallel threads can't do this work
+    //      If it successfully removed it from the dictionary then do the fixup
+    //          If the thunk remains unresolved add it back to the ccuThunks dictionary for further processing
+    //      If not then move on to the next thunk
+    let fixupOrphanCcus () =
+        let keys = ccuThunks.Keys
+        for ccuThunk in keys do
+            match ccuThunks.TryRemove(ccuThunk) with
+            | true, func ->
+                if ccuThunk.IsUnresolvedReference then
+                    func()
+                if ccuThunk.IsUnresolvedReference then
+                    ccuThunks.TryAdd(ccuThunk, func) |> ignore
+            | _ -> ()
 
     static let ccuHasType (ccu: CcuThunk) (nsname: string list) (tname: string) =
         let matchNameSpace (entityOpt: Entity option) n =
@@ -3988,13 +4015,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             CheckDisposed()
             tcImportsWeak
 #endif
-        
+
     member tcImports.RegisterCcu ccuInfo =
         CheckDisposed()
         ccuInfos <- ccuInfos ++ ccuInfo
         // Assembly Ref Resolution: remove this use of ccu.AssemblyName
         ccuTable <- NameMap.add (ccuInfo.FSharpViewOfMetadata.AssemblyName) ccuInfo ccuTable
-    
+
     member tcImports.RegisterDll dllInfo =
         CheckDisposed()
         dllInfos <- dllInfos ++ dllInfo
@@ -4037,24 +4064,24 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | Some res -> res
         | None -> error(Error(FSComp.SR.buildCouldNotResolveAssembly assemblyName, m))
 
-    member tcImports.GetImportedAssemblies() = 
+    member tcImports.GetImportedAssemblies() =
         CheckDisposed()
-        match importsBase with 
+        match importsBase with
         | Some importsBase-> List.append (importsBase.GetImportedAssemblies()) ccuInfos
-        | None -> ccuInfos        
-        
-    member tcImports.GetCcusExcludingBase() = 
-        CheckDisposed()
-        ccuInfos |> List.map (fun x -> x.FSharpViewOfMetadata)        
+        | None -> ccuInfos
 
-    member tcImports.GetCcusInDeclOrder() =         
+    member tcImports.GetCcusExcludingBase() =
+        CheckDisposed()
+        ccuInfos |> List.map (fun x -> x.FSharpViewOfMetadata)
+
+    member tcImports.GetCcusInDeclOrder() =
         CheckDisposed()
         List.map (fun x -> x.FSharpViewOfMetadata) (tcImports.GetImportedAssemblies())  
-        
+
     // This is the main "assembly reference --> assembly" resolution routine. 
-    member tcImports.FindCcuInfo (ctok, m, assemblyName, lookupOnly) = 
+    member tcImports.FindCcuInfo (ctok, m, assemblyName, lookupOnly) =
         CheckDisposed()
-        let rec look (t: TcImports) = 
+        let rec look (t: TcImports) =
             match NameMap.tryFind assemblyName t.CcuTable with
             | Some res -> Some res
             | None -> 
@@ -4069,9 +4096,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             match look tcImports with 
             | Some res -> ResolvedImportedAssembly res
             | None -> UnresolvedImportedAssembly assemblyName
-        
 
-    member tcImports.FindCcu (ctok, m, assemblyName, lookupOnly) = 
+    member tcImports.FindCcu (ctok, m, assemblyName, lookupOnly) =
         CheckDisposed()
         match tcImports.FindCcuInfo(ctok, m, assemblyName, lookupOnly) with
         | ResolvedImportedAssembly importedAssembly -> ResolvedCcu(importedAssembly.FSharpViewOfMetadata)
@@ -4509,7 +4535,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #endif
               FSharpOptimizationData = notlazy None }
         tcImports.RegisterCcu ccuinfo
-        let phase2 () = 
+        let phase2 () =
 #if !NO_EXTENSIONTYPING
             ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
 #endif
@@ -4569,11 +4595,17 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                          | None -> 
                             if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName 
                             None
-                         | Some info -> 
+                         | Some info ->
                             let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), info)
-                            let res = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) 
-                            if verbose then dprintf "found optimization data for CCU %s\n" ccuName 
-                            Some res)
+                            let fixupThunk () = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false)))
+
+                            // Make a note of all ccuThunks that may still need to be fixed up when other dlls are loaded
+                            for ccuThunk in data.FixupThunks do
+                                if ccuThunk.IsUnresolvedReference then
+                                    ccuThunks.TryAdd(ccuThunk, fun () -> fixupThunk () |> ignore) |> ignore
+
+                            if verbose then dprintf "found optimization data for CCU %s\n" ccuName
+                            Some (fixupThunk ()))
 
                 let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
 
@@ -4599,19 +4631,25 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                      ()
 #endif
                 data, ccuinfo, phase2)
-                     
+
         // Register all before relinking to cope with mutually-referential ccus 
         ccuRawDataAndInfos |> List.iter (p23 >> tcImports.RegisterCcu)
-        let phase2 () = 
+        let phase2 () =
             (* Relink *)
             (* dprintf "Phase2: %s\n" filename; REMOVE DIAGNOSTICS *)
-            ccuRawDataAndInfos |> List.iter (fun (data, _, _) -> data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) |> ignore)
+            ccuRawDataAndInfos
+            |> List.iter (fun (data, _, _) ->
+                let fixupThunk () = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) |> ignore
+                fixupThunk()
+                for ccuThunk in data.FixupThunks do
+                    if ccuThunk.IsUnresolvedReference then
+                        ccuThunks.TryAdd(ccuThunk, fixupThunk) |> ignore
+                )
 #if !NO_EXTENSIONTYPING
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2())
 #endif
-            ccuRawDataAndInfos |> List.map p23 |> List.map ResolvedImportedAssembly  
+            ccuRawDataAndInfos |> List.map p23 |> List.map ResolvedImportedAssembly
         phase2
-         
 
     // NOTE: When used in the Language Service this can cause the transitive checking of projects. Hence it must be cancellable.
     member tcImports.RegisterAndPrepareToImportReferencedDll (ctok, r: AssemblyResolution) : Cancellable<_ * (unit -> AvailableImportedAssembly list)> =
@@ -4653,16 +4691,16 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                   ILAssemblyRefs = assemblyData.ILAssemblyRefs }
             tcImports.RegisterDll dllinfo
             let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
-            let phase2 = 
+            let phase2 =
                 if assemblyData.HasAnyFSharpSignatureDataAttribute then 
                     if not (assemblyData.HasMatchingFSharpSignatureDataAttribute ilg) then 
-                      errorR(Error(FSComp.SR.buildDifferentVersionMustRecompile filename, m))
-                      tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo)
+                        errorR(Error(FSComp.SR.buildDifferentVersionMustRecompile filename, m))
+                        tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo)
                     else 
-                      try
+                        try
                         tcImports.PrepareToImportReferencedFSharpAssembly (ctok, m, filename, dllinfo)
-                      with e -> error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), m))
-                else 
+                        with e -> error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), m))
+                else
                     tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo)
             return dllinfo, phase2
          }
@@ -4683,6 +4721,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                })
 
         let dllinfos, phase2s = results |> List.choose id |> List.unzip
+        fixupOrphanCcus()
         let ccuinfos = (List.collect (fun phase2 -> phase2()) phase2s) 
         return dllinfos, ccuinfos
       }
@@ -4902,10 +4941,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 #if DEBUG
         // the global_g reference cell is used only for debug printing
         global_g <- Some tcGlobals
-#endif
-        // do this prior to parsing, since parsing IL assembly code may refer to mscorlib
-#if !NO_INLINE_IL_PARSER
-        FSharp.Compiler.AbstractIL.Internal.AsciiConstants.parseILGlobals <- tcGlobals.ilg 
 #endif
         frameworkTcImports.SetTcGlobals tcGlobals
         return tcGlobals, frameworkTcImports

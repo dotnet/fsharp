@@ -8,8 +8,8 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
 open FSharp.Compiler.XmlDoc
@@ -396,6 +396,14 @@ let (|Attributes|) synAttributes =
 
 let rangeOfNonNilAttrs (attrs: SynAttributes) =
     (attrs.Head.Range, attrs.Tail) ||> unionRangeWithListBy (fun a -> a.Range)
+
+let rec stripParenTypes synType =
+    match synType with
+    | SynType.Paren (innerType, _) -> stripParenTypes innerType
+    | _ -> synType
+
+let (|StripParenTypes|) synType =
+    stripParenTypes synType
 
 /// Operations related to the syntactic analysis of arguments of value, function and member definitions and signatures.
 module SynInfo =
