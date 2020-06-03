@@ -1,9 +1,5 @@
 
-<<<<<<< HEAD
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
-=======
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -37,7 +33,6 @@
 }
 .mresource public FSharpSignatureData.Linq101Select01
 {
-<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x00000657
 }
 .mresource public FSharpSignatureDataB.Linq101Select01
@@ -50,26 +45,12 @@
 }
 .module Linq101Select01.exe
 // MVID: {5E172EEB-6057-8F80-A745-0383EB2E175E}
-=======
-  // Offset: 0x00000000 Length: 0x00000655
-}
-.mresource public FSharpOptimizationData.Linq101Select01
-{
-  // Offset: 0x00000660 Length: 0x00000204
-}
-.module Linq101Select01.exe
-// MVID: {5ECD8279-6057-8F80-A745-03837982CD5E}
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-<<<<<<< HEAD
-// Image base: 0x069B0000
-=======
 // Image base: 0x058D0000
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -100,11 +81,7 @@
       .maxstack  5
       .locals init ([0] int32 n)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-<<<<<<< HEAD
-      .line 12,12 : 9,28 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Select01.fs'
-=======
       .line 12,12 : 9,28 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Select01.fs'
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 13,13 : 9,23 ''

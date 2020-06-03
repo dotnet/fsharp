@@ -1,9 +1,5 @@
 
-<<<<<<< HEAD
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
-=======
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -42,7 +38,6 @@
 }
 .mresource public FSharpSignatureData.Linq101Quantifiers01
 {
-<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x00000393
 }
 .mresource public FSharpSignatureDataB.Linq101Quantifiers01
@@ -55,26 +50,12 @@
 }
 .module Linq101Quantifiers01.exe
 // MVID: {5E172EEB-76DD-E373-A745-0383EB2E175E}
-=======
-  // Offset: 0x00000000 Length: 0x00000381
-}
-.mresource public FSharpOptimizationData.Linq101Quantifiers01
-{
-  // Offset: 0x00000388 Length: 0x000000FF
-}
-.module Linq101Quantifiers01.exe
-// MVID: {5EAD3E37-76DD-E373-A745-0383373EAD5E}
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-<<<<<<< HEAD
-// Image base: 0x070E0000
-=======
 // Image base: 0x05120000
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -128,11 +109,7 @@
       .locals init ([0] string V_0,
                [1] string w)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-<<<<<<< HEAD
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Quantifiers01.fs'
-=======
       .line 100001,100001 : 0,0 'C:\\dev\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Quantifiers01.fs'
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Quantifiers01/iAfterE@12::pc
       IL_0006:  ldc.i4.1

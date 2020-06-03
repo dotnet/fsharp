@@ -1948,7 +1948,7 @@ let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
     let vsl = List.mapSquared fst vse
     match GenWitnessExpr amap g m traitInfo (List.concat (List.mapSquared snd vse)) with 
     | Some expr -> 
-        Choice2Of2 (mkMemberLambdas m [] None None vsl (expr, tyOfExpr g expr))
+        Choice2Of2 (mkMemberLambdas g m [] None None vsl (expr, tyOfExpr g expr))
     | None -> 
         Choice1Of2 traitInfo
 

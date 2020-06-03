@@ -7760,6 +7760,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                          .WithAccess(access)
                          .WithInitSemantics(ILTypeInit.BeforeField)
 
+               let tdef2 = g.EraseClassUnionDef tref tdef cuinfo
 
                // Discard the user-supplied (i.e. prim-type.fs) implementations of the get_Empty, get_IsEmpty, get_Value and get_None and Some methods.
                // This is because we will replace their implementations by ones that load the unique

@@ -1,9 +1,5 @@
 
-<<<<<<< HEAD
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
-=======
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -33,7 +29,6 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_NoArray_FSInterface_NoExtMeth
 {
-<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x0000026A
 }
 .mresource public FSharpSignatureDataB.DoNotBoxStruct_NoArray_FSInterface_NoExtMeth
@@ -46,16 +41,6 @@
 }
 .module DoNotBoxStruct_NoArray_FSInterface_NoExtMeth.exe
 // MVID: {5E172EEA-CD0A-F713-A745-0383EA2E175E}
-=======
-  // Offset: 0x00000000 Length: 0x00000258
-}
-.mresource public FSharpOptimizationData.DoNotBoxStruct_NoArray_FSInterface_NoExtMeth
-{
-  // Offset: 0x00000260 Length: 0x000000B0
-}
-.module DoNotBoxStruct_NoArray_FSInterface_NoExtMeth.exe
-// MVID: {5EAD3E33-CD0A-F713-A745-0383333EAD5E}
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
@@ -70,44 +55,19 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-<<<<<<< HEAD
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname F@6
-         extends [mscorlib]System.Object
-  {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
-    {
-      // Code size       7 (0x7)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
-      IL_0006:  ret
-    } // end of method F@6::.ctor
-
-    .method assembly hidebysig instance void 
-            Invoke(object x,
-                   int32 _arg1) cil managed
-=======
   .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname F@6
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
     .method assembly static void  Invoke(object x,
                                          int32 _arg1) cil managed
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
     {
       // Code size       3 (0x3)
       .maxstack  5
       .locals init ([0] int32 V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-<<<<<<< HEAD
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_NoArray_FSInterface_NoExtMeth.fs'
-      IL_0000:  ldarg.2
-=======
       .line 100001,100001 : 0,0 'C:\\dev\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_NoArray_FSInterface_NoExtMeth.fs'
       IL_0000:  ldarg.1
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
       IL_0001:  stloc.0
       .line 6,6 : 68,70 ''
       IL_0002:  ret
@@ -124,17 +84,10 @@
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  ldloca.s   V_0
-<<<<<<< HEAD
-    IL_0004:  newobj     instance void DoNotBoxStruct_NoArray_FSInterface_NoExtMeth/F@6::.ctor()
-    IL_0009:  ldftn      instance void DoNotBoxStruct_NoArray_FSInterface_NoExtMeth/F@6::Invoke(object,
-                                                                                                int32)
-    IL_000f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>::.ctor(object,
-=======
     IL_0004:  ldnull
     IL_0005:  ldftn      void DoNotBoxStruct_NoArray_FSInterface_NoExtMeth/F@6::Invoke(object,
                                                                                        int32)
     IL_000b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>::.ctor(object,
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
                                                                                                                  native int)
     IL_0010:  constrained. !!T
     IL_0016:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Control.IDelegateEvent`1<class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>>::AddHandler(!0)

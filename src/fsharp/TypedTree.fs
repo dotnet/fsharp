@@ -5151,17 +5151,14 @@ type CcuThunk =
         ccu.target
    
     /// Indicates if this assembly reference is unresolved
-    member ccu.IsUnresolvedReference = isNull (ccu.target :> obj)
-
-    member ccu.IsUnresolvedReference = isNull (box ccu.target) || ccu.orphanfixup
+    member ccu.IsUnresolvedReference = isNull (box ccu.target)
 #else
     member ccu.Deref = 
         match ccu.target with 
         | null -> raise(UnresolvedReferenceNoRange ccu.name)
-        | _ when ccu.orphanfixup -> raise(UnresolvedReferenceNoRange ccu.name)
         | NonNull tg -> tg
 
-    member ccu.IsUnresolvedReference = isNull ccu.target || ccu.orphanfixup
+    member ccu.IsUnresolvedReference = isNull ccu.target
 #endif
    
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.

@@ -1,9 +1,5 @@
 
-<<<<<<< HEAD
-Usage: fsiAnyCpu.exe <options> [script.fsx [<arguments>]]
-=======
 Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 
 
 		- INPUT FILES -

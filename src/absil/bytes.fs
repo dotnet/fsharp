@@ -396,8 +396,6 @@ type ByteMemory with
     static member FromArray bytes =
         ByteArrayMemory.FromArray(bytes, 0, bytes.Length)
 
-    static member Empty with get() = ByteMemory.FromArray [| |]
-
 type internal ByteStream = 
     { bytes: ReadOnlyByteMemory
       mutable pos: int 

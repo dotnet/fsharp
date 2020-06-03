@@ -524,7 +524,6 @@ type SynType =
        value: SynType *
        range: range
 
-<<<<<<< HEAD
     /// F# syntax : type | null
     | WithNull of
         innerType: SynType *
@@ -532,13 +531,11 @@ type SynType =
         range:range
 
     /// Gets the syntax range of this constuct
-=======
     | Paren of
       innerType: SynType *
       range: range
 
     /// Gets the syntax range of this construct
->>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
     member x.Range =
         match x with
         | SynType.App (range=m)
