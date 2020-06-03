@@ -3155,33 +3155,6 @@ let CreateCodegenState tcVal g amap =
       InfoReader = new InfoReader(g, amap)
       codegen = true }
 
-/// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
-let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
-    let css = CreateCodegenState tcVal g amap
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
-    let sln = GenWitnessExpr amap g m traitInfo argExprs
-    return sln
-  }
-
-/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
-let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
-    let css = CreateCodegenState tcVal g amap
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-    let ftps, _renaming, tinst = FreshenTypeInst m typars
-    let traitInfos = GetTraitConstraintInfosOfTypars g ftps 
-    do! SolveTypeEqualsTypeEqns csenv 0 m NoTrace None tinst tyargs
-    return MethodCalls.GenWitnessArgs amap g m traitInfos
-  }
-
-/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
-let CodegenWitnessesForTraitWitness tcVal g amap m traitInfo = trackErrors {
-    let css = CreateCodegenState tcVal g amap
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
-    return MethodCalls.GenWitnessExprLambda amap g m traitInfo
-  }
-
 /// For some code like "let f() = ([] = [])", a free choice is made for a type parameter
 /// for an interior type variable.  This chooses a solution for a type parameter subject
 /// to its constraints and applies that solution by using a constraint.
@@ -3241,17 +3214,7 @@ let ChooseSolutionsForUnsolved css denv (unsolved: Typar list) =
         if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
             ChooseTyparSolutionAndSolve css denv tp)
 
-/// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
-let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo: TraitConstraintInfo) argExprs = trackErrors {
-    let css = CreateCodegenState tcVal g amap
-
-    let denv = DisplayEnv.Empty g
-
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-
-    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.LegacyYesAtCodeGen 0 m NoTrace traitInfo
-    let sln = GenWitnessExpr amap g m traitInfo argExprs
-
+let ApplyDefaultsAfterWitnessGeneration (g: TcGlobals) amap css denv sln = 
     // The process of generating witnesses can cause free inference type variables to arise from use
     // of generic methods as extension constraint solutions. We eliminate these using the same
     // sequence (ApplyDefault, ChooseSolutions) used at the end of type inference.
@@ -3265,7 +3228,48 @@ let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo: TraitConstraintI
             let unsolved2 = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfExpr g amap denv slnExpr
             ChooseSolutionsForUnsolved css denv unsolved2)
 
+/// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
+let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
+    let css = CreateCodegenState tcVal g amap
+    let denv = DisplayEnv.Empty g
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.LegacyYesAtCodeGen 0 m NoTrace traitInfo
+    let sln = GenWitnessExpr amap g m traitInfo argExprs
+    ApplyDefaultsAfterWitnessGeneration g amap css denv sln
     return sln
+  }
+
+/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
+let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
+    let css = CreateCodegenState tcVal g amap
+    let denv = DisplayEnv.Empty g
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+     // TODO: check traitCtxtNone here, feels wrong. We should simply not be re-freshening here during codegen.
+     // This is invoked every time codegen or quotation calls a witness-accepting
+     // method. TBH the witnesses need to be generated during type checking and passed all the way down,
+     // or at least be left in the tree as WitnessArg nodes.
+    let ftps, _renaming, tinst = FreshenTypeInst traitCtxtNone m typars
+    let traitInfos = GetTraitConstraintInfosOfTypars g ftps 
+    do! SolveTypeEqualsTypeEqns csenv 0 m NoTrace None tinst tyargs
+    let witnessArgs = MethodCalls.GenWitnessArgs amap g m traitInfos
+    for witnessArg in witnessArgs do
+        match witnessArg with 
+        | Choice1Of2 _traitInfo -> ()
+        | Choice2Of2 sln -> ApplyDefaultsAfterWitnessGeneration g amap css denv (Some sln)
+    return witnessArgs
+  }
+
+/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
+let CodegenWitnessesForTraitWitness tcVal g amap m traitInfo = trackErrors {
+    let css = CreateCodegenState tcVal g amap
+    let denv = DisplayEnv.Empty g
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.LegacyYesAtCodeGen 0 m NoTrace traitInfo
+    let witnessLambda = MethodCalls.GenWitnessExprLambda amap g m traitInfo
+    match witnessLambda with 
+    | Choice1Of2 _traitInfo -> ()
+    | Choice2Of2 sln -> ApplyDefaultsAfterWitnessGeneration g amap css denv (Some sln)
+    return witnessLambda
   }
 
 /// An approximation used during name resolution for intellisense to eliminate extension members which will not

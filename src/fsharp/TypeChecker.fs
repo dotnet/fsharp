@@ -18090,7 +18090,7 @@ let TypeCheckOneImplFile
 
             try  
                 let reportErrors = not (checkForErrors())
-                let tcVal = LightweightTcValForUsingInBuildMethodCall g
+                let tcVal = LightweightTcValForUsingInBuildMethodCall g envAtEnd.TraitContext
                 PostTypeCheckSemanticChecks.CheckTopImpl 
                    (g, cenv.amap, reportErrors, cenv.infoReader, 
                     env.eInternalsVisibleCompPaths, cenv.topCcu, tcVal, envAtEnd.DisplayEnv, 
