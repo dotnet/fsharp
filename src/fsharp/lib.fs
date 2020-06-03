@@ -574,3 +574,4 @@ type MaybeLazy<'T> =
         | Strict x -> x
         | Lazy x -> x.Force()
 
+let inline vsnd ((_, y): struct('T * 'T)) = y

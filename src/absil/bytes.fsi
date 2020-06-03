@@ -88,7 +88,11 @@ type ByteMemory with
 
     member AsReadOnly: unit -> ReadOnlyByteMemory
 
+    /// Empty byte memory.
+    static member Empty: ByteMemory
+
     /// Create another ByteMemory object that has a backing memory mapped file based on another ByteMemory's contents.
+    /// If the given ByteMemory's length is zero, a backing memory mapped file will not be created and an empty ByteMemory will be given.
     static member CreateMemoryMappedFile: ReadOnlyByteMemory -> ByteMemory
 
     /// Creates a ByteMemory object that has a backing memory mapped file from a file on-disk.

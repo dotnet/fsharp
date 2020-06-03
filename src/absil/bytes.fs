@@ -314,21 +314,26 @@ type ByteMemory with
 
     member x.AsReadOnly() = ReadOnlyByteMemory x
 
-    static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
-        if Utils.runningOnMono
-        then
-            // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/10245
-            ByteArrayMemory.FromArray (bytes.ToArray()) :> ByteMemory
-        else
-            let length = int64 bytes.Length
-            let mmf =
-                let mmf = MemoryMappedFile.CreateNew(null, length, MemoryMappedFileAccess.ReadWrite, MemoryMappedFileOptions.None, HandleInheritability.None)
-                use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
-                bytes.CopyTo stream
-                mmf
+    static member Empty = ByteArrayMemory([||], 0, 0) :> ByteMemory
 
-            let accessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.ReadWrite)
-            RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
+    static member CreateMemoryMappedFile(bytes: ReadOnlyByteMemory) =
+        let length = int64 bytes.Length
+        if length = 0L then
+            ByteMemory.Empty
+        else
+            if Utils.runningOnMono
+            then
+                // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/10245
+                ByteArrayMemory.FromArray (bytes.ToArray()) :> ByteMemory
+            else
+                let mmf =
+                    let mmf = MemoryMappedFile.CreateNew(null, length, MemoryMappedFileAccess.ReadWrite, MemoryMappedFileOptions.None, HandleInheritability.None)
+                    use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
+                    bytes.CopyTo stream
+                    mmf
+
+                let accessor = mmf.CreateViewAccessor(0L, length, MemoryMappedFileAccess.ReadWrite)
+                RawByteMemory.FromUnsafePointer(accessor.SafeMemoryMappedViewHandle.DangerousGetHandle(), int length, (mmf, accessor))
 
     static member FromFile(path, access, ?canShadowCopy: bool) =
         let canShadowCopy = defaultArg canShadowCopy false

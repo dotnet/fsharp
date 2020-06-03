@@ -1,5 +1,9 @@
 
+<<<<<<< HEAD
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+=======
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -29,6 +33,7 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Struct01
 {
+<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x000007A1
 }
 .mresource public FSharpSignatureDataB.StaticInit_Struct01
@@ -45,12 +50,26 @@
 }
 .module StaticInit_Struct01.dll
 // MVID: {5E172EE8-05F6-D6CB-A745-0383E82E175E}
+=======
+  // Offset: 0x00000000 Length: 0x0000079F
+}
+.mresource public FSharpOptimizationData.StaticInit_Struct01
+{
+  // Offset: 0x000007A8 Length: 0x0000021F
+}
+.module StaticInit_Struct01.dll
+// MVID: {5ECD86B3-05F6-D6CB-A745-0383B386CD5E}
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
+<<<<<<< HEAD
 // Image base: 0x07070000
+=======
+// Image base: 0x06E50000
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -75,23 +94,27 @@
             instance int32  CompareTo(valuetype StaticInit_Struct01/C obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       28 (0x1c)
-      .maxstack  5
-      .locals init ([0] valuetype StaticInit_Struct01/C& V_0)
+      // Code size       27 (0x1b)
+      .maxstack  4
+      .locals init ([0] valuetype StaticInit_Struct01/C& V_0,
+               [1] class [mscorlib]System.Collections.IComparer V_1)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+<<<<<<< HEAD
       .line 4,4 : 6,7 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Struct01.fs'
+=======
+      .line 4,4 : 6,7 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Struct01.fs'
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0008:  ldarg.0
-      IL_0009:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_000e:  ldloc.0
-      IL_000f:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_0014:  tail.
-      IL_0016:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<valuetype [mscorlib]System.DateTime>(class [mscorlib]System.Collections.IComparer,
-                                                                                                                                                                                !!0,
-                                                                                                                                                                                !!0)
-      IL_001b:  ret
+      IL_0008:  stloc.1
+      IL_0009:  ldarg.0
+      IL_000a:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
+      IL_000f:  ldloc.0
+      IL_0010:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
+      IL_0015:  call       int32 [mscorlib]System.DateTime::Compare(valuetype [mscorlib]System.DateTime,
+                                                                    valuetype [mscorlib]System.DateTime)
+      IL_001a:  ret
     } // end of method C::CompareTo
 
     .method public hidebysig virtual final 
@@ -113,10 +136,11 @@
                                       class [mscorlib]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       31 (0x1f)
-      .maxstack  5
+      // Code size       30 (0x1e)
+      .maxstack  4
       .locals init ([0] valuetype StaticInit_Struct01/C V_0,
-               [1] valuetype StaticInit_Struct01/C& V_1)
+               [1] valuetype StaticInit_Struct01/C& V_1,
+               [2] class [mscorlib]System.Collections.IComparer V_2)
       .line 4,4 : 6,7 ''
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  StaticInit_Struct01/C
@@ -124,15 +148,14 @@
       IL_0007:  ldloca.s   V_0
       IL_0009:  stloc.1
       IL_000a:  ldarg.2
-      IL_000b:  ldarg.0
-      IL_000c:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_0011:  ldloc.1
-      IL_0012:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_0017:  tail.
-      IL_0019:  call       int32 [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericComparisonWithComparerIntrinsic<valuetype [mscorlib]System.DateTime>(class [mscorlib]System.Collections.IComparer,
-                                                                                                                                                                                !!0,
-                                                                                                                                                                                !!0)
-      IL_001e:  ret
+      IL_000b:  stloc.2
+      IL_000c:  ldarg.0
+      IL_000d:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
+      IL_0012:  ldloc.1
+      IL_0013:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
+      IL_0018:  call       int32 [mscorlib]System.DateTime::Compare(valuetype [mscorlib]System.DateTime,
+                                                                    valuetype [mscorlib]System.DateTime)
+      IL_001d:  ret
     } // end of method C::CompareTo
 
     .method public hidebysig virtual final 
@@ -183,16 +206,17 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       43 (0x2b)
-      .maxstack  5
+      // Code size       42 (0x2a)
+      .maxstack  4
       .locals init ([0] valuetype StaticInit_Struct01/C V_0,
-               [1] valuetype StaticInit_Struct01/C& V_1)
+               [1] valuetype StaticInit_Struct01/C& V_1,
+               [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype StaticInit_Struct01/C>(object)
       IL_0006:  brtrue.s   IL_000a
 
-      IL_0008:  br.s       IL_0029
+      IL_0008:  br.s       IL_0028
 
       .line 100001,100001 : 0,0 ''
       IL_000a:  ldarg.1
@@ -201,19 +225,18 @@
       IL_0011:  ldloca.s   V_0
       IL_0013:  stloc.1
       IL_0014:  ldarg.2
-      IL_0015:  ldarg.0
-      IL_0016:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_001b:  ldloc.1
-      IL_001c:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_0021:  tail.
-      IL_0023:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityWithComparerIntrinsic<valuetype [mscorlib]System.DateTime>(class [mscorlib]System.Collections.IEqualityComparer,
-                                                                                                                                                                             !!0,
-                                                                                                                                                                             !!0)
-      IL_0028:  ret
+      IL_0015:  stloc.2
+      IL_0016:  ldarg.0
+      IL_0017:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
+      IL_001c:  ldloc.1
+      IL_001d:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
+      IL_0022:  call       bool [mscorlib]System.DateTime::Equals(valuetype [mscorlib]System.DateTime,
+                                                                  valuetype [mscorlib]System.DateTime)
+      IL_0027:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0029:  ldc.i4.0
-      IL_002a:  ret
+      IL_0028:  ldc.i4.0
+      IL_0029:  ret
     } // end of method C::Equals
 
     .method public specialname rtspecialname 
@@ -264,7 +287,7 @@
             instance bool  Equals(valuetype StaticInit_Struct01/C obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       23 (0x17)
+      // Code size       21 (0x15)
       .maxstack  4
       .locals init ([0] valuetype StaticInit_Struct01/C& V_0)
       .line 4,4 : 6,7 ''
@@ -274,10 +297,9 @@
       IL_0004:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
       IL_0009:  ldloc.0
       IL_000a:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_000f:  tail.
-      IL_0011:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityERIntrinsic<valuetype [mscorlib]System.DateTime>(!!0,
-                                                                                                                                                                   !!0)
-      IL_0016:  ret
+      IL_000f:  call       bool [mscorlib]System.DateTime::Equals(valuetype [mscorlib]System.DateTime,
+                                                                  valuetype [mscorlib]System.DateTime)
+      IL_0014:  ret
     } // end of method C::Equals
 
     .method public hidebysig virtual final 

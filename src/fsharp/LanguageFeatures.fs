@@ -31,6 +31,7 @@ type LanguageFeature =
     | AndBang
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
+    | WitnessPassing
     | NullnessChecking
 
 /// LanguageVersion management
@@ -70,6 +71,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.NullnessChecking, languageVersion47 // TODO: currently always on because requires FSharp.Core build
             LanguageFeature.NullableOptionalInterop, previewVersion
             LanguageFeature.DefaultInterfaceMemberConsumption, previewVersion
+            LanguageFeature.WitnessPassing, previewVersion
         ]
 
     let specified =
@@ -139,6 +141,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
+        | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

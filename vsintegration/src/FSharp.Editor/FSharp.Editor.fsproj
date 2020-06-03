@@ -69,7 +69,7 @@
     <Compile Include="Completion\CompletionUtils.fs" />
     <Compile Include="Completion\CompletionProvider.fs" />
     <Compile Include="Completion\PathCompletionUtilities.fs" />
-    <Compile Include="Completion\FileSystemCompletion.fs" />
+    <Compile Include="Completion\HashDirectiveCompletionProvider.fs" />
     <Compile Include="Completion\CompletionService.fs" />
     <Compile Include="Completion\SignatureHelp.fs" />
     <Compile Include="InlineRename\InlineRenameService.fs" />

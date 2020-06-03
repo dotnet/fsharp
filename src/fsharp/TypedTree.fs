@@ -2303,7 +2303,22 @@ type TyparConstraint =
     
     override x.ToString() = sprintf "%+A" x 
     
-/// Represents the specification of a member constraint that must be solved 
+[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+type TraitWitnessInfo = 
+    | TraitWitnessInfo of TTypes * string * MemberFlags * TTypes * TType option
+    
+    /// Get the member name associated with the member constraint.
+    member x.MemberName = (let (TraitWitnessInfo(_, b, _, _, _)) = x in b)
+
+    /// Get the return type recorded in the member constraint.
+    member x.ReturnType = (let (TraitWitnessInfo(_, _, _, _, ty)) = x in ty)
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    override x.ToString() = "TTrait(" + x.MemberName + ")"
+    
+/// The specification of a member constraint that must be solved 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo = 
 
@@ -2311,10 +2326,17 @@ type TraitConstraintInfo =
     /// to store the inferred solution of the constraint.
     | TTrait of tys: TTypes * memberName: string * _memFlags: MemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
 
+    /// Get the key associated with the member constraint.
+    member x.TraitKey = (let (TTrait(a, b, c, d, e, _)) = x in TraitWitnessInfo(a, b, c, d, e))
+
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
 
-    /// Get the argument types required of a member in order to solve the constraint
+    /// Get the member flags associated with the member constraint.
+    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _)) = x in flags)
+
+    /// Get the argument types recorded in the member constraint. This includes the object instance type for
+    /// instance members.
     member x.ArgumentTypes = (let (TTrait(_, _, _, argtys, _, _)) = x in argtys)
 
     /// Get the return type recorded in the member constraint.
@@ -4569,11 +4591,31 @@ type Expr =
     // MUTABILITY: this use of mutability is awkward and perhaps should be removed
     | Quote of
         quotedExpr: Expr *
-        quotationInfo: (ILTypeRef list * TTypes * Exprs * ExprData) option ref *
+        quotationInfo: ((ILTypeRef list * TTypes * Exprs * ExprData) * (ILTypeRef list * TTypes * Exprs * ExprData)) option ref *
         isFromQueryExpression: bool *
         range: range *
         quotedType: TType  
     
+    /// Used in quotation generation to indicate a witness argument, spliced into a quotation literal.
+    ///
+    /// For example:
+    ///
+    ///     let inline f x = <@ sin x @>
+    ///
+    /// needs to pass a witness argument to `sin x`, captured from the surrounding context, for the witness-passing
+    /// version of the code.  Thus the QuotationTranslation and IlxGen makes the generated code as follows:
+    ///
+    ///  f(x) { return Deserialize(<@ sin _spliceHole @>, [| x |]) }
+    ///
+    ///  f$W(witnessForSin, x) { return Deserialize(<@ sin$W _spliceHole1 _spliceHole2 @>, [| WitnessArg(witnessForSin), x |]) }
+    ///
+    /// where _spliceHole1 will be the location of the witness argument in the quotation data, and 
+    /// witnessArg is the lambda for the witness
+    /// 
+    | WitnessArg of
+        traitInfo: TraitConstraintInfo *
+        range: range
+
     /// Indicates a free choice of typars that arises due to 
     /// minimization of polymorphism at let-rec bindings. These are 
     /// resolved to a concrete instantiation on subsequent rewrites. 
@@ -4610,6 +4652,7 @@ type Expr =
         | StaticOptimization (_, _, _, _) -> "StaticOptimization(..)"
         | Op (op, _, args, _) -> "Op(" + op.ToString() + ", " + String.concat ", " (args |> List.map (fun e -> e.ToDebugString(depth))) + ")"
         | Quote _ -> "Quote(..)"
+        | WitnessArg _  -> "WitnessArg(..)"
         | TyChoose _ -> "TyChoose(..)"
         | Link e -> "Link(" + e.Value.ToDebugString(depth) + ")"
 
@@ -5089,30 +5132,26 @@ type CcuReference = string // ILAssemblyRef
 /// reference that has not had an appropriate fixup applied.  
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type CcuThunk = 
-
     {
+      /// ccu.target is null when a reference is missing in the transitive closure of static references that
+      /// may potentially be required for the metadata of referenced DLLs.
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
       mutable target: CcuData
 #else
       mutable target: CcuData?
 #endif
-
-      /// ccu.orphanfixup is true when a reference is missing in the transitive closure of static references that
-      /// may potentially be required for the metadata of referenced DLLs. It is set to true if the "loader"
-      /// used in the F# metadata-deserializer or the .NET metadata reader returns a failing value (e.g. None).
-      /// Note: When used from Visual Studio, the loader will not automatically chase down transitively referenced DLLs - they
-      /// must be in the explicit references in the project.
-      mutable orphanfixup: bool
-
       name: CcuReference
     }
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     /// Dereference the asssembly reference 
     member ccu.Deref = 
-        if isNull (box ccu.target) || ccu.orphanfixup then 
+        if isNull (box ccu.target) then 
             raise(UnresolvedReferenceNoRange ccu.name)
         ccu.target
+   
+    /// Indicates if this assembly reference is unresolved
+    member ccu.IsUnresolvedReference = isNull (ccu.target :> obj)
 
     member ccu.IsUnresolvedReference = isNull (box ccu.target) || ccu.orphanfixup
 #else
@@ -5185,13 +5224,11 @@ type CcuThunk =
     /// Create a CCU with the given name and contents
     static member Create(nm, x) = 
         { target = x 
-          orphanfixup = false
           name = nm }
 
     /// Create a CCU with the given name but where the contents have not yet been specified
     static member CreateDelayed nm = 
         { target = Unchecked.defaultof<_> 
-          orphanfixup = false
           name = nm }
 
     /// Fixup a CCU to have the given contents
@@ -5209,13 +5246,7 @@ type CcuThunk =
             match box avail.target with
             | null -> error(Failure("internal error: ccu thunk '"+avail.name+"' not fixed up!"))
             | _ -> avail.target
-        
-    /// Fixup a CCU to record it as "orphaned", i.e. not available
-    member x.FixupOrphaned() = 
-        match box x.target with
-        | null -> x.orphanfixup<-true
-        | _ -> errorR(Failure("internal error: FixupOrphaned: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
-            
+
     /// Try to resolve a path into the CCU by referencing the .NET/CLI type forwarder table of the CCU
     member ccu.TryForward(nlpath: string[], item: string) : EntityRef option = 
         ccu.EnsureDerefable nlpath

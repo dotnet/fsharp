@@ -1,5 +1,9 @@
 
+<<<<<<< HEAD
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+=======
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -38,6 +42,7 @@
 }
 .mresource public FSharpSignatureData.Linq101Quantifiers01
 {
+<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x00000393
 }
 .mresource public FSharpSignatureDataB.Linq101Quantifiers01
@@ -50,12 +55,26 @@
 }
 .module Linq101Quantifiers01.exe
 // MVID: {5E172EEB-76DD-E373-A745-0383EB2E175E}
+=======
+  // Offset: 0x00000000 Length: 0x00000381
+}
+.mresource public FSharpOptimizationData.Linq101Quantifiers01
+{
+  // Offset: 0x00000388 Length: 0x000000FF
+}
+.module Linq101Quantifiers01.exe
+// MVID: {5EAD3E37-76DD-E373-A745-0383373EAD5E}
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
+<<<<<<< HEAD
 // Image base: 0x070E0000
+=======
+// Image base: 0x05120000
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -109,7 +128,11 @@
       .locals init ([0] string V_0,
                [1] string w)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+<<<<<<< HEAD
       .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Quantifiers01.fs'
+=======
+      .line 100001,100001 : 0,0 'C:\\dev\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Quantifiers01.fs'
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Quantifiers01/iAfterE@12::pc
       IL_0006:  ldc.i4.1
@@ -563,27 +586,16 @@
 
   } // end of class 'productGroups@22-3'
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'productGroups@23-5'
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname 'productGroups@23-5'
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
-    {
-      // Code size       7 (0x7)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
-      IL_0006:  ret
-    } // end of method 'productGroups@23-5'::.ctor
-
-    .method assembly hidebysig instance bool 
-            Invoke(class [Utils]Utils/Product x) cil managed
+    .method assembly static bool  Invoke(class [Utils]Utils/Product x) cil managed
     {
       // Code size       10 (0xa)
       .maxstack  8
       .line 23,23 : 31,49 ''
-      IL_0000:  ldarg.1
+      IL_0000:  ldarg.0
       IL_0001:  callvirt   instance int32 [Utils]Utils/Product::get_UnitsInStock()
       IL_0006:  ldc.i4.0
       IL_0007:  ceq
@@ -610,17 +622,17 @@
     .method public strict virtual instance bool 
             Invoke(class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
     {
-      // Code size       23 (0x17)
+      // Code size       19 (0x13)
       .maxstack  8
       .line 23,23 : 16,50 ''
       IL_0000:  ldarg.1
-      IL_0001:  newobj     instance void Linq101Quantifiers01/'productGroups@23-5'::.ctor()
-      IL_0006:  ldftn      instance bool Linq101Quantifiers01/'productGroups@23-5'::Invoke(class [Utils]Utils/Product)
-      IL_000c:  newobj     instance void class [mscorlib]System.Func`2<class [Utils]Utils/Product,bool>::.ctor(object,
+      IL_0001:  ldnull
+      IL_0002:  ldftn      bool Linq101Quantifiers01/'productGroups@23-5'::Invoke(class [Utils]Utils/Product)
+      IL_0008:  newobj     instance void class [mscorlib]System.Func`2<class [Utils]Utils/Product,bool>::.ctor(object,
                                                                                                                native int)
-      IL_0011:  call       bool [System.Core]System.Linq.Enumerable::Any<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>,
+      IL_000d:  call       bool [System.Core]System.Linq.Enumerable::Any<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>,
                                                                                                      class [mscorlib]System.Func`2<!!0,bool>)
-      IL_0016:  ret
+      IL_0012:  ret
     } // end of method 'productGroups@23-4'::Invoke
 
   } // end of class 'productGroups@23-4'
@@ -1156,27 +1168,16 @@
 
   } // end of class 'productGroups2@40-3'
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'productGroups2@41-5'
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname 'productGroups2@41-5'
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
-    {
-      // Code size       7 (0x7)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
-      IL_0006:  ret
-    } // end of method 'productGroups2@41-5'::.ctor
-
-    .method assembly hidebysig instance bool 
-            Invoke(class [Utils]Utils/Product x) cil managed
+    .method assembly static bool  Invoke(class [Utils]Utils/Product x) cil managed
     {
       // Code size       10 (0xa)
       .maxstack  8
       .line 41,41 : 31,49 ''
-      IL_0000:  ldarg.1
+      IL_0000:  ldarg.0
       IL_0001:  callvirt   instance int32 [Utils]Utils/Product::get_UnitsInStock()
       IL_0006:  ldc.i4.0
       IL_0007:  cgt
@@ -1203,17 +1204,17 @@
     .method public strict virtual instance bool 
             Invoke(class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g) cil managed
     {
-      // Code size       23 (0x17)
+      // Code size       19 (0x13)
       .maxstack  8
       .line 41,41 : 16,50 ''
       IL_0000:  ldarg.1
-      IL_0001:  newobj     instance void Linq101Quantifiers01/'productGroups2@41-5'::.ctor()
-      IL_0006:  ldftn      instance bool Linq101Quantifiers01/'productGroups2@41-5'::Invoke(class [Utils]Utils/Product)
-      IL_000c:  newobj     instance void class [mscorlib]System.Func`2<class [Utils]Utils/Product,bool>::.ctor(object,
+      IL_0001:  ldnull
+      IL_0002:  ldftn      bool Linq101Quantifiers01/'productGroups2@41-5'::Invoke(class [Utils]Utils/Product)
+      IL_0008:  newobj     instance void class [mscorlib]System.Func`2<class [Utils]Utils/Product,bool>::.ctor(object,
                                                                                                                native int)
-      IL_0011:  call       bool [System.Core]System.Linq.Enumerable::All<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>,
+      IL_000d:  call       bool [System.Core]System.Linq.Enumerable::All<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>,
                                                                                                      class [mscorlib]System.Func`2<!!0,bool>)
-      IL_0016:  ret
+      IL_0012:  ret
     } // end of method 'productGroups2@41-4'::Invoke
 
   } // end of class 'productGroups2@41-4'

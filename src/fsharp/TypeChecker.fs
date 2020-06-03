@@ -1628,7 +1628,7 @@ let AdjustAndForgetUsesOfRecValue cenv (vrefTgt: ValRef) (valScheme: ValScheme) 
                               errorR(Error(FSComp.SR.tcUnexpectedExprAtRecInfPoint(), m)) 
                               NormalValUse, []
                   
-                      let ityargs = generalizeTypars (List.drop (List.length tyargs0) generalizedTypars)
+                      let ityargs = generalizeTypars (List.skip (List.length tyargs0) generalizedTypars)
                       primMkApp (Expr.Val (vrefTgt, vrefFlags, m), fty) (tyargs0 @ ityargs) [] m
                   fixupPoint.Value <- fixedUpExpr)
 
@@ -3863,6 +3863,7 @@ let EliminateInitializationGraphs
             | Expr.Link eref -> CheckExpr st !eref
             | Expr.TyChoose (_, b, _) -> CheckExpr st b
             | Expr.Quote _ -> ()
+            | Expr.WitnessArg (_witnessInfo, _m) -> ()
 
         and CheckBinding st (TBind(_, e, _)) = CheckExpr st e 
         and CheckDecisionTree st = function
@@ -4410,8 +4411,8 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv memSpfn m =
         | [ValSpecResult(_, _, id, _, _, memberConstraintTy, partialValReprInfo, _)] -> 
             let memberConstraintTypars, _ = tryDestForallTy cenv.g memberConstraintTy
             let topValInfo = TranslatePartialArity memberConstraintTypars partialValReprInfo
-            let _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm cenv.g topValInfo memberConstraintTy m
-            //if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcInvalidConstraint(), m))
+            let _, _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm cenv.g topValInfo 0 memberConstraintTy m
+            //if curriedArgInfos.Length > 1 then  error(Error(FSComp.SR.tcInvalidConstraint(), m))
             let argTys = List.concat curriedArgInfos
             let argTys = List.map fst argTys
             let logicalCompiledName = ComputeLogicalName id memberFlags
@@ -4662,7 +4663,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
         | _, TyparKind.Type ->
             TcTypeApp cenv newOk checkCxs occ env tpenv m tcref [] []
 
-    | SynType.App (SynType.LongIdent(LongIdentWithDots(tc, _)), _, args, _commas, _, postfix, m) -> 
+    | SynType.App (StripParenTypes (SynType.LongIdent(LongIdentWithDots(tc, _))), _, args, _commas, _, postfix, m) -> 
         let ad = env.eAccessRights
 
         let tcref = 
@@ -4835,7 +4836,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
             let ms2, tpenv = TcMeasure cenv newOk checkCxs occ env tpenv typ2 m
             TType_measure (Measure.Prod(ms1, Measure.Inv ms2)), tpenv
 
-    | SynType.App((SynType.Var(_, m1) | SynType.MeasurePower(_, _, m1)) as arg1, _, args, _commas, _, postfix, m) ->
+    | SynType.App(StripParenTypes (SynType.Var(_, m1) | (SynType.MeasurePower(_, _, m1))) as arg1, _, args, _commas, _, postfix, m) ->
         match optKind, args, postfix with
         | (None | Some TyparKind.Measure), [arg2], true ->
             let ms1, tpenv = TcMeasure cenv newOk checkCxs occ env tpenv arg1 m1
@@ -4850,10 +4851,13 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
         errorR(Error(FSComp.SR.tcIllegalSyntaxInTypeExpression(), m))
         NewErrorType (), tpenv
 
+    | SynType.Paren(innerType, _) ->
+        TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscopedTyparEnv) innerType
+
 and TcType cenv newOk checkCxs occ env (tpenv: SyntacticUnscopedTyparEnv) ty = 
     TcTypeOrMeasure (Some TyparKind.Type) cenv newOk checkCxs occ env tpenv ty
 
-and TcMeasure cenv newOk checkCxs occ env (tpenv: SyntacticUnscopedTyparEnv) ty m = 
+and TcMeasure cenv newOk checkCxs occ env (tpenv: SyntacticUnscopedTyparEnv) (StripParenTypes ty) m = 
     match ty with
     | SynType.Anon m ->
         error(Error(FSComp.SR.tcAnonymousUnitsOfMeasureCannotBeNested(), m))
@@ -4911,7 +4915,7 @@ and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =
     tpenv
 
 #if !NO_EXTENSIONTYPING
-and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (v: SynType) idOpt container =
+and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) idOpt container =
     let g = cenv.g
     let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv kind), v.Range)) 
     let record ttype =
@@ -4980,7 +4984,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (v: SynType) idOpt co
 and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedParameterInfo>[], args: SynType list, container, containerName, m) =
     let args = 
         args |> List.map (function 
-            | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id], _)), v, _) -> Some id, v
+            | StripParenTypes (SynType.StaticConstantNamed(StripParenTypes (SynType.LongIdent(LongIdentWithDots([id], _))), v, _)) -> Some id, v
             | v -> None, v)
 
     let unnamedArgs = args |> Seq.takeWhile (fst >> Option.isNone) |> Seq.toArray |> Array.map snd
@@ -5112,12 +5116,14 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys:
     // If we're not checking constraints, i.e. when we first assert the super/interfaces of a type definition, then just 
     // clear the constraint lists of the freshly generated type variables. A little ugly but fairly localized. 
     if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.SetConstraints [])
-    if tinst.Length <> pathTypeArgs.Length + synArgTys.Length then 
-        error (TyconBadArgs(env.DisplayEnv, tcref, pathTypeArgs.Length + synArgTys.Length, m))
+    let synArgTysLength = synArgTys.Length
+    let pathTypeArgsLength = pathTypeArgs.Length
+    if tinst.Length <> pathTypeArgsLength + synArgTysLength then 
+        error (TyconBadArgs(env.DisplayEnv, tcref, pathTypeArgsLength + synArgTysLength, m))
 
     let argTys, tpenv = 
         // Get the suffix of typars
-        let tpsForArgs = List.drop (tps.Length - synArgTys.Length) tps
+        let tpsForArgs = List.skip (tps.Length - synArgTysLength) tps
         let kindsForArgs = tpsForArgs |> List.map (fun tp -> tp.Kind)
         TcTypesOrMeasures (Some kindsForArgs) cenv newOk checkCxs occ env tpenv synArgTys m
 
@@ -5275,7 +5281,7 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 topValData (inlineFlag, de
             let name = id.idText
             match values.TryGetValue name with
             | true, value ->
-                if not (String.IsNullOrEmpty name) && Char.IsLower(name.[0]) then
+                if not (String.IsNullOrEmpty name) && not (String.isLeadingIdentifierCharacterUpperCase name) then
                     match env.eNameResEnv.ePatItems.TryGetValue name with
                     | true, Item.Value vref when vref.LiteralValue.IsSome ->
                         warning(Error(FSComp.SR.checkLowercaseLiteralBindingInPattern name, id.idRange))
@@ -9305,9 +9311,8 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
     let m = cleanSynArg.Range
     let rec check overallTyOpt expr (delayed: DelayedItem list) = 
         match expr with
-        | LongOrSingleIdent (false, (LongIdentWithDots(longId, _) as lidd), _, _) when longId.Length > 0 ->
+        | LongOrSingleIdent (false, (LongIdentWithDots((id::rest) as longId, _) as lidd), _, _) ->
             let ad = env.eAccessRights
-            let id, rest = List.headAndTail longId
             match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) -> 
                 () // resolved to a module or namespace, done with checks
@@ -12816,7 +12821,7 @@ module TcRecdUnionAndEnumDeclarations = begin
             errorR(Error(FSComp.SR.tcUnionCaseNameConflictsWithGeneratedType(name, "Tags"), id.idRange))
 
         CheckNamespaceModuleOrTypeName cenv.g id
-        if not (String.isUpper name) && name <> opNameCons && name <> opNameNil then
+        if not (String.isLeadingIdentifierCharacterUpperCase name) && name <> opNameCons && name <> opNameNil then
             errorR(NotUpperCaseConstructor(id.idRange))
 
     let ValidateFieldNames (synFields: SynField list, tastFields: RecdField list) = 
@@ -13266,7 +13271,7 @@ module IncrClassChecking =
                         InVar isCtorArg
                 | topValInfo -> 
                     //dprintfn "Representing %s as a method %s" v.LogicalName name
-                    let tps, argInfos, _, _ = GetTopValTypeInCompiledForm g topValInfo v.Type v.Range
+                    let tps, _, argInfos, _, _ = GetTopValTypeInCompiledForm g topValInfo 0 v.Type v.Range
 
                     let valSynInfo = SynValInfo(argInfos |> List.mapSquared (fun (_, argInfo) -> SynArgInfo([], false, argInfo.Name)), SynInfo.unnamedRetVal)
                     let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) MemberKind.Member
@@ -13284,6 +13289,7 @@ module IncrClassChecking =
                             let (ValReprInfo(tpNames, args, ret)) = topValInfo
                             let topValInfo = ValReprInfo(tpNames, ValReprInfo.selfMetadata :: args, ret)
                             tauTy, topValInfo
+
                     // Add the enclosing type parameters on to the function
                     let topValInfo = 
                         let (ValReprInfo(tpNames, args, ret)) = topValInfo
@@ -15214,7 +15220,7 @@ module TcExceptionDeclarations =
 
     let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, UnionCase(_, id, _, _, _, _), _, doc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
-        if not (String.isUpper id.idText) then errorR(NotUpperCaseConstructor m)
+        if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor m)
         let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
         let vis = TcRecdUnionAndEnumDeclarations.CombineReprAccess parent vis
         CheckForDuplicateConcreteType env (id.idText + "Exception") id.idRange
@@ -15382,9 +15388,9 @@ module EstablishTypeDefinitionCores =
             k
 
 
-    let private (|TyconCoreAbbrevThatIsReallyAUnion|_|) (hasMeasureAttr, envinner, id: Ident) synTyconRepr =
+    let private (|TyconCoreAbbrevThatIsReallyAUnion|_|) (hasMeasureAttr, envinner, id: Ident) (synTyconRepr) =
         match synTyconRepr with 
-        | SynTypeDefnSimpleRepr.TypeAbbrev(_, SynType.LongIdent(LongIdentWithDots([unionCaseName], _)), m) 
+        | SynTypeDefnSimpleRepr.TypeAbbrev(_, StripParenTypes (SynType.LongIdent(LongIdentWithDots([unionCaseName], _))), m) 
                               when 
                                 (not hasMeasureAttr && 
                                  (isNil (LookupTypeNameInEnvNoArity OpenQualified unionCaseName.idText envinner.eNameResEnv) || 
@@ -15667,11 +15673,11 @@ module EstablishTypeDefinitionCores =
 
 #if !NO_EXTENSIONTYPING
     /// Get the items on the r.h.s. of a 'type X = ABC<...>' definition
-    let private TcTyconDefnCore_GetGenerateDeclaration_Rhs rhsType =
+    let private TcTyconDefnCore_GetGenerateDeclaration_Rhs (StripParenTypes rhsType) =
         match rhsType with 
-        | SynType.App (SynType.LongIdent(LongIdentWithDots(tc, _)), _, args, _commas, _, _postfix, m) -> Some(tc, args, m)
+        | SynType.App (StripParenTypes (SynType.LongIdent(LongIdentWithDots(tc, _))), _, args, _commas, _, _postfix, m) -> Some(tc, args, m)
         | SynType.LongIdent (LongIdentWithDots(tc, _) as lidwd) -> Some(tc, [], lidwd.Range)
-        | SynType.LongIdentApp (SynType.LongIdent (LongIdentWithDots(tc, _)), LongIdentWithDots(longId, _), _, args, _commas, _, m) -> Some(tc@longId, args, m)
+        | SynType.LongIdentApp (StripParenTypes (SynType.LongIdent (LongIdentWithDots(tc, _))), LongIdentWithDots(longId, _), _, args, _commas, _, m) -> Some(tc@longId, args, m)
         | _ -> None
 
     /// Check whether 'type X = ABC<...>' is a generative provided type definition
@@ -16302,7 +16308,7 @@ module EstablishTypeDefinitionCores =
                                   noAbstractClassAttributeCheck()
                                   noFieldsCheck userFields
                                   let ty', _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType envinner tpenv ty
-                                  let _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm g (arity |> TranslateTopValSynInfo m (TcAttributes cenv envinner)  |> TranslatePartialArity []) ty' m
+                                  let _, _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm g (arity |> TranslateTopValSynInfo m (TcAttributes cenv envinner)  |> TranslatePartialArity []) 0 ty' m
                                   if curriedArgInfos.Length < 1 then error(Error(FSComp.SR.tcInvalidDelegateSpecification(), m))
                                   if curriedArgInfos.Length > 1 then error(Error(FSComp.SR.tcDelegatesCannotBeCurried(), m))
                                   let ttps = thisTyconRef.Typars m
@@ -17186,7 +17192,7 @@ module TcDeclarations =
                         memberFlags.MemberKind=MemberKind.Constructor && 
                         // REVIEW: This is a syntactic approximation
                         (match valSpfn.SynType, valSpfn.SynInfo.ArgInfos with 
-                         | SynType.Fun (SynType.LongIdent (LongIdentWithDots([id], _)), _, _), [[_]] when id.idText = "unit" -> true
+                         | StripParenTypes (SynType.Fun (StripParenTypes (SynType.LongIdent (LongIdentWithDots([id], _))), _, _)), [[_]] when id.idText = "unit" -> true
                          | _ -> false) 
                     | _ -> false) 
 
@@ -17441,10 +17447,7 @@ and TcSignatureElements cenv parent endm env xml mutRecNSInfo defs =
     }
 
 and TcSignatureElementsNonMutRec cenv parent typeNames endm env defs = 
-    eventually {
-
-        return! Eventually.fold (TcSignatureElementNonMutRec cenv parent typeNames endm) env defs
-    }
+    Eventually.fold (TcSignatureElementNonMutRec cenv parent typeNames endm) env defs
 
 and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (defs: SynModuleSigDecl list) =
     eventually {
@@ -18114,10 +18117,10 @@ let TypeCheckOneImplFile
 
             try  
                 let reportErrors = not (checkForErrors())
-
+                let tcVal = LightweightTcValForUsingInBuildMethodCall g
                 PostTypeCheckSemanticChecks.CheckTopImpl 
                    (g, cenv.amap, reportErrors, cenv.infoReader, 
-                    env.eInternalsVisibleCompPaths, cenv.topCcu, envAtEnd.DisplayEnv, 
+                    env.eInternalsVisibleCompPaths, cenv.topCcu, tcVal, envAtEnd.DisplayEnv, 
                     implFileExprAfterSig, extraAttribs, isLastCompiland, 
                     isInternalTestSpanStackReferring)
 

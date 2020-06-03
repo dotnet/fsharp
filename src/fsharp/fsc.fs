@@ -341,7 +341,7 @@ module XmlDocWriter =
     let computeXmlDocSigs (tcGlobals, generatedCcu: CcuThunk) =
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
         let g = tcGlobals
-        let doValSig ptext (v: Val)  = if (hasDoc v.XmlDoc) then v.XmlDocSig <- XmlDocSigOfVal g ptext v
+        let doValSig ptext (v: Val)  = if hasDoc v.XmlDoc then v.XmlDocSig <- XmlDocSigOfVal g false ptext v
         let doTyconSig ptext (tc: Tycon) = 
             if (hasDoc tc.XmlDoc) then tc.XmlDocSig <- XmlDocSigOfTycon [ptext; tc.CompiledName]
             for vref in tc.MembersOfFSharpTyconSorted do 

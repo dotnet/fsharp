@@ -109,7 +109,10 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
             | TTyconIsStruct(ty1) -> 
                 accTy cenv env ty1)
 
-    | Expr.Link _eref -> failwith "Unexpected reclink"
+    | Expr.WitnessArg (traitInfo, _m) ->
+        accTraitInfo cenv env traitInfo
+
+    | Expr.Link _eref -> failwith "Unexpected Expr.Link"
 
 and accMethods cenv env baseValOpt l = 
     List.iter (accMethod cenv env baseValOpt) l
@@ -135,14 +138,17 @@ and accOp cenv env (op, tyargs, args, _m) =
         accTypeInst cenv env enclTypeArgs
         accTypeInst cenv env methTypeArgs
         accTypeInst cenv env tys
-    | TOp.TraitCall (TTrait(tys, _nm, _, argtys, rty, _sln)) -> 
-        argtys |> accTypeInst cenv env 
-        rty |> Option.iter (accTy cenv env)
-        tys |> List.iter (accTy cenv env)
+    | TOp.TraitCall traitInfo -> 
+        accTraitInfo cenv env traitInfo
         
     | TOp.ILAsm (_, tys) ->
         accTypeInst cenv env tys
     | _ ->    ()
+
+and accTraitInfo cenv env (TTrait(tys, _nm, _, argtys, rty, _sln)) =
+    argtys |> accTypeInst cenv env 
+    rty |> Option.iter (accTy cenv env)
+    tys |> List.iter (accTy cenv env)
 
 and accLambdas cenv env topValInfo e ety =
     match e with

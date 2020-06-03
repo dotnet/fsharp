@@ -1,5 +1,9 @@
 
+<<<<<<< HEAD
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+=======
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -33,6 +37,7 @@
 }
 .mresource public FSharpSignatureData.Linq101Select01
 {
+<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x00000657
 }
 .mresource public FSharpSignatureDataB.Linq101Select01
@@ -45,12 +50,26 @@
 }
 .module Linq101Select01.exe
 // MVID: {5E172EEB-6057-8F80-A745-0383EB2E175E}
+=======
+  // Offset: 0x00000000 Length: 0x00000655
+}
+.mresource public FSharpOptimizationData.Linq101Select01
+{
+  // Offset: 0x00000660 Length: 0x00000204
+}
+.module Linq101Select01.exe
+// MVID: {5ECD8279-6057-8F80-A745-03837982CD5E}
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
+<<<<<<< HEAD
 // Image base: 0x069B0000
+=======
+// Image base: 0x058D0000
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -81,7 +100,11 @@
       .maxstack  5
       .locals init ([0] int32 n)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+<<<<<<< HEAD
       .line 12,12 : 9,28 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Select01.fs'
+=======
+      .line 12,12 : 9,28 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Select01.fs'
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 13,13 : 9,23 ''
@@ -2856,10 +2879,12 @@
     .method public strict virtual instance bool 
             Invoke(class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
     {
-      // Code size       40 (0x28)
-      .maxstack  8
+      // Code size       48 (0x30)
+      .maxstack  7
       .locals init ([0] class [Utils]Utils/Customer c,
-               [1] class [Utils]Utils/Order o)
+               [1] class [Utils]Utils/Order o,
+               [2] valuetype [mscorlib]System.DateTime V_2,
+               [3] valuetype [mscorlib]System.DateTime V_3)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  call       instance !0 class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>::get_Item1()
@@ -2870,16 +2895,23 @@
       .line 93,93 : 16,50 ''
       IL_000e:  ldloc.1
       IL_000f:  callvirt   instance valuetype [mscorlib]System.DateTime [Utils]Utils/Order::get_OrderDate()
-      IL_0014:  ldc.i4     0x7ce
-      IL_0019:  ldc.i4.1
+      IL_0014:  stloc.2
+      IL_0015:  ldc.i4     0x7ce
       IL_001a:  ldc.i4.1
-      IL_001b:  newobj     instance void [mscorlib]System.DateTime::.ctor(int32,
+      IL_001b:  ldc.i4.1
+      IL_001c:  newobj     instance void [mscorlib]System.DateTime::.ctor(int32,
                                                                           int32,
                                                                           int32)
-      IL_0020:  tail.
-      IL_0022:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericGreaterOrEqualIntrinsic<valuetype [mscorlib]System.DateTime>(!!0,
-                                                                                                                                                                       !!0)
-      IL_0027:  ret
+      IL_0021:  stloc.3
+      IL_0022:  ldloc.2
+      IL_0023:  ldloc.3
+      IL_0024:  call       int32 [mscorlib]System.DateTime::Compare(valuetype [mscorlib]System.DateTime,
+                                                                    valuetype [mscorlib]System.DateTime)
+      IL_0029:  ldc.i4.0
+      IL_002a:  clt
+      IL_002c:  ldc.i4.0
+      IL_002d:  ceq
+      IL_002f:  ret
     } // end of method 'orders2@93-2'::Invoke
 
   } // end of class 'orders2@93-2'
@@ -3317,10 +3349,12 @@
     .method public strict virtual instance bool 
             Invoke(class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order> tupledArg) cil managed
     {
-      // Code size       33 (0x21)
+      // Code size       41 (0x29)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Customer c,
-               [1] class [Utils]Utils/Order o)
+               [1] class [Utils]Utils/Order o,
+               [2] valuetype [mscorlib]System.DateTime V_2,
+               [3] valuetype [mscorlib]System.DateTime V_3)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  call       instance !0 class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>::get_Item1()
@@ -3331,11 +3365,18 @@
       .line 114,114 : 16,41 ''
       IL_000e:  ldloc.1
       IL_000f:  callvirt   instance valuetype [mscorlib]System.DateTime [Utils]Utils/Order::get_OrderDate()
-      IL_0014:  call       valuetype [mscorlib]System.DateTime Linq101Select01::get_cutOffDate()
-      IL_0019:  tail.
-      IL_001b:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericGreaterOrEqualIntrinsic<valuetype [mscorlib]System.DateTime>(!!0,
-                                                                                                                                                                       !!0)
-      IL_0020:  ret
+      IL_0014:  stloc.2
+      IL_0015:  call       valuetype [mscorlib]System.DateTime Linq101Select01::get_cutOffDate()
+      IL_001a:  stloc.3
+      IL_001b:  ldloc.2
+      IL_001c:  ldloc.3
+      IL_001d:  call       int32 [mscorlib]System.DateTime::Compare(valuetype [mscorlib]System.DateTime,
+                                                                    valuetype [mscorlib]System.DateTime)
+      IL_0022:  ldc.i4.0
+      IL_0023:  clt
+      IL_0025:  ldc.i4.0
+      IL_0026:  ceq
+      IL_0028:  ret
     } // end of method 'orders4@114-4'::Invoke
 
   } // end of class 'orders4@114-4'

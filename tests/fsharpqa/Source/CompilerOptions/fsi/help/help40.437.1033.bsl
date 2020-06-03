@@ -1,7 +1,11 @@
 Microsoft (R) F# Interactive version 10.2.3 for F# 4.5
 Copyright (c) Microsoft Corporation. All Rights Reserved.
 
+<<<<<<< HEAD
 Usage: fsiAnyCpu.exe <options> [script.fsx [<arguments>]]
+=======
+Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
+>>>>>>> d0c19d865e2a91dcbf26a8832f38611b9655e052
 
 
 		- INPUT FILES -

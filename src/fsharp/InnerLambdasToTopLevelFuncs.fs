@@ -1168,12 +1168,20 @@ module Pass4_RewriteAssembly =
         | Expr.Const _ -> 
             expr,z 
 
-        | Expr.Quote (a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty) -> 
-            let argExprs,z = List.mapFold (TransExpr penv) z argExprs
-            Expr.Quote (a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty),z
+        | Expr.Quote (a,dataCell,isFromQueryExpression,m,ty) -> 
+            let doData (typeDefs,argTypes,argExprs,data) z = 
+                let argExprs,z = List.mapFold (TransExpr penv) z argExprs
+                (typeDefs,argTypes,argExprs,data), z
 
-        | Expr.Quote (a,{contents=None},isFromQueryExpression,m,ty) -> 
-            Expr.Quote (a,{contents=None},isFromQueryExpression,m,ty),z
+            let data, z =
+                match !dataCell with 
+                | Some (data1, data2) ->
+                   let data1, z = doData data1 z
+                   let data2, z = doData data2 z
+                   Some (data1, data2), z
+                | None -> None, z
+
+            Expr.Quote (a,ref data,isFromQueryExpression,m,ty),z
 
         | Expr.Op (c,tyargs,args,m) -> 
             let args,z = List.mapFold (TransExpr penv) z args
@@ -1186,6 +1194,9 @@ module Pass4_RewriteAssembly =
 
         | Expr.TyChoose (_,_,m) -> 
             error(Error(FSComp.SR.tlrUnexpectedTExpr(),m))
+
+        | Expr.WitnessArg (_witnessInfo, _m) ->
+            expr, z
 
     /// Walk over linear structured terms in tail-recursive loop, using a continuation 
     /// to represent the rebuild-the-term stack 

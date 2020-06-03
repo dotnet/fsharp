@@ -32,8 +32,8 @@ type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: range,
 [<AutoOpen>]
 module internal NoteworthyParamInfoLocationsImpl =
 
-    let isStaticArg a =
-        match a with
+    let isStaticArg (StripParenTypes synType) =
+        match synType with
         | SynType.StaticConstant _ 
         | SynType.StaticConstantNull _ 
         | SynType.StaticConstantExpr _ 
@@ -55,7 +55,7 @@ module internal NoteworthyParamInfoLocationsImpl =
         | Found of openParen: pos * commasAndCloseParen: (pos * string option) list * hasClosedParen: bool
         | NotFound
 
-    let digOutIdentFromStaticArg synType =
+    let digOutIdentFromStaticArg (StripParenTypes synType) =
         match synType with 
         | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id], _)), _, _) -> Some id.idText 
         | SynType.LongIdent(LongIdentWithDots([id], _)) -> Some id.idText // NOTE: again, not a static constant, but may be a prefix of a Named in incomplete code
@@ -148,9 +148,9 @@ module internal NoteworthyParamInfoLocationsImpl =
                     NotFound, Some inner
             | _ -> NotFound, Some inner
 
-    let (|StaticParameters|_|) pos synType =
+    let (|StaticParameters|_|) pos (StripParenTypes synType) =
         match synType with
-        | SynType.App(SynType.LongIdent(LongIdentWithDots(lid, _) as lidwd), Some(openm), args, commas, closemOpt, _pf, wholem) ->
+        | SynType.App(StripParenTypes (SynType.LongIdent(LongIdentWithDots(lid, _) as lidwd)), Some(openm), args, commas, closemOpt, _pf, wholem) ->
             let lidm = lidwd.Range
             let betweenTheBrackets = mkRange wholem.FileName openm.Start wholem.End
             if AstTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos && args |> List.forall isStaticArg then

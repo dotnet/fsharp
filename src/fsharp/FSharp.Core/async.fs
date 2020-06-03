@@ -1368,7 +1368,7 @@ namespace Microsoft.FSharp.Control
             let cancellationToken = defaultArg cancellationToken defaultCancellationTokenSource.Token
             AsyncPrimitives.StartWithContinuations cancellationToken computation id (fun edi -> edi.ThrowAny()) ignore
 
-        static member Sleep millisecondsDueTime : Async<unit> =
+        static member Sleep (millisecondsDueTime: int64) : Async<unit> =
             CreateDelimitedUserCodeAsync (fun ctxt ->
                 let mutable timer = None: Timer option
                 let cont = ctxt.cont
@@ -1401,7 +1401,7 @@ namespace Microsoft.FSharp.Control
                                             | Some t -> t.Dispose()
                                             // Now we're done, so call the continuation
                                             ctxt.trampolineHolder.ExecuteWithTrampoline (fun () -> cont()) |> unfake),
-                                     null, dueTime=millisecondsDueTime, period = -1) |> Some
+                                     null, dueTime=millisecondsDueTime, period = -1L) |> Some
                 with exn ->
                     if latch.Enter() then
                         // post exception to econt only if we successfully enter the latch (no other continuations were called)
@@ -1412,6 +1412,16 @@ namespace Microsoft.FSharp.Control
                     fake()
                 | _ ->
                     ctxt.econt edi)
+
+        static member Sleep (millisecondsDueTime: int32) : Async<unit> =
+            Async.Sleep (millisecondsDueTime |> int64)
+
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        static member Sleep (dueTime: TimeSpan) =
+            if dueTime < TimeSpan.Zero then
+                raise (ArgumentOutOfRangeException("dueTime"))
+            else
+                Async.Sleep (dueTime.TotalMilliseconds |> Checked.int64)
 
         /// Wait for a wait handle. Both timeout and cancellation are supported
         static member AwaitWaitHandle(waitHandle: WaitHandle, ?millisecondsTimeout:int) =
