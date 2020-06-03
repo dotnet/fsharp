@@ -12,7 +12,6 @@ namespace Microsoft.FSharp.NativeInterop
     module NativePtr =
 
         [<Unverifiable>]
-        [<NoDynamicInvocation>]
         [<CompiledName("OfNativeIntInlined")>]
         /// <summary>Returns a typed native pointer for a given machine address.</summary>
         /// <param name="address">The pointer address.</param>
@@ -20,7 +19,6 @@ namespace Microsoft.FSharp.NativeInterop
         val inline ofNativeInt : address:nativeint -> nativeptr<'T>
 
         [<Unverifiable>]
-        [<NoDynamicInvocation>]
         [<CompiledName("ToVoidPtrInlined")>]
         /// <summary>Returns an untyped native pointer for a given typed pointer.</summary>
         /// <param name="address">The pointer address.</param>
@@ -28,7 +26,6 @@ namespace Microsoft.FSharp.NativeInterop
         val inline toVoidPtr : address:nativeptr<'T> -> voidptr
 
         [<Unverifiable>]
-        [<NoDynamicInvocation>]
         [<CompiledName("OfVoidPtrInlined")>]
         /// <summary>Returns a typed native pointer for a untyped native pointer.</summary>
         /// <param name="address">The untyped pointer.</param>
@@ -36,7 +33,6 @@ namespace Microsoft.FSharp.NativeInterop
         val inline ofVoidPtr : voidptr -> nativeptr<'T>
 
         [<Unverifiable>]
-        [<NoDynamicInvocation>]
         [<CompiledName("ToNativeIntInlined")>]
         /// <summary>Returns a machine address for a given typed native pointer.</summary>
         /// <param name="address">The input pointer.</param>
@@ -45,7 +41,6 @@ namespace Microsoft.FSharp.NativeInterop
 
 
         [<Unverifiable>]
-        [<NoDynamicInvocation>]
         [<CompiledName("AddPointerInlined")>]
         /// <summary>Returns a typed native pointer by adding index * sizeof&lt;'T&gt; to the 
         /// given input pointer.</summary>
@@ -55,7 +50,6 @@ namespace Microsoft.FSharp.NativeInterop
         val inline add : address:nativeptr<'T> -> index:int -> nativeptr<'T>
 
         [<Unverifiable>]
-        [<NoDynamicInvocation>]
         [<CompiledName("GetPointerInlined")>]
         /// <summary>Dereferences the typed native pointer computed by adding index * sizeof&lt;'T&gt; to the 
         /// given input pointer.</summary>
@@ -65,7 +59,6 @@ namespace Microsoft.FSharp.NativeInterop
         val inline get : address:nativeptr<'T> -> index:int -> 'T
 
         [<Unverifiable>]
-        [<NoDynamicInvocation>]
         [<CompiledName("ReadPointerInlined")>]
         /// <summary>Dereferences the given typed native pointer.</summary>
         /// <param name="address">The input pointer.</param>
@@ -73,7 +66,6 @@ namespace Microsoft.FSharp.NativeInterop
         val inline read : address:nativeptr<'T> -> 'T
 
         [<Unverifiable>]
-        [<NoDynamicInvocation>]
         [<CompiledName("WritePointerInlined")>]
         /// <summary>Assigns the <c>value</c> into the memory location referenced by the given typed native pointer.</summary>
         /// <param name="address">The input pointer.</param>
@@ -81,7 +73,6 @@ namespace Microsoft.FSharp.NativeInterop
         val inline write : address:nativeptr<'T> -> value:'T -> unit
 
         [<Unverifiable>]
-        [<NoDynamicInvocation>]
         [<CompiledName("SetPointerInlined")>]
         /// <summary>Assigns the <c>value</c> into the memory location referenced by the typed native 
         /// pointer computed by adding index * sizeof&lt;'T&gt; to the given input pointer.</summary>
@@ -94,7 +85,6 @@ namespace Microsoft.FSharp.NativeInterop
         /// <param name="count">The number of objects of type T to allocate.</param>
         /// <returns>A typed pointer to the allocated memory.</returns>
         [<Unverifiable>]
-        [<NoDynamicInvocation>]
         [<CompiledName("StackAllocate")>]
         val inline stackalloc : count:int -> nativeptr<'T>
 
@@ -102,6 +92,5 @@ namespace Microsoft.FSharp.NativeInterop
         /// <param name="address">The input pointer.</param>
         /// <returns>The managed pointer.</returns>
         [<Unverifiable>]
-        [<NoDynamicInvocation>]
         [<CompiledName("ToByRefInlined")>]
         val inline toByRef : nativeptr<'T> -> byref<'T>        
