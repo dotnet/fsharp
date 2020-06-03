@@ -3708,6 +3708,7 @@ let getCustomAttrData (ilg: ILGlobals) cattr =
 let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", None, Some ecmaPublicKey, true, None, None))
 
 let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [])
+let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [])
 
 // ILSecurityDecl is a 'blob' having the following format:
 // - A byte containing a period (.).

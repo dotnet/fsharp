@@ -4942,10 +4942,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         // the global_g reference cell is used only for debug printing
         global_g <- Some tcGlobals
 #endif
-        // do this prior to parsing, since parsing IL assembly code may refer to mscorlib
-#if !NO_INLINE_IL_PARSER
-        FSharp.Compiler.AbstractIL.Internal.AsciiConstants.parseILGlobals <- tcGlobals.ilg 
-#endif
         frameworkTcImports.SetTcGlobals tcGlobals
         return tcGlobals, frameworkTcImports
       }
