@@ -2087,7 +2087,7 @@ type CcuLoadFailureAction =
     | ReturnNone
 
 [<RequireQualifiedAccess>]
-type FallbackPrimaryAssembly =
+type TargetProfile =
     | Mscorlib
     | System_Runtime
     | NetStandard
@@ -2100,7 +2100,7 @@ type FallbackPrimaryAssembly =
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
-    { mutable fallbackPrimaryAssembly: FallbackPrimaryAssembly
+    { mutable targetProfile: TargetProfile
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string (* normally "." *)
@@ -2266,7 +2266,7 @@ type TcConfigBuilder =
 
     static member Initial =
         {
-          fallbackPrimaryAssembly = FallbackPrimaryAssembly.Mscorlib
+          targetProfile = TargetProfile.Mscorlib
           light = None
           noFeedback = false
           stackReserveSize = None
@@ -2765,7 +2765,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         match tryFindPrimaryAssembly data.reduceMemoryUsage data.tryGetMetadataSnapshot data.implicitIncludeDir data.referencedDLLs with
         | Some(assemblyReference, assemblyExplicitFilename) -> true, assemblyReference, Some assemblyExplicitFilename
         | _ -> 
-            let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(data.fallbackPrimaryAssembly.Name)
+            let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(data.targetProfile.Name)
             false, primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt
 
 
@@ -2805,7 +2805,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     let systemAssemblies = systemAssemblies
 
-    member x.fallbackPrimaryAssembly = data.fallbackPrimaryAssembly
+    member x.targetProfile = data.targetProfile
     member x.isPrimaryAssemblyFoundAgnostically = isPrimaryAssemblyFound
     member x.noFeedback = data.noFeedback
     member x.stackReserveSize = data.stackReserveSize   
@@ -3303,6 +3303,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             else 
                 resultingResolutions, unresolvedReferences |> List.map (fun (name, _, r) -> (name, r)) |> List.map UnresolvedAssemblyReference    
 
+    member tcConfig.GetPrimaryAssemblyName() =
+        Path.GetFileNameWithoutExtension primaryAssemblyReference.Text
+        
     member tcConfig.PrimaryAssemblyDllReference() = primaryAssemblyReference
 
     member tcConfig.CoreLibraryDllReference() = fslibReference
@@ -4906,7 +4909,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             if tcConfig.isPrimaryAssemblyFoundAgnostically then
                 tcConfig.PrimaryAssemblyDllReference()
             else
-                let path = frameworkDLLs |> List.tryFind(fun dll -> String.Compare(Path.GetFileNameWithoutExtension(dll.resolvedPath), tcConfig.fallbackPrimaryAssembly.Name, StringComparison.OrdinalIgnoreCase) = 0)
+                let path = frameworkDLLs |> List.tryFind(fun dll -> String.Compare(Path.GetFileNameWithoutExtension(dll.resolvedPath), tcConfig.targetProfile.Name, StringComparison.OrdinalIgnoreCase) = 0)
                 match path with
                 | Some p -> AssemblyReference(range0, p.resolvedPath, None)
                 | None -> tcConfig.PrimaryAssemblyDllReference()

@@ -570,6 +570,8 @@ type TcConfig =
     member shadowCopyReferences: bool
     member useSdkRefs: bool
     member langVersion: LanguageVersion
+    
+    member GetPrimaryAssemblyName: unit -> string
 
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
 

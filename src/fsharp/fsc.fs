@@ -797,7 +797,7 @@ module MainModuleBuilder =
 
     let createSystemNumericsExportList (tcConfig: TcConfig) (tcImports: TcImports) =
         let refNumericsDllName =
-            if (tcConfig.primaryAssembly.Name = "mscorlib") then "System.Numerics"
+            if (tcConfig.targetProfile.Name = "mscorlib") then "System.Numerics"
             else "System.Runtime.Numerics"
         let numericsAssemblyRef =
             match tcImports.GetImportedAssemblies() |> List.tryFind<ImportedAssembly>(fun a -> a.FSharpViewOfMetadata.AssemblyName = refNumericsDllName) with
@@ -2050,8 +2050,7 @@ let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlo
         match tcConfig.metadataVersion with
         | Some v -> v
         | _ -> 
-            let filename = Path.GetFileNameWithoutExtension(tcConfig.PrimaryAssemblyDllReference().Text)
-            match frameworkTcImports.DllTable.TryFind filename with 
+            match frameworkTcImports.DllTable.TryFind(tcConfig.GetPrimaryAssemblyName()) with 
              | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion 
              | _ -> ""
 
