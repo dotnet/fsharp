@@ -2086,9 +2086,21 @@ type CcuLoadFailureAction =
     | RaiseError
     | ReturnNone
 
+[<RequireQualifiedAccess>]
+type FallbackPrimaryAssembly =
+    | Mscorlib
+    | System_Runtime
+    | NetStandard
+
+    member this.Name =
+        match this with
+        | Mscorlib -> "mscorlib"
+        | System_Runtime -> "System.Runtime"
+        | NetStandard -> "netstandard"
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
-    { mutable primaryAssembly: ILAssemblyRef
+    { mutable fallbackPrimaryAssembly: FallbackPrimaryAssembly
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string (* normally "." *)
@@ -2254,7 +2266,7 @@ type TcConfigBuilder =
 
     static member Initial =
         {
-          primaryAssembly = mkSimpleAssemblyRef "mscorlib"
+          fallbackPrimaryAssembly = FallbackPrimaryAssembly.Mscorlib
           light = None
           noFeedback = false
           stackReserveSize = None
@@ -2671,7 +2683,7 @@ let GetInternalsVisibleToAttributes ilg ilModule =
 [<Literal>]
 let tname_System_Runtime_InteropServices_TypeIdentifierAttribute = "System.Runtime.InteropServices.TypeIdentifierAttribute"
 
-let tryFindPrimaryAssembly reduceMemoryUsage tryGetMetadataSnapshot (assemblies: string list) =
+let tryFindPrimaryAssembly reduceMemoryUsage tryGetMetadataSnapshot implicitIncludeDir (assemblies: AssemblyReference list) =
     let readerSettings: ILReaderOptions = 
         { pdbDirPath=None
           reduceMemoryUsage = reduceMemoryUsage
@@ -2703,12 +2715,12 @@ let tryFindPrimaryAssembly reduceMemoryUsage tryGetMetadataSnapshot (assemblies:
 
     let candidates =
         assemblies
-        |> List.choose (fun path ->
+        |> List.choose (fun r ->
+            let path = ComputeMakePathAbsolute implicitIncludeDir r.Text
             if FileSystem.SafeExists path then
                 let reader = OpenILModuleReader path readerSettings
                 if isCandidate reader && reader.ILModuleDef.HasManifest then
-                    mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
-                    |> Some
+                    Some(r, Path.GetFileName path)
                 else
                     None
             else
@@ -2748,18 +2760,15 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         | [r]
         | r :: _ -> nameOfDll r
 
-    let primaryAssemblyRef = 
-        let assemblies =
-            data.referencedDLLs
-            |> List.map (fun r -> ComputeMakePathAbsolute data.implicitIncludeDir r.Text)
-        match tryFindPrimaryAssembly data.reduceMemoryUsage data.tryGetMetadataSnapshot assemblies with
-        | Some asmRef -> asmRef
-        | _ ->
-            // We could not find the primary assembly out of the referenced dlls; therefore use the one set in TcConfigBuilder.
-            data.primaryAssembly
-
     // Look for an explicit reference to mscorlib/netstandard.dll or System.Runtime.dll and use that to compute clrRoot and targetFrameworkVersion
-    let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(primaryAssemblyRef.Name)
+    let isPrimaryAssemblyFound, primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = 
+        match tryFindPrimaryAssembly data.reduceMemoryUsage data.tryGetMetadataSnapshot data.implicitIncludeDir data.referencedDLLs with
+        | Some(assemblyReference, assemblyExplicitFilename) -> true, assemblyReference, Some assemblyExplicitFilename
+        | _ -> 
+            let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(data.fallbackPrimaryAssembly.Name)
+            false, primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt
+
+
     let fslibReference =
         // Look for explicit FSharp.Core reference otherwise use version that was referenced by compiler
         let dllReference, fileNameOpt = computeKnownDllReference getFSharpCoreLibraryName
@@ -2796,7 +2805,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     let systemAssemblies = systemAssemblies
 
-    member x.primaryAssembly = primaryAssemblyRef
+    member x.fallbackPrimaryAssembly = data.fallbackPrimaryAssembly
+    member x.isPrimaryAssemblyFoundAgnostically = isPrimaryAssemblyFound
     member x.noFeedback = data.noFeedback
     member x.stackReserveSize = data.stackReserveSize   
     member x.implicitIncludeDir = data.implicitIncludeDir
@@ -4893,10 +4903,13 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
         // Fetch the primaryAssembly from the referenced assemblies otherwise 
         let primaryAssemblyReference =
-            let path = frameworkDLLs |> List.tryFind(fun dll -> String.Compare(Path.GetFileNameWithoutExtension(dll.resolvedPath), tcConfig.primaryAssembly.Name, StringComparison.OrdinalIgnoreCase) = 0)
-            match path with
-            | Some p -> AssemblyReference(range0, p.resolvedPath, None)
-            | None -> tcConfig.PrimaryAssemblyDllReference()
+            if tcConfig.isPrimaryAssemblyFoundAgnostically then
+                tcConfig.PrimaryAssemblyDllReference()
+            else
+                let path = frameworkDLLs |> List.tryFind(fun dll -> String.Compare(Path.GetFileNameWithoutExtension(dll.resolvedPath), tcConfig.fallbackPrimaryAssembly.Name, StringComparison.OrdinalIgnoreCase) = 0)
+                match path with
+                | Some p -> AssemblyReference(range0, p.resolvedPath, None)
+                | None -> tcConfig.PrimaryAssemblyDllReference()
 
         let primaryAssemblyResolution = frameworkTcImports.ResolveAssemblyReference(ctok, primaryAssemblyReference, ResolveAssemblyReferenceMode.ReportErrors)
         let! primaryAssem = frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, primaryAssemblyResolution)
@@ -4951,11 +4964,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         // These are the DLLs we can search for well-known types
         let sysCcus =
              [| for ccu in frameworkTcImports.GetCcusInDeclOrder() do
-                   //printfn "found sys ccu %s" ccu.AssemblyName
                    yield ccu |]
-
-        //for ccu in nonFrameworkDLLs do
-        //    printfn "found non-sys ccu %s" ccu.resolvedPath
 
         let tryFindSysTypeCcu path typeName =
             sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName) 

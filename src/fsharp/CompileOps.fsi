@@ -254,9 +254,17 @@ type VersionFlag =
     member GetVersionInfo: implicitIncludeDir:string -> ILVersionInfo
     member GetVersionString: implicitIncludeDir:string -> string
 
+[<RequireQualifiedAccess>]
+type FallbackPrimaryAssembly =
+    | Mscorlib
+    | System_Runtime
+    | NetStandard
+
+    member Name: string
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
-    { mutable primaryAssembly: ILAssemblyRef
+    { mutable fallbackPrimaryAssembly: FallbackPrimaryAssembly
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string
@@ -429,7 +437,8 @@ type TcConfigBuilder =
 [<Sealed>]
 // Immutable TcConfig
 type TcConfig =
-    member primaryAssembly: ILAssemblyRef
+    member fallbackPrimaryAssembly: FallbackPrimaryAssembly
+    member isPrimaryAssemblyFoundAgnostically: bool
     member noFeedback: bool
     member stackReserveSize: int32 option
     member implicitIncludeDir: string
