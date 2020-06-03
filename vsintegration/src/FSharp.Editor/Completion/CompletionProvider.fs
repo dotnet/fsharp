@@ -144,7 +144,7 @@ type internal FSharpCompletionProvider
             declarationItems |> Array.iteri (fun number declarationItem ->
                 let namespaceName =
                     match declarationItem.NamespaceToOpen with
-                    | Some namespaceToOpen -> namespaceToOpen
+                    | Some namespaceToOpen -> withNull<string> namespaceToOpen
                     | _ -> null // Icky, but this is how roslyn handles it
                     
                 let filterText =
@@ -159,8 +159,9 @@ type internal FSharpCompletionProvider
                     let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declarationItem.Glyph, declarationItem.Accessibility)
                     FSharpCommonCompletionItem.Create(
                         declarationItem.Name,
-                        glyph = Nullable glyph,
+                        null,
                         rules = getRules intellisenseOptions.ShowAfterCharIsTyped,
+                        glyph = Nullable glyph,
                         filterText = filterText,
                         inlineDescription = namespaceName)
                         .AddProperty(FullNamePropName, declarationItem.FullName)
