@@ -5241,7 +5241,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_, deleg
 
     // Work out the free type variables for the morphing thunk
     let takenNames = List.map nameOfVal tmvs
-    let (cloAttribs, _, _, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilDelegeeTypeRef, ilCloFreeVars, eenvinner) =
+    let (cloAttribs, _, _, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilDelegeeTypeRef, ilCloAllFreeVars, eenvinner) =
         GetIlxClosureFreeVars cenv m [] ILBoxity.AsObject eenvouter takenNames expr
 
     let ilDelegeeGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars

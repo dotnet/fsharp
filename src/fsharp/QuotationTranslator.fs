@@ -501,7 +501,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     | Expr.Sequential  (x0, x1, ThenDoSeq, _, _) ->
         QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
 
-    | Expr.Obj (_lambdaId, _typ, _basev, _basecall, _overrides, _iimpls, m) ->
+    | Expr.Obj (_lambdaId, _typ, _basev, _basecall, _overrides, _iimpls, _, m) ->
         wfail(Error(FSComp.SR.crefQuotationsCantContainObjExprs(), m))
 
     | Expr.Op (op, tyargs, args, m) ->
