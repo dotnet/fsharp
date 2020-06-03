@@ -406,10 +406,10 @@
       <Link>TypedTree\TypedTreeOps.fs</Link>
     </Compile>
     <Compile Include="..\TypedTreePickle.fsi">
-      <Link>TypedTree\.TypedTreePickle.fsi</Link>
+      <Link>TypedTree\TypedTreePickle.fsi</Link>
     </Compile>
     <Compile Include="..\TypedTreePickle.fs">
-      <Link>TypedTree\.TypedTreePickle.fs</Link>
+      <Link>TypedTree\TypedTreePickle.fs</Link>
     </Compile>
     <Compile Include="..\import.fsi">
       <Link>Logic\import.fsi</Link>

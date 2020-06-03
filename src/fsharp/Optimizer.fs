@@ -135,16 +135,33 @@ type ValInfos(entries) =
                    t.Add (vref.Deref, (vref, x))
               t)
 
-    // The compiler ValRef's into fslib stored in env.fs break certain invariants that hold elsewhere, 
+    // The compiler's ValRef's in TcGlobals.fs that refer to things in FSharp.Core break certain invariants that hold elsewhere, 
     // because they dereference to point to Val's from signatures rather than Val's from implementations.
-    // Thus a backup alternative resolution technique is needed for these.
+    // Thus a backup alternative resolution technique is needed for these when processing the FSharp.Core implementation files
+    // holding these items. This resolution must be able to distinguish between overloaded methods, so we use
+    // XmlDocSigOfVal as a cheap hack to get a unique item of data for a value.
     let valInfosForFslib = 
-        lazy (
-            let dict = Dictionary<_, _>()
+        LazyWithContext<_, TcGlobals>.Create ((fun g -> 
+            let dict = 
+                Dictionary<(ValRef * ValLinkageFullKey), (ValRef * ValInfo)>
+                    (HashIdentity.FromFunctions
+                         (fun (_: ValRef, k: ValLinkageFullKey) -> hash k.PartialKey)
+                         (fun (v1, k1) (v2, k2) -> 
+                             k1.PartialKey = k2.PartialKey && 
+                             // dismbiguate overloads, somewhat low-perf but only use for a handful of overloads in FSharp.Core
+                             match k1.TypeForLinkage, k2.TypeForLinkage with
+                             | Some _, Some _ -> 
+                                 let sig1 = XmlDocSigOfVal g true "" v1.Deref 
+                                 let sig2 = XmlDocSigOfVal g true "" v2.Deref
+                                 (sig1 = sig2) 
+                             | None, None -> true
+                             | _ -> false))
             for (vref, _x) as p in entries do 
-                let vkey = vref.Deref.GetLinkagePartialKey()
+                let vkey = (vref, vref.Deref.GetLinkageFullKey())
+                if dict.ContainsKey vkey then 
+                    failwithf "dictionary already contains key %A" vkey
                 dict.Add(vkey, p) |> ignore
-            dict)
+            dict), id)
 
     member x.Entries = valInfoTable.Force().Values
 
@@ -154,8 +171,8 @@ type ValInfos(entries) =
 
     member x.TryFind (v: ValRef) = valInfoTable.Force().TryFind v.Deref
 
-    member x.TryFindForFslib (v: ValRef) =
-        valInfosForFslib.Force().TryGetValue(v.Deref.GetLinkagePartialKey())
+    member x.TryFindForFslib (g, vref: ValRef) =
+        valInfosForFslib.Force(g).TryGetValue((vref, vref.Deref.GetLinkageFullKey()))
 
 type ModuleInfo = 
     { ValInfos: ValInfos
@@ -622,7 +639,7 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
                   //dprintn ("\n\n*** Optimization info for value "+n+" from module "+(full_name_of_nlpath smv)+" not found, module contains values: "+String.concat ", " (NameMap.domainL structInfo.ValInfos))  
                   //System.Diagnostics.Debug.Assert(false, sprintf "Break for module %s, value %s" (full_name_of_nlpath smv) n)
                   if cenv.g.compilingFslib then 
-                      match structInfo.ValInfos.TryFindForFslib vref with 
+                      match structInfo.ValInfos.TryFindForFslib (cenv.g, vref) with 
                       | true, ninfo -> snd ninfo
                       | _ -> UnknownValInfo
                   else
@@ -1876,8 +1893,12 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         OptimizeVal cenv env expr (v, m)
 
     | Expr.Quote (ast, splices, isFromQueryExpression, m, ty) -> 
-          let splices = ref (splices.Value |> Option.map (map3Of4 (List.map (OptimizeExpr cenv env >> fst))))
-          Expr.Quote (ast, splices, isFromQueryExpression, m, ty), 
+          let doData data = map3Of4 (List.map (OptimizeExpr cenv env >> fst)) data
+          let splices =
+              match splices.Value with
+              | Some (data1, data2opt) -> Some (doData data1, doData data2opt)
+              | None -> None
+          Expr.Quote (ast, ref splices, isFromQueryExpression, m, ty), 
           { TotalSize = 10
             FunctionSize = 1
             HasEffect = false  
@@ -1928,6 +1949,14 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.Link _eref -> 
         assert ("unexpected reclink" = "")
         failwith "Unexpected reclink"
+
+    | Expr.WitnessArg _ ->
+        expr, 
+        { TotalSize = 10
+          FunctionSize = 1
+          HasEffect = false  
+          MightMakeCriticalTailcall=false
+          Info=UnknownValue }
 
 /// Optimize/analyze an object expression
 and OptimizeObjectExpr cenv env (ty, baseValOpt, basecall, overrides, iimpls, m) =
@@ -2956,7 +2985,7 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
               else 
                   let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (bodyR, bodyty)
                   CurriedLambdaValue (lambdaId, arities, bsize, expr2, ety) 
-
+                  
         let estimatedSize = 
             match vspec with
             | Some v when v.IsCompiledAsTopLevel -> methodDefnTotalSize
