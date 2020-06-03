@@ -1091,7 +1091,7 @@ type FrameworkImportsCache(keepStrongly) =
             // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
             // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
             let key = (frameworkDLLsKey,
-                        tcConfig.primaryAssembly.Name,
+                        tcConfig.GetPrimaryAssemblyName(),
                         tcConfig.GetTargetFrameworkDirectories(),
                         tcConfig.fsharpBinariesDir,
                         tcConfig.langVersion.SpecifiedVersion)
