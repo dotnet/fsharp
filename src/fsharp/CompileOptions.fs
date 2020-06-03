@@ -909,14 +909,14 @@ let cliRootFlag (_tcConfigB: TcConfigBuilder) =
          Some(FSComp.SR.optsClirootDescription()))
 
 let SetTargetProfile tcConfigB v = 
-    tcConfigB.primaryAssembly <- 
+    tcConfigB.targetProfile <- 
         match v with
         // Indicates we assume "mscorlib.dll", i.e .NET Framework, Mono and Profile 47
-        | "mscorlib" -> mkSimpleAssemblyRef "mscorlib"
+        | "mscorlib" -> TargetProfile.Mscorlib
         // Indicates we assume "System.Runtime.dll", i.e .NET Standard 1.x, .NET Core App 1.x and above, and Profile 7/78/259
-        | "netcore"  -> mkSimpleAssemblyRef "System.Runtime"
+        | "netcore"  -> TargetProfile.System_Runtime
         // Indicates we assume "netstandard.dll", i.e .NET Standard 2.0 and above
-        | "netstandard"  -> mkSimpleAssemblyRef "netstandard"
+        | "netstandard"  -> TargetProfile.NetStandard
         | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile v, rangeCmdArgs))
 
 let advancedFlagsBoth tcConfigB =

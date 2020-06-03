@@ -2050,7 +2050,8 @@ let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlo
         match tcConfig.metadataVersion with
         | Some v -> v
         | _ -> 
-            match frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name with 
+            let filename = Path.GetFileNameWithoutExtension(tcConfig.PrimaryAssemblyDllReference().Text)
+            match frameworkTcImports.DllTable.TryFind filename with 
              | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion 
              | _ -> ""
 
