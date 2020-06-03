@@ -1514,7 +1514,6 @@ featureAndBang,"applicative computation expressions"
 featureResumableStateMachines,"resumable state machines"
 featureNullableOptionalInterop,"nullable optional interop"
 featureDefaultInterfaceMemberConsumption,"default interface member consumption"
-< HEAD
 3501,structTemplateMustImplementOneInterface,"Invalid resumable code - a template struct type used with __resumableStateMachineStruct must implement exactly one interface. Usually this interface is the type 'System.Runtime.CompilerServices.IAsyncStateMachine'. If necessary mark the struct type with [<NoEquality; NoComparison>]."
 3502,stateMachineMacroTypars,"Invalid resumable code - a macro in a state machine has type parameters"
 3503,stateMachineMacroUnderapplied,"Invalid resumable code - a macro in a state machine is under-applied"
