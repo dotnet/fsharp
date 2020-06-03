@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
 module TestFramework
 
 open Microsoft.Win32
@@ -6,7 +8,6 @@ open System.IO
 open System.Text.RegularExpressions
 open Scripting
 open NUnit.Framework
-
 
 [<RequireQualifiedAccess>]
 module Commands =

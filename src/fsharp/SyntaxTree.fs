@@ -515,7 +515,11 @@ type SynType =
        value: SynType *
        range: range
 
-    /// Gets the syntax range of this constuct
+    | Paren of
+      innerType: SynType *
+      range: range
+
+    /// Gets the syntax range of this construct
     member x.Range =
         match x with
         | SynType.App (range=m)
@@ -532,7 +536,8 @@ type SynType =
         | SynType.StaticConstantNamed (range=m)
         | SynType.HashConstraint (range=m)
         | SynType.MeasureDivide (range=m)
-        | SynType.MeasurePower (range=m) -> m
+        | SynType.MeasurePower (range=m)
+        | SynType.Paren (range=m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
 /// Represents a syntax tree for F# expressions

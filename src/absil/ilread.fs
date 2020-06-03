@@ -33,8 +33,6 @@ open System.Reflection
 
 #nowarn "9"
 
-let primaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [])
-
 let checking = false  
 let logging = false
 let _ = if checking then dprintn "warning: ILBinaryReader.checking is on"
@@ -199,17 +197,17 @@ let seekReadUInt16AsInt32 mdv addr = int32 (seekReadUInt16 mdv addr)
     
 let seekReadCompressedUInt32 mdv addr = 
     let b0 = seekReadByte mdv addr
-    if b0 <= 0x7Fuy then int b0, addr+1
+    if b0 <= 0x7Fuy then struct (int b0, addr+1)
     elif b0 <= 0xBFuy then 
         let b0 = b0 &&& 0x7Fuy
         let b1 = seekReadByteAsInt32 mdv (addr+1) 
-        (int b0 <<< 8) ||| int b1, addr+2
+        struct ((int b0 <<< 8) ||| int b1, addr+2)
     else 
         let b0 = b0 &&& 0x3Fuy
         let b1 = seekReadByteAsInt32 mdv (addr+1) 
         let b2 = seekReadByteAsInt32 mdv (addr+2) 
         let b3 = seekReadByteAsInt32 mdv (addr+3) 
-        (int b0 <<< 24) ||| (int b1 <<< 16) ||| (int b2 <<< 8) ||| int b3, addr+4
+        struct ((int b0 <<< 24) ||| (int b1 <<< 16) ||| (int b2 <<< 8) ||| int b3, addr+4)
 
 let seekReadSByte mdv addr = sbyte (seekReadByte mdv addr)
 let seekReadSingle mdv addr = singleOfBits (seekReadInt32 mdv addr)
@@ -226,11 +224,11 @@ let seekReadUTF8String mdv addr =
     System.Text.Encoding.UTF8.GetString (bytes, 0, bytes.Length)
 
 let seekReadBlob mdv addr = 
-    let len, addr = seekReadCompressedUInt32 mdv addr
+    let struct (len, addr) = seekReadCompressedUInt32 mdv addr
     seekReadBytes mdv addr len
     
 let seekReadUserString mdv addr = 
-    let len, addr = seekReadCompressedUInt32 mdv addr
+    let struct (len, addr) = seekReadCompressedUInt32 mdv addr
     let bytes = seekReadBytes mdv addr (len - 1)
     Encoding.Unicode.GetString(bytes, 0, bytes.Length)
 
@@ -1550,11 +1548,10 @@ and readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx) =
 
 and seekReadTypeDefRowExtents (ctxt: ILMetadataReader) _info (idx: int) =
     if idx >= ctxt.getNumRows TableNames.TypeDef then 
-        ctxt.getNumRows TableNames.Field + 1, 
-        ctxt.getNumRows TableNames.Method + 1
+        struct (ctxt.getNumRows TableNames.Field + 1, ctxt.getNumRows TableNames.Method + 1)
     else
         let (_, _, _, _, fieldsIdx, methodsIdx) = seekReadTypeDefRow ctxt (idx + 1)
-        fieldsIdx, methodsIdx 
+        struct (fieldsIdx, methodsIdx )
 
 and seekReadTypeDefRowWithExtents ctxt (idx: int) =
     let info= seekReadTypeDefRow ctxt idx
@@ -1578,7 +1575,7 @@ and typeDefReader ctxtH: ILTypeDefStored =
 
            let ((flags, nameIdx, namespaceIdx, extendsIdx, fieldsIdx, methodsIdx) as info) = seekReadTypeDefRow ctxt idx
            let nm = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
-           let (endFieldsIdx, endMethodsIdx) = seekReadTypeDefRowExtents ctxt info idx
+           let struct (endFieldsIdx, endMethodsIdx) = seekReadTypeDefRowExtents ctxt info idx
            let typars = seekReadGenericParams ctxt 0 (tomd_TypeDef, idx)
            let numtypars = typars.Length
            let super = seekReadOptionalTypeDefOrRef ctxt numtypars AsObject extendsIdx
@@ -1718,7 +1715,7 @@ and seekReadTypeDefOrRefAsTypeRef (ctxt: ILMetadataReader) (TaggedIndex(tag, idx
     | tag when tag = tdor_TypeRef -> seekReadTypeRef ctxt idx
     | tag when tag = tdor_TypeSpec -> 
         dprintn ("type spec used where a type ref or def is required")
-        primaryAssemblyILGlobals.typ_Object.TypeRef
+        PrimaryAssemblyILGlobals.typ_Object.TypeRef
     | _ -> failwith "seekReadTypeDefOrRefAsTypeRef_readTypeDefOrRefOrSpec"
 
 and seekReadMethodRefParent (ctxt: ILMetadataReader) mdv numtypars (TaggedIndex(tag, idx)) =
@@ -1836,22 +1833,22 @@ and sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr =
 
 and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr = 
     let b0, sigptr = sigptrGetByte bytes sigptr
-    if b0 = et_OBJECT then primaryAssemblyILGlobals.typ_Object, sigptr
-    elif b0 = et_STRING then primaryAssemblyILGlobals.typ_String, sigptr
-    elif b0 = et_I1 then primaryAssemblyILGlobals.typ_SByte, sigptr
-    elif b0 = et_I2 then primaryAssemblyILGlobals.typ_Int16, sigptr
-    elif b0 = et_I4 then primaryAssemblyILGlobals.typ_Int32, sigptr
-    elif b0 = et_I8 then primaryAssemblyILGlobals.typ_Int64, sigptr
-    elif b0 = et_I then primaryAssemblyILGlobals.typ_IntPtr, sigptr
-    elif b0 = et_U1 then primaryAssemblyILGlobals.typ_Byte, sigptr
-    elif b0 = et_U2 then primaryAssemblyILGlobals.typ_UInt16, sigptr
-    elif b0 = et_U4 then primaryAssemblyILGlobals.typ_UInt32, sigptr
-    elif b0 = et_U8 then primaryAssemblyILGlobals.typ_UInt64, sigptr
-    elif b0 = et_U then primaryAssemblyILGlobals.typ_UIntPtr, sigptr
-    elif b0 = et_R4 then primaryAssemblyILGlobals.typ_Single, sigptr
-    elif b0 = et_R8 then primaryAssemblyILGlobals.typ_Double, sigptr
-    elif b0 = et_CHAR then primaryAssemblyILGlobals.typ_Char, sigptr
-    elif b0 = et_BOOLEAN then primaryAssemblyILGlobals.typ_Bool, sigptr
+    if b0 = et_OBJECT then PrimaryAssemblyILGlobals.typ_Object, sigptr
+    elif b0 = et_STRING then PrimaryAssemblyILGlobals.typ_String, sigptr
+    elif b0 = et_I1 then PrimaryAssemblyILGlobals.typ_SByte, sigptr
+    elif b0 = et_I2 then PrimaryAssemblyILGlobals.typ_Int16, sigptr
+    elif b0 = et_I4 then PrimaryAssemblyILGlobals.typ_Int32, sigptr
+    elif b0 = et_I8 then PrimaryAssemblyILGlobals.typ_Int64, sigptr
+    elif b0 = et_I then PrimaryAssemblyILGlobals.typ_IntPtr, sigptr
+    elif b0 = et_U1 then PrimaryAssemblyILGlobals.typ_Byte, sigptr
+    elif b0 = et_U2 then PrimaryAssemblyILGlobals.typ_UInt16, sigptr
+    elif b0 = et_U4 then PrimaryAssemblyILGlobals.typ_UInt32, sigptr
+    elif b0 = et_U8 then PrimaryAssemblyILGlobals.typ_UInt64, sigptr
+    elif b0 = et_U then PrimaryAssemblyILGlobals.typ_UIntPtr, sigptr
+    elif b0 = et_R4 then PrimaryAssemblyILGlobals.typ_Single, sigptr
+    elif b0 = et_R8 then PrimaryAssemblyILGlobals.typ_Double, sigptr
+    elif b0 = et_CHAR then PrimaryAssemblyILGlobals.typ_Char, sigptr
+    elif b0 = et_BOOLEAN then PrimaryAssemblyILGlobals.typ_Bool, sigptr
     elif b0 = et_WITH then 
         let b0, sigptr = sigptrGetByte bytes sigptr
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
@@ -1897,7 +1894,7 @@ and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr =
         
     elif b0 = et_VOID then ILType.Void, sigptr
     elif b0 = et_TYPEDBYREF then 
-        primaryAssemblyILGlobals.typ_TypedReference, sigptr
+        PrimaryAssemblyILGlobals.typ_TypedReference, sigptr
     elif b0 = et_CMOD_REQD || b0 = et_CMOD_OPT then 
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
         let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr

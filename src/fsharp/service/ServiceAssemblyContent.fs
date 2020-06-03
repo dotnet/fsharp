@@ -603,7 +603,8 @@ module ParsedInput =
         and walkType = function
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
-            | SynType.MeasurePower (t, _, _) -> walkType t
+            | SynType.MeasurePower (t, _, _)
+            | SynType.Paren (t, _) -> walkType t
             | SynType.Fun (t1, t2, _)
             | SynType.MeasureDivide (t1, t2, _) -> walkType t1; walkType t2
             | SynType.LongIdent ident -> addLongIdentWithDots ident
