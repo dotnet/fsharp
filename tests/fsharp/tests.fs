@@ -538,7 +538,7 @@ module CoreTests =
 
     [<Test>]
     let ``extconstraint-fsc preview`` () = 
-        let cfg = testConfig "core/extconstraint"
+        let cfg = testConfig' "core/extconstraint"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --langversion:preview" }
 
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
@@ -555,7 +555,7 @@ module CoreTests =
 
     [<Test>]
     let ``extconstraint-fsc-no-optimize preview`` () = 
-        let cfg = testConfig "core/extconstraint"
+        let cfg = testConfig' "core/extconstraint"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --langversion:preview" }
 
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
@@ -572,7 +572,7 @@ module CoreTests =
 
     [<Test>]
     let ``extconstraint-fsi preview`` () = 
-        let cfg = testConfig "core/extconstraint"
+        let cfg = testConfig' "core/extconstraint"
         let cfg = { cfg with fsi_flags = cfg.fsi_flags + " --langversion:preview" }
 
         use testOkFile = fileguard cfg "test.ok"
@@ -583,7 +583,7 @@ module CoreTests =
 
     [<Test>]
     let ``extconstraint-compat preview`` () = 
-        let cfg = testConfig "core/extconstraint"
+        let cfg = testConfig' "core/extconstraint"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --define:LANGVERSION_PREVIEW --langversion:preview" }
 
         let outFile = "test-compat.output.txt" 
@@ -600,7 +600,7 @@ module CoreTests =
 
     [<Test>]
     let ``extconstraint-compat2`` () = 
-        let cfg = testConfig "core/extconstraint"
+        let cfg = testConfig' "core/extconstraint"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --langversion:4.6" }
 
         let outFile = "test-compat.output.feature-disabled.txt" 
@@ -2280,7 +2280,7 @@ module TypecheckTests =
     // We also run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>]
     let ``sigs pos34 preview`` () = 
-        let cfg = testConfig "typecheck/sigs"
+        let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos34-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["pos34.fs"]
         peverify cfg "pos34-preview.dll"
 
@@ -2292,56 +2292,56 @@ module TypecheckTests =
 
     [<Test>] 
     let ``sigs pos35 preview`` () =
-        let cfg = testConfig "typecheck/sigs"
+        let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos35.dll --warnaserror --langversion:preview" cfg.fsc_flags ["pos35.fs"]
         peverify cfg "pos35.dll"
 
     // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>]
     let ``sigs pos36 preview`` () = 
-        let cfg = testConfig "typecheck/sigs"
+        let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos36.dll --langversion:preview --warnaserror" cfg.fsc_flags ["pos36.fs"]
         peverify cfg "pos36.dll"
 
     // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>]
     let ``sigs widen1 preview`` () = 
-        let cfg = testConfig "typecheck/sigs"
+        let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:widen1.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen1.fs"]
         peverify cfg "widen1.dll"
 
     // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>]
     let ``sigs widen2 preview`` () = 
-        let cfg = testConfig "typecheck/sigs"
+        let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:widen2.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen2.fs"]
         peverify cfg "widen2.dll"
 
     // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>]
     let ``sigs widen3 preview`` () = 
-        let cfg = testConfig "typecheck/sigs"
+        let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:widen3.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen3.fs"]
         peverify cfg "widen3.dll"
 
     // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>]
     let ``sigs widen4 preview`` () = 
-        let cfg = testConfig "typecheck/sigs"
+        let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:widen4.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen4.fs"]
         peverify cfg "widen4.dll"
 
     // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>]
     let ``sigs widen5 preview`` () = 
-        let cfg = testConfig "typecheck/sigs"
+        let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:widen5.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen5.fs"]
         peverify cfg "widen5.dll"
 
     // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
     [<Test>]
     let ``sigs widen6 preview`` () = 
-        let cfg = testConfig "typecheck/sigs"
+        let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:widen6.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen6.fs"]
         peverify cfg "widen6.dll"
 
