@@ -533,22 +533,37 @@ type AsyncType() =
         
     [<Test>]
     member this.NonGenericTaskAsyncValueCancellation () =
-        use ewh = new ManualResetEvent(false)    
+        use ewh = new ManualResetEvent(false)
         let cts = new CancellationTokenSource()
         let token = cts.Token
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
-#endif   
+#endif
             Task.Factory.StartNew(Action(fun () -> while not token.IsCancellationRequested do ()), token)
-        let cancelled = ref true
         let a = async {
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
                     let! v = Async.AwaitTask(t)
                     return v
-            }        
+            }
         Async.Start a
         cts.Cancel()
-        ewh.WaitOne(10000) |> ignore        
+        ewh.WaitOne(10000) |> ignore
 
+    [<Test>]
+    member this.CancellationExceptionThrown () =
+        use ewh = new ManualResetEventSlim(false)
+        let cts = new CancellationTokenSource()
+        let token = cts.Token
+        let mutable hasThrown = false
+        token.Register(fun () -> ewh.Set() |> ignore) |> ignore
+        let a = async {
+            try
+                while true do token.ThrowIfCancellationRequested()
+            with _ -> hasThrown <- true
+        }
+        Async.Start(a, token)
+        cts.Cancel()
+        ewh.Wait(10000) |> ignore
+        Assert.False hasThrown
