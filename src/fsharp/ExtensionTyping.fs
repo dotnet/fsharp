@@ -236,6 +236,10 @@ module internal ExtensionTyping =
         BindingFlags.Instance |||
         BindingFlags.Public
 
+    type CustomAttributeData = System.Reflection.CustomAttributeData
+    type CustomAttributeNamedArgument = System.Reflection.CustomAttributeNamedArgument
+    type CustomAttributeTypedArgument = System.Reflection.CustomAttributeTypedArgument
+
     // NOTE: for the purposes of remapping the closure of generated types, the FullName is sufficient.
     // We do _not_ rely on object identity or any other notion of equivalence provided by System.Type
     // itself. The mscorlib implementations of System.Type equality relations are not suitable: for
@@ -300,10 +304,6 @@ module internal ExtensionTyping =
                 Entries(d1, lazy (let dict = Dictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
                                   for KeyValue (st, tcref) in d2.Force() do dict.Add(st, f tcref)
                                   dict))
-
-    and CustomAttributeData = System.Reflection.CustomAttributeData
-    and CustomAttributeNamedArgument = System.Reflection.CustomAttributeNamedArgument
-    and CustomAttributeTypedArgument = System.Reflection.CustomAttributeTypedArgument
 
     and [<AllowNullLiteral; Sealed>]
         ProvidedType (x: System.Type, ctxt: ProvidedTypeContext) =
