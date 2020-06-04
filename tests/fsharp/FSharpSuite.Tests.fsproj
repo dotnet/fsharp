@@ -75,6 +75,7 @@
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Compile Include="Compiler\Regressions\IndexerRegressionTests.fs" />
     <Compile Include="Compiler\Regressions\ForInDoMutableRegressionTest.fs" />
+    <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\CastToUnitsTests.fs" />
     <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\ComparisonTests.fs" />
     <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\StringFormatTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Collections\IEnumerableTests.fs" />
