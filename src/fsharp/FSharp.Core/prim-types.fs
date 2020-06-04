@@ -3005,6 +3005,7 @@ namespace Microsoft.FSharp.Collections
     //-------------------------------------------------------------------------
 
     open System
+    open System.Collections
     open System.Collections.Generic
     open System.Diagnostics
     open Microsoft.FSharp.Core
@@ -3027,6 +3028,10 @@ namespace Microsoft.FSharp.Collections
        interface System.Collections.Generic.IReadOnlyCollection<'T>
        interface System.Collections.Generic.IReadOnlyList<'T>
        interface IComparable
+       interface IComparable<List<'T>>
+       interface IEquatable<List<'T>>
+       interface IStructuralComparable
+       interface IStructuralEquatable
         
     and 'T list = List<'T>
 
@@ -3275,6 +3280,90 @@ namespace Microsoft.FSharp.Collections
                 | :? List<'T> as o ->
                     loop this o
                 | _ -> 0
+
+        interface IComparable<List<'T>> with
+            member this.CompareTo(other) =
+                let rec loop l1 l2 =
+                    match l1, l2 with
+                    | [], [] -> 0
+                    | _, [] -> 1
+                    | [], _ -> -1
+                    | h1 :: t1, h2 :: t2 ->
+                        let res = GenericComparison h1 h2
+                        if res <> 0 then
+                            res
+                        else
+                            loop t1 t2
+                loop this other
+
+        interface IEquatable<List<'T>> with
+            member this.Equals(other) =
+                let rec loop x y =
+                    match x, y with
+                    | [], [] -> true
+                    | _, [] -> false
+                    | [], _ -> false
+                    | xHead :: xTail, yHead :: yTail ->
+                        if not (GenericEqualityER xHead yHead) then
+                            false
+                        else
+                            loop xTail yTail
+
+                loop this other
+
+        interface IStructuralComparable with
+            member this.CompareTo(other, comparer) =
+                let rec loop l1 l2 =
+                    match l1, l2 with
+                    | [], [] -> 0
+                    | _, [] -> 1
+                    | [], _ -> -1
+                    | h1 :: t1, h2 :: t2 ->
+                        let res = comparer.Compare(h1, h2)
+                        if res <> 0 then
+                            res
+                        else
+                            loop t1 t2
+                            
+                match other with
+                | :? List<'T> as o ->
+                    loop this o
+                | _ -> 0
+
+        interface IStructuralEquatable with
+            member this.Equals(other, comparer) =
+                let rec loop x y =
+                    match x, y with
+                    | [], [] -> true
+                    | _, [] -> false
+                    | [], _ -> false
+                    | xHead :: xTail, yHead :: yTail ->
+                        if not (comparer.Equals(xHead, yHead)) then
+                            false
+                        else
+                            loop xTail yTail
+
+                match other with
+                | :? List<'T> as o ->
+                    loop this o
+                | _ -> false
+
+            member this.GetHashCode(comparer) =
+                let len = PrivateListHelpers.lengthAcc 0 this
+                let mutable i = len - 1
+                if i > LanguagePrimitives.HashCompare.defaultHashNodes then
+                    i <- LanguagePrimitives.HashCompare.defaultHashNodes // Limit the hash
+
+                let rec loop l i acc =
+                    match l with
+                    | [] -> acc
+                    | h::t ->
+                        if i >= 0 then
+                            loop t (i - 1) (LanguagePrimitives.HashCompare.HashCombine i acc (comparer.GetHashCode(h)))
+                        else
+                            acc
+                   
+                loop this i 0
 
     type seq<'T> = IEnumerable<'T>
 

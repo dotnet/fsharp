@@ -1949,6 +1949,10 @@ namespace Microsoft.FSharp.Collections
         interface IReadOnlyCollection<'T>
         interface IReadOnlyList<'T>
         interface IComparable
+        interface IComparable<List<'T>>
+        interface IEquatable<List<'T>>
+        interface IStructuralComparable
+        interface IStructuralEquatable
 
     /// <summary>An abbreviation for the type of immutable singly-linked lists. </summary>
     ///
