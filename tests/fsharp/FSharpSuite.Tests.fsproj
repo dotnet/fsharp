@@ -79,6 +79,7 @@
     <Compile Include="Compiler\Libraries\Core\Collections\MapTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Collections\CollectionTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Collections\ListTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\ExtraTopLevelOperators\DictionaryTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
