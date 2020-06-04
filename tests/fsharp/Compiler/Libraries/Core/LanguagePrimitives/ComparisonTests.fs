@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 
+[<TestFixture>]
 module ``Comparison Tests`` =
 
     type 'a www = W of 'a
