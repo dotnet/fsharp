@@ -2768,7 +2768,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(data.targetProfile.Name)
             false, primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt
 
-
     let fslibReference =
         // Look for explicit FSharp.Core reference otherwise use version that was referenced by compiler
         let dllReference, fileNameOpt = computeKnownDllReference getFSharpCoreLibraryName
@@ -3304,7 +3303,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 resultingResolutions, unresolvedReferences |> List.map (fun (name, _, r) -> (name, r)) |> List.map UnresolvedAssemblyReference    
 
     member tcConfig.GetPrimaryAssemblyName() =
-        Path.GetFileNameWithoutExtension primaryAssemblyReference.Text
+        if tcConfig.isPrimaryAssemblyFoundAgnostically then
+            Path.GetFileNameWithoutExtension primaryAssemblyReference.Text
+        else
+            tcConfig.targetProfile.Name
         
     member tcConfig.PrimaryAssemblyDllReference() = primaryAssemblyReference
 
@@ -4909,7 +4911,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             if tcConfig.isPrimaryAssemblyFoundAgnostically then
                 tcConfig.PrimaryAssemblyDllReference()
             else
-                let path = frameworkDLLs |> List.tryFind(fun dll -> String.Compare(Path.GetFileNameWithoutExtension(dll.resolvedPath), tcConfig.targetProfile.Name, StringComparison.OrdinalIgnoreCase) = 0)
+                let path = frameworkDLLs |> List.tryFind(fun dll -> String.Compare(Path.GetFileNameWithoutExtension(dll.resolvedPath), tcConfig.GetPrimaryAssemblyName(), StringComparison.OrdinalIgnoreCase) = 0)
                 match path with
                 | Some p -> AssemblyReference(range0, p.resolvedPath, None)
                 | None -> tcConfig.PrimaryAssemblyDllReference()
