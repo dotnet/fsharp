@@ -137,6 +137,11 @@
         <target state="new">wild card in for loop</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWitnessPassing">
+        <source>witness passing</source>
+        <target state="new">witness passing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
         <target state="translated"> — {0}</target>
