@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 
+[<TestFixture>]
 module ``String Format Tests`` =
     
     [<Test>]
