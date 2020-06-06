@@ -1954,22 +1954,17 @@ type ILTypeDefKind =
     | Enum
     | Delegate
 
-let typeKindOfFlags nm _mdefs _fdefs (super: ILType option) flags =
+let typeKindOfFlags nm (super: ILType option) flags =
     if (flags &&& 0x00000020) <> 0x0 then ILTypeDefKind.Interface
     else
-         let isEnum, isDelegate, isMulticastDelegate, isValueType =
-            match super with
-            | None -> false, false, false, false
-            | Some ty ->
-                ty.TypeSpec.Name = "System.Enum",
-                ty.TypeSpec.Name = "System.Delegate",
-                ty.TypeSpec.Name = "System.MulticastDelegate",
-                ty.TypeSpec.Name = "System.ValueType" && nm <> "System.Enum"
-         let selfIsMulticastDelegate = nm = "System.MulticastDelegate"
-         if isEnum then ILTypeDefKind.Enum
-         elif (isDelegate && not selfIsMulticastDelegate) || isMulticastDelegate then ILTypeDefKind.Delegate
-         elif isValueType then ILTypeDefKind.ValueType
-         else ILTypeDefKind.Class
+        match super with
+        | None -> ILTypeDefKind.Class
+        | Some ty ->
+            let name = ty.TypeSpec.Name
+            if name = "System.Enum" then ILTypeDefKind.Enum
+            elif (name = "System.Delegate" && nm <> "System.MulticastDelegate") || name = "System.MulticastDelegate" then ILTypeDefKind.Delegate
+            elif name = "System.ValueType" && nm <> "System.Enum" then ILTypeDefKind.ValueType
+            else ILTypeDefKind.Class
 
 let convertTypeAccessFlags access =
     match access with
@@ -2071,11 +2066,11 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
-    member x.IsClass = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Class
-    member x.IsStruct = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.ValueType
-    member x.IsInterface = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Interface
-    member x.IsEnum = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Enum
-    member x.IsDelegate = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Delegate
+    member x.IsClass = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Class
+    member x.IsStruct = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.ValueType
+    member x.IsInterface = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Interface
+    member x.IsEnum = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Enum
+    member x.IsDelegate = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Delegate
     member x.Access = typeAccessOfFlags (int x.Attributes)
     member x.IsAbstract = x.Attributes &&& TypeAttributes.Abstract <> enum 0
     member x.IsSealed = x.Attributes &&& TypeAttributes.Sealed <> enum 0
@@ -3574,7 +3569,7 @@ let formatILVersion (version: ILVersionInfo) = sprintf "%d.%d.%d.%d" (int versio
 
 let encodeCustomAttrString s =
     let arr = string_as_utf8_bytes s
-    Array.concat [ z_unsigned_int arr.Length; arr ]
+    Array.append (z_unsigned_int arr.Length) arr
 
 let rec encodeCustomAttrElemType x =
     match x with
@@ -3713,6 +3708,7 @@ let getCustomAttrData (ilg: ILGlobals) cattr =
 let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", None, Some ecmaPublicKey, true, None, None))
 
 let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [])
+let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [])
 
 // ILSecurityDecl is a 'blob' having the following format:
 // - A byte containing a period (.).

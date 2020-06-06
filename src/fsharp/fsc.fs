@@ -341,7 +341,7 @@ module XmlDocWriter =
     let computeXmlDocSigs (tcGlobals, generatedCcu: CcuThunk) =
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
         let g = tcGlobals
-        let doValSig ptext (v: Val)  = if (hasDoc v.XmlDoc) then v.XmlDocSig <- XmlDocSigOfVal g ptext v
+        let doValSig ptext (v: Val)  = if hasDoc v.XmlDoc then v.XmlDocSig <- XmlDocSigOfVal g false ptext v
         let doTyconSig ptext (tc: Tycon) = 
             if (hasDoc tc.XmlDoc) then tc.XmlDocSig <- XmlDocSigOfTycon [ptext; tc.CompiledName]
             for vref in tc.MembersOfFSharpTyconSorted do 
@@ -1128,15 +1128,17 @@ module StaticLinker =
         // Make a dictionary of ccus passed to the compiler will be looked up by qualified assembly name
         let ccuThunksQualifiedName =
             tcImports.GetCcusInDeclOrder()
-            |> List.filter(fun ccuThunk -> ccuThunk.QualifiedName |> Option.isSome)
-            |> List.map(fun ccuThunk -> ccuThunk.QualifiedName |> Option.defaultValue "Assembly Name Not Passed", ccuThunk)
+            |> List.choose (fun ccuThunk -> ccuThunk.QualifiedName |> Option.map (fun v -> v, ccuThunk))
             |> dict
 
         // If we can't type forward using exact assembly match, we need to rely on the loader (Policy, Configuration or the coreclr load heuristics), so use try simple name
         let ccuThunksSimpleName =
             tcImports.GetCcusInDeclOrder()
-            |> List.filter(fun ccuThunk -> not (String.IsNullOrEmpty(ccuThunk.AssemblyName)))
-            |> List.map(fun ccuThunk -> ccuThunk.AssemblyName, ccuThunk)
+            |> List.choose (fun ccuThunk -> 
+                if String.IsNullOrEmpty(ccuThunk.AssemblyName) then
+                    None
+                else
+                    Some (ccuThunk.AssemblyName, ccuThunk))
             |> dict
 
         let followTypeForwardForILTypeRef (tref:ILTypeRef) =
@@ -1668,22 +1670,23 @@ let expandFileNameIfNeeded (tcConfig : TcConfig) name =
         Path.Combine(tcConfig.implicitIncludeDir, name)
 
 let GetStrongNameSigner signingInfo = 
-        let (StrongNameSigningInfo(delaysign, publicsign, signer, container)) = signingInfo
-        // REVIEW: favor the container over the key file - C# appears to do this
-        if Option.isSome container then
-          Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
-        else
-            match signer with 
-            | None -> None
-            | Some s ->
-                try 
+    let (StrongNameSigningInfo(delaysign, publicsign, signer, container)) = signingInfo
+    // REVIEW: favor the container over the key file - C# appears to do this
+    match container with
+    | Some container ->
+        Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container)
+    | None ->
+        match signer with 
+        | None -> None
+        | Some s ->
+            try 
                 if publicsign || delaysign then
                     Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyOptions s publicsign)
                 else
                     Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
-                with e -> 
-                    // Note :: don't use errorR here since we really want to fail and not produce a binary
-                    error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened s, rangeCmdArgs))
+            with _ -> 
+                // Note :: don't use errorR here since we really want to fail and not produce a binary
+                error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened s, rangeCmdArgs))
 
 //----------------------------------------------------------------------------
 // CopyFSharpCore

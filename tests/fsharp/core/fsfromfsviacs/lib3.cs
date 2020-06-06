@@ -81,7 +81,34 @@ namespace CSharpOptionalParameters
                 length = y.Length;
             return (x.HasValue ? (int) x.Value : -1) + length + (int) (d.HasValue ? d.Value : -1.0) + 7;
         }
+        public static int MethodTakingNullables(int? x, string y, double? d)
+        {
+            int length;
+            if (y == null)
+                length = -1;
+            else
+                length = y.Length;
+            return (x.HasValue ? x.Value : -1) + length + (int) (d.HasValue ? d.Value : -1.0);
+        }
 
+        public static int OverloadedMethodTakingNullables(int? x, string y, double? d)
+        {
+            int length;
+            if (y == null)
+                length = -1;
+            else
+                length = y.Length;
+            return (x.HasValue ? x.Value : -1) + length + (int) (d.HasValue ? d.Value : -1.0);
+        }
+        public static int OverloadedMethodTakingNullables(long? x, string y, double? d)
+        {
+            int length;
+            if (y == null)
+                length = -1;
+            else
+                length = y.Length;
+            return (x.HasValue ? (int) x.Value : -1) + length + (int) (d.HasValue ? d.Value : -1.0) + 7;
+        }
         public static int SimpleOverload(int? x = 3)
         {
             return (x.HasValue ? x.Value : 100);

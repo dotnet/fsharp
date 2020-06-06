@@ -603,7 +603,8 @@ module ParsedInput =
         and walkType = function
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
-            | SynType.MeasurePower (t, _, _) -> walkType t
+            | SynType.MeasurePower (t, _, _)
+            | SynType.Paren (t, _) -> walkType t
             | SynType.Fun (t1, t2, _)
             | SynType.MeasureDivide (t1, t2, _) -> walkType t1; walkType t2
             | SynType.LongIdent ident -> addLongIdentWithDots ident
@@ -752,8 +753,7 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkType t
             argInfo :: (argInfos |> List.concat)
-            |> List.map (fun (SynArgInfo(Attributes attrs, _, _)) -> attrs)
-            |> List.concat
+            |> List.collect (fun (SynArgInfo(Attributes attrs, _, _)) -> attrs)
             |> List.iter walkAttribute
     
         and walkMemberSig = function
@@ -876,11 +876,11 @@ module ParsedInput =
         let mutable ns = None
         let modules = ResizeArray<Module>()  
 
-        let inline longIdentToIdents ident = ident |> Seq.map (fun x -> string x) |> Seq.toArray
+        let inline longIdentToIdents ident = ident |> Seq.map string |> Seq.toArray
         
         let addModule (longIdent: LongIdent, range: range) =
             modules.Add 
-                { Idents = longIdent |> List.map string |> List.toArray 
+                { Idents = longIdentToIdents longIdent
                   Range = range }
 
         let doRange kind (scope: LongIdent) line col =

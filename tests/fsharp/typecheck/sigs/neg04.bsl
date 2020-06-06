@@ -110,7 +110,7 @@ is not compatible with type
     'IBar'    
 
 
-neg04.fs(144,10,144,25): typecheck error FS0193: Type constraint mismatch. The type 
+neg04.fs(144,10,144,26): typecheck error FS0193: Type constraint mismatch. The type 
     'int * int'    
 is not compatible with type
     'IBar'    
@@ -122,7 +122,7 @@ is not compatible with type
     'IBar'    
 
 
-neg04.fs(150,10,150,26): typecheck error FS0193: Type constraint mismatch. The type 
+neg04.fs(150,10,150,27): typecheck error FS0193: Type constraint mismatch. The type 
     'int -> int'    
 is not compatible with type
     'IBar'    

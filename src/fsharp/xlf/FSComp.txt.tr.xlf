@@ -14,42 +14,42 @@
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
-        <target state="new">Available overloads:\n{0}</target>
+        <target state="translated">Kullanılabilir aşırı yüklemeler:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
-        <target state="new">Known types of arguments: {0}</target>
+        <target state="translated">Bilinen bağımsız değişken türleri: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixSingular">
         <source>Known type of argument: {0}</source>
-        <target state="new">Known type of argument: {0}</target>
+        <target state="translated">Bilinen bağımsız değişken türü: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundReturnType">
         <source>Known return type: {0}</source>
-        <target state="new">Known return type: {0}</target>
+        <target state="translated">Bilinen dönüş türü: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundTypeParametersPrefixPlural">
         <source>Known type parameters: {0}</source>
-        <target state="new">Known type parameters: {0}</target>
+        <target state="translated">Bilinen tür parametreleri: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundTypeParametersPrefixSingular">
         <source>Known type parameter: {0}</source>
-        <target state="new">Known type parameter: {0}</target>
+        <target state="translated">Bilinen tür parametresi: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
         <source>Argument at index {0} doesn't match</source>
-        <target state="new">Argument at index {0} doesn't match</target>
+        <target state="translated">{0} dizinindeki bağımsız değişken eşleşmiyor</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
-        <target state="new">Argument '{0}' doesn't match</target>
+        <target state="translated">'{0}' bağımsız değişkeni eşleşmiyor</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -137,14 +137,19 @@
         <target state="new">wild card in for loop</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWitnessPassing">
+        <source>witness passing</source>
+        <target state="new">witness passing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
-        <target state="new"> - {0}</target>
+        <target state="translated"> - {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="translated">Dil sürümü 5.0 gerektiren bitiş diliminden /langversion:preview kullanın.</target>
+        <target state="translated">Sondan dilimleme, 5.0 dil sürümünü gerektirir, /langversion:preview kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -194,7 +199,7 @@
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
-        <target state="new">This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</target>
+        <target state="translated">Bu özellik, bu F# sürümünde desteklenmiyor. Bu özelliği kullanabilmeniz için /langversion:preview eklemeniz gerekebilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -219,12 +224,12 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
-        <target state="new">use! may not be combined with and!</target>
+        <target state="translated">use!, and! ile birleştirilemez</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
+        <target state="translated">'let! ... and! ...' yapısı, yalnızca hesaplama ifadesi oluşturucu bir '{0}' metodunu ya da uygun 'MergeSource' ve 'Bind' metotlarını tanımlarsa kullanılabilir</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -234,7 +239,7 @@
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
-        <target state="new">The type '{0}' does not define the field, constructor or member '{1}'.</target>
+        <target state="translated">'{0}' türü; alanı, oluşturucuyu veya '{1}' üyesini tanımlamıyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -1178,8 +1183,8 @@
         <note />
       </trans-unit>
       <trans-unit id="typrelNamedArgumentHasBeenAssignedMoreThenOnce">
-        <source>A named argument has been assigned more than one value</source>
-        <target state="translated">Adlandırılmış bir bağımsız değişken birden fazla değere atanmış</target>
+        <source>The named argument '{0}' has been assigned more than one value</source>
+        <target state="new">The named argument '{0}' has been assigned more than one value</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGiven">
@@ -2014,7 +2019,7 @@
       </trans-unit>
       <trans-unit id="csCandidates">
         <source>Candidates:\n{0}</source>
-        <target state="needs-review-translation">Adaylar: {0}</target>
+        <target state="translated">Adaylar:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="parsDoCannotHaveVisibilityDeclarations">
@@ -5164,7 +5169,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="needs-review-translation">Bu geçerli bir sayısal sabit değer değil. Geçerli sayısal sabit değerler şunları içerir: 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
+        <target state="translated">Bu geçerli bir sayısal sabit değer değil. Geçerli sayısal sabit değerler şunları içerir: 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">

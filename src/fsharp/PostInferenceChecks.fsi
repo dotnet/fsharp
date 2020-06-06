@@ -18,6 +18,7 @@ val CheckTopImpl:
     infoReader: InfoReader *
     internalsVisibleToPaths: CompilationPath list *
     viewCcu: CcuThunk *
+    tcValF: ConstraintSolver.TcValF *
     denv: DisplayEnv *
     mexpr: ModuleOrNamespaceExprWithSig *
     extraAttribs: Attribs * (bool * bool) *

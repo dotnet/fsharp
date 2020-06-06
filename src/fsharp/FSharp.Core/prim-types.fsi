@@ -616,6 +616,11 @@ namespace Microsoft.FSharp.Core
         /// <summary>Indicates one or more adjustments to the compiled representation of an F# type or member</summary>
         member Flags : CompilationRepresentationFlags
 
+    module internal ExperimentalAttributeMessages = begin
+        [<Literal>]
+        val RequiresPreview : string = "Experimental library feature, requires '--langversion:preview'"
+    end
+        
     /// <summary>This attribute is used to tag values that are part of an experimental library
     /// feature.</summary>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]
@@ -713,6 +718,8 @@ namespace Microsoft.FSharp.Core
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>NoDynamicInvocationAttribute</returns>
         new : unit -> NoDynamicInvocationAttribute
+
+        internal new : isLegacy: bool -> NoDynamicInvocationAttribute
 
     /// <summary>This attribute is used to indicate that references to the elements of a module, record or union 
     /// type require explicit qualified access.</summary>
@@ -1079,6 +1086,101 @@ namespace Microsoft.FSharp.Core
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val CheckedMultiplyDynamic : x:'T1 -> y:'T2 -> 'U
 
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '-' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val SubtractionDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '/' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val DivisionDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the unary '-' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val UnaryNegationDynamic : value:'T -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '%' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val ModulusDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '-' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val CheckedSubtractionDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the checked unary '-' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val CheckedUnaryNegationDynamic : value:'T -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '&lt;&lt;&lt;' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val LeftShiftDynamic : value:'T1 -> shift:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '&gt;&gt;&gt;' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val RightShiftDynamic : value:'T1 -> shift:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '&&&' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val BitwiseAndDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '|||' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val BitwiseOrDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '^^^' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val ExclusiveOrDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '~~~' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val LogicalNotDynamic : value:'T -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to conversion operators.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val ExplicitDynamic : value:'T -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val LessThanDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val GreaterThanDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;=' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val LessThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;=' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val GreaterThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val EqualityDynamic : x:'T1 -> y:'T2 -> 'U
+
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val InequalityDynamic : x:'T1 -> y:'T2 -> 'U
+
         /// <summary>A compiler intrinsic that implements dynamic invocations for the DivideByInt primitive.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val DivideByIntDynamic : x:'T -> y:int -> 'T
@@ -1145,13 +1247,11 @@ namespace Microsoft.FSharp.Core
             /// <summary>Address-of. Uses of this value may result in the generation of unverifiable code.</summary>
             /// <param name="obj">The input object.</param>
             /// <returns>The managed pointer.</returns>
-            [<NoDynamicInvocation>]
             val inline ( ~& ) : obj:'T -> byref<'T>
 
             /// <summary>Address-of. Uses of this value may result in the generation of unverifiable code.</summary>
             /// <param name="obj">The input object.</param>
             /// <returns>The unmanaged pointer.</returns>
-            [<NoDynamicInvocation>]
             val inline ( ~&& ) : obj:'T -> nativeptr<'T>
 
         //-------------------------------------------------------------------------
@@ -2169,14 +2269,12 @@ namespace Microsoft.FSharp.Core
         
         /// <summary>Rethrows an exception. This should only be used when handling an exception</summary>
         /// <returns>The result value.</returns>
-        [<NoDynamicInvocation>]
         [<CompiledName("Rethrow")>]
         [<System.Obsolete("This function has been renamed to 'reraise'. Please adjust your code to reflect this", true)>]
         val inline rethrow : unit -> 'T
 
         /// <summary>Rethrows an exception. This should only be used when handling an exception</summary>
         /// <returns>The result value.</returns>
-        [<NoDynamicInvocation>]
         [<CompiledName("Reraise")>]
         val inline reraise : unit -> 'T
 
@@ -3674,14 +3772,12 @@ namespace Microsoft.FSharp.Core
             /// <summary>Overloaded unary negation (checks for overflow)</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The negated value.</returns>
-            [<NoDynamicInvocation>]
             val inline ( ~- ) : value:^T -> ^T when ^T : (static member ( ~- ) : ^T -> ^T) and default ^T : int
 
             /// <summary>Overloaded subtraction operator (checks for overflow)</summary>
             /// <param name="x">The first value.</param>
             /// <param name="y">The second value.</param>
             /// <returns>The first value minus the second value.</returns>
-            [<NoDynamicInvocation>]
             val inline ( - ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( - ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Overloaded addition operator (checks for overflow)</summary>
@@ -3694,7 +3790,6 @@ namespace Microsoft.FSharp.Core
             /// <param name="x">The first value.</param>
             /// <param name="y">The second value.</param>
             /// <returns>The product of the two input values.</returns>
-            [<NoDynamicInvocation>]
             val inline ( * ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Converts the argument to <c>byte</c>. This is a direct, checked conversion for all 
@@ -3703,7 +3798,6 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted byte</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToByte")>]
             val inline byte       : value:^T -> byte       when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int
 
@@ -3713,7 +3807,6 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted sbyte</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToSByte")>]
             val inline sbyte      : value:^T -> sbyte      when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
 
@@ -3723,7 +3816,6 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int16</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToInt16")>]
             val inline int16      : value:^T -> int16      when ^T : (static member op_Explicit : ^T -> int16)      and default ^T : int
 
@@ -3733,7 +3825,6 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted uint16</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToUInt16")>]
             val inline uint16     : value:^T -> uint16     when ^T : (static member op_Explicit : ^T -> uint16)     and default ^T : int
 
@@ -3743,7 +3834,6 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToInt")>]
             val inline int        : value:^T -> int        when ^T : (static member op_Explicit : ^T -> int)        and default ^T : int
 
@@ -3753,7 +3843,6 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int32</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToInt32")>]
             val inline int32      : value:^T -> int32      when ^T : (static member op_Explicit : ^T -> int32)      and default ^T : int
 
@@ -3763,7 +3852,6 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted uint32</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToUInt32")>]
             val inline uint32     : value:^T -> uint32     when ^T : (static member op_Explicit : ^T -> uint32)     and default ^T : int
 
@@ -3773,7 +3861,6 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted int64</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToInt64")>]
             val inline int64      : value:^T -> int64      when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
 
@@ -3783,7 +3870,6 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted uint64</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToUInt64")>]
             val inline uint64     : value:^T -> uint64     when ^T : (static member op_Explicit : ^T -> uint64)     and default ^T : int
 
@@ -3792,7 +3878,6 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted nativeint</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToIntPtr")>]
             val inline nativeint  : value:^T -> nativeint  when ^T : (static member op_Explicit : ^T -> nativeint)  and default ^T : int
 
@@ -3801,7 +3886,6 @@ namespace Microsoft.FSharp.Core
             /// static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted unativeint</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToUIntPtr")>]
             val inline unativeint : value:^T -> unativeint when ^T : (static member op_Explicit : ^T -> unativeint) and default ^T : int
 
@@ -3811,7 +3895,6 @@ namespace Microsoft.FSharp.Core
             /// appropriate static conversion method on the input type.</summary>
             /// <param name="value">The input value.</param>
             /// <returns>The converted char</returns>
-            [<NoDynamicInvocation>]
             [<CompiledName("ToChar")>]
             val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
 

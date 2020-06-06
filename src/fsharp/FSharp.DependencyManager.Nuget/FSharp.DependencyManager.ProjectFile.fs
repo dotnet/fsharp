@@ -190,6 +190,11 @@ $(PACKAGEREFERENCES)
             Condition="'%(RuntimeTargetsCopyLocalItems.AssetType)' == 'native'">
             <Path>$([MSBuild]::EnsureTrailingSlash('$([System.String]::Copy('%(FullPath)').Substring(0, $([System.String]::Copy('%(FullPath)').LastIndexOf('runtimes'))))'))</Path>
         </NativeIncludeRoots>
+        <NativeIncludeRoots
+            Include="@(NativeCopyLocalItems)"
+            Condition="'%(NativeCopyLocalItems.AssetType)' == 'native'">
+            <Path>$([MSBuild]::EnsureTrailingSlash('$([System.String]::Copy('%(FullPath)').Substring(0, $([System.String]::Copy('%(FullPath)').LastIndexOf('runtimes'))))'))</Path>
+        </NativeIncludeRoots>
       </ItemGroup>
   </Target>
 
@@ -201,8 +206,12 @@ $(PACKAGEREFERENCES)
     <ItemGroup>
       <ResolvedReferenceLines Remove='*' />
       <ResolvedReferenceLines
-          Condition="'$(SCRIPTEXTENSION)'=='.csx' or '%(InteractiveResolvedFile.NugetPackageId)'!='FSharp.Core'"
-          Include='%(InteractiveResolvedFile.NugetPackageId),%(InteractiveResolvedFile.NugetPackageVersion),%(InteractiveResolvedFile.PackageRoot),%(InteractiveResolvedFile.FullPath),%(InteractiveResolvedFile.AssetType),%(InteractiveResolvedFile.IsNotImplementationReference),%(InteractiveResolvedFile.InitializeSourcePath),%(NativeIncludeRoots.Path)'
+          Condition=" ('%(InteractiveResolvedFile.NugetPackageId)'!='FSharp.Core') or ('$(SCRIPTEXTENSION)'!='.fsx' and '%(InteractiveResolvedFile.NugetPackageId)'=='FSharp.Core')"
+          Include='%(InteractiveResolvedFile.NugetPackageId),%(InteractiveResolvedFile.NugetPackageVersion),%(InteractiveResolvedFile.PackageRoot),%(InteractiveResolvedFile.FullPath),%(InteractiveResolvedFile.AssetType),%(InteractiveResolvedFile.IsNotImplementationReference),%(InteractiveResolvedFile.InitializeSourcePath),'
+          KeepDuplicates="false" />
+      <ResolvedReferenceLines
+          Condition="('%(NativeIncludeRoots.NugetPackageId)'!='FSharp.Core') or ('$(SCRIPTEXTENSION)'!='.fsx' and '%(NativeIncludeRoots.NugetPackageId)'=='FSharp.Core')"
+          Include='%(NativeIncludeRoots.NugetPackageId),%(NativeIncludeRoots.NugetPackageVersion),%(NativeIncludeRoots.PackageRoot),,%(NativeIncludeRoots.AssetType),,,%(NativeIncludeRoots.Path)'
           KeepDuplicates="false" />
     </ItemGroup>
 

@@ -13,13 +13,13 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <UnitTestType>nunit</UnitTestType>
+    <NoWarn>3186</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\..\src\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
     </Compile>
-    <Compile Include="test-framework.fs" />
     <Compile Include="..\FSharp.Compiler.UnitTests\NunitHelpers.fs">
       <Link>NunitHelpers.fs</Link>
     </Compile>
@@ -27,9 +27,7 @@
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
-    <Compile Include="Compiler\ILChecker.fs" />
-    <Compile Include="Compiler\Utilities.fs" />
-    <Compile Include="Compiler\CompilerAssert.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\StaticMember.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\LiteralValue.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
@@ -52,6 +50,9 @@
     <Compile Include="Compiler\ErrorMessages\WrongSyntaxInForLoop.fs" />
     <Compile Include="Compiler\ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="Compiler\ErrorMessages\DontSuggestTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\MissingExpressionTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\InvalidNumericLiteralTests.fs" />
+    <Compile Include="Compiler\ErrorMessages\ModuleAbbreviationTests.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
@@ -72,7 +73,16 @@
     <Compile Include="Compiler\Language\SpanTests.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
+    <Compile Include="Compiler\Regressions\IndexerRegressionTests.fs" />
     <Compile Include="Compiler\Regressions\ForInDoMutableRegressionTest.fs" />
+    <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\CastToUnitsTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\ComparisonTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\StringFormatTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Collections\IEnumerableTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Collections\MapTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Collections\CollectionTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Collections\ListTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\ExtraTopLevelOperators\DictionaryTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
@@ -83,6 +93,7 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="..\FSharp.TestHelpers\FSharp.TestHelpers.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

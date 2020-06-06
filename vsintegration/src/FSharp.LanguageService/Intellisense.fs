@@ -183,7 +183,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
         let decls = trimmedDeclarations filterText
         if (index >= 0 && index < decls.Length) then
             let buf = Text.StringBuilder()
-            XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].StructuredDescriptionText) 
+            XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].StructuredDescriptionTextAsync |> Async.RunSynchronously) 
             buf.ToString()
         else ""
 

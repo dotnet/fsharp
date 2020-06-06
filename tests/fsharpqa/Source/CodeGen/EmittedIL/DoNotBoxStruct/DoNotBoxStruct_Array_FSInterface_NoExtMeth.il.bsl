@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly DoNotBoxStruct_Array_FSInterface_NoExtMeth
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_Array_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000000 Length: 0x00000278
+  // Offset: 0x00000000 Length: 0x00000261
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_Array_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000280 Length: 0x000000AC
+  // Offset: 0x00000268 Length: 0x000000AC
 }
 .module DoNotBoxStruct_Array_FSInterface_NoExtMeth.exe
-// MVID: {59B1920A-8127-3EE3-A745-03830A92B159}
+// MVID: {5EAD3E33-8127-3EE3-A745-0383333EAD5E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00740000
+// Image base: 0x00AF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -51,55 +51,44 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'F@6-1'
+  .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname F@6
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor() cil managed
-    {
-      // Code size       7 (0x7)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
-      IL_0006:  ret
-    } // end of method 'F@6-1'::.ctor
-
-    .method assembly hidebysig instance void 
-            Invoke(object x,
-                   int32 _arg1) cil managed
+    .method assembly static void  Invoke(object x,
+                                         int32 _arg1) cil managed
     {
       // Code size       3 (0x3)
       .maxstack  5
       .locals init ([0] int32 V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_Array_FSInterface_NoExtMeth.fs'
-      IL_0000:  ldarg.2
+      .line 100001,100001 : 0,0 'C:\\dev\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_Array_FSInterface_NoExtMeth.fs'
+      IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 6,6 : 74,76 ''
       IL_0002:  ret
-    } // end of method 'F@6-1'::Invoke
+    } // end of method F@6::Invoke
 
-  } // end of class 'F@6-1'
+  } // end of class F@6
 
   .method public static void  F<(class [FSharp.Core]Microsoft.FSharp.Control.IEvent`2<class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>,int32>) T>(!!T[] x) cil managed
   {
-    // Code size       38 (0x26)
+    // Code size       34 (0x22)
     .maxstack  8
     .line 6,6 : 46,77 ''
     IL_0000:  ldarg.0
     IL_0001:  ldc.i4.0
     IL_0002:  readonly.
     IL_0004:  ldelema    !!T
-    IL_0009:  newobj     instance void DoNotBoxStruct_Array_FSInterface_NoExtMeth/'F@6-1'::.ctor()
-    IL_000e:  ldftn      instance void DoNotBoxStruct_Array_FSInterface_NoExtMeth/'F@6-1'::Invoke(object,
-                                                                                                  int32)
-    IL_0014:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>::.ctor(object,
+    IL_0009:  ldnull
+    IL_000a:  ldftn      void DoNotBoxStruct_Array_FSInterface_NoExtMeth/F@6::Invoke(object,
+                                                                                     int32)
+    IL_0010:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>::.ctor(object,
                                                                                                                  native int)
-    IL_0019:  constrained. !!T
-    IL_001f:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Control.IDelegateEvent`1<class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>>::AddHandler(!0)
-    IL_0024:  nop
-    IL_0025:  ret
+    IL_0015:  constrained. !!T
+    IL_001b:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Control.IDelegateEvent`1<class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>>::AddHandler(!0)
+    IL_0020:  nop
+    IL_0021:  ret
   } // end of method DoNotBoxStruct_Array_FSInterface_NoExtMeth::F
 
 } // end of class DoNotBoxStruct_Array_FSInterface_NoExtMeth

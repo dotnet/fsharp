@@ -1356,7 +1356,7 @@ let LookupTypeNameInEntityMaybeHaveArity (amap, m, ad, nm, staticResInfo: TypeNa
 /// Handle the .NET/C# business where nested generic types implicitly accumulate the type parameters
 /// from their enclosing types.
 let MakeNestedType (ncenv: NameResolver) (tinst: TType list) m (tcrefNested: TyconRef) =
-    let tps = List.drop tinst.Length (tcrefNested.Typars m)
+    let tps = List.skip tinst.Length (tcrefNested.Typars m)
     let tinstNested = ncenv.InstantiationGenerator m tps
     mkAppTy tcrefNested (tinst @ tinstNested)
 
@@ -2398,10 +2398,10 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
             | _ -> ()
 
         let errorTextF s =
-            if isAppTy g ty then
-                let tcref = tcrefOfAppTy g ty
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcref ->
                 FSComp.SR.undefinedNameFieldConstructorOrMemberWhenTypeIsKnown(tcref.DisplayNameWithStaticParametersAndTypars, s)
-            else
+            | _ ->
                 FSComp.SR.undefinedNameFieldConstructorOrMember(s)
 
         raze (UndefinedName (depth, errorTextF, id, suggestMembers))

@@ -50,9 +50,11 @@ type PickledDataWithReferences<'rawData> =
     member x.OptionalFixup loader =
         x.FixupThunks
         |> Array.iter(fun reqd->
-            match loader reqd.AssemblyName with
-            | Some loaded -> reqd.Fixup loaded
-            | None -> reqd.FixupOrphaned() )
+            // Only fixup what needs fixing up
+            if reqd.IsUnresolvedReference then
+                match loader reqd.AssemblyName with
+                | Some loaded -> reqd.Fixup loaded
+                | _ -> () )
         x.RawData
 
 //---------------------------------------------------------------------------
@@ -2585,6 +2587,7 @@ and p_expr expr st =
     | Expr.StaticOptimization (a, b, c, d) -> p_byte 11 st; p_tup4 p_constraints p_expr p_expr p_dummy_range (a, b, c, d) st
     | Expr.TyChoose (a, b, c)            -> p_byte 12 st; p_tup3 p_tyar_specs p_expr p_dummy_range (a, b, c) st
     | Expr.Quote (ast, _, _, m, ty)         -> p_byte 13 st; p_tup3 p_expr p_dummy_range p_ty (ast, m, ty) st
+    | Expr.WitnessArg (traitInfo, m) -> p_byte 14 st; p_trait traitInfo st; p_dummy_range m st
 
 and u_expr st =
     let tag = u_byte st
@@ -2659,6 +2662,10 @@ and u_expr st =
             let c = u_dummy_range st
             let d = u_ty st
             Expr.Quote (b, ref None, false, c, d) // isFromQueryExpression=false
+    | 14 ->
+        let traitInfo = u_trait st
+        let m = u_dummy_range st
+        Expr.WitnessArg (traitInfo, m) 
     | _ -> ufailwith st "u_expr"
 
 and p_static_optimization_constraint x st =

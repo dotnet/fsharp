@@ -59,6 +59,9 @@ open Internal.Utilities.StructuredFormat
 
 open Microsoft.DotNet.DependencyManager
 
+// Prevents warnings of experimental APIs - we are using FSharpLexer
+#nowarn "57"
+
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
 //----------------------------------------------------------------------------
@@ -68,6 +71,10 @@ type FsiValue(reflectionValue:obj, reflectionType:Type, fsharpType:FSharpType) =
   member x.ReflectionType = reflectionType
   member x.FSharpType = fsharpType
 
+[<Sealed>]
+type FsiBoundValue(name: string, value: FsiValue) =
+    member _.Name = name
+    member _.Value = value
 
 [<AutoOpen>]
 module internal Utilities = 
@@ -579,8 +586,6 @@ let internal directoryName (s:string) =
         | res -> if res = "" then "." else res
 
 
-
-
 //----------------------------------------------------------------------------
 // cmd line - state for options
 //----------------------------------------------------------------------------
@@ -613,13 +618,29 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let isInteractiveServer() = fsiServerName <> ""  
     let recordExplicitArg arg = explicitArgs <- explicitArgs @ [arg]
 
-    let executableFileName = 
-        lazy 
-            match tcConfigB.exename with
-            | Some s -> s
-            | None -> 
-            let currentProcess = System.Diagnostics.Process.GetCurrentProcess()
-            Path.GetFileName(currentProcess.MainModule.FileName)
+    let executableFileNameWithoutExtension =
+        lazy
+            let getFsiCommandLine () =
+                let fileNameWithoutExtension path = Path.GetFileNameWithoutExtension(path)
+
+                let currentProcess = Process.GetCurrentProcess()
+                let processFileName = fileNameWithoutExtension currentProcess.MainModule.FileName
+
+                let commandLineExecutableFileName =
+                    try fileNameWithoutExtension (Environment.GetCommandLineArgs().[0])
+                    with _ -> ""
+
+                let stringComparison =
+                    match Environment.OSVersion.Platform with
+                    | PlatformID.MacOSX
+                    | PlatformID.Unix -> StringComparison.Ordinal
+                    | _ -> StringComparison.OrdinalIgnoreCase
+                
+                if String.Compare(processFileName, commandLineExecutableFileName, stringComparison) = 0
+                then processFileName
+                else sprintf "%s %s" processFileName commandLineExecutableFileName
+
+            tcConfigB.exename |> Option.defaultWith getFsiCommandLine
 
 
     // Additional fsi options are list below.
@@ -628,7 +649,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let displayHelpFsi tcConfigB (blocks:CompilerOptionBlock list) =
         DisplayBannerText tcConfigB;
         fprintfn fsiConsoleOutput.Out ""
-        fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage(executableFileName.Value))
+        fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage(executableFileNameWithoutExtension.Value))
         PrintCompilerOptionBlocks blocks
         exit 0
 
@@ -754,7 +775,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fsiConsoleOutput.uprintfn  "%s" (FSIstrings.SR.fsiBanner3())
      
     member __.ShowHelp() =
-        let helpLine = sprintf "%s --help" (Path.GetFileNameWithoutExtension executableFileName.Value)
+        let helpLine = sprintf "%s --help" executableFileNameWithoutExtension.Value
 
         fsiConsoleOutput.uprintfn  ""
         fsiConsoleOutput.uprintfnn "%s" (FSIstrings.SR.fsiIntroTextHeader1directives());
@@ -927,6 +948,7 @@ type internal FsiDynamicCompilerState =
       tcState   : TcState 
       tcImports   : TcImports
       ilxGenerator : IlxGen.IlxAssemblyGenerator
+      boundValues : NameMap<Val>
       // Why is this not in FsiOptions?
       timing    : bool
       debugBreak : bool }
@@ -937,7 +959,83 @@ let internal WithImplicitHome (tcConfigB, dir) f =
     try f() 
     finally tcConfigB.implicitIncludeDir <- old
 
+let internal convertReflectionTypeToILTypeRef (reflectionTy: Type) =
+    if reflectionTy.Assembly.IsDynamic then
+        raise (NotSupportedException(sprintf "Unable to import type, %A, from a dynamic assembly." reflectionTy))
 
+    if not reflectionTy.IsPublic && not reflectionTy.IsNestedPublic then
+        invalidOp (sprintf "Cannot import the non-public type, %A." reflectionTy)
+
+    let aref = ILAssemblyRef.FromAssemblyName(reflectionTy.Assembly.GetName())
+    let scoref = ILScopeRef.Assembly aref
+
+    let fullName = reflectionTy.FullName
+    let index = fullName.IndexOf("[")
+    let fullName =
+        if index = -1 then
+            fullName
+        else
+            fullName.Substring(0, index)
+
+    let isTop = reflectionTy.DeclaringType = null
+    if isTop then
+        ILTypeRef.Create(scoref, [], fullName)
+    else
+        let names = String.split StringSplitOptions.None [|"+";"."|] fullName
+        let enc = names.[..names.Length - 2]
+        let nm = names.[names.Length - 1]
+        ILTypeRef.Create(scoref, List.ofArray enc, nm)
+
+let rec internal convertReflectionTypeToILType (reflectionTy: Type) =
+    let reflectionTy =
+        // Special case functions.
+        if FSharp.Reflection.FSharpType.IsFunction reflectionTy then
+            let ctors = reflectionTy.GetConstructors(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
+            if ctors.Length = 1 && 
+               ctors.[0].GetCustomAttribute<CompilerGeneratedAttribute>() <> null && 
+               not ctors.[0].IsPublic && 
+               PrettyNaming.IsCompilerGeneratedName reflectionTy.Name then
+                let rec get (typ: Type) = if FSharp.Reflection.FSharpType.IsFunction typ.BaseType then get typ.BaseType else typ
+                get reflectionTy
+            else
+                reflectionTy
+        else
+            reflectionTy
+
+    let tref = convertReflectionTypeToILTypeRef reflectionTy
+    let genericArgs =
+        reflectionTy.GenericTypeArguments
+        |> Seq.map convertReflectionTypeToILType
+        |> List.ofSeq
+
+    let boxity =
+        if reflectionTy.IsValueType then
+            ILBoxity.AsValue
+        else
+            ILBoxity.AsObject
+
+    let tspec = ILTypeSpec.Create(tref, genericArgs)
+
+    mkILTy boxity tspec
+
+let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
+    let vis = Accessibility.TAccess([])
+    let compPath = (CompilationPath.CompPath(ILScopeRef.Local, []))
+    let mutable mty = Unchecked.defaultof<_>
+    let moduleOrNamespace = Construct.NewModuleOrNamespace (Some compPath) vis (Ident(moduleName, m)) XmlDoc.Empty [] (MaybeLazy.Lazy(lazy mty))
+    let v =
+        Construct.NewVal
+            (name, m, None, ty, ValMutability.Immutable,
+             false, Some(ValReprInfo([], [], { Attribs = []; Name = None })), vis, ValNotInRecScope, None, NormalVal, [], ValInline.Optional,
+             XmlDoc.Empty, true, false, false, false, 
+             false, false, None, Parent(TypedTreeBasics.ERefLocal moduleOrNamespace))
+    mty <- ModuleOrNamespaceType(ModuleOrNamespaceKind.ModuleOrType, QueueList.one v, QueueList.empty)
+
+    let bindExpr = TypedTreeOps.mkCallDefaultOf tcGlobals range0 ty
+    let binding = Binding.TBind(v, bindExpr, NoDebugPointAtLetBinding)
+    let mbinding = ModuleOrNamespaceBinding.Module(moduleOrNamespace, TMDefs([TMDefLet(binding, m)]))
+    let expr = ModuleOrNamespaceExprWithSig(mty, TMDefs([TMDefs[TMDefRec(false, [], [mbinding], m)]]), range0)
+    moduleOrNamespace, v, TypedImplFile.TImplFile(QualifiedNameOfFile.QualifiedNameOfFile(Ident(moduleName, m)), [], expr, false, false, StampMap.Empty)
 
 /// Encapsulates the coordination of the typechecking, optimization and code generation
 /// components of the F# compiler for interactively executed fragments of code.
@@ -990,37 +1088,8 @@ type internal FsiDynamicCompiler
                 (let man = mainModule.ManifestOfAssembly
                  Some { man with  CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs codegenResults.ilAssemAttrs) }) }
 
-    let ProcessInputs (ctok, errorLogger: ErrorLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent) =
-        let optEnv    = istate.optEnv
-        let emEnv     = istate.emEnv
-        let tcState   = istate.tcState
-        let ilxGenerator = istate.ilxGenerator
-        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-
-        // Typecheck. The lock stops the type checker running at the same time as the 
-        // server intellisense implementation (which is currently incomplete and #if disabled)
-        let (tcState:TcState),topCustomAttrs,declaredImpls,tcEnvAtEndOfLastInput =
-            lock tcLockObject (fun _ -> TypeCheckClosedInputSet(ctok, errorLogger.CheckForErrors, tcConfig, tcImports, tcGlobals, Some prefixPath, tcState, inputs))
-
-#if DEBUG
-        // Logging/debugging
-        if tcConfig.printAst then
-            for input in declaredImpls do 
-                fprintfn fsiConsoleOutput.Out "AST:" 
-                fprintfn fsiConsoleOutput.Out "%+A" input
-#endif
-
-        errorLogger.AbortOnError(fsiConsoleOutput);
-         
-        let importMap = tcImports.GetImportMap()
-
-        // optimize: note we collect the incremental optimization environment 
-        let optimizedImpls, _optData, optEnv = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, isIncrementalFragment, optEnv, tcState.Ccu, declaredImpls)
-        errorLogger.AbortOnError(fsiConsoleOutput);
-            
-        let fragName = textOfLid prefixPath 
-        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, ilxGenerator)
-        errorLogger.AbortOnError(fsiConsoleOutput);
+    let ProcessCodegenResults (ctok, errorLogger: ErrorLogger, istate, optEnv, tcState: TcState, tcConfig, prefixPath, showTypes: bool, isIncrementalFragment, fragName, declaredImpls, ilxGenerator: IlxAssemblyGenerator, codegenResults) =
+        let emEnv = istate.emEnv
 
         // Each input is like a small separately compiled extension to a single source file. 
         // The incremental extension to the environment is dictated by the "signature" of the values as they come out 
@@ -1112,13 +1181,154 @@ type internal FsiDynamicCompiler
                                    tcState   = tcState  }
         
         // Return the new state and the environment at the end of the last input, ready for further inputs.
-        (istate,tcEnvAtEndOfLastInput,declaredImpls)
+        (istate,declaredImpls)
+
+    let ProcessTypedImpl (errorLogger: ErrorLogger, optEnv, tcState: TcState, tcConfig: TcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator: IlxAssemblyGenerator) =
+        #if DEBUG
+        // Logging/debugging
+        if tcConfig.printAst then
+            for input in declaredImpls do 
+                fprintfn fsiConsoleOutput.Out "AST:" 
+                fprintfn fsiConsoleOutput.Out "%+A" input
+#endif
+
+        errorLogger.AbortOnError(fsiConsoleOutput);
+         
+        let importMap = tcImports.GetImportMap()
+
+        // optimize: note we collect the incremental optimization environment 
+        let optimizedImpls, _optData, optEnv = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, isIncrementalFragment, optEnv, tcState.Ccu, declaredImpls)
+        errorLogger.AbortOnError(fsiConsoleOutput);
+            
+        let fragName = textOfLid prefixPath 
+        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, ilxGenerator)
+        errorLogger.AbortOnError(fsiConsoleOutput);
+        codegenResults, optEnv, fragName
+
+    let ProcessInputs (ctok, errorLogger: ErrorLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent) =
+        let optEnv    = istate.optEnv
+        let tcState   = istate.tcState
+        let ilxGenerator = istate.ilxGenerator
+        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
+
+        // Typecheck. The lock stops the type checker running at the same time as the 
+        // server intellisense implementation (which is currently incomplete and #if disabled)
+        let (tcState:TcState),topCustomAttrs,declaredImpls,tcEnvAtEndOfLastInput =
+            lock tcLockObject (fun _ -> TypeCheckClosedInputSet(ctok, errorLogger.CheckForErrors, tcConfig, tcImports, tcGlobals, Some prefixPath, tcState, inputs))
+
+        let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, optEnv, tcState, tcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator)
+        let newState, declaredImpls = ProcessCodegenResults(ctok, errorLogger, istate, optEnv, tcState, tcConfig, prefixPath, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults)
+        (newState, tcEnvAtEndOfLastInput, declaredImpls)
+
+    let tryGetGeneratedValue istate cenv v =
+        match istate.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(istate.emEnv), v) with
+        | Some (res, ty) ->
+            Some (FsiValue(res, ty, FSharpType(cenv, v.Type)))
+        | _ ->
+            None
 
     let nextFragmentId() = fragmentId <- fragmentId + 1; fragmentId
 
     let mkFragmentPath  i = 
         // NOTE: this text shows in exn traces and type names. Make it clear and fixed width 
         [mkSynId rangeStdin (FsiDynamicModulePrefix + sprintf "%04d" i)]
+
+    let processContents istate declaredImpls =
+        let tcState = istate.tcState
+
+        let mutable itValue = None
+        let mutable boundValues = istate.boundValues
+        try
+            let contents = FSharpAssemblyContents(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports, declaredImpls)
+            let contentFile = contents.ImplementationFiles.[0]
+
+            // Skip the "FSI_NNNN"
+            match contentFile.Declarations with
+            | [FSharpImplementationFileDeclaration.Entity (_eFakeModule,modDecls) ] ->
+                let cenv = SymbolEnv(istate.tcGlobals, istate.tcState.Ccu, Some istate.tcState.CcuSig, istate.tcImports)
+                for decl in modDecls do
+                    match decl with
+                    | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (v,_,_) ->
+                        // Report a top-level function or value definition
+                        if v.IsModuleValueOrMember && not v.IsMember then
+                            let fsiValueOpt =
+                                match v.Item with
+                                | Item.Value vref -> 
+                                    let fsiValueOpt = tryGetGeneratedValue istate cenv vref.Deref
+                                    if fsiValueOpt.IsSome then
+                                        boundValues <- boundValues |> NameMap.add v.CompiledName vref.Deref
+                                    fsiValueOpt
+                                | _ -> None
+
+                            if v.CompiledName = "it" then
+                                itValue <- fsiValueOpt
+
+                            match fsiValueOpt with
+                            | Some fsiValue -> valueBoundEvent.Trigger(fsiValue.ReflectionValue, fsiValue.ReflectionType, v.CompiledName)
+                            | None -> ()
+
+                            let symbol = FSharpSymbol.Create(cenv, v.Item)
+                            let symbolUse = FSharpSymbolUse(tcGlobals, istate.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
+                            fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
+
+                    | FSharpImplementationFileDeclaration.Entity (e,_) ->
+                        // Report a top-level module or namespace definition
+                        let symbol = FSharpSymbol.Create(cenv, e.Item)
+                        let symbolUse = FSharpSymbolUse(tcGlobals, istate.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, e.DeclarationLocation)
+                        fsi.TriggerEvaluation (None, symbolUse, decl)
+
+                    | FSharpImplementationFileDeclaration.InitAction _ ->
+                        // Top level 'do' bindings are not reported as incremental declarations
+                        ()
+            | _ -> ()
+        with _ -> ()
+
+        { istate with boundValues = boundValues }, Completed itValue
+
+    let addCcusToIncrementalEnv istate ccuinfos =
+        let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) istate.optEnv ccuinfos
+        istate.ilxGenerator.AddExternalCcus (ccuinfos |> List.map (fun ccuinfo -> ccuinfo.FSharpViewOfMetadata))
+        { istate with optEnv = optEnv }
+
+    let importReflectionType istate reflectionTy =
+        let tcImports = istate.tcImports
+        let tcGlobals = istate.tcGlobals
+        let amap = tcImports.GetImportMap()
+
+        let prevCcuinfos = tcImports.GetImportedAssemblies()
+        
+        let rec import ccuinfos (ilTy: ILType) =
+            let ccuinfos, tinst =
+                (ilTy.GenericArgs, (ccuinfos, []))
+                ||> List.foldBack (fun ilGenericArgTy (ccuInfos, tinst) ->
+                    let ccuinfos2, ty = import ccuInfos ilGenericArgTy
+                    (ccuinfos2 @ ccuinfos, ty :: tinst))
+
+            let ty = Import.ImportILType amap range0 tinst ilTy
+            let ccuinfos =
+                match tryTcrefOfAppTy tcGlobals ty with
+                | ValueSome tcref ->
+                    match tcref.CompilationPath.ILScopeRef with
+                    | ILScopeRef.Assembly aref ->
+                        (tcImports.GetImportedAssemblies() |> List.find (fun x -> x.FSharpViewOfMetadata.AssemblyName = aref.Name)) :: ccuinfos
+                    | _ ->
+                        ccuinfos
+                | _ ->
+                    ccuinfos
+            ccuinfos, ty
+        
+        let ilTy = convertReflectionTypeToILType reflectionTy
+
+        if not (Import.CanImportILType amap range0 ilTy) then
+            invalidOp (sprintf "Unable to import type, %A." reflectionTy)
+
+        let ccuinfos, ty = import [] ilTy
+        let ccuinfos = 
+            ccuinfos 
+            |> List.distinctBy (fun x -> x.FSharpViewOfMetadata.AssemblyName)
+            |> List.filter (fun asm1 -> not (prevCcuinfos |> List.exists (fun asm2 -> asm2.FSharpViewOfMetadata.AssemblyName = asm1.FSharpViewOfMetadata.AssemblyName)))
+        // After we have successfully imported the type, then we can add newly resolved ccus to the env.
+        addCcusToIncrementalEnv istate ccuinfos, ty
 
     member __.DynamicAssemblyName = assemblyName
 
@@ -1143,55 +1353,7 @@ type internal FsiDynamicCompiler
         let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, errorLogger, istate, [input], showTypes, true, isInteractiveItExpr, prefix)
         let tcState = istate.tcState 
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
-
-        // Find all new declarations the EvaluationListener
-        let mutable itValue = None
-        try
-            let contents = FSharpAssemblyContents(tcGlobals, tcState.Ccu, Some tcState.CcuSig, tcImports, declaredImpls)
-            let contentFile = contents.ImplementationFiles.[0]
-
-            // Skip the "FSI_NNNN"
-            match contentFile.Declarations with
-            | [FSharpImplementationFileDeclaration.Entity (_eFakeModule,modDecls) ] ->
-                let cenv = SymbolEnv(newState.tcGlobals, newState.tcState.Ccu, Some newState.tcState.CcuSig, newState.tcImports)
-                for decl in modDecls do
-                    match decl with
-                    | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (v,_,_) ->
-                        // Report a top-level function or value definition
-                        if v.IsModuleValueOrMember && not v.IsMember then
-                            let fsiValueOpt =
-                                match v.Item with
-                                | Item.Value vref ->
-                                    let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
-                                    match optValue with
-                                    | Some (res, ty) -> Some(FsiValue(res, ty, FSharpType(cenv, vref.Type)))
-                                    | None -> None 
-                                | _ -> None
-
-                            if v.CompiledName = "it" then
-                                itValue <- fsiValueOpt
-
-                            match fsiValueOpt with
-                            | Some fsiValue -> valueBoundEvent.Trigger(fsiValue.ReflectionValue, fsiValue.ReflectionType, v.CompiledName)
-                            | None -> ()
-
-                            let symbol = FSharpSymbol.Create(cenv, v.Item)
-                            let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
-                            fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
-
-                    | FSharpImplementationFileDeclaration.Entity (e,_) ->
-                        // Report a top-level module or namespace definition
-                        let symbol = FSharpSymbol.Create(cenv, e.Item)
-                        let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, e.DeclarationLocation)
-                        fsi.TriggerEvaluation (None, symbolUse, decl)
-
-                    | FSharpImplementationFileDeclaration.InitAction _ ->
-                        // Top level 'do' bindings are not reported as incremental declarations
-                        ()
-            | _ -> ()
-        with _ -> ()
-
-        newState, Completed itValue
+        processContents newState declaredImpls
 
     /// Evaluate the given expression and produce a new interactive state.
     member fsiDynamicCompiler.EvalParsedExpression (ctok, errorLogger: ErrorLogger, istate, expr: SynExpr) =
@@ -1264,10 +1426,8 @@ type internal FsiDynamicCompiler
             with e ->
                 tcConfigB.RemoveReferencedAssemblyByPath(m,path)
                 reraise()
-        let optEnv = List.fold (AddExternalCcuToOptimizationEnv tcGlobals) istate.optEnv ccuinfos
-        istate.ilxGenerator.AddExternalCcus (ccuinfos |> List.map (fun ccuinfo -> ccuinfo.FSharpViewOfMetadata)) 
         resolutions,
-        { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv); optEnv = optEnv }
+        { addCcusToIncrementalEnv istate ccuinfos with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv) }
 
 
     member __.EvalDependencyManagerTextFragment (packageManager:IDependencyManagerProvider,m,path: string) =
@@ -1319,7 +1479,7 @@ type internal FsiDynamicCompiler
                             for folder in result.Roots do
                                 tcConfigB.AddIncludePath(m, folder, "")
                             let scripts = result.SourceFiles |> Seq.toList
-                            if scripts |> Seq.length > 0 then
+                            if not (isNil scripts) then
                                 fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, errorLogger)
                             else istate
                     with _ ->
@@ -1382,6 +1542,82 @@ type internal FsiDynamicCompiler
           let istate = (istate, sourceFiles, inputs) |||> List.fold2 (fun istate sourceFile input -> fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, input))
           fsiDynamicCompiler.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs)
 
+    member __.GetBoundValues istate =
+        let cenv = SymbolEnv(istate.tcGlobals, istate.tcState.Ccu, Some istate.tcState.CcuSig, istate.tcImports)
+        [ for pair in istate.boundValues do
+            let nm = pair.Key
+            let v = pair.Value
+            match tryGetGeneratedValue istate cenv v with
+            | Some fsiValue ->
+                yield FsiBoundValue(nm, fsiValue)
+            | _ ->
+                () ]
+
+    member __.TryFindBoundValue(istate, nm) =
+        match istate.boundValues.TryFind nm with
+        | Some v ->
+            let cenv = SymbolEnv(istate.tcGlobals, istate.tcState.Ccu, Some istate.tcState.CcuSig, istate.tcImports)
+            match tryGetGeneratedValue istate cenv v with
+            | Some fsiValue ->
+                Some (FsiBoundValue(nm, fsiValue))
+            | _ ->
+                None
+        | _ ->
+            None
+
+    member this.AddBoundValue (ctok, errorLogger: ErrorLogger, istate, name: string, value: obj) =
+        try
+            match value with
+            | null -> nullArg "value"
+            | _ -> ()
+
+            if String.IsNullOrWhiteSpace name then
+                invalidArg "name" "Name cannot be null or white-space."
+
+            // Verify that the name is a valid identifier for a value.
+            SourceCodeServices.Lexer.FSharpLexer.Lex(SourceText.ofString name, 
+                let mutable foundOne = false
+                fun t -> 
+                    if not t.IsIdentifier || foundOne then
+                        invalidArg "name" "Name is not a valid identifier."
+                    foundOne <- true)
+
+            if PrettyNaming.IsCompilerGeneratedName name then
+                invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved() |> snd)
+
+            let istate, ty = importReflectionType istate (value.GetType())
+            let amap = istate.tcImports.GetImportMap()
+
+            let i = nextFragmentId()
+            let prefix = mkFragmentPath i
+            let prefixPath = pathOfLid prefix
+            let qualifiedName = ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath)
+
+            let tcConfig = TcConfig.Create(tcConfigB,validate=false)
+
+            // Build a simple module with a single 'let' decl with a default value.
+            let moduleOrNamespace, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
+            let tcEnvAtEndOfLastInput = 
+                TypeChecker.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
+                |> TypeChecker.AddLocalVal TcResultsSink.NoSink range0 v
+
+            // Generate IL for the given typled impl and create new interactive state.
+            let ilxGenerator = istate.ilxGenerator
+            let isIncrementalFragment = true
+            let showTypes = false
+            let declaredImpls = [impl]
+            let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, istate.optEnv, istate.tcState, tcConfig, false, EmptyTopAttrs, prefix, isIncrementalFragment, declaredImpls, ilxGenerator)
+            let istate, declaredImpls = ProcessCodegenResults(ctok, errorLogger, istate, optEnv, istate.tcState, tcConfig, prefix, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults)
+            let newState = { istate with tcState = istate.tcState.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput }
+
+            // Force set the val with the given value obj.
+            let ctxt = valuePrinter.GetEvaluationContext(newState.emEnv)
+            ilxGenerator.ForceSetGeneratedValue(ctxt, v, value)
+
+            processContents newState declaredImpls
+        with
+        | ex ->
+            istate, CompletedWithReportedError(StopProcessingExn(Some ex))
     
     member __.GetInitialInteractiveState () =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
@@ -1399,6 +1635,7 @@ type internal FsiDynamicCompiler
          tcState   = tcState
          tcImports = tcImports
          ilxGenerator = ilxGenerator
+         boundValues = NameMap.empty
          timing    = false
          debugBreak = false
         } 
@@ -2029,10 +2266,15 @@ type internal FsiInteractionProcessor
 
                 // When the last declaration has a shape of DoExp (i.e., non-binding), 
                 // transform it to a shape of "let it = <exp>", so we can refer it.
-                let defsA = if defsA.Length <= 1 || not (List.isEmpty defsB) then defsA else
-                            match List.headAndTail (List.rev defsA) with
-                            | SynModuleDecl.DoExpr(_,exp,_), rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
-                            | _ -> defsA
+                let defsA =                    
+                    if not (isNil defsB) then defsA else
+                    match defsA with
+                    | [] -> defsA
+                    | [_] -> defsA
+                    | _ ->
+                        match List.rev defsA with
+                        | SynModuleDecl.DoExpr(_,exp,_) :: rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
+                        | _ -> defsA
 
                 Some (IDefns(defsA,m)),Some (IDefns(defsB,m)),istate
 
@@ -2236,6 +2478,12 @@ type internal FsiInteractionProcessor
             // Make this into "(); expr" to suppress generalization and compilation-as-function
             let exprWithSeq = SynExpr.Sequential (DebugPointAtSequential.ExprOnly, true, SynExpr.Const (SynConst.Unit,m.StartRange), expr, m)
             mainThreadProcessParsedExpression ctok errorLogger (exprWithSeq, istate))
+        |> commitResult
+
+    member __.AddBoundValue(ctok, errorLogger, name, value: obj) =
+        currState 
+        |> InteractiveCatch errorLogger (fun istate -> 
+            fsiDynamicCompiler.AddBoundValue(ctok, errorLogger, istate, name, value))
         |> commitResult
 
     member __.PartialAssemblySignatureUpdated = event.Publish
@@ -2561,11 +2809,18 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let fsiInteractionProcessor = FsiInteractionProcessor(fsi, tcConfigB, fsiOptions, fsiDynamicCompiler, fsiConsolePrompt, fsiConsoleOutput, fsiInterruptController, fsiStdinLexerProvider, lexResourceManager, initialInteractiveState) 
 
+    // Raising an exception throws away the exception stack making diagnosis hard
+    // this wraps the existing exception as the inner exception
+    let makeNestedException (userExn: #Exception) =
+        // clone userExn -- make userExn the inner exception, to retain the stacktrace on raise
+        let arguments = [| userExn.Message :> obj; userExn :> obj |]
+        Activator.CreateInstance(userExn.GetType(), arguments) :?> Exception
+
     let commitResult res =
         match res with
         | Choice1Of2 r -> r
         | Choice2Of2 None -> raise (FsiCompilationException(FSIstrings.SR.fsiOperationFailed(), None))
-        | Choice2Of2 (Some userExn) -> raise userExn
+        | Choice2Of2 (Some userExn) -> raise (makeNestedException userExn)
 
     let commitResultNonThrowing errorOptions scriptFile (errorLogger: CompilationErrorLogger) res =
         let errs = errorLogger.GetErrors()
@@ -2752,6 +3007,22 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.
     member __.ValueBound = fsiDynamicCompiler.ValueBound
+
+    member __.GetBoundValues() =
+        fsiDynamicCompiler.GetBoundValues fsiInteractionProcessor.CurrentState
+
+    member __.TryFindBoundValue(name: string) =
+        fsiDynamicCompiler.TryFindBoundValue(fsiInteractionProcessor.CurrentState, name)
+
+    member __.AddBoundValue(name: string, value: obj) =
+        // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
+        // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
+        // is not safe to call concurrently.
+        let ctok = AssumeCompilationThreadWithoutEvidence()
+
+        fsiInteractionProcessor.AddBoundValue(ctok, errorLogger, name, value)
+        |> commitResult
+        |> ignore
 
     /// Performs these steps:
     ///    - Load the dummy interaction, if any

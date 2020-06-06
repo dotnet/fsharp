@@ -538,7 +538,7 @@ module internal SymbolHelpers =
                     ap + sep + vref.TopValDeclaringEntity.CompiledName
                 else
                     ap
-            v.XmlDocSig <- XmlDocSigOfVal g path v
+            v.XmlDocSig <- XmlDocSigOfVal g false path v
         Some (ccuFileName, v.XmlDocSig)                
 
     let GetXmlDocSigOfRecdFieldInfo (rfinfo: RecdFieldInfo) = 
@@ -591,7 +591,7 @@ module internal SymbolHelpers =
             let ccuFileName = vref.nlr.Ccu.FileName
             let v = vref.Deref
             if v.XmlDocSig = "" && v.HasDeclaringEntity then
-                v.XmlDocSig <- XmlDocSigOfVal g vref.TopValDeclaringEntity.CompiledRepresentationForNamedType.Name v
+                v.XmlDocSig <- XmlDocSigOfVal g false vref.TopValDeclaringEntity.CompiledRepresentationForNamedType.Name v
             Some (ccuFileName, v.XmlDocSig)
         else 
             None
@@ -857,11 +857,13 @@ module internal SymbolHelpers =
                           member x.GetHashCode item = hash item.Stamp  }
 
     /// Remove all duplicate items
-    let RemoveDuplicateItems g (items: ItemWithInst list) = 
+    let RemoveDuplicateItems g (items: ItemWithInst list) =     
+        if isNil items then items else
         items |> IPartialEqualityComparer.partialDistinctBy (IPartialEqualityComparer.On (fun item -> item.Item) (ItemDisplayPartialEquality g))
 
     /// Remove all duplicate items
-    let RemoveDuplicateCompletionItems g items = 
+    let RemoveDuplicateCompletionItems g items =     
+        if isNil items then items else
         items |> IPartialEqualityComparer.partialDistinctBy (CompletionItemDisplayPartialEquality g) 
 
     let IsExplicitlySuppressed (g: TcGlobals) (item: Item) = 
@@ -886,12 +888,12 @@ module internal SymbolHelpers =
             | _ -> false)
 
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
-    let RemoveExplicitlySuppressed (g: TcGlobals) (items: ItemWithInst list) = 
-      items |> List.filter (fun item -> not (IsExplicitlySuppressed g item.Item))
+    let RemoveExplicitlySuppressed (g: TcGlobals) (items: ItemWithInst list) =
+        items |> List.filter (fun item -> not (IsExplicitlySuppressed g item.Item))
 
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
     let RemoveExplicitlySuppressedCompletionItems (g: TcGlobals) (items: CompletionItem list) = 
-      items |> List.filter (fun item -> not (IsExplicitlySuppressed g item.Item))
+        items |> List.filter (fun item -> not (IsExplicitlySuppressed g item.Item))
 
     let SimplerDisplayEnv denv = 
         { denv with suppressInlineKeyword=true

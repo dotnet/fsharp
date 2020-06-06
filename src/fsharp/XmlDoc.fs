@@ -77,18 +77,9 @@ type XmlDocCollector() =
                 let prevGrabPointPos = grabPoints.[grabPointIndex-1]
                 Array.findFirstIndexWhereTrue lines (fun (_, pos) -> posGeq pos prevGrabPointPos)
 
-        let lines = lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.rev
-        if lines.Length = 0 then
-            [| |]
-        else
-            let firstLineNumber = (snd lines.[0]).Line
-            lines
-            |> Array.mapi (fun i x -> firstLineNumber - i, x)
-            |> Array.takeWhile (fun (sequencedLineNumber, (_, pos)) -> sequencedLineNumber = pos.Line)
-            |> Array.map (fun (_, (lineStr, _)) -> lineStr)
-            |> Array.rev
+        let lines = lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1]
+        lines |> Array.map fst
       with e ->
-        //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
         [| |]
 
 /// Represents the XmlDoc fragments as collected from the lexer during parsing

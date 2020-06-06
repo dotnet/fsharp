@@ -18,6 +18,8 @@
     <Compile Include="ProductVersion.fs" />
     <Compile Include="EditDistance.fs" />
     <Compile Include="SuggestionBuffer.fs" />
+    <Compile Include="FsiTests.fs" />
+    <Compile Include="ByteMemoryTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
