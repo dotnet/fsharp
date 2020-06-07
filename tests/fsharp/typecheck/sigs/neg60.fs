@@ -95,29 +95,30 @@ module QuerySyntaxWithValidOverloading =
     type ContentBuilder() =
         member this.Run(c: Content) =
             let crlf = "\r\n"B
-            [|for part in c do
-                yield! part.Array.[part.Offset..part.Count]
+            [|for part in List.rev c do
+                yield! part.Array.[part.Offset..(part.Count+part.Offset-1)]
                 yield! crlf |]
 
         member this.Yield(_) = []
-        
+
         [<CustomOperation("body")>]
-        member this.Body(c, segment)  =
+        member this.Body(c: Content, segment: ArraySegment<byte>)  =
             segment::c
 
         [<CustomOperation("body")>]
-        member this.Body(c, bytes, offset, count) =
-            this.Body(c, ArraySegment(bytes, offset, count))
+        member this.Body(c: Content, bytes: byte[], offset, count) =
+            ArraySegment<byte>(bytes, offset, count)::c
 
         [<CustomOperation("body")>]
-        member this.Body(c, bytes: byte[]) =
-            this.Body(c, bytes, 0, bytes.Length)
+        member this.Body(c: Content, [<ParamArray>] contents: string[]) =
+            let rec loop acc (contents: string list) =
+                match contents with
+                | [] -> acc
+                | content::rest ->
+                    let bytes = Text.Encoding.ASCII.GetBytes(content)
+                    loop (this.Body(c, bytes, 0, bytes.Length)) rest
+            loop c (List.ofArray contents)
 
-        [<CustomOperation("body")>]
-        member this.Body(c, text:string) =
-            let bytes = Text.Encoding.ASCII.GetBytes(text)
-            this.Body(c, bytes)
-        
     let content = ContentBuilder()
 
     //---------------------------------------------------------------
@@ -125,9 +126,9 @@ module QuerySyntaxWithValidOverloading =
     let values =
       content {
         body "Name"
-        body "Email"B
+        body (ArraySegment<_>("Email"B, 0, 5))
         body "Password"B 2 4
-        body (ArraySegment("Description"B, 0, 4))
+        body "Description" "of" "content"
       }
 
 module QuerySyntaxWithOptionalParamAndParamsArray = 

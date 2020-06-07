@@ -710,3 +710,105 @@ let ceResult =
 check "grwerjkrwejgk42" ceResult.Value 2
     """
 
+    let overloadLib includeInternalExtensions includeExternalExtensions = 
+        """
+open System
+
+type Content = ArraySegment<byte> list
+
+type ContentBuilder() =
+    member this.Run(c: Content) =
+        let crlf = "\r\n"B
+        [|for part in List.rev c do
+            yield! part.Array.[part.Offset..(part.Count+part.Offset-1)]
+            yield! crlf |]
+
+    member this.Yield(_) = []
+
+    [<CustomOperation("body")>]
+    member this.Body(c: Content, segment)  =
+        segment::c
+        """ + (if includeInternalExtensions then """
+
+type ContentBuilder with
+    [<CustomOperation("body")>]
+    member this.Body(c: Content, bytes: byte[], offset, count) =
+        ArraySegment<byte>(bytes, offset, count)::c
+        """ else """
+
+    [<CustomOperation("body")>]
+    member this.Body(c: Content, bytes: byte[], offset, count) =
+        ArraySegment<byte>(bytes, offset, count)::c
+        """) + (if includeExternalExtensions then """
+
+module Extensions =
+    type ContentBuilder with
+        [<CustomOperation("body")>]
+        member this.Body(c: Content, [<ParamArray>] contents: string[]) =
+            let rec loop acc (contents: string list) =
+                match contents with
+                | [] -> acc
+                | content::rest ->
+                    let bytes = Text.Encoding.ASCII.GetBytes(content)
+                    loop (this.Body(c, bytes, 0, bytes.Length)) rest
+            loop c (List.ofArray contents)
+        """ else """
+
+    [<CustomOperation("body")>]
+    member this.Body(c: Content, [<ParamArray>] contents: string[]) =
+        let rec loop acc (contents: string list) =
+            match contents with
+            | [] -> acc
+            | content::rest ->
+                let bytes = Text.Encoding.ASCII.GetBytes(content)
+                loop (this.Body(c, bytes, 0, bytes.Length)) rest
+        loop c (List.ofArray contents)
+        """) + """
+
+let check msg actual expected = if actual <> expected then failwithf "FAILED %s, expected %A, got %A" msg expected actual
+        """
+
+    let OverloadLibTest inclInternalExt inclExternalExt source =
+        CompilerAssert.CompileExeAndRunWithOptions [| "/langversion:preview" |] (overloadLib inclInternalExt inclExternalExt + source)
+
+    [<Test>]
+    let ``OverloadLib accepts overloaded methods`` () =
+        OverloadLibTest false false """
+let content = ContentBuilder()
+let ceResult =
+    content {
+        body "Name"
+        body (ArraySegment<_>("Email"B, 0, 5))
+        body "Password"B 2 4
+        body "Description" "of" "content"
+    }
+check "TmFtZVxyXG5FbWF1" ceResult "Name\r\nEmail\r\nsswo\r\nDescription\r\nof\r\ncontent\r\n"B
+    """
+
+    [<Test>]
+    let ``OverloadLib accepts overloaded internal extension methods`` () =
+        OverloadLibTest true false """
+let content = ContentBuilder()
+let ceResult =
+    content {
+        body "Name"
+        body (ArraySegment<_>("Email"B, 0, 5))
+        body "Password"B 2 4
+        body "Description" "of" "content"
+    }
+check "TmFtZVxyXG5FbWF2" ceResult "Name\r\nEmail\r\nsswo\r\nDescription\r\nof\r\ncontent\r\n"B
+    """
+
+    [<Test>]
+    let ``OverloadLib accepts overloaded internal and external extensions`` () =
+        OverloadLibTest true true """
+let content = ContentBuilder()
+let ceResult =
+    content {
+        body "Name"
+        body (ArraySegment<_>("Email"B, 0, 5))
+        body "Password"B 2 4
+        body "Description" "of" "content"
+    }
+check "TmFtZVxyXG5FbWF3" ceResult "Name\r\nEmail\r\nsswo\r\nDescription\r\nof\r\ncontent\r\n"B
+    """
