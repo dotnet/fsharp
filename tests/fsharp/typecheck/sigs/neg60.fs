@@ -85,3 +85,114 @@ module NullableOperators3 =
     let a = new System.Nullable<int>(0)
     let b = new System.Nullable<int>(1)
     if a ?=? b then printfn "Same" else printfn "Differerent"
+
+module QuerySyntaxWithValidOverloading = 
+
+    open System
+
+    type Content = ArraySegment<byte> list
+
+    type ContentBuilder() =
+        member this.Run(c: Content) =
+            let crlf = "\r\n"B
+            [|for part in c do
+                yield! part.Array.[part.Offset..part.Count]
+                yield! crlf |]
+
+        member this.Yield(_) = []
+        
+        [<CustomOperation("body")>]
+        member this.Body(c, segment)  =
+            segment::c
+
+        [<CustomOperation("body")>]
+        member this.Body(c, bytes, offset, count) =
+            this.Body(c, ArraySegment(bytes, offset, count))
+
+        [<CustomOperation("body")>]
+        member this.Body(c, bytes: byte[]) =
+            this.Body(c, bytes, 0, bytes.Length)
+
+        [<CustomOperation("body")>]
+        member this.Body(c, text:string) =
+            let bytes = Text.Encoding.ASCII.GetBytes(text)
+            this.Body(c, bytes)
+        
+    let content = ContentBuilder()
+
+    //---------------------------------------------------------------
+
+    let values =
+      content {
+        body "Name"
+        body "Email"B
+        body "Password"B 2 4
+        body (ArraySegment("Description"B, 0, 4))
+      }
+
+module QuerySyntaxWithOptionalParamAndParamsArray = 
+
+    open System
+
+    type InputKind =
+        | Text of placeholder:string option
+        | Password of placeholder: string option
+
+    type InputOptions =
+      { Label: string option
+        Kind : InputKind
+        Validators : (string -> bool) array }
+
+    type InputBuilder() =
+
+        member t.Yield(_) = 
+          { Label = None
+            Kind = Text None
+            Validators = [||] }
+            
+        [<CustomOperation("text")>]
+        member this.Text(io,?placeholder) =
+            { io with Kind = Text placeholder }
+            
+        [<CustomOperation("password")>]
+        member this.Password(io,?placeholder) =
+            { io with Kind = Password placeholder }
+            
+        [<CustomOperation("label")>]
+        member this.Label(io,label) = 
+            { io with Label = Some label }
+            
+        [<CustomOperation("with_validators")>]
+        member this.Validators(io, [<ParamArray>] validators) =
+            { io with Validators = validators }
+        
+    let input = InputBuilder()
+
+    //---------------------------------------------------------------
+
+    let name =
+      input {
+        label "Name"
+        text
+        with_validators
+            (String.IsNullOrWhiteSpace >> not)
+      }
+            
+    let email =
+      input {
+        label "Email"
+        text "Your email"
+        with_validators
+            (String.IsNullOrWhiteSpace >> not)
+            (fun s -> s.Contains "@")
+      }
+            
+    let password =
+      input {
+        label "Password"
+        password "Must contains at least 6 characters, one number and one uppercase"
+        with_validators
+            (String.exists Char.IsUpper)
+            (String.exists Char.IsDigit)
+            (fun s -> s.Length >= 6)
+      }
