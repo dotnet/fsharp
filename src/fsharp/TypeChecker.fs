@@ -8571,6 +8571,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
         // 'match! expr with pats ...' --> build.Bind(e1, (function pats ...))
         | SynExpr.MatchBang (spMatch, expr, clauses, m) ->
+            let matchExpr = mkSourceExpr expr
             let mMatch = match spMatch with DebugPointAtBinding mMatch -> mMatch | _ -> m
             if isQuery then error(Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery(), mMatch))
 
@@ -8581,7 +8582,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             let consumeExpr = SynExpr.MatchLambda (false, mMatch, clauses, spMatch, mMatch)
 
             // TODO: consider allowing translation to BindReturn
-            Some(translatedCtxt (mkSynCall "Bind" mMatch [expr; consumeExpr]))
+            Some(translatedCtxt (mkSynCall "Bind" mMatch [matchExpr; consumeExpr]))
 
         | SynExpr.TryWith (innerComp, _mTryToWith, clauses, _mWithToLast, mTryToLast, spTry, _spWith) ->
             let mTry = match spTry with DebugPointAtTry.Yes m -> m | _ -> mTryToLast
