@@ -23,7 +23,7 @@ module SuggestionBuffer =
         
         let results = Array.ofSeq buffer
         
-        Assert.shouldBe [| "abce" |] results
+        Assert.shouldBeEquivalentTo [| "abce" |] results
     
     [<Fact>]
     let SmallIdentifierShouldBeIgnored() =
@@ -42,7 +42,7 @@ module SuggestionBuffer =
         let results = Array.ofSeq buffer
 
         Assert.shouldBeTrue buffer.Disabled
-        Assert.shouldBe [||] results
+        Assert.shouldBeEquivalentTo [||] results
 
     [<Fact>]
     let BufferShouldOnlyTakeTop5Elements() =
@@ -57,7 +57,7 @@ module SuggestionBuffer =
 
         let results = Array.ofSeq buffer
 
-        Assert.shouldBe [| "abce"; "abcg"; "abch"; "abci"; "abcj"|] results
+        Assert.shouldBeEquivalentTo [| "abce"; "abcg"; "abch"; "abci"; "abcj"|] results
 
     [<Fact>]
     let BufferShouldUseEarlierElementsIfTheyHaveSameScore() =
@@ -71,7 +71,7 @@ module SuggestionBuffer =
 
         let results = Array.ofSeq buffer
 
-        Assert.shouldBe [| "abce"; "abcf"; "abcg"; "abch"; "abci"|] results
+        Assert.shouldBeEquivalentTo [| "abce"; "abcf"; "abcg"; "abch"; "abci"|] results
 
 
     [<Fact>]
@@ -101,4 +101,4 @@ module SuggestionBuffer =
         
         let results = Array.ofSeq buffer
         
-        Assert.shouldBe [| "abc"; "abce" |] results
+        Assert.shouldBeEquivalentTo [| "abc"; "abce" |] results

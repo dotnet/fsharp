@@ -87,7 +87,7 @@ module FsiTests =
 
         let values = fsiSession.GetBoundValues() |> List.map (fun x -> x.Value.ReflectionValue)
 
-        Assert.shouldBe [4;7;6;5;1;2;3] values
+        Assert.shouldBeEquivalentTo [4;7;6;5;1;2;3] values
 
     [<Fact>]
     let ``Seven bound values are ordered and have their correct type`` () =
@@ -530,7 +530,6 @@ module FsiTests =
 
     type TestFSharpFunc() =
         inherit FSharpFunc<int, int>()
-
         override _.Invoke x = x
 
     type ``Test2FSharp @ Func``() =

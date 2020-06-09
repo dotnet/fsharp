@@ -4,6 +4,9 @@ module Assert =
     open FluentAssertions
     open System.Collections
 
+    let inline shouldBeEquivalentTo (expected : ^T) (actual : ^U) =
+        actual.Should().BeEquivalentTo(expected, "") |> ignore
+
     let inline shouldBe (expected : ^T) (actual : ^U) =
         actual.Should().Be(expected, "") |> ignore
 
