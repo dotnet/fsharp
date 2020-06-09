@@ -3,9 +3,7 @@
 namespace FSharp.Compiler.AbstractIL.Internal
 
 open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open Internal.Utilities
 open Internal.Utilities.Collections.Tagged
 open System.Collections.Generic
 

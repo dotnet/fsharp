@@ -282,6 +282,15 @@ namespace Microsoft.FSharp.Control
         /// and not infinite.</exception>
         static member Sleep: millisecondsDueTime:int -> Async<unit>
 
+        /// <summary>Creates an asynchronous computation that will sleep for the given time. This is scheduled
+        /// using a System.Threading.Timer object. The operation will not block operating system threads
+        /// for the duration of the wait.</summary>
+        /// <param name="dueTime">The amount of time to sleep.</param>
+        /// <returns>An asynchronous computation that will sleep for the given time.</returns>
+        /// <exception cref="System.ArgumentOutOfRangeException">Thrown when the due time is negative.</exception>
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        static member Sleep: dueTime:TimeSpan -> Async<unit>
+
         /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
         /// the style used in CLI APIs. For example, 
         ///     <c>Async.FromBeginEnd(ws.BeginGetWeather,ws.EndGetWeather)</c>
@@ -444,8 +453,8 @@ namespace Microsoft.FSharp.Control
         static member StartImmediate: 
             computation:Async<unit> * ?cancellationToken:CancellationToken-> unit
 
-        /// <summary>Runs an asynchronous computation, starting immediately on the current operating system, 
-        /// but also returns the execution as <c>System.Threading.Tasks.Task</c> 
+        /// <summary>Runs an asynchronous computation, starting immediately on the current operating system
+        /// thread, but also returns the execution as <c>System.Threading.Tasks.Task</c>
         /// </summary>
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.
         /// You may prefer using this method if you want to achive a similar behviour to async await in C# as 

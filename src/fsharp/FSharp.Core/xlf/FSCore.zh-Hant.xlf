@@ -564,7 +564,7 @@
       </trans-unit>
       <trans-unit id="printfBadIntegerForDynamicFomatter">
         <source>Bad integer supplied to dynamic formatter</source>
-        <target state="translated">提供給動態格式子的整數錯誤</target>
+        <target state="translated">提供給動態格式器的整數錯誤</target>
         <note />
       </trans-unit>
       <trans-unit id="printfExpectedPrecision">
@@ -709,7 +709,7 @@
       </trans-unit>
       <trans-unit id="maxDegreeOfParallelismNotPositive">
         <source>maxDegreeOfParallelism must be positive, was {0}</source>
-        <target state="new">maxDegreeOfParallelism must be positive, was {0}</target>
+        <target state="translated">maxDegreeOfParallelism 必須為正數，原先為 {0}</target>
         <note />
       </trans-unit>
     </body>

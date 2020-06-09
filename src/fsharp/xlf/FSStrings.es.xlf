@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../FSStrings.resx">
     <body>
+      <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
+        <source>symbol '..^'</source>
+        <target state="translated">símbolo "..^"</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">. Vea también {0}.</target>
@@ -63,18 +68,13 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">En general, los identificadores de variable en mayúscula no deben usarse en patrones y pueden indicar un nombre de patrón mal escrito.</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="needs-review-translation">En general, los identificadores de variable en mayúscula no deben usarse en patrones y pueden indicar un nombre de patrón mal escrito.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">Las etiquetas de casos de unión discriminada y de excepciones deben ser identificadores en mayúscula.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Sobrecarga posible: '{0}'. {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -954,7 +954,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COMMENT">
         <source>comment</source>
-        <target state="translated">Comentario</target>
+        <target state="translated">comentario</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LINE.COMMENT">
@@ -1294,7 +1294,7 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">El resultado de esta expresión de igualdad tiene el tipo "{0}" y se descarta implícitamente. Considere el uso de "let" para enlazar el resultado a un nombre, por ejemplo, "let result = expression". Si pretende establecer un valor a una propiedad, utilice el  operador "&lt;-"; por ejemplo, "{1}.{2} &lt;- expression".</target>
+        <target state="translated">El resultado de esta expresión de igualdad tiene el tipo "{0}" y se descarta implícitamente. Considere el uso de "let" para enlazar el resultado a un nombre, por ejemplo, "let result = expression". Si pretende establecer un valor a una propiedad, utilice el operador "&lt;-"; por ejemplo, "{1}.{2} &lt;- expression".</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
@@ -1620,6 +1620,11 @@
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
         <target state="translated">símbolo "|}"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="translated">palabra clave 'and!'</target>
         <note />
       </trans-unit>
     </body>

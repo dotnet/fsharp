@@ -709,7 +709,7 @@
       </trans-unit>
       <trans-unit id="maxDegreeOfParallelismNotPositive">
         <source>maxDegreeOfParallelism must be positive, was {0}</source>
-        <target state="new">maxDegreeOfParallelism must be positive, was {0}</target>
+        <target state="translated">maxDegreeOfParallelism doit être positif, était {0}</target>
         <note />
       </trans-unit>
     </body>

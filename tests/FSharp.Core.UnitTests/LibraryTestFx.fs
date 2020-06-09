@@ -64,27 +64,42 @@ module SurfaceArea =
 
     // gets string form of public surface area for the currently-loaded FSharp.Core
     let private getActual () =
+
         // get current FSharp.Core
-        let asm = 
-            typeof<int list>.Assembly
+        let asm = typeof<int list>.Assembly
+        let fsCoreFullName = asm.FullName
 
         // public types only
-        let types =
-            asm.GetExportedTypes()
+        let types = asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
 
         // extract canonical string form for every public member of every type
         let getTypeMemberStrings (t : Type) =
             // for System.Runtime-based profiles, need to do lots of manual work
-            t.GetMembers()
-            |> Array.map (fun v -> sprintf "%s: %s" (v.ReflectedType.ToString()) (v.ToString()))
-            
+            let getMembers (t : Type) =
+                let ti = t.GetTypeInfo()
+                let cast (info: #MemberInfo) = (t, info :> MemberInfo)
+                let isDeclaredInFSharpCore (m:MemberInfo) = m.DeclaringType.Assembly.FullName = fsCoreFullName
+                seq {
+                    yield! t.GetRuntimeEvents()     |> Seq.filter (fun m -> m.AddMethod.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! t.GetRuntimeProperties() |> Seq.filter (fun m -> m.GetMethod.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! t.GetRuntimeMethods()    |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! t.GetRuntimeFields()     |> Seq.filter (fun m -> m.IsPublic && m |> isDeclaredInFSharpCore) |> Seq.map cast
+                    yield! ti.DeclaredConstructors  |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
+                    yield! ti.DeclaredNestedTypes   |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map cast
+                } |> Array.ofSeq
+
+
+            getMembers t
+            |> Array.map (fun (ty, m) -> sprintf "%s: %s" (ty.ToString()) (m.ToString()))
+
         let actual =
             types |> Array.collect getTypeMemberStrings
 
-        asm,actual
-    
+        asm, actual
+
     // verify public surface area matches expected
     let verify expected platform (fileName : string) =
+        printfn "Verify"
         let normalize (s:string) =
             Regex.Replace(s, "(\\r\\n|\\n|\\r)+", "\r\n").Trim()
 
@@ -109,37 +124,38 @@ module SurfaceArea =
         // If both sets are empty, the surface areas match so allow the test to pass.
         if Set.isEmpty unexpectedlyMissing
           && Set.isEmpty unexpectedlyPresent then
-            Assert.Pass ()
+            // pass
+            ()
+        else
 
-        let logFile =
-            let workDir = TestContext.CurrentContext.WorkDirectory
-            sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
-        System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
+            let logFile =
+                let workDir = TestContext.CurrentContext.WorkDirectory
+                sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
+            System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
 
-        // The surface areas don't match; prepare an easily-readable output message.
-        let msg =
-            let inline newLine (sb : System.Text.StringBuilder) = sb.AppendLine () |> ignore
-            let sb = System.Text.StringBuilder ()
-            Printf.bprintf sb "Assembly: %A" asm
-            newLine sb
-            sb.AppendLine "Expected and actual surface area don't match. To see the delta, run:" |> ignore
-            Printf.bprintf sb "    windiff %s %s" fileName logFile
-            newLine sb
-            newLine sb
-            sb.Append "Unexpectedly missing (expected, not actual):" |> ignore
-            for s in unexpectedlyMissing do
+            // The surface areas don't match; prepare an easily-readable output message.
+            let msg =
+                let inline newLine (sb : System.Text.StringBuilder) = sb.AppendLine () |> ignore
+                let sb = System.Text.StringBuilder ()
+                Printf.bprintf sb "Assembly: %A" asm
                 newLine sb
-                sb.Append "    " |> ignore
-                sb.Append s |> ignore
-            newLine sb
-            newLine sb
-            sb.Append "Unexpectedly present (actual, not expected):" |> ignore
-            for s in unexpectedlyPresent do
+                sb.AppendLine "Expected and actual surface area don't match. To see the delta, run:" |> ignore
+                Printf.bprintf sb "    windiff %s %s" fileName logFile
                 newLine sb
-                sb.Append "    " |> ignore
-                sb.Append s |> ignore
-            newLine sb
-            sb.ToString ()
+                newLine sb
+                sb.Append "Unexpectedly missing (expected, not actual):" |> ignore
+                for s in unexpectedlyMissing do
+                    newLine sb
+                    sb.Append "    " |> ignore
+                    sb.Append s |> ignore
+                newLine sb
+                newLine sb
+                sb.Append "Unexpectedly present (actual, not expected):" |> ignore
+                for s in unexpectedlyPresent do
+                    newLine sb
+                    sb.Append "    " |> ignore
+                    sb.Append s |> ignore
+                newLine sb
+                sb.ToString ()
 
-        Assert.Fail msg
-        ()
+            failwith msg

@@ -42,6 +42,11 @@
         <target state="translated">Tamamlama Listeleri</target>
         <note />
       </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="translated">Tanılama</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">Performans</target>
@@ -195,11 +200,6 @@
       <trans-unit id="Suggest_names_for_errors_code_fix">
         <source>Suggest names for unresolved identifiers</source>
         <target state="translated">Çözümlenmemiş tanımlayıcılar için ad öner</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Use_out_of_process_language_server">
-        <source>(Preview) Use out of process language server</source>
-        <target state="translated">(Önizleme) İşlem dışı dil sunucusunu kullanma</target>
         <note />
       </trans-unit>
     </body>

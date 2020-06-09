@@ -18,6 +18,8 @@
 
   <!-- nuget -->
   <PropertyGroup>
+    <PackageIconFullPath>$(MSBuildThisFileDirectory)icon.png</PackageIconFullPath>
+
     <!-- Point to artifacts folder as an additional nuget package source  -->
     <RestoreAdditionalProjectSources Condition = "Exists('$(ArtifactsPackagesDir)') and '$(RestoreAdditionalProjectSources)' != ''">$(RestoreAdditionalProjectSources);$(ArtifactsPackagesDir)</RestoreAdditionalProjectSources>
     <RestoreAdditionalProjectSources Condition = "Exists('$(ArtifactsPackagesDir)') and '$(RestoreAdditionalProjectSources)' == ''">$(ArtifactsPackagesDir)</RestoreAdditionalProjectSources>

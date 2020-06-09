@@ -7,7 +7,6 @@
     <PlatformTarget>x86</PlatformTarget>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);44;58;75;3005</NoWarn>
-    <DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DefaultValueTuplePackageVersion>$(SystemValueTupleVersion)</DefaultValueTuplePackageVersion>
@@ -92,9 +91,6 @@
     <Compile Include="..\..\..\tests\service\CSharpProjectAnalysis.fs">
       <Link>CompilerService\CSharpProjectAnalysis.fs</Link>
     </Compile>
-    <Compile Include="..\..\..\tests\service\ProjectOptionsTests.fs">
-      <Link>CompilerService\ProjectOptionsTests.fs</Link>
-    </Compile>
     <Compile Include="..\..\..\tests\service\StructureTests.fs">
       <Link>CompilerService\StructureTests.fs</Link>
     </Compile>
@@ -147,6 +143,9 @@
     </Compile>
     <Compile Include="CompletionProviderTests.fs">
       <Link>Roslyn\CompletionProviderTests.fs</Link>
+    </Compile>
+    <Compile Include="FsxCompletionProviderTests.fs">
+      <Link>Roslyn\FsxCompletionProviderTests.fs</Link>
     </Compile>
     <Compile Include="SignatureHelpProviderTests.fs">
       <Link>Roslyn\SignatureHelpProviderTests.fs</Link>
@@ -234,6 +233,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Language.StandardClassification" Version="$(MicrosoftVisualStudioLanguageStandardClassificationVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.LanguageServices" Version="$(MicrosoftVisualStudioLanguageServicesVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.OLE.Interop" Version="$(MicrosoftVisualStudioOLEInteropVersion)" />
+    <PackageReference Include="Microsoft.VisualStudio.Platform.VSEditor" Version="$(MicrosoftVisualStudioPlatformVSEditorVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="$(MicrosoftVisualStudioShell150Version)" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.Design" Version="$(MicrosoftVisualStudioShellDesignVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.Framework" Version="$(MicrosoftVisualStudioShellFrameworkVersion)" />
@@ -243,6 +243,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.9.0" Version="$(MicrosoftVisualStudioShellInterop90Version)" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.10.0" Version="$(MicrosoftVisualStudioShellInterop100Version)" />
     <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.11.0" Version="$(MicrosoftVisualStudioShellInterop110Version)" />
+    <PackageReference Include="Microsoft.VisualStudio.Text.Internal" Version="$(MicrosoftVisualStudioTextInternalVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="$(MicrosoftVisualStudioTextUIWpfVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.TextManager.Interop.8.0" Version="$(MicrosoftVisualStudioTextManagerInterop80Version)" />
     <PackageReference Include="Microsoft.VisualStudio.TextManager.Interop" Version="$(MicrosoftVisualStudioTextManagerInteropVersion)" />

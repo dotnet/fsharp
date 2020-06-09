@@ -27,6 +27,21 @@
         <target state="translated">杂项</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractivePreview">
+        <source>FSI Preview</source>
+        <target state="translated">FSI 预览</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewMode">
+        <source>Enable preview language features</source>
+        <target state="translated">启用预览语言功能</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewModeDescr">
+        <source>Enable preview of in-development language features in F# Interactive</source>
+        <target state="translated">在 F# 交互中启用开发中语言功能的预览</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
         <source>Shadow copy assemblies</source>
         <target state="translated">卷影副本程序集</target>

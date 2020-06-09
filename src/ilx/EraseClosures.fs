@@ -2,18 +2,13 @@
 
 module internal FSharp.Compiler.AbstractIL.Extensions.ILX.EraseClosures
 
-open Internal.Utilities
 
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
-open FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
 open FSharp.Compiler.AbstractIL.Morphs 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.PrettyNaming
-open System.Reflection
 
 // -------------------------------------------------------------------- 
 // Erase closures and function types
@@ -116,12 +111,22 @@ let mkFuncTypeRef n =
                          [IlxSettings.ilxNamespace () + ".OptimizedClosures"], 
                          "FSharpFunc`"+ string (n + 1))
 type cenv = 
-    { ilg:ILGlobals
+    {
+      ilg:ILGlobals
+
       tref_Func: ILTypeRef[]
+
       mkILTyFuncTy: ILType
+
       addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef
+
       addFieldNeverAttrs: ILFieldDef -> ILFieldDef
-      addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef }
+
+      addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef
+    }
+
+    override __.ToString() = "<cenv>"
+
   
 let addMethodGeneratedAttrsToTypeDef cenv (tdef: ILTypeDef) = 
     tdef.With(methods = (tdef.Methods.AsList |> List.map (fun md -> md |> cenv.addMethodGeneratedAttrs) |> mkILMethods))

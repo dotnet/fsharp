@@ -16,6 +16,26 @@ let report_failure (s : string) =
     stderr.WriteLine s
     failures := !failures @ [s]
 
+// We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
+// We will use this api to see if we are running on a netcore which supports pinvoke / refemit
+let definePInvokeMethod =
+    typeof<System.Reflection.Emit.TypeBuilder>.GetMethod("DefinePInvokeMethod", [|
+        typeof<string>
+        typeof<string>
+        typeof<string>
+        typeof<System.Reflection.MethodAttributes>
+        typeof<System.Reflection.CallingConventions>
+        typeof<Type>
+        typeof<Type[]>
+        typeof<Type[]>
+        typeof<Type[]>
+        typeof<Type[][]>
+        typeof<Type[][]>
+        typeof<System.Runtime.InteropServices.CallingConvention>
+        typeof<System.Runtime.InteropServices.CharSet> |])
+
+let enablePInvokeOnCoreClr = definePInvokeMethod <> null
+
 module GetSystemTimeTest = 
     open System
     open System.Runtime.InteropServices
@@ -36,16 +56,18 @@ module GetSystemTimeTest =
     [<DllImport("kernel32.dll")>]
     extern void GetSystemTime([<MarshalAs(UnmanagedType.LPStruct)>] MySystemTime ct);
 
-    do 
-          let sysTime = new MySystemTime()
-          GetSystemTime(sysTime);
-          printf "The System time is %d/%d/%d %d:%d:%d\n" 
-                            (int32 sysTime.wDay)
-                            (int32 sysTime.wMonth )
-                            (int32 sysTime.wYear )
-                            (int32 sysTime.wHour )
-                            (int32 sysTime.wMinute )
-                            (int32 sysTime.wSecond)
+    let doTime () = 
+        let sysTime = new MySystemTime()
+        GetSystemTime(sysTime);
+        printf "The System time is %d/%d/%d %d:%d:%d\n" 
+               (int32 sysTime.wDay)
+               (int32 sysTime.wMonth )
+               (int32 sysTime.wYear )
+               (int32 sysTime.wHour )
+               (int32 sysTime.wMinute )
+               (int32 sysTime.wSecond)
+
+    do if enablePInvokeOnCoreClr then doTime () 
 
 
 module MemoryStatusTest = 
@@ -75,16 +97,14 @@ module MemoryStatusTest =
     end
 
     [<DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)>]
-    extern [<MarshalAs(UnmanagedType.Bool)>] bool 
-          GlobalMemoryStatusEx( [<In; Out>] MEMORYSTATUSEX lpBuffer);
+    extern [<MarshalAs(UnmanagedType.Bool)>] bool GlobalMemoryStatusEx( [<In; Out>] MEMORYSTATUSEX lpBuffer);
 
     let main() =
         let mex = new MEMORYSTATUSEX()
         GlobalMemoryStatusEx(mex) |> ignore
         printf "%A\n" mex
 
-    main()
-
+    if enablePInvokeOnCoreClr then main()
 
 module MemoryStatusTest2 = 
     open System
@@ -121,7 +141,7 @@ module MemoryStatusTest2 =
         GlobalMemoryStatusEx(&& mex) |> ignore
         printf "%A\n" mex
 
-    main()
+    if enablePInvokeOnCoreClr then main()
 
 (*--------------------*)  
 

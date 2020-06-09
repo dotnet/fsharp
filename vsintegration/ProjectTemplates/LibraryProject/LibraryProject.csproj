@@ -9,7 +9,6 @@
   <ItemGroup>
     <VSTemplate Include="Template\Library.vstemplate">
       <TranslatableResources>
-        Template\AssemblyInfo.fs;
         Template\Script.fsx;
       </TranslatableResources>
     </VSTemplate>

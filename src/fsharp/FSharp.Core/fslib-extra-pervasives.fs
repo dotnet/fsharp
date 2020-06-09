@@ -219,7 +219,6 @@ module ExtraTopLevelOperators =
     [<CompiledName("PrintFormatLineToTextWriter")>]
     let fprintfn (textWriter:TextWriter) format = Printf.fprintfn textWriter format 
     
-#if !FX_NO_SYSTEM_CONSOLE
     [<CompiledName("PrintFormat")>]
     let printf format = Printf.printf      format 
 
@@ -231,7 +230,6 @@ module ExtraTopLevelOperators =
 
     [<CompiledName("PrintFormatLineToError")>]
     let eprintfn format = Printf.eprintfn    format 
-#endif
 
     [<CompiledName("FailWith")>]
     let failwith s = raise (Failure s)

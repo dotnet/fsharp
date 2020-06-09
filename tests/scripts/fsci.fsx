@@ -6,11 +6,6 @@ open System.IO
 open System.Diagnostics
 
 let root            = Path.GetFullPath                   (__SOURCE_DIRECTORY__ ++ ".." ++ "..")
-// %USERPROFILE%/.nuget/packages
-let defaultPackagesDir =
-    match System.Environment.GetEnvironmentVariable("USERPROFILE") with
-    | p -> p ++ @".nuget\packages"
-    | _ -> root ++ "packages"
 
 let Platform        = getCmdLineArg "--platform:"        "win7-x64"
 let ProjectJsonLock = getCmdLineArg "--projectJsonLock:" (root ++ "tests" ++ "fsharp" ++ "FSharp.Tests.FSharpSuite.DrivingCoreCLR" ++ "project.lock.json")

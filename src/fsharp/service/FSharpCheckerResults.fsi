@@ -2,17 +2,16 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler 
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypeChecker
@@ -56,24 +55,6 @@ type public FSharpProjectContext =
     /// Get the accessibility rights for this project context w.r.t. InternalsVisibleTo attributes granting access to other assemblies
     member AccessibilityRights : FSharpAccessibilityRights
 
-[<RequireQualifiedAccess>]
-type public SemanticClassificationType =
-    | ReferenceType
-    | ValueType
-    | UnionCase
-    | Function
-    | Property
-    | MutableVar
-    | Module
-    | Printf
-    | ComputationExpression
-    | IntrinsicFunction
-    | Enumeration
-    | Interface
-    | TypeArgument
-    | Operator
-    | Disposable
-
 /// Options used to determine active --define conditionals and other options relevant to parsing files in a project
 type public FSharpParsingOptions =
     { 
@@ -89,7 +70,7 @@ type public FSharpParsingOptions =
 
     static member internal FromTcConfig: tcConfig: TcConfig * sourceFiles: string[]  * isInteractive: bool -> FSharpParsingOptions
 
-    static member internal FromTcConfigBuidler: tcConfigB: TcConfigBuilder * sourceFiles: string[] * isInteractive: bool -> FSharpParsingOptions
+    static member internal FromTcConfigBuilder: tcConfigB: TcConfigBuilder * sourceFiles: string[] * isInteractive: bool -> FSharpParsingOptions
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
@@ -234,7 +215,7 @@ type public FSharpCheckFileResults =
     member GetSymbolUseAtLocation  : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?userOpName: string -> Async<FSharpSymbolUse option>
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
-    member GetSemanticClassification : range option -> (range * SemanticClassificationType)[]
+    member GetSemanticClassification : range option -> struct (range * SemanticClassificationType)[]
 
     /// <summary>Get the locations of format specifiers</summary>
     [<System.Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
@@ -249,7 +230,7 @@ type public FSharpCheckFileResults =
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile : symbol:FSharpSymbol -> Async<FSharpSymbolUse[]>
 
-    member internal GetVisibleNamespacesAndModulesAtPoint : pos -> Async<Tast.ModuleOrNamespaceRef[]>
+    member internal GetVisibleNamespacesAndModulesAtPoint : pos -> Async<ModuleOrNamespaceRef[]>
 
     /// Find the most precise display environment for the given line and column.
     member GetDisplayContextForPos : pos : pos -> Async<FSharpDisplayContext option>
@@ -376,7 +357,7 @@ type public FSharpCheckProjectResults =
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
         errors: FSharpErrorInfo[] * 
-        details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list * TopAttribs option * CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef * AccessorDomain * TypedImplFile list option * string[]) option 
+        details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list * TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef * AccessorDomain * TypedImplFile list option * string[]) option 
            -> FSharpCheckProjectResults
 
 module internal ParseAndCheckFile = 

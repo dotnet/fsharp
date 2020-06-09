@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open FSharp.TestHelpers
 open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
@@ -14,8 +15,6 @@ module ``Errors assigning to mutable objects`` =
             """
 let x = 10
 x <- 20
-    
-exit 0
             """
             FSharpErrorSeverity.Error
             27

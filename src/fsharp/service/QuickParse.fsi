@@ -2,12 +2,12 @@
 
 namespace FSharp.Compiler
 
-open System
 open FSharp.Compiler.SourceCodeServices
 
 /// Qualified long name.
 type public PartialLongName =
-    { /// Qualifying idents, prior to the last dot, not including the last part.
+    {
+      /// Qualifying idents, prior to the last dot, not including the last part.
       QualifyingIdents: string list
 
       /// Last part of long ident.
@@ -17,12 +17,13 @@ type public PartialLongName =
       EndColumn: int
 
       /// Position of the last dot.
-      LastDotPos: int option }
+      LastDotPos: int option
+    }
     
-    /// Empty patial long name.
+    /// Empty partial long name.
     static member Empty: endColumn: int -> PartialLongName
 
-/// Methods for cheaply and innacurately parsing F#.
+/// Methods for cheaply and inaccurately parsing F#.
 ///
 /// These methods are very old and are mostly to do with extracting "long identifier islands" 
 ///     A.B.C
@@ -39,6 +40,7 @@ type public PartialLongName =
 /// below is inaccurate for long identifier chains involving ``...`` identifiers.  And there are special cases
 /// for active pattern names and so on.
 module public QuickParse =
+
     /// Puts us after the last character.
     val MagicalAdjustmentConstant : int
 
@@ -57,7 +59,7 @@ module public QuickParse =
     /// In general, only identifiers composed from upper/lower letters and '.' are supported, but there
     /// are a couple of explicitly handled exceptions to allow some common scenarios:
     /// - When the name contains only letters and '|' symbol, it may be an active pattern, so we 
-    ///   treat it as a valid identifier - e.g. let ( |Identitiy| ) a = a
+    ///   treat it as a valid identifier - e.g. let ( |Identity| ) a = a
     ///   (but other identifiers that include '|' are not allowed - e.g. '||' operator)
     /// - It searches for double tick (``) to see if the identifier could be something like ``a b``
     ///

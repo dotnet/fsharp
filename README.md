@@ -8,8 +8,14 @@ You're invited to contribute to future releases of the F# compiler, core library
 
 Build from the command line:
 
-```bash
+```
 build.cmd
+```
+
+The build depends on an installation of Visual Studio. To build the compiler without this dependency use:
+
+```
+build.cmd -noVisualStudio
 ```
 
 After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your editor of choice. The latter solution is larger but includes the F# tools for Visual Studio and its associated infrastructure.
@@ -18,11 +24,19 @@ After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your edit
 
 Build from the command line:
 
-```bash
-sh ./build.sh
+```
+./build.sh
 ```
 
 After it's finished, open `FSharp.sln` in your editor of choice.
+
+### Visual Studio Online quickstart
+
+If you'd like to use Visual Studio online (or VSCode with VSO as backend), just click this button to create a new online environment:
+
+<a href="https://online.visualstudio.com/environments/new?name=my-fsharp&repo=dotnet/fsharp"><img src="https://img.shields.io/static/v1?style=flat-square&logo=microsoft&label=VS%20Online&message=Create&color=blue" alt="VS Online"></a>
+
+This will provision an environment with all necessary dependencies. Initial build of the environment may take up to 10 minutes, as it's also performing initial build of the F# compiler.
 
 ### More options and information
 
@@ -109,3 +123,4 @@ If you're curious about F# itself, check out these links:
 * [Get started with F#](https://docs.microsoft.com/dotnet/fsharp/get-started/)
 * [F# Software Foundation](https://fsharp.org)
 * [F# Testimonials](https://fsharp.org/testimonials)
+

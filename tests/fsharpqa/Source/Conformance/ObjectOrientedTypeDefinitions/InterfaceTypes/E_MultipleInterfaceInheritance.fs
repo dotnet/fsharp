@@ -60,9 +60,9 @@ if ( {new I_003<int> with
             System.Console.WriteLine("I_003.Home failed")         
             res <- false
 
-//<Expects id="FS0039" status="error" span="(41,7-41,9)">The field, constructor or member 'Me' is not defined</Expects>
-//<Expects id="FS0039" status="error" span="(45,7-45,9)">The field, constructor or member 'Me' is not defined</Expects>
-//<Expects id="FS0039" status="error" span="(49,7-49,11)">The field, constructor or member 'Home' is not defined</Expects>
+//<Expects id="FS0039" status="error" span="(41,7-41,9)">The type 'T' does not define the field, constructor or member 'Me'</Expects>
+//<Expects id="FS0039" status="error" span="(45,7-45,9)">The type 'T' does not define the field, constructor or member 'Me'</Expects>
+//<Expects id="FS0039" status="error" span="(49,7-49,11)">The type 'T' does not define the field, constructor or member 'Home'</Expects>
 //<Expects id="FS0366" status="error" span="(53,6-55,8)">No implementation was given for those members: </Expects>
 //<Expects span="(53,6-55,8)">'abstract member I_002\.Me : 'a -> int'\.</Expects>
 //<Expects span="(53,6-55,8)">'abstract member I_002\.Me : 'a -> int'\.</Expects>

@@ -1,8 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 %{
-open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.SyntaxTree
 
 let dummy       = IfdefId("DUMMY")
 

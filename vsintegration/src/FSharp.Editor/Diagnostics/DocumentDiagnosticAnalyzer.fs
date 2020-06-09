@@ -33,7 +33,7 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     let getProjectInfoManager(document: Document) =
         document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
-    
+
     static let errorInfoEqualityComparer =
         { new IEqualityComparer<FSharpErrorInfo> with 
             member __.Equals (x, y) =

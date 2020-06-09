@@ -3,21 +3,23 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
+
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
-open FSharp.Compiler.Tast
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TcGlobals
 
 // Implementation details used by other code in the compiler    
 type internal SymbolEnv = 
-    new: TcGlobals * thisCcu:CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports -> SymbolEnv
-    new: TcGlobals * thisCcu:CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports * amap: ImportMap * infoReader: InfoReader -> SymbolEnv
+    new: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports -> SymbolEnv
+    new: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports * amap: ImportMap * infoReader: InfoReader -> SymbolEnv
     member amap: ImportMap
     member g: TcGlobals
 
@@ -47,8 +49,10 @@ type public FSharpAccessibility =
 /// Acquired via GetDisplayEnvAtLocationAlternate and similar methods. May be passed 
 /// to the Format method on FSharpType and other methods.
 type [<Class>] public FSharpDisplayContext = 
-    internal new : denv: (TcGlobals -> Tastops.DisplayEnv) -> FSharpDisplayContext
+    internal new : denv: (TcGlobals -> DisplayEnv) -> FSharpDisplayContext
     static member Empty: FSharpDisplayContext
+
+    member WithShortTypeNames: bool -> FSharpDisplayContext
 
 /// Represents a symbol in checked F# source code or a compiled .NET component. 
 ///
@@ -85,7 +89,7 @@ type [<Class>] public FSharpSymbol =
 
     /// Return true if two symbols are effectively the same when referred to in F# source code text.  
     /// This sees through signatures (a symbol in a signature will be considered effectively the same as 
-    /// the matching symbol in an implementation).  In addition, other equivalances are applied
+    /// the matching symbol in an implementation).  In addition, other equivalences are applied
     /// when the same F# source text implies the same declaration name - for example, constructors 
     /// are considered to be effectively the same symbol as the corresponding type definition.
     ///
@@ -380,6 +384,9 @@ and [<Class>] public FSharpUnionCase =
     /// Get the range of the name of the case 
     member DeclarationLocation : range
 
+    /// Indicates if the union case has field definitions
+    member HasFields: bool
+
     /// Get the data carried by the case. 
     member UnionCaseFields: IList<FSharpField>
 
@@ -434,6 +441,12 @@ and [<Class>] public FSharpField =
 
     /// If the field is from an anonymous record type then get the details of the field including the index in the sorted array of fields
     member AnonRecordFieldDetails: FSharpAnonRecordTypeDetails * FSharpType[] * int
+
+    /// Indicates if the field is declared in a union case
+    member IsUnionCaseField: bool
+
+    /// Returns the declaring union case symbol  
+    member DeclaringUnionCase: FSharpUnionCase option
 
     /// Indicates if the field is declared 'static'
     member IsMutable: bool
@@ -1060,7 +1073,7 @@ type public FSharpOpenDeclaration =
 type public FSharpSymbolUse = 
 
     // For internal use only
-    internal new : g:TcGlobals * denv: Tastops.DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
+    internal new : g:TcGlobals * denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
     /// The symbol referenced
     member Symbol : FSharpSymbol 
@@ -1096,3 +1109,5 @@ type public FSharpSymbolUse =
     /// The range of text representing the reference to the symbol
     member RangeAlternate: range
 
+    /// Indicates if the FSharpSymbolUse is declared as private
+    member IsPrivateToFile: bool 
