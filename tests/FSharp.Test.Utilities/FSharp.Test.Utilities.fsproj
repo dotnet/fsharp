@@ -21,6 +21,7 @@
     <Compile Include="ILChecker.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="CompilerAssert.fs" />
+    <Compile Include="Assert.fs" />
   </ItemGroup>
 
   <ItemGroup>

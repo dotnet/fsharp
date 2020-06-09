@@ -187,6 +187,6 @@
     <StrawberryPerlVersion>5.28.0.1</StrawberryPerlVersion>
     <StreamJsonRpcVersion>2.0.187</StreamJsonRpcVersion>
     <XUnitVersion>2.4.1</XUnitVersion>
-    <FluentAssertionsVersion>2.4.1</FluentAssertionsVersion>
+    <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
   </PropertyGroup>
 </Project>

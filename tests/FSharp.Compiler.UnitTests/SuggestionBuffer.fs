@@ -12,8 +12,8 @@ module SuggestionBuffer =
     let NewBufferShouldBeEmpty() =
         let buffer = SuggestionBuffer("abdef")
     
-        Assert.IsFalse buffer.Disabled
-        Assert.IsEmpty buffer
+        Assert.shouldBeFalse buffer.Disabled
+        Assert.shouldBeEmpty buffer
         
     [<Fact>]
     let BufferShouldOnlyAcceptSimilarElements() =
@@ -29,7 +29,7 @@ module SuggestionBuffer =
     let SmallIdentifierShouldBeIgnored() =
         let buffer = SuggestionBuffer("ab")
 
-        Assert.IsTrue buffer.Disabled
+        Assert.shouldBeTrue buffer.Disabled
 
         buffer.Add("abce")
         buffer.Add("somethingcompletelyunrelated")
@@ -41,7 +41,7 @@ module SuggestionBuffer =
 
         let results = Array.ofSeq buffer
 
-        Assert.IsTrue buffer.Disabled
+        Assert.shouldBeTrue buffer.Disabled
         Assert.shouldBe [||] results
 
     [<Fact>]
@@ -82,14 +82,14 @@ module SuggestionBuffer =
         buffer.Add("abcg")
         buffer.Add("abch")
 
-        Assert.IsFalse buffer.Disabled
-        Assert.IsNotEmpty buffer
+        Assert.shouldBeFalse buffer.Disabled
+        Assert.shouldNotBeEmpty buffer
 
         buffer.Add("abcd")  // original Ident
         buffer.Add("abcj")
 
-        Assert.IsTrue buffer.Disabled
-        Assert.IsEmpty buffer
+        Assert.shouldBeTrue buffer.Disabled
+        Assert.shouldBeEmpty buffer
 
     [<Fact>]
     let BufferShouldIgnoreSmallIdentifiers() =

@@ -22,6 +22,6 @@ module EditDistance =
     [<InlineData("RICK", "RICK", 0)>]
     [<InlineData("MARTHA", "MARHTA", 1)>]
     [<InlineData("'T", "'u", 1)>]
-    let EditDistanceTest (str1 : string, str2 : string, expected : string) : unit =
+    let EditDistanceTest (str1 : string, str2 : string, expected : int) : unit =
         CalcEditDistance(str1,str2)
         |> Assert.shouldBe expected

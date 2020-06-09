@@ -19,8 +19,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.SyntaxTree
 
-type HashIfExpression()     =
-
+type public HashIfExpression() =
     let preludes    = [|"#if "; "#elif "|]
     let epilogues   = [|""; " // Testing"|]
 
@@ -34,7 +33,6 @@ type HashIfExpression()     =
     let (&&&) l r   = IfdefAnd(l,r)
     let (|||) l r   = IfdefOr(l,r)
 
-    let mutable tearDown = fun () -> ()
 
     let exprAsString (e : LexerIfdefExpression) : string =
         let sb                  = StringBuilder()
@@ -57,7 +55,7 @@ type HashIfExpression()     =
         let errorLogger     =
             {
                 new ErrorLogger("TestErrorLogger") with
-                    member x.DiagnosticSink(e, isError)    = if isError then errors.Add e else warnings.Add e 
+                    member x.DiagnosticSink(e, isError)    = if isError then errors.Add e else warnings.Add e
                     member x.ErrorCount         = errors.Count
             }
 
@@ -80,19 +78,12 @@ type HashIfExpression()     =
 
         errors, warnings, parser
 
-    [<SetUp>]
-    member this.Setup() =
-        let el  = CompileThreadStatic.ErrorLogger
-        tearDown <- 
-            fun () -> 
-                CompileThreadStatic.BuildPhase  <- BuildPhase.DefaultPhase
-                CompileThreadStatic.ErrorLogger <- el
-
+    do // Setup
         CompileThreadStatic.BuildPhase  <- BuildPhase.Compile
-
-    [<TearDown>]
-    member this.TearDown() =
-        tearDown ()
+    interface IDisposable with // Teardown
+        member _.Dispose() =
+            CompileThreadStatic.BuildPhase  <- BuildPhase.DefaultPhase
+            CompileThreadStatic.ErrorLogger <- CompileThreadStatic.ErrorLogger
 
     [<Fact>]
     member this.PositiveParserTestCases()=
@@ -151,7 +142,7 @@ type HashIfExpression()     =
 
         let failure = String.Join ("\n", fs)
 
-        Assert.shouldBe("", failure)
+        Assert.shouldBe "" failure
 
         ()
 
@@ -214,7 +205,7 @@ type HashIfExpression()     =
 
         let fails = String.Join ("\n", fs)
 
-        Assert.shouldBe("", fails)
+        Assert.shouldBe "" fails
 
     [<Fact>]
     member this.LexerIfdefEvalTestCases()=
@@ -267,4 +258,4 @@ type HashIfExpression()     =
 
         let fails = String.Join ("\n", fs)
 
-        Assert.shouldBe("", fails)
+        Assert.shouldBe "" fails

@@ -7,7 +7,7 @@ module Assert =
     let inline failf fmt = Printf.kprintf fail fmt
 
     let inline areEqual (expected: ^T) (actual: ^T) =
-        Assert.shouldBe(expected, actual)
+        Assert.shouldBe expected actual
   
 module StringAssert =
 
