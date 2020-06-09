@@ -7,9 +7,8 @@ open FSharp.Compiler.SourceCodeServices
 [<TestFixture>]
 module ComputationExpressionTests =
 
-    [<Test>]
-    let ``do-bang can be used with nested CE expressions``() =
-        let code = """
+    let ``complex CE with source member and applicatives`` ceUsage = 
+        sprintf """
 module Code
 type ResultBuilder() =
     member __.Return value = Ok value
@@ -29,10 +28,12 @@ module Result =
         | Ok x1res, Ok x2res -> Ok (x1res, x2res)
         | Error e, _ -> Error e
         | _, Error e -> Error e
+
     let ofChoice c =
         match c with    
         | Choice1Of2 x -> Ok x
         | Choice2Of2 x -> Error x
+
     let fold onOk onError r =
         match r with
         | Ok x -> onOk x
@@ -49,9 +50,10 @@ module Async =
     }
 
 module AsyncResult = 
-    let zip x1 x2 = 
+    let zip x1 x2 =
         Async.zip x1 x2
         |> Async.map(fun (r1, r2) -> Result.zip r1 r2)
+
     let foldResult onSuccess onError ar =
         Async.map (Result.fold onSuccess onError) ar
 
@@ -101,7 +103,7 @@ type AsyncResultBuilder() =
          compensation: unit -> unit)
         : Async<Result<'T, 'TError>> =
       async.TryFinally(computation, compensation)
-
+    
     member __.Using
         (resource: 'T when 'T :> System.IDisposable,
          binder: 'T -> Async<Result<'U, 'TError>>)
@@ -127,6 +129,7 @@ type AsyncResultBuilder() =
     
     member inline _.Source(result : Async<Result<_,_>>) : Async<Result<_,_>> = result
 
+[<AutoOpen>]
 module ARExts =
     type AsyncResultBuilder with
         /// <summary>
@@ -151,9 +154,14 @@ module ARExts =
         /// Method lets us transform data types into our internal representation.
         /// </summary>
         member inline __.Source(asyncComputation : Async<_>) : Async<Result<_,_>> = asyncComputation |> Async.map Ok
-    
+
 let asyncResult = AsyncResultBuilder()
 
+%s"""     ceUsage
+
+    [<Test>]
+    let ``do-bang can be used with nested CE expressions``() =
+        let code = ``complex CE with source member and applicatives`` """
 asyncResult {
     let! something = asyncResult { return 5 }
     do! asyncResult {
@@ -164,5 +172,22 @@ asyncResult {
 |> AsyncResult.foldResult id (fun (_err: string) -> 10)
 |> Async.RunSynchronously
 |> printfn "%d"
+"""
+        CompilerAssert.Pass code
+    
+    [<Test>]
+    let ``match-bang should apply source transformations to its inputs`` () =
+        let code = ``complex CE with source member and applicatives`` """
+asyncResult {
+    // if the source transformation is not applied, the match will not work,
+    // because match! is only defined in terms of let!, and the only
+    // bind overload provided takes AsyncResult as its input.
+    match! Ok 5 with
+    | 5 -> return "ok"
+    | n -> return! (Error (sprintf "boo %d" n))
+}
+|> AsyncResult.foldResult id (fun (err: string) -> err)
+|> Async.RunSynchronously
+|> printfn "%s"
 """
         CompilerAssert.Pass code
