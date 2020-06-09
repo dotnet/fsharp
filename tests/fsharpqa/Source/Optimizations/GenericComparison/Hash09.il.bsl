@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly Hash09
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Hash09
 {
-  // Offset: 0x00000000 Length: 0x0000088E
+  // Offset: 0x00000000 Length: 0x0000086C
 }
 .mresource public FSharpOptimizationData.Hash09
 {
-  // Offset: 0x00000898 Length: 0x00000686
+  // Offset: 0x00000870 Length: 0x00000677
 }
 .module Hash09.dll
-// MVID: {59B18AEE-9642-77DB-A745-0383EE8AB159}
+// MVID: {5EDEB166-9642-77DB-A745-038366B1DE5E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00690000
+// Image base: 0x072E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -187,7 +187,7 @@
                  [4] !a V_4,
                  [5] !a V_5)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Hash09.fsx'
+        .line 16707566,16707566 : 0,0 'C:\\src\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Hash09.fsx'
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
@@ -560,8 +560,8 @@
               instance bool  Equals(class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       77 (0x4d)
-        .maxstack  4
+        // Code size       87 (0x57)
+        .maxstack  5
         .locals init ([0] class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
                  [1] class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_1,
                  [2] !a V_2,
@@ -570,13 +570,13 @@
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
-        IL_0004:  brfalse.s  IL_0045
+        IL_0004:  brfalse.s  IL_004f
 
         .line 16707566,16707566 : 0,0 ''
         IL_0006:  ldarg.1
         IL_0007:  ldnull
         IL_0008:  cgt.un
-        IL_000a:  brfalse.s  IL_0043
+        IL_000a:  brfalse.s  IL_004d
 
         .line 16707566,16707566 : 0,0 ''
         IL_000c:  ldarg.0
@@ -592,41 +592,43 @@
         IL_0019:  ldloc.1
         IL_001a:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item1
         IL_001f:  stloc.3
-        IL_0020:  ldloc.2
-        IL_0021:  ldloc.3
-        IL_0022:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityERIntrinsic<!a>(!!0,
-                                                                                                                                    !!0)
-        IL_0027:  brfalse.s  IL_0041
+        IL_0020:  call       class [mscorlib]System.Collections.Generic.EqualityComparer`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare/FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer()
+        IL_0025:  ldloc.2
+        IL_0026:  ldloc.3
+        IL_0027:  callvirt   instance bool class [mscorlib]System.Collections.Generic.EqualityComparer`1<!a>::Equals(!0,
+                                                                                                                     !0)
+        IL_002c:  brfalse.s  IL_004b
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0029:  ldloc.0
-        IL_002a:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
-        IL_002f:  stloc.2
-        IL_0030:  ldloc.1
-        IL_0031:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
-        IL_0036:  stloc.3
-        IL_0037:  ldloc.2
-        IL_0038:  ldloc.3
-        IL_0039:  tail.
-        IL_003b:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityERIntrinsic<!a>(!!0,
-                                                                                                                                    !!0)
-        IL_0040:  ret
+        IL_002e:  ldloc.0
+        IL_002f:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_0034:  stloc.2
+        IL_0035:  ldloc.1
+        IL_0036:  ldfld      !0 class Hash09/HashMicroPerfAndCodeGenerationTests/GenericKey`1<!a>::item2
+        IL_003b:  stloc.3
+        IL_003c:  call       class [mscorlib]System.Collections.Generic.EqualityComparer`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare/FSharpEqualityComparer_ER`1<!a>::get_EqualityComparer()
+        IL_0041:  ldloc.2
+        IL_0042:  ldloc.3
+        IL_0043:  tail.
+        IL_0045:  callvirt   instance bool class [mscorlib]System.Collections.Generic.EqualityComparer`1<!a>::Equals(!0,
+                                                                                                                     !0)
+        IL_004a:  ret
 
         .line 16707566,16707566 : 0,0 ''
-        IL_0041:  ldc.i4.0
-        IL_0042:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0043:  ldc.i4.0
-        IL_0044:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0045:  ldarg.1
-        IL_0046:  ldnull
-        IL_0047:  cgt.un
-        IL_0049:  ldc.i4.0
-        IL_004a:  ceq
+        IL_004b:  ldc.i4.0
         IL_004c:  ret
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_004d:  ldc.i4.0
+        IL_004e:  ret
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_004f:  ldarg.1
+        IL_0050:  ldnull
+        IL_0051:  cgt.un
+        IL_0053:  ldc.i4.0
+        IL_0054:  ceq
+        IL_0056:  ret
       } // end of method GenericKey`1::Equals
 
       .method public hidebysig virtual final 

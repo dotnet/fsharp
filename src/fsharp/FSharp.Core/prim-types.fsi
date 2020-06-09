@@ -959,7 +959,10 @@ namespace Microsoft.FSharp.Core
         val inline FastGenericComparer<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
 
         /// <summary>Make an F# comparer object for the given type, where it can be null if System.Collections.Generic.Comparer&lt;'T&gt;.Default</summary>
-        val internal FastGenericComparerCanBeNull<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
+        val internal FastGenericComparerInternal<'T>  : System.Collections.Generic.Comparer<'T> when 'T : comparison 
+        
+        /// As an optimization, determine if a fast unstable sort can be used with equivalent results
+        val internal EquivalentForStableAndUnstableSort<'T> : bool
 
         /// <summary>Make an F# hash/equality object for the given type</summary>
         val inline FastGenericEqualityComparer<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T : equality
@@ -1336,8 +1339,38 @@ namespace Microsoft.FSharp.Core
             //[<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
             val inline SetArray4D : target:'T[,,,] -> index1:int -> index2:int -> index3:int -> index4:int -> value:'T -> unit  
 
+        module internal Reflection =
+            val internal tupleNames : string []
+            val internal isTupleType : Type -> bool
+            val internal tryFindSourceConstructFlagsOfType : Type * byref<SourceConstructFlags> -> bool
+            val internal fieldPropsOfRecordType : Type * System.Reflection.BindingFlags -> System.Reflection.PropertyInfo[]
+            val internal isRecordType : Type * System.Reflection.BindingFlags -> bool
+            val internal getUnionTypeTagNameMap : Type * System.Reflection.BindingFlags -> (int*string)[]
+            val internal fieldsPropsOfUnionCase : Type * int* System.Reflection.BindingFlags -> System.Reflection.PropertyInfo[]
+            val internal isUnionType : Type * System.Reflection.BindingFlags -> bool
+
         /// <summary>The F# compiler emits calls to some of the functions in this module as part of the compiled form of some language constructs</summary>
         module HashCompare =
+            [<AbstractClass; Sealed>]
+            type FSharpEqualityComparer_ER<'T> =
+                static member EqualityComparer : System.Collections.Generic.EqualityComparer<'T>
+
+            [<AbstractClass; Sealed>]
+            type FSharpEqualityComparer_PER<'T> =
+                static member EqualityComparer : System.Collections.Generic.EqualityComparer<'T>
+
+            /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
+            [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
+            val inline FSharpEqualityComparer_ER_Equals : x:'T -> y:'T -> bool
+
+            /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
+            [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
+            val inline FSharpEqualityComparer_PER_Equals : x:'T -> y:'T -> bool
+
+            /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
+            [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
+            val inline FSharpEqualityComparer_GetHashCode : x:'T -> int
+
             /// <summary>A primitive entry point used by the F# compiler for optimization purposes.</summary> 
             [<CompilerMessage("This function is a primitive library routine used by optimized F# code and should not be used directly", 1204, IsHidden=true)>]
             val PhysicalHashIntrinsic : input:'T -> int when 'T : not struct

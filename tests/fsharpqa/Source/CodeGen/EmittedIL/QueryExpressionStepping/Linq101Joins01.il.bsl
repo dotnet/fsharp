@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly extern Utils
 {
@@ -38,20 +38,20 @@
 }
 .mresource public FSharpSignatureData.Linq101Joins01
 {
-  // Offset: 0x00000000 Length: 0x00000316
+  // Offset: 0x00000000 Length: 0x000002F8
 }
 .mresource public FSharpOptimizationData.Linq101Joins01
 {
-  // Offset: 0x00000320 Length: 0x000000C3
+  // Offset: 0x00000300 Length: 0x000000C3
 }
 .module Linq101Joins01.exe
-// MVID: {5B9A68C1-151B-685E-A745-0383C1689A5B}
+// MVID: {5EDEADE3-151B-685E-A745-0383E3ADDE5E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x026A0000
+// Image base: 0x00DC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -81,7 +81,7 @@
       // Code size       2 (0x2)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 14,14 : 32,33 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Joins01.fs'
+      .line 14,14 : 32,33 'C:\\src\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Joins01.fs'
       IL_0000:  ldarg.1
       IL_0001:  ret
     } // end of method q@14::Invoke
@@ -790,54 +790,65 @@
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,object> 
             Invoke(class [Utils]Utils/Product _arg2) cil managed
     {
-      // Code size       69 (0x45)
+      // Code size       84 (0x54)
       .maxstack  9
       .locals init ([0] class [Utils]Utils/Product p,
-               [1] string t)
+               [1] string t,
+               [2] object V_2,
+               [3] object V_3,
+               [4] object V_4,
+               [5] object V_5)
       .line 40,40 : 9,40 ''
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 41,41 : 17,39 ''
       IL_0002:  ldloc.0
       IL_0003:  box        [Utils]Utils/Product
-      IL_0008:  ldnull
-      IL_0009:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<object>(!!0,
-                                                                                                                                    !!0)
-      IL_000e:  brfalse.s  IL_0012
+      IL_0008:  stloc.2
+      IL_0009:  ldloc.2
+      IL_000a:  stloc.s    V_4
+      IL_000c:  ldloc.3
+      IL_000d:  stloc.s    V_5
+      IL_000f:  call       class [mscorlib]System.Collections.Generic.EqualityComparer`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare/FSharpEqualityComparer_PER`1<object>::get_EqualityComparer()
+      IL_0014:  ldloc.s    V_4
+      IL_0016:  ldloc.s    V_5
+      IL_0018:  callvirt   instance bool class [mscorlib]System.Collections.Generic.EqualityComparer`1<object>::Equals(!0,
+                                                                                                                       !0)
+      IL_001d:  brfalse.s  IL_0021
 
-      IL_0010:  br.s       IL_0014
+      IL_001f:  br.s       IL_0023
 
-      IL_0012:  br.s       IL_001c
+      IL_0021:  br.s       IL_002b
 
       .line 41,41 : 40,55 ''
-      IL_0014:  ldstr      "(No products)"
+      IL_0023:  ldstr      "(No products)"
       .line 100001,100001 : 0,0 ''
-      IL_0019:  nop
-      IL_001a:  br.s       IL_0023
+      IL_0028:  nop
+      IL_0029:  br.s       IL_0032
 
       .line 41,41 : 61,74 ''
-      IL_001c:  ldloc.0
-      IL_001d:  callvirt   instance string [Utils]Utils/Product::get_ProductName()
+      IL_002b:  ldloc.0
+      IL_002c:  callvirt   instance string [Utils]Utils/Product::get_ProductName()
       .line 100001,100001 : 0,0 ''
-      IL_0022:  nop
+      IL_0031:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0023:  stloc.1
+      IL_0032:  stloc.1
       .line 42,42 : 9,22 ''
-      IL_0024:  ldarg.0
-      IL_0025:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'q4@40-4'::builder@
-      IL_002a:  ldarg.0
-      IL_002b:  ldfld      string Linq101Joins01/'q4@40-4'::c
-      IL_0030:  ldarg.0
-      IL_0031:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'q4@40-4'::ps
-      IL_0036:  ldloc.0
-      IL_0037:  ldloc.1
-      IL_0038:  newobj     instance void class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>::.ctor(!0,
+      IL_0033:  ldarg.0
+      IL_0034:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Joins01/'q4@40-4'::builder@
+      IL_0039:  ldarg.0
+      IL_003a:  ldfld      string Linq101Joins01/'q4@40-4'::c
+      IL_003f:  ldarg.0
+      IL_0040:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product> Linq101Joins01/'q4@40-4'::ps
+      IL_0045:  ldloc.0
+      IL_0046:  ldloc.1
+      IL_0047:  newobj     instance void class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>::.ctor(!0,
                                                                                                                                                                                                               !1,
                                                                                                                                                                                                               !2,
                                                                                                                                                                                                               !3)
-      IL_003d:  tail.
-      IL_003f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,object>(!!0)
-      IL_0044:  ret
+      IL_004c:  tail.
+      IL_004e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`4<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product,string>,object>(!!0)
+      IL_0053:  ret
     } // end of method 'q4@40-4'::Invoke
 
   } // end of class 'q4@40-4'
@@ -955,7 +966,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Joins01>'.$Linq101Joins01::'categories@8-2'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Joins01>'.$Linq101Joins01::categories@8
     IL_0005:  ret
   } // end of method Linq101Joins01::get_categories
 
@@ -964,7 +975,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Joins01>'.$Linq101Joins01::'products@9-6'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Joins01>'.$Linq101Joins01::products@9
     IL_0005:  ret
   } // end of method Linq101Joins01::get_products
 
@@ -1045,9 +1056,9 @@
 .class private abstract auto ansi sealed '<StartupCode$Linq101Joins01>'.$Linq101Joins01
        extends [mscorlib]System.Object
 {
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 'categories@8-2'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> categories@8
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> 'products@9-6'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> products@9
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [mscorlib]System.Tuple`2<string,string>[] q@11
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -1094,12 +1105,12 @@
     IL_0032:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0037:  dup
-    IL_0038:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Joins01>'.$Linq101Joins01::'categories@8-2'
+    IL_0038:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Joins01>'.$Linq101Joins01::categories@8
     IL_003d:  stloc.0
     .line 9,9 : 1,32 ''
     IL_003e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
     IL_0043:  dup
-    IL_0044:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Joins01>'.$Linq101Joins01::'products@9-6'
+    IL_0044:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Joins01>'.$Linq101Joins01::products@9
     IL_0049:  stloc.1
     .line 11,16 : 1,21 ''
     IL_004a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()

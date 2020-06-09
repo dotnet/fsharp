@@ -1784,10 +1784,16 @@ Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_InputAr
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_InputMustBeNonNegativeString()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_InputSequenceEmptyString()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_NoNegateMinValueString()
+Microsoft.FSharp.Core.LanguagePrimitives+HashCompare+FSharpEqualityComparer_ER`1[T]: System.Collections.Generic.EqualityComparer`1[T] EqualityComparer
+Microsoft.FSharp.Core.LanguagePrimitives+HashCompare+FSharpEqualityComparer_ER`1[T]: System.Collections.Generic.EqualityComparer`1[T] get_EqualityComparer()
+Microsoft.FSharp.Core.LanguagePrimitives+HashCompare+FSharpEqualityComparer_PER`1[T]: System.Collections.Generic.EqualityComparer`1[T] EqualityComparer
+Microsoft.FSharp.Core.LanguagePrimitives+HashCompare+FSharpEqualityComparer_PER`1[T]: System.Collections.Generic.EqualityComparer`1[T] get_EqualityComparer()
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean FastEqualsTuple2[T1,T2](System.Collections.IEqualityComparer, System.Tuple`2[T1,T2], System.Tuple`2[T1,T2])
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean FastEqualsTuple3[T1,T2,T3](System.Collections.IEqualityComparer, System.Tuple`3[T1,T2,T3], System.Tuple`3[T1,T2,T3])
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean FastEqualsTuple4[T1,T2,T3,T4](System.Collections.IEqualityComparer, System.Tuple`4[T1,T2,T3,T4], System.Tuple`4[T1,T2,T3,T4])
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean FastEqualsTuple5[T1,T2,T3,T4,T5](System.Collections.IEqualityComparer, System.Tuple`5[T1,T2,T3,T4,T5], System.Tuple`5[T1,T2,T3,T4,T5])
+Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean FSharpEqualityComparer_ER_Equals[T](T, T)
+Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean FSharpEqualityComparer_PER_Equals[T](T, T)
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean GenericEqualityERIntrinsic[T](T, T)
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean GenericEqualityIntrinsic[T](T, T)
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean GenericEqualityWithComparerIntrinsic[T](System.Collections.IEqualityComparer, T, T)
@@ -1804,12 +1810,15 @@ Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Int32 FastHashTuple2[T1,T2
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Int32 FastHashTuple3[T1,T2,T3](System.Collections.IEqualityComparer, System.Tuple`3[T1,T2,T3])
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Int32 FastHashTuple4[T1,T2,T3,T4](System.Collections.IEqualityComparer, System.Tuple`4[T1,T2,T3,T4])
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Int32 FastHashTuple5[T1,T2,T3,T4,T5](System.Collections.IEqualityComparer, System.Tuple`5[T1,T2,T3,T4,T5])
+Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Int32 FSharpEqualityComparer_GetHashCode[T](T)
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Int32 GenericComparisonIntrinsic[T](T, T)
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Int32 GenericComparisonWithComparerIntrinsic[T](System.Collections.IComparer, T, T)
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Int32 GenericHashIntrinsic[T](T)
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Int32 GenericHashWithComparerIntrinsic[T](System.Collections.IEqualityComparer, T)
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Int32 LimitedGenericHashIntrinsic[T](Int32, T)
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Int32 PhysicalHashIntrinsic[T](T)
+Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Microsoft.FSharp.Core.LanguagePrimitives+HashCompare+FSharpEqualityComparer_ER`1[T]
+Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Microsoft.FSharp.Core.LanguagePrimitives+HashCompare+FSharpEqualityComparer_PER`1[T]
 Microsoft.FSharp.Core.LanguagePrimitives+IntrinsicFunctions: Boolean TypeTestFast[T](System.Object)
 Microsoft.FSharp.Core.LanguagePrimitives+IntrinsicFunctions: Boolean TypeTestGeneric[T](System.Object)
 Microsoft.FSharp.Core.LanguagePrimitives+IntrinsicFunctions: Char GetString(System.String, Int32)

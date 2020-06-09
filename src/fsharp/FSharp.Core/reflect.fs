@@ -66,145 +66,16 @@ module internal Impl =
     //-----------------------------------------------------------------
     // ATTRIBUTE DECOMPILATION
 
-    let tryFindCompilationMappingAttribute (attrs: obj[]) =
-      match attrs with
-      | null | [| |] -> None
-      | [| res |] -> let a = (res :?> CompilationMappingAttribute) in Some (a.SourceConstructFlags, a.SequenceNumber, a.VariantNumber)
-      | _ -> invalidOp (SR.GetString (SR.multipleCompilationMappings))
-
-    let findCompilationMappingAttribute (attrs: obj[]) =
-      match tryFindCompilationMappingAttribute attrs with
-      | None -> failwith "no compilation mapping attribute"
-      | Some a -> a
-
-    let cmaName = typeof<CompilationMappingAttribute>.FullName
-    let assemblyName = typeof<CompilationMappingAttribute>.Assembly.GetName().Name
-    let _ = assert (assemblyName = "FSharp.Core")
-
-    let tryFindCompilationMappingAttributeFromData (attrs: IList<CustomAttributeData>) =
-        match attrs with
-        | null -> None
-        | _ ->
-            let mutable res = None
-            for a in attrs do
-                if a.Constructor.DeclaringType.FullName = cmaName then
-                    let args = a.ConstructorArguments
-                    let flags =
-                         match args.Count  with
-                         | 1 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), 0, 0)
-                         | 2 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), (let x = args.[1] in x.Value :?> int), 0)
-                         | 3 -> ((let x = args.[0] in x.Value :?> SourceConstructFlags), (let x = args.[1] in x.Value :?> int), (let x = args.[2] in x.Value :?> int))
-                         | _ -> (enum 0, 0, 0)
-                    res <- Some flags
-            res
-
-    let findCompilationMappingAttributeFromData attrs =
-      match tryFindCompilationMappingAttributeFromData attrs with
-      | None -> failwith "no compilation mapping attribute"
-      | Some a -> a
-
-    let tryFindCompilationMappingAttributeFromType       (typ: Type)        =
-        let assem = typ.Assembly
-        if (not (isNull assem)) && assem.ReflectionOnly then
-           tryFindCompilationMappingAttributeFromData ( typ.GetCustomAttributesData())
+    let tryFindSourceConstructFlagsOfType (typ:Type) =
+        let mutable res = Unchecked.defaultof<_>
+        if LanguagePrimitives.Reflection.tryFindSourceConstructFlagsOfType (typ, &res) then
+            Some res
         else
-        tryFindCompilationMappingAttribute ( typ.GetCustomAttributes (typeof<CompilationMappingAttribute>, false))
-
-    let tryFindCompilationMappingAttributeFromMemberInfo (info: MemberInfo) =
-        let assem = info.DeclaringType.Assembly
-        if (not (isNull assem)) && assem.ReflectionOnly then
-           tryFindCompilationMappingAttributeFromData (info.GetCustomAttributesData())
-        else
-        tryFindCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>, false))
-
-    let    findCompilationMappingAttributeFromMemberInfo (info: MemberInfo) =
-        let assem = info.DeclaringType.Assembly
-        if (not (isNull assem)) && assem.ReflectionOnly then
-            findCompilationMappingAttributeFromData (info.GetCustomAttributesData())
-        else
-        findCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>, false))
-
-    let sequenceNumberOfMember          (x: MemberInfo) = let (_, n, _) = findCompilationMappingAttributeFromMemberInfo x in n
-    let variantNumberOfMember           (x: MemberInfo) = let (_, _, vn) = findCompilationMappingAttributeFromMemberInfo x in vn
-
-    let sortFreshArray f arr = Array.sortInPlaceWith f arr; arr
-
-    let isFieldProperty (prop : PropertyInfo) =
-        match tryFindCompilationMappingAttributeFromMemberInfo prop with
-        | None -> false
-        | Some (flags, _n, _vn) -> (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.Field
-
-    let tryFindSourceConstructFlagsOfType (typ: Type) =
-      match tryFindCompilationMappingAttributeFromType typ with
-      | None -> None
-      | Some (flags, _n, _vn) -> Some flags
-
+            None
     //-----------------------------------------------------------------
     // UNION DECOMPILATION
 
-    // Get the type where the type definitions are stored
-    let getUnionCasesTyp (typ: Type, _bindingFlags) =
-#if CASES_IN_NESTED_CLASS
-       let casesTyp = typ.GetNestedType("Cases", bindingFlags)
-       if casesTyp.IsGenericTypeDefinition then casesTyp.MakeGenericType(typ.GetGenericArguments())
-       else casesTyp
-#else
-       typ
-#endif
-
-    let getUnionTypeTagNameMap (typ: Type, bindingFlags) =
-        let enumTyp = typ.GetNestedType("Tags", bindingFlags)
-        // Unions with a singleton case do not get a Tags type (since there is only one tag), hence enumTyp may be null in this case
-        match enumTyp with
-        | null ->
-            typ.GetMethods(staticMethodFlags ||| bindingFlags)
-            |> Array.choose (fun minfo ->
-                match tryFindCompilationMappingAttributeFromMemberInfo minfo with
-                | None -> None
-                | Some (flags, n, _vn) ->
-                    if (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.UnionCase then
-                        let nm = minfo.Name
-                        // chop "get_" or  "New" off the front
-                        let nm =
-                            if not (isListType typ) && not (isOptionType typ) then
-                                if   nm.Length > 4 && nm.[0..3] = "get_" then nm.[4..]
-                                elif nm.Length > 3 && nm.[0..2] = "New" then nm.[3..]
-                                else nm
-                            else nm
-                        Some (n, nm)
-                    else
-                        None)
-        | _ ->
-            enumTyp.GetFields(staticFieldFlags ||| bindingFlags)
-            |> Array.filter (fun (f: FieldInfo) -> f.IsStatic && f.IsLiteral)
-            |> sortFreshArray (fun f1 f2 -> compare (f1.GetValue null :?> int) (f2.GetValue null :?> int))
-            |> Array.map (fun tagfield -> (tagfield.GetValue null :?> int), tagfield.Name)
-
-    let getUnionCaseTyp (typ: Type, tag: int, bindingFlags) =
-        let tagFields = getUnionTypeTagNameMap(typ, bindingFlags)
-        let tagField = tagFields |> Array.pick (fun (i, f) -> if i = tag then Some f else None)
-        if tagFields.Length = 1 then
-            typ
-        else
-            // special case: two-cased DU annotated with CompilationRepresentation(UseNullAsTrueValue)
-            // in this case it will be compiled as one class: return self type for non-nullary case and null for nullary
-            let isTwoCasedDU =
-                if tagFields.Length = 2 then
-                    match typ.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
-                    | [|:? CompilationRepresentationAttribute as attr|] ->
-                        (attr.Flags &&& CompilationRepresentationFlags.UseNullAsTrueValue) = CompilationRepresentationFlags.UseNullAsTrueValue
-                    | _ -> false
-                else
-                    false
-            if isTwoCasedDU then
-                typ
-            else
-            let casesTyp = getUnionCasesTyp (typ, bindingFlags)
-            let caseTyp = casesTyp.GetNestedType(tagField, bindingFlags) // if this is null then the union is nullary
-            match caseTyp with
-            | null -> null
-            | _ when caseTyp.IsGenericTypeDefinition -> caseTyp.MakeGenericType(casesTyp.GetGenericArguments())
-            | _ -> caseTyp
+    let getUnionTypeTagNameMap (typ:Type,bindingFlags) = LanguagePrimitives.Reflection.getUnionTypeTagNameMap (typ, bindingFlags)
 
     let getUnionTagConverter (typ: Type, bindingFlags) =
         if isOptionType typ then (fun tag -> match tag with 0 -> "None" | 1 -> "Some" | _ -> invalidArg "tag" (SR.GetString (SR.outOfRange)))
@@ -214,17 +85,11 @@ module internal Impl =
           (fun tag -> tagfieldmap.[tag])
 
     let isUnionType (typ: Type, bindingFlags: BindingFlags) =
+        // isOptionType & isListType are not necessary. There were here before the code was refactored into prim-types
+        // presumably as an optimization, so have not been removed (no performance testing run at this time)
         isOptionType typ ||
         isListType typ ||
-        match tryFindSourceConstructFlagsOfType typ with
-        | None -> false
-        | Some flags ->
-          (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.SumType &&
-          // We see private representations only if BindingFlags.NonPublic is set
-          (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum 0 then
-              (bindingFlags &&& BindingFlags.NonPublic) <> enum 0
-           else
-              true)
+        LanguagePrimitives.Reflection.isUnionType (typ, bindingFlags)
 
     // Check the base type - if it is also an F# type then
     // for the moment we know it is a Discriminated Union
@@ -248,14 +113,7 @@ module internal Impl =
             | 1 (* Cons *) -> getInstancePropertyInfos (typ, [| "Head"; "Tail" |], bindingFlags)
             | _ -> failwith "fieldsPropsOfUnionCase"
         else
-            // Lookup the type holding the fields for the union case
-            let caseTyp = getUnionCaseTyp (typ, tag, bindingFlags)
-            let caseTyp = match caseTyp with null ->  typ | _ -> caseTyp
-            caseTyp.GetProperties(instancePropertyFlags ||| bindingFlags)
-            |> Array.filter isFieldProperty
-            |> Array.filter (fun prop -> variantNumberOfMember prop = tag)
-            |> sortFreshArray (fun p1 p2 -> compare (sequenceNumberOfMember p1) (sequenceNumberOfMember p2))
-
+            LanguagePrimitives.Reflection.fieldsPropsOfUnionCase (typ, tag, bindingFlags)
 
     let getUnionCaseRecordReader (typ: Type, tag: int, bindingFlags) =
         let props = fieldsPropsOfUnionCase (typ, tag, bindingFlags)
@@ -310,54 +168,9 @@ module internal Impl =
 
     //-----------------------------------------------------------------
     // TUPLE DECOMPILATION
-    let tupleNames =
-        [| "System.Tuple`1"
-           "System.Tuple`2"
-           "System.Tuple`3"
-           "System.Tuple`4"
-           "System.Tuple`5"
-           "System.Tuple`6"
-           "System.Tuple`7"
-           "System.Tuple`8"
-           "System.Tuple"
-           "System.ValueTuple`1"
-           "System.ValueTuple`2"
-           "System.ValueTuple`3"
-           "System.ValueTuple`4"
-           "System.ValueTuple`5"
-           "System.ValueTuple`6"
-           "System.ValueTuple`7"
-           "System.ValueTuple`8"
-           "System.ValueTuple" |]
+    let tupleNames = LanguagePrimitives.Reflection.tupleNames
 
-    let simpleTupleNames = 
-        [| "Tuple`1"
-           "Tuple`2"
-           "Tuple`3"
-           "Tuple`4"
-           "Tuple`5"
-           "Tuple`6"
-           "Tuple`7"
-           "Tuple`8"
-           "ValueTuple`1"
-           "ValueTuple`2"
-           "ValueTuple`3"
-           "ValueTuple`4"
-           "ValueTuple`5"
-           "ValueTuple`6"
-           "ValueTuple`7"
-           "ValueTuple`8" |]
-
-    let isTupleType (typ: Type) =
-        // We need to be careful that we only rely typ.IsGenericType, typ.Namespace and typ.Name here.
-        //
-        // Historically the FSharp.Core reflection utilities get used on implementations of
-        // System.Type that don't have functionality such as .IsEnum and .FullName fully implemented.
-        // This happens particularly over TypeBuilderInstantiation types in the ProvideTypes implementation of System.Type
-        // used in F# type providers.
-        typ.IsGenericType &&
-        typ.Namespace = "System" &&
-        simpleTupleNames |> Seq.exists typ.Name.StartsWith
+    let isTupleType (typ:Type) = LanguagePrimitives.Reflection.isTupleType typ
 
     let maxTuple = 8
     // Which field holds the nested tuple?
@@ -565,21 +378,9 @@ module internal Impl =
         isFunctionType typ ||
         (match typ.BaseType with null -> false | bty -> isClosureRepr bty)
 
-    let isRecordType (typ: Type, bindingFlags: BindingFlags) =
-      match tryFindSourceConstructFlagsOfType typ with
-      | None -> false
-      | Some flags ->
-        (flags &&& SourceConstructFlags.KindMask) = SourceConstructFlags.RecordType &&
-        // We see private representations only if BindingFlags.NonPublic is set
-        (if (flags &&& SourceConstructFlags.NonPublicRepresentation) <> enum 0 then
-            (bindingFlags &&& BindingFlags.NonPublic) <> enum 0
-         else
-            true)
+    let isRecordType (typ:Type,bindingFlags:BindingFlags) = LanguagePrimitives.Reflection.isRecordType (typ, bindingFlags)
 
-    let fieldPropsOfRecordType(typ: Type, bindingFlags) =
-      typ.GetProperties(instancePropertyFlags ||| bindingFlags)
-      |> Array.filter isFieldProperty
-      |> sortFreshArray (fun p1 p2 -> compare (sequenceNumberOfMember p1) (sequenceNumberOfMember p2))
+    let fieldPropsOfRecordType (typ:Type, bindingFlags) = LanguagePrimitives.Reflection.fieldPropsOfRecordType (typ, bindingFlags)
 
     let getRecordReader(typ: Type, bindingFlags) =
         let props = fieldPropsOfRecordType(typ, bindingFlags)

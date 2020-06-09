@@ -588,6 +588,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_generic_comparison_inner_info       = makeIntrinsicValRef(fslib_MFHashCompare_nleref,                  "GenericComparisonIntrinsic"           , None                 , None          , [vara],     mk_compare_sig varaTy)
   let v_generic_comparison_withc_inner_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,                  "GenericComparisonWithComparerIntrinsic", None                , None          , [vara],     mk_compare_withc_sig varaTy)
 
+  let v_FSharpEqualityComparer_PER_Equals_info      = makeIntrinsicValRef(fslib_MFHashCompare_nleref,          "FSharpEqualityComparer_PER_Equals"     , None                , None          , [vara],     mk_rel_sig varaTy)
+  let v_FSharpEqualityComparer_GetHashCode_info     = makeIntrinsicValRef(fslib_MFHashCompare_nleref,          "FSharpEqualityComparer_GetHashCode", None                , None          , [vara],     mk_hash_sig varaTy)
+  let v_FSharpEqualityComparer_ER_Equals_info       = makeIntrinsicValRef(fslib_MFHashCompare_nleref,          "FSharpEqualityComparer_ER_Equals"      , None                , None          , [vara],     mk_rel_sig varaTy)
+
   let v_generic_hash_inner_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,                              "GenericHashIntrinsic"                 , None                 , None          , [vara],     mk_hash_sig varaTy)
   let v_generic_hash_withc_inner_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,                        "GenericHashWithComparerIntrinsic"     , None                 , None          , [vara],     mk_hash_withc_sig  varaTy)
   
@@ -1235,6 +1239,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.generic_hash_withc_outer_info = v_generic_hash_withc_outer_info
   member val generic_hash_inner_vref = ValRefForIntrinsic v_generic_hash_inner_info
   member val generic_hash_withc_inner_vref = ValRefForIntrinsic v_generic_hash_withc_inner_info
+  member val fsharpEqualityComparer_ER_Equals_vref   = ValRefForIntrinsic v_FSharpEqualityComparer_ER_Equals_info      
+  member val fsharpEqualityComparer_PER_Equals_vref  = ValRefForIntrinsic v_FSharpEqualityComparer_PER_Equals_info     
+  member val fsharpEqualityComparer_GetHashCode_vref = ValRefForIntrinsic v_FSharpEqualityComparer_GetHashCode_info
 
   member val reference_equality_inner_vref         = ValRefForIntrinsic v_reference_equality_inner_info
 

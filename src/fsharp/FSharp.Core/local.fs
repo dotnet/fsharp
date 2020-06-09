@@ -987,8 +987,12 @@ module internal Array =
 
     open System
 
-    let inline fastComparerForArraySort<'t when 't : comparison> () =
-        LanguagePrimitives.FastGenericComparerCanBeNull<'t>
+    let inline getInternalComparer<'t when 't : comparison> () =
+        // Previously a "comparer" was returned that could be null, which was for optimized Array.Sort
+        // but we now mainly return Comparer.Default (and FastGenericComparerInternal more so)
+        // which is also optimized in Array.Sort
+        // ** this comment can be destroyed sometime in the future, it is just as a breadcrumb for review **
+        LanguagePrimitives.FastGenericComparerInternal<'t>
 
     // The input parameter should be checked by callers if necessary
     let inline zeroCreateUnchecked (count:int) =
@@ -1086,26 +1090,26 @@ module internal Array =
             let keys = zeroCreateUnchecked array.Length
             for i = 0 to array.Length - 1 do
                 keys.[i] <- projection array.[i]
-            Array.Sort<_, _>(keys, array, fastComparerForArraySort())
+            Array.Sort<_, _>(keys, array, getInternalComparer())
 
     let unstableSortInPlace (array : array<'T>) =
         let len = array.Length
         if len < 2 then ()
-        else Array.Sort<_>(array, fastComparerForArraySort())
+        else Array.Sort<_>(array, getInternalComparer())
 
-    let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
+    let stableSortWithKeysAndComparer (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
         // 'places' is an array or integers storing the permutation performed by the sort
         let places = zeroCreateUnchecked array.Length
         for i = 0 to array.Length - 1 do
             places.[i] <- i
-        System.Array.Sort<_, _>(keys, places, cFast)
+        System.Array.Sort<_, _>(keys, places, c)
         // 'array2' is a copy of the original values
         let array2 = (array.Clone() :?> array<'T>)
 
         // Walk through any chunks where the keys are equal
         let mutable i = 0
         let len = array.Length
-        let intCompare = fastComparerForArraySort<int>()
+        let intCompare = getInternalComparer<int>()
 
         while i < len do
             let mutable j = i
@@ -1120,9 +1124,8 @@ module internal Array =
             i <- j
 
     let stableSortWithKeys (array:array<'T>) (keys:array<'Key>) =
-        let cFast = fastComparerForArraySort()
-        let c = LanguagePrimitives.FastGenericComparer<'Key>
-        stableSortWithKeysAndComparer cFast c array keys
+        let c = getInternalComparer()
+        stableSortWithKeysAndComparer c array keys
 
     let stableSortInPlaceBy (projection: 'T -> 'U) (array : array<'T>) =
         let len = array.Length
@@ -1138,13 +1141,11 @@ module internal Array =
         let len = array.Length
         if len < 2 then ()
         else
-            let cFast = LanguagePrimitives.FastGenericComparerCanBeNull<'T>
-            match cFast with
-            | null ->
+            if LanguagePrimitives.EquivalentForStableAndUnstableSort<'T> then
                 // An optimization for the cases where the keys and values coincide and do not have identity, e.g. are integers
                 // In this case an unstable sort is just as good as a stable sort (and faster)
                 Array.Sort<_, _>(array, null)
-            | _ ->
+            else
                 // 'keys' is an array storing the projected keys
                 let keys = (array.Clone() :?> array<'T>)
                 stableSortWithKeys array keys
@@ -1155,7 +1156,7 @@ module internal Array =
             let keys = (array.Clone() :?> array<'T>)
             let comparer = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(comparer)
             let c = { new IComparer<'T> with member __.Compare(x, y) = comparer.Invoke(x, y) }
-            stableSortWithKeysAndComparer c c array keys
+            stableSortWithKeysAndComparer c array keys
 
     let inline subUnchecked startIndex count (array : 'T[]) =
         let res = zeroCreateUnchecked count : 'T[]
