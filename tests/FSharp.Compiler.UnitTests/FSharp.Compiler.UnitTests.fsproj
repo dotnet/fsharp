@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>xunit</UnitTestType>
-    <NoWarn>$(NoWarn);3186;1104;NETSDK1023</NoWarn>
+    <NoWarn>$(NoWarn);3186;1104</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
