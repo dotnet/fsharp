@@ -3,14 +3,15 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open System.Globalization
-open NUnit.Framework
+open Xunit
+open FSharp.Test.Utilities
 
-[<TestFixture>]
+
 module ByteMemoryTests =
     open FSharp.Compiler.AbstractIL.Internal
 
-    [<Test>]
+    [<Fact>]
     let ``ByteMemory.CreateMemoryMappedFile succeeds with byte length of zero``() =
         let memory = ByteMemory.Empty.AsReadOnly()
         let newMemory = ByteMemory.CreateMemoryMappedFile memory
-        Assert.AreEqual(0, newMemory.Length)
+        Assert.shouldBe(0, newMemory.Length)

@@ -1,20 +1,21 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 namespace FSharp.Compiler.UnitTests
 
-open NUnit.Framework
+open Xunit
+open FSharp.Test.Utilities
 
-[<TestFixture>]
+
 module SuggestionBuffer =
     open FSharp.Compiler.ErrorResolutionHints
     
-    [<Test>]
+    [<Fact>]
     let NewBufferShouldBeEmpty() =
         let buffer = SuggestionBuffer("abdef")
     
         Assert.IsFalse buffer.Disabled
         Assert.IsEmpty buffer
         
-    [<Test>]
+    [<Fact>]
     let BufferShouldOnlyAcceptSimilarElements() =
         let buffer = SuggestionBuffer("abcd")
         buffer.Add("abce")
@@ -22,9 +23,9 @@ module SuggestionBuffer =
         
         let results = Array.ofSeq buffer
         
-        Assert.areEqual [| "abce" |] results
+        Assert.shouldBe [| "abce" |] results
     
-    [<Test>]
+    [<Fact>]
     let SmallIdentifierShouldBeIgnored() =
         let buffer = SuggestionBuffer("ab")
 
@@ -41,9 +42,9 @@ module SuggestionBuffer =
         let results = Array.ofSeq buffer
 
         Assert.IsTrue buffer.Disabled
-        Assert.areEqual [||] results
+        Assert.shouldBe [||] results
 
-    [<Test>]
+    [<Fact>]
     let BufferShouldOnlyTakeTop5Elements() =
         let buffer = SuggestionBuffer("abcd")
         buffer.Add("abce")
@@ -56,9 +57,9 @@ module SuggestionBuffer =
 
         let results = Array.ofSeq buffer
 
-        Assert.areEqual [| "abce"; "abcg"; "abch"; "abci"; "abcj"|] results
+        Assert.shouldBe [| "abce"; "abcg"; "abch"; "abci"; "abcj"|] results
 
-    [<Test>]
+    [<Fact>]
     let BufferShouldUseEarlierElementsIfTheyHaveSameScore() =
         let buffer = SuggestionBuffer("abcd")
         buffer.Add("abce")
@@ -70,10 +71,10 @@ module SuggestionBuffer =
 
         let results = Array.ofSeq buffer
 
-        Assert.areEqual [| "abce"; "abcf"; "abcg"; "abch"; "abci"|] results
+        Assert.shouldBe [| "abce"; "abcf"; "abcg"; "abch"; "abci"|] results
 
 
-    [<Test>]
+    [<Fact>]
     let BufferShouldDisableItselfIfItSeesTheOriginalIdentifier() =
         let buffer = SuggestionBuffer("abcd")
         buffer.Add("abce")
@@ -90,7 +91,7 @@ module SuggestionBuffer =
         Assert.IsTrue buffer.Disabled
         Assert.IsEmpty buffer
 
-    [<Test>]
+    [<Fact>]
     let BufferShouldIgnoreSmallIdentifiers() =
         let buffer = SuggestionBuffer("abd")
         buffer.Add("abce")
@@ -100,4 +101,4 @@ module SuggestionBuffer =
         
         let results = Array.ofSeq buffer
         
-        Assert.areEqual [| "abc"; "abce" |] results
+        Assert.shouldBe [| "abc"; "abce" |] results

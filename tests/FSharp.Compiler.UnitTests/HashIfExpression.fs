@@ -5,7 +5,8 @@ namespace FSharp.Compiler.UnitTests
 open System
 open System.Text
 
-open NUnit.Framework
+open Xunit
+open FSharp.Test.Utilities
 
 open Internal.Utilities
 open Internal.Utilities.Text.Lexing
@@ -18,7 +19,6 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.SyntaxTree
 
-[<TestFixture>]
 type HashIfExpression()     =
 
     let preludes    = [|"#if "; "#elif "|]
@@ -94,7 +94,7 @@ type HashIfExpression()     =
     member this.TearDown() =
         tearDown ()
 
-    [<Test>]
+    [<Fact>]
     member this.PositiveParserTestCases()=
 
         let errors, warnings, parser = createParser ()
@@ -151,11 +151,11 @@ type HashIfExpression()     =
 
         let failure = String.Join ("\n", fs)
 
-        Assert.AreEqual("", failure)
+        Assert.shouldBe("", failure)
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.NegativeParserTestCases()=
 
         let errors, warnings, parser = createParser ()
@@ -214,9 +214,9 @@ type HashIfExpression()     =
 
         let fails = String.Join ("\n", fs)
 
-        Assert.AreEqual("", fails)
+        Assert.shouldBe("", fails)
 
-    [<Test>]
+    [<Fact>]
     member this.LexerIfdefEvalTestCases()=
 
         let failures    = ResizeArray<string> ()
@@ -267,4 +267,4 @@ type HashIfExpression()     =
 
         let fails = String.Join ("\n", fs)
 
-        Assert.AreEqual("", fails)
+        Assert.shouldBe("", fails)

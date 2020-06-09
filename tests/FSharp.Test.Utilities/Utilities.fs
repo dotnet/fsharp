@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.TestHelpers
+namespace FSharp.Test.Utilities
 
 open System
 open System.IO
@@ -8,7 +8,7 @@ open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open System.Diagnostics
-open FSharp.TestHelpers
+open FSharp.Test.Utilities
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 

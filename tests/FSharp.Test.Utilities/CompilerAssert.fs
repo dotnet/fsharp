@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.TestHelpers
+namespace FSharp.Test.Utilities
 
 open System
 open System.Diagnostics
@@ -19,7 +19,7 @@ open NUnit.Framework
 open System.Reflection.Emit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
-open FSharp.TestHelpers.Utilities
+open FSharp.Test.Utilities.Utilities
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
