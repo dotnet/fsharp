@@ -1,0 +1,717 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="fi" original="../FSCore.resx">
+    <body>
+      <trans-unit id="matchCasesIncomplete">
+        <source>The match cases were incomplete</source>
+        <target state="translated">Match-lause vuotaa arvoja</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="addressOpNotFirstClass">
+        <source>First class uses of address-of operators are not permitted.</source>
+        <target state="translated">Ensimmäisen luokan address-of operaatiot eivät ole sallittu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="arraysHadDifferentLengths">
+        <source>The arrays have different lengths.</source>
+        <target state="translated">Array-tietueiden pituudet eivät täsmää.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="arrayWasEmpty">
+        <source>The input array was empty.</source>
+        <target state="translated">Syöte-array oli tyhjä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="badFormatString">
+        <source>Input string was not in a correct format.</source>
+        <target state="translated">Syöttömerkkijono ei ollut oikeassa muodossa.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="delegateExpected">
+        <source>Expecting delegate type.</source>
+        <target state="translated">Odotettiin delegaatti-tyyppiä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="dyInvDivByIntCoerce">
+        <source>Dynamic invocation of DivideByInt involving coercions is not supported.</source>
+        <target state="translated">DivideByInt dynaamista kutsua pakolla (coerscion) ei tueta.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="dyInvOpAddCoerce">
+        <source>Dynamic invocation of op_Addition involving coercions is not supported.</source>
+        <target state="translated">Metodin op_Addition dynaamista kutsua pakolla (coerscion) ei tueta.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="dyInvOpAddOverload">
+        <source>Dynamic invocation of op_Addition involving overloading is not supported.</source>
+        <target state="translated">Metodin op_Addition dynaamista kutsua ylikuormituksella ei tueta.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="dyInvOpMultCoerce">
+        <source>Dynamic invocation of op_Multiply involving coercions is not supported.</source>
+        <target state="translated">Metodin op_Multiply dynaamista kutsua pakolla (coerscion) ei tueta.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="dyInvOpMultOverload">
+        <source>Dynamic invocation of op_Multiply involving overloading is not supported.</source>
+        <target state="translated">Metodin op_Multiply dynaamista kutsua ylikuormituksella ei tueta.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="endCannotBeNaN">
+        <source>The end of a range cannot be NaN.</source>
+        <target state="translated"> Alueen loppu ei voi olla ei-numeerinen (NaN).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="enumerationAlreadyFinished">
+        <source>Enumeration already finished.</source>
+        <target state="translated">Luettelu on jo suoritettu loppuun.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="enumerationNotStarted">
+        <source>Enumeration has not started. Call MoveNext.</source>
+        <target state="translated">Luettelu ei ole alkanut. Kutsu MoveNext.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="setContainsNoElements">
+        <source>Set contains no elements.</source>
+        <target state="translated">Sarja (Set) ei sisällä elementtejä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="enumerationPastIntMaxValue">
+        <source>Enumeration based on System.Int32 exceeded System.Int32.MaxValue.</source>
+        <target state="translated">Luettelo tyypiltään System.Int32 ylitti System.Int32.MaxValue.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="failedReadEnoughBytes">
+        <source>Failed to read enough bytes from the stream.</source>
+        <target state="translated">Syötevirrasta ei voitu lukea tarpeeksi tavuja.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="genericCompareFail1">
+        <source>Failure during generic comparison: the type '{0}' does not implement the System.IComparable interface. This error may be arise from the use of a function such as 'compare', 'max' or 'min' or a data structure such as 'Set' or 'Map' whose keys contain instances of this type.</source>
+        <target state="translated">Vika yleisen vertailun aikana: tyyppi '{0}' ei toteuta rajapintaa System.IComparable. Tämä virhe voi johtua funktion käytöstä (kuten 'compare', 'max' o 'min'), tai tietorakenteesta (kuten 'Set' tai 'Map') jonka avaimet sisältävät instanssin tästä tyypistä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="indexOutOfBounds">
+        <source>The index was outside the range of elements in the list.</source>
+        <target state="translated">Indeksi oli listan elementtialueen ulkopuolella.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="inputListWasEmpty">
+        <source>The input list was empty.</source>
+        <target state="translated">Syötelista oli tyhjä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="inputMustBeNonNegative">
+        <source>The input must be non-negative.</source>
+        <target state="translated">Syöte ei saa olla negatiivinen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="inputMustBePositive">
+        <source>The input must be positive.</source>
+        <target state="translated">Syötteen on oltava positiivinen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="inputSequenceEmpty">
+        <source>The input sequence was empty.</source>
+        <target state="translated">Syötesarja oli tyhjä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="invalidTupleTypes">
+        <source>This is not a valid tuple type for the F# reflection library.</source>
+        <target state="translated">Tämä ei ole laillinen monikko (tuple) -tyyppi F# reflektiokirjastolle.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keyNotFound">
+        <source>The item, key, or index was not found in the collection.</source>
+        <target state="translated">Asia, avain tai indeksi ei löytynyt kokoelmasta.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="listsHadDifferentLengths">
+        <source>The lists had different lengths.</source>
+        <target state="translated">Listat ovat eripituiset.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mailboxProcessorAlreadyStarted">
+        <source>The MailboxProcessor has already been started.</source>
+        <target state="translated">MailboxProcessor on jo käynnissä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mailboxProcessorPostAndAsyncReplyTimedOut">
+        <source>MailboxProcessor.PostAndAsyncReply timed out.</source>
+        <target state="translated">MailboxProcessor.PostAndAsyncReply aika loppui kesken.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mailboxProcessorPostAndReplyTimedOut">
+        <source>MailboxProcessor.PostAndReply timed out.</source>
+        <target state="translated">MailboxProcessor.PostAndReply aika loppui kesken.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mailboxReceiveTimedOut">
+        <source>Mailbox.Receive timed out.</source>
+        <target state="translated">Mailbox.Receive aika loppui kesken.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mailboxScanTimedOut">
+        <source>Mailbox.Scan timed out.</source>
+        <target state="translated">Mailbox.Scan aika loppui kesken.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mapCannotBeMutated">
+        <source>Map values cannot be mutated.</source>
+        <target state="translated">Map arvoja ei voi muokata.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mismatchIARCancel">
+        <source>The IAsyncResult object provided does not match this 'Cancel' operation.</source>
+        <target state="translated"> Annettu IAsyncResult-objekti ei vastaa tätä 'Cancel' -toimintoa.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="mismatchIAREnd">
+        <source>The IAsyncResult object provided does not match this 'End' operation.</source>
+        <target state="translated">Annettu IAsyncResult-objekti ei vastaa tätä 'End' -operaatiota.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="noNegateMinValue">
+        <source>Negating the minimum value of a twos complement number is invalid.</source>
+        <target state="translated">Kaksoiskomplementin luvun vähimmäisarvon negatointi on virheellinen.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="checkInit">
+        <source>The initialization of an object or value resulted in an object or value being accessed recursively before it was fully initialized.</source>
+        <target state="translated">Objektin tai arvon alustus johti siihen, että objektia tai arvoa käytettiin rekursiivisesti ennen sen alustamista kokonaan.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="checkStaticInit">
+        <source>The static initialization of a file or type resulted in static data being accessed recursively before it was fully initialized.</source>
+        <target state="translated">Tiedoston tai tyypin staattinen alustaminen johti siihen, että staattista dataa käsiteltiin rekursiivisesti ennen sen alustamista kokonaan.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nonZeroBasedDisallowed">
+        <source>Arrays with non-zero base cannot be created on this platform.</source>
+        <target state="translated">Tälle alustalle ei voida luoda taulukkoja, jotka eivät ala indeksistä nolla.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notAFunctionType">
+        <source>Type '{0}' is not a function type.</source>
+        <target state="translated">Tyyppi '{0}' ei ole kutsuttava funktion tyyppi.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notAnExceptionType">
+        <source>Type '{0}' is not the representation of an F# exception declaration.</source>
+        <target state="translated">Tyyppi '{0}' ei edusta F# poikkeusmäärittelyjä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notAPermutation">
+        <source>The function did not compute a permutation.</source>
+        <target state="translated">Funktio ei laskenut permutaatiota.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notARecordType">
+        <source>Type '{0}' is not an F# record type.</source>
+        <target state="translated">Tyyppi '{0}' ei ole F# tietue (record) tyyppiä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notATupleType">
+        <source>Type '{0}' is not a tuple type.</source>
+        <target state="translated">Tyyppi '{0}' ei ole monikko (tuple).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notAUnionType">
+        <source>Type '{0}' is not an F# union type.</source>
+        <target state="translated">Tyyppi '{0}' ei ole F# yhdiste (union).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notComparable">
+        <source>The two objects have different types and are not comparable.</source>
+        <target state="translated">Kahdessa objektissa on erityyppisiä tyyppejä, eikä niitä voida verrata toisiinsa.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notEnoughElements">
+        <source>The input sequence has an insufficient number of elements.</source>
+        <target state="translated">Syöttöjaksossa on riittämätön määrä elementtejä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="notUsedForHashing">
+        <source>This object is for recursive equality calls and cannot be used for hashing.</source>
+        <target state="translated">Tämä objekti on tarkoitettu rekursiivisille yhtäläisyyskutsuille, eikä sitä voida käyttää tarkistelaskentaan.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="nullsNotAllowedInArray">
+        <source>One of the elements in the array is null.</source>
+        <target state="translated">Yksi taulukon elementeistä on tyhjä (null).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="objIsNotARecord">
+        <source>The object is not an F# record value.</source>
+        <target state="translated">Objekti ei ole F#-tietueen (record) arvo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="objIsNullAndNoType">
+        <source>The object is null and no type was given.  Either pass a non-null object or a non-null type parameter.</source>
+        <target state="translated">Objekti on tyhjä (null) eikä tyyppiä ole määritelty. Välitä joko ei-nolla-objekti tai anna tyyppi-parametri.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="outOfRange">
+        <source>The index is outside the legal range.</source>
+        <target state="translated">Indeksi on laillisen alueen ulkopuolella.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="privateExceptionType">
+        <source>The type '{0}' is the representation of an F# exception declaration but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</source>
+        <target state="translated"> Tyyppi '{0}' on F # -poikkeusilmoituksen määrittely, mutta sen esiintymä on yksityinen. On asetettava BindingFlags.NonPublic päästäksesi käsiksi yksityisiin tyyppimäärittelyihin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="privateRecordType">
+        <source>The type '{0}' is an F# record type but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</source>
+        <target state="translated">Tyyppi '{0}' on F # tietuetyyppi, mutta sen esiintymä on yksityinen. On asetettava BindingFlags.NonPublic päästäksesi käsiksi yksityisiin tyyppimäärittelyihin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="privateUnionType">
+        <source>The type '{0}' is an F# union type but its representation is private. You must specify BindingFlags.NonPublic to access private type representations.</source>
+        <target state="translated"> Tyyppi '{0}' on F # unionityyppi, mutta sen esiintymä on yksityinen. On asetettava BindingFlags.NonPublic päästäksesi käsiksi yksityisiin tyyppimäärittelyihin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QexpectedOneType">
+        <source>Expected exactly one type argument.</source>
+        <target state="translated">Odotettiin tarkalleen yhtä tyyppiargumenttia.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QexpectedTwoTypes">
+        <source>Expected exactly two type arguments.</source>
+        <target state="translated">Odotettiin tarkalleen kahta tyyppiargumenttia.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QinvalidCaseIndex">
+        <source>Not a valid F# union case index.</source>
+        <target state="translated">Epäkelpo F#-unionin tapauksen indeksi.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QmissingRecordField">
+        <source>Type '{0}' did not have an F# record field named '{1}'.</source>
+        <target state="translated">Tyypillä '{0}' ei ollut F#-rekisterikenttää nimeltä '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QmissingUnionCase">
+        <source>Type '{0}' did not have an F# union case named '{1}'.</source>
+        <target state="translated">Tyypillä '{0}' ei ollut F#-unionitapausta nimeltä '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmBadFieldType">
+        <source>Type mismatch when building '{0}': the type of the field was incorrect. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Kentän tyyppi oli väärä. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmBodyMustBeUnit">
+        <source>Type mismatch when building '{0}': body must return unit. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Ohjelmakoodin on palautettava "unit". Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmCondMustBeBool">
+        <source>Type mismatch when building '{0}': condition expression must be of type bool. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Ehtolauseen on oltava tyyppiä bool. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmExpectedFunction">
+        <source>Type mismatch when building '{0}': expected function type in function application or let binding. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Odotettu funktion tyyppi aplikaatiossa tai let-määrittelyssä. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmExprNotMatchTuple">
+        <source>Type mismatch when building '{0}': expression doesn't match the tuple type. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Lauseke ei vastaa tuple-tyyppiä. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmExprTypeMismatch">
+        <source>Type mismatch when building '{0}': types of expression does not match. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Lausekkeen tyypit eivät täsmää. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmFunctionArgTypeMismatch">
+        <source>Type mismatch when building '{0}': function argument type doesn't match. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Funktioargumentin tyyppi ei täsmää. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmGuardMustBeBool">
+        <source>Type mismatch when building '{0}': guard must return boolean. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Vartija-ehtolauseen on palautettava bool. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmIncorrectArgForRecord">
+        <source>Type mismatch when building '{0}': incorrect argument type for an F# record. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Väärä argumenttityyppi F#-tietueelle. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmIncorrectArgForUnion">
+        <source>Type mismatch when building '{0}': incorrect argument type for an F# union. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Väärä argumentti tyyppi F#-unionille. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmInitArray">
+        <source>Type mismatch when building '{0}': initializer doesn't match array type. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Alustus ei vastaa array-tyyppiä. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmInvalidParam">
+        <source>Type mismatch when building '{0}': invalid parameter for a method or indexer property. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Virheellinen parametri menetelmälle tai indeksoijaominaisuudelle. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmLoopBodyMustBeLambdaTakingInteger">
+        <source>Type mismatch when building '{0}': body of the for loop must be lambda taking integer as an argument. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': for-silmukan rungon on oltava lambda ottaen argumentiksi kokonaisluvun. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmLowerUpperBoundMustBeInt">
+        <source>Type mismatch when building '{0}': lower and upper bounds must be integers. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Ala- ja ylärajojen on oltava kokonaislukuja. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmTrueAndFalseMustMatch">
+        <source>Type mismatch when building '{0}': types of true and false branches differ. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Tosi ja epätosi -haarojen paluutyypit eroavat toisistaan. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmTuple">
+        <source>Type mismatch when building '{0}': mismatched type of argument and tuple element. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Argumentin ja tuple-elementin tyyppiyhteensopimattomuus. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmVarTypeNotMatchRHS">
+        <source>Type mismatch when building '{0}': the variable type doesn't match the type of the right-hand-side of a let binding. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Muuttujan tyyppi ei vastaa let-määrittelyn oikeanpuoleista tyyppiä. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QunexpectedHole">
+        <source>Unexpected quotation hole in expression.</source>
+        <target state="translated">Odottamaton lainausreikä lausekkeessa.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QunrecognizedMethodCall">
+        <source>The parameter is not a recognized method name.</source>
+        <target state="translated">Parametri ei ole tunnistettu menetelmän nimi.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="resetNotSupported">
+        <source>Reset is not supported on this enumerator.</source>
+        <target state="translated">Resetointia ei tueta tässä luettelossa.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="startCannotBeNaN">
+        <source>The start of a range cannot be NaN.</source>
+        <target state="translated">Alueen alku ei voi olla epänumeerinen (NaN).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stepCannotBeNaN">
+        <source>The step of a range cannot be NaN.</source>
+        <target state="translated">Alueen askel ei voi olla epänumeerinen (NaN).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">Alueen askel ei voi olla nolla.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="syncContextNull">
+        <source>The System.Threading.SynchronizationContext.Current of the calling thread is null.</source>
+        <target state="translated">System.Threading.SynchronizationContext.Current kutsujasäikeessä on tyhjä (null).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tupleIndexOutOfRange">
+        <source>The tuple index '{1}' was out of range for tuple type '{0}'.</source>
+        <target state="translated">Tuple-indeksi '{1}' oli tupletyypin '{0}' alueen ulkopuolella.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QfailedToBindConstructor">
+        <source>Failed to bind constructor</source>
+        <target state="translated">Konstruktorin määritelmä epäonnistui.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QfailedToBindField">
+        <source>Failed to bind field '{0}'</source>
+        <target state="translated">Kentän '{0}' määritelmä epäonnistui.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QfailedToBindProperty">
+        <source>Failed to bind property '{0}'</source>
+        <target state="translated">Ominaisuuden '{0}' määritelmä epäonnistui.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QfailedToBindTypeInAssembly">
+        <source>Failed to bind type '{0}' in assembly '{1}'</source>
+        <target state="translated">Tyypin asetus epäonnistui '{0}' kohteessa '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QincompatibleRecordLength">
+        <source>Incompatible record length</source>
+        <target state="translated">Yhteensopimaton tietueen pituus.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QincorrectInstanceType">
+        <source>Incorrect instance type</source>
+        <target state="translated">Väärä ilmentymätyyppi.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QincorrectNumArgs">
+        <source>Incorrect number of arguments</source>
+        <target state="translated">Argumenttien määrä ei täsmää.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QincorrectType">
+        <source>Incorrect type</source>
+        <target state="translated">Virheellinen tietotyyppi.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QinvalidFuncType">
+        <source>Invalid function type</source>
+        <target state="translated">Virheellinen funktion tyyppi.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QnonStaticNoReceiverObject">
+        <source>The member is non-static (instance), but no receiver object was supplied</source>
+        <target state="translated">Jäsen ei ole staattinen (esiintymä), mutta vastaanottajaobjektia ei annettu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QparentCannotBeNull">
+        <source>Parent type cannot be null</source>
+        <target state="translated">Kantatyyppi ei voi olla tyhjä (null).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QreadingSetOnly">
+        <source>Reading a set-only property</source>
+        <target state="translated">Vain-set-ominaisuutta ei voi lukea.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QstaticWithReceiverObject">
+        <source>Receiver object was unexpected, as member is static</source>
+        <target state="translated">Staattisen jäsenen odottamaton vastaanottajaobjekti.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmExprHasWrongType">
+        <source>Type mismatch when building '{0}': the expression has the wrong type. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Lausekkeen tyyppi on väärin. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmFunTypeNotMatchDelegate">
+        <source>Type mismatch when building '{0}': function type doesn't match delegate type. Expected '{1}', but received type '{2}'.</source>
+        <target state="translated">Tyyppiyhteensopimattomuus rakennettaessa '{0}': Funktion tyyppi ei vastaa delegaattia. Odotettu '{1}', mutta vastaanotettu tyyppi '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtmmRaw">
+        <source>Type mismatch when splicing expression into quotation literal. The type of the expression tree being inserted doesn't match the type expected by the splicing operation. Expected '{0}', but received type '{1}'. Consider type-annotating with the expected expression type, e.g., (%% x : {0}) or (%x : {0}).</source>
+        <target state="translated">Tyyppiyhteensopimattomuus pilkottaessa lausetta quotation-vakioon. Lisättävän lausekepuun tyyppi ei vastaa tyyppiä, jota liitosoperaatio odottaa. Odotettu '{0}', mutta vastaanotettiin tyyppi '{1}'. Harkitse kirjoittavasi tyyppimerkintä auki odotetulle lausekkeelle, esimerkiksi (%% x: {0}) tai (% x: {0}).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtupleAccessOutOfRange">
+        <source>Tuple access out of range</source>
+        <target state="translated">Tuple määritetyn alueen ulkopuolella.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtupleLengthsDiffer">
+        <source>The tuple lengths are different</source>
+        <target state="translated">Tuplejen pituudet eivät täsmää.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QunionNeedsDiffNumArgs">
+        <source>F# union type requires different number of arguments</source>
+        <target state="translated">F#-unionityyppi vaatii eri määrän argumentteja.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QwritingGetOnly">
+        <source>Writing a get-only property</source>
+        <target state="translated">Vain-get-ominaisuuteen ei voi asettaa.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QwrongNumOfTypeArgs">
+        <source>The method '{0}' expects {1} type arguments but {2} were provided</source>
+        <target state="translated">Menetelmä '{0}' odottaa argumentti tyyppiä {1}, mutta annettu tyyppi on {2}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keyNotFoundAlt">
+        <source>An index satisfying the predicate was not found in the collection.</source>
+        <target state="translated">Kokoelmasta ei löytynyt hakuehdon täyttävää indeksiä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="constructorForUnionCaseNotFound">
+        <source>The constructor method '{0}' for the union case could not be found</source>
+        <target state="translated">Unionitapauksen konstruktorimenetelmää '{0}' ei löytynyt</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="firstClassUsesOfSplice">
+        <source>first class uses of '%' or '%%' are not permitted</source>
+        <target state="translated">Ensiluokan käyttö ei ole sallittua: '%' tai '%%'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="moveNextNotCalledOrFinished">
+        <source>MoveNext not called, or finished</source>
+        <target state="translated">MoveNext-kutsua seuraavaan ei kutsuttu, tai lopetettiin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="multipleCompilationMappings">
+        <source>Multiple CompilationMappingAttributes, expected at most one</source>
+        <target state="translated">Useita CompilationMappingAttributeja, odotettiin korkeintaan yhtä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="printfBadFloatValue">
+        <source>Bad float value</source>
+        <target state="translated">Kelvoton float-arvo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="printfBadFormatSpecifier">
+        <source>Bad format specifier:{0}</source>
+        <target state="translated">Kelvoton muotomääritelmä: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="printfBadIntegerForDynamicFomatter">
+        <source>Bad integer supplied to dynamic formatter</source>
+        <target state="translated">Kelvoton kokonaisluku toimitettu dynaamiselle muotoilijalle.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="printfExpectedPrecision">
+        <source>Expected a precision argument</source>
+        <target state="translated">Odotettiin tarkkuusargumenttia.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="printfExpectedWidth">
+        <source>Expected a width argument</source>
+        <target state="translated">Odotettiin leveysargumenttia.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="printfHashFormatSpecifierIllegal">
+        <source>The # formatting modifier is invalid in F#</source>
+        <target state="translated">Muotoilun muokkain # ei ole validi F#-kielessä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="printfMissingFormatSpecifier">
+        <source>Missing format specifier</source>
+        <target state="translated">Muotoiluargumentti on kateissa.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="printfNotAFunType">
+        <source>Not a function type</source>
+        <target state="translated">Ei ole kutsuttava funktiotyyppi.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="printfPrecisonSpecifierIllegal">
+        <source>Bad format specifier (precision)</source>
+        <target state="translated">Kelvoton (tarkkuus-) muotoilumäärittely.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="printfSpecifierAfterIllegal">
+        <source>Bad format specifier (after {0})</source>
+        <target state="translated">Kelvoton muotoilumäärittely ({0} jälkeen).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="printfWidthSpecifierIllegal">
+        <source>Bad format specifier (width)</source>
+        <target state="translated">Kelvoton (leveys-) muotoilumäärittely.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QcannotBindFunction">
+        <source>Could not bind function {0} in type {1}</source>
+        <target state="translated">Ei voitu sijoittaa funktiota {0} tyypissä {1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QcannotBindProperty">
+        <source>Could not bind property {0} in type {1}</source>
+        <target state="translated">Ei voitu sijoittaa ominaisuutta {0} tyypissä {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QcannotBindToMethod">
+        <source>Could not bind to method</source>
+        <target state="translated">Ei voitu asettaa metodiin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QcannotTakeAddress">
+        <source>Cannot take the address of this quotation</source>
+        <target state="translated">Tämän quotationin osoitetta ei voitu saavuttaa.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QfailedToBindAssembly">
+        <source>Failed to bind assembly '{0}' while processing quotation data</source>
+        <target state="translated">Ei löydetty kirjastoa '{0}' käsiteltäessä quotationia.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QillFormedAppOrLet">
+        <source>ill formed expression: AppOp or LetOp</source>
+        <target state="translated">Kelvottomasti muodostettu lauseke: AppOp tai LetOp</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="QtypeArgumentOutOfRange">
+        <source>type argument out of range</source>
+        <target state="translated">Alueen ulkopuolinen tyyppiargumentti.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="thisValueCannotBeMutated">
+        <source>This value cannot be mutated</source>
+        <target state="translated">Tätä arvoa ei voi muokata.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optionValueWasNone">
+        <source>The option value was None</source>
+        <target state="translated">Valinnainen arvo oli tyhjä (None).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="controlContinuationInvokedMultipleTimes">
+        <source>A continuation provided by Async.FromContinuations was invoked multiple times</source>
+        <target state="translated">Async.FromContinuations -yrityksen jatkamiseen vedottiin useita kertoja.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="invalidRecordTypeConstructorNotDefined">
+        <source>The record type '{0}' is invalid. Required constructor is not defined.</source>
+        <target state="translated">Tietuetyyppi '{0}' on virheellinen. Vaadittavaa konstruktoria ei ole määritelty.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="invalidTupleTypeConstructorNotDefined">
+        <source>The tuple type '{0}' is invalid. Required constructor is not defined.</source>
+        <target state="translated">Tuple-tyyppi '{0}' on virheellinen. Vaadittavaa konstruktoria ei ole määritelty.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="inputSequenceTooLong">
+        <source>The input sequence contains more than one element.</source>
+        <target state="translated">Syötesarja sisältää useita elementtejä.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="thenByError">
+        <source>'thenBy' and 'thenByDescending' may only be used with an ordered input</source>
+        <target state="translated">'thenBy' ja 'thenByDescending' voidaan käyttää vain järjestetyssä syötteessä</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="failDueToUnsupportedInputTypeInSumByOrAverageBy">
+        <source>Unrecognized use of a 'sumBy' or 'averageBy' operator in a query. In queries whose original data is of static type IQueryable, these operators may only be used with result type int32, int64, single, double or decimal</source>
+        <target state="translated">Opetaattorin 'sumBy' tai 'averageBy' tuntematon käyttö kyselyssä. Kyselyissä, joiden alkuperäinen tieto on staattista tyyppiä IQueryable, näitä operaattoreita saa käyttää vain tulostyypeille int32, int64, single, double tai decimal.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedIfThenElse">
+        <source>An if/then/else conditional or pattern matching expression with multiple branches is not permitted in a query. An if/then/else conditional may be used.</source>
+        <target state="translated">Konditionaalisen if/then/else match-lausekkeen käyttö, useahaaraisena, ei ole sallittu kyselyssä. Voit käyttää if/then/else -ehtoa.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedQueryConstruct">
+        <source>This is not a valid query expression. The following construct was used in a query but is not recognized by the F#-to-LINQ query translator:\n{0}\nCheck the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
+        <target state="translated">Tämä on kelvoton kyselylause. Seuraavaa rakennetta käytettiin kyselyssä, mutta F#-to-LINQ-kääntäjä ei tunnista sitä:\{0}\nTarkista sallittujen kyselyiden määritelmä ja harkitse joidenkin toimintojen siirtämistä kyselylausekkeesta.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedQueryCall">
+        <source>This is not a valid query expression. The method '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression</source>
+        <target state="translated">Tämä on kelvoton kyselylause. Menetelmää '{0}' käytettiin kyselyssä, mutta F#-to-LINQ-kääntäjä ei tunnista sitä. Tarkista sallittujen kyselyiden määritelmä ja harkitse joidenkin toimintojen siirtämistä pois kyselylausekkeesta.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedQueryProperty">
+        <source>This is not a valid query expression. The property '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
+        <target state="translated">Tämä on kelvoton kyselylause. Ominaisuutta '{0}' käytettiin kyselyssä, mutta F#-to-LINQ-kääntäjä ei tunnista sitä. Tarkista sallittujen kyselyiden määritelmä ja harkitse joidenkin toimintojen siirtämistä pois kyselylausekkeesta.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedQueryConstructKind">
+        <source>This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
+        <target state="translated">Tämä on kelvoton kyselylause. Rakennetta '{0}' käytettiin kyselyssä, mutta F#-to-LINQ-kyselykääntäjä ei tunnista sitä. Tarkista sallittujen kyselyiden määritelmä ja harkitse joidenkin toimintojen siirtämistä pois kyselylausekkeesta.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism on oltava positiivinen, nähtiin {0}</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
