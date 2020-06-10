@@ -26,7 +26,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="key">The input key.</param>
         /// <param name="f">The change function.</param>
         /// <returns>The resulting map.</returns>
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         member Change: key:'Key * f:('Value option -> 'Value option) -> Map<'Key,'Value>
 
         /// <summary>Returns true if there are no bindings in the map.</summary>
@@ -98,7 +98,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="f">The change function.</param>
         /// <param name="table">The input map.</param>
         /// <returns>The resulting map.</returns>
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         [<CompiledName("Change")>]
         val change: key:'Key -> f:('T option -> 'T option) -> table:Map<'Key,'T> -> Map<'Key,'T>
 
