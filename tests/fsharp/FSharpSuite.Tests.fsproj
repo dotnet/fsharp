@@ -72,6 +72,7 @@
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
     <Compile Include="Compiler\Language\SpanTests.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
+    <Compile Include="Compiler\Language\ComputationExpressionTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Compile Include="Compiler\Regressions\IndexerRegressionTests.fs" />
     <Compile Include="Compiler\Regressions\ForInDoMutableRegressionTest.fs" />

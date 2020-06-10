@@ -8884,6 +8884,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             clauses |> List.forall (fun (Clause(_, _, clauseComp, _, _)) -> isSimpleExpr clauseComp)
         | SynExpr.YieldOrReturnFrom _ -> false
         | SynExpr.YieldOrReturn _ -> false
+        | SynExpr.DoBang _ -> false
         | _ -> true
 
     let basicSynExpr = 
