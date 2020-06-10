@@ -1817,7 +1817,7 @@ module CoreTests =
         
     [<Test>]
     let ``property setter in method or constructor`` () =
-        let cfg = testConfig "core/members/set-only-property"
+        let cfg = testConfig' "core/members/set-only-property"
         csc cfg @"%s /target:library /out:cs.dll" cfg.csc_flags ["cs.cs"]
         vbc cfg @"%s /target:library /out:vb.dll" cfg.vbc_flags ["vb.vb"]
         fsc cfg @"%s /target:library /out:fs.dll" cfg.fsc_flags ["fs.fs"]
