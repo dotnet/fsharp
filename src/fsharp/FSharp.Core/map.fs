@@ -549,6 +549,7 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
 #endif
         new Map<'Key, 'Value>(comparer, MapTree.add comparer key value tree)
 
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     member m.Change(key, f) : Map<'Key, 'Value> =
         new Map<'Key, 'Value>(comparer, MapTree.change comparer key f tree)
 
