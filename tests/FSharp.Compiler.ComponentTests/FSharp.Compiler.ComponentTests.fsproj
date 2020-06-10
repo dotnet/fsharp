@@ -5,11 +5,14 @@
   <PropertyGroup>
     <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
+    <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <UnitTestType>xunit</UnitTestType>
-    <NoWarn>$(NoWarn);3186;1104</NoWarn>
+    <NoWarn>$(NoWarn);3186;1104;FS0988</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

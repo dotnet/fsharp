@@ -49,7 +49,6 @@
     <Compile Include="Compiler\ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="Compiler\ErrorMessages\DontSuggestTests.fs" />
     <Compile Include="Compiler\ErrorMessages\MissingExpressionTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\InvalidNumericLiteralTests.fs" />
     <Compile Include="Compiler\ErrorMessages\ModuleAbbreviationTests.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />

@@ -93,10 +93,9 @@ Existing FSharpQA and Cambridge need to be migrated to corresponding test projec
 
 ## Next steps
 
-* [**In Progress**] Move `FSharp.TestHelpers` to `FSharp.Test.Utilities`.
-* [**In Progress**] Create initial test projects structure for new tests (`FSharp.Compiler.ComponentTests`).
 * [**In Progress**] Migrate existing `NUnit` tests to xUnit.
-* [**In progress**] Change build scripts to run new suites as well as old ones.
+* Clean up CompilerAssert.
+* Make PEVerify tests work in netcore/non-windows environment.
 * Start migration of existing (namely, FSharpQA and Cambridge) suites to xUnit-based projects.
 
 ## Open questions:
@@ -108,5 +107,3 @@ Existing FSharpQA and Cambridge need to be migrated to corresponding test projec
 Related issues: (https://github.com/dotnet/fsharp/issues/7075)
 
 You can find this document under 'tests/README.md'.
-
-**I would like to hear some feedback the community, so we can quickly re-iterate over it (if needed), and start working :)**
