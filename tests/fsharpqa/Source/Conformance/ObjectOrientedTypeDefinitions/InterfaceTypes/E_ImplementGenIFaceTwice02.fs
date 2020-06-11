@@ -1,7 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
-// Verify error when trying to implement the same generic
-// interface twice
-//<Expects status="error" span="(11,6)" id="FS0443">This type implements the same interface at different generic instantiations 'IFoo<int64>' and 'IFoo<string>'\. This is not permitted in this version of F#</Expects>
+// It is now allowed to implement the same interface multiple times (RFC FS-1031).
 
 type IFoo<'a> =
     interface
@@ -19,4 +17,4 @@ let t = new Bar()
 (t :> IFoo<string>).DoStuff()
 (t :> IFoo<int64>).DoStuff()
 
-exit 1
+exit 0

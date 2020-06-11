@@ -1,10 +1,9 @@
 // #Conformance #ObjectOrientedTypes #InterfacesAndImplementations #ReqNOMT 
-// <Expects id="FS0443" status="error" span="(8,6-8,7)">This type implements the same interface at different generic instantiations 'I_002\<string\>' and 'I_002\<char\>'\. This is not permitted in this version of F#\.</Expects>
+// It is now allowed to implement the same interface multiple times (RFC FS-1031).
 #light	
 
 let mutable res = true
 
-// Check we can't implement an interface inheriting from multiple instantiations of an interface when defining an object expression inheriting from a C# class type
 type D() = 
     inherit T()
     interface I_003<int> with

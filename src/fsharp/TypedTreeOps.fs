@@ -879,6 +879,17 @@ let convertToTypeWithMetadataIfPossible g ty =
     else ty
  
 //---------------------------------------------------------------------------
+// TType modifications
+//---------------------------------------------------------------------------
+
+let stripMeasuresFromTType g tt = 
+    match tt with
+    | TType_app(a,b) ->
+        let b' = b |> List.filter (isMeasureTy g >> not)
+        TType_app(a, b')
+    | _ -> tt
+
+//---------------------------------------------------------------------------
 // Equivalence of types up to alpha-equivalence 
 //---------------------------------------------------------------------------
 
@@ -2904,12 +2915,36 @@ let fullDisplayTextOfValRefAsLayout (vref: ValRef) =
         pathText ^^ SepL.dot ^^ wordL n
         //pathText +.+ vref.DisplayName
 
-
-let fullMangledPathToTyconRef (tcref: TyconRef) = 
+let fullMangledPathToTyconRef (tcref:TyconRef) = 
     match tcref with 
     | ERefLocal _ -> (match tcref.PublicPath with None -> [| |] | Some pp -> pp.EnclosingPath)
     | ERefNonLocal nlr -> nlr.EnclosingMangledPath
-  
+    
+/// generates a name like 'System.IComparable<System.Int32>.Get'
+/// for types in the global namespace, `global is prepended (note the backtick)
+let qualifiedInterfaceImplementationName g (tt:TType) memberName =
+    let rec TType_ToCodeLikeString (x:TType) : string =
+        let TyconRefToFullName (tc:TyconRef) =
+            let namespaceParts =
+                // we need to ensure there are no collisions between (for example)
+                // - ``IB<GlobalType>`` (non-generic)
+                // - IB<'T> instantiated with 'T = GlobalType
+                // This is only an issue for types inside the global namespace, because '.' is invalid even in a quoted identifier.
+                // So if the type is in the global namespace, prepend 'global`', because '`' is also illegal -> there can be no quoted identifer with that name.
+                match fullMangledPathToTyconRef tc with
+                | [||] -> [| "global`" |]
+                | ns -> ns
+            seq { yield! namespaceParts; yield tc.DisplayName } |> String.concat "."
+        match x with
+        | TType_app (a,[]) -> TyconRefToFullName a
+        | TType_app (a,b) ->
+            let genericParameters = b |> Seq.map (stripTyEqnsAndErase true g >> stripMeasuresFromTType g >> TType_ToCodeLikeString) |> String.concat ", "
+            sprintf "%s<%s>" (TyconRefToFullName a) genericParameters
+        | TType_var (v) -> "'" + v.Name
+        | _ -> failwithf "unexpected: expected TType_app but got %O" (x.GetType())
+    let interfaceName = tt |> stripTyEqnsAndErase true g |> stripMeasuresFromTType g |> TType_ToCodeLikeString
+    sprintf "%s.%s" interfaceName memberName
+
 let qualifiedMangledNameOfTyconRef tcref nm = 
     String.concat "-" (Array.toList (fullMangledPathToTyconRef tcref) @ [ tcref.LogicalName + "-" + nm ])
 
