@@ -5535,7 +5535,6 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                     errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
                     [], args
 
-
                 | arg :: rest when numArgTys = 1 ->
                     if numArgTys = 1 && not (List.isEmpty rest) then
                         errorR (Error (FSComp.SR.tcUnionCaseRequiresOneArgument (), m))
@@ -5544,23 +5543,24 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 | [arg] -> [arg], []
 
                 | args ->
-                    errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments numArgTys, m))
                     [], args
 
             let args, extraPatterns =
                 let numArgs = args.Length
                 if numArgs = numArgTys then
                     args, extraPatterns
+                elif numArgs < numArgTys then
+                    if numArgTys > 1 then
+                        // Expects tuple without enough args
+                        errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments numArgTys, m))
+                    else                        
+                        errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, m))
+                    args @ (List.init (numArgTys - numArgs) (fun _ -> SynPat.Wild (m.MakeSynthetic()))), extraPatterns
                 else
-                    if numArgs < numArgTys then
-                        if numArgs <> 0 && numArgTys <> 0 then
-                            errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, m))
-                        args @ (List.init (numArgTys - numArgs) (fun _ -> SynPat.Wild (m.MakeSynthetic()))), extraPatterns
-                    else
-                        let args, remaining = args |> List.splitAt numArgTys
-                        for remainingArg in remaining do
-                            errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, remainingArg.Range))
-                        args, extraPatterns @ remaining
+                    let args, remaining = args |> List.splitAt numArgTys
+                    for remainingArg in remaining do
+                        errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, remainingArg.Range))
+                    args, extraPatterns @ remaining
 
             let extraPatterns = extraPatterns @ extraPatternsFromNames
             let args', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) argTys args
