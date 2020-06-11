@@ -3,6 +3,7 @@ namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
 
 open FSharp.Compiler.UnitTests
 open NUnit.Framework
+open FSharp.TestHelpers
 
 [<TestFixture>]
 module CeEdiThrow =
