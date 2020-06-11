@@ -5464,6 +5464,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 TPat_query((activePatExpr, activePatResTys, activePatIdentity, idx, apinfo), arg' values, m)), acc
 
         | (Item.UnionCase _ | Item.ExnCase _) as item ->
+
             // Report information about the case occurrence to IDE
             CallNameResolutionSink cenv.tcSink (lidRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.eAccessRights)
 
@@ -5535,7 +5536,6 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                     errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
                     [], args
 
-
                 | arg :: rest when numArgTys = 1 ->
                     if numArgTys = 1 && not (List.isEmpty rest) then
                         errorR (Error (FSComp.SR.tcUnionCaseRequiresOneArgument (), m))
@@ -5544,7 +5544,6 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 | [arg] -> [arg], []
 
                 | args ->
-                    errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments numArgTys, m))
                     [], args
 
             let args, extraPatterns =
@@ -5552,7 +5551,11 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 if numArgs = numArgTys then
                     args, extraPatterns
                 elif numArgs < numArgTys then
-                    errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, m))
+                    if numArgTys > 1 then
+                        // Expects tuple without enough args
+                        errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments numArgTys, m))
+                    else                        
+                        errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, m))
                     args @ (List.init (numArgTys - numArgs) (fun _ -> SynPat.Wild (m.MakeSynthetic()))), extraPatterns
                 else
                     let args, remaining = args |> List.splitAt numArgTys
