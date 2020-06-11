@@ -68,8 +68,14 @@ type MapModule() =
 
         let a = (Map.ofArray [|(1,1);(2,4);(3,9)|])
         let b = Map.change 4 (fun current -> Assert.AreEqual(current, None); Some 16) a
+        Assert.AreEqual(b.[1], 1)
+        Assert.AreEqual(b.[2], 4)
+        Assert.AreEqual(b.[3], 9)
         Assert.AreEqual(b.[4], 16)
         let c = Map.change 4 (fun current -> Assert.AreEqual(current, Some 16); Some 25) b
+        Assert.AreEqual(b.[1], 1)
+        Assert.AreEqual(b.[2], 4)
+        Assert.AreEqual(b.[3], 9)
         Assert.AreEqual(c.[4], 25)
 
         // empty Map
@@ -88,7 +94,6 @@ type MapModule() =
         Assert.AreEqual(resultRm.[2], 4)
         Assert.AreEqual(resultRm.[3], 9)
         Assert.AreEqual(resultRm.[4], 25)
-
 
         ()
 
