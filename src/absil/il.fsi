@@ -732,10 +732,10 @@ type ILMethodBody =
 type ILMemberAccess = 
     | CompilerControlled
     | Private
-    | FamilyAndAssembly
-    | Assembly
-    | FamilyOrAssembly
-    | Family
+    | FamilyAndAssembly // protected and internal
+    | Family // protected
+    | Assembly // internal
+    | FamilyOrAssembly // protected or internal
     | Public
     
 [<RequireQualifiedAccess>]

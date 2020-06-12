@@ -38,24 +38,24 @@ module ILMemberAccessTests =
       else
         failwithf "%A > %A didn't hold" a b
 
-    compareIsGreater ILMemberAccess.Public ILMemberAccess.Family
     compareIsGreater ILMemberAccess.Public ILMemberAccess.FamilyOrAssembly
+    compareIsGreater ILMemberAccess.Public ILMemberAccess.Family
     compareIsGreater ILMemberAccess.Public ILMemberAccess.Assembly
     compareIsGreater ILMemberAccess.Public ILMemberAccess.FamilyAndAssembly
     compareIsGreater ILMemberAccess.Public ILMemberAccess.Private
     compareIsGreater ILMemberAccess.Public ILMemberAccess.CompilerControlled
-    compareIsGreater ILMemberAccess.Family ILMemberAccess.FamilyOrAssembly
-    compareIsGreater ILMemberAccess.Family ILMemberAccess.Assembly
-    compareIsGreater ILMemberAccess.Family ILMemberAccess.FamilyAndAssembly
-    compareIsGreater ILMemberAccess.Family ILMemberAccess.Private
-    compareIsGreater ILMemberAccess.Family ILMemberAccess.CompilerControlled
     compareIsGreater ILMemberAccess.FamilyOrAssembly ILMemberAccess.Assembly
+    compareIsGreater ILMemberAccess.FamilyOrAssembly ILMemberAccess.Family
     compareIsGreater ILMemberAccess.FamilyOrAssembly ILMemberAccess.FamilyAndAssembly
     compareIsGreater ILMemberAccess.FamilyOrAssembly ILMemberAccess.Private
     compareIsGreater ILMemberAccess.FamilyOrAssembly ILMemberAccess.CompilerControlled
+    compareIsGreater ILMemberAccess.Assembly ILMemberAccess.Family
     compareIsGreater ILMemberAccess.Assembly ILMemberAccess.FamilyAndAssembly
     compareIsGreater ILMemberAccess.Assembly ILMemberAccess.Private
     compareIsGreater ILMemberAccess.Assembly ILMemberAccess.CompilerControlled
+    compareIsGreater ILMemberAccess.Family ILMemberAccess.FamilyAndAssembly
+    compareIsGreater ILMemberAccess.Family ILMemberAccess.Private
+    compareIsGreater ILMemberAccess.Family ILMemberAccess.CompilerControlled
     compareIsGreater ILMemberAccess.FamilyAndAssembly ILMemberAccess.Private
     compareIsGreater ILMemberAccess.FamilyAndAssembly ILMemberAccess.CompilerControlled
     compareIsGreater ILMemberAccess.Private ILMemberAccess.CompilerControlled
