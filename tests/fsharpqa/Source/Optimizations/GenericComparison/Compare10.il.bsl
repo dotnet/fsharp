@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly Compare10
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Compare10
 {
-  // Offset: 0x00000000 Length: 0x00000AA4
+  // Offset: 0x00000000 Length: 0x00000AAE
 }
 .mresource public FSharpOptimizationData.Compare10
 {
-  // Offset: 0x00000AA8 Length: 0x0000058E
+  // Offset: 0x00000AB8 Length: 0x0000058E
 }
 .module Compare10.dll
-// MVID: {59B18AEE-04BF-1753-A745-0383EE8AB159}
+// MVID: {5EE40408-04BF-1753-A745-03830804E45E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002E0000
+// Image base: 0x071F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -187,7 +187,7 @@
                  [4] int32 V_4,
                  [5] int32 V_5)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Compare10.fsx'
+        .line 16707566,16707566 : 0,0 'C:\\Users\\phcart\\source\\repos\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Compare10.fsx'
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un
@@ -884,18 +884,18 @@
                                                                                                             class [mscorlib]System.Collections.IComparer)
         IL_0089:  stloc.s    V_10
         IL_008b:  ldloc.s    V_10
-        IL_008d:  brfalse.s  IL_0092
+        IL_008d:  brtrue.s   IL_009a
 
         .line 16707566,16707566 : 0,0 ''
-        IL_008f:  ldloc.s    V_10
-        IL_0091:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0092:  ldloc.s    V_5
-        IL_0094:  ldloc.s    V_9
-        IL_0096:  ldloc.3
-        IL_0097:  callvirt   instance int32 Compare10/CompareMicroPerfAndCodeGenerationTests/Key::CompareTo(object,
+        IL_008f:  ldloc.s    V_5
+        IL_0091:  ldloc.s    V_9
+        IL_0093:  ldloc.3
+        IL_0094:  callvirt   instance int32 Compare10/CompareMicroPerfAndCodeGenerationTests/Key::CompareTo(object,
                                                                                                             class [mscorlib]System.Collections.IComparer)
+        IL_0099:  ret
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_009a:  ldloc.s    V_10
         IL_009c:  ret
 
         .line 16707566,16707566 : 0,0 ''
@@ -1028,18 +1028,18 @@
                                                                                                             class [mscorlib]System.Collections.IComparer)
         IL_0089:  stloc.s    V_10
         IL_008b:  ldloc.s    V_10
-        IL_008d:  brfalse.s  IL_0092
+        IL_008d:  brtrue.s   IL_009a
 
         .line 16707566,16707566 : 0,0 ''
-        IL_008f:  ldloc.s    V_10
-        IL_0091:  ret
-
-        .line 16707566,16707566 : 0,0 ''
-        IL_0092:  ldloc.s    V_5
-        IL_0094:  ldloc.s    V_9
-        IL_0096:  ldarg.2
-        IL_0097:  callvirt   instance int32 Compare10/CompareMicroPerfAndCodeGenerationTests/Key::CompareTo(object,
+        IL_008f:  ldloc.s    V_5
+        IL_0091:  ldloc.s    V_9
+        IL_0093:  ldarg.2
+        IL_0094:  callvirt   instance int32 Compare10/CompareMicroPerfAndCodeGenerationTests/Key::CompareTo(object,
                                                                                                             class [mscorlib]System.Collections.IComparer)
+        IL_0099:  ret
+
+        .line 16707566,16707566 : 0,0 ''
+        IL_009a:  ldloc.s    V_10
         IL_009c:  ret
 
         .line 16707566,16707566 : 0,0 ''

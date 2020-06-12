@@ -3792,7 +3792,7 @@ namespace Microsoft.FSharp.Core
         let (|Failure|_|) (error: exn) = if error.GetType().Equals(typeof<System.Exception>) then Some error.Message else None
 
         [<CompiledName("Not")>]
-        let inline not (value: bool) = (# "ceq" value false : bool #)
+        let inline not (value: bool) = if value then false else true
            
 
         let inline (<) x y = GenericLessThan x y

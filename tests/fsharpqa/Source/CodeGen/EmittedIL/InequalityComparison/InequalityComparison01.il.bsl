@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly InequalityComparison01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.InequalityComparison01
 {
-  // Offset: 0x00000000 Length: 0x0000020E
+  // Offset: 0x00000000 Length: 0x00000224
 }
 .mresource public FSharpOptimizationData.InequalityComparison01
 {
-  // Offset: 0x00000218 Length: 0x00000085
+  // Offset: 0x00000228 Length: 0x00000085
 }
 .module InequalityComparison01.exe
-// MVID: {59B19213-263A-E6D5-A745-03831392B159}
+// MVID: {5EE40368-263A-E6D5-A745-03836803E45E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002E0000
+// Image base: 0x00E80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -55,16 +55,34 @@
                                  int32 y) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    // Code size       8 (0x8)
-    .maxstack  8
+    // Code size       24 (0x18)
+    .maxstack  4
+    .locals init ([0] int32 V_0,
+             [1] int32 V_1,
+             [2] int32 V_2,
+             [3] int32 V_3,
+             [4] int32 V_4,
+             [5] int32 V_5)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 27,33 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\InequalityComparison\\InequalityComparison01.fs'
+    .line 3,3 : 27,33 'C:\\Users\\phcart\\source\\repos\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\InequalityComparison\\InequalityComparison01.fs'
     IL_0000:  ldarg.0
-    IL_0001:  ldarg.1
-    IL_0002:  cgt
-    IL_0004:  ldc.i4.0
-    IL_0005:  ceq
-    IL_0007:  ret
+    IL_0001:  stloc.0
+    IL_0002:  ldarg.1
+    IL_0003:  stloc.1
+    IL_0004:  ldloc.0
+    IL_0005:  stloc.2
+    IL_0006:  ldloc.1
+    IL_0007:  stloc.3
+    IL_0008:  ldloc.2
+    IL_0009:  stloc.s    V_4
+    IL_000b:  ldloc.3
+    IL_000c:  stloc.s    V_5
+    IL_000e:  ldloc.s    V_4
+    IL_0010:  ldloc.s    V_5
+    IL_0012:  cgt
+    IL_0014:  ldc.i4.0
+    IL_0015:  ceq
+    IL_0017:  ret
   } // end of method InequalityComparison01::f1
 
 } // end of class InequalityComparison01
