@@ -27,6 +27,7 @@
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
+    <Compile Include="Compiler\ILMemberAccessTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticMember.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\LiteralValue.fs" />
