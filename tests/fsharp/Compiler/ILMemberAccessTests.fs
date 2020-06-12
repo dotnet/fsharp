@@ -24,7 +24,8 @@ module ILMemberAccessTests =
     let expectedComparisons =
       let rec cummulativeSum n =
         match n with
-        | 0 | 1 -> 1
+        | 0 -> 0
+        | 1 -> 1
         | _ -> n + cummulativeSum(n-1)
       cummulativeSum (allCases.Count - 1)
 
