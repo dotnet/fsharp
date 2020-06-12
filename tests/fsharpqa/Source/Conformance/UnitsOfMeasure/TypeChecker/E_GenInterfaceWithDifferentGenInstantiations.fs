@@ -1,7 +1,7 @@
 // #Regression #Conformance #UnitsOfMeasure #TypeInference #TypeConstraints 
 // Regression test for FSHARP1.0:4782
 // It is illegal to implement or inherit the same interface at different generic instantiations
-//<Expects status="error" id="FS3302" span="(13,6-13,8)">'IB<'b>' cannot implement the interface 'IA<_>' with the two instantiations 'IA<kg>' and 'IA<'b>' because they may unify.</Expects>
+//<Expects status="error" id="FS3360" span="(13,6-13,8)">'IB<'b>' cannot implement the interface 'IA<_>' with the two instantiations 'IA<kg>' and 'IA<'b>' because they may unify.</Expects>
 
 [<Measure>] type kg
 

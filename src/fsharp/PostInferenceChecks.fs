@@ -783,12 +783,12 @@ let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list
                     let tcRef1 = tcrefOfAppTy cenv.g typ1
                     if tyconRefEq cenv.g tcRef1 (tcrefOfAppTy cenv.g typ2) then
                         if not(langVersion.SupportsFeature LanguageFeature.InterfacesWithMultipleGenericInstantiation) then
-                            if // same nominal type -> not allowed in earlier versions of F# language
+                            // same nominal type -> not allowed in earlier versions of F# language
+                            let hasMultipleGenericInterfaceInstantiations =
                                 tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
-                                // different instantiations
                                 not (typeEquivAux EraseNone cenv.g typ1 typ2)
-                            then
-                                    yield (Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)), m))
+                            if hasMultipleGenericInterfaceInstantiations then
+                                yield (Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)), m))
                         else
                             // same nominal type -> check generic args
                             match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g typ1 typ2 with

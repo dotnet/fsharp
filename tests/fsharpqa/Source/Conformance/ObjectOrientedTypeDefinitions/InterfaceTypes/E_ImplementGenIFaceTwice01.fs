@@ -3,7 +3,7 @@
 
 // Verify error when trying to implement the same generic interface twice.
 // Regression for FSB 3574, PE Verification failure when implementing multiple generic interfaces (one generic, one specifc)
-//<Expects status="error" id="FS3302" span="(12,6)">'IB<'b>' cannot implement the interface 'IA<_>' with the two instantiations 'IA<int>' and 'IA<'b>' because they may unify.</Expects>
+//<Expects status="error" id="FS0443" span="(12,6)">This type implements the same interface at different generic instantiations 'IA<int>' and 'IA<'b>'\. This is not permitted in this version of F#</Expects>
 
 type IA<'b> = 
   interface

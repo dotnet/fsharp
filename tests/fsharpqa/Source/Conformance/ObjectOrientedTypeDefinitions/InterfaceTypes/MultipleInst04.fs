@@ -1,5 +1,8 @@
 // #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
-// It is now allowed to implement the same interface multiple times (RFC FS-1031).
+// Regression test for FSHARP1.0:5540
+// It is forbidden to implement an interface at multiple instantiations
+//<Expects status="error" id="FS0443" span="(12,6-12,7)">This type implements the same interface at different generic instantiations 'IA<char,int>' and 'IA<int,char>'\. This is not permitted in this version of F#\.$</Expects>
+
 
 type IA<'a, 'b> =
     interface 
