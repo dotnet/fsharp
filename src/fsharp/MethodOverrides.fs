@@ -628,32 +628,17 @@ module DispatchSlotChecking =
                          else acc ) 
                 (i, reqdTy, m, reduced))
 
+        // Find the full set of most derived interfaces, used roots to search for default interface implementations of interface methods.
+        let mostSpecificOverrides = GetMostSpecificOverrideInterfaceMethodSets infoReader allReqdTys
+
         // Get the SlotImplSet for each implemented type
         // This contains the list of required members and the list of available members
-        for (_i, reqdTy, reqdTyRange, impliedTys) in reqdTyInfos do
+        [ for (i, reqdTy, reqdTyRange, impliedTys) in reqdTyInfos do
 
             // Check that, for each implemented type, at least one implemented type is implied. This is enough to capture
             // duplicates.
             if isInterfaceTy g reqdTy && isNil impliedTys then 
                 errorR(Error(FSComp.SR.typrelDuplicateInterface(), reqdTyRange))
-
-        // Check that no interface type is implied twice
-        //
-        // Note complexity O(reqdTy*reqdTy)
-        for (i, _reqdTy, reqdTyRange, impliedTys) in reqdTyInfos do
-            for (j,_,_,impliedTys2) in reqdTyInfos do
-                if i > j then  
-                    let overlap = ListSet.intersect (TypesFeasiblyEquiv 0 g amap reqdTyRange) impliedTys impliedTys2
-                    for overlappingTy in overlap do
-                        if not (isNil (GetImmediateIntrinsicMethInfosOfType (None,AccessibleFromSomewhere) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual))) then
-                            errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)),reqdTyRange))
-
-        // Find the full set of most derived interfaces, used roots to search for default interface implementations of interface methods.
-        let mostSpecificOverrides = GetMostSpecificOverrideInterfaceMethodSets infoReader allReqdTys
-
-         // Get the SlotImplSet for each implemented type
-        // This contains the list of required members and the list of available members
-        [ for (i,reqdTy,reqdTyRange,impliedTys) in reqdTyInfos do
 
             // Build a set of the implied interface types, for quicker lookup, by nominal type
             let isImpliedInterfaceTable = 

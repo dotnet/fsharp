@@ -13,6 +13,7 @@ open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
@@ -748,7 +749,27 @@ let compareTypesWithRegardToTypeVariablesAndMeasures g typ1 typ2 =
         | NotEqual -> NotEqual
 
 /// Check conditions associated with implementing multiple instantiations of a interface (either non-generic, or with exactly the same generic parameters)
-let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list) isObjectExpression m = 
+
+// Check conditions associated with implementing multiple instantiations of a generic interface
+(*
+let CheckMultipleInterfaceInstantiations cenv interfaces m = 
+    let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
+    let table = interfaces |> MultiMap.initBy keyf
+    let firstInterfaceWithMultipleGenericInstantiations = 
+        interfaces |> List.tryPick (fun typ1 -> 
+            table |> MultiMap.find (keyf typ1) |> List.tryPick (fun typ2 -> 
+                   if // same nominal type
+                       tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
+                       // different instantiations
+                       not (typeEquivAux EraseNone cenv.g typ1 typ2) 
+                    then Some (typ1, typ2)
+                    else None))
+    match firstInterfaceWithMultipleGenericInstantiations with 
+
+*)
+
+let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list) isObjectExpression m =
+    let langVersion = cenv.g.langVersion
     let keyf ty =
         assert isAppTy cenv.g ty
         (tcrefOfAppTy cenv.g ty).Stamp
@@ -761,18 +782,26 @@ let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list
                     let typ2 = items.[i2]
                     let tcRef1 = tcrefOfAppTy cenv.g typ1
                     if tyconRefEq cenv.g tcRef1 (tcrefOfAppTy cenv.g typ2) then
-                        // same nominal type -> check generic args
-                        match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g typ1 typ2 with
-                        | ExactlyEqual -> () // exact duplicates are checked in another place
-                        | ``Equal except for TType_var or Measure or Alias`` ->
-                            let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
-                            let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
-                            if isObjectExpression then
-                                yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariableObjectExpression(tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
-                            else
-                                let typStr = NicePrint.minimalStringOfType cenv.denv typ
-                                yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
-                        | NotEqual -> ()
+                        if not(langVersion.SupportsFeature LanguageFeature.InterfacesWithMultipleGenericInstantiation) then
+                            if // same nominal type -> not allowed in earlier versions of F# language
+                                tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
+                                // different instantiations
+                                not (typeEquivAux EraseNone cenv.g typ1 typ2)
+                            then
+                                    yield (Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)), m))
+                        else
+                            // same nominal type -> check generic args
+                            match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g typ1 typ2 with
+                            | ExactlyEqual -> () // exact duplicates are checked in another place
+                            | ``Equal except for TType_var or Measure or Alias`` ->
+                                let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
+                                let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
+                                if isObjectExpression then
+                                    yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariableObjectExpression(tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
+                                else
+                                    let typStr = NicePrint.minimalStringOfType cenv.denv typ
+                                    yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
+                            | NotEqual -> ()
     }
     match Seq.tryHead errors with
     | None -> ()

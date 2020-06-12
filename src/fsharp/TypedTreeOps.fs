@@ -2937,6 +2937,9 @@ let qualifiedInterfaceImplementationName g (tt:TType) memberName =
             seq { yield! namespaceParts; yield tc.DisplayName } |> String.concat "."
         match x with
         | TType_app (a,[]) -> TyconRefToFullName a
+        | TType_anon (a,b) ->
+            let genericParameters = b |> Seq.map (stripTyEqnsAndErase true g >> stripMeasuresFromTType g >> TType_ToCodeLikeString) |> String.concat ", "
+            sprintf "%s<%s>" (a.ILTypeRef.FullName) genericParameters
         | TType_app (a,b) ->
             let genericParameters = b |> Seq.map (stripTyEqnsAndErase true g >> stripMeasuresFromTType g >> TType_ToCodeLikeString) |> String.concat ", "
             sprintf "%s<%s>" (TyconRefToFullName a) genericParameters
