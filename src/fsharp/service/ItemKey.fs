@@ -232,7 +232,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         match ty with
         | TType_forall (_, ty) ->
             writeType ty
-        | TType_app (tcref, _) ->
+        | TType_app (tcref, _, _) ->
             writeEntityRef tcref
         | TType_tuple (_, tinst) ->
             writeString ItemKeyTags.typeTuple
@@ -241,14 +241,14 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.typeAnonymousRecord
             writeString anonInfo.ILTypeRef.BasicQualifiedName
             tinst |> List.iter writeType
-        | TType_fun (d, r) ->
+        | TType_fun (d, r, _) ->
             writeString ItemKeyTags.typeFunction
             writeType d
             writeType r
         | TType_measure ms -> 
             writeString ItemKeyTags.typeMeasure
             writeMeasure ms
-        | TType_var tp ->
+        | TType_var (tp, _) ->
             writeTypar tp
         | TType_ucase (uc, _) ->
             match uc with

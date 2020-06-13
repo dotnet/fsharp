@@ -82,7 +82,7 @@ val internal p_ty : pickler<TType>
 val internal pickleCcuInfo : pickler<PickledCcuInfo>
 
 /// Serialize an arbitrary object using the given pickler
-val pickleObjWithDanglingCcus : inMem: bool -> file: string -> TcGlobals -> scope:CcuThunk -> pickler<'T> -> 'T -> byte[]
+val pickleObjWithDanglingCcus : inMem: bool -> file: string -> TcGlobals -> scope:CcuThunk -> pickler<'T> -> 'T -> byte[] * byte[]
 
 /// The type of state unpicklers read from
 type ReaderState 
@@ -142,7 +142,7 @@ val internal u_ty : unpickler<TType>
 val internal unpickleCcuInfo : ReaderState -> PickledCcuInfo
 
 /// Deserialize an arbitrary object which may have holes referring to other compilation units
-val internal unpickleObjWithDanglingCcus : file:string -> viewedScope:ILScopeRef -> ilModule:ILModuleDef option -> ('T  unpickler) -> ReadOnlyByteMemory -> PickledDataWithReferences<'T>
+val internal unpickleObjWithDanglingCcus : file:string -> viewedScope:ILScopeRef -> ilModule:ILModuleDef option -> ('T  unpickler) -> ReadOnlyByteMemory -> ReadOnlyByteMemory -> PickledDataWithReferences<'T>
 
 
 

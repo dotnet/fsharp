@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly Structs02
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.Structs02
 {
-  // Offset: 0x00000000 Length: 0x00000787
+  // Offset: 0x00000000 Length: 0x00000777
+}
+.mresource public FSharpSignatureDataB.Structs02
+{
+  // Offset: 0x00000780 Length: 0x00000096
 }
 .mresource public FSharpOptimizationData.Structs02
 {
-  // Offset: 0x00000790 Length: 0x00000237
+  // Offset: 0x00000820 Length: 0x00000237
+}
+.mresource public FSharpOptimizationDataB.Structs02
+{
+  // Offset: 0x00000A60 Length: 0x00000035
 }
 .module Structs02.exe
-// MVID: {59B19213-7040-5E27-A745-03831392B159}
+// MVID: {5E172EE9-7040-5E27-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002F0000
+// Image base: 0x05800000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -83,7 +91,7 @@
                [2] int32 V_2,
                [3] int32 V_3)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 6,6 : 6,11 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\Structs02.fs'
+      .line 6,6 : 6,11 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Structs02.fs'
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()

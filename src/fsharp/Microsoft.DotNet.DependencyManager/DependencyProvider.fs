@@ -101,7 +101,9 @@ type IResolveDependenciesResult =
     abstract Roots: string seq
 
 
-[<AllowNullLiteralAttribute>]
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+[<AllowNullLiteral>]
+#endif
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
@@ -308,7 +310,11 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         DependencyManager.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
 
     /// Fetch a dependencymanager that supports a specific key
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string * IDependencyManagerProvider =
+#else
+    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string? * IDependencyManagerProvider? =
+#endif
         try
             if path.Contains ":" && not (Path.IsPathRooted path) then
                 let managers = RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
@@ -317,17 +323,17 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
                 | None ->
                     let err, msg = this.CreatePackageManagerUnknownError(compilerTools, outputDir, (path.Split(':').[0]), reportError)
                     reportError.Invoke(ErrorReportType.Error, err, msg)
-                    null, Unchecked.defaultof<IDependencyManagerProvider>
+                    null, null
 
                 | Some kv -> path, kv.Value
             else
-                path, Unchecked.defaultof<IDependencyManagerProvider>
+                path, null
         with 
         | e ->
             let e = stripTieWrapper e
             let err, msg = DependencyManager.SR.packageManagerError(e.Message)
             reportError.Invoke(ErrorReportType.Error, err, msg)
-            null, Unchecked.defaultof<IDependencyManagerProvider>
+            null, null
 
     /// Remove the dependency mager with the specified key
     member __.RemoveDependencyManagerKey(packageManagerKey:string, path:string): string =
@@ -335,7 +341,11 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         path.Substring(packageManagerKey.Length + 1).Trim()
 
     /// Fetch a dependencymanager that supports a specific key
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     member __.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
+#else
+    member __.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider? =
+#endif
 
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError

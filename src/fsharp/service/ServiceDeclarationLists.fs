@@ -172,7 +172,7 @@ module internal DescriptionListsImpl =
                 |> Array.map (fun sp -> 
                     let ty = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType), m))
                     let spKind = NicePrint.prettyLayoutOfType denv ty
-                    let spName = sp.PUntaint((fun sp -> sp.Name), m)
+                    let spName = sp.PUntaint((fun sp -> nonNull sp.Name), m)
                     let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
                     FSharpMethodGroupItemParameter(
                       name = spName,
@@ -247,7 +247,7 @@ module internal DescriptionListsImpl =
                 match ucinfo.UnionCase.RecdFields with
                 | [f] -> [PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField -1 f]
                 | fs -> fs |> List.mapi (PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField)
-            let rty = generalizedTyconRef ucinfo.TyconRef
+            let rty = generalizedTyconRef g ucinfo.TyconRef
             let rtyL = NicePrint.layoutType denv rty
             prettyParams, rtyL
 
@@ -530,10 +530,10 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
             items 
             |> List.map (fun x ->
                 match x.Item with
-                | Item.Types (_, (TType_app(tcref, _) :: _)) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
+                | Item.Types (_, (TType_app(tcref, _, _) :: _)) -> { x with MinorPriority = 1 + tcref.TyparsNoRange.Length }
                 // Put delegate ctors after types, sorted by #typars. RemoveDuplicateItems will remove FakeInterfaceCtor and DelegateCtor if an earlier type is also reported with this name
-                | Item.FakeInterfaceCtor (TType_app(tcref, _)) 
-                | Item.DelegateCtor (TType_app(tcref, _)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
+                | Item.FakeInterfaceCtor (TType_app(tcref,_,_)) 
+                | Item.DelegateCtor (TType_app(tcref,_,_)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
                 | Item.CtorGroup (_, (cinfo :: _)) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
                 | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }

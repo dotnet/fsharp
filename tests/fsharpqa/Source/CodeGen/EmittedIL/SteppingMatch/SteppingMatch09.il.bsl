@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly SteppingMatch09
 {
@@ -29,20 +29,24 @@
 }
 .mresource public FSharpSignatureData.SteppingMatch09
 {
-  // Offset: 0x00000000 Length: 0x00000318
+  // Offset: 0x00000000 Length: 0x0000030C
+}
+.mresource public FSharpSignatureDataB.SteppingMatch09
+{
+  // Offset: 0x00000310 Length: 0x00000013
 }
 .mresource public FSharpOptimizationData.SteppingMatch09
 {
-  // Offset: 0x00000320 Length: 0x000000EB
+  // Offset: 0x00000328 Length: 0x000000EB
 }
 .module SteppingMatch09.dll
-// MVID: {59B19213-4935-D6AC-A745-03831392B159}
+// MVID: {5E172EE8-4935-D6AC-A745-0383E82E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00390000
+// Image base: 0x05AA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -112,7 +116,7 @@
       .maxstack  6
       .locals init ([0] class SteppingMatch09/GenericInner@15 V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 16,16 : 6,21 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch09.fs'
+      .line 16,16 : 6,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch09.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      class SteppingMatch09/GenericInner@15 class SteppingMatch09/GenericInner@15T<!T>::self0@
       IL_0006:  stloc.0
