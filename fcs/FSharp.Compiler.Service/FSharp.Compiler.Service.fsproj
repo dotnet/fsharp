@@ -2,6 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
   <Import Project="..\..\src\buildtools\buildtools.targets" />
+  <Import Project="..\..\eng\Versions.props" />
   <PropertyGroup>
     <TargetFrameworks>$(FcsTargetNetFxFramework);netstandard2.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>

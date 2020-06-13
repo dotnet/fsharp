@@ -325,9 +325,12 @@ type cenv =
 
 let convResolveAssemblyRef (cenv: cenv) (asmref: ILAssemblyRef) qualifiedName =
     let assembly = 
-        match cenv.resolveAssemblyRef asmref with                     
+        match cenv.resolveAssemblyRef asmref with
         | Some (Choice1Of2 path) ->
-            FileSystem.AssemblyLoadFrom path              
+            // asmRef is a path but the runtime is smarter with assembly names so make one
+            let asmName = AssemblyName.GetAssemblyName(path)
+            asmName.CodeBase <- path
+            FileSystem.AssemblyLoad asmName
         | Some (Choice2Of2 assembly) ->
             assembly
         | None ->
@@ -358,8 +361,6 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
         | res -> res
     | ILScopeRef.PrimaryAssembly ->
         convResolveAssemblyRef cenv cenv.ilg.primaryAssemblyRef qualifiedName
-
-
 
 /// The (local) emitter env (state). Some of these fields are effectively global accumulators
 /// and could be placed as hash tables in the global environment.
