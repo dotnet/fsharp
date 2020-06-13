@@ -31,6 +31,7 @@ type LanguageFeature =
     | AndBang
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
+    | WitnessPassing
     | StringInterpolation
 
 /// LanguageVersion management
@@ -68,6 +69,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.AndBang, previewVersion
             LanguageFeature.NullableOptionalInterop, previewVersion
             LanguageFeature.DefaultInterfaceMemberConsumption, previewVersion
+            LanguageFeature.WitnessPassing, previewVersion
             LanguageFeature.StringInterpolation, previewVersion
         ]
 
@@ -137,6 +139,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
+        | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation()
 
     /// Get a version string associated with the given feature.

@@ -196,7 +196,10 @@ module CoreTests =
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun' "core/letrec-mutrec2" FSI_BASIC
 
     [<Test>]
-    let ``printf-FSC_BASIC`` () = singleTestBuildAndRun' "core/printf" FSC_BASIC
+    let ``printf`` () = singleTestBuildAndRun' "core/printf" FSC_BASIC
+
+    [<Test>]
+    let ``printf-interpolated`` () = singleTestBuildAndRunVersion' "core/printf-interpolated" FSC_BASIC "preview"
 
     [<Test>]
     let ``printf-interpolated-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/printf-interpolated" FSC_BASIC "preview"
@@ -972,7 +975,7 @@ module CoreTests =
 
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
-        fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s --define:LANGVERSION_PREVIEW --langversion:preview -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 

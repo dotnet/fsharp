@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open NUnit.Framework
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.UnitTests.Utilities
+open FSharp.TestHelpers
 
 [<TestFixture>]
 module StringInterpolationTests =
