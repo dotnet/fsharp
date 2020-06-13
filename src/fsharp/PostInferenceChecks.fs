@@ -693,9 +693,9 @@ let isSpliceOperator g v = valRefEq g v g.splice_expr_vref || valRefEq g v g.spl
 /// The differences could also be nested, example:
 /// I<List<int*string>> vs I<List<int*'T>> => ``Equal except for TType_var or Measure or Alias``.
 type TTypeEquality =
-| ExactlyEqual
-| ``Equal except for TType_var or Measure or Alias``
-| NotEqual
+    | ExactlyEqual
+    | ``Equal except for TType_var or Measure or Alias``
+    | NotEqual
 
 let compareTypesWithRegardToTypeVariablesAndMeasures g typ1 typ2 =
     
