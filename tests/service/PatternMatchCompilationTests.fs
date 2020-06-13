@@ -80,7 +80,7 @@ match A with
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
     dumpErrors checkResults |> shouldEqual [
-        "(7,2--7,10): This constructor is applied to 2 argument(s) but expects 3"
+        "(7,2--7,10): This union case expects 3 arguments in tupled form"        
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
@@ -257,6 +257,23 @@ match TraceLevel.Off with
     ]
 
 
+[<Test>]
+let ``Caseless DU`` () =
+    let _, checkResults = getParseAndCheckResults """
+type DU = Case of int
+
+let f du =
+    match du with
+    | Case -> ()
+
+let dowork () =
+    f (Case 1)
+    0 // return an integer exit code"""
+    assertHasSymbolUsages ["DU"; "dowork"; "du"; "f"] checkResults
+    dumpErrors checkResults |> shouldEqual [
+        "(6,6--6,10): This constructor is applied to 0 argument(s) but expects 1"
+    ]
+    
 [<Test>]
 let ``Or 01 - No errors`` () =
     let _, checkResults = getParseAndCheckResults """

@@ -1079,6 +1079,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val system_MarshalByRefObject_tcref =  tryFindSysTyconRef sys "MarshalByRefObject"
   member val system_MarshalByRefObject_ty = tryMkSysNonGenericTy sys "MarshalByRefObject"
 
+  member val system_ExceptionDispatchInfo_ty =
+      tryMkSysNonGenericTy ["System"; "Runtime"; "ExceptionServices"] "ExceptionDispatchInfo"
+
   member __.system_Reflection_MethodInfo_ty = v_system_Reflection_MethodInfo_ty
     
   member val system_Array_tcref  = findSysTyconRef sys "Array"

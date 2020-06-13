@@ -4017,8 +4017,8 @@ atomicExpr:
   | GLOBAL
       { SynExpr.Ident (ident(MangledGlobalName, rhs parseState 1)), false }
 
-  | nameop
-      { SynExpr.Ident ($1), false }
+  | identExpr
+      { $1, false }
 
   | LBRACK listExprElements RBRACK 
       { $2 (lhs parseState) false, false }
@@ -5342,6 +5342,16 @@ pathOp:
 /* nameop is identOrOp not used as part of a path */
 nameop: 
   | identOrOp { $1 } 
+
+identExpr:
+  | ident
+     { SynExpr.Ident($1) }
+
+  | opName
+     { let m = lhs parseState
+       let mLparen = mkFileIndexRange m.FileIndex m.Start (mkPos m.StartLine (m.StartColumn + 1))
+       let mRparen = mkFileIndexRange m.FileIndex (mkPos m.EndLine (m.EndColumn - 1)) m.End
+       SynExpr.Paren(SynExpr.Ident($1), mLparen, Some mRparen, m) }
 
 topSeparator: 
   | SEMICOLON { } 

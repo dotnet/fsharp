@@ -32,6 +32,7 @@
     <Compile Include="Compiler\CodeGen\EmittedIL\LiteralValue.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\TailCalls.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
     <Compile Include="Compiler\ErrorMessages\ConstructorTests.fs" />
@@ -73,13 +74,18 @@
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
     <Compile Include="Compiler\Language\SpanTests.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
+    <Compile Include="Compiler\Language\ComputationExpressionTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Compile Include="Compiler\Regressions\IndexerRegressionTests.fs" />
     <Compile Include="Compiler\Regressions\ForInDoMutableRegressionTest.fs" />
+    <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\CastToUnitsTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\ComparisonTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\StringFormatTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Collections\IEnumerableTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Collections\MapTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Collections\CollectionTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Collections\ListTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\ExtraTopLevelOperators\DictionaryTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
