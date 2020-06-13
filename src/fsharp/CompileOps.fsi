@@ -151,24 +151,35 @@ exception HashLoadedScriptConsideredSource of range
 /// Represents a reference to an F# assembly. May be backed by a real assembly on disk (read by Abstract IL), or a cross-project
 /// reference in FSharp.Compiler.Service.
 type IRawFSharpAssemblyData = 
+
     ///  The raw list AutoOpenAttribute attributes in the assembly
     abstract GetAutoOpenAttributes: ILGlobals -> string list
+
     ///  The raw list InternalsVisibleToAttribute attributes in the assembly
     abstract GetInternalsVisibleToAttributes: ILGlobals  -> string list
+
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
     abstract TryGetILModuleDef: unit -> ILModuleDef option
+
     abstract HasAnyFSharpSignatureDataAttribute: bool
+
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
+
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
+
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
+
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
+
     /// The identity of the module
     abstract ILScopeRef: ILScopeRef
+
     abstract ILAssemblyRefs: ILAssemblyRef list
+
     abstract ShortAssemblyName: string
 
 type TimeStampCache = 
@@ -288,6 +299,8 @@ type TcConfigBuilder =
       mutable embedResources: string list
       mutable errorSeverityOptions: FSharpErrorSeverityOptions
       mutable mlCompatibility:bool
+      mutable assumeNullOnImport: bool
+      mutable checkNullness: bool
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
       mutable outputDir: string option
@@ -400,7 +413,7 @@ type TcConfigBuilder =
 
     }
 
-    static member Initial: TcConfigBuilder
+    static member Initial: ReferenceResolver.Resolver -> TcConfigBuilder
 
     static member CreateNew: 
         legacyReferenceResolver: ReferenceResolver.Resolver *
@@ -454,6 +467,8 @@ type TcConfig =
     member embedResources: string list
     member errorSeverityOptions: FSharpErrorSeverityOptions
     member mlCompatibility:bool
+    member assumeNullOnImport: bool
+    member checkNullness: bool
     member checkOverflow:bool
     member showReferenceResolutions:bool
     member outputDir: string option
@@ -667,22 +682,22 @@ type TcImports =
 /// Determine if an IL resource attached to an F# assembly is an F# signature data resource
 val IsSignatureDataResource: ILResource -> bool
 
+/// Determine if an IL resource attached to an F# assembly is an F# signature data resource (data stream B)
+val IsSignatureDataResourceB: ILResource -> bool
+
 /// Determine if an IL resource attached to an F# assembly is an F# optimization data resource
 val IsOptimizationDataResource: ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
+
 val GetSignatureDataResourceName: ILResource -> string
 
-/// Write F# signature data as an IL resource
-val WriteSignatureData: TcConfig * TcGlobals * Remap * CcuThunk * filename: string * inMem: bool -> ILResource
+/// Write F# signature data as one or more IL resources
+val WriteSignatureData: TcConfig * TcGlobals * Remap * CcuThunk * filename: string * inMem: bool -> ILResource * ILResource option
 
-/// Write F# optimization data as an IL resource
-val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
-
-//----------------------------------------------------------------------------
-// #r and other directives
-//--------------------------------------------------------------------------
+/// Write F# optimization data as an IL resource(s)
+val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource * ILResource option
 
 //----------------------------------------------------------------------------
 // #r and other directives

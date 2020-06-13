@@ -38,14 +38,18 @@
 }
 .mresource public FSharpSignatureData.Linq101Aggregates01
 {
-  // Offset: 0x00000000 Length: 0x000005F6
+  // Offset: 0x00000000 Length: 0x00000608
+}
+.mresource public FSharpSignatureDataB.Linq101Aggregates01
+{
+  // Offset: 0x00000610 Length: 0x00000027
 }
 .mresource public FSharpOptimizationData.Linq101Aggregates01
 {
-  // Offset: 0x00000600 Length: 0x00000211
+  // Offset: 0x00000640 Length: 0x00000211
 }
 .module Linq101Aggregates01.exe
-// MVID: {5EAD3E37-D281-4783-A745-0383373EAD5E}
+// MVID: {5E172EEB-D281-4783-A745-0383EB2E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000

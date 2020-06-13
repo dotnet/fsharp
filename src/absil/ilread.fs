@@ -689,7 +689,11 @@ type GenericParamsIdx = GenericParamsIdx of int * TypeOrMethodDefTag * int
 
 let mkCacheInt32 lowMem _inbase _nm _sz =
     if lowMem then (fun f x -> f x) else
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let cache = ref null 
+#else
+    let cache : Dictionary<_,_>? ref = ref null // TODO NULLNESS: this explicit annotation should not be needed 
+#endif
     let count = ref 0
 #if STATISTICS
     addReport (fun oc -> if !count <> 0 then oc.WriteLine ((_inbase + string !count + " "+ _nm + " cache hits"): string))
@@ -697,9 +701,12 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
     fun f (idx: int32) ->
         let cache = 
             match !cache with
-            | null -> cache := new Dictionary<int32, _>(11)
-            | _ -> ()
-            !cache
+            | null -> 
+                let c = new Dictionary<int32, _>(11)
+                cache :=  c
+                c
+            | NonNull c -> c 
+
         match cache.TryGetValue idx with
         | true, res ->
             incr count 
@@ -711,7 +718,11 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
 
 let mkCacheGeneric lowMem _inbase _nm _sz =
     if lowMem then (fun f x -> f x) else
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     let cache = ref null 
+#else
+    let cache : Dictionary<_,_>? ref = ref null // TODO NULLNESS: this explicit annotation should not be needed
+#endif
     let count = ref 0
 #if STATISTICS
     addReport (fun oc -> if !count <> 0 then oc.WriteLine ((_inbase + string !count + " " + _nm + " cache hits"): string))
@@ -719,10 +730,13 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
     fun f (idx :'T) ->
         let cache = 
             match !cache with
-            | null -> cache := new Dictionary<_, _>(11 (* sz: int *) ) 
-            | _ -> ()
-            !cache
-        match cache.TryGetValue idx with
+            | null -> 
+                let c = new Dictionary<_, _>(11) 
+                cache := c
+                c
+            | NonNull c -> c
+
+        match cache.TryGetValue(idx) with
         | true, v ->
             incr count
             v
@@ -3035,7 +3049,7 @@ and seekReadManifestResources (ctxt: ILMetadataReader) canReduceMemory (mdv: Bin
                     let bytes = 
                         let bytes = pevEager.Slice(offsetOfBytesFromStartOfPhysicalPEFile, resourceLength)
                         // If we are trying to reduce memory, create a memory mapped file based on the contents.
-                        if canReduceMemory then
+                        if canReduceMemory && resourceLength > 0 then
                             ByteMemory.CreateMemoryMappedFile bytes
                         else
                             ByteMemory.FromArray(bytes.ToArray())

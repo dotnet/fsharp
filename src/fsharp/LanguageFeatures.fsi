@@ -20,6 +20,7 @@ type LanguageFeature =
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
+    | NullnessChecking
 
 /// LanguageVersion management
 type LanguageVersion =

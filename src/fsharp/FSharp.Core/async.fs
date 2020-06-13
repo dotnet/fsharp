@@ -1768,8 +1768,8 @@ namespace Microsoft.FSharp.Control
                             if userToken = args.UserState then
                                 event.RemoveHandler handle
                                 if args.Cancelled then
-                                    ccont (OperationCanceledException())
-                                elif isNotNull args.Error then
+                                    ccont (new OperationCanceledException())
+                                elif isNonNull args.Error then
                                     econt args.Error
                                 else
                                     cont (result args)

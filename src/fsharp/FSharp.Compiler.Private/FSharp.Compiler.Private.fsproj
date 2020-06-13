@@ -9,6 +9,7 @@
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --checknulls</OtherFlags>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);MSBUILD_AT_LEAST_15</DefineConstants>
     <DefineConstants>$(DefineConstants);LOCALIZATION_FCOMP</DefineConstants>

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly ForEachOnList01
 {
@@ -29,20 +29,24 @@
 }
 .mresource public FSharpSignatureData.ForEachOnList01
 {
-  // Offset: 0x00000000 Length: 0x000002ED
+  // Offset: 0x00000000 Length: 0x000002E9
+}
+.mresource public FSharpSignatureDataB.ForEachOnList01
+{
+  // Offset: 0x000002F0 Length: 0x00000016
 }
 .mresource public FSharpOptimizationData.ForEachOnList01
 {
-  // Offset: 0x000002F8 Length: 0x000000DB
+  // Offset: 0x00000310 Length: 0x000000DB
 }
 .module ForEachOnList01.dll
-// MVID: {59B18AEE-56DF-F74F-A745-0383EE8AB159}
+// MVID: {5E1730A7-56DF-F74F-A745-0383A730175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002D0000
+// Image base: 0x054B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -72,7 +76,7 @@
       // Code size       4 (0x4)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 39,39 : 21,26 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\ForLoop\\ForEachOnList01.fs'
+      .line 39,39 : 21,26 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\ForEachOnList01.fs'
       IL_0000:  ldarg.1
       IL_0001:  ldc.i4.1
       IL_0002:  add

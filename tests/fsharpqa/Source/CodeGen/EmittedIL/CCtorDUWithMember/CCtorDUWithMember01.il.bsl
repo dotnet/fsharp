@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly CCtorDUWithMember01
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.CCtorDUWithMember01
 {
-  // Offset: 0x00000000 Length: 0x00000790
+  // Offset: 0x00000000 Length: 0x0000077A
+}
+.mresource public FSharpSignatureDataB.CCtorDUWithMember01
+{
+  // Offset: 0x00000780 Length: 0x00000085
 }
 .mresource public FSharpOptimizationData.CCtorDUWithMember01
 {
-  // Offset: 0x00000798 Length: 0x00000227
+  // Offset: 0x00000810 Length: 0x00000227
+}
+.mresource public FSharpOptimizationDataB.CCtorDUWithMember01
+{
+  // Offset: 0x00000A40 Length: 0x0000002F
 }
 .module CCtorDUWithMember01.exe
-// MVID: {59B1923F-26F1-14EE-A745-03833F92B159}
+// MVID: {5E172EE9-26F1-14EE-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00A70000
+// Image base: 0x04F90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -70,7 +78,7 @@
              [2] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class CCtorDUWithMember01a/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2,
              [3] class CCtorDUWithMember01a/C V_3)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 2,2 : 1,23 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CCtorDUWithMember\\CCtorDUWithMember01.fs'
+    .line 2,2 : 1,23 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\CCtorDUWithMember\\CCtorDUWithMember01.fs'
     IL_0000:  ldstr      "File1.A = %A"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class CCtorDUWithMember01a/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class CCtorDUWithMember01a/C>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class CCtorDUWithMember01a/C,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -259,7 +267,7 @@
       .maxstack  4
       .locals init ([0] int32 V_0,
                [1] int32 V_1)
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CCtorDUWithMember\\CCtorDUWithMember01a.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\CCtorDUWithMember\\CCtorDUWithMember01a.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldnull
       IL_0002:  cgt.un

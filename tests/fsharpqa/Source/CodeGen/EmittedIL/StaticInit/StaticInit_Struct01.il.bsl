@@ -29,14 +29,22 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Struct01
 {
-  // Offset: 0x00000000 Length: 0x0000079F
+  // Offset: 0x00000000 Length: 0x000007A1
+}
+.mresource public FSharpSignatureDataB.StaticInit_Struct01
+{
+  // Offset: 0x000007A8 Length: 0x0000009B
 }
 .mresource public FSharpOptimizationData.StaticInit_Struct01
 {
-  // Offset: 0x000007A8 Length: 0x0000021F
+  // Offset: 0x00000848 Length: 0x0000021F
+}
+.mresource public FSharpOptimizationDataB.StaticInit_Struct01
+{
+  // Offset: 0x00000A70 Length: 0x00000035
 }
 .module StaticInit_Struct01.dll
-// MVID: {5ECD86B3-05F6-D6CB-A745-0383B386CD5E}
+// MVID: {5E172EE8-05F6-D6CB-A745-0383E82E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
