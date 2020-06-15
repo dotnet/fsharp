@@ -419,6 +419,7 @@ let main argv = 0"""
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
         CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output)))
 
+    /// Assert that the given source code compiles with the `defaultProjectOptions`, with no errors or warnings
     static member Pass (source: string) =
         lock gate <| fun () ->
             let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
