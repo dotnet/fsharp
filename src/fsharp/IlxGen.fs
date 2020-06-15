@@ -894,7 +894,7 @@ and IlxGenEnv =
       /// Indicates the default "place" for stuff we're currently generating
       cloc: CompileLocation
 
-      /// The sequel to use for an "early exit" in a state machine, e.g. a return fro the middle of an 
+      /// The sequel to use for an "early exit" in a state machine, e.g. a return from the middle of an 
       /// async block
       exitSequel: sequel
 
@@ -988,7 +988,8 @@ let AddStorageForVal (g: TcGlobals) (v, s) eenv =
 let AddStorageForLocalVals g vals eenv =
     List.foldBack (fun (v, s) acc -> AddStorageForVal g (v, notlazy s) acc) vals eenv
 
-let AddTemplateReplacement eenv (tcref, ilty, inst) = { eenv with tyenv = eenv.tyenv.WithTemplateReplacement (tcref, ilty, inst) }
+let AddTemplateReplacement eenv (tcref, ilty, inst) =
+    { eenv with tyenv = eenv.tyenv.WithTemplateReplacement (tcref, ilty, inst) }
 
 let AddStorageForLocalWitness eenv (w,s) =
     { eenv with witnessesInScope = eenv.witnessesInScope.SetItem (w, s) }
@@ -2297,7 +2298,7 @@ and GenExprWithStackGuard cenv cgbuf eenv sp expr sequel =
 /// Returns 'true' if the expression was processed by alternative means.
 and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
     let g = cenv.g
-    
+
     ProcessDebugPointForExpr cenv cgbuf sp expr
 
     match (if compileSequenceExpressions && IsPossibleSequenceExpr g expr then ConvertSequenceExprToObject g cenv.amap expr else None) with
@@ -2343,7 +2344,7 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
     | Expr.Let _
     | LinearOpExpr _ 
     | Expr.Match _ -> 
-        GenLinearExpr cenv cgbuf eenv sp expr sequel (* preSteps *) false id |> ignore<FakeUnit>
+        GenLinearExpr cenv cgbuf eenv sp expr sequel false id |> ignore<FakeUnit>
 
     | Expr.Const (c, m, ty) ->
         GenConstant cenv cgbuf eenv (c, m, ty) sequel
@@ -2355,15 +2356,15 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
         GenLambda cenv cgbuf eenv false [] expr sequel
 
     | Expr.App (Expr.Val (vref, _, m) as v, _, tyargs, [], _) when
-        List.forall (isMeasureTy g) tyargs &&
-        (
-            // inline only values that are stored in local variables
-            match StorageForValRef g m vref eenv with
-            | ValStorage.Local _ -> true
-            | _ -> false
-        ) ->
-      // application of local type functions with type parameters = measure types and body = local value - inline the body
-      GenExpr cenv cgbuf eenv sp v sequel
+          List.forall (isMeasureTy g) tyargs &&
+          (
+              // inline only values that are stored in local variables
+              match StorageForValRef g m vref eenv with
+              | ValStorage.Local _ -> true
+              | _ -> false
+          ) ->
+        // application of local type functions with type parameters = measure types and body = local value - inline the body
+        GenExpr cenv cgbuf eenv sp v sequel
 
     | Expr.App (f, fty, tyargs, curriedArgs, m) -> 
         GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel
@@ -2697,13 +2698,11 @@ and GenAllocUnionCase cenv cgbuf eenv (c,tyargs,args,m) sequel =
 
 and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> FakeUnit) =
     let expr = stripExpr expr
-
     match expr with 
     | Expr.Sequential (e1, e2, specialSeqFlag, spSeq, _) ->
         // Process the debug point and see if there's a replacement technique to process this expression
         if preSteps && GenExprPreSteps cenv cgbuf eenv sp expr sequel then contf Fake else
 
-        // preSteps = run the initial processing from GenExprAux on the expression.
         // Compiler generated sequential executions result in suppressions of sequence points on both
         // left and right of the sequence
         let spAction, spExpr =
@@ -2812,7 +2811,7 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> Fa
         if preSteps && GenExprPreSteps cenv cgbuf eenv sp expr sequel then contf Fake else
 
         GenExprs cenv cgbuf eenv argsFront
-        GenLinearExpr cenv cgbuf eenv SPSuppress argLast Continue (* preSteps *) true (contf << (fun Fake -> 
+        GenLinearExpr cenv cgbuf eenv SPSuppress argLast Continue true (contf << (fun Fake -> 
             GenAllocUnionCaseCore cenv cgbuf eenv (c, tyargs, argsFront.Length + 1, m)
             GenSequel cenv eenv.cloc cgbuf sequel
             Fake))
@@ -4667,6 +4666,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
         cgbuf.mgbuf.AddTypeDef(ilCloTypeRef, cloTypeDef, false, false, None)
 
     CountClosure()
+    GenWitnessArgsFromWitnessInfos cenv cgbuf eenvouter m cloinfo.cloWitnessInfos
     for fv in cloinfo.cloFreeVars do
        // State variables always get zero-initialized
        if stateVarsSet.Contains fv then
@@ -5461,9 +5461,9 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
                 // Emit the expression
                 GenBindingRhs cenv cgbuf eenv SPSuppress v e)
 
-            vs |> List.rev |> List.iter (fun v -> 
-               // Store the results
-               GenStoreVal cenv cgbuf eenvAtTarget v.Range v)
+            vs |> List.rev |> List.iter (fun v ->
+                // Store the results
+                GenStoreVal cenv cgbuf eenvAtTarget v.Range v)
 
             CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkAfterBinds.CodeLabel)
 
