@@ -27,7 +27,6 @@
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
-    <Compile Include="Compiler\ILMemberAccessTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticMember.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\LiteralValue.fs" />
@@ -35,6 +34,7 @@
     <Compile Include="Compiler\CodeGen\EmittedIL\TailCalls.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
+    <Compile Include="Compiler\Conformance\Properties\ILMemberAccessTests.fs" />
     <Compile Include="Compiler\ErrorMessages\ConstructorTests.fs" />
     <Compile Include="Compiler\ErrorMessages\ClassesTests.fs" />
     <Compile Include="Compiler\ErrorMessages\AccessOfTypeAbbreviationTests.fs" />

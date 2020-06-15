@@ -252,12 +252,32 @@ let GetILAccessOfILPropInfo (ILPropInfo(tinfo, pdef)) =
         match pdef.GetMethod, pdef.SetMethod with 
         | Some mref, None 
         | None, Some mref -> (resolveILMethodRef tdef mref).Access
+
         | Some mrefGet, Some mrefSet ->
             let getA = (resolveILMethodRef tdef mrefGet).Access
             let setA = (resolveILMethodRef tdef mrefSet).Access
-            // pick most accessible
-            max getA setA
+
+            // use the accessors to determine the visibility of the property
+            match getA, setA with
+            | ILMemberAccess.Public, _
+            | _, ILMemberAccess.Public -> ILMemberAccess.Public
+
+            | ILMemberAccess.FamilyOrAssembly, _
+            | _, ILMemberAccess.FamilyOrAssembly -> ILMemberAccess.FamilyOrAssembly
+
+            | ILMemberAccess.Assembly, _
+            | _, ILMemberAccess.Assembly -> ILMemberAccess.Assembly
+
+            | ILMemberAccess.Family, _
+            | _, ILMemberAccess.Family -> ILMemberAccess.Family
+
+            | ILMemberAccess.FamilyAndAssembly, _
+            | _, ILMemberAccess.FamilyAndAssembly -> ILMemberAccess.FamilyAndAssembly
+
+            | _ -> ILMemberAccess.Private
+
         | None, None -> ILMemberAccess.Public
+
     ilAccess
 
 let IsILPropInfoAccessible g amap m ad pinfo =
