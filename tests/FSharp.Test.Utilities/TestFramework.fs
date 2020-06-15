@@ -245,8 +245,9 @@ let config configurationName envVars =
     File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ CORECLR_DLL, overwrite=true)
     File.Copy(coreclrdll, Path.GetDirectoryName(ILASM) ++ CORECLR_DLL, overwrite=true)
 
-    let FSI_FOR_SCRIPTS = ("fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe")
-    let FSI = requireArtifact FSI_FOR_SCRIPTS
+    let FSI_PATH = ("fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe")
+    let FSI_FOR_SCRIPTS = requireArtifact FSI_PATH
+    let FSI = requireArtifact FSI_PATH
 #if !NETCOREAPP
     let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
 #endif
@@ -273,7 +274,7 @@ let config configurationName envVars =
       FSIANYCPU = FSIANYCPU
 #endif
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
-      FSharpBuild = FSharpBuild
+      SharpBuild = FSharpBuild
       FSharpCompilerInteractiveSettings = FSharpCompilerInteractiveSettings
       csc_flags = csc_flags
       fsc_flags = fsc_flags
@@ -296,6 +297,7 @@ let logConfig (cfg: TestConfig) =
 #if !NETCOREAPP
     log "FSIANYCPU           =%s" cfg.FSIANYCPU
 #endif
+    log "FSI_FOR_SCRIPTS     =%s" cfg.FSI_FOR_SCRIPTS
     log "fsi_flags           =%s" cfg.fsi_flags
     log "ILDASM              =%s" cfg.ILDASM
     log "PEVERIFY            =%s" cfg.PEVERIFY
