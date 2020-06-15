@@ -223,20 +223,20 @@ let config configurationName envVars =
     let requirePackage = requireFile packagesDir
     let requireArtifact = requireFile artifactsBinPath
     let CSC = requirePackage ("Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "csc.exe")
-    let ILDASM_EXE = if operatingSystem = "windows" then "ildasm.exe" else "ildasm"
+    let ILDASM_EXE = if operatingSystem = "win" then "ildasm.exe" else "ildasm"
     let ILDASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILDASM_EXE)
-    let ILASM_EXE = if operatingSystem = "windows" then "ilasm.exe" else "ilasm"
+    let ILASM_EXE = if operatingSystem = "win" then "ilasm.exe" else "ilasm"
     let ILASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILASM_EXE)
-    let CORECLR_DLL = if operatingSystem = "windows" then "coreclr.dll" elif operatingSystem = "osx" then "libcoreclr.dylib" else "libcoreclr.so"
+    let CORECLR_DLL = if operatingSystem = "win" then "coreclr.dll" elif operatingSystem = "osx" then "libcoreclr.dylib" else "libcoreclr.so"
     let coreclrdll = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ CORECLR_DLL)
-    let PEVERIFY_EXE = if operatingSystem = "windows" then "PEVerify.exe" else "PEVerify"
+    let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" else "PEVerify"
     let PEVERIFY = requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
     let FSharpBuild = requireArtifact ("FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
     let FSharpCompilerInteractiveSettings = requireArtifact ("FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
 
     let dotNetExe =
         // first look for {repoRoot}\.dotnet\dotnet.exe, otherwise fallback to %PATH%
-        let DOTNET_EXE = if operatingSystem = "windows" then "dotnet.exe" else "dotnet"
+        let DOTNET_EXE = if operatingSystem = "win" then "dotnet.exe" else "dotnet"
         let repoLocalDotnetPath = repoRoot ++ ".dotnet" ++ DOTNET_EXE
         if File.Exists(repoLocalDotnetPath) then repoLocalDotnetPath
         else DOTNET_EXE
