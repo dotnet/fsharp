@@ -18,13 +18,13 @@ module Commands =
             else Path.Combine(workDir, path)
         rooted |> Path.GetFullPath
 
-    let fileExists workDir path = 
+    let fileExists workDir path =
         if path |> getfullpath workDir |> File.Exists then Some path else None
 
-    let directoryExists workDir path = 
+    let directoryExists workDir path =
         if path |> getfullpath workDir |> Directory.Exists then Some path else None
 
-    let copy_y workDir source dest = 
+    let copy_y workDir source dest =
         log "copy /y %s %s" source dest
         File.Copy( source |> getfullpath workDir, dest |> getfullpath workDir, true)
         CmdResult.Success
@@ -35,7 +35,7 @@ module Commands =
 
     let rm dir path =
         let p = path |> getfullpath dir
-        if File.Exists(p) then 
+        if File.Exists(p) then
             (log "rm %s" p) |> ignore
             File.Delete(p)
         else
@@ -43,16 +43,16 @@ module Commands =
 
     let rmdir dir path =
         let p = path |> getfullpath dir
-        if Directory.Exists(p) then 
+        if Directory.Exists(p) then
             (log "rmdir /sy %s" p) |> ignore
             Directory.Delete(p, true)
         else
             (log "not found: %s p") |> ignore
 
-    let pathAddBackslash (p: FilePath) = 
+    let pathAddBackslash (p: FilePath) =
         if String.IsNullOrWhiteSpace (p) then p
         else
-            p.TrimEnd ([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |]) 
+            p.TrimEnd ([| Path.DirectorySeparatorChar; Path.AltDirectorySeparatorChar |])
             + Path.DirectorySeparatorChar.ToString()
 
     let echoAppendToFile workDir text p =
@@ -78,11 +78,11 @@ module Commands =
 
         match exitCode with
         | 0 -> CmdResult.Success
-        | err -> 
-            let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'" fscExe args workDir 
+        | err ->
+            let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'" fscExe args workDir
             CmdResult.ErrorLevel (msg, err)
 #else
-        ignore workDir 
+        ignore workDir
 #if NETCOREAPP
         exec dotNetExe (fscExe + " " + args)
 #else
@@ -119,7 +119,7 @@ module Commands =
         path
 
 
-type TestConfig = 
+type TestConfig =
     { EnvironmentVariables : Map<string, string>
       CSC : string
       csc_flags : string
@@ -138,7 +138,7 @@ type TestConfig =
       ILDASM : string
       ILASM : string
       PEVERIFY : string
-      Directory: string 
+      Directory: string
       DotNetExe: string
       DefaultPlatform: string}
 
@@ -185,11 +185,11 @@ let requireFile dir path =
     // However when nuget packages are installed to $HOME/.nuget/packages, it seems they are lowercased
     let fullPath = (dir ++ path)
     match Commands.fileExists __SOURCE_DIRECTORY__ fullPath with
-    | Some p -> p
+    | Some _ -> fullPath
     | None ->
         let fullPathLower = (dir ++ path.ToLower())
         match Commands.fileExists __SOURCE_DIRECTORY__ fullPathLower with
-        | Some p -> p
+        | Some _ -> fullPathLower
         | None -> failwith (sprintf "Couldn't find \"%s\" on the following paths: \"%s\", \"%s\". Running 'build test' once might solve this issue" path fullPath fullPathLower)
 
 let config configurationName envVars =
@@ -213,7 +213,7 @@ let config configurationName envVars =
     let artifactsPath = repoRoot ++ "artifacts"
     let artifactsBinPath = artifactsPath ++ "bin"
     let coreClrRuntimePackageVersion = "3.0.0-preview-27318-01"
-    let csc_flags = "/nologo" 
+    let csc_flags = "/nologo"
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
     let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
     let operatingSystem = getOperatingSystem ()
@@ -253,8 +253,8 @@ let config configurationName envVars =
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
     let FSCOREDLLPATH = requireArtifact ("FSharp.Core" ++ configurationName ++ fsharpCoreArchitecture ++ "FSharp.Core.dll")
 
-    let defaultPlatform = 
-        match Is64BitOperatingSystem with 
+    let defaultPlatform =
+        match Is64BitOperatingSystem with
 //        | PlatformID.MacOSX, true -> "osx.10.10-x64"
 //        | PlatformID.Unix,true -> "ubuntu.14.04-x64"
         | true -> "win7-x64"
@@ -265,7 +265,7 @@ let config configurationName envVars =
       ILDASM = ILDASM
       ILASM = ILASM
       PEVERIFY = PEVERIFY
-      CSC = CSC 
+      CSC = CSC
       BUILD_CONFIG = configurationName
       FSC = FSC
       FSI = FSI
@@ -276,9 +276,9 @@ let config configurationName envVars =
       FSharpBuild = FSharpBuild
       FSharpCompilerInteractiveSettings = FSharpCompilerInteractiveSettings
       csc_flags = csc_flags
-      fsc_flags = fsc_flags 
-      fsi_flags = fsi_flags 
-      Directory="" 
+      fsc_flags = fsc_flags
+      fsi_flags = fsi_flags
+      Directory=""
       DotNetExe = dotNetExe
       DefaultPlatform = defaultPlatform }
 
@@ -302,18 +302,18 @@ let logConfig (cfg: TestConfig) =
     log "---------------------------------------------------------------"
 
 
-let checkResult result = 
+let checkResult result =
     match result with
     | CmdResult.ErrorLevel (msg1, err) -> Assert.Fail (sprintf "%s. ERRORLEVEL %d" msg1 err)
     | CmdResult.Success -> ()
 
-let checkErrorLevel1 result = 
+let checkErrorLevel1 result =
     match result with
     | CmdResult.ErrorLevel (_,1) -> ()
     | CmdResult.Success | CmdResult.ErrorLevel _ -> Assert.Fail (sprintf "Command passed unexpectedly")
 
-let envVars () = 
-    System.Environment.GetEnvironmentVariables () 
+let envVars () =
+    System.Environment.GetEnvironmentVariables ()
     |> Seq.cast<System.Collections.DictionaryEntry>
     |> Seq.map (fun d -> d.Key :?> string, d.Value :?> string)
     |> Map.ofSeq
@@ -329,7 +329,7 @@ let initializeSuite () =
 
     let cfg =
         let c = config configurationName env
-        let usedEnvVars = c.EnvironmentVariables  |> Map.add "FSC" c.FSC             
+        let usedEnvVars = c.EnvironmentVariables  |> Map.add "FSC" c.FSC
         { c with EnvironmentVariables = usedEnvVars }
 
     logConfig cfg
@@ -345,7 +345,7 @@ type public InitializeSuiteAttribute () =
 
     override x.BeforeTest details =
         try
-            if details.IsSuite 
+            if details.IsSuite
             then suiteHelpers.Force() |> ignore
         with
         | e -> raise (Exception("failed test suite initialization, debug code in InitializeSuiteAttribute", e))
@@ -376,28 +376,28 @@ type FileGuard(path: string) =
     member x.Path = path
     member x.Exists = x.Path |> File.Exists
     member x.CheckExists() =
-        if not x.Exists then 
+        if not x.Exists then
              failwith (sprintf "exit code 0 but %s file doesn't exists" (x.Path |> Path.GetFileName))
 
     interface IDisposable with
         member x.Dispose () = remove path
-        
 
-type RedirectToType = 
+
+type RedirectToType =
     | Overwrite of FilePath
     | Append of FilePath
 
-type RedirectTo = 
+type RedirectTo =
     | Inherit
     | Output of RedirectToType
     | OutputAndError of RedirectToType * RedirectToType
-    | OutputAndErrorToSameFile of RedirectToType 
+    | OutputAndErrorToSameFile of RedirectToType
     | Error of RedirectToType
 
-type RedirectFrom = 
+type RedirectFrom =
     | RedirectInput of FilePath
 
-type RedirectInfo = 
+type RedirectInfo =
     { Output : RedirectTo
       Input : RedirectFrom option }
 
@@ -415,7 +415,7 @@ module Command =
             | Inherit -> ""
             | Output r-> sprintf " 1%s" (redirectType r)
             | OutputAndError (r1, r2) -> sprintf " 1%s 2%s" (redirectType r1)  (redirectType r2)
-            | OutputAndErrorToSameFile r -> sprintf " 1%s 2>1" (redirectType r)  
+            | OutputAndErrorToSameFile r -> sprintf " 1%s 2>1" (redirectType r)
             | Error r -> sprintf " 2%s" (redirectType r)
         sprintf "%s%s%s%s" path (match args with "" -> "" | x -> " " + x) (inF redirect.Input) (outF redirect.Output)
 
@@ -444,13 +444,13 @@ module Command =
 
         let openWrite rt =
             let fullpath = Commands.getfullpath dir
-            match rt with 
+            match rt with
             | Append p -> File.AppendText( p |> fullpath)
             | Overwrite p -> new StreamWriter(new FileStream(p |> fullpath, FileMode.Create))
 
         let outF fCont cmdArgs =
             match redirect.Output with
-            | RedirectTo.Inherit ->  
+            | RedirectTo.Inherit ->
                 use toLog = redirectToLog ()
                 fCont { cmdArgs with RedirectOutput = Some (toLog.Post); RedirectError = Some (toLog.Post) }
             | Output r ->
@@ -473,7 +473,7 @@ module Command =
                 use outFile = redirectTo writer
                 use toLog = redirectToLog ()
                 fCont { cmdArgs with RedirectOutput = Some (toLog.Post); RedirectError = Some (outFile.Post) }
-            
+
         let exec cmdArgs =
             log "%s" (logExec dir path args redirect)
             Process.exec cmdArgs dir envVars path args
@@ -533,7 +533,7 @@ let diff normalize path1 path2 =
 
     if not <| File.Exists(path1) then
         // creating empty baseline file as this is likely someone initializing a new test
-        File.WriteAllText(path1, String.Empty) 
+        File.WriteAllText(path1, String.Empty)
     if not <| File.Exists(path2) then failwithf "Invalid path %s" path2
 
     let lines1 = File.ReadAllLines(path1)
@@ -565,7 +565,7 @@ let diff normalize path1 path2 =
 
     result.ToString()
 
-let fsdiff cfg a b = 
+let fsdiff cfg a b =
     let actualFile = System.IO.Path.Combine(cfg.Directory, a)
     let expectedFile = System.IO.Path.Combine(cfg.Directory, b)
     let errorText = System.IO.File.ReadAllText (System.IO.Path.Combine(cfg.Directory, a))
@@ -577,8 +577,8 @@ let fsdiff cfg a b =
         log "%s" errorText
 
     result
-        
-let requireENCulture () = 
+
+let requireENCulture () =
     match System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName with
     | "en" -> true
     | _ -> false
