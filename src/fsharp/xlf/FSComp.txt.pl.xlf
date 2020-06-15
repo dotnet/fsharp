@@ -102,11 +102,6 @@
         <target state="new">implicit yield</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
-        <source>interfaces with multiple generic instantiation</source>
-        <target state="new">interfaces with multiple generic instantiation</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="new">nameof</target>
@@ -245,16 +240,6 @@
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
         <target state="translated">Typ „{0}” nie definiuje pola, konstruktora lub składowej „{1}”.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typrelInterfaceWithConcreteAndVariable">
-        <source>'{0}' cannot implement the interface '{1}' with the two instantiations '{2}' and '{3}' because they may unify.</source>
-        <target state="new">'{0}' cannot implement the interface '{1}' with the two instantiations '{2}' and '{3}' because they may unify.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typrelInterfaceWithConcreteAndVariableObjectExpression">
-        <source>You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</source>
-        <target state="new">You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">

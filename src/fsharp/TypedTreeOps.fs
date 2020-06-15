@@ -2921,31 +2921,33 @@ let fullMangledPathToTyconRef (tcref:TyconRef) =
     | ERefNonLocal nlr -> nlr.EnclosingMangledPath
     
 /// generates a name like 'System.IComparable<System.Int32>.Get'
+let tyconRefToFullName (tc:TyconRef) =
+    let namespaceParts =
+        // we need to ensure there are no collisions between (for example)
+        // - ``IB<GlobalType>`` (non-generic)
+        // - IB<'T> instantiated with 'T = GlobalType
+        // This is only an issue for types inside the global namespace, because '.' is invalid even in a quoted identifier.
+        // So if the type is in the global namespace, prepend 'global`', because '`' is also illegal -> there can be no quoted identifer with that name.
+        match fullMangledPathToTyconRef tc with
+        | [||] -> [| "global`" |]
+        | ns -> ns
+    seq { yield! namespaceParts; yield tc.DisplayName } |> String.concat "."
+
+let rec qualifiedInterfaceImplementationNameAux g (x:TType) : string =
+    match stripMeasuresFromTType g (stripTyEqnsAndErase true g x) with
+    | TType_app (a,[]) -> tyconRefToFullName a
+    | TType_anon (a,b) ->
+        let genericParameters = b |> Seq.map (qualifiedInterfaceImplementationNameAux g) |> String.concat ", "
+        sprintf "%s<%s>" (a.ILTypeRef.FullName) genericParameters
+    | TType_app (a,b) ->
+        let genericParameters = b |> Seq.map (qualifiedInterfaceImplementationNameAux g) |> String.concat ", "
+        sprintf "%s<%s>" (tyconRefToFullName a) genericParameters
+    | TType_var (v) -> "'" + v.Name
+    | _ -> failwithf "unexpected: expected TType_app but got %O" (x.GetType())
+
 /// for types in the global namespace, `global is prepended (note the backtick)
 let qualifiedInterfaceImplementationName g (tt:TType) memberName =
-    let rec TType_ToCodeLikeString (x:TType) : string =
-        let TyconRefToFullName (tc:TyconRef) =
-            let namespaceParts =
-                // we need to ensure there are no collisions between (for example)
-                // - ``IB<GlobalType>`` (non-generic)
-                // - IB<'T> instantiated with 'T = GlobalType
-                // This is only an issue for types inside the global namespace, because '.' is invalid even in a quoted identifier.
-                // So if the type is in the global namespace, prepend 'global`', because '`' is also illegal -> there can be no quoted identifer with that name.
-                match fullMangledPathToTyconRef tc with
-                | [||] -> [| "global`" |]
-                | ns -> ns
-            seq { yield! namespaceParts; yield tc.DisplayName } |> String.concat "."
-        match x with
-        | TType_app (a,[]) -> TyconRefToFullName a
-        | TType_anon (a,b) ->
-            let genericParameters = b |> Seq.map (stripTyEqnsAndErase true g >> stripMeasuresFromTType g >> TType_ToCodeLikeString) |> String.concat ", "
-            sprintf "%s<%s>" (a.ILTypeRef.FullName) genericParameters
-        | TType_app (a,b) ->
-            let genericParameters = b |> Seq.map (stripTyEqnsAndErase true g >> stripMeasuresFromTType g >> TType_ToCodeLikeString) |> String.concat ", "
-            sprintf "%s<%s>" (TyconRefToFullName a) genericParameters
-        | TType_var (v) -> "'" + v.Name
-        | _ -> failwithf "unexpected: expected TType_app but got %O" (x.GetType())
-    let interfaceName = tt |> stripTyEqnsAndErase true g |> stripMeasuresFromTType g |> TType_ToCodeLikeString
+    let interfaceName = tt |> qualifiedInterfaceImplementationNameAux g
     sprintf "%s.%s" interfaceName memberName
 
 let qualifiedMangledNameOfTyconRef tcref nm = 
