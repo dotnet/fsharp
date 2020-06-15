@@ -686,114 +686,59 @@ let isSpliceOperator g v = valRefEq g v g.splice_expr_vref || valRefEq g v g.spl
 /// Examples:
 /// I<int> & I<int> => ExactlyEqual.
 /// I<int> & I<string> => NotEqual.
-/// I<int> & I<'T> => ``Equal except for TType_var or Measure or Alias``.
-/// with '[<Measure>] type kg': I< int<kg> > & I<int> => ``Equal except for TType_var or Measure or Alias``.
-/// with 'type MyInt = int': I<MyInt> & I<int> => ``Equal except for TType_var or Measure or Alias``.
+/// I<int> & I<'T> => FeasiblyEqual.
+/// with '[<Measure>] type kg': I< int<kg> > & I<int> => FeasiblyEqual.
+/// with 'type MyInt = int': I<MyInt> & I<int> => FeasiblyEqual.
 ///
 /// The differences could also be nested, example:
-/// I<List<int*string>> vs I<List<int*'T>> => ``Equal except for TType_var or Measure or Alias``.
+/// I<List<int*string>> vs I<List<int*'T>> => FeasiblyEqual.
 type TTypeEquality =
     | ExactlyEqual
-    | ``Equal except for TType_var or Measure or Alias``
+    | FeasiblyEqual
     | NotEqual
 
-let compareTypesWithRegardToTypeVariablesAndMeasures g typ1 typ2 =
+let compareTypesWithRegardToTypeVariablesAndMeasures g amap m typ1 typ2 =
     
-    // compare the two types twice
-    // first pass: only generics are detected, aliases/measures would return 'NotEqual'
-    // IF the first pass returned 'NotEqual', compare them a second time:
-    // second pass: all aliases and measures are stripped.
-
-    let rec compare stripMeasuresAndAliases g typ1 typ2 : TTypeEquality =
-
-        let stripAll = (stripTyEqnsWrtErasure EraseAll g) >> stripMeasuresFromTType g
-        
-        let typ1 = if stripMeasuresAndAliases then stripAll typ1 else typ1
-        let typ2 = if stripMeasuresAndAliases then stripAll typ2 else typ2
-
-        match typ1, typ2 with 
-
-        | TType_var v1, TType_var v2 when v1.Name = v2.Name -> ExactlyEqual
-        
-        | TType_var _, _
-        | _, TType_var _ ->
-            ``Equal except for TType_var or Measure or Alias``
-
-        | TType_app (a1, []), TType_app (a2, []) ->
-            if tyconRefEq g a1 a2 then ExactlyEqual else NotEqual
-
-        | TType_app (a1, ag1), TType_app (a2, ag2) ->
-            if not (tyconRefEq g a1 a2) then NotEqual else
-              if ag1.Length <> ag2.Length then NotEqual else
-                // outer types and number of parameters are equal - compare each parameter
-                let results =
-                    (ag1, ag2) ||> Seq.map2 (compare stripMeasuresAndAliases g) |> set
-                if results = set [ ExactlyEqual ] then
-                    ExactlyEqual
-                else if results |> Set.contains NotEqual then
-                    NotEqual
-                else
-                    ``Equal except for TType_var or Measure or Alias``
-        
-        | _ -> if typeEquivAux Erasure.EraseNone g typ1 typ2 then ExactlyEqual else NotEqual
-
-    let preStrip = compare false g typ1 typ2
-    match preStrip with
-    | ExactlyEqual -> ExactlyEqual
-    | ``Equal except for TType_var or Measure or Alias`` -> ``Equal except for TType_var or Measure or Alias``
-    | NotEqual ->
-        let stripped = compare true g typ1 typ2
-        match stripped with
-        | ExactlyEqual -> ``Equal except for TType_var or Measure or Alias``
-        | ``Equal except for TType_var or Measure or Alias`` -> ``Equal except for TType_var or Measure or Alias``
-        | NotEqual -> NotEqual
-
-/// Check conditions associated with implementing multiple instantiations of a interface (either non-generic, or with exactly the same generic parameters)
-
-// Check conditions associated with implementing multiple instantiations of a generic interface
-(*
-let CheckMultipleInterfaceInstantiations cenv interfaces m = 
-    let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
-    let table = interfaces |> MultiMap.initBy keyf
-    let firstInterfaceWithMultipleGenericInstantiations = 
-        interfaces |> List.tryPick (fun typ1 -> 
-            table |> MultiMap.find (keyf typ1) |> List.tryPick (fun typ2 -> 
-                   if // same nominal type
-                       tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
-                       // different instantiations
-                       not (typeEquivAux EraseNone cenv.g typ1 typ2) 
-                    then Some (typ1, typ2)
-                    else None))
-    match firstInterfaceWithMultipleGenericInstantiations with 
-
-*)
-
+    if (typeEquiv g typ1 typ2) then ExactlyEqual else
+    
+    let typ1 = typ1 |> stripTyEqnsWrtErasure EraseAll g |> stripMeasuresFromTType g 
+    let typ2 = typ2 |> stripTyEqnsWrtErasure EraseAll g |> stripMeasuresFromTType g 
+    if (typeEquiv g typ1 typ2 || TypesFeasiblyEquiv 0 g amap m typ1 typ2) then 
+        FeasiblyEqual
+    else
+        NotEqual
+    
 let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list) isObjectExpression m =
-    let langVersion = cenv.g.langVersion
-    let keyf ty =
-        assert isAppTy cenv.g ty
-        (tcrefOfAppTy cenv.g ty).Stamp
-    let groups = interfaces |> List.groupBy keyf
-    let errors = seq {
-        for (_, items) in groups do
-            for i1 in 0 .. items.Length - 1 do
-                for i2 in i1 + 1 .. items.Length - 1 do
-                    let typ1 = items.[i1]
-                    let typ2 = items.[i2]
-                    let tcRef1 = tcrefOfAppTy cenv.g typ1
-                    if tyconRefEq cenv.g tcRef1 (tcrefOfAppTy cenv.g typ2) then
-                        if not(langVersion.SupportsFeature LanguageFeature.InterfacesWithMultipleGenericInstantiation) then
-                            // same nominal type -> not allowed in earlier versions of F# language
-                            let hasMultipleGenericInterfaceInstantiations =
-                                tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
-                                not (typeEquivAux EraseNone cenv.g typ1 typ2)
-                            if hasMultipleGenericInterfaceInstantiations then
-                                yield (Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)), m))
-                        else
+    let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
+    if not(cenv.g.langVersion.SupportsFeature LanguageFeature.InterfacesWithMultipleGenericInstantiation) then
+        let table = interfaces |> MultiMap.initBy keyf
+        let firstInterfaceWithMultipleGenericInstantiations = 
+            interfaces |> List.tryPick (fun typ1 -> 
+                table |> MultiMap.find (keyf typ1) |> List.tryPick (fun typ2 -> 
+                       if // same nominal type
+                           tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
+                           // different instantiations
+                           not (typeEquivAux EraseNone cenv.g typ1 typ2) 
+                        then Some (typ1, typ2)
+                        else None))
+        match firstInterfaceWithMultipleGenericInstantiations with 
+        | None -> ()
+        | Some (typ1, typ2) -> 
+            errorR(Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)), m))
+    else
+        let groups = interfaces |> List.groupBy keyf
+        let errors = seq {
+            for (_, items) in groups do
+                for i1 in 0 .. items.Length - 1 do
+                    for i2 in i1 + 1 .. items.Length - 1 do
+                        let typ1 = items.[i1]
+                        let typ2 = items.[i2]
+                        let tcRef1 = tcrefOfAppTy cenv.g typ1
+                        if tyconRefEq cenv.g tcRef1 (tcrefOfAppTy cenv.g typ2) then
                             // same nominal type -> check generic args
-                            match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g typ1 typ2 with
+                            match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m typ1 typ2 with
                             | ExactlyEqual -> () // exact duplicates are checked in another place
-                            | ``Equal except for TType_var or Measure or Alias`` ->
+                            | FeasiblyEqual ->
                                 let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
                                 let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
                                 if isObjectExpression then
@@ -802,10 +747,10 @@ let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list
                                     let typStr = NicePrint.minimalStringOfType cenv.denv typ
                                     yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
                             | NotEqual -> ()
-    }
-    match Seq.tryHead errors with
-    | None -> ()
-    | Some e -> errorR(e)
+        }
+        match Seq.tryHead errors with
+        | None -> ()
+        | Some e -> errorR(e)
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
