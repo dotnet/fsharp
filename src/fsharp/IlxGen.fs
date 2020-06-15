@@ -3114,7 +3114,7 @@ and GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo =
     match storage with 
     | None ->
         let witnessExpr =
-           ConstraintSolver.CodegenWitnessesForTraitWitness cenv.tcVal g cenv.amap m traitInfo 
+           ConstraintSolver.CodegenWitnessesForTraitWitness cenv.tcVal g cenv.amap m traitInfo true
             |> CommitOperationResult
         match witnessExpr with
         | Choice1Of2 _traitInfo ->
@@ -3152,7 +3152,7 @@ and GenWitnessArgs cenv cgbuf eenv m tps tyargs =
     // Witness arguments are only generated in emitted 'inline' code where witness parameters are available.
     if generateWitnesses then 
         let mwitnesses = 
-            ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal g cenv.amap m tps tyargs 
+            ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal g cenv.amap m tps tyargs true
             |> CommitOperationResult
 
         for witnessArg in mwitnesses do
@@ -4084,7 +4084,7 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
     // If witnesses are available, we should now always find trait witnesses in scope
     assert not generateWitnesses
         
-    let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
+    let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs true)
     match minfoOpt with
     | None ->
         let exnArg = mkString g m (FSComp.SR.ilDynamicInvocationNotSupported(traitInfo.MemberName))

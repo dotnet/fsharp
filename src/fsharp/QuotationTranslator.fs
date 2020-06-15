@@ -249,7 +249,7 @@ and GetWitnessArgs cenv (env : QuotationTranslationEnv) m tps tyargs =
     let g = cenv.g
     if g.generateWitnesses && not env.suppressWitnesses then 
         let witnessExprs = 
-            ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal g cenv.amap m tps tyargs 
+            ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcVal g cenv.amap m tps tyargs false
             |> CommitOperationResult
         let env = { env with suppressWitnesses = true }
         witnessExprs |> List.map (fun arg -> 
@@ -737,7 +737,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         
                 let minfoOpt =
                     if g.generateWitnesses then 
-                        ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal g cenv.amap m traitInfo args |> CommitOperationResult 
+                        ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal g cenv.amap m traitInfo args false |> CommitOperationResult 
                     else
                         None
                 match minfoOpt with

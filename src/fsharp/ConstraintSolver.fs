@@ -248,6 +248,12 @@ type ConstraintSolverState =
       /// Indicates if the constraint solver is being run after type checking is complete,
       /// e.g. during codegen to determine solutions and witnesses for trait constraints.
       /// Suppresses the generation of certain errors such as missing constraint warnings.
+      afterTypeCheck: bool
+
+      /// Indicates if the constraint solver is being run at very last stage (ilxgen)
+      /// Allows constraints to be added to type parameters to produce a witness.
+      /// There is no really good reason this should be allowed nor should it be needed,
+      /// but it was in the codebase and remains active for legacy compat reasons.
       codegen: bool
 
       /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
@@ -262,6 +268,7 @@ type ConstraintSolverState =
           amap = amap 
           ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
           InfoReader = infoReader
+          afterTypeCheck = false
           codegen = false
           TcVal = tcVal } 
 
@@ -1952,7 +1959,7 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
             // will-be-made-rigid type variable. This is because the existence of these warnings
             // is relevant to the overload resolution rules (see 'candidateWarnCount' in the overload resolution
             // implementation).
-            if tp.Rigidity.WarnIfMissingConstraint  && not csenv.SolverState.codegen then
+            if tp.Rigidity.WarnIfMissingConstraint  && not csenv.SolverState.afterTypeCheck then
                 do! WarnD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2))
 
             let newConstraints = 
@@ -3060,17 +3067,18 @@ let ApplyTyparDefaultAtPriority denv css priority (tp: Typar) =
                 |> RaiseOperationResult
         | _ -> ())
 
-let CreateCodegenState tcVal g amap = 
+let CreateCodegenState tcVal g amap codegen = 
     { g = g
       amap = amap
       TcVal = tcVal
       ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
       InfoReader = new InfoReader(g, amap)
-      codegen = true }
+      codegen = codegen
+      afterTypeCheck = true }
 
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
-let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
-    let css = CreateCodegenState tcVal g amap
+let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs codegen = trackErrors {
+    let css = CreateCodegenState tcVal g amap codegen
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
     let sln = GenWitnessExpr amap g m traitInfo argExprs
@@ -3078,8 +3086,8 @@ let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintIn
   }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
-let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
-    let css = CreateCodegenState tcVal g amap
+let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs codegen = trackErrors {
+    let css = CreateCodegenState tcVal g amap codegen
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let ftps, _renaming, tinst = FreshenTypeInst m typars
     let traitInfos = GetTraitConstraintInfosOfTypars g ftps 
@@ -3088,8 +3096,8 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
   }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
-let CodegenWitnessesForTraitWitness tcVal g amap m traitInfo = trackErrors {
-    let css = CreateCodegenState tcVal g amap
+let CodegenWitnessesForTraitWitness tcVal g amap m traitInfo codegen = trackErrors {
+    let css = CreateCodegenState tcVal g amap codegen
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
     return MethodCalls.GenWitnessExprLambda amap g m traitInfo
@@ -3140,6 +3148,7 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               amap = amap
               TcVal = (fun _ -> failwith "should not be called")
               ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
+              afterTypeCheck = false
               codegen = false
               InfoReader = new InfoReader(g, amap) }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
