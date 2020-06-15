@@ -9,6 +9,8 @@
 #nowarn "69" // Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration...
 #nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler...
 #nowarn "3218" // mismatch of parameter name for 'fst' and 'snd'
+#nowarn "3244" // no nullness checking
+#nowarn "3245" // no nullness checking
 
 namespace Microsoft.FSharp.Core
 
@@ -838,7 +840,8 @@ namespace Microsoft.FSharp.Core
                     
             /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
             /// specification.  The treatment of NaNs is governed by "comp".
-            let rec GenericCompare (comp:GenericComparer) (xobj:obj,yobj:obj) = 
+            let rec GenericCompare (comp:GenericComparer) (xobj:obj, yobj:obj) = 
+                (*if objEq xobj yobj then 0 else *)
                   match xobj,yobj with 
                    | null,null -> 0
                    | null,_ -> -1
@@ -2301,9 +2304,7 @@ namespace Microsoft.FSharp.Core
             Convert.ToUInt64(s, 8)
 
         let inline removeUnderscores (s:string) =
-            match s with
-            | null -> null
-            | s -> s.Replace("_", "")
+            s.Replace("_", "")
 
         let ParseUInt32 (s:string) = 
             if System.Object.ReferenceEquals(s,null) then
@@ -3772,16 +3773,66 @@ namespace Microsoft.FSharp.Core
             | _ -> None
 
         [<CompiledName("IsNull")>]
-        let inline isNull (value : 'T) = 
-            match value with 
+        let inline isNull (value : 'T when 'T : null) = 
+            match box value with 
             | null -> true 
             | _ -> false
 
-        [<CompiledName("IsNotNull")>]
-        let inline internal isNotNull (value : 'T) = 
+        [<CompiledName("IsNonNull")>]
+        let inline internal isNonNull (value : 'T) = 
             match value with 
             | null -> false 
             | _ -> true
+
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+
+        [<CompiledName("IsNullV")>]
+        let inline isNullV (value : Nullable<'T>) = not value.HasValue
+
+        [<CompiledName("NonNull")>]
+        let inline nonNull (value : 'T? when 'T : not struct and 'T : not null) = 
+            match box value with 
+            | null -> raise (System.NullReferenceException()) 
+            | _ -> (# "" value : 'T #)
+
+        [<CompiledName("NonNullV")>]
+        let inline nonNullV (value : Nullable<'T>) = 
+            if value.HasValue then 
+                value.Value
+            else 
+                raise (System.NullReferenceException())
+
+        [<CompiledName("NullMatchPattern")>]
+        let inline (|Null|NotNull|) (value : 'T? when 'T : not null) = 
+            match value with 
+            | null -> Null () 
+            | _ -> NotNull (# "" value : 'T #)
+
+        [<CompiledName("NullValueMatchPattern")>]
+        let inline (|NullV|NotNullV|) (value : Nullable<'T>) = 
+            if value.HasValue then NotNullV value.Value
+            else NullV ()
+
+        [<CompiledName("NonNullPattern")>]
+        let inline (|NonNull|) (value : 'T? when 'T : not null) =
+            match box value with 
+            | null -> raise (System.NullReferenceException()) 
+            | _ -> (# "" value : 'T #)
+
+        [<CompiledName("NonNullValuePattern")>]
+        let inline (|NonNullV|) (value : Nullable<'T>) =
+            if value.HasValue then value.Value
+            else raise (System.NullReferenceException()) 
+
+        [<CompiledName("WithNull")>]
+        let inline withNull (value : 'T when 'T : not struct) = (# "" value : 'T? #)
+
+        [<CompiledName("WithNullV")>]
+        let inline withNullV (value : 'T) : Nullable<'T> = Nullable<'T>(value)
+
+        [<CompiledName("NullV")>]
+        let inline nullV<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType>  = Nullable<'T>()
+#endif
 
         [<CompiledName("Raise")>]
         let inline raise (exn: exn) = (# "throw" exn : 'T #)
@@ -3823,6 +3874,14 @@ namespace Microsoft.FSharp.Core
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let inline nullArg (argumentName:string) = 
             raise (new System.ArgumentNullException(argumentName))        
+
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+        [<CompiledName("NullArgCheck")>]
+        let inline nullArgCheck (argumentName:string) (value: 'T? when 'T : not struct and 'T : not null) = 
+            match value with 
+            | null -> raise (new System.ArgumentNullException(argumentName))        
+            | _ ->  (# "" value : 'T #)
+#endif
 
         [<CompiledName("InvalidOp")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
@@ -3874,10 +3933,26 @@ namespace Microsoft.FSharp.Core
         let (^) (s1: string) (s2: string) = System.String.Concat(s1, s2)
 
         [<CompiledName("DefaultArg")>]
-        let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
+        let inline defaultArg arg defaultValue = 
+            match arg with None -> defaultValue | Some v -> v
         
         [<CompiledName("DefaultValueArg")>]
-        let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
+        let inline defaultValueArg arg defaultValue = 
+            match arg with ValueNone -> defaultValue | ValueSome v -> v
+
+        [<CompiledName("DefaultIfNone")>]
+        let inline defaultIfNone defaultValue arg = 
+            match arg with None -> defaultValue | Some v -> v
+        
+#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+        [<CompiledName("DefaultIfNull")>]
+        let inline defaultIfNull defaultValue (arg: 'T? when 'T : not struct and 'T : not null) = 
+            match arg with null -> defaultValue | _ -> (# "" arg : 'T #)
+        
+        [<CompiledName("DefaultIfNullV")>]
+        let inline defaultIfNullV defaultValue (arg: Nullable<'T>) = 
+            if arg.HasValue then arg.Value else defaultValue
+#endif
 
         [<NoDynamicInvocation(isLegacy=true)>]
         let inline (~-) (n: ^T) : ^T = 

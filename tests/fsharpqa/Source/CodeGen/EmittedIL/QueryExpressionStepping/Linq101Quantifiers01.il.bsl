@@ -38,14 +38,18 @@
 }
 .mresource public FSharpSignatureData.Linq101Quantifiers01
 {
-  // Offset: 0x00000000 Length: 0x00000381
+  // Offset: 0x00000000 Length: 0x00000393
+}
+.mresource public FSharpSignatureDataB.Linq101Quantifiers01
+{
+  // Offset: 0x00000398 Length: 0x00000012
 }
 .mresource public FSharpOptimizationData.Linq101Quantifiers01
 {
-  // Offset: 0x00000388 Length: 0x000000FF
+  // Offset: 0x000003B0 Length: 0x000000FF
 }
 .module Linq101Quantifiers01.exe
-// MVID: {5EAD3E37-76DD-E373-A745-0383373EAD5E}
+// MVID: {5E172EEB-76DD-E373-A745-0383EB2E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
