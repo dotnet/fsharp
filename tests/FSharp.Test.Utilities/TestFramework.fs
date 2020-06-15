@@ -274,7 +274,7 @@ let config configurationName envVars =
       FSIANYCPU = FSIANYCPU
 #endif
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
-      SharpBuild = FSharpBuild
+      FSharpBuild = FSharpBuild
       FSharpCompilerInteractiveSettings = FSharpCompilerInteractiveSettings
       csc_flags = csc_flags
       fsc_flags = fsc_flags
