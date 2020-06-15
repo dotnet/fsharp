@@ -172,13 +172,13 @@ type FSLibPaths =
     { FSCOREDLLPATH : string }
 
 let getPackagesDir () =
-    let p = match Environment.GetEnvironmentVariable("NUGET_PACKAGES") with
-            | null ->
-                match  Environment.GetEnvironmentVariable("USERPROFILE") with
-                | null -> Environment.GetEnvironmentVariable("HOME")
-                | p -> p
-            | path -> path
-    p ++ ".nuget" ++ "packages"
+    match Environment.GetEnvironmentVariable("NUGET_PACKAGES") with
+    | null ->
+        let path = match  Environment.GetEnvironmentVariable("USERPROFILE") with
+                   | null -> Environment.GetEnvironmentVariable("HOME")
+                   | p -> p
+        path ++ ".nuget" ++ "packages"
+    | path -> path
 
 let requireFile dir path =
     // Linux filesystems are (in most cases) case-sensitive.
