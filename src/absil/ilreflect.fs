@@ -1481,14 +1481,14 @@ let emitParameter cenv emEnv (defineParameter: int * ParameterAttributes * strin
 // buildMethodPass2
 //----------------------------------------------------------------------------
 
-#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_0
+#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_1
 
 let enablePInvoke = true
 
 #else
 
-// We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
-// but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
+// We currently build targeting netcoreapp3_1, and will continue to do so through this VS cycle
+// but we can run on Netcoreapp3.1 so ... use reflection to invoke the api, when we are executing on netcoreapp3.1
 let definePInvokeMethod =
     typeof<TypeBuilder>.GetMethod("DefinePInvokeMethod", [|
         typeof<string>
@@ -1541,13 +1541,13 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
 (* p.CharBestFit *)
 (* p.NoMangle *)
 
-#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_0
+#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_1
         // DefinePInvokeMethod was removed in early versions of coreclr, it was added back in NETCORE_APP3_0.
         // It has always been available in the desktop framework
         let methB = typB.DefinePInvokeMethod(mdef.Name, p.Where.Name, p.Name, attrs, cconv, rty, null, null, argtys, null, null, pcc, pcs)
 #else
-        // We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
-        // but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
+        // We currently build targeting netcoreapp3_1, and will continue to do so through this VS cycle
+        // but we can run on Netcoreapp3.1 so ... use reflection to invoke the api, when we are executing on netcoreapp3.1
         let methB =
             System.Diagnostics.Debug.Assert(definePInvokeMethod <> null, "Runtime does not have DefinePInvokeMethod")   // Absolutely can't happen
             definePInvokeMethod.Invoke(typB,  [| mdef.Name; p.Where.Name; p.Name; attrs; cconv; rty; null; null; argtys; null; null; pcc; pcs |]) :?> MethodBuilder
