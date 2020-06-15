@@ -245,11 +245,6 @@ type ConstraintSolverState =
       /// The function used to freshen values we encounter during trait constraint solving
       TcVal: TcValF
 
-      /// Indicates if the constraint solver is being run after type checking is complete,
-      /// e.g. during codegen to determine solutions and witnesses for trait constraints.
-      /// Suppresses the generation of certain errors such as missing constraint warnings.
-      codegen: bool
-
       /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
       /// That is, there will be one entry in this table for each free type variable in 
       /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved 
@@ -262,7 +257,6 @@ type ConstraintSolverState =
           amap = amap 
           ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
           InfoReader = infoReader
-          codegen = false
           TcVal = tcVal } 
 
 type ConstraintSolverEnv = 
@@ -1945,14 +1939,14 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
               | (TyparRigidity.Rigid | TyparRigidity.WillBeRigid), TyparConstraint.DefaultsTo _ -> true
               | _ -> false) then 
             ()
-        elif tp.Rigidity = TyparRigidity.Rigid && not csenv.SolverState.codegen then
+        elif tp.Rigidity = TyparRigidity.Rigid then
             return! ErrorD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2)) 
         else
             // It is important that we give a warning if a constraint is missing from a 
             // will-be-made-rigid type variable. This is because the existence of these warnings
             // is relevant to the overload resolution rules (see 'candidateWarnCount' in the overload resolution
             // implementation).
-            if tp.Rigidity.WarnIfMissingConstraint  && not csenv.SolverState.codegen then
+            if tp.Rigidity.WarnIfMissingConstraint then
                 do! WarnD (ConstraintSolverMissingConstraint(denv, tp, newConstraint, m, m2))
 
             let newConstraints = 
@@ -3065,8 +3059,7 @@ let CreateCodegenState tcVal g amap =
       amap = amap
       TcVal = tcVal
       ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-      InfoReader = new InfoReader(g, amap)
-      codegen = true }
+      InfoReader = new InfoReader(g, amap) }
 
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
 let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
@@ -3140,7 +3133,6 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               amap = amap
               TcVal = (fun _ -> failwith "should not be called")
               ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-              codegen = false
               InfoReader = new InfoReader(g, amap) }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         let minst = FreshenMethInfo m minfo
