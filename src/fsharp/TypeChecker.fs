@@ -3266,7 +3266,7 @@ let GetMethodArgs arg =
 //------------------------------------------------------------------------- 
 
 let CompilePatternForMatch cenv (env: TcEnv) mExpr matchm warnOnUnused actionOnFailure (inputVal, generalizedTypars, inputExprOpt) clauses inputTy resultTy =
-    let dtree, targets = CompilePattern cenv.g env.DisplayEnv cenv.amap (LightweightTcValForUsingInBuildMethodCall cenv.g) cenv.infoReader mExpr matchm warnOnUnused actionOnFailure (inputVal, generalizedTypars, inputExprOpt) clauses inputTy resultTy
+    let dtree, targets = CompilePattern cenv.g env.DisplayEnv cenv.amap (LightweightTcValForUsingInBuildMethodCall cenv.g env.TraitContext) cenv.infoReader mExpr matchm warnOnUnused actionOnFailure (inputVal, generalizedTypars, inputExprOpt) clauses inputTy resultTy
     mkAndSimplifyMatch NoDebugPointAtInvisibleBinding mExpr matchm resultTy dtree targets
 
 /// Compile a pattern
