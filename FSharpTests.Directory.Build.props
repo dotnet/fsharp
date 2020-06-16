@@ -22,18 +22,18 @@
     <FscToolPath>$([System.IO.Path]::GetDirectoryName('$(DOTNET_HOST_PATH)'))</FscToolPath>
     <FscToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FscToolExe>
     <FscToolExe Condition="'$(OS)' == 'Unix'">dotnet</FscToolExe>
-    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\netcoreapp3.0\fsc.exe</DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\netcoreapp3.1\fsc.exe</DotnetFscCompilerPath>
 
     <FsiToolPath>$([System.IO.Path]::GetDirectoryName('$(DOTNET_HOST_PATH)'))</FsiToolPath>
     <FsiToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FsiToolExe>
     <FsiToolExe Condition="'$(OS)' == 'Unix'">dotnet</FsiToolExe>
-    <DotnetFsiCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\netcoreapp3.0\fsi.exe</DotnetFsiCompilerPath>
+    <DotnetFsiCompilerPath>$(MSBuildThisFileDirectory)artifacts\bin\fsi\$(Configuration)\netcoreapp3.1\fsi.exe</DotnetFsiCompilerPath>
   </PropertyGroup>
 
   <!-- SDK targets override -->
   <PropertyGroup>
     <_FSharpBuildTargetFramework Condition="'$(MSBuildRuntimeType)'!='Core'">net472</_FSharpBuildTargetFramework>
-    <_FSharpBuildTargetFramework Condition="'$(MSBuildRuntimeType)'=='Core'">netcoreapp3.0</_FSharpBuildTargetFramework>
+    <_FSharpBuildTargetFramework Condition="'$(MSBuildRuntimeType)'=='Core'">netcoreapp3.1</_FSharpBuildTargetFramework>
     <_FSharpBuildBinPath>$(MSBuildThisFileDirectory)artifacts\bin\fsc\$(Configuration)\$(_FSharpBuildTargetFramework)</_FSharpBuildBinPath>
 
     <FSharpBuildAssemblyFile>$(_FSharpBuildBinPath)\FSharp.Build.dll</FSharpBuildAssemblyFile>
