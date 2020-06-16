@@ -127,6 +127,11 @@
         <target state="new">whitespace relexation</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureResumableStateMachines">
+        <source>resumable state machines</source>
+        <target state="new">resumable state machines</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
         <target state="new">single underscore pattern</target>
@@ -150,6 +155,11 @@
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
         <target state="translated">從結尾處切割需要語言版本 5.0，請使用 /langversion:preview。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
+        <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableStateMachines then ...' and the overall composition must form valid resumable code.</source>
+        <target state="new">The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableStateMachines then ...' and the overall composition must form valid resumable code.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -195,6 +205,56 @@
       <trans-unit id="optsUnknownChecksumAlgorithm">
         <source>Algorithm '{0}' is not supported</source>
         <target state="translated">不支援演算法 '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stateMachineLetRec">
+        <source>Invalid resumable code - recursive bindings are not allowed, please lift to a top-level recursive function definition</source>
+        <target state="new">Invalid resumable code - recursive bindings are not allowed, please lift to a top-level recursive function definition</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stateMachineMacroInvalidExpansion">
+        <source>Invalid resumable code - invalid macro expansion</source>
+        <target state="new">Invalid resumable code - invalid macro expansion</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stateMachineMacroTypars">
+        <source>Invalid resumable code - a macro in a state machine has type parameters</source>
+        <target state="new">Invalid resumable code - a macro in a state machine has type parameters</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stateMachineMacroUnderapplied">
+        <source>Invalid resumable code - a macro in a state machine is under-applied</source>
+        <target state="new">Invalid resumable code - a macro in a state machine is under-applied</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stateMachineNotSupported">
+        <source>Using tasks and resumable state machines requires /langversion:preview</source>
+        <target state="new">Using tasks and resumable state machines requires /langversion:preview</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stateMachineResumeAtTargetNotStatic">
+        <source>Invalid resumable code - a target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</source>
+        <target state="new">Invalid resumable code - a target label for __resumeAt was not statically determined. A __resumeAt with a non-static target label may only appear at the start of a resumable code method</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stateMachineResumptionByrefInStructMachine">
+        <source>Invalid resumable code - a byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</source>
+        <target state="new">Invalid resumable code - a byref may only be used in resumptions if it is precisely the 'this' pointer of the enclosing struct state machine</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stateMachineResumptionForLoop">
+        <source>Invalid resumable code - a fast integer for loops may not contain resumption points</source>
+        <target state="new">Invalid resumable code - a fast integer for loops may not contain resumption points</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stateMachineResumptionInTryFinally">
+        <source>Invalid resumable code - a try/finally may not contain resumption points</source>
+        <target state="new">Invalid resumable code - a try/finally may not contain resumption points</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="structTemplateMustImplementOneInterface">
+        <source>Invalid resumable code - a template struct type used with __resumableStateMachineStruct must implement exactly one interface. Usually this interface is the type 'System.Runtime.CompilerServices.IAsyncStateMachine'. If necessary mark the struct type with [&lt;NoEquality; NoComparison&gt;].</source>
+        <target state="new">Invalid resumable code - a template struct type used with __resumableStateMachineStruct must implement exactly one interface. Usually this interface is the type 'System.Runtime.CompilerServices.IAsyncStateMachine'. If necessary mark the struct type with [&lt;NoEquality; NoComparison&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">

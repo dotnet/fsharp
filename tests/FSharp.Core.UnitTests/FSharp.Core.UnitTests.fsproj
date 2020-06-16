@@ -74,6 +74,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\LazyType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\Cancellation.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncType.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\Tasks.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\MailboxProcessorType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\ObservableModule.fs" />
