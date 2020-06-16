@@ -3,11 +3,11 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.TestHelpers
+open FSharp.Test.Utilities
 
 [<TestFixture>]
 module ``String Format Tests`` =
-    
+
     [<Test>]
     let ``sprintf with %d format specifier``() =
         // Regression test for FSHARP1.0:4120

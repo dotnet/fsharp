@@ -5,7 +5,8 @@ namespace FSharp.Compiler.UnitTests
 open System
 open System.Text
 
-open NUnit.Framework
+open Xunit
+open FSharp.Test.Utilities
 
 open Internal.Utilities
 open Internal.Utilities.Text.Lexing
@@ -18,9 +19,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.SyntaxTree
 
-[<TestFixture>]
-type HashIfExpression()     =
-
+type public HashIfExpression() =
     let preludes    = [|"#if "; "#elif "|]
     let epilogues   = [|""; " // Testing"|]
 
@@ -34,7 +33,6 @@ type HashIfExpression()     =
     let (&&&) l r   = IfdefAnd(l,r)
     let (|||) l r   = IfdefOr(l,r)
 
-    let mutable tearDown = fun () -> ()
 
     let exprAsString (e : LexerIfdefExpression) : string =
         let sb                  = StringBuilder()
@@ -57,7 +55,7 @@ type HashIfExpression()     =
         let errorLogger     =
             {
                 new ErrorLogger("TestErrorLogger") with
-                    member x.DiagnosticSink(e, isError)    = if isError then errors.Add e else warnings.Add e 
+                    member x.DiagnosticSink(e, isError)    = if isError then errors.Add e else warnings.Add e
                     member x.ErrorCount         = errors.Count
             }
 
@@ -80,21 +78,14 @@ type HashIfExpression()     =
 
         errors, warnings, parser
 
-    [<SetUp>]
-    member this.Setup() =
-        let el  = CompileThreadStatic.ErrorLogger
-        tearDown <- 
-            fun () -> 
-                CompileThreadStatic.BuildPhase  <- BuildPhase.DefaultPhase
-                CompileThreadStatic.ErrorLogger <- el
-
+    do // Setup
         CompileThreadStatic.BuildPhase  <- BuildPhase.Compile
+    interface IDisposable with // Teardown
+        member _.Dispose() =
+            CompileThreadStatic.BuildPhase  <- BuildPhase.DefaultPhase
+            CompileThreadStatic.ErrorLogger <- CompileThreadStatic.ErrorLogger
 
-    [<TearDown>]
-    member this.TearDown() =
-        tearDown ()
-
-    [<Test>]
+    [<Fact>]
     member this.PositiveParserTestCases()=
 
         let errors, warnings, parser = createParser ()
@@ -151,11 +142,11 @@ type HashIfExpression()     =
 
         let failure = String.Join ("\n", fs)
 
-        Assert.AreEqual("", failure)
+        Assert.shouldBe "" failure
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.NegativeParserTestCases()=
 
         let errors, warnings, parser = createParser ()
@@ -214,9 +205,9 @@ type HashIfExpression()     =
 
         let fails = String.Join ("\n", fs)
 
-        Assert.AreEqual("", fails)
+        Assert.shouldBe "" fails
 
-    [<Test>]
+    [<Fact>]
     member this.LexerIfdefEvalTestCases()=
 
         let failures    = ResizeArray<string> ()
@@ -267,4 +258,4 @@ type HashIfExpression()     =
 
         let fails = String.Join ("\n", fs)
 
-        Assert.AreEqual("", fails)
+        Assert.shouldBe "" fails
