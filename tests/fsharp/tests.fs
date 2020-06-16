@@ -2,7 +2,7 @@
 #if INTERACTIVE
 #r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "../../src/scripts/scriptlib.fsx"
-#load "../FSharp.TestHelpers/TestFramework.fs"
+#load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
 #else
 module ``FSharp-Tests-Core``

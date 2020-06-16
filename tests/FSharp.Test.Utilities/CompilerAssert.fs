@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.TestHelpers
+namespace FSharp.Test.Utilities
 
 open System
 open System.Diagnostics
@@ -19,7 +19,7 @@ open NUnit.Framework
 open System.Reflection.Emit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
-open FSharp.TestHelpers.Utilities
+open FSharp.Test.Utilities.Utilities
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
@@ -125,7 +125,6 @@ let main argv = 0"""
                 File.WriteAllText(programFsFileName, programFs)
 
                 let pInfo = ProcessStartInfo ()
-
                 pInfo.FileName <- config.DotNetExe
                 pInfo.Arguments <- "build"
                 pInfo.WorkingDirectory <- projectDirectory
@@ -147,7 +146,7 @@ let main argv = 0"""
                 cleanUp <- false
                 printfn "%s" output
                 printfn "%s" errors
-                raise (new Exception (sprintf "An error occured getting netcoreapp references: %A" e))
+                raise (new Exception (sprintf "An error occurred getting netcoreapp references: %A" e))
         finally
             if cleanUp then
                 try Directory.Delete(projectDirectory) with | _ -> ()
