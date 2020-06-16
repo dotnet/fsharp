@@ -17,7 +17,7 @@ module Utilities =
     [<RequireQualifiedAccess>]
     type TargetFramework =
         | NetStandard20
-        | NetCoreApp30
+        | NetCoreApp31
 
     module private TestReferences =
 
@@ -30,13 +30,13 @@ module Utilities =
             let systemDynamicRuntimeRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netstandard20.System_Dynamic_Runtime).GetReference(display = "System.Dynamic.Runtime.dll (netstandard 2.0 ref)")
 
         [<RequireQualifiedAccess>]
-        module NetCoreApp30 =
-            let netStandard = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.netstandard).GetReference(display = "netstandard.dll (netcoreapp 3.0 ref)")
-            let mscorlibRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.mscorlib).GetReference(display = "mscorlib.dll (netcoreapp 3.0 ref)")
-            let systemRuntimeRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.System_Runtime).GetReference(display = "System.Runtime.dll (netcoreapp 3.0 ref)")
-            let systemCoreRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.System_Core).GetReference(display = "System.Core.dll (netcoreapp 3.0 ref)")
-            let systemDynamicRuntimeRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.System_Dynamic_Runtime).GetReference(display = "System.Dynamic.Runtime.dll (netcoreapp 3.0 ref)")
-            let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.System_Console).GetReference(display = "System.Console.dll (netcoreapp 3.0 ref)")
+        module NetCoreApp31 =
+            let netStandard = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp31.netstandard).GetReference(display = "netstandard.dll (netcoreapp 3.1 ref)")
+            let mscorlibRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp31.mscorlib).GetReference(display = "mscorlib.dll (netcoreapp 3.1 ref)")
+            let systemRuntimeRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp31.System_Runtime).GetReference(display = "System.Runtime.dll (netcoreapp 3.1 ref)")
+            let systemCoreRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp31.System_Core).GetReference(display = "System.Core.dll (netcoreapp 3.1 ref)")
+            let systemDynamicRuntimeRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp31.System_Dynamic_Runtime).GetReference(display = "System.Dynamic.Runtime.dll (netcoreapp 3.1 ref)")
+            let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp31.System_Console).GetReference(display = "System.Console.dll (netcoreapp 3.1 ref)")
 
     [<RequireQualifiedAccess>]
     module private TargetFrameworkUtil =
@@ -45,13 +45,13 @@ module Utilities =
 
         let private netStandard20References =
             lazy ImmutableArray.Create(NetStandard20.netStandard.Value, NetStandard20.mscorlibRef.Value, NetStandard20.systemRuntimeRef.Value, NetStandard20.systemCoreRef.Value, NetStandard20.systemDynamicRuntimeRef.Value)
-        let private netCoreApp30References =
-            lazy ImmutableArray.Create(NetCoreApp30.netStandard.Value, NetCoreApp30.mscorlibRef.Value, NetCoreApp30.systemRuntimeRef.Value, NetCoreApp30.systemCoreRef.Value, NetCoreApp30.systemDynamicRuntimeRef.Value, NetCoreApp30.systemConsoleRef.Value)
+        let private netCoreApp31References =
+            lazy ImmutableArray.Create(NetCoreApp31.netStandard.Value, NetCoreApp31.mscorlibRef.Value, NetCoreApp31.systemRuntimeRef.Value, NetCoreApp31.systemCoreRef.Value, NetCoreApp31.systemDynamicRuntimeRef.Value, NetCoreApp31.systemConsoleRef.Value)
 
         let internal getReferences tf =
             match tf with
                 | TargetFramework.NetStandard20 -> netStandard20References.Value
-                | TargetFramework.NetCoreApp30 -> netCoreApp30References.Value
+                | TargetFramework.NetCoreApp31 -> netCoreApp31References.Value
 
     type RoslynLanguageVersion = LanguageVersion
 
