@@ -64,8 +64,8 @@ Target.create "BuildVersion" (fun _ ->
 
 Target.create "Build" (fun _ ->
     runDotnet __SOURCE_DIRECTORY__ "build" "../src/buildtools/buildtools.proj -v n -c Proto"
-    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp3.0/fslex.dll"
-    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp3.0/fsyacc.dll"
+    let fslexPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fslex/Proto/netcoreapp3.1/fslex.dll"
+    let fsyaccPath = __SOURCE_DIRECTORY__ + "/../artifacts/bin/fsyacc/Proto/netcoreapp3.1/fsyacc.dll"
     runDotnet __SOURCE_DIRECTORY__ "build" (sprintf "FSharp.Compiler.Service.sln -nodereuse:false -v n -c Release /p:DisableCompilerRedirection=true /p:FsLexPath=%s /p:FsYaccPath=%s" fslexPath fsyaccPath)
 )
 

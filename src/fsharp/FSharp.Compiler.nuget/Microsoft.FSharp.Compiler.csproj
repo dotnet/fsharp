@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PreRelease>true</PreRelease>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <NuspecFile>Microsoft.FSharp.Compiler.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
     <PackageDescription>.NET Core compatible version of the F# compiler fsc.exe.</PackageDescription>
@@ -10,13 +10,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\fsc\fsc.fsproj">
-      <AdditionalProperties>TargetFramework=netcoreapp3.0</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=netcoreapp3.1</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="..\fsi\fsi.fsproj">
-      <AdditionalProperties>TargetFramework=netcoreapp3.0</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=netcoreapp3.1</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="..\FSharp.Build\FSharp.Build.fsproj">
-      <AdditionalProperties>TargetFramework=netcoreapp3.0</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=netcoreapp3.1</AdditionalProperties>
     </ProjectReference>
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
       <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
