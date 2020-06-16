@@ -861,34 +861,31 @@ let CheckWarnIfRigid (csenv: ConstraintSolverEnv) ty1 (r: Typar) ty =
 
 /// Add the constraint "ty1 = ty" to the constraint problem, where ty1 is a type variable. 
 /// Propagate all effects of adding this constraint, e.g. to solve other variables 
-let rec SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty1 ty = trackErrors {
-    let m = csenv.m
-    do! DepthCheck ndeep m
-    match ty1 with 
-    | TType_var r | TType_measure (Measure.Var r) ->
-      // The types may still be equivalent due to abbreviations, which we are trying not to eliminate 
-      if typeEquiv csenv.g ty1 ty then () else
-      // The famous 'occursCheck' check to catch "infinite types" like 'a = list<'a> - see also https://github.com/Microsoft/visualfsharp/issues/1170
-      if occursCheck csenv.g r ty then return! ErrorD (ConstraintSolverInfiniteTypes(csenv.DisplayEnv, csenv.eContextInfo, ty1, ty, m, m2)) else
-      // Note: warn _and_ continue! 
-      do! CheckWarnIfRigid csenv ty1 r ty
-      // Record the solution before we solve the constraints, since 
-      // We may need to make use of the equation when solving the constraints. 
-      // Record a entry in the undo trace if one is provided 
-      trace.Exec (fun () -> r.typar_solution <- Some ty) (fun () -> r.typar_solution <- None)
-      
-      // Only solve constraints if this is not an error var 
-      if r.IsFromError then () else
+let rec SolveTyparEqualsTypePart1 (csenv: ConstraintSolverEnv) m2 (trace: OptionalTrace) ty1 r ty = trackErrors {
+    // The types may still be equivalent due to abbreviations, which we are trying not to eliminate 
+    if typeEquiv csenv.g ty1 ty then () else
+    // The famous 'occursCheck' check to catch "infinite types" like 'a = list<'a> - see also https://github.com/Microsoft/visualfsharp/issues/1170
+    if occursCheck csenv.g r ty then return! ErrorD (ConstraintSolverInfiniteTypes(csenv.DisplayEnv, csenv.eContextInfo, ty1, ty, csenv.m, m2)) else
+    // Note: warn _and_ continue! 
+    do! CheckWarnIfRigid csenv ty1 r ty
+    // Record the solution before we solve the constraints, since 
+    // We may need to make use of the equation when solving the constraints. 
+    // Record a entry in the undo trace if one is provided 
+    trace.Exec (fun () -> r.typar_solution <- Some ty) (fun () -> r.typar_solution <- None)
+ }  
 
-      // Check to see if this type variable is relevant to any trait constraints. 
-      // If so, re-solve the relevant constraints. 
-      if csenv.SolverState.ExtraCxs.ContainsKey r.Stamp then 
-          do! RepeatWhileD ndeep (fun ndeep -> SolveRelevantMemberConstraintsForTypar csenv ndeep PermitWeakResolution.No trace r)
+and SolveTyparEqualsTypePart2 (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) (r: Typar) ty = trackErrors {
+    // Only solve constraints if this is not an error var 
+    if r.IsFromError then () else
 
-      // Re-solve the other constraints associated with this type variable 
-      return! solveTypMeetsTyparConstraints csenv ndeep m2 trace ty r
+    // Check to see if this type variable is relevant to any trait constraints. 
+    // If so, re-solve the relevant constraints. 
+    if csenv.SolverState.ExtraCxs.ContainsKey r.Stamp then 
+        do! RepeatWhileD ndeep (fun ndeep -> SolveRelevantMemberConstraintsForTypar csenv ndeep PermitWeakResolution.No trace r)
 
-    | _ -> failwith "SolveTyparEqualsType"
+    // Re-solve the other constraints associated with this type variable 
+    return! solveTypMeetsTyparConstraints csenv ndeep m2 trace ty r
+
   }
 
 /// Apply the constraints on 'typar' to the type 'ty'
@@ -933,6 +930,28 @@ and solveTypMeetsTyparConstraints (csenv: ConstraintSolverEnv) ndeep m2 trace ty
   }
 
         
+and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty1 ty = trackErrors {
+    let m = csenv.m
+    do! DepthCheck ndeep m
+    match ty1 with 
+    | TType_var r | TType_measure (Measure.Var r) ->
+        do! SolveTyparEqualsTypePart1 csenv m2 trace ty1 r ty 
+        do! SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
+    | _ -> failwith "SolveTyparEqualsType"
+    }
+
+// Like SolveTyparEqualsType but asserts all typar equalities simultaneously instead of one by one
+and SolveTyparsEqualTypes (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) tptys tys = trackErrors {
+    do! (tptys, tys) ||> Iterate2D (fun tpty ty -> 
+            match tpty with 
+            | TType_var r | TType_measure (Measure.Var r) -> SolveTyparEqualsTypePart1 csenv m2 trace tpty r ty 
+            | _ -> failwith "SolveTyparsEqualTypes")
+    do! (tptys, tys) ||> Iterate2D (fun tpty ty -> 
+            match tpty with 
+            | TType_var r | TType_measure (Measure.Var r) -> SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
+            | _ -> failwith "SolveTyparsEqualTypes")
+ }
+
 and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) = 
     if evalTupInfoIsStruct anonInfo1.TupInfo <> evalTupInfoIsStruct anonInfo2.TupInfo then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m,m2)) else
     (match anonInfo1.Assembly, anonInfo2.Assembly with 
@@ -3076,7 +3095,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let ftps, _renaming, tinst = FreshenTypeInst m typars
     let traitInfos = GetTraitConstraintInfosOfTypars g ftps 
-    do! SolveTypeEqualsTypeEqns csenv 0 m NoTrace None tinst tyargs
+    do! SolveTyparsEqualTypes csenv 0 m NoTrace tinst tyargs
     return MethodCalls.GenWitnessArgs amap g m traitInfos
   }
 
