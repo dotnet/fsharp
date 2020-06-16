@@ -266,7 +266,7 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
         let result =
             use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.IsTrue(result.Success, "resolve failed")
 
@@ -363,7 +363,7 @@ printfn ""%A"" result
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.IsTrue(result.Success, "resolve failed")
 
@@ -445,7 +445,7 @@ printfn ""%A"" result
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.IsTrue(result.Success, "resolve failed")
 
@@ -502,7 +502,7 @@ x |> Seq.iter(fun r ->
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         // Expected: error FS3217: PackageManager can not reference the System Package 'FSharp.Core'
         Assert.IsFalse(result.Success, "resolve succeeded but should have failed")
@@ -528,7 +528,7 @@ x |> Seq.iter(fun r ->
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.IsTrue(result.Success, "resolve failed but should have succeeded")
 

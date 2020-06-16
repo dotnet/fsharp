@@ -5,8 +5,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks Condition="'$(ProtoTargetFramework)' != ''">$(ProtoTargetFramework)</TargetFrameworks>
-    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;netcoreapp3.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
     <TargetExt>.exe</TargetExt>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
