@@ -40,9 +40,9 @@ module Utilities =
 
     [<RequireQualifiedAccess>]
     module private TargetFrameworkUtil =
-        
+
         open TestReferences
-        
+
         let private netStandard20References =
             lazy ImmutableArray.Create(NetStandard20.netStandard.Value, NetStandard20.mscorlibRef.Value, NetStandard20.systemRuntimeRef.Value, NetStandard20.systemCoreRef.Value, NetStandard20.systemDynamicRuntimeRef.Value)
         let private netCoreApp30References =
