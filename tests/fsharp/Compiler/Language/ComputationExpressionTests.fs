@@ -1,13 +1,13 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.TestHelpers
+open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
 module ComputationExpressionTests =
 
-    let ``complex CE with source member and applicatives`` ceUsage = 
+    let ``complex CE with source member and applicatives`` ceUsage =
         sprintf """
 module Code
 type ResultBuilder() =
@@ -22,15 +22,15 @@ type ResultBuilder() =
 
 let result = ResultBuilder()
 
-module Result = 
-    let zip x1 x2 = 
+module Result =
+    let zip x1 x2 =
         match x1,x2 with
         | Ok x1res, Ok x2res -> Ok (x1res, x2res)
         | Error e, _ -> Error e
         | _, Error e -> Error e
 
     let ofChoice c =
-        match c with    
+        match c with
         | Choice1Of2 x -> Ok x
         | Choice2Of2 x -> Error x
 
@@ -49,7 +49,7 @@ module Async =
         return r1,r2
     }
 
-module AsyncResult = 
+module AsyncResult =
     let zip x1 x2 =
         Async.zip x1 x2
         |> Async.map(fun (r1, r2) -> Result.zip r1 r2)
@@ -103,7 +103,7 @@ type AsyncResultBuilder() =
          compensation: unit -> unit)
         : Async<Result<'T, 'TError>> =
       async.TryFinally(computation, compensation)
-    
+
     member __.Using
         (resource: 'T when 'T :> System.IDisposable,
          binder: 'T -> Async<Result<'U, 'TError>>)
@@ -124,9 +124,9 @@ type AsyncResultBuilder() =
           this.Delay(fun () -> binder enum.Current)))
 
     member inline __.BindReturn(x: Async<Result<'T,'U>>, f) = async.Bind(x, fun r -> Result.map f r |> async.Return)
-    member inline __.MergeSources(t1: Async<Result<'T,'U>>, t2: Async<Result<'T1,'U>>) = 
+    member inline __.MergeSources(t1: Async<Result<'T,'U>>, t2: Async<Result<'T1,'U>>) =
         AsyncResult.zip t1 t2
-    
+
     member inline _.Source(result : Async<Result<_,_>>) : Async<Result<_,_>> = result
 
 [<AutoOpen>]
@@ -145,10 +145,10 @@ module ARExts =
         /// <summary>
         /// Method lets us transform data types into our internal representation.
         /// </summary>
-        member inline _.Source(choice : Choice<_,_>) : Async<Result<_,_>> = 
+        member inline _.Source(choice : Choice<_,_>) : Async<Result<_,_>> =
           choice
           |> Result.ofChoice
-          |> Async.singleton 
+          |> Async.singleton
 
         /// <summary>
         /// Method lets us transform data types into our internal representation.
@@ -174,7 +174,7 @@ asyncResult {
 |> printfn "%d"
 """
         CompilerAssert.Pass code
-    
+
     [<Test>]
     let ``match-bang should apply source transformations to its inputs`` () =
         let code = ``complex CE with source member and applicatives`` """

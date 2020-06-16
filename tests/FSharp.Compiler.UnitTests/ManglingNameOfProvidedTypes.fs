@@ -3,66 +3,67 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open System.Text
-open NUnit.Framework
+open Xunit
+open FSharp.Test.Utilities
 open FSharp.Compiler
 
-[<TestFixture>]
+
 type ManglingNamesOfProvidedTypesWithSingleParameter() = 
     
-    [<Test>]
+    [<Fact>]
     member this.MangleWithNonDefaultValue() = 
         let mangled = 
             PrettyNaming.computeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| "xyz" |], [| "Foo", Some "abc" |])
-        Assert.AreEqual("MyNamespace.Test,Foo=\"xyz\"", mangled)
+        Assert.shouldBe "MyNamespace.Test,Foo=\"xyz\"" mangled
     
-    [<Test>]
+    [<Fact>]
     member this.MangleWithDefaultValue() = 
         let mangled = 
             PrettyNaming.computeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| "xyz" |], [| "Foo", Some "xyz" |])
-        Assert.AreEqual("MyNamespace.Test", mangled)
+        Assert.shouldBe "MyNamespace.Test" mangled
     
-    [<Test>]
+    [<Fact>]
     member this.DemangleNonDefaultValue() = 
         let name, parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test,Foo=\"xyz\""
-        Assert.AreEqual("MyNamespace.Test", name)
-        Assert.AreEqual([| "Foo", "xyz" |], parameters)
+        Assert.shouldBe "MyNamespace.Test" name
+        Assert.shouldBeEquivalentTo [| "Foo", "xyz" |] parameters
     
-    [<Test>]
+    [<Fact>]
     member this.DemangleDefaultValue() = 
         let name, parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test,"
-        Assert.AreEqual("MyNamespace.Test", name)
-        Assert.AreEqual([||], parameters)
+        Assert.shouldBe "MyNamespace.Test" name
+        Assert.shouldBeEquivalentTo [||] parameters
 
-    [<Test>]
+    [<Fact>]
     member this.DemangleNewDefaultValue() = 
         let name, parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test"
-        Assert.AreEqual("MyNamespace.Test", name)
-        Assert.AreEqual([||], parameters)
+        Assert.shouldBe "MyNamespace.Test" name
+        Assert.shouldBeEquivalentTo [||] parameters
 
-[<TestFixture>]
+
 type ManglingNamesOfProvidedTypesWithMultipleParameter() = 
     
-    [<Test>]
+    [<Fact>]
     member this.MangleWithNonDefaultValue() = 
         let mangled = 
             PrettyNaming.computeMangledNameWithoutDefaultArgValues 
                 ("MyNamespace.Test", [| "xyz"; "abc" |], 
                     [| "Foo", Some "foo"
                        "Foo2", Some "foo2" |])
-        Assert.AreEqual("MyNamespace.Test,Foo=\"xyz\",Foo2=\"abc\"", mangled)
+        Assert.shouldBe "MyNamespace.Test,Foo=\"xyz\",Foo2=\"abc\"" mangled
     
-    [<Test>]
+    [<Fact>]
     member this.MangleWithDefaultValue() = 
         let mangled = 
             PrettyNaming.computeMangledNameWithoutDefaultArgValues 
                 ("MyNamespace.Test", [| "xyz"; "abc" |], 
                     [| "Foo", Some "xyz"
                        "Foo2", Some "abc" |])
-        Assert.AreEqual("MyNamespace.Test", mangled)
+        Assert.shouldBe "MyNamespace.Test" mangled
     
-    [<Test>]
+    [<Fact>]
     member this.DemangleMultiParameter() = 
         let name, parameters = PrettyNaming.demangleProvidedTypeName "TestType,Foo=\"xyz\",Foo2=\"abc\""
-        Assert.AreEqual("TestType", name)
-        Assert.AreEqual([| "Foo", "xyz"
+        Assert.shouldBe "TestType" name
+        Assert.shouldBe([| "Foo", "xyz"
                            "Foo2", "abc" |], parameters)
