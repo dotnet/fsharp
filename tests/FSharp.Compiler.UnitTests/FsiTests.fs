@@ -1,547 +1,546 @@
-﻿[<NUnit.Framework.SingleThreaded>]
-module FSharp.Compiler.UnitTests.FsiTests
-
+﻿namespace FSharp.Compiler.UnitTests
 open System
 open System.IO
 open FSharp.Compiler.Interactive.Shell
-open NUnit.Framework
+open Xunit
+open FSharp.Test.Utilities
 
-#nowarn "1104"
+[<Collection("SingleThreaded")>]
+module FsiTests =
 
-let createFsiSession () =
-    // Intialize output and input streams
-    let inStream = new StringReader("")
-    let outStream = new CompilerOutputStream()
-    let errStream = new CompilerOutputStream()
+    let createFsiSession () =
+        // Intialize output and input streams
+        let inStream = new StringReader("")
+        let outStream = new CompilerOutputStream()
+        let errStream = new CompilerOutputStream()
 
-    // Build command line arguments & start FSI session
-    let argv = [| "C:\\fsi.exe" |]
-    let allArgs = Array.append argv [|"--noninteractive"|]
+        // Build command line arguments & start FSI session
+        let argv = [| "C:\\fsi.exe" |]
+        let allArgs = Array.append argv [|"--noninteractive"|]
 
-    let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-    FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, new StreamWriter(outStream), new StreamWriter(errStream), collectible = true)
+        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
+        FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, new StreamWriter(outStream), new StreamWriter(errStream), collectible = true)
 
-[<Test>]
-let ``No bound values at the start of FSI session`` () =
-    use fsiSession = createFsiSession ()
-    let values = fsiSession.GetBoundValues()
-    Assert.IsEmpty values
+    [<Fact>]
+    let ``No bound values at the start of FSI session`` () =
+        use fsiSession = createFsiSession ()
+        let values = fsiSession.GetBoundValues()
+        Assert.shouldBeEmpty values
 
-[<Test>]
-let ``Bound value has correct name`` () =
-    use fsiSession = createFsiSession ()
+    [<Fact>]
+    let ``Bound value has correct name`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.EvalInteraction("let x = 1")
+        fsiSession.EvalInteraction("let x = 1")
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-    Assert.AreEqual("x", boundValue.Name)
+        Assert.shouldBe "x" boundValue.Name
 
-[<Test>]
-let ``Bound value has correct value`` () =
-    use fsiSession = createFsiSession ()
+    [<Fact>]
+    let ``Bound value has correct value`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.EvalInteraction("let y = 2")
+        fsiSession.EvalInteraction("let y = 2")
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-    Assert.AreEqual(2, boundValue.Value.ReflectionValue)
+        Assert.shouldBe 2 boundValue.Value.ReflectionValue
 
-[<Test>]
-let ``Bound value has correct type`` () =
-    use fsiSession = createFsiSession ()
+    [<Fact>]
+    let ``Bound value has correct type`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.EvalInteraction("let z = 3")
+        fsiSession.EvalInteraction("let z = 3")
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-    Assert.AreEqual(typeof<int>, boundValue.Value.ReflectionType)
+        Assert.shouldBe typeof<int> boundValue.Value.ReflectionType
 
-[<Test>]
-let ``Seven bound values are ordered and have their correct name`` () =
-    use fsiSession = createFsiSession ()
+    [<Fact>]
+    let ``Seven bound values are ordered and have their correct name`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.EvalInteraction("let x = 1")
-    fsiSession.EvalInteraction("let y = 2")
-    fsiSession.EvalInteraction("let z = 3")
-    fsiSession.EvalInteraction("let a = 4")
-    fsiSession.EvalInteraction("let ccc = 5")
-    fsiSession.EvalInteraction("let b = 6")
-    fsiSession.EvalInteraction("let aa = 7")
+        fsiSession.EvalInteraction("let x = 1")
+        fsiSession.EvalInteraction("let y = 2")
+        fsiSession.EvalInteraction("let z = 3")
+        fsiSession.EvalInteraction("let a = 4")
+        fsiSession.EvalInteraction("let ccc = 5")
+        fsiSession.EvalInteraction("let b = 6")
+        fsiSession.EvalInteraction("let aa = 7")
 
-    let names = fsiSession.GetBoundValues() |> List.map (fun x -> x.Name)
+        let names = fsiSession.GetBoundValues() |> List.map (fun x -> x.Name)
 
-    Assert.AreEqual(["a";"aa";"b";"ccc";"x";"y";"z"], names)
+        Assert.shouldBe ["a";"aa";"b";"ccc";"x";"y";"z"] names
 
-[<Test>]
-let ``Seven bound values are ordered and have their correct value`` () =
-    use fsiSession = createFsiSession ()
+    [<Fact>]
+    let ``Seven bound values are ordered and have their correct value`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.EvalInteraction("let x = 1")
-    fsiSession.EvalInteraction("let y = 2")
-    fsiSession.EvalInteraction("let z = 3")
-    fsiSession.EvalInteraction("let a = 4")
-    fsiSession.EvalInteraction("let ccc = 5")
-    fsiSession.EvalInteraction("let b = 6")
-    fsiSession.EvalInteraction("let aa = 7")
+        fsiSession.EvalInteraction("let x = 1")
+        fsiSession.EvalInteraction("let y = 2")
+        fsiSession.EvalInteraction("let z = 3")
+        fsiSession.EvalInteraction("let a = 4")
+        fsiSession.EvalInteraction("let ccc = 5")
+        fsiSession.EvalInteraction("let b = 6")
+        fsiSession.EvalInteraction("let aa = 7")
 
-    let values = fsiSession.GetBoundValues() |> List.map (fun x -> x.Value.ReflectionValue)
+        let values = fsiSession.GetBoundValues() |> List.map (fun x -> x.Value.ReflectionValue)
 
-    Assert.AreEqual([4;7;6;5;1;2;3], values)
+        Assert.shouldBeEquivalentTo [4;7;6;5;1;2;3] values
 
-[<Test>]
-let ``Seven bound values are ordered and have their correct type`` () =
-    use fsiSession = createFsiSession ()
+    [<Fact>]
+    let ``Seven bound values are ordered and have their correct type`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.EvalInteraction("let x = 1")
-    fsiSession.EvalInteraction("let y = 2")
-    fsiSession.EvalInteraction("let z = 3")
-    fsiSession.EvalInteraction("let a = 4.")
-    fsiSession.EvalInteraction("let ccc = 5")
-    fsiSession.EvalInteraction("let b = 6.f")
-    fsiSession.EvalInteraction("let aa = 7")
+        fsiSession.EvalInteraction("let x = 1")
+        fsiSession.EvalInteraction("let y = 2")
+        fsiSession.EvalInteraction("let z = 3")
+        fsiSession.EvalInteraction("let a = 4.")
+        fsiSession.EvalInteraction("let ccc = 5")
+        fsiSession.EvalInteraction("let b = 6.f")
+        fsiSession.EvalInteraction("let aa = 7")
 
-    let types = fsiSession.GetBoundValues() |> List.map (fun x -> x.Value.ReflectionType)
+        let types = fsiSession.GetBoundValues() |> List.map (fun x -> x.Value.ReflectionType)
 
-    Assert.AreEqual([typeof<float>;typeof<int>;typeof<float32>;typeof<int>;typeof<int>;typeof<int>;typeof<int>], types)
+        Assert.shouldBe [typeof<float>;typeof<int>;typeof<float32>;typeof<int>;typeof<int>;typeof<int>;typeof<int>] types
 
-[<Test>]
-let ``Able to find a bound value by the identifier`` () =
-    use fsiSession = createFsiSession ()
+    [<Fact>]
+    let ``Able to find a bound value by the identifier`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.EvalInteraction("let x = 1")
-    fsiSession.EvalInteraction("let y = 2")
-    fsiSession.EvalInteraction("let z = 3")
-    fsiSession.EvalInteraction("let a = 4")
-    fsiSession.EvalInteraction("let ccc = 5")
-    fsiSession.EvalInteraction("let b = 6")
-    fsiSession.EvalInteraction("let aa = 7")
+        fsiSession.EvalInteraction("let x = 1")
+        fsiSession.EvalInteraction("let y = 2")
+        fsiSession.EvalInteraction("let z = 3")
+        fsiSession.EvalInteraction("let a = 4")
+        fsiSession.EvalInteraction("let ccc = 5")
+        fsiSession.EvalInteraction("let b = 6")
+        fsiSession.EvalInteraction("let aa = 7")
 
-    let boundValueOpt = fsiSession.TryFindBoundValue "ccc"
+        let boundValueOpt = fsiSession.TryFindBoundValue "ccc"
 
-    Assert.IsTrue boundValueOpt.IsSome
+        Assert.shouldBeTrue boundValueOpt.IsSome
 
-[<Test>]
-let ``Able to find a bound value by the identifier and has valid info`` () =
-    use fsiSession = createFsiSession ()
+    [<Fact>]
+    let ``Able to find a bound value by the identifier and has valid info`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.EvalInteraction("let x = 1.")
-    fsiSession.EvalInteraction("let y = 2.")
-    fsiSession.EvalInteraction("let z = 3")
-    fsiSession.EvalInteraction("let a = 4.")
-    fsiSession.EvalInteraction("let ccc = 5.")
-    fsiSession.EvalInteraction("let b = 6.")
-    fsiSession.EvalInteraction("let aa = 7.")
+        fsiSession.EvalInteraction("let x = 1.")
+        fsiSession.EvalInteraction("let y = 2.")
+        fsiSession.EvalInteraction("let z = 3")
+        fsiSession.EvalInteraction("let a = 4.")
+        fsiSession.EvalInteraction("let ccc = 5.")
+        fsiSession.EvalInteraction("let b = 6.")
+        fsiSession.EvalInteraction("let aa = 7.")
 
-    let boundValue = (fsiSession.TryFindBoundValue "z").Value
-    
-    Assert.AreEqual("z", boundValue.Name)
-    Assert.AreEqual(3, boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<int>, boundValue.Value.ReflectionType)
+        let boundValue = (fsiSession.TryFindBoundValue "z").Value
 
-[<Test>]
-let ``Not Able to find a bound value by the identifier`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "z" boundValue.Name
+        Assert.shouldBe 3 boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<int> boundValue.Value.ReflectionType
 
-    fsiSession.EvalInteraction("let x = 1")
-    fsiSession.EvalInteraction("let y = 2")
-    fsiSession.EvalInteraction("let z = 3")
-    fsiSession.EvalInteraction("let a = 4")
-    fsiSession.EvalInteraction("let ccc = 5")
-    fsiSession.EvalInteraction("let b = 6")
-    fsiSession.EvalInteraction("let aa = 7")
+    [<Fact>]
+    let ``Not Able to find a bound value by the identifier`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValueOpt = fsiSession.TryFindBoundValue "aaa"
+        fsiSession.EvalInteraction("let x = 1")
+        fsiSession.EvalInteraction("let y = 2")
+        fsiSession.EvalInteraction("let z = 3")
+        fsiSession.EvalInteraction("let a = 4")
+        fsiSession.EvalInteraction("let ccc = 5")
+        fsiSession.EvalInteraction("let b = 6")
+        fsiSession.EvalInteraction("let aa = 7")
 
-    Assert.IsTrue boundValueOpt.IsNone
+        let boundValueOpt = fsiSession.TryFindBoundValue "aaa"
 
-[<Test>]
-let ``The 'it' value does not exist at the start of a FSI session`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBeTrue boundValueOpt.IsNone
 
-    let boundValueOpt = fsiSession.TryFindBoundValue "it"
+    [<Fact>]
+    let ``The 'it' value does not exist at the start of a FSI session`` () =
+        use fsiSession = createFsiSession ()
 
-    Assert.IsTrue boundValueOpt.IsNone
+        let boundValueOpt = fsiSession.TryFindBoundValue "it"
 
-[<Test>]
-let ``The 'it' bound value does exists after a value is not explicitly bound`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBeTrue boundValueOpt.IsNone
 
-    fsiSession.EvalInteraction("456")
+    [<Fact>]
+    let ``The 'it' bound value does exists after a value is not explicitly bound`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValueOpt = fsiSession.TryFindBoundValue "it"
+        fsiSession.EvalInteraction("456")
 
-    Assert.IsTrue boundValueOpt.IsSome
+        let boundValueOpt = fsiSession.TryFindBoundValue "it"
 
-[<Test>]
-let ``The 'it' value does exists after a value is not explicitly bound and has valid info`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBeTrue boundValueOpt.IsSome
 
-    fsiSession.EvalInteraction("456")
+    [<Fact>]
+    let ``The 'it' value does exists after a value is not explicitly bound and has valid info`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValue = (fsiSession.TryFindBoundValue "it").Value
+        fsiSession.EvalInteraction("456")
 
-    Assert.AreEqual("it", boundValue.Name)
-    Assert.AreEqual(456, boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<int>, boundValue.Value.ReflectionType)
+        let boundValue = (fsiSession.TryFindBoundValue "it").Value
 
-[<Test>]
-let ``The latest shadowed value is only available`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "it" boundValue.Name
+        Assert.shouldBe 456 boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<int> boundValue.Value.ReflectionType
 
-    fsiSession.EvalInteraction("let x = 1")
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+    [<Fact>]
+    let ``The latest shadowed value is only available`` () =
+        use fsiSession = createFsiSession ()
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual(1, boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<int>, boundValue.Value.ReflectionType)
+        fsiSession.EvalInteraction("let x = 1")
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-    fsiSession.EvalInteraction("let x = (1, 2)")
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe 1 boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<int> boundValue.Value.ReflectionType
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual((1, 2), boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<int * int>, boundValue.Value.ReflectionType)
+        fsiSession.EvalInteraction("let x = (1, 2)")
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-[<Test>]
-let ``The latest shadowed value is only available and can be found`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe (1, 2) boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<int * int> boundValue.Value.ReflectionType
 
-    fsiSession.EvalInteraction("let x = 1")
-    let boundValue = (fsiSession.TryFindBoundValue "x").Value
+    [<Fact>]
+    let ``The latest shadowed value is only available and can be found`` () =
+        use fsiSession = createFsiSession ()
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual(1, boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<int>, boundValue.Value.ReflectionType)
+        fsiSession.EvalInteraction("let x = 1")
+        let boundValue = (fsiSession.TryFindBoundValue "x").Value
 
-    fsiSession.EvalInteraction("let x = (1, 2)")
-    let boundValue = (fsiSession.TryFindBoundValue "x").Value
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe 1 boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<int> boundValue.Value.ReflectionType
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual((1, 2), boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<int * int>, boundValue.Value.ReflectionType)
+        fsiSession.EvalInteraction("let x = (1, 2)")
+        let boundValue = (fsiSession.TryFindBoundValue "x").Value
 
-[<Test>]
-let ``Values are successfully shadowed even with intermediate interactions`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe (1, 2) boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<int * int> boundValue.Value.ReflectionType
 
-    fsiSession.EvalInteraction("let x = 1")
-    fsiSession.EvalInteraction("let z = 100")
-    fsiSession.EvalInteraction("let x = (1, 2)")
-    fsiSession.EvalInteraction("let w = obj ()")
+    [<Fact>]
+    let ``Values are successfully shadowed even with intermediate interactions`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValues = fsiSession.GetBoundValues()
+        fsiSession.EvalInteraction("let x = 1")
+        fsiSession.EvalInteraction("let z = 100")
+        fsiSession.EvalInteraction("let x = (1, 2)")
+        fsiSession.EvalInteraction("let w = obj ()")
 
-    Assert.AreEqual(3, boundValues.Length)
+        let boundValues = fsiSession.GetBoundValues()
 
-    let boundValue = boundValues |> List.find (fun x -> x.Name = "x")
+        Assert.shouldBe 3 boundValues.Length
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual((1, 2), boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<int * int>, boundValue.Value.ReflectionType)
+        let boundValue = boundValues |> List.find (fun x -> x.Name = "x")
 
-    let boundValue = (fsiSession.TryFindBoundValue "x").Value
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe (1, 2) boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<int * int> boundValue.Value.ReflectionType
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual((1, 2), boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<int * int>, boundValue.Value.ReflectionType)
+        let boundValue = (fsiSession.TryFindBoundValue "x").Value
 
-[<Test>]
-let ``Creation of a simple bound value succeeds`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe (1, 2) boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<int * int> boundValue.Value.ReflectionType
 
-    fsiSession.AddBoundValue("x", 1)
+    [<Fact>]
+    let ``Creation of a simple bound value succeeds`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.AddBoundValue("x", 1)
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual(typeof<int>, boundValue.Value.ReflectionType)
-    Assert.AreEqual(1, boundValue.Value.ReflectionValue)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-[<Test>]
-let ``Creation of a bound value succeeds with underscores in the identifier`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe typeof<int> boundValue.Value.ReflectionType
+        Assert.shouldBe 1 boundValue.Value.ReflectionValue
 
-    fsiSession.AddBoundValue("x_y_z", 1)
+    [<Fact>]
+    let ``Creation of a bound value succeeds with underscores in the identifier`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.AddBoundValue("x_y_z", 1)
 
-    Assert.AreEqual("x_y_z", boundValue.Name)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-[<Test>]
-let ``Creation of a bound value succeeds with tildes in the identifier`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "x_y_z" boundValue.Name
 
-    fsiSession.AddBoundValue("``hello world``", 1)
+    [<Fact>]
+    let ``Creation of a bound value succeeds with tildes in the identifier`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.AddBoundValue("``hello world``", 1)
 
-    Assert.AreEqual("``hello world``", boundValue.Name)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-[<Test>]
-let ``Creation of a bound value succeeds with 'it' as the indentifier`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "``hello world``" boundValue.Name
 
-    fsiSession.EvalInteraction("\"test\"")
+    [<Fact>]
+    let ``Creation of a bound value succeeds with 'it' as the indentifier`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.EvalInteraction("\"test\"")
 
-    Assert.AreEqual("it", boundValue.Name)
-    Assert.AreEqual(typeof<string>, boundValue.Value.ReflectionType)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-    fsiSession.AddBoundValue("it", 1)
+        Assert.shouldBe "it" boundValue.Name
+        Assert.shouldBe typeof<string> boundValue.Value.ReflectionType
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.AddBoundValue("it", 1)
 
-    Assert.AreEqual("it", boundValue.Name)
-    Assert.AreEqual(typeof<int>, boundValue.Value.ReflectionType)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-[<Test>]
-let ``Creation of a bound value fails with tildes in the identifier and with 'at' but has warning`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "it" boundValue.Name
+        Assert.shouldBe typeof<int> boundValue.Value.ReflectionType
 
-    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("``hello @ world``", 1)) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails with tildes in the identifier and with 'at' but has warning`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value fails if the name is not a valid identifier with 'at' in front`` () =
-    use fsiSession = createFsiSession ()
+        Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("``hello @ world``", 1)) |> ignore
 
-    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("@x", 1)) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails if the name is not a valid identifier with 'at' in front`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value fails if the name is not a valid identifier with 'at' in back`` () =
-    use fsiSession = createFsiSession ()
+        Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("@x", 1)) |> ignore
 
-    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x@", 1)) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails if the name is not a valid identifier with 'at' in back`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value fails if the name is null`` () =
-    use fsiSession = createFsiSession ()
+        Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x@", 1)) |> ignore
 
-    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue(null, 1)) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails if the name is null`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value fails if the name is empty`` () =
-    use fsiSession = createFsiSession ()
+        Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue(null, 1)) |> ignore
 
-    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("", 1)) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails if the name is empty`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value fails if the name is whitespace`` () =
-    use fsiSession = createFsiSession ()
+        Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("", 1)) |> ignore
 
-    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue(" ", 1)) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails if the name is whitespace`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value fails if the name contains spaces`` () =
-    use fsiSession = createFsiSession ()
+        Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue(" ", 1)) |> ignore
 
-    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x x", 1)) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails if the name contains spaces`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value fails if the name contains an operator at the end`` () =
-    use fsiSession = createFsiSession ()
+        Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x x", 1)) |> ignore
 
-    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x+", 1)) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails if the name contains an operator at the end`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value fails if the name contains an operator at the front`` () =
-    use fsiSession = createFsiSession ()
+        Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x+", 1)) |> ignore
 
-    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("+x", 1)) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails if the name contains an operator at the front`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value fails if the name contains dots`` () =
-    use fsiSession = createFsiSession ()
+        Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("+x", 1)) |> ignore
 
-    Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x.x", 1)) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails if the name contains dots`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value fails if the value passed is null`` () =
-    use fsiSession = createFsiSession ()
+        Assert.Throws<ArgumentException>(fun () -> fsiSession.AddBoundValue("x.x", 1)) |> ignore
 
-    Assert.Throws<ArgumentNullException>(fun () -> fsiSession.AddBoundValue("x", null) |> ignore) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails if the value passed is null`` () =
+        use fsiSession = createFsiSession ()
 
-type CustomType = { X: int }
+        Assert.Throws<ArgumentNullException>(fun () -> fsiSession.AddBoundValue("x", null) |> ignore) |> ignore
 
-[<Test>]
-let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution`` () =
-    use fsiSession = createFsiSession ()
+    type CustomType = { X: int }
 
-    fsiSession.AddBoundValue("x", { X = 1 })
+    [<Fact>]
+    let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution, and then doing some evaluation`` () =
-    use fsiSession = createFsiSession ()
+        fsiSession.AddBoundValue("x", { X = 1 })
 
-    fsiSession.AddBoundValue("x", { X = 1 })
-    fsiSession.EvalInteraction("let y = { x with X = 5 }")
+    [<Fact>]
+    let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution, and then doing some evaluation`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValues = fsiSession.GetBoundValues()
-    Assert.AreEqual(2, boundValues.Length)
+        fsiSession.AddBoundValue("x", { X = 1 })
+        fsiSession.EvalInteraction("let y = { x with X = 5 }")
 
-    let v1 = boundValues.[0]
-    let v2 = boundValues.[1]
+        let boundValues = fsiSession.GetBoundValues()
+        Assert.shouldBe 2 boundValues.Length
 
-    Assert.AreEqual("x", v1.Name)
-    Assert.AreEqual({ X = 1 }, v1.Value.ReflectionValue)
-    Assert.AreEqual(typeof<CustomType>, v1.Value.ReflectionType)
+        let v1 = boundValues.[0]
+        let v2 = boundValues.[1]
 
-    Assert.AreEqual("y", v2.Name)
-    Assert.AreEqual({ X = 5 }, v2.Value.ReflectionValue)
-    Assert.AreEqual(typeof<CustomType>, v2.Value.ReflectionType)
+        Assert.shouldBe "x" v1.Name
+        Assert.shouldBe { X = 1 } v1.Value.ReflectionValue
+        Assert.shouldBe typeof<CustomType> v1.Value.ReflectionType
 
-[<Test>]
-let ``Creation of a bound value, of type ResizeArray<string>, succeeds`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "y" v2.Name
+        Assert.shouldBe { X = 5 } v2.Value.ReflectionValue
+        Assert.shouldBe typeof<CustomType> v2.Value.ReflectionType
 
-    let xs = ResizeArray()
-    xs.Add("banana")
-    xs.Add("apple")
+    [<Fact>]
+    let ``Creation of a bound value, of type ResizeArray<string>, succeeds`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.AddBoundValue("xs", xs)
+        let xs = ResizeArray()
+        xs.Add("banana")
+        xs.Add("apple")
 
-    let boundValues = fsiSession.GetBoundValues()
-    Assert.AreEqual(1, boundValues.Length)
+        fsiSession.AddBoundValue("xs", xs)
 
-    let v1 = boundValues.[0]
+        let boundValues = fsiSession.GetBoundValues()
+        Assert.shouldBe 1 boundValues.Length
 
-    Assert.AreEqual("xs", v1.Name)
-    Assert.AreEqual(xs, v1.Value.ReflectionValue)
-    Assert.AreEqual(typeof<ResizeArray<string>>, v1.Value.ReflectionType)
+        let v1 = boundValues.[0]
 
-type CustomType2() =
+        Assert.shouldBe "xs" v1.Name
+        Assert.shouldBe xs v1.Value.ReflectionValue
+        Assert.shouldBe typeof<ResizeArray<string>> v1.Value.ReflectionType
 
-    member _.Message = "hello"
+    type CustomType2() =
 
-[<Test>]
-let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution, and then use a member from it`` () =
-    use fsiSession = createFsiSession ()
+        member _.Message = "hello"
 
-    let value = CustomType2()
-    fsiSession.AddBoundValue("x", value)
+    [<Fact>]
+    let ``Creation of a bound value succeeds if the value contains types from assemblies that are not referenced in the session, due to implicit resolution, and then use a member from it`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        let value = CustomType2()
+        fsiSession.AddBoundValue("x", value)
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual(value, boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<CustomType2>, boundValue.Value.ReflectionType)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-    fsiSession.EvalInteraction("let x = x.Message")
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe value boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<CustomType2> boundValue.Value.ReflectionType
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.EvalInteraction("let x = x.Message")
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual("hello", boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<string>, boundValue.Value.ReflectionType)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-[<Test>]
-let ``Creation of a bound value succeeds if the value contains generic types from assemblies that are not referenced in the session, due to implicit resolution, and then use a member from it`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe "hello" boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<string> boundValue.Value.ReflectionType
 
-    let value = ResizeArray<CustomType2>()
-    value.Add(CustomType2())
+    [<Fact>]
+    let ``Creation of a bound value succeeds if the value contains generic types from assemblies that are not referenced in the session, due to implicit resolution, and then use a member from it`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.AddBoundValue("x", value)
+        let value = ResizeArray<CustomType2>()
+        value.Add(CustomType2())
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.AddBoundValue("x", value)
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual(value, boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<ResizeArray<CustomType2>>, boundValue.Value.ReflectionType)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-    fsiSession.EvalInteraction("let x = x.[0].Message")
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe value boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<ResizeArray<CustomType2>> boundValue.Value.ReflectionType
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.EvalInteraction("let x = x.[0].Message")
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual("hello", boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<string>, boundValue.Value.ReflectionType)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-[<Test>]
-let ``Creation of a bound value succeeds if the value contains two generic types from assemblies that are not referenced in the session, due to implicit resolution`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe "hello" boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<string> boundValue.Value.ReflectionType
 
-    let value = ({ X = 1 }, CustomType2())
+    [<Fact>]
+    let ``Creation of a bound value succeeds if the value contains two generic types from assemblies that are not referenced in the session, due to implicit resolution`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.AddBoundValue("x", value)
+        let value = ({ X = 1 }, CustomType2())
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.AddBoundValue("x", value)
 
-    Assert.AreEqual("x", boundValue.Name)
-    Assert.AreEqual(value, boundValue.Value.ReflectionValue)
-    Assert.AreEqual(typeof<CustomType * CustomType2>, boundValue.Value.ReflectionType)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-[<Test>]
-let ``Creation of a bound value fails if the value contains types from a dynamic assembly`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe "x" boundValue.Name
+        Assert.shouldBe value boundValue.Value.ReflectionValue
+        Assert.shouldBe typeof<CustomType * CustomType2> boundValue.Value.ReflectionType
 
-    fsiSession.AddBoundValue("fsiSession", fsiSession)
+    [<Fact>]
+    let ``Creation of a bound value fails if the value contains types from a dynamic assembly`` () =
+        use fsiSession = createFsiSession ()
 
-    let res, _ = fsiSession.EvalInteractionNonThrowing("""
-type TypeInDynamicAssembly() = class end
-fsiSession.AddBoundValue("x", TypeInDynamicAssembly())""")
+        fsiSession.AddBoundValue("fsiSession", fsiSession)
 
-    match res with
-    | Choice2Of2 ex -> Assert.AreEqual(typeof<NotSupportedException>, ex.GetType())
-    | _ -> failwith "Expected an exception"
+        let res, _ = fsiSession.EvalInteractionNonThrowing("""
+    type TypeInDynamicAssembly() = class end
+    fsiSession.AddBoundValue("x", TypeInDynamicAssembly())""")
 
-type internal NonPublicCustomType() = class end
+        match res with
+        | Choice2Of2 ex -> Assert.shouldBe typeof<NotSupportedException> (ex.GetType())
+        | _ -> failwith "Expected an exception"
 
-[<Test>]
-let ``Creation of a bound value fails if the value's type is not public`` () =
-    use fsiSession = createFsiSession ()
+    type internal NonPublicCustomType() = class end
 
-    Assert.Throws<InvalidOperationException>(fun () -> fsiSession.AddBoundValue("x", NonPublicCustomType())) |> ignore
+    [<Fact>]
+    let ``Creation of a bound value fails if the value's type is not public`` () =
+        use fsiSession = createFsiSession ()
 
-[<Test>]
-let ``Creation of a bound value succeeds if the value is a partial application function type`` () =
-    use fsiSession = createFsiSession ()
+        Assert.Throws<InvalidOperationException>(fun () -> fsiSession.AddBoundValue("x", NonPublicCustomType())) |> ignore
 
-    fsiSession.AddBoundValue("createFsiSession", createFsiSession)
+    [<Fact>]
+    let ``Creation of a bound value succeeds if the value is a partial application function type`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.AddBoundValue("createFsiSession", createFsiSession)
 
-    Assert.AreEqual(typeof<unit -> FsiEvaluationSession>, boundValue.Value.ReflectionType)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-[<Test>]
-let ``Creation of a bound value succeeds if the value is a partial application function type with four arguments`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe typeof<unit -> FsiEvaluationSession> boundValue.Value.ReflectionType
 
-    let addXYZW x y z w = x + y + z + w
-    let addYZW = addXYZW 1
-    let addZW = addYZW 2
+    [<Fact>]
+    let ``Creation of a bound value succeeds if the value is a partial application function type with four arguments`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.AddBoundValue("addZW", addZW)
+        let addXYZW x y z w = x + y + z + w
+        let addYZW = addXYZW 1
+        let addZW = addYZW 2
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.AddBoundValue("addZW", addZW)
 
-    Assert.AreEqual(typeof<int -> int -> int>, boundValue.Value.ReflectionType)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-[<Test>]
-let ``Creation of a bound value succeeds if the value is a lambda`` () =
-    use fsiSession = createFsiSession ()
+        Assert.shouldBe typeof<int -> int -> int> boundValue.Value.ReflectionType
 
-    fsiSession.AddBoundValue("addXYZ", fun x y z -> x + y + z)
+    [<Fact>]
+    let ``Creation of a bound value succeeds if the value is a lambda`` () =
+        use fsiSession = createFsiSession ()
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        fsiSession.AddBoundValue("addXYZ", fun x y z -> x + y + z)
 
-    Assert.AreEqual(typeof<int -> int -> int -> int>, boundValue.Value.ReflectionType)
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-type TestFSharpFunc() =
-    inherit FSharpFunc<int, int>()
+        Assert.shouldBe typeof<int -> int -> int -> int> boundValue.Value.ReflectionType
 
-    override _.Invoke x = x
+    type TestFSharpFunc() =
+        inherit FSharpFunc<int, int>()
+        override _.Invoke x = x
 
-type ``Test2FSharp @ Func``() =
-    inherit TestFSharpFunc()
+    type ``Test2FSharp @ Func``() =
+        inherit TestFSharpFunc()
 
-[<Test>]
-let ``Creation of a bound value succeeds if the value is a type that inherits FSharpFunc`` () =
-    use fsiSession = createFsiSession ()
+    [<Fact>]
+    let ``Creation of a bound value succeeds if the value is a type that inherits FSharpFunc`` () =
+        use fsiSession = createFsiSession ()
 
-    fsiSession.AddBoundValue("test", ``Test2FSharp @ Func``())
+        fsiSession.AddBoundValue("test", ``Test2FSharp @ Func``())
 
-    let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
+        let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
 
-    Assert.AreEqual(typeof<``Test2FSharp @ Func``>, boundValue.Value.ReflectionType)
+        Assert.shouldBe typeof<``Test2FSharp @ Func``> boundValue.Value.ReflectionType

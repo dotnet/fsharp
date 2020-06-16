@@ -1,15 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ComponentTests
 
-open NUnit.Framework
-open FSharp.TestHelpers
+open Xunit
+open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-[<TestFixture>]
 module ``Invalid Numeric Literal`` =
 
-    [<Test>]
+    [<Fact>]
     let ``1up is invalid Numeric Literal``() =
         CompilerAssert.TypeCheckSingleError
             """
