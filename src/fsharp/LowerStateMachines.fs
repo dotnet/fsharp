@@ -246,17 +246,37 @@ let ConvertStateMachineExprToObject g overallExpr =
             | Some bodyExpr2 -> Some (Expr.Sequential (x1, bodyExpr2, sp, ty, m))
             | None -> None
 
+        | Expr.Const (Const.Zero, m, ty) -> 
+            Some (Expr.Const (Const.Zero, m, ty))
+
         | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
+            let mutable newTyOpt = None
             let targets2 = 
                 targets |> Array.choose (fun (TTarget(vs, targetExpr, spTarget, flags)) -> 
-                    // Incomplete excption matching expressions give rise to targets with I_throw. Keep these in the residue with
-                    // the type of the expression adjusted
-                    match targetExpr with 
-                    | Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [_]), tyargs, args, m) -> 
-                        Some (TTarget(vs, Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [tyOfExpr g expr]), tyargs, args, m), spTarget, flags))
-                    | _ ->
+                    // Incomplete exception matching expressions give rise to targets with I_throw. 
+                    // and System.Runtime.ExceptionServices.ExceptionDispatchInfo::Throw(...)
+                    // 
+                    // Keep these in the residue.
+                    //
+                    // In theory the type of the expression should be adjusted but code generation doesn't record the 
+                    // type in the IL
+                    let targetExpr2Opt = 
+                        match targetExpr, newTyOpt with 
+                        | Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [_oldTy]), a, b, c), Some newTy -> 
+                            let targetExpr2 = Expr.Op (TOp.ILAsm ([ AbstractIL.IL.I_throw ], [newTy]), a, b, c) 
+                            Some targetExpr2
+                        | Expr.Sequential ((Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) as e1), Expr.Const (Const.Zero, m, _oldTy), a, b, c), Some newTy  when ilMethodRef.Name = "Throw" -> 
+                            let targetExpr2 = Expr.Sequential (e1, Expr.Const (Const.Zero, m, newTy), a, b, c)
+                            Some targetExpr2
+                        | _ ->
 
-                    match TryApplyMacroDef env targetExpr args with 
+                        match TryApplyMacroDef env targetExpr args with 
+                        | Some targetExpr2 -> 
+                            newTyOpt <- Some (tyOfExpr g targetExpr2) 
+                            Some targetExpr2
+                        | None -> 
+                            None
+                    match targetExpr2Opt with 
                     | Some targetExpr2 -> Some (TTarget(vs, targetExpr2, spTarget, flags))
                     | None -> None)
             if targets2.Length = targets.Length then 
