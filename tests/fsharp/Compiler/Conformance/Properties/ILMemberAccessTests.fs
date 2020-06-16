@@ -91,6 +91,7 @@ type MyFSharpClass () =
             (FSharpErrorSeverity.Error, 491, (34, 9, 34, 40),
              "The member or object constructor 'GetPublicSetPrivate' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")|])
 
+
     [<Test>]
     let ``VerifyVisibility of Properties C# class F# non-derived class -- AccessPublicStuff`` () =
 
@@ -161,6 +162,13 @@ type MyFSharpClass () =
 
         this.GetPublicSetPrivate <- "1"             // Inaccessible
         let _ = this.GetPublicSetPrivate            // Accessible
+
+        this.SetPublicGetInternal <- "1"            // Accessible
+        let _ = this.SetPublicGetInternal           // Inaccessible
+
+        this.SetPublicGetPrivate <- "1"             // Accessible
+        let _ = this.SetPublicGetPrivate            // accessible
+
         ()
 """
 
@@ -173,7 +181,9 @@ type MyFSharpClass () =
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 810, (25, 9, 25, 33),
-             "Property 'GetPublicSetPrivate' cannot be set")
+             "Property 'GetPublicSetPrivate' cannot be set");
+            (FSharpErrorSeverity.Error, 807, (32, 17, 32, 41),
+             "Property 'SetPublicGetPrivate' is not readable")
         |])
 
 
@@ -211,4 +221,3 @@ type MyFSharpClass () =
 
 
 
-// Todo: Repeat these tests with a seperate F# assembly

@@ -254,6 +254,19 @@ let GetILAccessOfILPropInfo (ILPropInfo(tinfo, pdef)) =
         | None, Some mref -> (resolveILMethodRef tdef mref).Access
 
         | Some mrefGet, Some mrefSet ->
+            //
+            // Dotnet properties have a getter and a setter method, each of which can have a separate visibility public, protected, private etc ...
+            // This code computes the visibility for the property by choosing the most visible method. This approximation is usefull for cases
+            // where the compiler needs to know the visibility of the property.
+            // The specific ordering for choosing the most visible is:
+            //  ILMemberAccess.Public,
+            //  ILMemberAccess.FamilyOrAssembly
+            //  ILMemberAccess.Assembly
+            //  ILMemberAccess.Family
+            //  ILMemberAccess.FamilyAndAssembly
+            //  ILMemberAccess.Private
+            //  ILMemberAccess.CompilerControlled
+            //          
             let getA = (resolveILMethodRef tdef mrefGet).Access
             let setA = (resolveILMethodRef tdef mrefSet).Access
 
@@ -274,7 +287,10 @@ let GetILAccessOfILPropInfo (ILPropInfo(tinfo, pdef)) =
             | ILMemberAccess.FamilyAndAssembly, _
             | _, ILMemberAccess.FamilyAndAssembly -> ILMemberAccess.FamilyAndAssembly
 
-            | _ -> ILMemberAccess.Private
+            | ILMemberAccess.Private, _
+            | _, ILMemberAccess.Private -> ILMemberAccess.Private
+
+            | _ -> ILMemberAccess.CompilerControlled
 
         | None, None -> ILMemberAccess.Public
 
