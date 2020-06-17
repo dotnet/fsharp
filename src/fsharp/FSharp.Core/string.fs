@@ -31,7 +31,7 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Map")>]
         let map (mapping: char -> char) (str:string) =
-            if String.IsNullOrEmpty str then 
+            if String.IsNullOrEmpty str then
                 String.Empty
             else
                 let result = str.ToCharArray()
