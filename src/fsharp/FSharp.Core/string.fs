@@ -31,15 +31,12 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Map")>]
         let map (mapping: char -> char) (str:string) =
-            if String.IsNullOrEmpty str then String.Empty
+            if String.IsNullOrEmpty str then
+                String.Empty
             else
-                let result = str.ToCharArray()
-                let mutable i = 0
-                for c in result do
-                    result.[i] <- mapping c
-                    i <- i + 1
-
-                String result
+                let res = StringBuilder str.Length
+                str |> iter (fun c -> res.Append(mapping c) |> ignore)
+                res.ToString()
 
         [<CompiledName("MapIndexed")>]
         let mapi (mapping: int -> char -> char) (str:string) =
