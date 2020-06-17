@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly Seq_for_all01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Seq_for_all01
 {
-  // Offset: 0x00000000 Length: 0x000001AB
+  // Offset: 0x00000000 Length: 0x000001C1
 }
 .mresource public FSharpOptimizationData.Seq_for_all01
 {
-  // Offset: 0x000001B0 Length: 0x00000072
+  // Offset: 0x000001C8 Length: 0x00000072
 }
 .module Seq_for_all01.exe
-// MVID: {59B19213-D30D-BA80-A745-03831392B159}
+// MVID: {5EE40368-D30D-BA80-A745-03836803E45E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02A60000
+// Image base: 0x07080000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -69,28 +69,33 @@
     .method public strict virtual instance bool 
             Invoke(int32 s) cil managed
     {
-      // Code size       14 (0xe)
+      // Code size       18 (0x12)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 31,47 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\Seq_for_all01.fs'
+      .line 5,5 : 31,47 'C:\\Users\\phcart\\source\\repos\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Seq_for_all01.fs'
       IL_0000:  ldc.i4.1
-      IL_0001:  brtrue.s   IL_0005
+      IL_0001:  ldc.i4.0
+      IL_0002:  ceq
+      .line 100001,100001 : 0,0 ''
+      IL_0004:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0005:  brfalse.s  IL_0009
 
-      IL_0003:  br.s       IL_0007
+      IL_0007:  br.s       IL_000b
 
-      IL_0005:  br.s       IL_000b
+      IL_0009:  br.s       IL_000f
 
       .line 5,5 : 48,50 ''
-      IL_0007:  nop
+      IL_000b:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0008:  nop
-      IL_0009:  br.s       IL_000c
+      IL_000c:  nop
+      IL_000d:  br.s       IL_0010
 
       .line 100001,100001 : 0,0 ''
-      IL_000b:  nop
+      IL_000f:  nop
       .line 6,6 : 31,35 ''
-      IL_000c:  ldc.i4.1
-      IL_000d:  ret
+      IL_0010:  ldc.i4.1
+      IL_0011:  ret
     } // end of method q@4::Invoke
 
   } // end of class q@4

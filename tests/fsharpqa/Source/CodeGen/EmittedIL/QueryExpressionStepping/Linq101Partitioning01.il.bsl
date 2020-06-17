@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly extern Utils
 {
@@ -33,20 +33,20 @@
 }
 .mresource public FSharpSignatureData.Linq101Partitioning01
 {
-  // Offset: 0x00000000 Length: 0x000003DE
+  // Offset: 0x00000000 Length: 0x000003EC
 }
 .mresource public FSharpOptimizationData.Linq101Partitioning01
 {
-  // Offset: 0x000003E8 Length: 0x00000138
+  // Offset: 0x000003F0 Length: 0x00000138
 }
 .module Linq101Partitioning01.exe
-// MVID: {5B9A632A-B280-A6A2-A745-03832A639A5B}
+// MVID: {5EE4036A-B280-A6A2-A745-03836A03E45E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00AF0000
+// Image base: 0x00C40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -100,7 +100,7 @@
       .locals init ([0] int32 V_0,
                [1] int32 n)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Partitioning01.fs'
+      .line 100001,100001 : 0,0 'C:\\Users\\phcart\\source\\repos\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Partitioning01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Partitioning01/first3Numbers@12::pc
       IL_0006:  ldc.i4.1
@@ -1797,17 +1797,23 @@
     .method public strict virtual instance bool 
             Invoke(int32 n) cil managed
     {
-      // Code size       10 (0xa)
-      .maxstack  8
+      // Code size       14 (0xe)
+      .maxstack  6
+      .locals init ([0] int32 V_0,
+               [1] int32 V_1)
       .line 53,53 : 20,30 ''
       IL_0000:  ldarg.1
       IL_0001:  ldc.i4.3
       IL_0002:  rem
-      IL_0003:  ldc.i4.0
-      IL_0004:  ceq
-      IL_0006:  ldc.i4.0
-      IL_0007:  ceq
-      IL_0009:  ret
+      IL_0003:  stloc.0
+      IL_0004:  ldc.i4.0
+      IL_0005:  stloc.1
+      IL_0006:  ldloc.0
+      IL_0007:  ldloc.1
+      IL_0008:  ceq
+      IL_000a:  ldc.i4.0
+      IL_000b:  ceq
+      IL_000d:  ret
     } // end of method 'allButFirst3Numbers@53-1'::Invoke
 
   } // end of class 'allButFirst3Numbers@53-1'
@@ -1817,7 +1823,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'numbers@7-5'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::numbers@7
     IL_0005:  ret
   } // end of method Linq101Partitioning01::get_numbers
 
@@ -1835,7 +1841,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'customers@17-2'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::customers@17
     IL_0005:  ret
   } // end of method Linq101Partitioning01::get_customers
 
@@ -1937,11 +1943,11 @@
 .class private abstract auto ansi sealed '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01
        extends [mscorlib]System.Object
 {
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'numbers@7-5'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> numbers@7
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> first3Numbers@10
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> 'customers@17-2'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> customers@17
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>[] WAOrders@18
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -2009,7 +2015,7 @@
     IL_003d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0042:  dup
-    IL_0043:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'numbers@7-5'
+    IL_0043:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::numbers@7
     IL_0048:  stloc.0
     .line 10,14 : 1,20 ''
     IL_0049:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
@@ -2033,7 +2039,7 @@
     .line 17,17 : 1,34 ''
     IL_0076:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> [Utils]Utils::getCustomerList()
     IL_007b:  dup
-    IL_007c:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::'customers@17-2'
+    IL_007c:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Partitioning01>'.$Linq101Partitioning01::customers@17
     IL_0081:  stloc.2
     .line 18,24 : 1,21 ''
     IL_0082:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()

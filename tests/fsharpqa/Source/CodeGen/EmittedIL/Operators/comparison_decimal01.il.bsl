@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly comparison_decimal01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.comparison_decimal01
 {
-  // Offset: 0x00000000 Length: 0x00000176
+  // Offset: 0x00000000 Length: 0x0000018C
 }
 .mresource public FSharpOptimizationData.comparison_decimal01
 {
-  // Offset: 0x00000180 Length: 0x0000005B
+  // Offset: 0x00000190 Length: 0x0000005B
 }
 .module comparison_decimal01.exe
-// MVID: {59B19240-76D8-7EE3-A745-03834092B159}
+// MVID: {5EE40368-76D8-7EE3-A745-03836803E45E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02980000
+// Image base: 0x06B30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,10 +63,12 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       228 (0xe4)
+    // Code size       233 (0xe9)
     .maxstack  8
+    .locals init ([0] valuetype [mscorlib]System.Decimal V_0,
+             [1] valuetype [mscorlib]System.Decimal V_1)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 4,4 : 9,20 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Operators\\comparison_decimal01.fs'
+    .line 4,4 : 9,20 'C:\\Users\\phcart\\source\\repos\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Operators\\comparison_decimal01.fs'
     IL_0000:  ldc.i4.s   10
     IL_0002:  ldc.i4.0
     IL_0003:  ldc.i4.0
@@ -197,70 +199,76 @@
                                                                        int32,
                                                                        bool,
                                                                        uint8)
-    IL_0097:  ldc.i4.s   20
-    IL_0099:  ldc.i4.0
+    IL_0097:  stloc.0
+    IL_0098:  ldc.i4.s   20
     IL_009a:  ldc.i4.0
     IL_009b:  ldc.i4.0
-    IL_009c:  ldc.i4.1
-    IL_009d:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
+    IL_009c:  ldc.i4.0
+    IL_009d:  ldc.i4.1
+    IL_009e:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
                                                                        int32,
                                                                        int32,
                                                                        bool,
                                                                        uint8)
-    IL_00a2:  call       bool [mscorlib]System.Decimal::op_Equality(valuetype [mscorlib]System.Decimal,
+    IL_00a3:  stloc.1
+    IL_00a4:  ldloc.0
+    IL_00a5:  ldloc.1
+    IL_00a6:  call       bool [mscorlib]System.Decimal::op_Equality(valuetype [mscorlib]System.Decimal,
                                                                     valuetype [mscorlib]System.Decimal)
-    IL_00a7:  ldc.i4.0
-    IL_00a8:  ceq
-    IL_00aa:  pop
+    IL_00ab:  ldc.i4.0
+    IL_00ac:  ceq
+    IL_00ae:  pop
+    .line 100001,100001 : 0,0 ''
+    IL_00af:  nop
     .line 10,10 : 9,20 ''
-    IL_00ab:  ldc.i4.s   10
-    IL_00ad:  ldc.i4.0
-    IL_00ae:  ldc.i4.0
-    IL_00af:  ldc.i4.0
-    IL_00b0:  ldc.i4.1
-    IL_00b1:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
+    IL_00b0:  ldc.i4.s   10
+    IL_00b2:  ldc.i4.0
+    IL_00b3:  ldc.i4.0
+    IL_00b4:  ldc.i4.0
+    IL_00b5:  ldc.i4.1
+    IL_00b6:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
                                                                        int32,
                                                                        int32,
                                                                        bool,
                                                                        uint8)
-    IL_00b6:  ldc.i4.s   20
-    IL_00b8:  ldc.i4.0
-    IL_00b9:  ldc.i4.0
-    IL_00ba:  ldc.i4.0
-    IL_00bb:  ldc.i4.1
-    IL_00bc:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
+    IL_00bb:  ldc.i4.s   20
+    IL_00bd:  ldc.i4.0
+    IL_00be:  ldc.i4.0
+    IL_00bf:  ldc.i4.0
+    IL_00c0:  ldc.i4.1
+    IL_00c1:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
                                                                        int32,
                                                                        int32,
                                                                        bool,
                                                                        uint8)
-    IL_00c1:  call       bool [mscorlib]System.Decimal::op_Equality(valuetype [mscorlib]System.Decimal,
+    IL_00c6:  call       bool [mscorlib]System.Decimal::op_Equality(valuetype [mscorlib]System.Decimal,
                                                                     valuetype [mscorlib]System.Decimal)
-    IL_00c6:  pop
+    IL_00cb:  pop
     .line 11,11 : 9,26 ''
-    IL_00c7:  ldc.i4.s   10
-    IL_00c9:  ldc.i4.0
-    IL_00ca:  ldc.i4.0
-    IL_00cb:  ldc.i4.0
-    IL_00cc:  ldc.i4.1
-    IL_00cd:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
+    IL_00cc:  ldc.i4.s   10
+    IL_00ce:  ldc.i4.0
+    IL_00cf:  ldc.i4.0
+    IL_00d0:  ldc.i4.0
+    IL_00d1:  ldc.i4.1
+    IL_00d2:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
                                                                        int32,
                                                                        int32,
                                                                        bool,
                                                                        uint8)
-    IL_00d2:  ldc.i4.s   20
-    IL_00d4:  ldc.i4.0
-    IL_00d5:  ldc.i4.0
-    IL_00d6:  ldc.i4.0
-    IL_00d7:  ldc.i4.1
-    IL_00d8:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
+    IL_00d7:  ldc.i4.s   20
+    IL_00d9:  ldc.i4.0
+    IL_00da:  ldc.i4.0
+    IL_00db:  ldc.i4.0
+    IL_00dc:  ldc.i4.1
+    IL_00dd:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
                                                                        int32,
                                                                        int32,
                                                                        bool,
                                                                        uint8)
-    IL_00dd:  call       int32 [mscorlib]System.Decimal::Compare(valuetype [mscorlib]System.Decimal,
+    IL_00e2:  call       int32 [mscorlib]System.Decimal::Compare(valuetype [mscorlib]System.Decimal,
                                                                  valuetype [mscorlib]System.Decimal)
-    IL_00e2:  pop
-    IL_00e3:  ret
+    IL_00e7:  pop
+    IL_00e8:  ret
   } // end of method $Comparison_decimal01::main@
 
 } // end of class '<StartupCode$comparison_decimal01>'.$Comparison_decimal01
