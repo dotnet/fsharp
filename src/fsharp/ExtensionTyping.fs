@@ -260,7 +260,10 @@ module internal ExtensionTyping =
     // to preserve object identity when presenting the types to the F# compiler.
 
     type ProvidedTypeComparer() = 
-        let key (ty: ProvidedType) = (ty.Assembly.FullName, ty.FullName)
+        let key (ty: ProvidedType) =
+            match ty.Assembly with
+            | null -> ("", ty.FullName)
+            | NonNull a -> (a.FullName, ty.FullName)
         static member val Instance = ProvidedTypeComparer()
         interface IEqualityComparer<ProvidedType> with
             member __.GetHashCode(ty: ProvidedType) = hash (key ty)
@@ -348,7 +351,11 @@ module internal ExtensionTyping =
 #endif
         member __.FullName = x.FullName
         member __.IsArray = x.IsArray
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         member __.Assembly: ProvidedAssembly = x.Assembly |> ProvidedAssembly.Create
+#else
+        member __.Assembly: ProvidedAssembly? = x.Assembly |> ProvidedAssembly.Create
+#endif
         member __.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
         member __.GetMethods() = x.GetMethods bindingFlags |> ProvidedMethodInfo.CreateArray ctxt
         member __.GetEvents() = x.GetEvents bindingFlags |> ProvidedEventInfo.CreateArray ctxt
