@@ -1029,11 +1029,11 @@ and SolveTyparEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalT
 and SolveTyparsEqualTypes (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) tptys tys = trackErrors {
     do! (tptys, tys) ||> Iterate2D (fun tpty ty -> 
             match tpty with 
-            | TType_var r | TType_measure (Measure.Var r) -> SolveTyparEqualsTypePart1 csenv m2 trace tpty r ty 
+            | TType_var (r, _) | TType_measure (Measure.Var r) -> SolveTyparEqualsTypePart1 csenv m2 trace tpty r ty 
             | _ -> failwith "SolveTyparsEqualTypes")
     do! (tptys, tys) ||> Iterate2D (fun tpty ty -> 
             match tpty with 
-            | TType_var r | TType_measure (Measure.Var r) -> SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
+            | TType_var (r, _) | TType_measure (Measure.Var r) -> SolveTyparEqualsTypePart2 csenv ndeep m2 trace r ty 
             | _ -> failwith "SolveTyparsEqualTypes")
  }
 
