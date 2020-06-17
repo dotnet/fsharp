@@ -86,7 +86,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsiAnyCpu", "src\fsharp\fsi
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsi", "src\fsharp\fsi\fsi.fsproj", "{D0E98C0D-490B-4C61-9329-0862F6E87645}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.TestsHelpers", "tests\FSharp.TestHelpers\FSharp.TestHelpers.fsproj", "{60D275B0-B14A-41CB-A1B2-E815A7448FCB} "
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.TestsHelpers", "tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj", "{60D275B0-B14A-41CB-A1B2-E815A7448FCB} "
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharpSuite.Tests", "tests\fsharp\FSharpSuite.Tests.fsproj", "{C163E892-5BF7-4B59-AA99-B0E8079C67C4}"
 EndProject
@@ -163,6 +163,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskPerfCSharp", "tests\fsharp\perf\tasks\CS\TaskPerfCSharp.csproj", "{D5ECF8DF-E150-4AE3-B613-AB2B0FFA93E0}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TaskPerf", "tests\fsharp\perf\tasks\FS\TaskPerf.fsproj", "{03596D51-754D-4644-8E23-84EC9532ABDC}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.ComponentTests", "tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj", "{0610FB97-7C15-422A-86FD-32335C6DF14D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -966,6 +967,18 @@ Global
 		{03596D51-754D-4644-8E23-84EC9532ABDC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{03596D51-754D-4644-8E23-84EC9532ABDC}.Release|x86.ActiveCfg = Release|Any CPU
 		{03596D51-754D-4644-8E23-84EC9532ABDC}.Release|x86.Build.0 = Release|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Debug|x86.Build.0 = Debug|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Proto|Any CPU.ActiveCfg = Debug|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Proto|Any CPU.Build.0 = Debug|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Proto|x86.ActiveCfg = Debug|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Proto|x86.Build.0 = Debug|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Release|x86.ActiveCfg = Release|Any CPU
+		{0610FB97-7C15-422A-86FD-32335C6DF14D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1043,6 +1056,7 @@ Global
 		{C2F38485-5F87-4986-985B-55D7ED96D5CE} = {3881429D-A97A-49EB-B7AE-A82BA5FE9C77}
 		{D5ECF8DF-E150-4AE3-B613-AB2B0FFA93E0} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{03596D51-754D-4644-8E23-84EC9532ABDC} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
+		{0610FB97-7C15-422A-86FD-32335C6DF14D} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {48EDBBBE-C8EE-4E3C-8B19-97184A487B37}
