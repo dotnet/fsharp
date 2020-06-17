@@ -107,5 +107,7 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Length")>]
         let length (str:string) =
-            if isNull str then 0
-            else str.Length
+            if String.IsNullOrEmpty str then
+                0
+            else
+                str.Length
