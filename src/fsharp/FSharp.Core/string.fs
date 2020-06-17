@@ -40,7 +40,7 @@ namespace Microsoft.FSharp.Core
                     result.[i] <- mapping c
                     i <- i + 1
 
-                String result
+                new String(result)
 
         [<CompiledName("MapIndexed")>]
         let mapi (mapping: int -> char -> char) (str:string) =
