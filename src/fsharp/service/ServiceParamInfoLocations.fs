@@ -49,6 +49,7 @@ module internal NoteworthyParamInfoLocationsImpl =
         | SynExpr.LongIdent (_, LongIdentWithDots(lid, _), _, lidRange) 
         | SynExpr.DotGet (_, _, LongIdentWithDots(lid, _), lidRange) -> Some (pathOfLid lid, lidRange)
         | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr 
+        | SynExpr.Paren(expr = expr) -> digOutIdentFromFuncExpr expr 
         | _ -> None
 
     type FindResult = 

@@ -2,10 +2,10 @@
 #if INTERACTIVE
 #r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "../../src/scripts/scriptlib.fsx"
-#load "../FSharp.TestHelpers/TestFramework.fs"
+#load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
 #else
-module ``FSharp-Tests-Core``
+module FSharp.Tests.Core
 #endif
 
 open System
@@ -2291,6 +2291,15 @@ module TypecheckTests =
         let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos35.dll --warnaserror" cfg.fsc_flags ["pos35.fs"]
         peverify cfg "pos35.dll"
+
+    [<Test>]
+    let ``sigs pos36-srtp`` () =
+        let cfg = testConfig' "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos36-srtp-lib.dll --warnaserror" cfg.fsc_flags ["pos36-srtp-lib.fs"]
+        fsc cfg "%s --target:exe -r:pos36-srtp-lib.dll -o:pos36-srtp-app.exe --warnaserror" cfg.fsc_flags ["pos36-srtp-app.fs"]
+        peverify cfg "pos36-srtp-lib.dll"
+        peverify cfg "pos36-srtp-app.exe"
+        exec cfg ("." ++ "pos36-srtp-app.exe") ""
 
     [<Test>]
     let ``sigs pos23`` () =

@@ -245,6 +245,10 @@ module internal ExtensionTyping =
         BindingFlags.Instance |||
         BindingFlags.Public
 
+    type CustomAttributeData = System.Reflection.CustomAttributeData
+    type CustomAttributeNamedArgument = System.Reflection.CustomAttributeNamedArgument
+    type CustomAttributeTypedArgument = System.Reflection.CustomAttributeTypedArgument
+
     // NOTE: for the purposes of remapping the closure of generated types, the FullName is sufficient.
     // We do _not_ rely on object identity or any other notion of equivalence provided by System.Type
     // itself. The mscorlib implementations of System.Type equality relations are not suitable: for
@@ -255,11 +259,12 @@ module internal ExtensionTyping =
     // providers can implement wrap-and-filter "views" over existing System.Type clusters without needing
     // to preserve object identity when presenting the types to the F# compiler.
 
-    let providedSystemTypeComparer = 
-        let key (ty: System.Type) = (ty.Assembly.FullName, ty.FullName)
-        { new IEqualityComparer<Type> with 
-            member __.GetHashCode(ty: Type) = hash (key ty)
-            member __.Equals(ty1: Type, ty2: Type) = (key ty1 = key ty2) }
+    type ProvidedTypeComparer() = 
+        let key (ty: ProvidedType) = (ty.Assembly.FullName, ty.FullName)
+        static member val Instance = ProvidedTypeComparer()
+        interface IEqualityComparer<ProvidedType> with
+            member __.GetHashCode(ty: ProvidedType) = hash (key ty)
+            member __.Equals(ty1: ProvidedType, ty2: ProvidedType) = (key ty1 = key ty2)
 
     /// The context used to interpret information in the closure of System.Type, System.MethodInfo and other 
     /// info objects coming from the type provider.
@@ -269,9 +274,9 @@ module internal ExtensionTyping =
     ///
     /// Laziness is used "to prevent needless computation for every type during remapping". However it
     /// appears that the laziness likely serves no purpose and could be safely removed.
-    type ProvidedTypeContext = 
+    and ProvidedTypeContext = 
         | NoEntries
-        | Entries of Dictionary<System.Type, ILTypeRef> * Lazy<Dictionary<System.Type, obj>>
+        | Entries of Dictionary<ProvidedType, ILTypeRef> * Lazy<Dictionary<ProvidedType, obj>>
 
         static member Empty = NoEntries
 
@@ -280,7 +285,7 @@ module internal ExtensionTyping =
         member ctxt.GetDictionaries()  = 
             match ctxt with
             | NoEntries -> 
-                Dictionary<System.Type, ILTypeRef>(providedSystemTypeComparer), Dictionary<System.Type, obj>(providedSystemTypeComparer)
+                Dictionary<ProvidedType, ILTypeRef>(ProvidedTypeComparer.Instance), Dictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
             | Entries (lookupILTR, lookupILTCR) ->
                 lookupILTR, lookupILTCR.Force()
 
@@ -305,19 +310,16 @@ module internal ExtensionTyping =
             match ctxt with 
             | NoEntries -> NoEntries
             | Entries(d1, d2) ->
-                Entries(d1, lazy (let dict = new Dictionary<System.Type, obj>(providedSystemTypeComparer)
+                Entries(d1, lazy (let dict = Dictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
                                   for KeyValue (st, tcref) in d2.Force() do dict.Add(st, f tcref)
                                   dict))
 
-    type CustomAttributeData = System.Reflection.CustomAttributeData
-    type CustomAttributeNamedArgument = System.Reflection.CustomAttributeNamedArgument
-    type CustomAttributeTypedArgument = System.Reflection.CustomAttributeTypedArgument
-
-    [<Sealed>]
+    and
+      [<Sealed>]
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    [<AllowNullLiteral>]
+      [<AllowNullLiteral>]
 #endif
-    type ProvidedType (x: System.Type, ctxt: ProvidedTypeContext) =
+      ProvidedType (x: System.Type, ctxt: ProvidedTypeContext) =
         inherit ProvidedMemberInfo(x, ctxt)
         let isMeasure = 
             lazy
@@ -346,7 +348,7 @@ module internal ExtensionTyping =
 #endif
         member __.FullName = x.FullName
         member __.IsArray = x.IsArray
-        member __.Assembly = x.Assembly |> ProvidedAssembly.Create
+        member __.Assembly: ProvidedAssembly = x.Assembly |> ProvidedAssembly.Create
         member __.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
         member __.GetMethods() = x.GetMethods bindingFlags |> ProvidedMethodInfo.CreateArray ctxt
         member __.GetEvents() = x.GetEvents bindingFlags |> ProvidedEventInfo.CreateArray ctxt
@@ -438,9 +440,9 @@ module internal ExtensionTyping =
 
         override __.Equals y = assert false; match y with :? ProvidedType as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
-        member __.TryGetILTypeRef() = ctxt.TryGetILTypeRef x
-        member __.TryGetTyconRef() = ctxt.TryGetTyconRef x
         member __.Context = ctxt
+        member this.TryGetILTypeRef() = this.Context.TryGetILTypeRef this
+        member this.TryGetTyconRef() = this.Context.TryGetTyconRef this
         static member ApplyContext (pt: ProvidedType, ctxt) = ProvidedType(pt.Handle, ctxt)
         static member TaintedEquals (pt1: Tainted<ProvidedType>, pt2: Tainted<ProvidedType>) = 
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
