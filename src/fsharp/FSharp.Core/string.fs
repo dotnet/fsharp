@@ -12,6 +12,9 @@ namespace Microsoft.FSharp.Core
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
     module String =
+        [<CompiledName("Length")>]
+        let length (str:string) = if isNull str then 0 else str.Length
+
         [<CompiledName("Concat")>]
         let concat sep (strings : seq<string>) =  
             String.Join(sep, strings)
@@ -40,13 +43,24 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("MapIndexed")>]
         let mapi (mapping: int -> char -> char) (str:string) =
-            if String.IsNullOrEmpty str then
+            let len = length str
+            if len = 0 then 
                 String.Empty
             else
-                let res = StringBuilder str.Length
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(mapping)
-                str |> iteri (fun i c -> res.Append(f.Invoke(i, c)) |> ignore)
-                res.ToString()
+                let result = str.ToCharArray()
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt mapping
+
+                // x2 unrolled loop gives 10-20% boost, overall 2.5x SB perf
+                let mutable i = 0
+                while i < len - len % 2 do
+                    result.[i] <- f.Invoke(i, result.[i])
+                    result.[i + 1] <- f.Invoke(i, result.[i + 1])
+                    i <- i + 2
+
+                if i % 2 = 1 then
+                    result.[i] <- f.Invoke(i, result.[i])
+
+                new String(result)
 
         [<CompiledName("Filter")>]
         let filter (predicate: char -> bool) (str:string) =
@@ -101,6 +115,3 @@ namespace Microsoft.FSharp.Core
             else
                 let rec check i = (i < str.Length) && (predicate str.[i] || check (i+1)) 
                 check 0  
-
-        [<CompiledName("Length")>]
-        let length (str:string) = if isNull str then 0 else str.Length
