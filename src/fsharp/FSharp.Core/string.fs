@@ -43,13 +43,24 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("MapIndexed")>]
         let mapi (mapping: int -> char -> char) (str:string) =
-            if String.IsNullOrEmpty str then
+            let len = length str
+            if len = 0 then 
                 String.Empty
             else
-                let res = StringBuilder str.Length
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(mapping)
-                str |> iteri (fun i c -> res.Append(f.Invoke(i, c)) |> ignore)
-                res.ToString()
+                let result = str.ToCharArray()
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt mapping
+
+                // x2 unrolled loop gives 10-20% boost, overall 2.5x SB perf
+                let mutable i = 0
+                while i < len - len % 2 do
+                    result.[i] <- f.Invoke(i, result.[i])
+                    result.[i + 1] <- f.Invoke(i, result.[i + 1])
+                    i <- i + 2
+
+                if i % 2 = 1 then
+                    result.[i] <- f.Invoke(i, result.[i])
+
+                new String(result)
 
         [<CompiledName("Filter")>]
         let filter (predicate: char -> bool) (str:string) =
