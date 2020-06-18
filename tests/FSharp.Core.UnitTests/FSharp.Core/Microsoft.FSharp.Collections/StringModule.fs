@@ -23,30 +23,26 @@ type StringModule() =
 
     [<Test>]
     member this.Concat() =
-        let e1 = String.concat null ["foo"]
-        Assert.AreEqual("foo", e1)
-        
-        let e2 = String.concat "" []
-        Assert.AreEqual("", e2)
-        
-        let e3 = String.concat "foo" []
-        Assert.AreEqual("", e3)        
-        
-        let e4 = String.concat "" [null]
-        Assert.AreEqual("", e4)
-        
-        let e5 = String.concat "" [""]
-        Assert.AreEqual("", e5)
-        
-        let e6 = String.concat "foo" ["bar"]
-        Assert.AreEqual("bar", e6)
-        
-        let e7 = String.concat "foo" ["bav";"baz"]
-        Assert.AreEqual("bavfoobaz", e7)
+        /// This tests the three paths of String.concat w.r.t. array, list, seq
+        let execTest f expected arg = 
+            let r1 = f (List.toSeq arg)
+            Assert.AreEqual(expected, r1)
 
-        let e8 = String.concat "foo" [null;"baz";null;"bar"]
-        Assert.AreEqual("foobazfoofoobar", e8)
-        
+            let r2 = f (List.toArray arg)
+            Assert.AreEqual(expected, r2)
+
+            let r3 = f arg
+            Assert.AreEqual(expected, r3)
+
+        do execTest (String.concat null) "foo" ["foo"]
+        do execTest (String.concat "") "" []
+        do execTest (String.concat "foo") "" []
+        do execTest (String.concat "") "" [null]
+        do execTest (String.concat "") "" [""]
+        do execTest (String.concat "foo") "bar" ["bar"]
+        do execTest (String.concat "foo") "bavfoobaz" ["bav"; "baz"]
+        do execTest (String.concat "foo") "foobazfoofoobar" [null;"baz";null;"bar"]
+
         CheckThrowsArgumentNullException(fun () -> String.concat "foo" null |> ignore)
 
     [<Test>]
