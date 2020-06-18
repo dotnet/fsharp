@@ -92,7 +92,7 @@ type StringModule() =
         // this tests makes sure mapping function is not called too many times
         let mutable x = 0
         let e7 = String.map (fun _ -> if x > 2 then failwith "should not raise" else x <- x + 1; 'x') "abc"
-        Assert.AreEqual(e7, 3)
+        Assert.AreEqual(x, 3)
         Assert.AreEqual(e7, "xxx")
 
         // side-effect and "order of operation" test
