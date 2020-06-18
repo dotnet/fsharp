@@ -103,6 +103,12 @@ type StringModule() =
         let e8 = String.mapi (fun i _ -> if i = 1 then failwith "should not fail" else char i) "X" 
         Assert.AreEqual("\u0000", e8)
 
+        // side-effect and "order of operation" test
+        let mutable x = 0
+        let e9 = String.mapi (fun i c -> x <- x + i; c + char x) "abcde"
+        Assert.AreEqual(x, 10)
+        Assert.AreEqual(e9, "acfjo")
+
     [<Test>]
     member this.Filter() =
         let e1 = String.filter (fun c -> true) "foo"
