@@ -16,15 +16,16 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Length")>]
         let length (str:string) = if isNull str then 0 else str.Length
 
-        let private concatArray sep (strings: string []) =
-            match length sep with
-            | 0 -> String.Concat strings
-            // following line should be used when this overload becomes part of .NET Standard (it's only in .NET Core)
-            //| 1 -> String.Join(sep.[0], strings, 0, strings.Length)
-            | _ -> String.Join(sep, strings, 0, strings.Length)
-
         [<CompiledName("Concat")>]
         let concat sep (strings : seq<string>) =  
+
+            let concatArray sep (strings: string []) =
+                match length sep with
+                | 0 -> String.Concat strings
+                // following line should be used when this overload becomes part of .NET Standard (it's only in .NET Core)
+                //| 1 -> String.Join(sep.[0], strings, 0, strings.Length)
+                | _ -> String.Join(sep, strings, 0, strings.Length)
+
             match strings with
             | :? array<string> as arr -> 
                 concatArray sep arr
