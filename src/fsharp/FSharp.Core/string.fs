@@ -38,7 +38,7 @@ namespace Microsoft.FSharp.Core
                     action str.[i + 7]
                     i <- i + 8
 
-                // the remainder
+                // The remainder
                 while i < len do
                     action str.[i]
                     i <- i + 1
