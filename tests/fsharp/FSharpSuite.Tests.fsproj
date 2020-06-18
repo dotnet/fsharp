@@ -33,7 +33,6 @@
     <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
-    <Compile Include="Compiler\ErrorMessages\ConstructorTests.fs" />
     <Compile Include="Compiler\ErrorMessages\ClassesTests.fs" />
     <Compile Include="Compiler\ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="Compiler\ErrorMessages\ElseBranchHasWrongTypeTests.fs" />

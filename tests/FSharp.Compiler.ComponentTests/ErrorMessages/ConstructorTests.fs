@@ -1,21 +1,19 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.Constructor.ComponentTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-[<TestFixture>]
 module ``Constructor`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Invalid Record``() =
         CompilerAssert.TypeCheckWithErrors
             """
 type Record = {field1:int; field2:int}
 let doSomething (xs) = List.map (fun {field1=x} -> x) xs
-
 doSomething {Record.field1=0; field2=0}
             """
             [|
@@ -23,7 +21,7 @@ doSomething {Record.field1=0; field2=0}
                 FSharpErrorSeverity.Warning, 20, (5, 1, 5, 40), "The result of this expression has type 'int list' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'."
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Comma In Rec Ctor``() =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -35,7 +33,7 @@ let x = { Name = "Isaac", Age = 21, City = "London" }
                 FSharpErrorSeverity.Error, 764, (3, 9, 3, 54), "No assignment given for field 'Age' of type 'Test.Person'"
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Missing Comma In Ctor``() =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -54,7 +52,7 @@ let p =
                 FSharpErrorSeverity.Error, 501, (7, 5, 8, 21), "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> Person'. If some of the arguments are meant to assign values to properties, consider separating those arguments with a comma (',')."
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Missing Ctor Value``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -71,7 +69,7 @@ let p =
             (7, 5, 8, 21)
             "The member or object constructor 'Person' requires 1 argument(s). The required signature is 'new : x:int -> Person'."
 
-    [<Test>]
+    [<Fact>]
     let ``Extra Argument In Ctor``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -87,7 +85,7 @@ let p =
             (7, 5, 7, 14)
             "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> Person'."
 
-    [<Test>]
+    [<Fact>]
     let ``Extra Argument In Ctor2``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -105,7 +103,7 @@ let p =
             (9, 5, 9, 16)
             "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> Person'."
 
-    [<Test>]
+    [<Fact>]
     let ``Valid Comma In Rec Ctor``() =
         CompilerAssert.Pass
             """

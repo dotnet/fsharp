@@ -16,7 +16,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="ErrorMessages/InvalidNumericLiteralTests.fs" />
+    <Compile Include="ErrorMessages\ConstructorTests.fs" />
+    <Compile Include="ErrorMessages\InvalidNumericLiteralTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
