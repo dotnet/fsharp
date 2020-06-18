@@ -21,16 +21,52 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Iterate")>]
         let iter (action : (char -> unit)) (str:string) =
-            if not (String.IsNullOrEmpty str) then
-                for i = 0 to str.Length - 1 do
-                    action str.[i] 
+            let len = length str
+
+            if len = 0 then ()
+            else
+                // unrolling gives a ~25% boost on older proc, more on modern proc
+                let mutable i = 0
+                while i < len - len % 8 do
+                    action str.[i]
+                    action str.[i + 1]
+                    action str.[i + 2]
+                    action str.[i + 3]
+                    action str.[i + 4]
+                    action str.[i + 5]
+                    action str.[i + 6]
+                    action str.[i + 7]
+                    i <- i + 8
+
+                // the remainder
+                while i < len do
+                    action str.[i]
+                    i <- i + 1
 
         [<CompiledName("IterateIndexed")>]
         let iteri action (str:string) =
-            if not (String.IsNullOrEmpty str) then
+            let len = length str
+            if len = 0 then ()
+            else
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(action)
-                for i = 0 to str.Length - 1 do
-                    f.Invoke(i, str.[i]) 
+
+                // unrolling gives a ~25% boost on older proc, more on modern proc
+                let mutable i = 0
+                while i < len - len % 8 do
+                    f.Invoke(i, str.[i])
+                    f.Invoke(i, str.[i + 1])
+                    f.Invoke(i, str.[i + 2])
+                    f.Invoke(i, str.[i + 3])
+                    f.Invoke(i, str.[i + 4])
+                    f.Invoke(i, str.[i + 5])
+                    f.Invoke(i, str.[i + 6])
+                    f.Invoke(i, str.[i + 7])
+                    i <- i + 8
+
+                // the remainder
+                while i < len do
+                    f.Invoke(i, str.[i])
+                    i <- i + 1
 
         [<CompiledName("Map")>]
         let map (mapping: char -> char) (str:string) =
