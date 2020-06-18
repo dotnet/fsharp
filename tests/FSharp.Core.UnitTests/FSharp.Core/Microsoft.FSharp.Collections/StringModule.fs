@@ -86,11 +86,20 @@ type StringModule() =
         let e5 = String.map (fun _ -> 'B') "A"
         Assert.AreEqual("B", e5)
 
+        let e6 = String.map (fun _ -> failwith "should not raise") null
+        Assert.AreEqual("", e6)
+
+        // this tests makes sure mapping function is not called too many times
+        let mutable x = 0
+        let e7 = String.map (fun _ -> if x > 2 then failwith "should not raise" else x <- x + 1; 'x') "abc"
+        Assert.AreEqual(e7, 3)
+        Assert.AreEqual(e7, "xxx")
+
         // side-effect and "order of operation" test
         let mutable x = 0
-        let e6 = String.map (fun c -> x <- x + 1; c + char x) "abcde"
+        let e8 = String.map (fun c -> x <- x + 1; c + char x) "abcde"
         Assert.AreEqual(x, 5)
-        Assert.AreEqual(e6, "bdfhj")
+        Assert.AreEqual(e8, "bdfhj")
 
     [<Test>]
     member this.MapI() =
