@@ -50,7 +50,7 @@ namespace Microsoft.FSharp.Core
             else
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(action)
 
-                // unrolling gives a ~25% boost on older proc, more on modern proc
+                // Unrolling gives a ~25% boost over a regular for loop on an older processor, more on a modern processor
                 let mutable i = 0
                 while i < len - len % 8 do
                     f.Invoke(i, str.[i])
