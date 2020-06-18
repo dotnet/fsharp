@@ -54,13 +54,13 @@ namespace Microsoft.FSharp.Core
                 let mutable i = 0
                 while i < len - len % 8 do
                     f.Invoke(i, str.[i])
-                    f.Invoke(i, str.[i + 1])
-                    f.Invoke(i, str.[i + 2])
-                    f.Invoke(i, str.[i + 3])
-                    f.Invoke(i, str.[i + 4])
-                    f.Invoke(i, str.[i + 5])
-                    f.Invoke(i, str.[i + 6])
-                    f.Invoke(i, str.[i + 7])
+                    f.Invoke(i + 1, str.[i + 1])
+                    f.Invoke(i + 2, str.[i + 2])
+                    f.Invoke(i + 3, str.[i + 3])
+                    f.Invoke(i + 4, str.[i + 4])
+                    f.Invoke(i + 5, str.[i + 5])
+                    f.Invoke(i + 6, str.[i + 6])
+                    f.Invoke(i + 7, str.[i + 7])
                     i <- i + 8
 
                 // The remainder
