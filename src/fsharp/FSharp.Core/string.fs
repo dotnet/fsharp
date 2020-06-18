@@ -25,7 +25,7 @@ namespace Microsoft.FSharp.Core
 
             if len = 0 then ()
             else
-                // unrolling gives a ~25% boost on older proc, more on modern proc
+                // Unrolling gives a ~25% boost over a regular for loop on an older processor, more on a modern processor
                 let mutable i = 0
                 while i < len - len % 8 do
                     action str.[i]
@@ -63,7 +63,7 @@ namespace Microsoft.FSharp.Core
                     f.Invoke(i, str.[i + 7])
                     i <- i + 8
 
-                // the remainder
+                // The remainder
                 while i < len do
                     f.Invoke(i, str.[i])
                     i <- i + 1
