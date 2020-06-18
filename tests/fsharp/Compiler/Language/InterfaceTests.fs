@@ -10,9 +10,8 @@ open FSharp.TestHelpers
 module InterfaceTests =
 
     [<Test>]
-    let ShouldWork() =
-        CompilerAssert.Pass
-            """
+    let ShouldnWork() =
+        CompilerAssert.Pass """
 type IGet<'T> =
     abstract member Get : unit -> 'T
     
@@ -41,12 +40,17 @@ type GetUnion() =
 exit 0
             """
 
+    let ``Many Instantiations of the same interface`` = """
+module Program
 
-    let multiTypedInterfaceSource = """
 open System
+
 type AnEnum =
     | One
     | Two
+
+[<Struct>]
+type AStructRecord = { Forename:string;  Surname:string }
 
 type AClass =
     val value: int
@@ -57,33 +61,44 @@ type IInterface<'a> =
     abstract GetIt: 'a -> 'a
 
 type implementation () =
-    interface IInterface<bool>       with member _.GetIt(x) = x
-    interface IInterface<byte>       with member _.GetIt(x) = x
-    interface IInterface<byte[]>     with member _.GetIt(x) = x
-    interface IInterface<sbyte>      with member _.GetIt(x) = x
-    interface IInterface<int16>      with member _.GetIt(x) = x
-    interface IInterface<uint16>     with member _.GetIt(x) = x
-    interface IInterface<int>        with member _.GetIt(x) = x
-    interface IInterface<uint32>     with member _.GetIt(x) = x
-    interface IInterface<int64>      with member _.GetIt(x) = x
-    interface IInterface<uint64>     with member _.GetIt(x) = x
-    interface IInterface<nativeint>  with member _.GetIt(x) = x
-    interface IInterface<unativeint> with member _.GetIt(x) = x
-    interface IInterface<char>       with member _.GetIt(x) = x
-    interface IInterface<string>     with member _.GetIt(x) = x
-    interface IInterface<single>     with member _.GetIt(x) = x
-    interface IInterface<double>     with member _.GetIt(x) = x
-    interface IInterface<decimal>    with member _.GetIt(x) = x
-    interface IInterface<bigint>     with member _.GetIt(x) = x
-    interface IInterface<AnEnum>     with member _.GetIt(x) = x
+    interface IInterface<bool>                      with member _.GetIt(x) = x              // bool
+    interface IInterface<byte>                      with member _.GetIt(x) = x              // byte
+    interface IInterface<byte[]>                    with member _.GetIt(x) = x              // byte array
+    interface IInterface<sbyte>                     with member _.GetIt(x) = x              // sbyte
+    interface IInterface<int16>                     with member _.GetIt(x) = x              // int 16
+    interface IInterface<uint16>                    with member _.GetIt(x) = x              // uint16
+    interface IInterface<int>                       with member _.GetIt(x) = x              // int
+    interface IInterface<uint32>                    with member _.GetIt(x) = x              // uint32
+    interface IInterface<int64>                     with member _.GetIt(x) = x              // int64
+    interface IInterface<uint64>                    with member _.GetIt(x) = x              // uint64
+    interface IInterface<nativeint>                 with member _.GetIt(x) = x              // nativeint
+    interface IInterface<unativeint>                with member _.GetIt(x) = x              // unativeint
+    interface IInterface<char>                      with member _.GetIt(x) = x              // char
+    interface IInterface<string>                    with member _.GetIt(x) = x              // string
+    interface IInterface<single>                    with member _.GetIt(x) = x              // single
+    interface IInterface<double>                    with member _.GetIt(x) = x              // double
+    interface IInterface<decimal>                   with member _.GetIt(x) = x              // decimal
+    interface IInterface<bigint>                    with member _.GetIt(x) = x              // bigint
+    interface IInterface<struct (int * int)>        with member _.GetIt(x) = x              // struct tuple
+    interface IInterface<AnEnum>                    with member _.GetIt(x) = x              // enum
+    interface IInterface<ValueOption<string>>       with member _.GetIt(x) = x              // struct union
+    interface IInterface<AStructRecord>             with member _.GetIt(x) = x              // struct record
+#if !NO_ANONYMOUS        // Anonymous records are non-deterministic So don't include for il comparison
+    interface IInterface<struct {|First:int;  Second:int|}>   with member _.GetIt(x) = x    // Anonymous record
+#endif
+    interface IInterface<int -> int>                with member _.GetIt(x) = x              // func
+    interface IInterface<float -> float>            with member _.GetIt(x) = x              // func
 
 let x = implementation ()
 let assertion v assertIt =
     if not (assertIt(v)) then
         raise (new Exception (sprintf "Failed to retrieve %A from implementation" v))
 
-// Ensure we can invoke the method and get the value back for each native F# type
+let assertionRecord v assertIt =
+    if not (assertIt(v)) then
+        raise (new Exception (sprintf "Failed to retrieve %A from implementation" v))
 
+// Ensure we can invoke the method and get the value back for each native F# type
 assertion true (fun v -> (x :> IInterface<bool>).GetIt(v) = v)
 assertion 1uy  (fun v -> (x :> IInterface<byte>).GetIt(v) = v)
 assertion 2y   (fun v -> (x :> IInterface<sbyte>).GetIt(v) = v)
@@ -102,20 +117,75 @@ assertion 'A'  (fun v -> (x :> IInterface<char>).GetIt(v) = v)
 assertion 'a'B (fun v -> (x :> IInterface<byte>).GetIt(v) = v)
 assertion "16"B  (fun v -> (x :> IInterface<byte[]>).GetIt(v) = v)
 assertion AnEnum.Two (fun v -> (x :> IInterface<AnEnum>).GetIt(v) = v)
+assertion (ValueSome "7") (fun v -> (x :> IInterface<ValueOption<string>>).GetIt(v) = v)
+assertion struct (1,2) (fun v -> (x :> IInterface<struct (int * int)>).GetIt(v) = v)
+assertion { Forename="Forename";  Surname="Surname" } (fun v -> (x :> IInterface<AStructRecord>).GetIt(v) = v)
+#if !NO_ANONYMOUS        // Anonymous records are non-deterministic So don't include for il comparison
+assertion struct {|First=2;  Second=3 |} (fun (v:struct {|First:int;  Second:int|}) -> (x :> IInterface<struct {|First:int;  Second:int|}>).GetIt(v) = v)
+#endif
+assertion (fun x -> x * 2) (fun v ->
+                        let f = (x :> IInterface<int -> int>).GetIt(v)
+                        f(7) = 14)
+assertion (fun (x:float) -> x * 3.0) (fun v ->
+    let f = (x :> IInterface<float -> float>).GetIt(v)
+    f(2.0) = 6.0)
 """
 
     [<Test>]
     let MultipleTypedInterfacesFSharp50() =
         CompilerAssert.PassWithOptions
             [| "--langversion:preview" |]
-            multiTypedInterfaceSource
+            ``Many Instantiations of the same interface``
 
     [<Test>]
     let MultipleTypedInterfacesFSharp47() =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.7" |]
-            multiTypedInterfaceSource
+            ``Many Instantiations of the same interface``
             [|
-                (FSharpErrorSeverity.Error, 443, (15,6,15,20), "This type implements the same interface at different generic instantiations 'IInterface<AnEnum>' and 'IInterface<bigint>'. This is not permitted in this version of F#.")
+                (FSharpErrorSeverity.Error, 443, (21,6,21,20), "This type implements the same interface at different generic instantiations 'IInterface<AnEnum>' and 'IInterface<bigint>'. This is not permitted in this version of F#.")
             |]
 
+    [<Test>]
+    let MultipleTypedInterfacesFSharp50VerifyIl() =
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions
+            [| "--langversion:preview"; "--deterministic+"; "--define:NO_ANONYMOUS" |]
+            ``Many Instantiations of the same interface``
+            (fun verifier -> verifier.VerifyIL ["""
+.class auto ansi serializable nested public implementation
+       extends [mscorlib]System.Object
+       implements class Program/IInterface`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<float64,float64>>,
+                  class Program/IInterface`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>>,
+                  class Program/IInterface`1<valuetype Program/AStructRecord>,
+                  class Program/IInterface`1<valuetype [FSharp.Core]Microsoft.FSharp.Core.FSharpValueOption`1<string>>,
+                  class Program/IInterface`1<class Program/AnEnum>,""" +
+#if NETSTANDARD
+             """
+                  class Program/IInterface`1<valuetype [runtime]System.ValueTuple`2<int32,int32>>,
+                  class Program/IInterface`1<valuetype [System.Runtime.Numerics]System.Numerics.BigInteger>,
+                  class Program/IInterface`1<valuetype [runtime]System.Decimal>,""" +
+#else
+             """
+                  class Program/IInterface`1<valuetype [mscorlib]System.ValueTuple`2<int32,int32>>,
+                  class Program/IInterface`1<valuetype [System.Numerics]System.Numerics.BigInteger>,
+                  class Program/IInterface`1<valuetype [mscorlib]System.Decimal>,""" +
+#endif
+             """
+                  class Program/IInterface`1<float64>,
+                  class Program/IInterface`1<float32>,
+                  class Program/IInterface`1<string>,
+                  class Program/IInterface`1<char>,
+                  class Program/IInterface`1<native uint>,
+                  class Program/IInterface`1<native int>,
+                  class Program/IInterface`1<uint64>,
+                  class Program/IInterface`1<int64>,
+                  class Program/IInterface`1<uint32>,
+                  class Program/IInterface`1<int32>,
+                  class Program/IInterface`1<uint16>,
+                  class Program/IInterface`1<int16>,
+                  class Program/IInterface`1<int8>,
+                  class Program/IInterface`1<uint8[]>,
+                  class Program/IInterface`1<uint8>,
+                  class Program/IInterface`1<bool>
+{
+"""] )
