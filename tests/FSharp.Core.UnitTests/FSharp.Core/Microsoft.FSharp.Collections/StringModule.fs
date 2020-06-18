@@ -3,6 +3,7 @@
 namespace FSharp.Core.UnitTests.Collections
 
 open System
+open System.Text
 open NUnit.Framework
 
 open FSharp.Core.UnitTests.LibraryTestFx
@@ -59,6 +60,28 @@ type StringModule() =
         do String.iter (fun c -> result := !result + (int c)) null
         Assert.AreEqual(0, !result)
 
+        // These tests test the unrolling cut-off points
+        let mutable x = 0
+        do String.iter (fun _ -> x <- x + 1) "1"
+        Assert.AreEqual(x, 1)
+
+        let mutable x = 0
+        do String.iter (fun _ -> x <- x + 1) "1234567"
+        Assert.AreEqual(x, 7)
+
+        let mutable x = 0
+        do String.iter (fun _ -> x <- x + 1) "12345678"
+        Assert.AreEqual(x, 8)
+
+        let mutable x = 0
+        do String.iter (fun _ -> x <- x + 1) "123456789"
+        Assert.AreEqual(x, 9)
+
+        // Test order of execution
+        let sb = StringBuilder()
+        do String.iter (fun c -> sb.Append c |> ignore) "abcdefghijklmnopqrstuvwxyz"
+        Assert.AreEqual(sb.ToString(), "abcdefghijklmnopqrstuvwxyz")
+
     [<Test>]
     member this.IterI() =
         let result = ref 0
@@ -68,6 +91,28 @@ type StringModule() =
         result := 0
         do String.iteri(fun i c -> result := !result + (i*(int c))) null
         Assert.AreEqual(0, !result)
+
+        // These tests test the unrolling cut-off points
+        let mutable x = 42
+        do String.iteri (fun i _ -> x <- x + i) "1"
+        Assert.AreEqual(x, 42)
+
+        let mutable x = 0
+        do String.iteri (fun i _ -> x <- x + i) "1234567"
+        Assert.AreEqual(x, 21)
+
+        let mutable x = 0
+        do String.iteri (fun i _ -> x <- x + i) "12345678"
+        Assert.AreEqual(x, 28)
+
+        let mutable x = 0
+        do String.iteri (fun i _ -> x <- x + i) "123456789"
+        Assert.AreEqual(x, 36)
+
+        // Test order of execution
+        let sb = StringBuilder()
+        do String.iteri (fun i c -> sb.Append [|char i; c|] |> ignore) "abcdefghijklmnopqrstuvwxyz"
+        Assert.AreEqual(sb.ToString(), "\u0000a\u0001b\u0002c\u0003d\u0004e\u0005f\u0006g\u0007h\u0008i\u0009j\u000Ak\u000Bl\u000Cm\u000Dn\u000Eo\u000Fp\u0010q\u0011r\u0012s\u0013t\u0014u\u0015v\u0016w\u0017x\u0018y\u0019z")
 
     [<Test>]
     member this.Map() =
