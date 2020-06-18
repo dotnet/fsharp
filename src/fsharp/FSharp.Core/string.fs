@@ -48,16 +48,17 @@ namespace Microsoft.FSharp.Core
                 String.Empty
             else
                 let result = str.ToCharArray()
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt mapping
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(mapping)
 
                 // x2 unrolled loop gives 10-20% boost, overall 2.5x SB perf
                 let mutable i = 0
                 while i < len - len % 2 do
                     result.[i] <- f.Invoke(i, result.[i])
-                    result.[i + 1] <- f.Invoke(i, result.[i + 1])
-                    i <- i + 2
+                    i <- i + 1
+                    result.[i] <- f.Invoke(i, result.[i])
+                    i <- i + 1
 
-                if i % 2 = 1 then
+                if len % 2 = 1 then
                     result.[i] <- f.Invoke(i, result.[i])
 
                 new String(result)
