@@ -71,11 +71,26 @@ type StringModule() =
 
     [<Test>]
     member this.Map() =
-        let e1 = String.map (fun c -> c) "foo"
+        let e1 = String.map id "foo"
         Assert.AreEqual("foo", e1)
 
-        let e2 = String.map (fun c -> c) null 
-        Assert.AreEqual("", e2)
+        let e2 = String.map (fun c -> c + char 1) "abcde"
+        Assert.AreEqual("bcdef", e2)
+
+        let e3 = String.map (fun c -> c) null 
+        Assert.AreEqual("", e3)
+
+        let e4 = String.map (fun c -> c) String.Empty 
+        Assert.AreEqual("", e4)
+
+        let e5 = String.map (fun _ -> 'B') "A"
+        Assert.AreEqual("B", e5)
+
+        // side-effect and "order of operation" test
+        let mutable x = 0
+        let e6 = String.map (fun c -> x <- x + 1; c + char x) "abcde"
+        Assert.AreEqual(x, 5)
+        Assert.AreEqual(e6, "bdfhj")
 
     [<Test>]
     member this.MapI() =
