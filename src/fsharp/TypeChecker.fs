@@ -5391,7 +5391,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             | SynPat.Named (SynPat.Wild _, id, _, None, _) -> SynExpr.Ident id
             | SynPat.Typed (p, cty, m) -> SynExpr.Typed (convSynPatToSynExpr p, cty, m)
             | SynPat.LongIdent (LongIdentWithDots(longId, dotms) as lidwd, _, _tyargs, args, None, m) -> 
-                let args = match args with SynConstructorArgs.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
+                let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
                 let e =
                     if dotms.Length = longId.Length then
                         let e = SynExpr.LongIdent (false, LongIdentWithDots(longId, List.truncate (dotms.Length - 1) dotms), None, m)
@@ -5405,7 +5405,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             | SynPat.Null m -> SynExpr.Null m
             | _ -> error(Error(FSComp.SR.tcInvalidArgForParameterizedPattern(), x.Range))
 
-        let isNameof id =
+        let isNameof (id: Ident) =
+            id.idText = "nameof" &&
             try
                 match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
                 | Item.Value vref, _ -> valRefEq cenv.g vref cenv.g.nameof_vref
@@ -5415,8 +5416,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
         | Item.NewDef id -> 
             match args with 
-            | SynConstructorArgs.Pats [] 
-            | SynConstructorArgs.NamePatPairs ([], _)-> 
+            | SynArgPats.Pats [] 
+            | SynArgPats.NamePatPairs ([], _) -> 
                 let _, acc = tcArgPatterns ()
                 match getArgPatterns () with
                 | [] -> 
@@ -5425,12 +5426,14 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                     errorR (UndefinedName (0, FSComp.SR.undefinedNamePatternDiscriminator, id, NoSuggestions))
                     (fun _ -> TPat_error m), acc
                 
-            | SynConstructorArgs.Pats [arg] when cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf && isNameof id ->
+            | SynArgPats.Pats [arg] 
+                when cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf && isNameof id ->
                 match TcNameOfExpr cenv env tpenv (convSynPatToSynExpr arg) with
                 | Expr.Const(c, m, _) -> (fun _ -> TPat_const (c, m)), (tpenv, names, takenNames)
                 | _ -> failwith "Impossible: TcNameOfExpr must return an Expr.Const"
 
-            | _ -> error (UndefinedName(0, FSComp.SR.undefinedNamePatternDiscriminator, id, NoSuggestions))
+            | _ ->
+                error (UndefinedName(0, FSComp.SR.undefinedNamePatternDiscriminator, id, NoSuggestions))
 
         | Item.ActivePatternCase (APElemRef (apinfo, vref, idx)) as item ->
             // Report information about the 'active recognizer' occurrence to IDE
@@ -12142,7 +12145,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue overridesOK isGeneratedEventVal cenv 
     let prelimValScheme = ValScheme(bindingId, prelimTyscheme, topValInfo, memberInfoOpt, false, inlineFlag, NormalVal, vis, false, false, false, hasDeclaredTypars)
 
     // Check the literal r.h.s., if any
-    let _, konst = TcLiteral cenv ty env tpenv (bindingAttribs, bindingExpr)
+    let _, konst = TcLiteral cenv ty envinner tpenv (bindingAttribs, bindingExpr)
 
     let extraBindings, extraValues, tpenv, recBindIdx = 
        let extraBindings = 
