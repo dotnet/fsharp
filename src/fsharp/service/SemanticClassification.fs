@@ -151,10 +151,11 @@ module TcResolutionsExtensions =
                             add m SemanticClassificationType.Function
 
                     | (Item.Value vref), _, _, _, _, m when isValRefDisposable vref ->
-                        add m SemanticClassificationType.DisposableValue
 
-                    | Item.Value _, _, _, _, _, m ->
-                        add m SemanticClassificationType.Value
+                        if isValRefDisposable vref then
+                            add m SemanticClassificationType.DisposableValue
+                        else
+                            add m SemanticClassificationType.Value
 
                     | Item.RecdField rfinfo, _, _, _, _, m ->
                         match rfinfo with
@@ -179,8 +180,9 @@ module TcResolutionsExtensions =
                         else
                             add m SemanticClassificationType.RecordField
 
-                    | Item.Property _, _, _, _, _, m ->
-                        add m SemanticClassificationType.Property
+                    | Item.Property (_, pinfo :: _), _, _, _, _, m ->
+                        if not pinfo.IsIndexer then
+                            add m SemanticClassificationType.Property
                         
                     | (Item.CtorGroup _ | Item.DelegateCtor _ | Item.FakeInterfaceCtor _), _, _, _, _, m ->
                         add m SemanticClassificationType.Constructor
@@ -278,6 +280,9 @@ module TcResolutionsExtensions =
 
                     | (Item.ArgName _ | Item.SetterArg _), _, _, _, _, m ->
                         add m SemanticClassificationType.NamedArgument
+
+                    | Item.SetterArg _, _, _, _, _, m ->
+                        add m SemanticClassificationType.Property
 
                     | Item.UnqualifiedType (tcref :: _), LegitTypeOccurence, _, _, _, m ->
                         if tcref.IsEnumTycon || tcref.IsILEnumTycon then

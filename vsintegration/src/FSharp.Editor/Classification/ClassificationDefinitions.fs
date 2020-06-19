@@ -56,9 +56,9 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Property
         | SemanticClassificationType.RecordFieldAsFunction
         | SemanticClassificationType.RecordField -> ClassificationTypeNames.LocalName // Picking something with a distinct color instead of the white color that Property gives
+        | SemanticClassificationType.NamedArgument -> ClassificationTypeNames.LabelName
         | SemanticClassificationType.Event -> ClassificationTypeNames.EventName
         | SemanticClassificationType.Delegate -> ClassificationTypeNames.DelegateName
-        | SemanticClassificationType.NamedArgument -> ClassificationTypeNames.LabelName
         | SemanticClassificationType.Value -> ClassificationTypeNames.Identifier
 
 module internal ClassificationDefinitions =
