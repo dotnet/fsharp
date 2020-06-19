@@ -27,16 +27,18 @@ module internal FSharpClassificationTypes =
     let [<Literal>] Disposable = "FSharp.Disposable"
 
     let getClassificationTypeName = function
-        | SemanticClassificationType.Function -> Function
         | SemanticClassificationType.MutableRecordField
         | SemanticClassificationType.MutableVar -> MutableVar
         | SemanticClassificationType.Printf -> Printf
         | SemanticClassificationType.DisposableValue
         | SemanticClassificationType.DisposableType -> Disposable
         | SemanticClassificationType.NameSpace -> ClassificationTypeNames.NamespaceName
-        | SemanticClassificationType.ExceptionCase
+        | SemanticClassificationType.Exception
         | SemanticClassificationType.Module
+        | SemanticClassificationType.Type
+        | SemanticClassificationType.TypeDef
         | SemanticClassificationType.ReferenceType -> ClassificationTypeNames.ClassName
+        | SemanticClassificationType.Measure
         | SemanticClassificationType.ValueType -> ClassificationTypeNames.StructName
         | SemanticClassificationType.ComputationExpression
         | SemanticClassificationType.IntrinsicFunction -> ClassificationTypeNames.Keyword
@@ -44,18 +46,21 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Enumeration -> ClassificationTypeNames.EnumName
         | SemanticClassificationType.Field
         | SemanticClassificationType.UnionCaseField -> ClassificationTypeNames.FieldName
-        | SemanticClassificationType.Property -> ClassificationTypeNames.PropertyName
         | SemanticClassificationType.Interface -> ClassificationTypeNames.InterfaceName
         | SemanticClassificationType.TypeArgument -> ClassificationTypeNames.TypeParameterName
         | SemanticClassificationType.Operator -> ClassificationTypeNames.Operator
         | SemanticClassificationType.Constructor
+        | SemanticClassificationType.Function
         | SemanticClassificationType.Method -> ClassificationTypeNames.MethodName
         | SemanticClassificationType.ExtensionMethod -> ClassificationTypeNames.ExtensionMethodName
         | SemanticClassificationType.Literal -> ClassificationTypeNames.ConstantName
+        | SemanticClassificationType.Property
         | SemanticClassificationType.RecordFieldAsFunction
         | SemanticClassificationType.RecordField -> ClassificationTypeNames.LocalName
         | SemanticClassificationType.Event -> ClassificationTypeNames.EventName
         | SemanticClassificationType.Delegate -> ClassificationTypeNames.DelegateName
+        | SemanticClassificationType.NamedArgument -> ClassificationTypeNames.LabelName
+        | SemanticClassificationType.Value -> ClassificationTypeNames.Identifier
 
 module internal ClassificationDefinitions =
 
@@ -80,7 +85,6 @@ module internal ClassificationDefinitions =
 
         let colorData = // name,                      (light,                            dark)
             [
-                FSharpClassificationTypes.Function,   (Colors.Black,                     Color.FromRgb(220uy, 220uy, 220uy))
                 FSharpClassificationTypes.MutableVar, (Color.FromRgb(160uy, 128uy, 0uy), Color.FromRgb(255uy, 210uy, 28uy))
                 FSharpClassificationTypes.Printf,     (Color.FromRgb(43uy, 145uy, 175uy), Color.FromRgb(78uy, 220uy, 176uy))
                 FSharpClassificationTypes.Disposable, (Colors.Tomato,                    Colors.Tomato)
@@ -101,17 +105,10 @@ module internal ClassificationDefinitions =
                         let ict = classificationTypeRegistry.GetClassificationType(ctype)
                         let oldProps = formatMap.GetTextProperties(ict)
                         let newProps =
-                            let props =
-                                match getCurrentThemeId() with
-                                | LightTheme -> oldProps.SetForeground light
-                                | DarkTheme -> oldProps.SetForeground dark
-                                | UnknownTheme -> oldProps
-
-                            // Distinguish F# functions from values with bold
-                            if ctype = FSharpClassificationTypes.Function then
-                                props.SetBold(true)
-                            else
-                                props
+                            match getCurrentThemeId() with
+                            | LightTheme -> oldProps.SetForeground light
+                            | DarkTheme -> oldProps.SetForeground dark
+                            | UnknownTheme -> oldProps
                         formatMap.SetTextProperties(ict, newProps)
                 fontAndColorStorage.CloseCategory() |> ignore
             finally formatMap.EndBatchUpdate()

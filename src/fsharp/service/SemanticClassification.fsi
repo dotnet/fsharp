@@ -37,17 +37,20 @@ type SemanticClassificationType =
     | RecordField
     | MutableRecordField
     | RecordFieldAsFunction
-    | ExceptionCase
+    | Exception
     | Field
     | Event
     | Delegate
+    | NamedArgument
+    | Value
+    | Type
+    | TypeDef
+    | Measure
 
 /// Extension methods for the TcResolutions type.
 [<AutoOpen>]
 module internal TcResolutionsExtensions =
-
     val (|CNR|) : cnr: CapturedNameResolution -> (Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range)
 
     type TcResolutions with
-
         member GetSemanticClassification: g: TcGlobals * amap: ImportMap * formatSpecifierLocations: (range * int) [] * range: range option -> struct(range * SemanticClassificationType) []
