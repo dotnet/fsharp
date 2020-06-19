@@ -34,16 +34,16 @@ type StringModule() =
             let r3 = f arg
             Assert.AreEqual(expected, r3)
 
-        do execTest (String.concat null) "foo" ["foo"]
+        do execTest (String.concat null) "world" ["world"]
         do execTest (String.concat "") "" []
-        do execTest (String.concat "foo") "" []
+        do execTest (String.concat "|||") "" []
         do execTest (String.concat "") "" [null]
         do execTest (String.concat "") "" [""]
-        do execTest (String.concat "foo") "bar" ["bar"]
-        do execTest (String.concat "foo") "bavfoobaz" ["bav"; "baz"]
-        do execTest (String.concat "foo") "foobazfoofoobar" [null;"baz";null;"bar"]
+        do execTest (String.concat "|||") "apples" ["apples"]
+        do execTest (String.concat " ") "happy together" ["happy"; "together"]
+        do execTest (String.concat "Me! ") "Me! No, you. Me! Me! Oh, them." [null;"No, you. ";null;"Oh, them."]
 
-        CheckThrowsArgumentNullException(fun () -> String.concat "foo" null |> ignore)
+        CheckThrowsArgumentNullException(fun () -> String.concat "%%%" null |> ignore)
 
     [<Test>]
     member this.Iter() =
