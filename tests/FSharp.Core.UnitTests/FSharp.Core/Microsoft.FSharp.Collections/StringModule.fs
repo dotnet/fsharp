@@ -88,8 +88,8 @@ type StringModule() =
         let e3 = String.mapi (fun _ c -> c + char 1) "AB"
         Assert.AreEqual("BC", e3)
 
-        let e4 = String.mapi (fun i c -> char(int c + i)) "foo"
-        Assert.AreEqual("fpq", e4)
+        let e4 = String.mapi (fun i c -> char(int c + i)) "hello"
+        Assert.AreEqual("hfnos", e4)
 
         let e5 = String.mapi (fun _ c -> c) null 
         Assert.AreEqual("", e5)
