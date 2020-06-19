@@ -41,6 +41,9 @@ module internal FSharpEnvironment =
     // WARNING: Do not change this revision number unless you absolutely know what you're doing.
     let FSharpBinaryMetadataFormatRevision = "2.0.0.0"
 
+    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
+
+
 #if FX_NO_WIN_REGISTRY
 #else
     [<DllImport("Advapi32.dll", CharSet = CharSet.Unicode, BestFitMapping = false)>]
@@ -62,6 +65,7 @@ module internal FSharpEnvironment =
     // See: ndp\clr\src\BCL\System\IO\Path.cs
     let maxPath = 260;
     let maxDataLength = (new System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
+
 #if FX_NO_WIN_REGISTRY
 #else
     let KEY_WOW64_DEFAULT = 0x0000
@@ -185,6 +189,10 @@ module internal FSharpEnvironment =
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
         try
+            // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
+            match Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN") with
+            | result when not (String.IsNullOrWhiteSpace result) -> Some result
+            |_->
             // FSharp.Compiler support setting an appKey for compiler location. I've never seen this used.
             let result = tryAppConfig "fsharp-compiler-location"
             match result with
@@ -197,11 +205,6 @@ module internal FSharpEnvironment =
             match probePoint with 
             | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p 
             | _ ->
-                // We let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
-                let result = Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
-                if not (String.IsNullOrEmpty(result)) then
-                    Some result
-                else
                     // For the prototype compiler, we can just use the current domain
                     tryCurrentDomain()
         with e -> None
@@ -256,7 +259,7 @@ module internal FSharpEnvironment =
         if typeof<obj>.Assembly.GetName().Name = "mscorlib" then
             [| "net48"; "net472"; "net471";"net47";"net462";"net461"; "net452"; "net451"; "net45"; "netstandard2.0" |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
-            [| "netcoreapp3.1"; "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netstandard2.0" |]
+            [| "netcoreapp3.1"; "netcoreapp3.0"; "netstandard2.1"; "netcoreapp2.2"; "netcoreapp2.1"; "netcoreapp2.0"; "netstandard2.0" |]
         else
             System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
             [| "netstandard2.0" |]
@@ -294,7 +297,7 @@ module internal FSharpEnvironment =
             try
                 Some (Assembly.UnsafeLoadFrom designTimeAssemblyPath)
             with e ->
-                raiseError e
+                raiseError (Some designTimeAssemblyPath) e
 
         let rec searchParentDirChain path assemblyName =
             seq {
@@ -341,7 +344,7 @@ module internal FSharpEnvironment =
                     let name = AssemblyName designTimeAssemblyName
                     Some (Assembly.Load (name))
                 with e ->
-                    raiseError e
+                    raiseError None e
 
     let getCompilerToolsDesignTimeAssemblyPaths compilerToolPaths = 
         searchToolPaths None compilerToolPaths

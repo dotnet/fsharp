@@ -6,13 +6,14 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Reflection
+open System.Runtime.InteropServices
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
 open FSharp.Compiler.SourceCodeServices
 open System.Runtime.InteropServices
 open NUnit.Framework
 
-open Interactive.DependencyManager
+open Microsoft.DotNet.DependencyManager
 
 module Native =
     [<DllImport("NoneExistentDll")>]
@@ -218,7 +219,26 @@ type DependencyManagerInteractiveTests() =
         ()
 
 /// Native dll resolution is not implemented on desktop
-#if NETSTANDARD
+#if NETCOREAPP
+    [<Test>]
+    member __.``Script using TorchSharp``() =
+        let text = """
+#r "nuget:RestoreSources=https://donsyme.pkgs.visualstudio.com/TorchSharp/_packaging/packages2/nuget/v3/index.json"
+#r "nuget:libtorch-cpu,0.3.52118"
+#r "nuget:TorchSharp,0.3.52118"
+
+TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
+"""
+
+        if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+            use script = scriptHost()
+            let opt = script.Eval(text) |> getValue
+            let value = opt.Value
+            Assert.AreEqual(typeof<string>, value.ReflectionType)
+            Assert.AreEqual("cpu", value.ReflectionValue :?> string)
+        ()
+
+
     [<Test>]
     member __.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
         let packagemanagerlines = [|
@@ -246,7 +266,7 @@ type DependencyManagerInteractiveTests() =
         let result =
             use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.IsTrue(result.Success, "resolve failed")
 
@@ -343,7 +363,7 @@ printfn ""%A"" result
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.IsTrue(result.Success, "resolve failed")
 
@@ -425,7 +445,7 @@ printfn ""%A"" result
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.IsTrue(result.Success, "resolve failed")
 
@@ -460,6 +480,57 @@ x |> Seq.iter(fun r ->
         let opt = script.Eval(scriptText)  |> getValue
         let value = opt.Value
         Assert.AreEqual(123, value.ReflectionValue :?> int32)
+
+    [<Test>]
+    member __.``Verify that referencing FSharp.Core fails with FSharp Scripts``() =
+        let packagemanagerlines = [| "FSharp.Core,version=4.7.1" |]
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let mutable resolverPackageRoots = Seq.empty<string>
+        let mutable resolverReferences = Seq.empty<string>
+
+        let nativeProbingRoots () = resolverPackageRoots
+        let assemblyProbingPaths () = resolverReferences
+
+        // Restore packages, Get Reference dll paths and package roots
+        let result =
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
+
+        // Expected: error FS3217: PackageManager can not reference the System Package 'FSharp.Core'
+        Assert.IsFalse(result.Success, "resolve succeeded but should have failed")
+
+    [<Test>]
+    member __.``Verify that referencing FSharp.Core succeeds with CSharp Scripts``() =
+        let packagemanagerlines = [| "FSharp.Core,version=4.7.1" |]
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let mutable resolverPackageRoots = Seq.empty<string>
+        let mutable resolverReferences = Seq.empty<string>
+
+        let nativeProbingRoots () = resolverPackageRoots
+        let assemblyProbingPaths () = resolverReferences
+
+        // Restore packages, Get Reference dll paths and package roots
+        let result =
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "netcoreapp3.1")
+
+        Assert.IsTrue(result.Success, "resolve failed but should have succeeded")
 
 
     [<Test>]

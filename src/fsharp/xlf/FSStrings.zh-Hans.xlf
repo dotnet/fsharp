@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
-        <target state="new">symbol '..^'</target>
+        <target state="translated">符号 "..^"</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">
@@ -68,8 +68,8 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">通常不应在模式中使用大写的变量标识符，这可能标明某个模式名称存在拼写错误。</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="needs-review-translation">通常不应在模式中使用大写的变量标识符，这可能标明某个模式名称存在拼写错误。</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
@@ -1624,7 +1624,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AND.BANG">
         <source>keyword 'and!'</source>
-        <target state="new">keyword 'and!'</target>
+        <target state="translated">关键字 "and!"</target>
         <note />
       </trans-unit>
     </body>

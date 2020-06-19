@@ -11,14 +11,19 @@ open System
 open System.Collections.Generic
 
 open FSharp.Compiler
-open FSharp.Compiler.Ast
-open FSharp.Compiler.Range
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 
 type ShortIdent = string
+
 type Idents = ShortIdent[]
+
 type MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
+
 type MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
+
 type IsAutoOpen = bool
 
 [<AutoOpen>]
@@ -113,6 +118,7 @@ type AssemblySymbol =
       Symbol: FSharpSymbol
       Kind: LookupType -> EntityKind
       UnresolvedSymbol: UnresolvedSymbol }
+
     override x.ToString() = sprintf "%A" x  
 
 type AssemblyPath = string
@@ -125,6 +131,7 @@ type Parent =
       AutoOpen: Idents option
       WithModuleSuffix: Idents option 
       IsModule: bool }
+
     static member Empty = 
         { Namespace = None
           ThisRequiresQualifiedAccess = fun _ -> None
@@ -132,6 +139,7 @@ type Parent =
           AutoOpen = None
           WithModuleSuffix = None 
           IsModule = true }
+
     static member RewriteParentIdents (parentIdents: Idents option) (idents: Idents) =
         match parentIdents with
         | Some p when p.Length <= idents.Length -> 
@@ -353,7 +361,7 @@ module AssemblyContentProvider =
 #endif
         | [], _ -> []
         | assemblies, Some fileName ->
-            let fileWriteTime = FileInfo(fileName).LastWriteTime 
+            let fileWriteTime = FileSystem.GetLastWriteTimeShim(fileName) 
             withCache <| fun cache ->
                 match contentType, cache.TryGet fileName with 
                 | _, Some entry
@@ -501,8 +509,8 @@ module ParsedInput =
         | _ -> None
 
     let (|ConstructorPats|) = function
-        | SynConstructorArgs.Pats ps -> ps
-        | SynConstructorArgs.NamePatPairs(xs, _) -> List.map snd xs
+        | SynArgPats.Pats ps -> ps
+        | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
     let getLongIdents (input: ParsedInput option) : IDictionary<Range.pos, LongIdent> =
@@ -595,7 +603,8 @@ module ParsedInput =
         and walkType = function
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
-            | SynType.MeasurePower (t, _, _) -> walkType t
+            | SynType.MeasurePower (t, _, _)
+            | SynType.Paren (t, _) -> walkType t
             | SynType.Fun (t1, t2, _)
             | SynType.MeasureDivide (t1, t2, _) -> walkType t1; walkType t2
             | SynType.LongIdent ident -> addLongIdentWithDots ident
@@ -744,8 +753,7 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkType t
             argInfo :: (argInfos |> List.concat)
-            |> List.map (fun (SynArgInfo(Attributes attrs, _, _)) -> attrs)
-            |> List.concat
+            |> List.collect (fun (SynArgInfo(Attributes attrs, _, _)) -> attrs)
             |> List.iter walkAttribute
     
         and walkMemberSig = function
@@ -868,11 +876,11 @@ module ParsedInput =
         let mutable ns = None
         let modules = ResizeArray<Module>()  
 
-        let inline longIdentToIdents ident = ident |> Seq.map (fun x -> string x) |> Seq.toArray
+        let inline longIdentToIdents ident = ident |> Seq.map string |> Seq.toArray
         
         let addModule (longIdent: LongIdent, range: range) =
             modules.Add 
-                { Idents = longIdent |> List.map string |> List.toArray 
+                { Idents = longIdentToIdents longIdent
                   Range = range }
 
         let doRange kind (scope: LongIdent) line col =
@@ -897,7 +905,7 @@ module ParsedInput =
                                   false)
                     | _ -> ()
 
-        let getMinColumn (decls: SynModuleDecls) =
+        let getMinColumn decls =
             match decls with
             | [] -> None
             | firstDecl :: _ -> 

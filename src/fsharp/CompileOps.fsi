@@ -6,28 +6,33 @@ module internal FSharp.Compiler.CompileOps
 open System
 open System.Text
 open System.Collections.Generic
+
 open Internal.Utilities
+
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler
-open FSharp.Compiler.TypeChecker
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Tast
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open Microsoft.FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices
+
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
 
-open Interactive.DependencyManager
+open Microsoft.DotNet.DependencyManager
 
 #if DEBUG
 
@@ -61,18 +66,18 @@ val GetFSharpCoreLibraryName: unit -> string
 // Parsing inputs
 //--------------------------------------------------------------------------
   
-val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> Ast.QualifiedNameOfFile
+val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> QualifiedNameOfFile
 
-val PrependPathToInput: Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
+val PrependPathToInput: Ident list -> ParsedInput -> ParsedInput
 
 /// State used to de-deduplicate module names along a list of file names
 type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-val DeduplicateParsedInputModuleName: ModuleNamesDict -> Ast.ParsedInput -> Ast.ParsedInput * ModuleNamesDict
+val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedInput * ModuleNamesDict
 
 /// Parse a single input (A signature file or implementation file)
-val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> Ast.ParsedInput
+val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> ParsedInput
 
 //----------------------------------------------------------------------------
 // Error and warnings
@@ -670,7 +675,7 @@ val IsReflectedDefinitionsResource: ILResource -> bool
 val GetSignatureDataResourceName: ILResource -> string
 
 /// Write F# signature data as an IL resource
-val WriteSignatureData: TcConfig * TcGlobals * Tastops.Remap * CcuThunk * filename: string * inMem: bool -> ILResource
+val WriteSignatureData: TcConfig * TcGlobals * Remap * CcuThunk * filename: string * inMem: bool -> ILResource
 
 /// Write F# optimization data as an IL resource
 val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
@@ -690,21 +695,21 @@ val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: s
 /// Processing # commands
 val ProcessMetaCommandsFromInput : 
     (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> IDependencyManagerProvider * range * string -> 'T) * ('T -> range * string -> unit)) 
-    -> TcConfigBuilder * Ast.ParsedInput * string * 'T 
+    -> TcConfigBuilder * ParsedInput * string * 'T 
     -> 'T
 
 /// Process all the #r, #I etc. in an input
-val ApplyMetaCommandsFromInputToTcConfig: TcConfig * Ast.ParsedInput * string -> TcConfig
+val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
 /// Process the #nowarn in an input
-val ApplyNoWarnsToTcConfig: TcConfig * Ast.ParsedInput * string -> TcConfig
+val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
 //----------------------------------------------------------------------------
 // Scoped pragmas
 //--------------------------------------------------------------------------
 
 /// Find the scoped #nowarn pragmas with their range information
-val GetScopedPragmasForInput: Ast.ParsedInput -> ScopedPragma list
+val GetScopedPragmasForInput: ParsedInput -> ScopedPragma list
 
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
 val GetErrorLoggerFilteringByScopedPragmas: checkFile:bool * ScopedPragma list * ErrorLogger  -> ErrorLogger
@@ -755,7 +760,7 @@ val GetInitialTcState:
 
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInputEventually :
-    checkForErrors:(unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput  
+    checkForErrors:(unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * NameResolution.TcResultsSink * TcState * ParsedInput  
            -> Eventually<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs 
@@ -765,11 +770,11 @@ val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * 
 val TypeCheckClosedInputSetFinish: TypedImplFile list * TcState -> TcState * TypedImplFile list
 
 /// Check a closed set of inputs 
-val TypeCheckClosedInputSet: CompilationThreadToken * checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * TcState * Ast.ParsedInput  list  -> TcState * TopAttribs * TypedImplFile list * TcEnv
+val TypeCheckClosedInputSet: CompilationThreadToken * checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * ParsedInput  list  -> TcState * TopAttribs * TypedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
 val TypeCheckOneInputAndFinishEventually :
-    checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
+    checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * NameResolution.TcResultsSink * TcState * ParsedInput 
         -> Eventually<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
 
 /// Indicates if we should report a warning

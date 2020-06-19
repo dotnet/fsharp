@@ -2,16 +2,9 @@
 namespace FSharp.DependencyManager.Nuget
 
 open System
-open System.Collections
-open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Reflection
-open System.Runtime.CompilerServices
-open System.Runtime.Versioning
-
-open FSharp.DependencyManager.Nuget.ProjectFile
-open Internal.Utilities.FSharpEnvironment
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
 type DependencyManagerAttribute() = inherit System.Attribute()
@@ -125,7 +118,7 @@ module internal Utilities =
         //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
         //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
         // 3. We are loaded in-process to some other application ... Eg. try .net
-        //    See if the host is dotnet.exe ... from netcoreapp3.0 on this is fairly unlikely
+        //    See if the host is dotnet.exe ... from netcoreapp3.1 on this is fairly unlikely
         // 4. If it's none of the above we are going to have to rely on the path containing the way to find dotnet.exe
         //
         if isRunningOnCoreClr then

@@ -25,10 +25,14 @@
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Utilities.Core.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Tasks.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Reflection.Metadata.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Collections.Immutable.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Buffers.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Collections.Immutable.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Memory.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Numerics.Vectors.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Reflection.Metadata.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Resources.Extensions.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Runtime.CompilerServices.Unsafe.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Threading.Tasks.Dataflow.dll" />
     </ItemGroup>
   </Target>
 
@@ -179,7 +183,7 @@
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
-    </Compile>    
+    </Compile>
     <FsLex Include="..\..\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>AbsIL\illex.fsl</Link>
@@ -332,8 +336,17 @@
     <Compile Include="..\layout.fs">
       <Link>ParserAndUntypedAST\layout.fs</Link>
     </Compile>
-    <Compile Include="..\ast.fs">
-      <Link>ParserAndUntypedAST\ast.fs</Link>
+    <Compile Include="..\XmlDoc.fs">
+      <Link>ParserAndUntypedAST\XmlDoc.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTree.fs">
+      <Link>ParserAndUntypedAST\SyntaxTree.fs</Link>
+    </Compile>
+    <Compile Include="..\SyntaxTreeOps.fs">
+      <Link>ParserAndUntypedAST\SyntaxTreeOps.fs</Link>
+    </Compile>
+    <Compile Include="..\ParseHelpers.fs">
+      <Link>ParserAndUntypedAST\ParseHelpers.fs</Link>
     </Compile>
     <Compile Include="pppars.fs">
       <Link>ParserAndUntypedAST\pppars.fs</Link>
@@ -357,43 +370,46 @@
       <Link>ParserAndUntypedAST\lexfilter.fs</Link>
     </Compile>
     <Compile Include="..\tainted.fsi">
-      <Link>TypedAST\tainted.fsi</Link>
+      <Link>TypedTree\tainted.fsi</Link>
     </Compile>
     <Compile Include="..\tainted.fs">
-      <Link>TypedAST\tainted.fs</Link>
+      <Link>TypedTree\tainted.fs</Link>
     </Compile>
     <Compile Include="..\ExtensionTyping.fsi">
-      <Link>TypedAST\ExtensionTyping.fsi</Link>
+      <Link>TypedTree\ExtensionTyping.fsi</Link>
     </Compile>
     <Compile Include="..\ExtensionTyping.fs">
-      <Link>TypedAST\ExtensionTyping.fs</Link>
+      <Link>TypedTree\ExtensionTyping.fs</Link>
     </Compile>
     <Compile Include="..\QuotationPickler.fsi">
-      <Link>TypedAST\QuotationPickler.fsi</Link>
+      <Link>TypedTree\QuotationPickler.fsi</Link>
     </Compile>
     <Compile Include="..\QuotationPickler.fs">
-      <Link>TypedAST\QuotationPickler.fs</Link>
+      <Link>TypedTree\QuotationPickler.fs</Link>
     </Compile>
     <Compile Include="..\CompilerGlobalState.fs">
-      <Link>TypedAST\CompilerGlobalState.fs</Link>
+      <Link>TypedTree\CompilerGlobalState.fs</Link>
     </Compile>
-    <Compile Include="..\tast.fs">
-      <Link>TypedAST\tast.fs</Link>
+    <Compile Include="..\TypedTree.fs">
+      <Link>TypedTree\TypedTree.fs</Link>
+    </Compile>
+    <Compile Include="..\TypedTreeBasics.fs">
+      <Link>TypedTree\TypedTreeBasics.fs</Link>
     </Compile>
     <Compile Include="..\TcGlobals.fs">
-      <Link>TypedAST\TcGlobals.fs</Link>
+      <Link>TypedTree\TcGlobals.fs</Link>
     </Compile>
-    <Compile Include="..\TastOps.fsi">
-      <Link>TypedAST\TastOps.fsi</Link>
+    <Compile Include="..\TypedTreeOps.fsi">
+      <Link>TypedTree\TypedTreeOps.fsi</Link>
     </Compile>
-    <Compile Include="..\TastOps.fs">
-      <Link>TypedAST\TastOps.fs</Link>
+    <Compile Include="..\TypedTreeOps.fs">
+      <Link>TypedTree\TypedTreeOps.fs</Link>
     </Compile>
-    <Compile Include="..\TastPickle.fsi">
-      <Link>TypedAST\TastPickle.fsi</Link>
+    <Compile Include="..\TypedTreePickle.fsi">
+      <Link>TypedTree\TypedTreePickle.fsi</Link>
     </Compile>
-    <Compile Include="..\TastPickle.fs">
-      <Link>TypedAST\TastPickle.fs</Link>
+    <Compile Include="..\TypedTreePickle.fs">
+      <Link>TypedTree\TypedTreePickle.fs</Link>
     </Compile>
     <Compile Include="..\import.fsi">
       <Link>Logic\import.fsi</Link>
@@ -409,6 +425,9 @@
     </Compile>
     <Compile Include="..\AttributeChecking.fs">
       <Link>Logic\AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="..\TypeRelations.fs">
+      <Link>Logic\TypeRelations.fs</Link>
     </Compile>
     <Compile Include="..\InfoReader.fs">
       <Link>Logic\InfoReader.fs</Link>
@@ -427,9 +446,6 @@
     </Compile>
     <Compile Include="..\NameResolution.fs">
       <Link>Logic\NameResolution.fs</Link>
-    </Compile>
-    <Compile Include="..\TypeRelations.fs">
-      <Link>Logic\TypeRelations.fs</Link>
     </Compile>
     <Compile Include="..\SignatureConformance.fs">
       <Link>Logic\SignatureConformance.fs</Link>
@@ -646,9 +662,6 @@
     <Compile Include="..\service\ServiceXmlDocParser.fs">
       <Link>Service/ServiceXmlDocParser.fs</Link>
     </Compile>
-    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
-      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
-    </Compile>
     <Compile Include="..\service\ExternalSymbol.fsi">
       <Link>Service/ExternalSymbol.fsi</Link>
     </Compile>
@@ -716,7 +729,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Interactive.DependencyManager\Interactive.DependencyManager.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Microsoft.DotNet.DependencyManager\Microsoft.DotNet.DependencyManager.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">

@@ -2,44 +2,69 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSComp.resx">
     <body>
+      <trans-unit id="chkFeatureNotLanguageSupported">
+        <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
+        <target state="new">Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkFeatureNotRuntimeSupported">
+        <source>Feature '{0}' is not supported by target runtime.</source>
+        <target state="new">Feature '{0}' is not supported by target runtime.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
-        <target state="new">Available overloads:\n{0}</target>
+        <target state="translated">Dostupná přetížení:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
-        <target state="new">Known types of arguments: {0}</target>
+        <target state="translated">Známé typy argumentů: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixSingular">
         <source>Known type of argument: {0}</source>
-        <target state="new">Known type of argument: {0}</target>
+        <target state="translated">Známý typ argumentu: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundReturnType">
         <source>Known return type: {0}</source>
-        <target state="new">Known return type: {0}</target>
+        <target state="translated">Známý návratový typ: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundTypeParametersPrefixPlural">
         <source>Known type parameters: {0}</source>
-        <target state="new">Known type parameters: {0}</target>
+        <target state="translated">Známé parametry typů: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundTypeParametersPrefixSingular">
         <source>Known type parameter: {0}</source>
-        <target state="new">Known type parameter: {0}</target>
+        <target state="translated">Známý typ parametru: {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
         <source>Argument at index {0} doesn't match</source>
-        <target state="new">Argument at index {0} doesn't match</target>
+        <target state="translated">Argument na indexu {0} neodpovídá</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
-        <target state="new">Argument '{0}' doesn't match</target>
+        <target state="translated">Argument {0} neodpovídá</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasDesignerAssemblyDependency">
+        <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
+        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasDesignerAssemblyException">
+        <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</source>
+        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasWrongDesignerAssemblyNoPath">
+        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</source>
+        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="fSharpBannerVersion">
@@ -47,14 +72,84 @@
         <target state="translated">{0} pro F# {1}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAndBang">
+        <source>applicative computation expressions</source>
+        <target state="new">applicative computation expressions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDefaultInterfaceMemberConsumption">
+        <source>default interface member consumption</source>
+        <target state="new">default interface member consumption</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDotlessFloat32Literal">
+        <source>dotless float32 literal</source>
+        <target state="new">dotless float32 literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureFixedIndexSlice3d4d">
+        <source>fixed-index slice 3d/4d</source>
+        <target state="new">fixed-index slice 3d/4d</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureFromEndSlicing">
+        <source>from-end slicing</source>
+        <target state="new">from-end slicing</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureImplicitYield">
+        <source>implicit yield</source>
+        <target state="new">implicit yield</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNameOf">
+        <source>nameof</source>
+        <target state="new">nameof</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNullableOptionalInterop">
+        <source>nullable optional interop</source>
+        <target state="new">nullable optional interop</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOpenStaticClasses">
+        <source>open static classes</source>
+        <target state="new">open static classes</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePackageManagement">
+        <source>package management</source>
+        <target state="new">package management</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRelaxWhitespace">
+        <source>whitespace relexation</source>
+        <target state="new">whitespace relexation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureSingleUnderscorePattern">
+        <source>single underscore pattern</source>
+        <target state="new">single underscore pattern</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWildCardInForLoop">
+        <source>wild card in for loop</source>
+        <target state="new">wild card in for loop</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWitnessPassing">
+        <source>witness passing</source>
+        <target state="new">witness passing</target>
+        <note />
+      </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
-        <target state="new"> - {0}</target>
+        <target state="translated"> – {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="new">From the end slicing with requires language version 5.0, use /langversion:preview.</target>
+        <target state="translated">Vytváření průřezů od konce vyžaduje jazykovou verzi 5.0, použijte /langversion:preview.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -84,7 +179,7 @@
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <target state="translated">Funkce správy balíčků vyžaduje jazykovou verzi 5.0, použijte /langversion:preview.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -104,22 +199,22 @@
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
-        <target state="new">This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</target>
+        <target state="translated">Tato funkce se v této verzi jazyka F# nepodporuje. Abyste mohli tuto funkci používat, možná bude nutné přidat /langversion:preview.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
+        <target state="translated">Toto je nesprávný anonymní záznam. Měl by mít pole {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSubset">
         <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
+        <target state="translated">Tento anonymní záznam nemá dost polí. Přidejte chybějící pole {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
+        <target state="translated">Tento anonymní záznam má příliš mnoho polí. Odeberte nadbytečná pole {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -129,17 +224,22 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
-        <target state="new">use! may not be combined with and!</target>
+        <target state="translated">use! se nedá kombinovat s and!.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
+        <target state="translated">Konstrukt let! ... and! ... se dá použít jen v případě, že tvůrce výpočetních výrazů definuje buď metodu {0}, nebo vhodné metody MergeSource a Bind.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
+        <source>Interface member '{0}' does not have a most specific implementation.</source>
+        <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
         <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
-        <target state="new">The type '{0}' does not define the field, constructor or member '{1}'.</target>
+        <target state="translated">Typ {0} nedefinuje pole, konstruktor ani člen {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -1083,8 +1183,8 @@
         <note />
       </trans-unit>
       <trans-unit id="typrelNamedArgumentHasBeenAssignedMoreThenOnce">
-        <source>A named argument has been assigned more than one value</source>
-        <target state="translated">Pojmenovaný argument má přiřazenou víc než jednu hodnotu.</target>
+        <source>The named argument '{0}' has been assigned more than one value</source>
+        <target state="new">The named argument '{0}' has been assigned more than one value</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGiven">
@@ -1919,7 +2019,7 @@
       </trans-unit>
       <trans-unit id="csCandidates">
         <source>Candidates:\n{0}</source>
-        <target state="needs-review-translation">Kandidáti: {0}</target>
+        <target state="translated">Kandidáti:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="parsDoCannotHaveVisibilityDeclarations">
@@ -5069,7 +5169,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="needs-review-translation">Toto není platný číselný literál. Mezi platné číselné literály patří 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
+        <target state="translated">Toto není platný číselný literál. Mezi platné číselné literály patří 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -5788,8 +5888,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssembly">
-        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. {2}</source>
-        <target state="translated">Atribut sestavení {0} odkazuje na navržené sestavení {1}, které se nedá načíst nebo neexistuje. {2}</target>
+        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</source>
+        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderDoesNotHaveValidConstructor">
@@ -7214,7 +7314,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="needs-review-translation">Dva typy anonymních záznamů mají odlišné sady názvů polí: {0} a {1}</target>
+        <target state="translated">Tento anonymní záznam neodpovídá přesně očekávanému tvaru. Přidejte chybějící pole {0} a odeberte nadbytečná pole {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
@@ -7309,22 +7409,22 @@
       </trans-unit>
       <trans-unit id="optsCompilerTool">
         <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
-        <target state="new">Reference an assembly or directory containing a design time tool (Short form: -t)</target>
+        <target state="translated">Odkaz na sestavení nebo adresář obsahující nástroj pro dobu návrhu (krátký tvar: -t)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <target state="translated">Klíč správce balíčků {0} nebyl zaregistrován v {1}. Aktuálně registrováno: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
         <source>{0}</source>
-        <target state="new">{0}</target>
+        <target state="translated">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadDependencyManagerExtension">
         <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
-        <target state="new">The dependency manager extension {0} could not be loaded. Message: {1}</target>
+        <target state="translated">Rozšíření správce závislostí {0} nešlo načíst. Zpráva: {1}</target>
         <note />
       </trans-unit>
     </body>

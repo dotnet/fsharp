@@ -14,23 +14,23 @@
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <FSLanguageVersion>4.7</FSLanguageVersion>
     <FSCoreMajorVersion>$(FSLanguageVersion)</FSCoreMajorVersion>
-    <FSCorePackageVersion>$(FSCoreMajorVersion).1</FSCorePackageVersion>
+    <FSCorePackageVersion>$(FSCoreMajorVersion).3</FSCorePackageVersion>
     <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersion>4.7.0</FSharpCoreShippedPackageVersion>
+    <FSharpCoreShippedPackageVersion>4.7.2</FSharpCoreShippedPackageVersion>
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <FSPackageMajorVersion>10.7</FSPackageMajorVersion>
-    <FSPackageVersion>$(FSPackageMajorVersion).1</FSPackageVersion>
+    <FSPackageMajorVersion>10.10</FSPackageMajorVersion>
+    <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
-    <VSMinorVersion>4</VSMinorVersion>
+    <VSMinorVersion>6</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
@@ -158,7 +158,7 @@
     <MicrosoftVisualStudioUtilitiesVersion>16.1.28917.181</MicrosoftVisualStudioUtilitiesVersion>
     <MicrosoftVisualStudioValidationVersion>15.3.58</MicrosoftVisualStudioValidationVersion>
     <MicrosoftVisualStudioWCFReferenceInteropVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropVersion>
-    <MicrosoftVSSDKBuildToolsVersion>16.3.2099</MicrosoftVSSDKBuildToolsVersion>
+    <MicrosoftVSSDKBuildToolsVersion>16.5.2044</MicrosoftVSSDKBuildToolsVersion>
     <VSSDKDebuggerVisualizersVersion>12.0.4</VSSDKDebuggerVisualizersVersion>
     <VSSDKVSLangProjVersion>7.0.4</VSSDKVSLangProjVersion>
     <VSSDKVSLangProj8Version>8.0.4</VSSDKVSLangProj8Version>
@@ -176,8 +176,7 @@
     <MicrosoftNetCompilersVersion>2.7.0</MicrosoftNetCompilersVersion>
     <MicrosoftNETCoreILDAsmVersion>3.0.0-preview-27318-01</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>3.0.0-preview-27318-01</MicrosoftNETCoreILAsmVersion>
-    <MicrosoftNETTestSdkVersion>15.8.0</MicrosoftNETTestSdkVersion>
-    <MicrosoftVisualFSharpTypeProvidersRedistVersion>1.0.0</MicrosoftVisualFSharpTypeProvidersRedistVersion>
+    <MicrosoftNETTestSdkVersion>16.6.1</MicrosoftNETTestSdkVersion>
     <MicrosoftWin32RegistryVersion>4.3.0</MicrosoftWin32RegistryVersion>
     <NewtonsoftJsonVersion>9.0.1</NewtonsoftJsonVersion>
     <NUnitVersion>3.11.0</NUnitVersion>
@@ -187,5 +186,7 @@
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
     <StrawberryPerlVersion>5.28.0.1</StrawberryPerlVersion>
     <StreamJsonRpcVersion>2.0.187</StreamJsonRpcVersion>
+    <XUnitVersion>2.4.1</XUnitVersion>
+    <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
   </PropertyGroup>
 </Project>

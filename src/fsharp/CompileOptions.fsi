@@ -7,7 +7,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompileOps
-open FSharp.Compiler.Tast
+open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Import
 open FSharp.Compiler.Optimizer
 open FSharp.Compiler.TcGlobals

@@ -5,16 +5,16 @@ module internal FSharp.Compiler.ConstraintSolver
 
 open FSharp.Compiler 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Range
 open FSharp.Compiler.Import
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Infos
-open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 
 /// Create a type variable representing the use of a "_" in F# code
 val NewAnonTypar: TyparKind * range * TyparRigidity * TyparStaticReq * TyparDynamicReq -> Typar
@@ -191,9 +191,19 @@ val SolveTypeAsError: DisplayEnv -> ConstraintSolverState -> range -> TType -> u
 
 val ApplyTyparDefaultAtPriority: DisplayEnv -> ConstraintSolverState -> priority: int -> Typar -> unit
 
-val CodegenWitnessThatTypeSupportsTraitConstraint: TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
+/// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
+val CodegenWitnessForTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
 
-val ChooseTyparSolutionAndSolve: ConstraintSolverState -> DisplayEnv -> Typar -> unit
+/// Generate the arguments passed when using a generic construct that accepts traits witnesses
+val CodegenWitnessesForTyparInst : TcValF -> TcGlobals -> ImportMap -> range -> Typars -> TType list -> OperationResult<Choice<TraitConstraintInfo, Expr> list>
+
+/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
+val CodegenWitnessesForTraitWitness : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> OperationResult<Choice<TraitConstraintInfo, Expr>>
+
+/// For some code like "let f() = ([] = [])", a free choice is made for a type parameter
+/// for an interior type variable.  This chooses a solution for a type parameter subject
+/// to its constraints and applies that solution by using a constraint.
+val ChooseTyparSolutionAndSolve : ConstraintSolverState -> DisplayEnv -> Typar -> unit
 
 val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool
 

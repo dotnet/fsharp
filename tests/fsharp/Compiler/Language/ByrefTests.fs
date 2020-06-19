@@ -3,8 +3,9 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open FSharp.Test.Utilities
+open FSharp.Test.Utilities.Utilities
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.UnitTests.Utilities
 
 [<TestFixture>]
 module ByrefTests =

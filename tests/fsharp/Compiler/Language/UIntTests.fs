@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open FSharp.Test.Utilities
 
 [<TestFixture>]
 module UIntTests =

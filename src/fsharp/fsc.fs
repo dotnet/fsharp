@@ -33,20 +33,23 @@ open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics
-
-open FSharp.Compiler.IlxGen
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.XmlDoc
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -338,7 +341,7 @@ module XmlDocWriter =
     let computeXmlDocSigs (tcGlobals, generatedCcu: CcuThunk) =
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
         let g = tcGlobals
-        let doValSig ptext (v: Val)  = if (hasDoc v.XmlDoc) then v.XmlDocSig <- XmlDocSigOfVal g ptext v
+        let doValSig ptext (v: Val)  = if hasDoc v.XmlDoc then v.XmlDocSig <- XmlDocSigOfVal g false ptext v
         let doTyconSig ptext (tc: Tycon) = 
             if (hasDoc tc.XmlDoc) then tc.XmlDocSig <- XmlDocSigOfTycon [ptext; tc.CompiledName]
             for vref in tc.MembersOfFSharpTyconSorted do 
@@ -463,7 +466,7 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
         if useDataFiles then 
             let ccu, modulInfo = data
-            let bytes = TastPickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
+            let bytes = TypedTreePickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
             let optDataFileName = (Filename.chopExtension outfile)+".optdata"
             File.WriteAllBytes(optDataFileName, bytes)
         let (ccu, optData) = 
@@ -901,10 +904,10 @@ module MainModuleBuilder =
             |> List.map (fun (referencedTypeDefs, reflectedDefinitionBytes) -> 
                 let reflectedDefinitionResourceName = QuotationPickler.SerializedReflectedDefinitionsResourceNameBase+"-"+assemblyName+"-"+string(newUnique())+"-"+string(hash reflectedDefinitionBytes)
                 let reflectedDefinitionAttrs = 
-                    match QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat tcGlobals with
-                    | QuotationTranslator.QuotationSerializationFormat.FSharp_40_Plus ->
+                    let qf = QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat tcGlobals 
+                    if qf.SupportsDeserializeEx then
                         [ mkCompilationMappingAttrForQuotationResource tcGlobals (reflectedDefinitionResourceName, referencedTypeDefs) ]
-                    | QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus ->
+                    else 
                         [  ]
                 let reflectedDefinitionResource = 
                   { Name=reflectedDefinitionResourceName
@@ -1125,15 +1128,17 @@ module StaticLinker =
         // Make a dictionary of ccus passed to the compiler will be looked up by qualified assembly name
         let ccuThunksQualifiedName =
             tcImports.GetCcusInDeclOrder()
-            |> List.filter(fun ccuThunk -> ccuThunk.QualifiedName |> Option.isSome)
-            |> List.map(fun ccuThunk -> ccuThunk.QualifiedName |> Option.defaultValue "Assembly Name Not Passed", ccuThunk)
+            |> List.choose (fun ccuThunk -> ccuThunk.QualifiedName |> Option.map (fun v -> v, ccuThunk))
             |> dict
 
         // If we can't type forward using exact assembly match, we need to rely on the loader (Policy, Configuration or the coreclr load heuristics), so use try simple name
         let ccuThunksSimpleName =
             tcImports.GetCcusInDeclOrder()
-            |> List.filter(fun ccuThunk -> not (String.IsNullOrEmpty(ccuThunk.AssemblyName)))
-            |> List.map(fun ccuThunk -> ccuThunk.AssemblyName, ccuThunk)
+            |> List.choose (fun ccuThunk -> 
+                if String.IsNullOrEmpty(ccuThunk.AssemblyName) then
+                    None
+                else
+                    Some (ccuThunk.AssemblyName, ccuThunk))
             |> dict
 
         let followTypeForwardForILTypeRef (tref:ILTypeRef) =
@@ -1665,22 +1670,23 @@ let expandFileNameIfNeeded (tcConfig : TcConfig) name =
         Path.Combine(tcConfig.implicitIncludeDir, name)
 
 let GetStrongNameSigner signingInfo = 
-        let (StrongNameSigningInfo(delaysign, publicsign, signer, container)) = signingInfo
-        // REVIEW: favor the container over the key file - C# appears to do this
-        if Option.isSome container then
-          Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
-        else
-            match signer with 
-            | None -> None
-            | Some s ->
-                try 
+    let (StrongNameSigningInfo(delaysign, publicsign, signer, container)) = signingInfo
+    // REVIEW: favor the container over the key file - C# appears to do this
+    match container with
+    | Some container ->
+        Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container)
+    | None ->
+        match signer with 
+        | None -> None
+        | Some s ->
+            try 
                 if publicsign || delaysign then
                     Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyOptions s publicsign)
                 else
                     Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
-                with e -> 
-                    // Note :: don't use errorR here since we really want to fail and not produce a binary
-                    error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened s, rangeCmdArgs))
+            with _ -> 
+                // Note :: don't use errorR here since we really want to fail and not produce a binary
+                error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened s, rangeCmdArgs))
 
 //----------------------------------------------------------------------------
 // CopyFSharpCore

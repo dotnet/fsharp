@@ -1063,6 +1063,7 @@ type ILMethodDefs =
     member AsArray: ILMethodDef[]
     member AsList: ILMethodDef list
     member FindByName: string -> ILMethodDef list
+    member TryFindInstanceByNameAndCallingSignature: string * ILCallingSignature -> ILMethodDef option
 
 /// Field definitions.
 [<NoComparison; NoEquality>]
@@ -1613,6 +1614,7 @@ type ILGlobals =
 val mkILGlobals: primaryScopeRef: ILScopeRef * assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list -> ILGlobals
 
 val EcmaMscorlibILGlobals: ILGlobals
+val PrimaryAssemblyILGlobals: ILGlobals
 
 /// When writing a binary the fake "toplevel" type definition (called <Module>)
 /// must come first. This function puts it first, and creates it in the returned 
