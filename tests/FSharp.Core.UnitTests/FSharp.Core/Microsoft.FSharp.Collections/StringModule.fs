@@ -87,14 +87,14 @@ type StringModule() =
 
     [<Test>]
     member this.Filter() =
-        let e1 = String.filter (fun c -> true) "foo"
-        Assert.AreEqual("foo", e1)
+        let e1 = String.filter (fun c -> true) "Taradiddle"
+        Assert.AreEqual("Taradiddle", e1)
 
         let e2 = String.filter (fun c -> true) null 
         Assert.AreEqual("", e2)
 
-        let e3 = String.filter (fun c -> c <> 'o') "foo bar"
-        Assert.AreEqual("f bar", e3)
+        let e3 = String.filter (fun c -> c <> '\'') "Golliwog's cakewalk"
+        Assert.AreEqual("Golliwogs cakewalk", e3)
 
         let e4 = String.filter (fun c -> c <> 'o') ""
         Assert.AreEqual("", e4)
