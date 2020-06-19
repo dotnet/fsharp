@@ -25,28 +25,37 @@ module internal FSharpClassificationTypes =
     let [<Literal>] MutableVar = "FSharp.MutableVar"
     let [<Literal>] Printf = "FSharp.Printf"
     let [<Literal>] Disposable = "FSharp.Disposable"
-    let [<Literal>] RecordField = "FSharp.RecordField"
 
     let getClassificationTypeName = function
         | SemanticClassificationType.Function -> Function
+        | SemanticClassificationType.MutableRecordField
         | SemanticClassificationType.MutableVar -> MutableVar
         | SemanticClassificationType.Printf -> Printf
-        | SemanticClassificationType.Disposable -> Disposable
+        | SemanticClassificationType.DisposableValue
+        | SemanticClassificationType.DisposableType -> Disposable
+        | SemanticClassificationType.NameSpace -> ClassificationTypeNames.NamespaceName
+        | SemanticClassificationType.ExceptionCase
+        | SemanticClassificationType.Module
         | SemanticClassificationType.ReferenceType -> ClassificationTypeNames.ClassName
-        | SemanticClassificationType.Module -> ClassificationTypeNames.ModuleName
         | SemanticClassificationType.ValueType -> ClassificationTypeNames.StructName
         | SemanticClassificationType.ComputationExpression
         | SemanticClassificationType.IntrinsicFunction -> ClassificationTypeNames.Keyword
         | SemanticClassificationType.UnionCase
         | SemanticClassificationType.Enumeration -> ClassificationTypeNames.EnumName
+        | SemanticClassificationType.Field
+        | SemanticClassificationType.UnionCaseField -> ClassificationTypeNames.FieldName
         | SemanticClassificationType.Property -> ClassificationTypeNames.PropertyName
         | SemanticClassificationType.Interface -> ClassificationTypeNames.InterfaceName
         | SemanticClassificationType.TypeArgument -> ClassificationTypeNames.TypeParameterName
         | SemanticClassificationType.Operator -> ClassificationTypeNames.Operator
         | SemanticClassificationType.Constructor
         | SemanticClassificationType.Method -> ClassificationTypeNames.MethodName
+        | SemanticClassificationType.ExtensionMethod -> ClassificationTypeNames.ExtensionMethodName
         | SemanticClassificationType.Literal -> ClassificationTypeNames.ConstantName
+        | SemanticClassificationType.RecordFieldAsFunction
         | SemanticClassificationType.RecordField -> ClassificationTypeNames.LocalName
+        | SemanticClassificationType.Event -> ClassificationTypeNames.EventName
+        | SemanticClassificationType.Delegate -> ClassificationTypeNames.DelegateName
 
 module internal ClassificationDefinitions =
 
@@ -74,7 +83,7 @@ module internal ClassificationDefinitions =
                 FSharpClassificationTypes.Function,   (Colors.Black,                     Color.FromRgb(220uy, 220uy, 220uy))
                 FSharpClassificationTypes.MutableVar, (Color.FromRgb(160uy, 128uy, 0uy), Color.FromRgb(255uy, 210uy, 28uy))
                 FSharpClassificationTypes.Printf,     (Color.FromRgb(43uy, 145uy, 175uy), Color.FromRgb(78uy, 220uy, 176uy))
-                FSharpClassificationTypes.Disposable, (Colors.ForestGreen,                    Colors.ForestGreen)
+                FSharpClassificationTypes.Disposable, (Colors.Tomato,                    Colors.Tomato)
             ]
 
         let setColors _ =

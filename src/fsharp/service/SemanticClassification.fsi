@@ -2,7 +2,6 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Import
 open FSharp.Compiler.NameResolution
@@ -16,10 +15,12 @@ type SemanticClassificationType =
     | ReferenceType
     | ValueType
     | UnionCase
+    | UnionCaseField
     | Function
     | Property
     | MutableVar
     | Module
+    | NameSpace
     | Printf
     | ComputationExpression
     | IntrinsicFunction
@@ -27,11 +28,19 @@ type SemanticClassificationType =
     | Interface
     | TypeArgument
     | Operator
-    | Disposable
+    | DisposableType
+    | DisposableValue
     | Method
+    | ExtensionMethod
     | Constructor
     | Literal
     | RecordField
+    | MutableRecordField
+    | RecordFieldAsFunction
+    | ExceptionCase
+    | Field
+    | Event
+    | Delegate
 
 /// Extension methods for the TcResolutions type.
 [<AutoOpen>]
