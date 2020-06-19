@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Core.UnitTests.Collections
 
@@ -133,6 +133,21 @@ type StringModule() =
 
         let e3 = String.replicate 2 null
         Assert.AreEqual("", e3)
+
+        let e4 = String.replicate 300_000 ""
+        Assert.AreEqual("", e4)
+
+        let e5 = String.replicate 23 "天地玄黃，宇宙洪荒。"
+        Assert.AreEqual(230 , e5.Length)
+        Assert.AreEqual("天地玄黃，宇宙洪荒。天地玄黃，宇宙洪荒。", e5.Substring(0, 20))
+
+        // this tests the cut-off point for the O(log(n)) algorithm by using a prime number
+        let e6 = String.replicate 84673 "!!!"
+        Assert.AreEqual(84673 * 3, e6.Length)
+
+        // this tests the cut-off point for the O(log(n)) algorithm by using a 2^x number
+        let e6 = String.replicate 1024 "!!!"
+        Assert.AreEqual(1024 * 3, e6.Length)
 
         CheckThrowsArgumentException(fun () -> String.replicate -1 "foo" |> ignore)
 
