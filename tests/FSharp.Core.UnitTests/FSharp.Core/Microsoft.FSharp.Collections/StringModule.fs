@@ -71,8 +71,8 @@ type StringModule() =
 
     [<Test>]
     member this.Map() =
-        let e1 = String.map id "foo"
-        Assert.AreEqual("foo", e1)
+        let e1 = String.map id "xyz"
+        Assert.AreEqual("xyz", e1)
 
         let e2 = String.map (fun c -> c + char 1) "abcde"
         Assert.AreEqual("bcdef", e2)
