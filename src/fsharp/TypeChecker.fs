@@ -9297,6 +9297,17 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
         | LongOrSingleIdent (false, (LongIdentWithDots(longId, _) as lidd), _, _) ->
             let ad = env.eAccessRights
             let result = defaultArg resultOpt (List.last longId)
+
+            // Demangle back to source operator name if the lengths in the ranges indicate the
+            // original source range matches exactly
+            let result =
+                if IsMangledOpName result.idText then
+                    let demangled = DecompileOpName result.idText
+                    if demangled.Length = result.idRange.EndColumn - result.idRange.StartColumn + 1 then
+                        ident(demangled, result.idRange) 
+                    else result
+                else result
+
             let resolvedToModuleOrNamespaceName =
                 if delayed.IsEmpty then 
                     let id,rest = List.headAndTail longId

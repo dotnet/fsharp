@@ -306,15 +306,17 @@ type GenericClassNameOfTests2<[<Measure>] 'TTT>() =
         let b = nameof<'TTT>
         Assert.AreEqual("TTT", b)
 
-//module RecTest = 
-//    let rec [<Literal>] xyz = nameof(xyz)
-//    let test ``can get name of recursive literal`` () =
-//        Assert.AreEqual("xyz", xyz)
+module RecTest = 
+    let rec [<Literal>] two = 2
+    and twoName = nameof(two)
+    let ``can get name of recursive literal`` () =
+        Assert.AreEqual("two", twoName)
 
-//module rec RecTest2 = 
-//    let [<Literal>] xxx = nameof(xxx)
-//    let test ``can get name of recursive literal`` () =
-//        Assert.AreEqual("xxx", xxx)
+module rec RecTest2 = 
+    let [<Literal>] two = 2
+    let twoName = nameof(two)
+    let ``can get name of recursive literal`` () =
+        Assert.AreEqual("two", twoName)
 
 do test "local variable name lookup"                    (BasicNameOfTests.``local variable name lookup`` ())
 do test "local int function name"                       (BasicNameOfTests.``local int function name`` ())
@@ -367,8 +369,8 @@ do test "user defined nameof should shadow the operator"(UserDefinedNameOfTests.
 
 do test "can get name of class type parameter"(GenericClassNameOfTests<int>.``can get name of class type parameter`` ())
 do test "can get name of class type parameter"(GenericClassNameOfTests2<FSharp.Data.UnitSystems.SI.UnitSymbols.kg>.``can get name of class unit of measure type parameter`` ())
-//do test "can get name of recursive literal"(RecTest.``can get name of recursive literal`` ())
-//do test "can get name of recursive literal"(RecTest2.``can get name of recursive literal`` ())
+do test "can get name of recursive literal"(RecTest.``can get name of recursive literal`` ())
+do test "can get name of recursive literal"(RecTest2.``can get name of recursive literal`` ())
 
 #if TESTS_AS_APP
 let RUN() = 
