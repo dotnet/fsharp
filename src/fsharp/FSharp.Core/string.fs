@@ -12,6 +12,11 @@ namespace Microsoft.FSharp.Core
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
     module String =
+        [<Literal>]
+        /// LOH threshold is calculated from FSharp.Compiler.AbstractIL.Internal.Library.LOH_SIZE_THRESHOLD_BYTES,
+        /// and is equal to 80_000 / sizeof<char>
+        let LOH_CHAR_THRESHOLD = 40_000
+
         [<CompiledName("Length")>]
         let length (str:string) = if isNull str then 0 else str.Length
 
@@ -53,12 +58,29 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Filter")>]
         let filter (predicate: char -> bool) (str:string) =
-            if String.IsNullOrEmpty str then
+            let len = length str
+
+            if len = 0 then 
                 String.Empty
-            else
-                let res = StringBuilder str.Length
+
+            elif len > LOH_CHAR_THRESHOLD then
+                // By using SB here, which is twice slower than the optimized path, we prevent LOH allocations 
+                // and 'stop the world' collections if the filtering results in smaller strings.
+                // We also don't pre-allocate SB here, to allow for less mem pressure when filter result is small.
+                let res = StringBuilder()
                 str |> iter (fun c -> if predicate c then res.Append c |> ignore)
                 res.ToString()
+
+            else
+                // Must do it this way, since array.fs is not yet in scope, but this is safe
+                let target = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+                let mutable i = 0
+                for c in str do
+                    if predicate c then 
+                        target.[i] <- c
+                        i <- i + 1
+
+                String(target, 0, i)
 
         [<CompiledName("Collect")>]
         let collect (mapping: char -> string) (str:string) =
