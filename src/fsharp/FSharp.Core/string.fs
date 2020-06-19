@@ -81,13 +81,27 @@ namespace Microsoft.FSharp.Core
         let replicate (count:int) (str:string) =
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
 
-            if String.IsNullOrEmpty str then
+            let len = length str
+            if len = 0 || count = 0 then 
                 String.Empty
             else
-                let res = StringBuilder(count * str.Length)
-                for i = 0 to count - 1 do 
-                   res.Append str |> ignore
-                res.ToString()
+                // Using the primitive, because array.fs is not yet in scope. It's safe: both len and count are positive.
+                let target = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (len * count)
+                let source = str.ToCharArray()
+
+                // O(log(n)) performance loop:
+                // Copy first string, then keep copying what we already copied 
+                // (i.e., doubling it) until we reach or pass the halfway point
+                Array.Copy(source, 0, target, 0, len)
+                let mutable i = len
+                while i * 2 < target.Length do
+                    Array.Copy(target, 0, target, i, i)
+                    i <- i * 2
+
+                // finally, copy the remain half, or less-then half
+                Array.Copy(target, 0, target, i, target.Length - i)
+                new String(target)
+
 
         [<CompiledName("ForAll")>]
         let forall predicate (str:string) =
