@@ -4,8 +4,8 @@ namespace FSharp.Compiler.UnitTests
 
 open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
-open FSharp.TestHelpers
-open FSharp.TestHelpers.Utilities
+open FSharp.Test
+open FSharp.Test.Utilities
 
 [<TestFixture>]
 module InterfaceTests =
