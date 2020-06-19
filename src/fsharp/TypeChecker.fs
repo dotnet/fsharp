@@ -9303,7 +9303,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
             let result =
                 if IsMangledOpName result.idText then
                     let demangled = DecompileOpName result.idText
-                    if demangled.Length = result.idRange.EndColumn - result.idRange.StartColumn + 1 then
+                    if demangled.Length = result.idRange.EndColumn - result.idRange.StartColumn then
                         ident(demangled, result.idRange) 
                     else result
                 else result

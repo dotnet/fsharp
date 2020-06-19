@@ -240,11 +240,17 @@ type OperatorNameOfTests() =
 
     member this.``lookup name of + operator`` () =
         let b = nameof(+)
-        Assert.AreEqual("op_Addition",b)
+        Assert.AreEqual("+",b)
+        let b2 = nameof(op_Addition)
+        Assert.AreEqual("op_Addition",b2)
+        let b3 = nameof(FSharp.Core.Operators.(+))
+        Assert.AreEqual("+",b3)
+        let b4 = nameof(FSharp.Core.Operators.op_Addition)
+        Assert.AreEqual("op_Addition",b4)
 
     member this.``lookup name of |> operator`` () =
         let a = nameof(|>)
-        let result = Assert.AreEqual("op_PipeRight",a)
+        let result = Assert.AreEqual("|>",a)
         let b = nameof(op_PipeRight)
         result || Assert.AreEqual("op_PipeRight",b)
 
@@ -370,7 +376,7 @@ do test "user defined nameof should shadow the operator"(UserDefinedNameOfTests.
 do test "can get name of class type parameter"(GenericClassNameOfTests<int>.``can get name of class type parameter`` ())
 do test "can get name of class type parameter"(GenericClassNameOfTests2<FSharp.Data.UnitSystems.SI.UnitSymbols.kg>.``can get name of class unit of measure type parameter`` ())
 do test "can get name of recursive literal"(RecTest.``can get name of recursive literal`` ())
-do test "can get name of recursive literal"(RecTest2.``can get name of literal in recursive module`` ())
+do test "can get name of literal in recursive module"(RecTest2.``can get name of literal in recursive module`` ())
 
 #if TESTS_AS_APP
 let RUN() = 
