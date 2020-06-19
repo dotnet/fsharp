@@ -103,6 +103,14 @@ type BasicNameOfTests() =
         let b = nameof(this.MemberMethod)
         Assert.AreEqual("MemberMethod", b)
 
+    member this.``can get name of instance member via unchecked`` () =
+        let b = nameof(Unchecked.defaultof<BasicNameOfTests>.MemberMethod)
+        Assert.AreEqual("MemberMethod", b)
+
+    member this.``can get name of method type parameter``<'TTT> () =
+        let b = nameof<'TTT>
+        Assert.AreEqual("TTT", b)
+
     static member ``namespace name`` () =
         let b = nameof(FSharp.Core)
         Assert.AreEqual("Core",b)
@@ -297,6 +305,7 @@ do test "can get name from inside a local function (needs to be let rec)"
 do test "can get name from inside static member"        (BasicNameOfTests.``can get name from inside static member`` ())
 do test "can get name from inside instance member"      ((BasicNameOfTests()).``can get name from inside instance member`` ())
 do test "can get name of instance member"               ((BasicNameOfTests()).``can get name of instance member`` ())
+do test "can get name of instance member via unchecked" ((BasicNameOfTests()).``can get name of instance member via unchecked`` ())
 do test "namespace name"                                (BasicNameOfTests.``namespace name`` ())
 do test "module name"                                   (BasicNameOfTests.``module name`` ())
 do test "exception name"                                (BasicNameOfTests.``exception name`` ())
