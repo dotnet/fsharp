@@ -315,7 +315,7 @@ module RecTest =
 module rec RecTest2 = 
     let [<Literal>] two = 2
     let twoName = nameof(two)
-    let ``can get name of recursive literal`` () =
+    let ``can get name of literal in recursive module`` () =
         Assert.AreEqual("two", twoName)
 
 do test "local variable name lookup"                    (BasicNameOfTests.``local variable name lookup`` ())
@@ -370,7 +370,7 @@ do test "user defined nameof should shadow the operator"(UserDefinedNameOfTests.
 do test "can get name of class type parameter"(GenericClassNameOfTests<int>.``can get name of class type parameter`` ())
 do test "can get name of class type parameter"(GenericClassNameOfTests2<FSharp.Data.UnitSystems.SI.UnitSymbols.kg>.``can get name of class unit of measure type parameter`` ())
 do test "can get name of recursive literal"(RecTest.``can get name of recursive literal`` ())
-do test "can get name of recursive literal"(RecTest2.``can get name of recursive literal`` ())
+do test "can get name of recursive literal"(RecTest2.``can get name of literal in recursive module`` ())
 
 #if TESTS_AS_APP
 let RUN() = 
