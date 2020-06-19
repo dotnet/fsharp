@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace rec FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.Range
@@ -17,7 +17,7 @@ type public FSharpAssemblyContents =
     member ImplementationFiles:  FSharpImplementationFileContents list
 
 /// Represents the definitional contents of a single file or fragment in an assembly, as seen by the F# language
-and [<Class>] public FSharpImplementationFileContents = 
+type public FSharpImplementationFileContents = 
     internal new : cenv: SymbolEnv * mimpl: TypedImplFile -> FSharpImplementationFileContents
 
     /// The qualified name acts to fully-qualify module specifications and implementations
@@ -52,7 +52,8 @@ and public FSharpImplementationFileDeclaration =
 ///
 /// Pattern matching is reduced to decision trees and conditional tests. Some other
 /// constructs may be represented in reduced form.
-and [<Sealed>] public FSharpExpr =
+[<Sealed>] 
+type public FSharpExpr =
     /// The range of the expression
     member Range : range
 
@@ -107,6 +108,9 @@ module public BasicPatterns =
     /// Matches expressions which are calls to members or module-defined functions. When calling curried functions and members the
     /// arguments are collapsed to a single collection of arguments, as done in the compiled version of these.
     val (|Call|_|) : FSharpExpr -> (FSharpExpr option * FSharpMemberOrFunctionOrValue * FSharpType list * FSharpType list * FSharpExpr list) option 
+
+    /// Like Call but also indicates witness arguments
+    val (|CallWithWitnesses|_|) : FSharpExpr -> (FSharpExpr option * FSharpMemberOrFunctionOrValue * FSharpType list * FSharpType list * FSharpExpr list * FSharpExpr list) option 
 
     /// Matches expressions which are calls to object constructors 
     val (|NewObject|_|) : FSharpExpr -> (FSharpMemberOrFunctionOrValue * FSharpType list * FSharpExpr list) option 
@@ -218,3 +222,5 @@ module public BasicPatterns =
     /// Matches expressions for an unresolved call to a trait 
     val (|TraitCall|_|) : FSharpExpr -> (FSharpType list * string * MemberFlags * FSharpType list * FSharpType list * FSharpExpr list) option 
 
+    /// Indicates a witness argument index from the witness arguments supplied to the enclosing method
+    val (|WitnessArg|_|) : FSharpExpr -> int option
