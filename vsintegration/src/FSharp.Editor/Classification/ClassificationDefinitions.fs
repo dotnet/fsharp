@@ -24,33 +24,29 @@ module internal FSharpClassificationTypes =
     let [<Literal>] Function = "FSharp.Function"
     let [<Literal>] MutableVar = "FSharp.MutableVar"
     let [<Literal>] Printf = "FSharp.Printf"
-    let [<Literal>] ReferenceType = ClassificationTypeNames.ClassName
-    let [<Literal>] Module = ClassificationTypeNames.ModuleName
-    let [<Literal>] ValueType = ClassificationTypeNames.StructName
-    let [<Literal>] Keyword = ClassificationTypeNames.Keyword
-    let [<Literal>] Enum = ClassificationTypeNames.EnumName
-    let [<Literal>] Property = "FSharp.Property"
-    let [<Literal>] Interface = ClassificationTypeNames.InterfaceName
-    let [<Literal>] TypeArgument = ClassificationTypeNames.TypeParameterName
-    let [<Literal>] Operator = ClassificationTypeNames.Operator
     let [<Literal>] Disposable = "FSharp.Disposable"
+    let [<Literal>] RecordField = "FSharp.RecordField"
 
     let getClassificationTypeName = function
-        | SemanticClassificationType.ReferenceType -> ReferenceType
-        | SemanticClassificationType.Module -> Module
-        | SemanticClassificationType.ValueType -> ValueType
         | SemanticClassificationType.Function -> Function
         | SemanticClassificationType.MutableVar -> MutableVar
         | SemanticClassificationType.Printf -> Printf
-        | SemanticClassificationType.ComputationExpression
-        | SemanticClassificationType.IntrinsicFunction -> Keyword
-        | SemanticClassificationType.UnionCase
-        | SemanticClassificationType.Enumeration -> Enum
-        | SemanticClassificationType.Property -> Property
-        | SemanticClassificationType.Interface -> Interface
-        | SemanticClassificationType.TypeArgument -> TypeArgument
-        | SemanticClassificationType.Operator -> Operator 
         | SemanticClassificationType.Disposable -> Disposable
+        | SemanticClassificationType.ReferenceType -> ClassificationTypeNames.ClassName
+        | SemanticClassificationType.Module -> ClassificationTypeNames.ModuleName
+        | SemanticClassificationType.ValueType -> ClassificationTypeNames.StructName
+        | SemanticClassificationType.ComputationExpression
+        | SemanticClassificationType.IntrinsicFunction -> ClassificationTypeNames.Keyword
+        | SemanticClassificationType.UnionCase
+        | SemanticClassificationType.Enumeration -> ClassificationTypeNames.EnumName
+        | SemanticClassificationType.Property -> ClassificationTypeNames.PropertyName
+        | SemanticClassificationType.Interface -> ClassificationTypeNames.InterfaceName
+        | SemanticClassificationType.TypeArgument -> ClassificationTypeNames.TypeParameterName
+        | SemanticClassificationType.Operator -> ClassificationTypeNames.Operator
+        | SemanticClassificationType.Constructor
+        | SemanticClassificationType.Method -> ClassificationTypeNames.MethodName
+        | SemanticClassificationType.Literal -> ClassificationTypeNames.ConstantName
+        | SemanticClassificationType.RecordField -> ClassificationTypeNames.LocalName
 
 module internal ClassificationDefinitions =
 
@@ -73,13 +69,13 @@ module internal ClassificationDefinitions =
             let themeService = serviceProvider.GetService(typeof<SVsColorThemeService>) :?> IVsColorThemeService
             themeService.CurrentTheme.ThemeId
 
-        let colorData = // name,                  (light,                            dark)
-          [ FSharpClassificationTypes.Function,   (Colors.Black,                     Color.FromRgb(220uy, 220uy, 220uy))
-            FSharpClassificationTypes.MutableVar, (Color.FromRgb(160uy, 128uy, 0uy), Color.FromRgb(255uy, 210uy, 28uy))
-            FSharpClassificationTypes.Printf,     (Color.FromRgb(43uy, 145uy, 175uy), Color.FromRgb(78uy, 220uy, 176uy))
-            FSharpClassificationTypes.Property,   (Colors.Black,                     Color.FromRgb(220uy, 220uy, 220uy)) 
-            FSharpClassificationTypes.Disposable, (Color.FromRgb(43uy, 145uy, 175uy), Color.FromRgb(78uy, 220uy, 176uy)) ]
-
+        let colorData = // name,                      (light,                            dark)
+            [
+                FSharpClassificationTypes.Function,   (Colors.Black,                     Color.FromRgb(220uy, 220uy, 220uy))
+                FSharpClassificationTypes.MutableVar, (Color.FromRgb(160uy, 128uy, 0uy), Color.FromRgb(255uy, 210uy, 28uy))
+                FSharpClassificationTypes.Printf,     (Color.FromRgb(43uy, 145uy, 175uy), Color.FromRgb(78uy, 220uy, 176uy))
+                FSharpClassificationTypes.Disposable, (Colors.ForestGreen,                    Colors.ForestGreen)
+            ]
 
         let setColors _ =
             let fontAndColorStorage = serviceProvider.GetService(typeof<SVsFontAndColorStorage>) :?> IVsFontAndColorStorage
@@ -95,10 +91,18 @@ module internal ClassificationDefinitions =
                     if fontAndColorStorage.GetItem(ctype, Array.zeroCreate 1) <> VSConstants.S_OK  then
                         let ict = classificationTypeRegistry.GetClassificationType(ctype)
                         let oldProps = formatMap.GetTextProperties(ict)
-                        let newProps = match getCurrentThemeId() with
-                                        | LightTheme -> oldProps.SetForeground light
-                                        | DarkTheme -> oldProps.SetForeground dark
-                                        | UnknownTheme -> oldProps
+                        let newProps =
+                            let props =
+                                match getCurrentThemeId() with
+                                | LightTheme -> oldProps.SetForeground light
+                                | DarkTheme -> oldProps.SetForeground dark
+                                | UnknownTheme -> oldProps
+
+                            // Distinguish F# functions from values with bold
+                            if ctype = FSharpClassificationTypes.Function then
+                                props.SetBold(true)
+                            else
+                                props
                         formatMap.SetTextProperties(ict, newProps)
                 fontAndColorStorage.CloseCategory() |> ignore
             finally formatMap.EndBatchUpdate()
@@ -125,9 +129,6 @@ module internal ClassificationDefinitions =
 
     [<Export; Name(FSharpClassificationTypes.Printf); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpPrintfClassificationType : ClassificationTypeDefinition = null
-
-    [<Export; Name(FSharpClassificationTypes.Property); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpPropertyClassificationType : ClassificationTypeDefinition = null
 
     [<Export; Name(FSharpClassificationTypes.Disposable); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpDisposableClassificationType : ClassificationTypeDefinition = null
@@ -163,16 +164,6 @@ module internal ClassificationDefinitions =
 
         do self.DisplayName <- SR.FSharpPrintfFormatClassificationType()
            self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Printf
-
-    [<Export(typeof<EditorFormatDefinition>)>]
-    [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Property)>]
-    [<Name(FSharpClassificationTypes.Property)>]
-    [<UserVisible(true)>]
-    [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpPropertyFormat() as self =
-        inherit ClassificationFormatDefinition()
-
-        do self.DisplayName <- SR.FSharpPropertiesClassificationType()
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Disposable)>]

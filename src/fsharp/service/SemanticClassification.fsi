@@ -28,6 +28,10 @@ type SemanticClassificationType =
     | TypeArgument
     | Operator
     | Disposable
+    | Method
+    | Constructor
+    | Literal
+    | RecordField
 
 /// Extension methods for the TcResolutions type.
 [<AutoOpen>]
