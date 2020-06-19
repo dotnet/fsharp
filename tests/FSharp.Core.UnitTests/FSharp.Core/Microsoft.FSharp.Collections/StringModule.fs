@@ -99,6 +99,13 @@ type StringModule() =
         let e4 = String.filter (fun c -> c <> 'o') ""
         Assert.AreEqual("", e4)
 
+        let e5 = String.filter (fun c -> c > 'B' ) "ABRACADABRA"
+        Assert.AreEqual("RCDR", e5)
+
+        // LOH test with 55k string, which is 110k bytes
+        let e5 = String.filter (fun c -> c > 'B' ) (String.replicate 5_000 "ABRACADABRA")
+        Assert.AreEqual(String.replicate 5_000 "RCDR", e5)
+
     [<Test>]
     member this.Collect() =
         let e1 = String.collect (fun c -> "a"+string c) "foo"
