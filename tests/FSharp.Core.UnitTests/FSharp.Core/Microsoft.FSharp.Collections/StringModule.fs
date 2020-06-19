@@ -125,11 +125,11 @@ type StringModule() =
 
     [<Test>]
     member this.Replicate() = 
-        let e1 = String.replicate 0 "foo"
+        let e1 = String.replicate 0 "Snickersnee"
         Assert.AreEqual("", e1)
 
-        let e2 = String.replicate 2 "foo"
-        Assert.AreEqual("foofoo", e2)
+        let e2 = String.replicate 2 "Collywobbles, "
+        Assert.AreEqual("Collywobbles, Collywobbles, ", e2)
 
         let e3 = String.replicate 2 null
         Assert.AreEqual("", e3)
