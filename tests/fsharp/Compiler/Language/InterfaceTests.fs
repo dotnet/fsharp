@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 open FSharp.TestHelpers
+open FSharp.TestHelpers.Utilities
 
 [<TestFixture>]
 module InterfaceTests =
@@ -38,12 +39,27 @@ type GetUnion() =
         member x.Get() = B 2
 
 exit 0
-            """
+"""
 
-    let ``Many Instantiations of the same interface`` = """
+    let ``C# base with dim`` = """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITestDim
+    {
+        int GetIt(int x) { return x;  }
+    }
+}
+"""
+
+    let ``Many Instantiations of the same interface - SetUp`` = """
 module Program
 
 open System
+#if TEST_DIMS
+open CSharpTest
+#endif
 
 type AnEnum =
     | One
@@ -61,6 +77,10 @@ type IInterface<'a> =
     abstract GetIt: 'a -> 'a
 
 type implementation () =
+// DIMs only available on netcoreapp 3
+#if TEST_DIMS
+    interface ITestDim
+#endif
     interface IInterface<bool>                      with member _.GetIt(x) = x              // bool
     interface IInterface<byte>                      with member _.GetIt(x) = x              // byte
     interface IInterface<byte[]>                    with member _.GetIt(x) = x              // byte array
@@ -83,12 +103,15 @@ type implementation () =
     interface IInterface<AnEnum>                    with member _.GetIt(x) = x              // enum
     interface IInterface<ValueOption<string>>       with member _.GetIt(x) = x              // struct union
     interface IInterface<AStructRecord>             with member _.GetIt(x) = x              // struct record
-#if !NO_ANONYMOUS        // Anonymous records are non-deterministic So don't include for il comparison
+    // Anonymous records are non-deterministic So don't include for il comparison
+#if !NO_ANONYMOUS
     interface IInterface<struct {|First:int;  Second:int|}>   with member _.GetIt(x) = x    // Anonymous record
 #endif
     interface IInterface<int -> int>                with member _.GetIt(x) = x              // func
     interface IInterface<float -> float>            with member _.GetIt(x) = x              // func
+"""
 
+    let ``Many Instantiations of the same interface - Asserts`` = """
 let x = implementation ()
 let assertion v assertIt =
     if not (assertIt(v)) then
@@ -99,6 +122,10 @@ let assertionRecord v assertIt =
         raise (new Exception (sprintf "Failed to retrieve %A from implementation" v))
 
 // Ensure we can invoke the method and get the value back for each native F# type
+#if TEST_DIMS
+assertion 7 (fun v -> (x :> ITestDim).GetIt(v) = v)
+#endif
+
 assertion true (fun v -> (x :> IInterface<bool>).GetIt(v) = v)
 assertion 1uy  (fun v -> (x :> IInterface<byte>).GetIt(v) = v)
 assertion 2y   (fun v -> (x :> IInterface<sbyte>).GetIt(v) = v)
@@ -107,7 +134,7 @@ assertion 4us  (fun v -> (x :> IInterface<uint16>).GetIt(v) = v)
 assertion 5l   (fun v -> (x :> IInterface<int>).GetIt(v) = v)
 assertion 6ul  (fun v -> (x :> IInterface<uint32>).GetIt(v) = v)
 assertion 7n   (fun v -> (x :> IInterface<nativeint>).GetIt(v) = v)
-assertion 8un (fun v -> (x :> IInterface<unativeint>).GetIt(v) = v)
+assertion 8un  (fun v -> (x :> IInterface<unativeint>).GetIt(v) = v)
 assertion 9L   (fun v -> (x :> IInterface<int64>).GetIt(v) = v)
 assertion 10UL  (fun v -> (x :> IInterface<uint64>).GetIt(v) = v)
 assertion 12.12  (fun v -> (x :> IInterface<double>).GetIt(v) = v)
@@ -131,26 +158,63 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
     f(2.0) = 6.0)
 """
 
+    let ``Many Instantiations of the same interface`` =
+        ``Many Instantiations of the same interface - SetUp`` + ``Many Instantiations of the same interface - Asserts``
+
+
     [<Test>]
     let MultipleTypedInterfacesFSharp50() =
-        CompilerAssert.PassWithOptions
-            [| "--langversion:preview" |]
-            ``Many Instantiations of the same interface``
+
+#if NETSTANDARD
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(``C# base with dim``, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+#endif
+
+        let fsCmpl =
+            Compilation.Create(
+                ``Many Instantiations of the same interface - SetUp`` +
+                ``Many Instantiations of the same interface - Asserts``,
+                Fs, Library, 
+                options = [|
+                    "--langversion:preview";
+#if !NETSTANDARD
+                |])
+#else
+                    "--define:NETSTANDARD";
+                    "--define:TEST_DIMS";
+                |],
+                cmplRefs = [csCmpl])
+#endif
+
+        CompilerAssert.Compile fsCmpl
 
     [<Test>]
     let MultipleTypedInterfacesFSharp47() =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:4.7" |]
+            [|
+                "--langversion:4.7";
+#if NETSTANDARD
+                "--define:NETSTANDARD";
+#endif
+            |]
             ``Many Instantiations of the same interface``
             [|
-                (FSharpErrorSeverity.Error, 443, (21,6,21,20), "This type implements the same interface at different generic instantiations 'IInterface<AnEnum>' and 'IInterface<bigint>'. This is not permitted in this version of F#.")
+                (FSharpErrorSeverity.Error, 443, (24, 6, 24, 20), "This type implements the same interface at different generic instantiations 'IInterface<(float -> float)>' and 'IInterface<(int -> int)>'. This is not permitted in this version of F#.")
             |]
 
     [<Test>]
     let MultipleTypedInterfacesFSharp50VerifyIl() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions
-            [| "--langversion:preview"; "--deterministic+"; "--define:NO_ANONYMOUS" |]
-            ``Many Instantiations of the same interface``
+            [|
+                "--langversion:preview"; 
+                "--deterministic+";
+                "--define:NO_ANONYMOUS";
+#if NETSTANDARD
+                "--define:NETSTANDARD";
+#endif
+            |]
+            ``Many Instantiations of the same interface - SetUp``
             (fun verifier -> verifier.VerifyIL ["""
 .class auto ansi serializable nested public implementation
        extends [mscorlib]System.Object
