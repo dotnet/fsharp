@@ -38,7 +38,6 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Type
         | SemanticClassificationType.TypeDef
         | SemanticClassificationType.ReferenceType -> ClassificationTypeNames.ClassName
-        | SemanticClassificationType.Measure
         | SemanticClassificationType.ValueType -> ClassificationTypeNames.StructName
         | SemanticClassificationType.ComputationExpression
         | SemanticClassificationType.IntrinsicFunction -> ClassificationTypeNames.Keyword

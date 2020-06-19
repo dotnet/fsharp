@@ -53,7 +53,6 @@ type SemanticClassificationType =
     | Value
     | Type
     | TypeDef
-    | Measure
 
 [<AutoOpen>]
 module TcResolutionsExtensions =
@@ -69,11 +68,6 @@ module TcResolutionsExtensions =
                     | ItemOccurence.Use _
                     | ItemOccurence.Binding _
                     | ItemOccurence.Pattern _ -> Some()
-                    | _ -> None
-
-                let (|OptionalArgumentAttribute|_|) ttype =
-                    match ttype with
-                    | TType.TType_app(tref, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
                     | _ -> None
 
                 let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
@@ -200,6 +194,10 @@ module TcResolutionsExtensions =
                     | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m ->
                         add m SemanticClassificationType.ComputationExpression
 
+                    // Special case measures for struct types
+                    | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
+                        add m SemanticClassificationType.ValueType
+
                     | Item.Types (_, ty :: _), LegitTypeOccurence, _, _, _, m ->
                         let reprToClassificationType repr tcref = 
                             match repr with
@@ -233,13 +231,10 @@ module TcResolutionsExtensions =
                             | TProvidedTypeExtensionPoint _-> SemanticClassificationType.TypeDef 
                             | TProvidedNamespaceExtensionPoint  _-> SemanticClassificationType.TypeDef  
 #endif
-                            | TNoRepr -> SemanticClassificationType.ReferenceType 
+                            | TNoRepr -> SemanticClassificationType.ReferenceType
 
                         let ty = stripTyEqns g ty
-
-                        if isMeasureTy g ty then
-                            add m SemanticClassificationType.Measure
-                        elif isDisposableTy ty then
+                        if isDisposableTy ty then
                             add m SemanticClassificationType.DisposableType
                         else
                             match tryTcrefOfAppTy g ty with

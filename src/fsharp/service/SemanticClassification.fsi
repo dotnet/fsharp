@@ -45,7 +45,6 @@ type SemanticClassificationType =
     | Value
     | Type
     | TypeDef
-    | Measure
 
 /// Extension methods for the TcResolutions type.
 [<AutoOpen>]
