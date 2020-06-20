@@ -79,7 +79,7 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Replicate")>]
         let replicate (count:int) (str:string) =
-            //if count < 0 then invalidArgInputMustBeNonNegative "count" count
+            if count < 0 then invalidArgInputMustBeNonNegative "count" count
 
             let len = length str
             if len = 0 || count = 0 then 
