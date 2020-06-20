@@ -6,6 +6,9 @@ open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 open FSharp.Test
 open FSharp.Test.Utilities
+open FSharp.Test.Utilities.Utilities
+
+
 
 [<TestFixture>]
 module InterfaceTests =
