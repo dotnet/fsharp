@@ -79,11 +79,22 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Replicate")>]
         let replicate (count:int) (str:string) =
-            if count < 0 then invalidArgInputMustBeNonNegative "count" count
+            //if count < 0 then invalidArgInputMustBeNonNegative "count" count
 
             let len = length str
             if len = 0 || count = 0 then 
                 String.Empty
+
+            elif len = 1 then
+                new String(str.[0], count)
+
+            elif count <= 4 then
+                match count with
+                | 1 -> str
+                | 2 -> String.Concat(str, str)
+                | 3 -> String.Concat(str, str, str)
+                | _ -> String.Concat(str, str, str, str)
+
             else
                 // Using the primitive, because array.fs is not yet in scope. It's safe: both len and count are positive.
                 let target = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (len * count)
