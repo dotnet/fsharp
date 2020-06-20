@@ -4,8 +4,9 @@ namespace FSharp.Compiler.UnitTests
 
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Reflection
-open FSharp.TestHelpers
-open FSharp.TestHelpers.Utilities
+open FSharp.Test
+open FSharp.Test.Utilities
+open FSharp.Test.Utilities.Utilities
 open NUnit.Framework
 
 [<TestFixture>]

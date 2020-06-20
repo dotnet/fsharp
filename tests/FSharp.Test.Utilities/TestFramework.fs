@@ -229,7 +229,7 @@ let config configurationName envVars =
     let requirePackage = requireFile packagesDir
     let requireArtifact = requireFile artifactsBinPath
     let CSC = requirePackage ("Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "csc.exe")
-    let VBC = requireFile (packagesDir ++ "Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "vbc.exe")
+    let VBC = requirePackage ("Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "vbc.exe")
     let ILDASM_EXE = if operatingSystem = "win" then "ildasm.exe" else "ildasm"
     let ILDASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILDASM_EXE)
     let ILASM_EXE = if operatingSystem = "win" then "ilasm.exe" else "ilasm"
@@ -238,7 +238,7 @@ let config configurationName envVars =
     let coreclrdll = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ CORECLR_DLL)
     let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" else "PEVerify"
     let PEVERIFY = requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
-    let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
+//    let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
     let FSharpBuild = requireArtifact ("FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
     let FSharpCompilerInteractiveSettings = requireArtifact ("FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
 
