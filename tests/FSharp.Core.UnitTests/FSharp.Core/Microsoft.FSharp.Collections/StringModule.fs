@@ -141,13 +141,25 @@ type StringModule() =
         Assert.AreEqual(230 , e5.Length)
         Assert.AreEqual("天地玄黃，宇宙洪荒。天地玄黃，宇宙洪荒。", e5.Substring(0, 20))
 
-        // this tests the cut-off point for the O(log(n)) algorithm by using a prime number
+        // This tests the cut-off point for the O(log(n)) algorithm with a prime number
         let e6 = String.replicate 84673 "!!!"
         Assert.AreEqual(84673 * 3, e6.Length)
 
-        // this tests the cut-off point for the O(log(n)) algorithm by using a 2^x number
-        let e6 = String.replicate 1024 "!!!"
-        Assert.AreEqual(1024 * 3, e6.Length)
+        // This tests the cut-off point for the O(log(n)) algorithm with a 2^x number
+        let e7 = String.replicate 1024 "!!!"
+        Assert.AreEqual(1024 * 3, e7.Length)
+
+        let e8 = String.replicate 1 "What a wonderful world"
+        Assert.AreEqual("What a wonderful world", e8)
+
+        let e9 = String.replicate 3 "أضعت طريقي! أضعت طريقي"  // means: I'm lost
+        Assert.AreEqual("أضعت طريقي! أضعت طريقيأضعت طريقي! أضعت طريقيأضعت طريقي! أضعت طريقي", e9)
+
+        let e10 = String.replicate 4 "㏖ ㏗ ℵ "
+        Assert.AreEqual("㏖ ㏗ ℵ ㏖ ㏗ ℵ ㏖ ㏗ ℵ ㏖ ㏗ ℵ ", e10)
+
+        let e11 = String.replicate 5 "5"
+        Assert.AreEqual("55555", e11)
 
         CheckThrowsArgumentException(fun () -> String.replicate -1 "foo" |> ignore)
 
