@@ -922,5 +922,3 @@ let PropTypOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     let delTy = einfo.GetDelegateType(amap, m)
     let argsTy = ArgsTypOfEventInfo infoReader m ad einfo 
     mkIEventType g delTy argsTy
-
-

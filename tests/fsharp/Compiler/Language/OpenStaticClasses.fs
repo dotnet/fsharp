@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 open FSharp.Test.Utilities
+open FSharp.Test.Utilities.Utilities
 
 
 (*
@@ -183,6 +184,108 @@ module OpenAFieldFromMath =
     
     let pi = PI""")
             [||]
+
+    [<Test>]
+    let ``Open type and use nested types as unqualified`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public static class Test
+    {
+        public class NestedTest
+        {
+            public void A()
+            {
+            }
+        }
+
+        public class NestedTest<T>
+        {
+            public void B()
+            {
+            }
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+open CSharpTest.Test
+
+module Test =
+    let x = NestedTest()
+    let y = NestedTest<int>()
+    let a = x.A()
+    let b = y.B()
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
+    let ``Open generic type and use nested types as unqualified`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public static class Test<T>
+    {
+        public class NestedTest
+        {
+            public T A()
+            {
+                return default(T);
+            }
+        }
+
+        public class NestedTest<U>
+        {
+            public (T, U) B()
+            {
+                return (default(T), default(U));
+            }
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+open CSharpTest.Test<byte>
+
+module Test =
+    let x = NestedTest()
+    let y = NestedTest<int>()
+    let a = x.A()
+    let b = y.B()
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Compile(fsCmpl)
 
     // TODO - wait for Will's integration of testing changes that makes this easlier
     // [<Test>]
