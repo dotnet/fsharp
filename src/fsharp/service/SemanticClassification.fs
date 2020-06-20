@@ -52,6 +52,7 @@ type SemanticClassificationType =
     | NamedArgument
     | Value
     | LocalValue
+    | Parameter
     | Type
     | TypeDef
 
@@ -153,7 +154,7 @@ module TcResolutionsExtensions =
                             add m SemanticClassificationType.DisposableValue
                         elif Option.isSome vref.LiteralValue then
                             add m SemanticClassificationType.Literal
-                        elif vref.IsLocalRef && not vref.IsCompiledAsTopLevel then
+                        elif not vref.IsCompiledAsTopLevel then
                             add m SemanticClassificationType.LocalValue
                         else
                             add m SemanticClassificationType.Value

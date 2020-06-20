@@ -61,6 +61,7 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Delegate -> ClassificationTypeNames.DelegateName
         | SemanticClassificationType.Value -> ClassificationTypeNames.Identifier
         | SemanticClassificationType.LocalValue -> ClassificationTypeNames.LocalName
+        | SemanticClassificationType.Parameter -> ClassificationTypeNames.ParameterName
 
 module internal ClassificationDefinitions =
 
