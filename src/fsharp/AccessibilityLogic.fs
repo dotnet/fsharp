@@ -291,7 +291,8 @@ let GetILAccessOfILPropInfo (ILPropInfo(tinfo, pdef)) =
             | ILMemberAccess.Private, _
             | _, ILMemberAccess.Private -> ILMemberAccess.Private
 
-            | _ -> ILMemberAccess.CompilerControlled
+            | ILMemberAccess.CompilerControlled, _
+            | _, ILMemberAccess.CompilerControlled -> ILMemberAccess.CompilerControlled
 
         | None, None -> ILMemberAccess.Public
 
