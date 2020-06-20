@@ -12,6 +12,9 @@ namespace Microsoft.FSharp.Core
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
     module String =
+        [<CompiledName("Length")>]
+        let length (str:string) = if isNull str then 0 else str.Length
+
         [<CompiledName("Concat")>]
         let concat sep (strings : seq<string>) =  
             String.Join(sep, strings)
@@ -101,10 +104,3 @@ namespace Microsoft.FSharp.Core
             else
                 let rec check i = (i < str.Length) && (predicate str.[i] || check (i+1)) 
                 check 0  
-
-        [<CompiledName("Length")>]
-        let length (str:string) =
-            if String.IsNullOrEmpty str then
-                0
-            else
-                str.Length
