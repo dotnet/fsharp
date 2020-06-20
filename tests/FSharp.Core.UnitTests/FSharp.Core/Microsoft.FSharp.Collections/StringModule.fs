@@ -93,8 +93,8 @@ type StringModule() =
         let e2 = String.filter (fun c -> true) null 
         Assert.AreEqual("", e2)
 
-        let e3 = String.filter (fun c -> c <> '\'') "Golliwog's cakewalk"
-        Assert.AreEqual("Golliwogs cakewalk", e3)
+        let e3 = String.filter Char.IsUpper "How Vexingly Quick Daft Zebras Jump!"
+        Assert.AreEqual("HVQDZJ", e3)
 
         let e4 = String.filter (fun c -> c <> 'o') ""
         Assert.AreEqual("", e4)
