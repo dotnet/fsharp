@@ -44,7 +44,6 @@ type SemanticClassificationType =
     | NamedArgument
     | Value
     | LocalValue
-    | Parameter
     | Type
     | TypeDef
 
