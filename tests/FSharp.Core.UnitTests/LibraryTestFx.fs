@@ -37,6 +37,7 @@ let private CheckThrowsExn2<'a when 'a :> exn> s (f : unit -> unit) =
 // attribute to flag these exception's usage as a bug.
 let CheckThrowsNullRefException      f = CheckThrowsExn<NullReferenceException>   f
 let CheckThrowsIndexOutRangException f = CheckThrowsExn<IndexOutOfRangeException> f
+let CheckThrowsObjectDisposedException f = CheckThrowsExn<ObjectDisposedException> f
 
 // Legit exceptions
 let CheckThrowsNotSupportedException f = CheckThrowsExn<NotSupportedException>    f
