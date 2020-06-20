@@ -270,7 +270,8 @@ let GetILAccessOfILPropInfo (ILPropInfo(tinfo, pdef)) =
             let getA = (resolveILMethodRef tdef mrefGet).Access
             let setA = (resolveILMethodRef tdef mrefSet).Access
 
-            // use the accessors to determine the visibility of the property
+            // Use the accessors to determine the visibility of the property.
+            // N.B. It is critical to keep the ordering in decreasing visibility order in the following match expression
             match getA, setA with
             | ILMemberAccess.Public, _
             | _, ILMemberAccess.Public -> ILMemberAccess.Public
@@ -385,4 +386,3 @@ let IsPropInfoAccessible g amap m ad = function
 
 let IsFieldInfoAccessible ad (rfref:RecdFieldInfo) =
     IsAccessible ad rfref.RecdField.Accessibility
-
