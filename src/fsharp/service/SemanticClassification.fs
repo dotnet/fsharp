@@ -51,6 +51,7 @@ type SemanticClassificationType =
     | Delegate
     | NamedArgument
     | Value
+    | LocalValue
     | Type
     | TypeDef
 
@@ -135,9 +136,6 @@ module TcResolutionsExtensions =
                     | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m ->
                         add m SemanticClassificationType.IntrinsicFunction
 
-                    | (Item.Value vref), _, _, _, _, m when Option.isSome vref.LiteralValue ->
-                        add m SemanticClassificationType.Literal
-
                     | (Item.Value vref), _, _, _, _, m when isFunction g vref.Type ->
                         if valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then 
                             ()
@@ -150,10 +148,13 @@ module TcResolutionsExtensions =
                         else
                             add m SemanticClassificationType.Function
 
-                    | (Item.Value vref), _, _, _, _, m when isValRefDisposable vref ->
-
+                    | (Item.Value vref), _, _, _, _, m ->
                         if isValRefDisposable vref then
                             add m SemanticClassificationType.DisposableValue
+                        elif Option.isSome vref.LiteralValue then
+                            add m SemanticClassificationType.Literal
+                        elif vref.IsLocalRef && not vref.IsCompiledAsTopLevel then
+                            add m SemanticClassificationType.LocalValue
                         else
                             add m SemanticClassificationType.Value
 

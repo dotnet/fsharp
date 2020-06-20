@@ -43,6 +43,7 @@ type SemanticClassificationType =
     | Delegate
     | NamedArgument
     | Value
+    | LocalValue
     | Type
     | TypeDef
 
