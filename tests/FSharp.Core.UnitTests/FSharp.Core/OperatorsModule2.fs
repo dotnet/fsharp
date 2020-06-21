@@ -13,8 +13,7 @@ open Microsoft.FSharp.Core.Operators.Checked
 [<TestFixture>]
 type OperatorsModule2() =
 
-#if IGNORED
-    [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
+    [<Test>]
     member _.int() =
         // int
         let result = Operators.int 10
@@ -36,14 +35,12 @@ type OperatorsModule2() =
         let result = Operators.int 0
         Assert.AreEqual(0, result)
         
-        // overflow
-        CheckThrowsOverflowException(fun() -> Operators.int System.Double.MaxValue |>ignore)
+        // Overflow does not trigger exception.
+        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
+        let result = Operators.int System.Double.MaxValue
+        Assert.AreEqual(Int32.MinValue, result)
         
-        ()
-#endif
-
-#if IGNORED
-    [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
+    [<Test>]
     member _.int16() =
         // int
         let result = Operators.int16 10
@@ -65,13 +62,12 @@ type OperatorsModule2() =
         let result = Operators.int16 "10"
         Assert.AreEqual(10, result)
         
-        // overflow
-        CheckThrowsOverflowException(fun() -> Operators.int16 System.Double.MaxValue |>ignore)
-        ()
-#endif
+        // Overflow does not trigger exception.
+        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
+        let result = Operators.int16 System.Double.MaxValue
+        Assert.AreEqual(Int16.MinValue, result)
 
-#if IGNORED
-    [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
+    [<Test>]
     member _.int32() =
         // int
         let result = Operators.int32 10
@@ -93,13 +89,12 @@ type OperatorsModule2() =
         let result = Operators.int32 "10"
         Assert.AreEqual(10, result)
         
-        // overflow
-        CheckThrowsOverflowException(fun() -> Operators.int32 System.Double.MaxValue |>ignore)
-        ()
-#endif
+        // Overflow does not trigger exception.
+        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
+        let result = Operators.int32 System.Double.MaxValue
+        Assert.AreEqual(Int32.MinValue, result)
 
-#if IGNORED
-    [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
+    [<Test>]
     member _.int64() =
         // int
         let result = Operators.int64 10
@@ -121,16 +116,16 @@ type OperatorsModule2() =
         let result = Operators.int64 "10"
         Assert.AreEqual(10, result)
         
-        // overflow
-        CheckThrowsOverflowException(fun() -> Operators.int64 System.Double.MaxValue |>ignore)
-        ()
-#endif
+        // Overflow does not trigger exception.
+        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
+        let result = Operators.int64 System.Double.MaxValue
+        Assert.AreEqual(Int64.MinValue, result)
 
-//    [<Test>]
-//    member _.invalidArg() =
-//        CheckThrowsArgumentException(fun() -> Operators.invalidArg  "A" "B" |>ignore )
-//
-//        
+    [<Test>]
+    member _.invalidArg() =
+        CheckThrowsArgumentException(fun() -> Operators.invalidArg  "A" "B" |>ignore )
+
+        
     [<Test>]
     member _.lock() =
         // lock
@@ -234,8 +229,7 @@ type OperatorsModule2() =
         let result = Operators.nanf
         Assert.AreEqual(System.Single.NaN, result)
         
-#if IGNORED
-    [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
+    [<Test; Ignore( " ")>]
     member _.nativeint() =
         // int
         let result = Operators.nativeint 10
@@ -257,11 +251,13 @@ type OperatorsModule2() =
         let result = Operators.nativeint 0
         Assert.AreEqual(0n, result)
         
-        // overflow
-        CheckThrowsOverflowException(fun() -> Operators.nativeint System.Double.MaxValue |>ignore)
-        
-        ()
-#endif
+        // Overflow does not trigger exception.
+        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
+        let result = Operators.nativeint System.Double.MaxValue
+        Assert.AreEqual("-9223372036854775808", string result)      // it is not possible to express this as a literal
+
+        let result = Operators.nativeint System.Double.MinValue
+        Assert.AreEqual("-9223372036854775808", string result)      // it is not possible to express this as a literal
 
     [<Test>]
     member _.not() =
@@ -271,11 +267,11 @@ type OperatorsModule2() =
         let result = Operators.not false
         Assert.IsTrue(result)
         
-//    [<Test>]
-//    member _.nullArg() =
-//        CheckThrowsArgumentNullException(fun() -> Operators.nullArg "A" |> ignore)
-//
-//        
+    [<Test>]
+    member _.nullArg() =
+        CheckThrowsArgumentNullException(fun() -> Operators.nullArg "A" |> ignore)
+
+        
     [<Test>]
     member _.pown() =
         // int

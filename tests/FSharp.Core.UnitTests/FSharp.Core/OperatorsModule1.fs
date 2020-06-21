@@ -29,7 +29,7 @@ type OperatorsModule1() =
         
         // overflow exception
         try
-            let overflowByte = Operators.Checked.byte 256.0
+            let _ = Operators.Checked.byte 256.0
             Assert.Fail("Expect overflow exception but not it didn't raise.")
         with
             | :? System.OverflowException -> ()
@@ -819,19 +819,18 @@ type OperatorsModule1() =
         let result = Operators.ignore "A"
         Assert.AreEqual(null, result)
 
-#if IGNORED
-    [<Test; Ignore( "[FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int 32 int64 ")>]
+    [<Test>]
     member _.incr() =
         // legit value
         let result = ref 10
         Operators.incr result
         Assert.AreEqual(11, !result)
         
-        // overflow
+        // Overflow does not trigger exception.
+        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
         let result = ref (Operators.Checked.int System.Int32.MaxValue)
-        CheckThrowsOverflowException(fun() -> Operators.incr result |> ignore)
-
-#endif
+        Operators.incr result
+        Assert.AreEqual(System.Int32.MinValue, !result)
 
     [<Test>]
     member _.infinity() =
