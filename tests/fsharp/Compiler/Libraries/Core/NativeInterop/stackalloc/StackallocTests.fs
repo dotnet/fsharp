@@ -46,15 +46,12 @@ module ``Stackalloc Tests`` =
 
     [<Test>]
     let ``Stackalloc of int64``() =
-        let mutable noerr = true
-        
         let data = NativeInterop.NativePtr.stackalloc<int64> 100
 
         for i = 0 to 99 do
             NativeInterop.NativePtr.set data i (int64 (i*i))
         for i = 0 to 99 do
-            if not (NativeInterop.NativePtr.get data i = (int64 (i*i))) then 
-                noerr <- false
+            Assert.areEqual (NativeInterop.NativePtr.get data i) (int64 (i*i))
 
         for i = 0 to 99 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
@@ -62,7 +59,4 @@ module ``Stackalloc Tests`` =
          
         for i = 0 to 99 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
-            if not (datai = int64 (1-i)) then 
-                noerr <- false
-
-        Assert.IsTrue noerr
+            Assert.areEqual datai (int64 (1-i))
