@@ -11,6 +11,9 @@ open FSharp.Compiler.SourceCodeServices
 [<TestFixture>]
 module ``Stackalloc Tests`` =
 
+    type E = | A = 1
+             | B = 2
+
     [<Test>]
     let ``Stackalloc zero-size``() =
         // Regression test for FSHARP1.0:
@@ -44,6 +47,26 @@ module ``Stackalloc Tests`` =
         for i = 0 to 99 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             Assert.areEqual datai later
+
+    [<Test>]
+    let ``Stackalloc of enum``() =
+        let data = NativeInterop.NativePtr.stackalloc<E> 10
+        
+        for i = 0 to 9 do
+            NativeInterop.NativePtr.set data i (if (i % 2)=0 then E.A else E.B)
+        
+        for i = 0 to 9 do
+            let expected = if (i % 2) = 0 then E.A else E.B
+            Assert.areEqual (NativeInterop.NativePtr.get data i) expected
+
+        for i = 0 to 9 do
+            let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+            datai <- (if (i % 2)=1 then E.A else E.B)
+        
+        for i = 0 to 9 do
+            let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+            let expected = if (i % 2)=1 then E.A else E.B
+            Assert.areEqual datai expected
 
     [<Test>]
     let ``Stackalloc of imported enum``() =
