@@ -27,6 +27,23 @@ module ``Stackalloc Tests`` =
         Assert.DoesNotThrow testDelegate
 
     [<Test>]
+    let ``Stackalloc of DateTime``() =
+        let data = NativeInterop.NativePtr.stackalloc<System.DateTime> 100
+        let now = System.DateTime.Now
+        for i = 0 to 99 do
+            NativeInterop.NativePtr.set data i now
+        for i = 0 to 99 do
+            Assert.areEqual (NativeInterop.NativePtr.get data i) now
+                 
+        let later = now.AddDays 1.
+        for i = 0 to 99 do
+            let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+            datai <- later
+        for i = 0 to 99 do
+            let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+            Assert.areEqual datai later
+
+    [<Test>]
     let ``Stackalloc of int``() =
         let data = NativeInterop.NativePtr.stackalloc<int> 100
            
