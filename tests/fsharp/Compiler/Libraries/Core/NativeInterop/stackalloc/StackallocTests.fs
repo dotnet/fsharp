@@ -3,12 +3,13 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open FSharp.Test.Utilities
 
 #nowarn "9"
 
 [<TestFixture>]
 module ``Stackalloc Tests`` =
-    
+
     [<Test>]
     let ``Stackalloc zero-size``() =
         // Regression test for FSHARP1.0:
@@ -42,6 +43,16 @@ module ``Stackalloc Tests`` =
         for i = 0 to 99 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             Assert.areEqual datai later
+
+    [<Test>]
+    let ``Stackalloc of imported enum``() =
+        Assert.DoesNotThrow (TestDelegate (fun () -> 
+            NativeInterop.NativePtr.stackalloc<System.DayOfWeek> 1 |> ignore))
+
+    [<Test>]
+    let ``Stackalloc of imported struct``() =
+        Assert.DoesNotThrow (TestDelegate (fun () -> 
+            NativeInterop.NativePtr.stackalloc<System.TimeSpan> 1 |> ignore))
 
     [<Test>]
     let ``Stackalloc of int``() =
