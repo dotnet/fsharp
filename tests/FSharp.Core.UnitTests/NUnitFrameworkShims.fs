@@ -41,6 +41,15 @@ type TestFrameworkAssert = Assert
 
 exception AssertionException of string
 
+module Info =
+    /// Use this to distinguish cases where output is deterministically different between x86 runtime or x64 runtime,
+    /// for instance w.r.t. floating point arithmetic. For more info, see https://github.com/dotnet/roslyn/issues/7333
+    let isX86Runtime = sizeof<IntPtr> = 4
+
+    /// Use this to distinguish cases where output is deterministically different between x86 runtime or x64 runtime,
+    /// for instance w.r.t. floating point arithmetic. For more info, see https://github.com/dotnet/roslyn/issues/7333
+    let isX64Runtime = sizeof<IntPtr> = 8
+
 module private Impl =
     open FsCheck.Arb
 

@@ -536,22 +536,32 @@ type OperatorsModule2() =
     
     [<Test>]
     member this.tanh() =  
-        // this doesn't work, even though the values are roundtrippable correct
-        // it also works correctly in FSI, so what gives?
-        //let result = Operators.tanh 0.8
-        //Assert.AreEqual(0.66403677026784891, result)
-        
+        // The x86 runtime uses 64 bit precision, whereas the x64 runtime uses SSE instructions with 80 bit precision
+        // details can be found here: https://github.com/dotnet/fsharp/issues/9522
         let result = Operators.tanh 0.8
-        // why does the following not compile?
-        //Assert.IsTrue(result = 0.66403677026784891)
-        // but the following does?
-        // Assert.IsTrue(0.5 = 0.66403677026784891)
-        // this works in FSI, but fails just like Assert.AreEqual, what is wrong here?
-        Assert.IsTrue(result.Equals(0.66403677026784891))
+        if Info.isX86Runtime then
+            Assert.AreEqual(0.66403677026784902, result)
+        else
+            Assert.AreEqual(0.66403677026784891, result)
 
-        // double
-        let result = Operators.tanh 0.5
-        Assert.AreEqual(0.46211715726000974, result)
+        let result = Operators.tanh 19.06154
+        if Info.isX86Runtime then
+            Assert.AreEqual(1.0, result)
+        else
+            Assert.AreEqual(0.99999999999999989, result)
+
+        let result = Operators.tanh 19.06095
+        Assert.AreEqual(0.99999999999999989, result)
+
+        let result = tanh 0.0
+        Assert.AreEqual(0.0, result)
+
+        let result = tanh infinity
+        Assert.AreEqual(1.0, result)
+
+        let result = tanh -infinity
+        Assert.AreEqual(-1.0, result)
+
         ()    
     
     [<Test>]
