@@ -128,3 +128,37 @@ let _ = NativeInterop.NativePtr.stackalloc<System.EventHandler> 1
         for i = 0 to 99 do
             let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
             Assert.areEqual datai (int64 (1-i))
+
+    [<Test>]
+    let ``Stackalloc of managed class``() =
+        CompilerAssert.TypeCheckSingleError
+            """
+#nowarn "9"
+
+type C() = 
+    class
+        member __.M = 10
+        member __.N(x) = x + 1
+    end
+
+let _ = NativeInterop.NativePtr.stackalloc<C> 1
+            """
+            FSharpErrorSeverity.Error
+            1
+            (10, 9, 10, 43)
+            "A generic construct requires that the type 'C' is an unmanaged type"
+
+    [<Test>]
+    let ``Stackalloc of managed record``() =
+        CompilerAssert.TypeCheckSingleError
+            """
+#nowarn "9"
+
+type R = { A : int }
+
+let _ = NativeInterop.NativePtr.stackalloc<R> 1
+            """
+            FSharpErrorSeverity.Error
+            1
+            (6, 9, 6, 43)
+            "A generic construct requires that the type 'R' is an unmanaged type"
