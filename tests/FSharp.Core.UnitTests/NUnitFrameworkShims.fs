@@ -39,8 +39,6 @@ type IgnoreAttribute (_comment:string) =
 // Alias NUnit and XUnit Assert  as LocalAssert
 type TestFrameworkAssert = Assert
 
-exception AssertionException of string
-
 module Info =
     /// Use this to distinguish cases where output is deterministically different between x86 runtime or x64 runtime,
     /// for instance w.r.t. floating point arithmetic. For more info, see https://github.com/dotnet/roslyn/issues/7333
