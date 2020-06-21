@@ -27,6 +27,24 @@ module ``Stackalloc Tests`` =
         Assert.DoesNotThrow testDelegate
 
     [<Test>]
+    let ``Stackalloc of int``() =
+        let data = NativeInterop.NativePtr.stackalloc<int> 100
+           
+        for i = 0 to 99 do
+            NativeInterop.NativePtr.set data i (i*i)
+                
+        for i = 0 to 99 do
+            Assert.areEqual (NativeInterop.NativePtr.get data i) (i*i)
+        
+        for i = 0 to 99 do
+            let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+            datai <- 1-i
+            
+        for i = 0 to 99 do
+            let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+            Assert.areEqual datai (1-i)
+
+    [<Test>]
     let ``Stackalloc of int64``() =
         let mutable noerr = true
         
