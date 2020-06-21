@@ -40,7 +40,8 @@ type SemanticClassificationType =
     | DisposableValue
     | Method
     | ExtensionMethod
-    | Constructor
+    | ConstructorForReferenceType
+    | ConstructorForValueType
     | Literal
     | RecordField
     | MutableRecordField
@@ -97,10 +98,13 @@ module TcResolutionsExtensions =
                         sResolutions.CapturedNameResolutions :> seq<_>
 
                 let isDisposableTy (ty: TType) =
+                    not (typeEquiv g ty g.system_IDisposable_ty) &&
                     protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
+                    
+                let isDiscardText (str: string) = str |> String.forall (fun c -> c = '_')
 
                 let isValRefDisposable (vref: ValRef) =
-                    not (vref.DisplayName = "_") && not (vref.DisplayName = "__") && isDisposableTy vref.Type
+                    not (isDiscardText vref.DisplayName) && isDisposableTy vref.Type
 
                 let isStructTyconRef (tyconRef: TyconRef) = 
                     let ty = generalizedTyconRef tyconRef
@@ -153,7 +157,7 @@ module TcResolutionsExtensions =
                             add m SemanticClassificationType.DisposableValue
                         elif Option.isSome vref.LiteralValue then
                             add m SemanticClassificationType.Literal
-                        elif not vref.IsCompiledAsTopLevel then
+                        elif not vref.IsCompiledAsTopLevel && not(isDiscardText vref.DisplayName) then
                             add m SemanticClassificationType.LocalValue
                         else
                             add m SemanticClassificationType.Value
@@ -184,9 +188,17 @@ module TcResolutionsExtensions =
                     | Item.Property (_, pinfo :: _), _, _, _, _, m ->
                         if not pinfo.IsIndexer then
                             add m SemanticClassificationType.Property
-                        
-                    | (Item.CtorGroup _ | Item.DelegateCtor _ | Item.FakeInterfaceCtor _), _, _, _, _, m ->
-                        add m SemanticClassificationType.Constructor
+
+                    | Item.CtorGroup (_, minfos), _, _, _, _, m ->
+                        if minfos |> List.forall (fun minfo -> isDisposableTy minfo.ApparentEnclosingType) then
+                            add m SemanticClassificationType.DisposableType
+                        elif minfos |> List.forall (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
+                            add m SemanticClassificationType.ConstructorForValueType
+                        else
+                            add m SemanticClassificationType.ConstructorForReferenceType
+
+                    | (Item.DelegateCtor _ | Item.FakeInterfaceCtor _), _, _, _, _, m ->
+                        add m SemanticClassificationType.ConstructorForReferenceType
 
                     | Item.MethodGroup (_, minfos, _), _, _, _, _, m ->
                         if minfos |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember) then

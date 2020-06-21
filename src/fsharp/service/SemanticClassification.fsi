@@ -32,7 +32,8 @@ type SemanticClassificationType =
     | DisposableValue
     | Method
     | ExtensionMethod
-    | Constructor
+    | ConstructorForReferenceType
+    | ConstructorForValueType
     | Literal
     | RecordField
     | MutableRecordField
