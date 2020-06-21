@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
 open FSharp.Test.Utilities
+open FSharp.Compiler.SourceCodeServices
 
 #nowarn "9"
 
@@ -53,6 +54,45 @@ module ``Stackalloc Tests`` =
     let ``Stackalloc of imported struct``() =
         Assert.DoesNotThrow (TestDelegate (fun () -> 
             NativeInterop.NativePtr.stackalloc<System.TimeSpan> 1 |> ignore))
+
+    [<Test>]
+    let ``Stackalloc of imported class``() =
+        CompilerAssert.TypeCheckSingleError
+            """
+#nowarn "9"
+
+let _ = NativeInterop.NativePtr.stackalloc<System.Object> 1
+            """
+            FSharpErrorSeverity.Error
+            1
+            (4, 9, 4, 43)
+            "A generic construct requires that the type 'System.Object' is an unmanaged type"
+
+    [<Test>]
+    let ``Stackalloc of imported interface``() =
+        CompilerAssert.TypeCheckSingleError
+            """
+#nowarn "9"
+
+let _ = NativeInterop.NativePtr.stackalloc<System.Collections.IEnumerable> 1
+            """
+            FSharpErrorSeverity.Error
+            1
+            (4, 9, 4, 43)
+            "A generic construct requires that the type 'System.Collections.IEnumerable' is an unmanaged type"
+
+    [<Test>]
+    let ``Stackalloc of imported delegate``() =
+        CompilerAssert.TypeCheckSingleError
+            """
+#nowarn "9"
+
+let _ = NativeInterop.NativePtr.stackalloc<System.EventHandler> 1
+            """
+            FSharpErrorSeverity.Error
+            1
+            (4, 9, 4, 43)
+            "A generic construct requires that the type 'System.EventHandler' is an unmanaged type"
 
     [<Test>]
     let ``Stackalloc of int``() =
