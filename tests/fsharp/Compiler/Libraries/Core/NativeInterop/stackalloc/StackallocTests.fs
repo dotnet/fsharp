@@ -15,23 +15,6 @@ module ``Stackalloc Tests`` =
              | B = 2
 
     [<Test>]
-    let ``Stackalloc zero-size``() =
-        // Regression test for FSHARP1.0:
-        // stackalloc<System.DateTime> 0
-
-        let testDelegate = TestDelegate (fun () -> 
-            // check stackalloc 0 -- ok
-            let data = NativeInterop.NativePtr.stackalloc<System.DateTime> 0
-            
-            // The returned pointer is undefined
-            // No allocation should happen
-            let _ = NativeInterop.NativePtr.toNativeInt data
-            
-            ())
-
-        Assert.DoesNotThrow testDelegate
-
-    [<Test>]
     let ``Stackalloc of DateTime``() =
         let data = NativeInterop.NativePtr.stackalloc<System.DateTime> 100
         let now = System.DateTime.Now
@@ -185,3 +168,20 @@ let _ = NativeInterop.NativePtr.stackalloc<R> 1
             1
             (6, 9, 6, 43)
             "A generic construct requires that the type 'R' is an unmanaged type"
+            
+    [<Test>]
+    let ``Stackalloc zero-size``() =
+        // Regression test for FSHARP1.0:
+        // stackalloc<System.DateTime> 0
+            
+        let testDelegate = TestDelegate (fun () -> 
+            // check stackalloc 0 -- ok
+            let data = NativeInterop.NativePtr.stackalloc<System.DateTime> 0
+                        
+            // The returned pointer is undefined
+            // No allocation should happen
+            let _ = NativeInterop.NativePtr.toNativeInt data
+                        
+            ())
+            
+        Assert.DoesNotThrow testDelegate
