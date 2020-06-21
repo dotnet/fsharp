@@ -30,10 +30,10 @@ type OperatorsModule1() =
         // overflow exception
         try
             let overflowByte = Operators.Checked.byte 256.0
-            Assert.Fail("Expectt overflow exception but not.")
+            Assert.Fail("Expect overflow exception but not it didn't raise.")
         with
             | :? System.OverflowException -> ()
-            | _ -> Assert.Fail("Expectt overflow exception but not.")
+            | _ -> Assert.Fail("Expect overflow exception but other exception thrown.")
 
     [<Test>]
     member _.Checkedchar() =
@@ -52,11 +52,11 @@ type OperatorsModule1() =
         
         // overflow exception
         try
-            let overflowchar = Operators.Checked.char (System.Int64.MaxValue+(int64)2)
-            Assert.Fail("Expectt overflow exception but not.")
+            let _ = Operators.Checked.char (System.Int64.MaxValue+(int64)2)
+            Assert.Fail("Expect overflow exception but not it didn't raise.")
         with
             | :? System.OverflowException -> ()
-            | _ -> Assert.Fail("Expectt overflow exception but not.")
+            | _ -> Assert.Fail("Expect overflow exception but other exception thrown.")
         
     [<Test>]
     member _.CheckedInt() =
@@ -75,11 +75,11 @@ type OperatorsModule1() =
         
         // overflow exception
         try
-            let overflowint = Operators.Checked.int 2147483648.0
-            Assert.Fail("Expectt overflow exception but not.")
+            let _ = Operators.Checked.int 2147483648.0
+            Assert.Fail("Expect overflow exception but not it didn't raise.")
         with
             | :? System.OverflowException -> ()
-            | _ -> Assert.Fail("Expectt overflow exception but not.")
+            | _ -> Assert.Fail("Expect overflow exception but other exception thrown.")
 
     [<Test>]
     member _.CheckedInt16() =
@@ -98,11 +98,11 @@ type OperatorsModule1() =
         
         // overflow exception
         try
-            let overflowint16 = Operators.Checked.int16 32768.0
-            Assert.Fail("Expectt overflow exception but not.")
+            let _ = Operators.Checked.int16 32768.0
+            Assert.Fail("Expect overflow exception but not it didn't raise.")
         with
             | :? System.OverflowException -> ()
-            | _ -> Assert.Fail("Expectt overflow exception but not.")
+            | _ -> Assert.Fail("Expect overflow exception but other exception thrown.")
 
     [<Test>]
     member _.CheckedInt32() =
@@ -121,11 +121,11 @@ type OperatorsModule1() =
         
         // overflow exception
         try
-            let overflowint32 = Operators.Checked.int32 2147483648.0
-            Assert.Fail("Expectt overflow exception but not.")
+            let _ = Operators.Checked.int32 2147483648.0
+            Assert.Fail("Expect overflow exception but not it didn't raise.")
         with
             | :? System.OverflowException -> ()
-            | _ -> Assert.Fail("Expectt overflow exception but not.")
+            | _ -> Assert.Fail("Expect overflow exception but other exception thrown.")
 
     [<Test>]
     member _.CheckedInt64() =
@@ -140,16 +140,16 @@ type OperatorsModule1() =
         
         // boundary value
         let boundInt64 = Operators.Checked.int64 9223372036854775807I
-        let a  = 9223372036854775807L
+        let _  = 9223372036854775807L
         Assert.AreEqual(9223372036854775807L, boundInt64)
         
         // overflow exception
         try
-            let overflowint64 = Operators.Checked.int64 (System.Double.MaxValue+2.0)
-            Assert.Fail("Expectt overflow exception but not.")
+            let _ = Operators.Checked.int64 (System.Double.MaxValue+2.0)
+            Assert.Fail("Expect overflow exception but not it didn't raise.")
         with
             | :? System.OverflowException -> ()
-            | _ -> Assert.Fail("Expectt overflow exception but not.")
+            | _ -> Assert.Fail("Expect overflow exception but other exception thrown.")
 
     [<Test>]
     member _.CheckedNativeint() =
@@ -168,11 +168,11 @@ type OperatorsModule1() =
         
         // overflow exception
         try
-            let overflownativeint = Operators.Checked.nativeint 2147483648.0
-            Assert.Fail("Expectt overflow exception but not.")
+            let _ = Operators.Checked.nativeint 2147483648.0
+            Assert.Fail("Expect overflow exception but not it didn't raise.")
         with
             | :? System.OverflowException -> ()
-            | _ -> Assert.Fail("Expectt overflow exception but not.")
+            | _ -> Assert.Fail("Expect overflow exception but other exception thrown.")
 
     [<Test>]
     member _.Checkedsbyte() =
@@ -191,11 +191,11 @@ type OperatorsModule1() =
         
         // overflow exception
         try
-            let overflowsbyte = Operators.Checked.sbyte -256.0
-            Assert.Fail("Expectt overflow exception but not.")
+            let _ = Operators.Checked.sbyte -256.0
+            Assert.Fail("Expect overflow exception but not it didn't raise.")
         with
             | :? System.OverflowException -> ()
-            | _ -> Assert.Fail("Expectt overflow exception but not.")
+            | _ -> Assert.Fail("Expect overflow exception but other exception thrown.")
 
     [<Test>]
     member _.Checkeduint16() =
@@ -214,11 +214,11 @@ type OperatorsModule1() =
         
         // overflow exception
         try
-            let overflowuint16 = Operators.Checked.uint16 65536.0
-            Assert.Fail("Expectt overflow exception but not.")
+            let _ = Operators.Checked.uint16 65536.0
+            Assert.Fail("Expect overflow exception but it didn't raise.")
         with
             | :? System.OverflowException -> ()
-            | _ -> Assert.Fail("Expectt overflow exception but not.")
+            | _ -> Assert.Fail("Expect overflow exception but other exception thrown.")
 
     [<Test>]
     member _.Checkeduint32() =
@@ -237,11 +237,11 @@ type OperatorsModule1() =
 
         // overflow exception
         try
-            let overflowuint32 = Operators.Checked.uint32 UInt32.MaxValue + 1u
-            Assert.Fail("Expectt overflow exception but not.")
+            let _ = Operators.Checked.uint32 UInt32.MaxValue + 1u
+            Assert.Fail("Expect overflow exception but it didn't raise.")
         with
             | :? System.OverflowException -> ()
-            | _ -> Assert.Fail("Expectt overflow exception but not.")
+            | _ -> Assert.Fail("Expect overflow exception but other exception thrown.")
 
     [<Test>]
     member _.Checkeduint64() =
