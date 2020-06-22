@@ -35,6 +35,7 @@
     <Compile Include="ErrorMessages\UpcastDowncastTests.fs" />
     <Compile Include="ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="ErrorMessages\WrongSyntaxInForLoop.fs" />
+    <Compile Include="ErrorMessages\ConfusingTypeName.fs" />
   </ItemGroup>
 
   <ItemGroup>
