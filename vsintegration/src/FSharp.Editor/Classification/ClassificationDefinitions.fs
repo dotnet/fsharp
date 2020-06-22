@@ -29,7 +29,6 @@ module internal FSharpClassificationTypes =
     let getClassificationTypeName = function
         | SemanticClassificationType.MutableRecordField
         | SemanticClassificationType.MutableVar -> MutableVar
-        | SemanticClassificationType.Printf -> Printf
         | SemanticClassificationType.DisposableValue
         | SemanticClassificationType.DisposableType -> Disposable
         | SemanticClassificationType.NameSpace -> ClassificationTypeNames.NamespaceName
@@ -38,6 +37,7 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Type
         | SemanticClassificationType.TypeDef
         | SemanticClassificationType.ConstructorForReferenceType
+        | SemanticClassificationType.Printf
         | SemanticClassificationType.ReferenceType -> ClassificationTypeNames.ClassName
         | SemanticClassificationType.ConstructorForValueType
         | SemanticClassificationType.ValueType -> ClassificationTypeNames.StructName
@@ -84,11 +84,10 @@ module internal ClassificationDefinitions =
             let themeService = serviceProvider.GetService(typeof<SVsColorThemeService>) :?> IVsColorThemeService
             themeService.CurrentTheme.ThemeId
 
-        let colorData = // name,                      (light,                            dark)
+        let customColorData = // name,                (light,                            dark)
             [
                 FSharpClassificationTypes.MutableVar, (Color.FromRgb(160uy, 128uy, 0uy), Color.FromRgb(255uy, 210uy, 28uy))
-                FSharpClassificationTypes.Printf,     (Color.FromRgb(43uy, 145uy, 175uy), Color.FromRgb(78uy, 220uy, 176uy))
-                FSharpClassificationTypes.Disposable, (Colors.Tomato,                    Colors.Tomato)
+                FSharpClassificationTypes.Disposable, (Colors.Green,                     Color.FromRgb(51uy, 251uy, 96uy))
             ]
 
         let setColors _ =
@@ -100,7 +99,7 @@ module internal ClassificationDefinitions =
             let formatMap = classificationformatMapService.GetClassificationFormatMap(category = "text")
             try 
                 formatMap.BeginBatchUpdate()
-                for ctype, (light, dark) in colorData do
+                for ctype, (light, dark) in customColorData do
                     // we don't touch the changes made by the user
                     if fontAndColorStorage.GetItem(ctype, Array.zeroCreate 1) <> VSConstants.S_OK  then
                         let ict = classificationTypeRegistry.GetClassificationType(ctype)
@@ -119,7 +118,7 @@ module internal ClassificationDefinitions =
         interface IDisposable with member __.Dispose() = VSColorTheme.remove_ThemeChanged handler
 
         member __.GetColor(ctype) =
-            let light, dark = colorData |> Map.ofList |> Map.find ctype
+            let light, dark = customColorData |> Map.ofList |> Map.find ctype
             match getCurrentThemeId() with
             | LightTheme -> Nullable light
             | DarkTheme -> Nullable dark

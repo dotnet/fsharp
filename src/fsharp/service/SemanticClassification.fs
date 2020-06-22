@@ -104,7 +104,9 @@ module TcResolutionsExtensions =
                 let isDiscard (str: string) = str.StartsWith("_")
 
                 let isValRefDisposable (vref: ValRef) =
-                    not (isDiscard vref.DisplayName) && isDisposableTy vref.Type
+                    not (isDiscard vref.DisplayName) &&
+                    // For values, we actually do want to color things if they literally are IDisposables 
+                    protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 vref.Type g.tcref_System_IDisposable)
 
                 let isStructTyconRef (tyconRef: TyconRef) = 
                     let ty = generalizedTyconRef tyconRef
