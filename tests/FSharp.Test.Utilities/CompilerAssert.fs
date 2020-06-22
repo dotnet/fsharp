@@ -283,9 +283,10 @@ let main argv = 0"""
                             | CompilationReference (cmpl, staticLink) ->
                                 compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
                             | TestCompilationReference (cmpl) ->
-                                let filename = match cmpl with
-                                | TestCompilation.CSharp c -> c.AssemblyName
-                                | _ -> Path.GetRandomFileName()
+                                let filename =
+                                 match cmpl with
+                                 | TestCompilation.CSharp c -> c.AssemblyName
+                                 | _ -> Path.GetRandomFileName()
                                 let tmp = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
                                 disposals.Add({ new IDisposable with
                                                     member _.Dispose() =
