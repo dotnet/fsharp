@@ -62,6 +62,6 @@ printfn "%A" (b = otherB)
         CompilerAssert.CompileWithErrors(
             appCmpl,
             [|
-             (FSharpErrorSeverity.Error, 1, (6, 19, 6, 25), ("This expression was expected to have type\n    'A (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    " + System.Environment.NewLine + "but here has type" + System.Environment.NewLine + "    'A (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    "))
-             (FSharpErrorSeverity.Error, 1, (11, 19, 11, 25), ("This expression was expected to have type\n    'B<Microsoft.FSharp.Core.int> (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    " + System.Environment.NewLine + "but here has type" + System.Environment.NewLine + "    'B<Microsoft.FSharp.Core.int> (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    "))
+             (FSharpErrorSeverity.Error, 1, (6, 19, 6, 25), ("This expression was expected to have type\n    'A (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    \nbut here has type\n    'A (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    "))
+             (FSharpErrorSeverity.Error, 1, (11, 19, 11, 25), ("This expression was expected to have type\n    'B<Microsoft.FSharp.Core.int> (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    \nbut here has type\n    'B<Microsoft.FSharp.Core.int> (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    "))
              |], true)
