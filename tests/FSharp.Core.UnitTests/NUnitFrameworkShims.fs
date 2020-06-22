@@ -5,6 +5,8 @@ namespace NUnit.Framework
 open System
 open System.Collections.Generic
 open System.Linq
+open System.Runtime.InteropServices
+
 #if XUNIT
 open Xunit
 
@@ -47,6 +49,16 @@ module Info =
     /// Use this to distinguish cases where output is deterministically different between x86 runtime or x64 runtime,
     /// for instance w.r.t. floating point arithmetic. For more info, see https://github.com/dotnet/roslyn/issues/7333
     let isX64Runtime = sizeof<IntPtr> = 8
+
+    let framework = RuntimeInformation.FrameworkDescription
+
+    /// Whether a test is run inside a .NET Core Runtime
+    let isNetCore = framework.StartsWith(".NET Core")
+
+    /// Whether a test is run using a .NET Framework Runtime
+    let isNetFramework = framework.StartsWith(".NET Framework")
+
+
 
 module private Impl =
     open FsCheck.Arb

@@ -8,230 +8,9 @@ namespace FSharp.Core.UnitTests.Operators
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
-open Microsoft.FSharp.Core.Operators.Checked
 
 [<TestFixture>]
 type OperatorsModule1() =
-
-    [<Test>]
-    member _.Checkedbyte() =
-        // int type
-        let intByte = Operators.Checked.byte 100
-        Assert.AreEqual((byte)100, intByte)
-        
-        // char type
-        let charByte = Operators.Checked.byte '0'
-        Assert.AreEqual((byte)48, charByte)
-        
-        // boundary value
-        let boundByte = Operators.Checked.byte 255.0
-        Assert.AreEqual((byte)255, boundByte)
-        
-        // overflow exception
-        CheckThrowsOverflowException(fun () -> Operators.Checked.byte 256 |> ignore)
-
-    [<Test>]
-    member _.Checkedchar() =
-
-        // number
-        let numberChar = Operators.Checked.char 48
-        Assert.AreEqual('0', numberChar)
-        
-        // letter
-        let letterChar = Operators.Checked.char 65
-        Assert.AreEqual('A', letterChar)
-        
-        // boundary value
-        let boundchar = Operators.Checked.char 126
-        Assert.AreEqual('~', boundchar)
-        
-        // overflow exception
-        CheckThrowsOverflowException(fun () -> Operators.Checked.char (int64 Char.MaxValue + 1L) |> ignore)
-        
-    [<Test>]
-    member _.CheckedInt() =
-
-        // char
-        let charInt = Operators.Checked.int '0'
-        Assert.AreEqual(48, charInt)
-        
-        // float
-        let floatInt = Operators.Checked.int 10.0
-        Assert.AreEqual(10, floatInt)
-
-        // boundary value
-        let boundInt = Operators.Checked.int 32767.0
-        Assert.AreEqual((int)32767, boundInt)
-        
-        // overflow exception
-        CheckThrowsOverflowException(fun() -> Operators.Checked.int 2147483648.0 |> ignore)
-
-    [<Test>]
-    member _.CheckedInt16() =
-
-        // char
-        let charInt16 = Operators.Checked.int16 '0'
-        Assert.AreEqual((int16)48, charInt16)
-        
-        // float
-        let floatInt16 = Operators.Checked.int16 10.0
-        Assert.AreEqual((int16)10, floatInt16)
-        
-        // boundary value
-        let boundInt16 = Operators.Checked.int16 32767.0
-        Assert.AreEqual((int16)32767, boundInt16)
-        
-        // overflow exception
-        CheckThrowsOverflowException(fun () -> Operators.Checked.int16 32768.0 |> ignore)
-
-    [<Test>]
-    member _.CheckedInt32() =
-
-        // char
-        let charInt32 = Operators.Checked.int32 '0'
-        Assert.AreEqual((int32)48, charInt32)
-        
-        // float
-        let floatInt32 = Operators.Checked.int32 10.0
-        Assert.AreEqual((int32)10, floatInt32)
-        
-        // boundary value
-        let boundInt32 = Operators.Checked.int32 2147483647.0
-        Assert.AreEqual((int32)2147483647, boundInt32)
-        
-        // overflow exception
-        CheckThrowsOverflowException(fun () -> Operators.Checked.int32 2147483648.0 |> ignore)
-
-    [<Test>]
-    member _.CheckedInt64() =
-
-        // char
-        let charInt64 = Operators.Checked.int64 '0'
-        Assert.AreEqual((int64)48, charInt64)
-        
-        // float
-        let floatInt64 = Operators.Checked.int64 10.0
-        Assert.AreEqual((int64)10, floatInt64)
-        
-        // boundary value
-        let boundInt64 = Operators.Checked.int64 9223372036854775807I
-        let _  = 9223372036854775807L
-        Assert.AreEqual(9223372036854775807L, boundInt64)
-        
-        // overflow exception
-        CheckThrowsOverflowException(fun() -> Operators.Checked.int64 (float Int64.MaxValue + 1.0) |> ignore)
-
-    [<Test>]
-    member _.CheckedNativeint() =
-
-        // char
-        let charnativeint = Operators.Checked.nativeint '0'
-        Assert.AreEqual(48n, charnativeint)
-        
-        // float
-        let floatnativeint = Operators.Checked.nativeint 10.0
-        Assert.AreEqual(10n, floatnativeint)
-        
-        // boundary value
-        let boundnativeint = Operators.Checked.nativeint 32767.0
-        Assert.AreEqual(32767n, boundnativeint)
-        
-        // overflow exception (depends on pointer size)
-        CheckThrowsOverflowException(fun() ->
-            if Info.isX86Runtime then
-                Operators.Checked.nativeint 2147483648.0 |> ignore
-            else
-                Operators.Checked.nativeint 9223372036854775808.0 |> ignore)
-
-         
-    [<Test>]
-    member _.Checkedsbyte() =
-
-        // char
-        let charsbyte = Operators.Checked.sbyte '0'
-        Assert.AreEqual((sbyte)48, charsbyte)
-        
-        // float
-        let floatsbyte = Operators.Checked.sbyte -10.0
-        Assert.AreEqual((sbyte)(-10), floatsbyte)
-        
-        // boundary value
-        let boundsbyte = Operators.Checked.sbyte -127.0
-        Assert.AreEqual((sbyte)(-127), boundsbyte)
-        
-        // overflow exception
-        CheckThrowsOverflowException(fun () -> Operators.Checked.sbyte -256 |> ignore)
-
-    [<Test>]
-    member _.Checkeduint16() =
-
-        // char
-        let charuint16 = Operators.Checked.uint16 '0'
-        Assert.AreEqual((uint16)48, charuint16)
-        
-        // float
-        let floatuint16 = Operators.Checked.uint16 10.0
-        Assert.AreEqual((uint16)(10), floatuint16)
-        
-        // boundary value
-        let bounduint16 = Operators.Checked.uint16 65535.0
-        Assert.AreEqual((uint16)(65535), bounduint16)
-        
-        CheckThrowsOverflowException(fun() -> Operators.Checked.uint16 65536.0 |> ignore)
-
-    [<Test>]
-    member _.Checkeduint32() =
-
-        // char
-        let charuint32 = Operators.Checked.uint32 '0'
-        Assert.AreEqual((uint32)48, charuint32)
-        
-        // float
-        let floatuint32 = Operators.Checked.uint32 10.0
-        Assert.AreEqual((uint32)(10), floatuint32)
-        
-        // boundary value
-        let bounduint32 = Operators.Checked.uint32 429496729.0
-        Assert.AreEqual((uint32)(429496729), bounduint32)
-
-        // overflow exception
-        CheckThrowsOverflowException(fun () ->  Operators.Checked.uint32(float UInt32.MaxValue + 1.0) |> ignore)
-
-    [<Test>]
-    member _.Checkeduint64() =
-
-        // char
-        let charuint64 = Operators.Checked.uint64 '0'
-        Assert.AreEqual((uint64)48, charuint64)
-        
-        // float
-        let floatuint64 = Operators.Checked.uint64 10.0
-        Assert.AreEqual((uint64)(10), floatuint64)
-        
-        // boundary value
-        let bounduint64 = Operators.Checked.uint64 429496729.0
-        Assert.AreEqual((uint64)(429496729), bounduint64)
-        
-        // overflow exception
-        CheckThrowsOverflowException(fun () -> Operators.Checked.uint64 (float System.UInt64.MaxValue + 1.0) |> ignore)
-
-    [<Test>]
-    member _.Checkedunativeint() =
-
-        // char
-        let charunativeint = Operators.Checked.unativeint '0'
-        Assert.AreEqual((unativeint)48, charunativeint)
-        
-        // float
-        let floatunativeint = Operators.Checked.unativeint 10.0
-        Assert.AreEqual((unativeint)10, floatunativeint)
-        
-        // boundary value
-        let boundunativeint = Operators.Checked.unativeint 65353.0
-        Assert.AreEqual((unativeint)65353, boundunativeint)
-        
-        // overflow exception (depends on pointer size)
-        CheckThrowsOverflowException(fun () -> Operators.Checked.unativeint (float System.UInt32.MaxValue + 1.0) |> ignore)
 
     [<Test>]
     member _.KeyValue() =
@@ -563,7 +342,12 @@ type OperatorsModule1() =
       
         // normal value
         let normalcos = Operators.cos (1.0)
-        Assert.AreEqual(0.54030230586813977, normalcos)
+        if Info.isNetFramework then
+            Assert.AreEqual(0.54030230586813977, normalcos)
+        elif Info.isNetCore then
+            Assert.AreEqual(0.5403023058681397, normalcos)
+        else
+            Assert.Fail(sprintf "Unexpected framework: %s" Info.framework)
         
         // biggish  value
         let maxcos = Operators.cos (1.57)
@@ -790,7 +574,6 @@ type OperatorsModule1() =
         Assert.AreEqual(11, !result)
         
         // Overflow.
-        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
         let result = ref (Operators.Checked.int System.Int32.MaxValue)
         Operators.incr result
         Assert.AreEqual(System.Int32.MinValue, !result)

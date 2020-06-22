@@ -8,7 +8,6 @@ namespace FSharp.Core.UnitTests.Operators
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
-open Microsoft.FSharp.Core.Operators.Checked
 
 [<TestFixture>]
 type OperatorsModule2() =
@@ -36,7 +35,6 @@ type OperatorsModule2() =
         Assert.AreEqual(0, result)
         
         // Overflow
-        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
         let result = Operators.int Double.MaxValue
         Assert.AreEqual(Int32.MinValue, result)
         
@@ -82,7 +80,6 @@ type OperatorsModule2() =
         Assert.AreEqual(10s, result)
         
         // Overflow
-        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
         let result = Operators.int16 Double.MaxValue
         Assert.AreEqual(0s, result)
 
@@ -127,7 +124,6 @@ type OperatorsModule2() =
         Assert.AreEqual(10, result)
         
         // Overflow
-        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
         let result = Operators.int32 Double.MaxValue
         Assert.AreEqual(Int32.MinValue, result)
         
@@ -145,7 +141,7 @@ type OperatorsModule2() =
 
         // Overflow
         let result = Int32.MaxValue + 5
-        Assert.AreEqual(Int32.MinValue - 4, result)
+        Assert.AreEqual(Int32.MinValue + 4, result)
 
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.int32 Decimal.MinValue |> ignore)
@@ -173,7 +169,6 @@ type OperatorsModule2() =
         Assert.AreEqual(10L, result)
         
         // Overflow.
-        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
         let result = Operators.int64 Double.MaxValue
         Assert.AreEqual(Int64.MinValue, result)
 
@@ -183,7 +178,7 @@ type OperatorsModule2() =
 
         // Overflow
         let result = Operators.int64 UInt64.MaxValue
-        Assert.AreEqual(Int64.MinValue, result)
+        Assert.AreEqual(-1L, result)
 
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.int64 Decimal.MinValue |> ignore)
@@ -260,9 +255,6 @@ type OperatorsModule2() =
         let result = Operators.max "A" "ABC"
         Assert.AreEqual("ABC", result)
         
-        // overflow
-        CheckThrowsOverflowException(fun() -> Operators.max 10 System.Int32.MaxValue+1 |>ignore)
-        
     [<Test>]
     member _.min() =
         // value type
@@ -280,9 +272,6 @@ type OperatorsModule2() =
         // reference type
         let result = Operators.min "A" "ABC"
         Assert.AreEqual("A", result)
-        
-        // overflow
-        CheckThrowsOverflowException(fun() -> Operators.min 10 System.Int32.MinValue - 1 |>ignore)
         
     [<Test>]
     member _.nan() =
@@ -329,7 +318,7 @@ type OperatorsModule2() =
         // Overflow (depends on pointer size)
         let result = Operators.nativeint Double.MinValue
         if Info.isX86Runtime then
-            Assert.AreEqual(0un, result)
+            Assert.AreEqual(-2147483648n, result)
         else
             // Cannot use -9223372036854775808, compiler doesn't allow it, see https://github.com/dotnet/fsharp/issues/9524
             Assert.AreEqual(-9223372036854775807n - 1n, result)
@@ -351,13 +340,20 @@ type OperatorsModule2() =
             Assert.AreEqual(-9223372036854775804n, result)
 
 
-        // Overflow.
-        // This used to be considered a bug in F# 1.0: [FSharp Bugs 1.0] #3842 - OverflowException does not pop up on Operators.int int16 int32 int64.
+        // Overflow (depends on pointer size)
         let result = Operators.nativeint System.Double.MaxValue
-        Assert.AreEqual("-9223372036854775808", string result)      // it is not possible to express this as a literal
+        if Info.isX86Runtime then
+            Assert.AreEqual(-2147483648n, result)
+        else
+            // Cannot express this as a literal, see https://github.com/dotnet/fsharp/issues/9524
+            Assert.AreEqual("-9223372036854775808", string result)
 
         let result = Operators.nativeint System.Double.MinValue
-        Assert.AreEqual("-9223372036854775808", string result)      // it is not possible to express this as a literal
+        if Info.isX86Runtime then
+            Assert.AreEqual(-2147483648n, result)
+        else
+            // Cannot express this as a literal, see https://github.com/dotnet/fsharp/issues/9524
+            Assert.AreEqual("-9223372036854775808", string result)
 
     [<Test>]
     member _.not() =
@@ -782,7 +778,7 @@ type OperatorsModule2() =
         
         // Overflow Double.MaxValue is equal on 32 bits and 64 bits runtimes
         let result = Operators.unativeint Double.MaxValue
-        Assert.AreEqual(0UL, result)
+        Assert.AreEqual(0un, result)
         
         // Overflow (depends on pointer size)
         let result = Operators.unativeint Double.MinValue
