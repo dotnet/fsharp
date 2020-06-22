@@ -58,6 +58,9 @@ module Info =
     /// Whether a test is run using a .NET Framework Runtime
     let isNetFramework = framework.StartsWith(".NET Framework")
 
+    /// Whether a test is run after being compiled to .NET Native
+    let isNetNative = framework.StartsWith(".NET Native")
+
 
 
 module private Impl =
