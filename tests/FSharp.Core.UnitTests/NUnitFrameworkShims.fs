@@ -94,9 +94,26 @@ module private Impl =
                 Object.Equals(expected, actual)
 
 type Assert =
+    
     static member AreEqual(expected : obj, actual : obj, message : string) =
         if not (Impl.equals expected actual) then
-            let message = sprintf "%s: Expected %A but got %A" message expected actual
+            let message = 
+                // Special treatment of float and float32 to get a somewhat meaningful error message 
+                // (otherwise, the missing precision leads to different values that are close together looking the same)
+                match expected, actual with
+                | :? float as expected, (:? float as actual) ->
+                    let exp = expected.ToString("R")
+                    let act = actual.ToString("R")
+                    sprintf "%s: Expected %s but got %s" message exp act
+
+                | :? float32 as expected, (:? float32 as actual) ->
+                    let exp = expected.ToString("R")
+                    let act = actual.ToString("R")
+                    sprintf "%s: Expected %s but got %s" message exp act
+
+                | _ ->
+                    sprintf "%s: Expected %A but got %A" message expected actual
+
             AssertionException message |> raise
 
     static member AreNotEqual(expected : obj, actual : obj, message : string) =
