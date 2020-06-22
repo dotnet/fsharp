@@ -44,7 +44,7 @@ if !x then
             FSharpErrorSeverity.Error
             1
             (3, 5, 3, 6)
-            "This expression was expected to have type\n    'bool ref'    \nbut here has type\n    'bool'    " + System.Environment.NewLine + "The '!' operator is used to dereference a ref cell. Consider using 'not expr' here."
+            ("This expression was expected to have type\n    'bool ref'    \nbut here has type\n    'bool'    " + System.Environment.NewLine + "The '!' operator is used to dereference a ref cell. Consider using 'not expr' here.")
 
     [<Fact>]
     let ``Ref Cell Instead Of Not 2``() =
@@ -56,7 +56,7 @@ let y = !x
             FSharpErrorSeverity.Error
             1
             (3, 10, 3, 11)
-            "This expression was expected to have type\n    ''a ref'    \nbut here has type\n    'bool'    " + System.Environment.NewLine + "The '!' operator is used to dereference a ref cell. Consider using 'not expr' here."
+            ("This expression was expected to have type\n    ''a ref'    \nbut here has type\n    'bool'    " + System.Environment.NewLine + "The '!' operator is used to dereference a ref cell. Consider using 'not expr' here.")
 
     [<Fact>]
     let ``Guard Has Wrong Type``() =

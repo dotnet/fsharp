@@ -19,7 +19,7 @@ let x = { Person.Names = "Isaac" }
             FSharpErrorSeverity.Error
             39
             (4, 18, 4, 23)
-            "The type 'Person' does not define the field, constructor or member 'Names'. Maybe you want one of the following:" + System.Environment.NewLine + "   Name"
+            ("The type 'Person' does not define the field, constructor or member 'Names'. Maybe you want one of the following:" + System.Environment.NewLine + "   Name")
 
 
     [<Fact>]
@@ -32,7 +32,7 @@ let f =
             FSharpErrorSeverity.Error
             39
             (3, 11, 3, 14)
-            "The value, constructor, namespace or type 'blt' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   blit"
+            ("The value, constructor, namespace or type 'blt' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   blit")
 
 
     [<Fact>]
@@ -45,7 +45,7 @@ let f =
             FSharpErrorSeverity.Error
             39
             (3, 5, 3, 9)
-            "The value, namespace, type or module 'Asnc' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   Async" + System.Environment.NewLine + "   async" + System.Environment.NewLine + "   asin" + System.Environment.NewLine + "   snd"
+            ("The value, namespace, type or module 'Asnc' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   Async" + System.Environment.NewLine + "   async" + System.Environment.NewLine + "   asin" + System.Environment.NewLine + "   snd")
 
 
     [<Fact>]
@@ -60,7 +60,7 @@ type MyClass<'Bar>() =
             FSharpErrorSeverity.Error
             39
             (2, 3, 2, 15)
-            "The type 'AbstractClas' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   AbstractClass" + System.Environment.NewLine + "   AbstractClassAttribute"
+            ("The type 'AbstractClas' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   AbstractClass" + System.Environment.NewLine + "   AbstractClassAttribute")
 
 
     [<Fact>]
@@ -75,7 +75,7 @@ let x = N.``longe name``
             FSharpErrorSeverity.Error
             39
             (5, 11, 5, 25)
-            "The value, constructor, namespace or type 'longe name' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   longer name"
+            ("The value, constructor, namespace or type 'longe name' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   longer name")
 
 
     [<Fact>]
@@ -94,7 +94,7 @@ let x = N.MyUnion.``My Case2``
             FSharpErrorSeverity.Error
             39
             (9, 19, 9,31)
-            "The type 'MyUnion' does not define the field, constructor or member 'My Case2'. Maybe you want one of the following:" + System.Environment.NewLine + "   My Case1" + System.Environment.NewLine + "   Case2"
+            ("The type 'MyUnion' does not define the field, constructor or member 'My Case2'. Maybe you want one of the following:" + System.Environment.NewLine + "   My Case1" + System.Environment.NewLine + "   Case2")
 
 
     [<Fact>]
@@ -111,7 +111,7 @@ let c = MyClass(Property = "")
             FSharpErrorSeverity.Error
             495
             (7, 17, 7, 25)
-            "The object constructor 'MyClass' has no argument or settable return property 'Property'. The required signature is new : unit -> MyClass. Maybe you want one of the following:" + System.Environment.NewLine + "   MyProperty" + System.Environment.NewLine + "   MyProperty2" + System.Environment.NewLine + "   ABigProperty"
+            ("The object constructor 'MyClass' has no argument or settable return property 'Property'. The required signature is new : unit -> MyClass. Maybe you want one of the following:" + System.Environment.NewLine + "   MyProperty" + System.Environment.NewLine + "   MyProperty2" + System.Environment.NewLine + "   ABigProperty")
 
 
     [<Fact>]
@@ -123,7 +123,7 @@ type T = System.Collections.Generic.Dictionary<int11,int>
             FSharpErrorSeverity.Error
             39
             (2, 48, 2, 53)
-            "The type 'int11' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   int16" + System.Environment.NewLine + "   int16`1" + System.Environment.NewLine + "   int8" + System.Environment.NewLine + "   uint16" + System.Environment.NewLine + "   int"
+            ("The type 'int11' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   int16" + System.Environment.NewLine + "   int16`1" + System.Environment.NewLine + "   int8" + System.Environment.NewLine + "   uint16" + System.Environment.NewLine + "   int")
 
 
     [<Fact>]
@@ -142,7 +142,7 @@ module Test2 =
             FSharpErrorSeverity.Error
             39
             (9, 7, 9, 14)
-            "The type 'D' does not define the field, constructor or member 'Method2'. Maybe you want one of the following:" + System.Environment.NewLine + "   Method1"
+            ("The type 'D' does not define the field, constructor or member 'Method2'. Maybe you want one of the following:" + System.Environment.NewLine + "   Method1")
 
 
     [<Fact>]
@@ -158,7 +158,7 @@ open Collectons
             FSharpErrorSeverity.Error
             39
             (6, 6, 6, 16)
-            "The namespace or module 'Collectons' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   Collections"
+            ("The namespace or module 'Collectons' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   Collections")
 
 
     [<Fact>]
@@ -186,7 +186,7 @@ let x = r.ello
             FSharpErrorSeverity.Error
             39
             (6, 11, 6, 15)
-            "The type 'MyRecord' does not define the field, constructor or member 'ello'. Maybe you want one of the following:" + System.Environment.NewLine + "   Hello"
+            ("The type 'MyRecord' does not define the field, constructor or member 'ello'. Maybe you want one of the following:" + System.Environment.NewLine + "   Hello")
 
 
     [<Fact>]
@@ -204,7 +204,7 @@ let r = { Field1 = "hallo"; Field2 = 1 }
             FSharpErrorSeverity.Error
             39
             (8, 11, 8, 17)
-            "The record label 'Field1' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   MyRecord.Field1"
+            ("The record label 'Field1' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   MyRecord.Field1")
 
 
     [<Fact>]
@@ -251,7 +251,7 @@ let x : System.Collections.Generic.Lst = ResizeArray()
             FSharpErrorSeverity.Error
             39
             (2, 36, 2, 39)
-            "The type 'Lst' is not defined in 'System.Collections.Generic'. Maybe you want one of the following:" + System.Environment.NewLine + "   List" + System.Environment.NewLine + "   IList" + System.Environment.NewLine + "   List`1"
+            ("The type 'Lst' is not defined in 'System.Collections.Generic'. Maybe you want one of the following:" + System.Environment.NewLine + "   List" + System.Environment.NewLine + "   IList" + System.Environment.NewLine + "   List`1")
 
     [<Fact>]
     let ``Suggest Types in Namespace`` () =
@@ -262,7 +262,7 @@ let x = System.DateTie.MaxValue
             FSharpErrorSeverity.Error
             39
             (2, 16, 2, 23)
-            "The value, constructor, namespace or type 'DateTie' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   DateTime" + System.Environment.NewLine + "   DateTimeKind" + System.Environment.NewLine + "   DateTimeOffset" + System.Environment.NewLine + "   Data"
+            ("The value, constructor, namespace or type 'DateTie' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   DateTime" + System.Environment.NewLine + "   DateTimeKind" + System.Environment.NewLine + "   DateTimeOffset" + System.Environment.NewLine + "   Data")
 
 
     [<Fact>]
@@ -278,7 +278,7 @@ let u = MyUnion.AntherCase
             FSharpErrorSeverity.Error
             39
             (6, 17, 6, 27)
-            "The type 'MyUnion' does not define the field, constructor or member 'AntherCase'. Maybe you want one of the following:" + System.Environment.NewLine + "   AnotherCase"
+            ("The type 'MyUnion' does not define the field, constructor or member 'AntherCase'. Maybe you want one of the following:" + System.Environment.NewLine + "   AnotherCase")
 
 
     [<Fact>]
@@ -295,7 +295,7 @@ let x : MyUnion = MyCase1
             FSharpErrorSeverity.Error
             39
             (7, 19, 7, 26)
-            "The value or constructor 'MyCase1' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   MyUnion.MyCase1"
+            ("The value or constructor 'MyCase1' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   MyUnion.MyCase1")
 
 
     [<Fact>]
@@ -317,4 +317,4 @@ let x =
             FSharpErrorSeverity.Error
             39
             (11, 15, 11, 19)
-            "The type 'MyUnion' does not define the field, constructor or member 'Cas1'. Maybe you want one of the following:" + System.Environment.NewLine + "   Case1" + System.Environment.NewLine + "   Case2"
+            ("The type 'MyUnion' does not define the field, constructor or member 'Cas1'. Maybe you want one of the following:" + System.Environment.NewLine + "   Case1" + System.Environment.NewLine + "   Case2")

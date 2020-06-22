@@ -6,7 +6,7 @@ open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-[<TestFixture>]
+
 module ``Errors assigning to mutable objects`` =
 
     [<Fact>]

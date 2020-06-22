@@ -24,7 +24,7 @@ let r:F = { Size=3; Height=4; Wall=1 }
             FSharpErrorSeverity.Error
             1129
             (9, 31, 9, 35)
-            "The record type 'F' does not contain a label 'Wall'. Maybe you want one of the following:" + System.Environment.NewLine + "   Wallis"
+            ("The record type 'F' does not contain a label 'Wall'. Maybe you want one of the following:" + System.Environment.NewLine + "   Wallis")
 
     [<Fact>]
     let RecordFieldProposal () =
@@ -42,4 +42,4 @@ let r = { Size=3; Height=4; Wall=1 }
             FSharpErrorSeverity.Error
             39
             (9, 29, 9, 33)
-            "The record label 'Wall' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   Walls" + System.Environment.NewLine + "   Wallis"
+            ("The record label 'Wall' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   Walls" + System.Environment.NewLine + "   Wallis")
