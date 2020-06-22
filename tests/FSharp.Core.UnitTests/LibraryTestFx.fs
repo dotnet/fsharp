@@ -50,6 +50,7 @@ let CheckThrowsDivideByZeroException f = CheckThrowsExn<DivideByZeroException>  
 let CheckThrowsOverflowException     f = CheckThrowsExn<OverflowException>        f
 let CheckThrowsInvalidOperationExn   f = CheckThrowsExn<InvalidOperationException> f
 let CheckThrowsFormatException       f = CheckThrowsExn<FormatException>           f
+let CheckThrowsArithmeticException   f = CheckThrowsExn<ArithmeticException>  f
 
 // Verifies two sequences are equal (same length, equiv elements)
 let VerifySeqsEqual (seq1 : seq<'T>) (seq2 : seq<'T>) =

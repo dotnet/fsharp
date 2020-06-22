@@ -536,23 +536,90 @@ type OperatorsModule2() =
         let result = Operators.sign 10
         Assert.AreEqual(1, result)
         
+        // negative int
+        let result = Operators.sign -10
+        Assert.AreEqual(-1, result)
+        
+        // zero int
+        let result = Operators.sign 0
+        Assert.AreEqual(0, result)
+
         // double
         let result = Operators.sign 10.0
         Assert.AreEqual(1, result)
         
-        // negative
-        let result = Operators.sign -10
+        // double max
+        let result = Operators.sign Double.MaxValue
+        Assert.AreEqual(1, result)
+        
+        // double min
+        let result = Operators.sign Double.MinValue
         Assert.AreEqual(-1, result)
         
-        // zero
-        let result = Operators.sign 0
-        Assert.AreEqual(0, result)
+        // double epsilon positive
+        let result = Operators.sign Double.Epsilon
+        Assert.AreEqual(1, result)
+        
+        // double epsilon negative
+        let result = Operators.sign (-Double.Epsilon)
+        Assert.AreEqual(-1, result)
+        
+        // double inf
+        let result = Operators.sign Double.PositiveInfinity
+        Assert.AreEqual(1, result)
+                
+        // double -inf
+        let result = Operators.sign Double.NegativeInfinity
+        Assert.AreEqual(-1, result)
+
+        // float32
+        let result = Operators.sign 10.0f
+        Assert.AreEqual(1, result)
+        
+        // float32 max
+        let result = Operators.sign Single.MaxValue
+        Assert.AreEqual(1, result)
+        
+        // float32 min
+        let result = Operators.sign Single.MinValue
+        Assert.AreEqual(-1, result)
+        
+        // float32 epsilon positive
+        let result = Operators.sign Single.Epsilon
+        Assert.AreEqual(1, result)
+        
+        // float32 epsilon negative
+        let result = Operators.sign (-Single.Epsilon)
+        Assert.AreEqual(-1, result)
+        
+        // float32 inf
+        let result = Operators.sign Single.PositiveInfinity
+        Assert.AreEqual(1, result)
+                
+        // float32 -inf
+        let result = Operators.sign Single.NegativeInfinity
+        Assert.AreEqual(-1, result)
+
+        // double nan
+        CheckThrowsArithmeticException(fun () -> Operators.sign Double.NaN |> ignore)
+
+        // float32 nan
+        CheckThrowsArithmeticException(fun () -> Operators.sign Single.NaN |> ignore)
         
     [<Test>]
     member _.sin() =
         
         let result = Operators.sin 0.5
         Assert.AreNearEqual(0.479425538604203, result)
+
+        let result = Operators.sin Double.NaN
+        Assert.AreEqual(Double.NaN, result)
+        
+        let result = Operators.sin Double.PositiveInfinity
+        Assert.AreEqual(Double.NaN, result)
+        
+        let result = Operators.sin Double.NegativeInfinity
+        Assert.AreEqual(Double.NaN, result)
         
     [<Test>]
     member _.single() =
@@ -574,6 +641,18 @@ type OperatorsModule2() =
         let result = Operators.sinh 1.0
         Assert.AreNearEqual(1.1752011936438014, result)
         
+        let result = Operators.sinh 0.0
+        Assert.AreNearEqual(0.0, result)
+
+        let result = Operators.sinh Double.PositiveInfinity
+        Assert.AreNearEqual(Double.PositiveInfinity, result)
+
+        let result = Operators.sinh Double.NegativeInfinity
+        Assert.AreNearEqual(Double.NegativeInfinity, result)
+
+        let result = Operators.sinh Double.NaN
+        Assert.AreNearEqual(Double.NaN, result)
+
     [<Test>]
     member _.sizeof() =
         // value type
@@ -611,6 +690,9 @@ type OperatorsModule2() =
         // double
         let result = Operators.sqrt 100.0
         Assert.AreEqual(10.0, result)
+        
+        let result = Operators.sqrt -2.0
+        Assert.AreEqual(Double.NaN, result)
         
     [<Test>]
     member _.stderr() =
