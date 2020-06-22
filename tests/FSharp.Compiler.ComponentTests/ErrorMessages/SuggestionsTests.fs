@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ErrorMessages.ComponentTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-[<TestFixture>]
 module Suggestions =
 
-    [<Test>]
+    [<Fact>]
     let ``Field Suggestion`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -20,10 +19,10 @@ let x = { Person.Names = "Isaac" }
             FSharpErrorSeverity.Error
             39
             (4, 18, 4, 23)
-            "The type 'Person' does not define the field, constructor or member 'Names'. Maybe you want one of the following:\r\n   Name"
+            "The type 'Person' does not define the field, constructor or member 'Names'. Maybe you want one of the following:" + System.Environment.NewLine + "   Name"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Array Module Functions`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -33,10 +32,10 @@ let f =
             FSharpErrorSeverity.Error
             39
             (3, 11, 3, 14)
-            "The value, constructor, namespace or type 'blt' is not defined. Maybe you want one of the following:\r\n   blit"
+            "The value, constructor, namespace or type 'blt' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   blit"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Async Module`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -46,10 +45,10 @@ let f =
             FSharpErrorSeverity.Error
             39
             (3, 5, 3, 9)
-            "The value, namespace, type or module 'Asnc' is not defined. Maybe you want one of the following:\r\n   Async\r\n   async\r\n   asin\r\n   snd"
+            "The value, namespace, type or module 'Asnc' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   Async" + System.Environment.NewLine + "   async" + System.Environment.NewLine + "   asin" + System.Environment.NewLine + "   snd"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Attribute`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -61,10 +60,10 @@ type MyClass<'Bar>() =
             FSharpErrorSeverity.Error
             39
             (2, 3, 2, 15)
-            "The type 'AbstractClas' is not defined. Maybe you want one of the following:\r\n   AbstractClass\r\n   AbstractClassAttribute"
+            "The type 'AbstractClas' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   AbstractClass" + System.Environment.NewLine + "   AbstractClassAttribute"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Double Backtick Identifiers`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -76,10 +75,10 @@ let x = N.``longe name``
             FSharpErrorSeverity.Error
             39
             (5, 11, 5, 25)
-            "The value, constructor, namespace or type 'longe name' is not defined. Maybe you want one of the following:\r\n   longer name"
+            "The value, constructor, namespace or type 'longe name' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   longer name"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Double Backtick Unions`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -95,10 +94,10 @@ let x = N.MyUnion.``My Case2``
             FSharpErrorSeverity.Error
             39
             (9, 19, 9,31)
-            "The type 'MyUnion' does not define the field, constructor or member 'My Case2'. Maybe you want one of the following:\r\n   My Case1\r\n   Case2"
+            "The type 'MyUnion' does not define the field, constructor or member 'My Case2'. Maybe you want one of the following:" + System.Environment.NewLine + "   My Case1" + System.Environment.NewLine + "   Case2"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Fields In Constructor`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -112,10 +111,10 @@ let c = MyClass(Property = "")
             FSharpErrorSeverity.Error
             495
             (7, 17, 7, 25)
-            "The object constructor 'MyClass' has no argument or settable return property 'Property'. The required signature is new : unit -> MyClass. Maybe you want one of the following:\r\n   MyProperty\r\n   MyProperty2\r\n   ABigProperty"
+            "The object constructor 'MyClass' has no argument or settable return property 'Property'. The required signature is new : unit -> MyClass. Maybe you want one of the following:" + System.Environment.NewLine + "   MyProperty" + System.Environment.NewLine + "   MyProperty2" + System.Environment.NewLine + "   ABigProperty"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Generic Type`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -124,10 +123,10 @@ type T = System.Collections.Generic.Dictionary<int11,int>
             FSharpErrorSeverity.Error
             39
             (2, 48, 2, 53)
-            "The type 'int11' is not defined. Maybe you want one of the following:\r\n   int16\r\n   int16`1\r\n   int8\r\n   uint16\r\n   int"
+            "The type 'int11' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   int16" + System.Environment.NewLine + "   int16`1" + System.Environment.NewLine + "   int8" + System.Environment.NewLine + "   uint16" + System.Environment.NewLine + "   int"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Methods`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -143,10 +142,10 @@ module Test2 =
             FSharpErrorSeverity.Error
             39
             (9, 7, 9, 14)
-            "The type 'D' does not define the field, constructor or member 'Method2'. Maybe you want one of the following:\r\n   Method1"
+            "The type 'D' does not define the field, constructor or member 'Method2'. Maybe you want one of the following:" + System.Environment.NewLine + "   Method1"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Modules`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -159,10 +158,10 @@ open Collectons
             FSharpErrorSeverity.Error
             39
             (6, 6, 6, 16)
-            "The namespace or module 'Collectons' is not defined. Maybe you want one of the following:\r\n   Collections"
+            "The namespace or module 'Collectons' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   Collections"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Namespaces`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -174,7 +173,7 @@ open System.Collectons
             "The namespace 'Collectons' is not defined."
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Record Labels`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -187,10 +186,10 @@ let x = r.ello
             FSharpErrorSeverity.Error
             39
             (6, 11, 6, 15)
-            "The type 'MyRecord' does not define the field, constructor or member 'ello'. Maybe you want one of the following:\r\n   Hello"
+            "The type 'MyRecord' does not define the field, constructor or member 'ello'. Maybe you want one of the following:" + System.Environment.NewLine + "   Hello"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Record Type for RequireQualifiedAccess Records`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -205,10 +204,10 @@ let r = { Field1 = "hallo"; Field2 = 1 }
             FSharpErrorSeverity.Error
             39
             (8, 11, 8, 17)
-            "The record label 'Field1' is not defined. Maybe you want one of the following:\r\n   MyRecord.Field1"
+            "The record label 'Field1' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   MyRecord.Field1"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest To Use Indexer`` () =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -227,7 +226,7 @@ let a = (f())[1]
             |]
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Type Parameters`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -243,7 +242,7 @@ type MyClass<'Bar>() =
             "The type parameter 'B is not defined."
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Types in Module`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -252,9 +251,9 @@ let x : System.Collections.Generic.Lst = ResizeArray()
             FSharpErrorSeverity.Error
             39
             (2, 36, 2, 39)
-            "The type 'Lst' is not defined in 'System.Collections.Generic'. Maybe you want one of the following:\r\n   List\r\n   IList\r\n   List`1"
+            "The type 'Lst' is not defined in 'System.Collections.Generic'. Maybe you want one of the following:" + System.Environment.NewLine + "   List" + System.Environment.NewLine + "   IList" + System.Environment.NewLine + "   List`1"
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Types in Namespace`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -263,10 +262,10 @@ let x = System.DateTie.MaxValue
             FSharpErrorSeverity.Error
             39
             (2, 16, 2, 23)
-            "The value, constructor, namespace or type 'DateTie' is not defined. Maybe you want one of the following:\r\n   DateTime\r\n   DateTimeKind\r\n   DateTimeOffset\r\n   Data"
+            "The value, constructor, namespace or type 'DateTie' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   DateTime" + System.Environment.NewLine + "   DateTimeKind" + System.Environment.NewLine + "   DateTimeOffset" + System.Environment.NewLine + "   Data"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Union Cases`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -279,10 +278,10 @@ let u = MyUnion.AntherCase
             FSharpErrorSeverity.Error
             39
             (6, 17, 6, 27)
-            "The type 'MyUnion' does not define the field, constructor or member 'AntherCase'. Maybe you want one of the following:\r\n   AnotherCase"
+            "The type 'MyUnion' does not define the field, constructor or member 'AntherCase'. Maybe you want one of the following:" + System.Environment.NewLine + "   AnotherCase"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Union Type for RequireQualifiedAccess Unions`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -296,10 +295,10 @@ let x : MyUnion = MyCase1
             FSharpErrorSeverity.Error
             39
             (7, 19, 7, 26)
-            "The value or constructor 'MyCase1' is not defined. Maybe you want one of the following:\r\n   MyUnion.MyCase1"
+            "The value or constructor 'MyCase1' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   MyUnion.MyCase1"
 
 
-    [<Test>]
+    [<Fact>]
     let ``Suggest Unions in PatternMatch`` () =
         CompilerAssert.TypeCheckSingleError
             """
@@ -318,4 +317,4 @@ let x =
             FSharpErrorSeverity.Error
             39
             (11, 15, 11, 19)
-            "The type 'MyUnion' does not define the field, constructor or member 'Cas1'. Maybe you want one of the following:\r\n   Case1\r\n   Case2"
+            "The type 'MyUnion' does not define the field, constructor or member 'Cas1'. Maybe you want one of the following:" + System.Environment.NewLine + "   Case1" + System.Environment.NewLine + "   Case2"

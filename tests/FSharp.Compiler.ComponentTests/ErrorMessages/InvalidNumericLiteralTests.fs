@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.NumericLiterals.ComponentTests
+namespace FSharp.Compiler.ErrorMessages.ComponentTests
 
 open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-module ``Invalid Numeric Literal`` =
+module ``Numeric Literlas`` =
 
     [<Fact>]
     let ``1up is invalid Numeric Literal``() =

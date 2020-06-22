@@ -1,16 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ErrorMessages.ComponentTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-[<TestFixture>]
 module ``Access Of Type Abbreviation`` =
 
-    [<Test>]
-    let ``Test1``() =
+    [<Fact>]
+    let ``Private type produces warning when trying to export``() =
         CompilerAssert.TypeCheckSingleError
             """
 module Library =
@@ -22,8 +21,8 @@ module Library =
             (4, 8, 4, 16)
             "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in.\r\nAs of F# 4.1, the accessibility of type abbreviations is checked at compile-time. Consider changing the accessibility of the type abbreviation. Ignoring this warning might lead to runtime errors."
 
-    [<Test>]
-    let ``Test2``() =
+    [<Fact>]
+    let ``Internal type passes when abbrev is internal``() =
         CompilerAssert.Pass
             """
 module Library =
@@ -31,8 +30,8 @@ module Library =
   type internal Exported = Hidden
             """
 
-    [<Test>]
-    let ``Test3``() =
+    [<Fact>]
+    let ``Internal type produces warning when trying to export``() =
         CompilerAssert.TypeCheckSingleError
             """
 module Library =
@@ -44,8 +43,8 @@ module Library =
             (4, 8, 4, 16)
             "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in.\r\nAs of F# 4.1, the accessibility of type abbreviations is checked at compile-time. Consider changing the accessibility of the type abbreviation. Ignoring this warning might lead to runtime errors."
 
-    [<Test>]
-    let ``Test4``() =
+    [<Fact>]
+    let ``Private type produces warning when abbrev is internal``() =
         CompilerAssert.TypeCheckSingleError
             """
 module Library =
@@ -57,8 +56,8 @@ module Library =
             (4, 17, 4, 25)
             "This construct is deprecated. The type 'Hidden' is less accessible than the value, member or type 'Exported' it is used in.\r\nAs of F# 4.1, the accessibility of type abbreviations is checked at compile-time. Consider changing the accessibility of the type abbreviation. Ignoring this warning might lead to runtime errors."
 
-    [<Test>]
-    let ``Test5``() =
+    [<Fact>]
+    let ``Private type passes when abbrev is private``() =
         CompilerAssert.Pass
             """
 module Library =
@@ -66,8 +65,8 @@ module Library =
   type private Exported = Hidden
             """
 
-    [<Test>]
-    let ``Test6``() =
+    [<Fact>]
+    let ``Default access type passes when abbrev is default``() =
         CompilerAssert.Pass
             """
 module Library =
