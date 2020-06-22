@@ -85,7 +85,7 @@ module internal ClassificationDefinitions =
         let customColorData = // name,                (light,                            dark)
             [
                 FSharpClassificationTypes.MutableVar, (Color.FromRgb(160uy, 128uy, 0uy), Color.FromRgb(255uy, 210uy, 28uy))
-                FSharpClassificationTypes.Disposable, (Colors.Green,                     Color.FromRgb(51uy, 251uy, 96uy))
+                FSharpClassificationTypes.Disposable, (Colors.Green,                     Color.FromRgb(2uy, 183uy, 43uy))
             ]
 
         let setColors _ =
