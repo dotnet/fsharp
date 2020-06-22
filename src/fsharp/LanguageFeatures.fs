@@ -59,7 +59,6 @@ type LanguageVersion (specifiedVersionAsString) =
             // F# 5.0
             LanguageFeature.FixedIndexSlice3d4d, languageVersion50
             LanguageFeature.DotlessFloat32Literal, languageVersion50
-            LanguageFeature.NameOf, languageVersion50
             LanguageFeature.AndBang, languageVersion50
             LanguageFeature.NullableOptionalInterop, languageVersion50
             LanguageFeature.DefaultInterfaceMemberConsumption, languageVersion50
@@ -69,6 +68,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.WitnessPassing, previewVersion
+            LanguageFeature.NameOf, previewVersion
         ]
 
     let specified =
