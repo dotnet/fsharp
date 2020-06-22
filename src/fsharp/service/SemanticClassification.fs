@@ -101,10 +101,10 @@ module TcResolutionsExtensions =
                     not (typeEquiv g ty g.system_IDisposable_ty) &&
                     protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
                     
-                let isDiscardText (str: string) = str |> String.forall (fun c -> c = '_')
+                let isDiscard (str: string) = str.StartsWith("_")
 
                 let isValRefDisposable (vref: ValRef) =
-                    not (isDiscardText vref.DisplayName) && isDisposableTy vref.Type
+                    not (isDiscard vref.DisplayName) && isDisposableTy vref.Type
 
                 let isStructTyconRef (tyconRef: TyconRef) = 
                     let ty = generalizedTyconRef tyconRef
@@ -157,7 +157,7 @@ module TcResolutionsExtensions =
                             add m SemanticClassificationType.DisposableValue
                         elif Option.isSome vref.LiteralValue then
                             add m SemanticClassificationType.Literal
-                        elif not vref.IsCompiledAsTopLevel && not(isDiscardText vref.DisplayName) then
+                        elif not vref.IsCompiledAsTopLevel && not(isDiscard vref.DisplayName) then
                             add m SemanticClassificationType.LocalValue
                         else
                             add m SemanticClassificationType.Value
