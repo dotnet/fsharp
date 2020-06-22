@@ -30,8 +30,6 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsc\fsc.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsi\fsi.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\fsharpqa\testenv\src\PEVerify\PEVerify.csproj" />
   </ItemGroup>
 
