@@ -21,9 +21,7 @@ open FSharp.Compiler.SourceCodeServices
 
 [<RequireQualifiedAccess>]
 module internal FSharpClassificationTypes =
-    let [<Literal>] Function = "FSharp.Function"
     let [<Literal>] MutableVar = "FSharp.MutableVar"
-    let [<Literal>] Printf = "FSharp.Printf"
     let [<Literal>] Disposable = "FSharp.Disposable"
 
     let getClassificationTypeName = function
@@ -126,28 +124,12 @@ module internal ClassificationDefinitions =
 
         interface ISetThemeColors with member this.SetColors() = setColors()
 
-
-    [<Export; Name(FSharpClassificationTypes.Function); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpFunctionClassificationType : ClassificationTypeDefinition = null
-
     [<Export; Name(FSharpClassificationTypes.MutableVar); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpMutableVarClassificationType : ClassificationTypeDefinition = null
 
-    [<Export; Name(FSharpClassificationTypes.Printf); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpPrintfClassificationType : ClassificationTypeDefinition = null
 
     [<Export; Name(FSharpClassificationTypes.Disposable); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpDisposableClassificationType : ClassificationTypeDefinition = null
-
-    [<Export(typeof<EditorFormatDefinition>)>]
-    [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Function)>]
-    [<Name(FSharpClassificationTypes.Function)>]
-    [<UserVisible(true)>]
-    [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpFunctionTypeFormat() as self =
-        inherit ClassificationFormatDefinition()
-
-        do self.DisplayName <- SR.FSharpFunctionsOrMethodsClassificationType()
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.MutableVar)>]
@@ -159,17 +141,6 @@ module internal ClassificationDefinitions =
 
         do self.DisplayName <- SR.FSharpMutableVarsClassificationType()
            self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.MutableVar
-
-    [<Export(typeof<EditorFormatDefinition>)>]
-    [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Printf)>]
-    [<Name(FSharpClassificationTypes.Printf)>]
-    [<UserVisible(true)>]
-    [<Order(After = PredefinedClassificationTypeNames.String)>]
-    type internal FSharpPrintfTypeFormat [<ImportingConstructor>](theme: ThemeColors) as self =
-        inherit ClassificationFormatDefinition()
-
-        do self.DisplayName <- SR.FSharpPrintfFormatClassificationType()
-           self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Printf
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Disposable)>]
