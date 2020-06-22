@@ -108,26 +108,27 @@ module private Impl =
         |   _ ->
                 Object.Equals(expected, actual)
 
+    /// Special treatment of float and float32 to get a somewhat meaningful error message 
+    /// (otherwise, the missing precision leads to different values that are close together looking the same)
+    let floatStr (flt1: obj) (flt2: obj)  = 
+        match flt1, flt2 with
+        | :? float as flt1, (:? float as flt2) ->
+            flt1.ToString("R"), flt2.ToString("R")
+
+        | :? float32 as flt1, (:? float32 as flt2) ->
+            flt1.ToString("R"), flt2.ToString("R")
+
+        | _ -> flt1.ToString(), flt2.ToString()
+
+
 type Assert =
     
     static member AreEqual(expected : obj, actual : obj, message : string) =
+            
         if not (Impl.equals expected actual) then
             let message = 
-                // Special treatment of float and float32 to get a somewhat meaningful error message 
-                // (otherwise, the missing precision leads to different values that are close together looking the same)
-                match expected, actual with
-                | :? float as expected, (:? float as actual) ->
-                    let exp = expected.ToString("R")
-                    let act = actual.ToString("R")
-                    sprintf "%s: Expected %s but got %s" message exp act
-
-                | :? float32 as expected, (:? float32 as actual) ->
-                    let exp = expected.ToString("R")
-                    let act = actual.ToString("R")
-                    sprintf "%s: Expected %s but got %s" message exp act
-
-                | _ ->
-                    sprintf "%s: Expected %A but got %A" message expected actual
+                let (exp, act) = Impl.floatStr expected actual
+                sprintf "%s: Expected %s but got %s" message exp act
 
             AssertionException message |> raise
 
@@ -137,6 +138,17 @@ type Assert =
             AssertionException message |> raise
 
     static member AreEqual(expected : obj, actual : obj) = Assert.AreEqual(expected, actual, "Assertion")
+
+    /// Use this to compare floats within a delta of 1e-15, useful for discrepancies
+    /// between 80-bit (dotnet, RyuJIT) and 64-bit (x86, Legacy JIT) floating point calculations
+    static member AreNearEqual(expected: float, actual: float) =
+        let delta = 1.0e-15
+        let message = 
+            let ((e, a)) = Impl.floatStr expected actual
+            sprintf "Are near equal: expected %s, but got %s (with delta: %f)" e a delta
+
+        global.NUnit.Framework.Assert.AreEqual(expected, actual, 1.0, message)
+        Assert.AreEqual(Math.Round(expected, 15), Math.Round(actual, 15), message)
 
     static member AreNotEqual(expected : obj, actual : obj) = Assert.AreNotEqual(expected, actual, "Assertion")
 

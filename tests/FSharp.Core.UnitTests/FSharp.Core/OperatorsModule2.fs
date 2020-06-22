@@ -425,7 +425,7 @@ type OperatorsModule2() =
         
     [<Test>]
     member _.reraise() =
-        // double
+        // nothing to reraise should not trigger exception
         try
             ()
         with
@@ -437,9 +437,53 @@ type OperatorsModule2() =
         let result = Operators.round 10.0
         Assert.AreEqual(10.0, result)
         
+        // double
+        let result = Operators.round 0.6640367702678489
+        Assert.AreEqual(1.0, result)
+        
+        // double
+        let result = Operators.round 0.6640367702678489e4
+        Assert.AreEqual(6640.0, result)
+        
+        // double, show half-to-even
+        let result = Operators.round 0.6640500000e4
+        Assert.AreEqual(6640.0, result)
+        
+        // double, show half-to-even
+        let result = Operators.round 0.6639500000e4
+        Assert.AreEqual(6640.0, result)
+        
+        // double, show half-to-even
+        let result = Operators.round 0.6641500000e4
+        Assert.AreEqual(6642.0, result)
+        
+        // double, show rounding up if anything follows '5'
+        let result = Operators.round 0.66405000001e4
+        Assert.AreEqual(6641.0, result)
+        
         // decimal
         let result = Operators.round 10M
         Assert.AreEqual(10M, result)
+        
+        // decimal, show half-to-even
+        let result = Operators.round 1233.5M
+        Assert.AreEqual(1234M, result)
+        
+        // decimal, show half-to-even
+        let result = Operators.round 1234.5M
+        Assert.AreEqual(1234M, result)
+        
+        // decimal, show half-to-even
+        let result = Operators.round 1235.5M
+        Assert.AreEqual(1236M, result)
+        
+        // decimal, show rounding up if anything follows '5'
+        let result = Operators.round 1234.500000000001M
+        Assert.AreEqual(1235M, result)
+        
+        // decimal, round up
+        let result = Operators.round 1234.6M
+        Assert.AreEqual(1235M, result)
         
     [<Test>]
     member _.sbyte() =
@@ -508,7 +552,7 @@ type OperatorsModule2() =
     member _.sin() =
         
         let result = Operators.sin 0.5
-        Assert.AreEqual(0.479425538604203, result)
+        Assert.AreNearEqual(0.479425538604203, result)
         
     [<Test>]
     member _.single() =
@@ -528,7 +572,7 @@ type OperatorsModule2() =
     member _.sinh() =
      
         let result = Operators.sinh 1.0
-        Assert.AreEqual(1.1752011936438014, result)
+        Assert.AreNearEqual(1.1752011936438014, result)
         
     [<Test>]
     member _.sizeof() =
@@ -597,26 +641,17 @@ type OperatorsModule2() =
     member _.tan() =
         // double
         let result = Operators.tan 1.0
-        Assert.AreEqual(1.5574077246549023, result)
+        Assert.AreNearEqual(1.5574077246549023, result)
         
     [<Test>]
     member _.tanh() =
         // The x86 runtime uses 64 bit precision, whereas the x64 runtime uses SSE instructions with 80 bit precision
         // details can be found here: https://github.com/dotnet/fsharp/issues/9522
         let result = Operators.tanh 0.8
-        if Info.isX86Runtime then
-            Assert.AreEqual(0.66403677026784902, result)
-        else
-            Assert.AreEqual(0.66403677026784891, result)
+        Assert.AreNearEqual(0.66403677026784902, result)
 
         let result = Operators.tanh 19.06154
-        if Info.isX86Runtime then
-            Assert.AreEqual(1.0, result)
-        else
-            Assert.AreEqual(0.99999999999999989, result)
-
-        let result = Operators.tanh 19.06095
-        Assert.AreEqual(0.99999999999999989, result)
+        Assert.AreNearEqual(1.0, result)        // can be 0.99999999999999989
 
         let result = tanh 0.0
         Assert.AreEqual(0.0, result)

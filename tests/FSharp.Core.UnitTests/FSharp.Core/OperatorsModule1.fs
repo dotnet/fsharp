@@ -184,11 +184,11 @@ type OperatorsModule1() =
         
         // min value
         let minacos = Operators.acos (0.0)
-        Assert.AreEqual(1.5707963267948966, minacos)
+        Assert.AreNearEqual(1.5707963267948966, minacos)
       
         // normal value
         let normalacos = Operators.acos (0.3)
-        Assert.AreEqual(1.2661036727794992, normalacos)
+        Assert.AreNearEqual(1.2661036727794992, normalacos)
       
         // max value
         let maxacos = Operators.acos (1.0)
@@ -203,41 +203,41 @@ type OperatorsModule1() =
       
         // normal value
         let normalasin = Operators.asin (0.5)
-        Assert.AreEqual(0.52359877559829893, normalasin)
+        Assert.AreNearEqual(0.52359877559829893, normalasin)
       
         // max value
         let maxasin = Operators.asin (1.0)
-        Assert.AreEqual(1.5707963267948966, maxasin)
+        Assert.AreNearEqual(1.5707963267948966, maxasin)
 
     [<Test>]
     member _.atan () =
         
         // min value
         let minatan = Operators.atan (0.0)
-        Assert.AreEqual(0.0, minatan)
+        Assert.AreNearEqual(0.0, minatan)
       
         // normal value
         let normalatan = Operators.atan (1.0)
-        Assert.AreEqual(0.78539816339744828, normalatan)
+        Assert.AreNearEqual(0.78539816339744828, normalatan)
       
         // biggish  value
         let maxatan = Operators.atan (infinity)
-        Assert.AreEqual(1.5707963267948966, maxatan)
+        Assert.AreNearEqual(1.5707963267948966, maxatan)
 
     [<Test>]
     member _.atan2 () =
         
         // min value
         let minatan2 = Operators.atan2 (0.0) (1.0)
-        Assert.AreEqual(0.0, minatan2)
+        Assert.AreNearEqual(0.0, minatan2)
       
         // normal value
         let normalatan2 = Operators.atan2 (1.0) (1.0)
-        Assert.AreEqual(0.78539816339744828, normalatan2)
+        Assert.AreNearEqual(0.78539816339744828, normalatan2)
       
         // biggish  value
         let maxatan2 = Operators.atan2 (1.0) (0.0)
-        Assert.AreEqual(1.5707963267948966, maxatan2)
+        Assert.AreNearEqual(1.5707963267948966, maxatan2)
 
     [<Test>]
     member _.box () =
@@ -342,18 +342,11 @@ type OperatorsModule1() =
       
         // normal value
         let normalcos = Operators.cos (1.0)
-        if Info.isNetFramework then
-            Assert.AreEqual(0.54030230586813977, normalcos)
-        elif Info.isNetCore then
-            Assert.AreEqual(0.5403023058681397, normalcos)
-        elif Info.isNetNative then
-            ()  // no idea how to test this scenario
-        else
-            Assert.Fail(sprintf "Unexpected framework: %s" Info.framework)
+        Assert.AreNearEqual(0.54030230586813977, normalcos)
         
         // biggish  value
         let maxcos = Operators.cos (1.57)
-        Assert.AreEqual(0.00079632671073326335, maxcos)
+        Assert.AreNearEqual(0.00079632671073326335, maxcos)
 
     [<Test>]
     member _.cosh () =
@@ -364,11 +357,11 @@ type OperatorsModule1() =
       
         // normal value
         let normalcosh = Operators.cosh (1.0)
-        Assert.AreEqual(1.5430806348152437, normalcosh)
+        Assert.AreNearEqual(1.5430806348152437, normalcosh)
         
         // biggish  value
         let maxcosh = Operators.cosh (1.57)
-        Assert.AreEqual(2.5073466880660993, maxcosh)
+        Assert.AreNearEqual(2.5073466880660993, maxcosh)
 
     [<Test>]
     member _.decimal () =
