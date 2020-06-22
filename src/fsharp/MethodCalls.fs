@@ -1742,8 +1742,8 @@ let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
 
     // Static IL interfaces fields are not supported in lower F# versions.
     if isInterfaceTy g finfo.ApparentEnclosingType then    
-        tryLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
-        tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+        checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+        checkLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
     CheckILFieldAttributes g finfo m
 

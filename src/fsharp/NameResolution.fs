@@ -800,7 +800,7 @@ let GetStaticPropertyItems infoReader nenv ad m ty =
                 yield KeyValuePair(propName , Item.Property(propName,[propInfo]))
     }
 
-let GetStaticFieldItems (infoReader: InfoReader) ad m ty =
+let GetStaticILFieldItems (infoReader: InfoReader) ad m ty =
     let fields =
        infoReader.GetILFieldInfosOfType(None, ad, m, ty)
        |> List.groupBy (fun f -> f.FieldName)
@@ -1059,9 +1059,9 @@ let MakeNestedTypeNoInstantiation (tinst: TType list) m (tcrefNested: TyconRef) 
     let tinstNested = tps |> List.map mkTyparTy
     mkAppTy tcrefNested (tinst @ tinstNested)
 
-let GetNestedTypeItemsOfType infoReader amap ad m ty =
+let GetNestedTypesOfTypeAsUnqualifiedItems infoReader amap ad m ty =
     let nestedTcrefGroups =
-        GetNestedTyconRefsOfType infoReader amap (ad, None, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) ty
+        GetNestedTyconRefsOfType infoReader amap (ad, None, TypeNameResolutionStaticArgsInfo.Indefinite, true, m) ty
         |> List.groupBy (fun (_, m) -> DemangleGenericTypeName m.LogicalName)
 
     seq {
@@ -1073,17 +1073,17 @@ let GetNestedTypeItemsOfType infoReader amap ad m ty =
     }
 
 let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (tcref:TyconRef) =
-    // If OpenStaticClasses is not enabled then don't do this
-    if amap.g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses then
+    // If OpenTypeDeclaration is not enabled then don't do this
+    if amap.g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration then
         let ty = generalizedTyconRef tcref
         let infoReader = InfoReader(g,amap)
 
         let items =
             [| 
-                yield! GetNestedTypeItemsOfType infoReader amap ad m ty
+                yield! GetNestedTypesOfTypeAsUnqualifiedItems infoReader amap ad m ty
                 yield! GetStaticMethodItems infoReader nenv ad m ty
                 yield! GetStaticPropertyItems infoReader nenv ad m ty
-                yield! GetStaticFieldItems infoReader ad m ty
+                yield! GetStaticILFieldItems infoReader ad m ty
                 yield! GetStaticEventItems infoReader ad m ty
             |]
 
@@ -1164,7 +1164,7 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
             eUnindexedExtensionMembers = eUnindexedExtensionMembers }
 
     let nenv = 
-        if TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true && isStaticClass g tcref then
+        if TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true then
            AddStaticContentOfTyconRefToNameEnv g amap ad m nenv tcref
         else
            nenv
@@ -2110,16 +2110,13 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 //-------------------------------------------------------------------------
 
 /// Perform name resolution for an identifier which must resolve to be a namespace or module.
-let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: ResultCollectionSettings) (amap: Import.ImportMap) m allowStaticClasses first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
-
-    // If the selected language version doesn't support open static classes then turn them off.
-    let allowStaticClasses = allowStaticClasses && amap.g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses
+let rec ResolveLongIdentAsModuleOrNamespace sink (atMostOne: ResultCollectionSettings) (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
             error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         | id2 :: rest2 ->
-            ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink atMostOne amap m allowStaticClasses false FullyQualified nenv ad id2 rest2 isOpenDecl
+            ResolveLongIdentAsModuleOrNamespace sink atMostOne amap m false FullyQualified nenv ad id2 rest2 isOpenDecl
     else
         let moduleOrNamespaces = nenv.ModulesAndNamespaces fullyQualified
         let namespaceNotFound = lazy(
@@ -2159,17 +2156,11 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
                 match moduleOrNamespaces.TryGetValue id.idText with 
                 | true, modrefs -> modrefs 
                 | _ -> []
-
-            let tcrefs = 
-                if allowStaticClasses then 
-                    LookupTypeNameInEnvNoArity fullyQualified id.idText nenv |> List.filter (isStaticClass amap.g) 
-                else []
-
-            modrefs @ tcrefs 
+            modrefs 
 
         if not erefs.IsEmpty then 
             /// Look through the sub-namespaces and/or modules
-            let rec look depth allowStaticClasses (modref: ModuleOrNamespaceRef) (lid: Ident list) =
+            let rec look depth (modref: ModuleOrNamespaceRef) (lid: Ident list) =
                 let mty = modref.ModuleOrNamespaceType
                 match lid with
                 | [] -> 
@@ -2181,12 +2172,7 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
                             match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with 
                             | true, res -> [res]
                             | _ -> []
-                        let tspecs = 
-                            if allowStaticClasses then 
-                                LookupTypeNameInEntityNoArity id.idRange id.idText mty 
-                                |> List.filter (modref.NestedTyconRef >> isStaticClass amap.g) 
-                            else []
-                        mspecs @ tspecs
+                        mspecs
                     
                     if not especs.IsEmpty then 
                         especs 
@@ -2194,8 +2180,7 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
                             let subref = modref.NestedTyconRef espec
                             if IsEntityAccessible amap m ad subref then
                                 notifyNameResolution subref id.idRange
-                                let allowStaticClasses = allowStaticClasses && (subref.IsModuleOrNamespace || isStaticClass amap.g subref)
-                                look (depth+1) allowStaticClasses subref rest
+                                look (depth+1) subref rest
                             else
                                 moduleNotFound modref mty id depth) 
                         |> List.reduce AddResults
@@ -2206,8 +2191,7 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
             |> List.map (fun eref ->
                 if IsEntityAccessible amap m ad eref then
                     notifyNameResolution eref id.idRange
-                    let allowStaticClasses = allowStaticClasses && (eref.IsModuleOrNamespace || isStaticClass amap.g eref)
-                    look 1 allowStaticClasses eref rest
+                    look 1 eref rest
                 else
                     raze (namespaceNotFound.Force()))
             |> List.reduce AddResults
@@ -2216,7 +2200,7 @@ let rec ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink (atMostOne: Resul
 
 // Note - 'rest' is annotated due to a bug currently in Unity (see: https://github.com/dotnet/fsharp/pull/7427)
 let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id (rest: Ident list) isOpenDecl f =
-    match ResolveLongIndentAsModuleOrNamespaceOrStaticClass sink ResultCollectionSettings.AllResults amap m false true fullyQualified nenv ad id [] isOpenDecl with
+    match ResolveLongIdentAsModuleOrNamespace sink ResultCollectionSettings.AllResults amap m true fullyQualified nenv ad id [] isOpenDecl with
     | Result modrefs ->
         match rest with
         | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(), id.idRange))

@@ -571,9 +571,15 @@ let private tryLanguageFeatureRuntimeErrorAux (infoReader: InfoReader) langFeatu
     if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
         let featureStr = infoReader.g.langVersion.GetFeatureString langFeature
         error (Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
+        false
+    else
+        true
 
-let tryLanguageFeatureRuntimeError infoReader langFeature m =
-    tryLanguageFeatureRuntimeErrorAux infoReader langFeature m error
+let checkLanguageFeatureRuntimeError infoReader langFeature m =
+    tryLanguageFeatureRuntimeErrorAux infoReader langFeature m error |> ignore
+
+let checkLanguageFeatureRuntimeErrorRecover infoReader langFeature m =
+    tryLanguageFeatureRuntimeErrorAux infoReader langFeature m errorR |> ignore
 
 let tryLanguageFeatureRuntimeErrorRecover infoReader langFeature m =
     tryLanguageFeatureRuntimeErrorAux infoReader langFeature m errorR

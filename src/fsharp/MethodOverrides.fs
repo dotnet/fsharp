@@ -311,7 +311,7 @@ module DispatchSlotChecking =
 
             // Always try to raise a target runtime error if we have a DIM.
             if reqdSlot.HasDefaultInterfaceImplementation then
-                tryLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+                checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
 
             let maybeResolvedSlot =
                 NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
