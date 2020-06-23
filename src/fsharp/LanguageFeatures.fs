@@ -32,6 +32,7 @@ type LanguageFeature =
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
+    | StringInterpolation
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -69,6 +70,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.WitnessPassing, previewVersion
             LanguageFeature.NameOf, previewVersion
+            LanguageFeature.StringInterpolation, previewVersion
         ]
 
     let specified =
@@ -138,6 +140,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()
+        | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

@@ -54,5 +54,39 @@ let ``Tokenizer test 1``() =
          ("STRING_TEXT", "\""); ("STRING_TEXT", "Hello"); ("STRING_TEXT", " ");
          ("STRING_TEXT", "world"); ("STRING", "\""); ("WHITESPACE", " ")])]
 
-    Assert.AreEqual(actual, expected)
+    if actual <> expected then 
+        printfn "actual   = %A" actual
+        printfn "expected = %A" expected
+        Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
+
+[<Test>]
+let ``Tokenizer test 2``() =
+    let tokenizedLines = 
+      tokenizeLines
+        [| "// Tests tokenizing string interpolation"
+           "let hello = $\"Hello world {1+1} = {2}\" " |]
+
+    let actual = 
+        [ for lineNo, lineToks in tokenizedLines do
+            yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
+    let expected = 
+      [(0,
+        [("LINE_COMMENT", "//"); ("LINE_COMMENT", " "); ("LINE_COMMENT", "Tests");
+         ("LINE_COMMENT", " "); ("LINE_COMMENT", "tokenizing"); ("LINE_COMMENT", " ");
+         ("LINE_COMMENT", "string"); ("LINE_COMMENT", " ");
+         ("LINE_COMMENT", "interpolation")]);
+       (1,
+        [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello"); ("WHITESPACE", " ");
+         ("EQUALS", "="); ("WHITESPACE", " "); ("STRING_TEXT", "$\"");
+         ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
+         ("STRING_TEXT", " "); ("STRING", "{"); ("STRING_TEXT", "1");
+         ("STRING_TEXT", "+"); ("STRING_TEXT", "1"); ("STRING_TEXT", "}");
+         ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
+         ("STRING", "{"); ("STRING_TEXT", "2"); ("STRING_TEXT", "}"); ("STRING", "\"");
+         ("STRING_TEXT", " ")])]
+  
+    if actual <> expected then 
+        printfn "actual   = %A" actual
+        printfn "expected = %A" expected
+        Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 

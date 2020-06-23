@@ -8,6 +8,7 @@ open Internal.Utilities.Text
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Range
 
@@ -32,6 +33,9 @@ type lexargs =
       lightSyntaxStatus: LightSyntaxStatus
       errorLogger: ErrorLogger
       applyLineDirectives: bool
+      /// The degree of nesting of '{..}' and the style of the string to continue afterwards, in an interpolation fill.
+      /// Nesting counters and styles of outer interpolating strings are pushed on this stack.
+      mutable interpolatedStringNesting: (int* LexerStringStyle) list
       pathMap: PathMap }
 
 type LongUnicodeLexResult =
@@ -47,9 +51,12 @@ val reusingLexbufForParsing: UnicodeLexing.Lexbuf -> (unit -> 'a) -> 'a
 
 val usingLexbufForParsing: UnicodeLexing.Lexbuf * string -> (UnicodeLexing.Lexbuf -> 'a) -> 'a
 
-val defaultStringFinisher: 'a -> 'b -> byte[] -> Parser.token
+type LexerStringFinisher =
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> token)
+    
+    member Finish: buf: ByteBuffer -> kind: LexerStringKind -> isInterpolatedStringPart: bool -> token
 
-val callStringFinisher: ('a -> 'b -> byte[] -> 'c) -> ByteBuffer -> 'a -> 'b -> 'c
+    static member Default: LexerStringFinisher
 
 val addUnicodeString: ByteBuffer -> string -> unit
 
@@ -57,7 +64,7 @@ val addUnicodeChar: ByteBuffer -> int -> unit
 
 val addByteChar: ByteBuffer -> char -> unit
 
-val stringBufferAsString: byte[] -> string
+val stringBufferAsString: ByteBuffer -> string
 
 val stringBufferAsBytes: ByteBuffer -> byte[]
 
@@ -85,9 +92,9 @@ exception IndentationProblem of string * Range.range
 
 module Keywords = 
 
-    val KeywordOrIdentifierToken: lexargs -> UnicodeLexing.Lexbuf -> string -> Parser.token
+    val KeywordOrIdentifierToken: lexargs -> UnicodeLexing.Lexbuf -> string -> token
 
-    val IdentifierToken: lexargs -> UnicodeLexing.Lexbuf -> string -> Parser.token
+    val IdentifierToken: lexargs -> UnicodeLexing.Lexbuf -> string -> token
 
     val DoesIdentifierNeedQuotation: string -> bool
 

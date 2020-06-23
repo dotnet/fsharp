@@ -115,19 +115,36 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
     let buf = ByteBuffer.Create 100 
     let m = lexbuf.LexemeRange 
     let startp = lexbuf.StartPos 
-    let fin = (fun _m2 b s -> 
-                     // Adjust the start-of-token mark back to the true start of the token 
-                     lexbuf.StartPos <- startp
-                     if b then
-                        if Lexhelp.stringBufferIsBytes buf then
-                            BYTEARRAY (Lexhelp.stringBufferAsBytes buf)
-                        else (
-                            fail args lexbuf (FSComp.SR.lexByteArrayCannotEncode()) ()
-                            BYTEARRAY (Lexhelp.stringBufferAsBytes buf)
-                        )
-                     else
-                        STRING (Lexhelp.stringBufferAsString s))  
+    let fin =
+        LexerStringFinisher (fun buf kind isPart -> 
+            // Adjust the start-of-token mark back to the true start of the token 
+            lexbuf.StartPos <- startp
+            if kind.IsByteString then
+                if kind.IsInterpolated then 
+                    fail args lexbuf (FSComp.SR.lexByteStringMayNotBeInterpolated()) ()
+                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf)
+                elif Lexhelp.stringBufferIsBytes buf then
+                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf)
+                else
+                    fail args lexbuf (FSComp.SR.lexByteArrayCannotEncode()) ()
+                    BYTEARRAY (Lexhelp.stringBufferAsBytes buf)
+            elif kind.IsInterpolated then 
+                let s = Lexhelp.stringBufferAsString buf
+                if kind.IsInterpolatedFirst then 
+                    if isPart then 
+                        INTERP_STRING_BEGIN_PART s
+                    else
+                        INTERP_STRING_BEGIN_END s
+                else
+                    if isPart then
+                        INTERP_STRING_PART s
+                    else
+                        INTERP_STRING_END s
+            else
+                let s = Lexhelp.stringBufferAsString buf
+                STRING s)  
     buf,fin,m
+           
              
 // Utility functions for processing XML documentation 
 
@@ -522,29 +539,78 @@ rule token args skip = parse
 
  | "(*IF-CAML*)" |  "(*IF-OCAML*)" 
      { let m = lexbuf.LexemeRange 
-       if not skip then (COMMENT (LexCont.MLOnly(args.ifdefStack,m))) else mlOnly m args skip lexbuf }
+       if not skip then (COMMENT (LexCont.MLOnly(args.ifdefStack, m))) else mlOnly m args skip lexbuf }
 
  | '"' 
-     { let buf,fin,m = startString args lexbuf 
-       if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m))) else string (buf,fin,m,args) skip lexbuf }
+     { let buf, fin, m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | (_, LexerStringStyle.TripleQuote) :: _ -> ()
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), lexbuf.LexemeRange))
+       | [] -> ()
+
+       if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, LexerStringKind.String, m))) else singleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
       
- | '"' '"' '"' 
-     { let buf,fin,m = startString args lexbuf 
-       if not skip then (STRING_TEXT (LexCont.TripleQuoteString(args.ifdefStack,m))) else tripleQuoteString (buf,fin,m,args) skip lexbuf }
+ | '$' '"' '"' '"' 
+     { let buf, fin, m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), lexbuf.LexemeRange))
+       | [] -> ()
+
+       if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, LexerStringKind.InterpolatedStringFirst, m))) else tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
       
  | '$' '"' 
-     { fail args lexbuf  (FSComp.SR.lexTokenReserved()) (WHITESPACE (LexCont.Token args.ifdefStack)) }
+     { let buf,fin,m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | (_, LexerStringStyle.TripleQuote) :: _ -> ()
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), lexbuf.LexemeRange))
+       | _ -> ()
+
+       if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, LexerStringKind.InterpolatedStringFirst, m))) else singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
+
+ | '"' '"' '"' 
+     { let buf, fin, m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), lexbuf.LexemeRange))
+       | _ -> ()
+
+       if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, LexerStringKind.String, m))) else tripleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
       
  | '@' '"' 
-     { let buf,fin,m = startString args lexbuf 
-       if not skip then (STRING_TEXT (LexCont.VerbatimString(args.ifdefStack,m))) else verbatimString (buf,fin,m,args) skip lexbuf }
+     { let buf, fin, m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | (_, LexerStringStyle.TripleQuote) :: _ -> ()
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), lexbuf.LexemeRange))
+       | _ -> ()
+
+       if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, LexerStringKind.String, m))) else verbatimString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
+
+ | ("$@" | "@$") '"' 
+     { let buf, fin, m = startString args lexbuf 
+       
+       // Single quote in triple quote ok, others disallowed
+       match args.interpolatedStringNesting with 
+       | (_, LexerStringStyle.TripleQuote) :: _ -> ()
+       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), lexbuf.LexemeRange))
+       | _ -> ()
+
+       if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, LexerStringKind.InterpolatedStringFirst, m))) else verbatimString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
 
  | truewhite+  
      { if skip then token args skip lexbuf
        else WHITESPACE (LexCont.Token args.ifdefStack) }
 
  | offwhite+  
-     { if args.lightSyntaxStatus.Status then errorR(Error(FSComp.SR.lexTabsNotAllowed(),lexbuf.LexemeRange))
+     { if args.lightSyntaxStatus.Status then errorR(Error(FSComp.SR.lexTabsNotAllowed(), lexbuf.LexemeRange))
        if not skip then (WHITESPACE (LexCont.Token args.ifdefStack)) else token args skip lexbuf }
 
  | "////" op_char* 
@@ -590,7 +656,7 @@ rule token args skip = parse
             | _ -> let text =  (String.sub s start (n-start)) 
                    let lineNumber = 
                        try int32 text
-                       with err -> errorR(Error(FSComp.SR.lexInvalidLineNumber(text),lexbuf.LexemeRange)); 0
+                       with err -> errorR(Error(FSComp.SR.lexInvalidLineNumber(text), lexbuf.LexemeRange)); 0
                    lineNumber, parseWhitespaceBeforeFile n // goto the next state
           
           and parseWhitespaceBeforeFile n =  
@@ -703,11 +769,38 @@ rule token args skip = parse
 
  | ">]" { GREATER_RBRACK }
 
- | "{" { LBRACE }
+ | "{"
+     {
+       match args.interpolatedStringNesting with
+       | [] -> ()
+       | (counter, style) :: rest ->
+         args.interpolatedStringNesting <- (counter + 1, style) :: rest
+       LBRACE
+     }
 
  | "|" { BAR }
 
- | "}" { RBRACE }
+ | "}" 
+     { 
+       // We encounter a '}' in the expression token stream.  First check if we're in an interpolated string expression
+       // and continue the string if necessary
+       match args.interpolatedStringNesting with
+       | (1, style) :: rest ->
+           args.interpolatedStringNesting <- rest
+           let buf, fin, m = startString args lexbuf 
+           if not skip then 
+               (STRING_TEXT (LexCont.String(args.ifdefStack, style, LexerStringKind.InterpolatedStringPart, m)))
+           else 
+               match style with 
+               | LexerStringStyle.Verbatim -> verbatimString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
+               | LexerStringStyle.SingleQuote -> singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
+               | LexerStringStyle.TripleQuote -> tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf 
+        | (counter, style) :: rest ->
+           args.interpolatedStringNesting <- (counter - 1, style) :: rest
+           RBRACE
+        | _ ->
+           RBRACE
+     }
 
  | "$" { DOLLAR }
 
@@ -750,7 +843,7 @@ rule token args skip = parse
  | "#light" anywhite* 
  | ("#indent" | "#light") anywhite+ "\"on\""
    { if args.lightSyntaxStatus.ExplicitlySet && args.lightSyntaxStatus.WarnOnMultipleTokens then 
-         warning(Error((0,"#light should only occur as the first non-comment text in an F# source file"),lexbuf.LexemeRange))
+         warning(Error((0,"#light should only occur as the first non-comment text in an F# source file"), lexbuf.LexemeRange))
      // TODO unreachable error above, I think? - brianmcn 
      args.lightSyntaxStatus.Status <- true 
      if not skip then (HASH_LIGHT (LexCont.Token args.ifdefStack)) else token args skip lexbuf } 
@@ -817,7 +910,7 @@ and ifdefSkip n m args skip = parse
      
      // If #if is the first thing on the line then increase depth, otherwise skip, because it is invalid (e.g. "(**) #if ...")
      if (m.StartColumn <> 0) then
-       if not skip then (INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack,n,m))) else ifdefSkip n m args skip lexbuf
+       if not skip then (INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, n, m))) else ifdefSkip n m args skip lexbuf
      else
        let tok = INACTIVECODE(LexCont.EndLine(LexerEndlineContinuation.Skip(args.ifdefStack,n+1,m))) 
        if not skip then tok else endline (LexerEndlineContinuation.Skip(args.ifdefStack,n+1,m)) args skip lexbuf }
@@ -828,7 +921,7 @@ and ifdefSkip n m args skip = parse
            
       // If #else is the first thing on the line then process it, otherwise ignore, because it is invalid (e.g. "(**) #else ...")
       if (m.StartColumn <> 0) then
-        if not skip then (INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack,n,m))) else ifdefSkip n m args skip lexbuf
+        if not skip then (INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, n, m))) else ifdefSkip n m args skip lexbuf
       elif n = 0 then 
          match args.ifdefStack with
          | []->  LEX_FAILURE (FSComp.SR.lexHashElseNoMatchingIf())
@@ -838,7 +931,7 @@ and ifdefSkip n m args skip = parse
            args.ifdefStack <- (IfDefElse,m) :: rest
            if not skip then (HASH_ELSE(m,lexed,LexCont.EndLine(LexerEndlineContinuation.Token(args.ifdefStack)))) else endline (LexerEndlineContinuation.Token(args.ifdefStack)) args skip lexbuf 
        else
-         if not skip then (INACTIVECODE(LexCont.EndLine(LexerEndlineContinuation.Skip(args.ifdefStack,n,m)))) else endline (LexerEndlineContinuation.Skip(args.ifdefStack,n,m)) args skip lexbuf }
+         if not skip then (INACTIVECODE(LexCont.EndLine(LexerEndlineContinuation.Skip(args.ifdefStack, n, m)))) else endline (LexerEndlineContinuation.Skip(args.ifdefStack, n, m)) args skip lexbuf }
           
   | anywhite* "#endif" anywhite* ("//" [^'\n''\r']*)?
     { let lexed = lexeme lexbuf
@@ -846,7 +939,7 @@ and ifdefSkip n m args skip = parse
       
       // If #endif is the first thing on the line then process it, otherwise ignore, because it is invalid (e.g. "(**) #endif ...")
       if (m.StartColumn <> 0) then
-          if not skip then (INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack,n,m))) else ifdefSkip n m args skip lexbuf
+          if not skip then (INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, n, m))) else ifdefSkip n m args skip lexbuf
       elif n = 0 then 
           match args.ifdefStack with
           | [] ->  LEX_FAILURE (FSComp.SR.lexHashEndingNoMatchingIf())
@@ -869,10 +962,10 @@ and ifdefSkip n m args skip = parse
 
   | _    
     { // This tries to be nice and get tokens as 'words' because VS uses this when selecting stuff
-      if not skip then (INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack,n,m))) else ifdefSkip n m args skip lexbuf }
+      if not skip then (INACTIVECODE (LexCont.IfDefSkip(args.ifdefStack, n, m))) else ifdefSkip n m args skip lexbuf }
 
   | eof  
-    { EOF (LexCont.IfDefSkip(args.ifdefStack,n,m)) }
+    { EOF (LexCont.IfDefSkip(args.ifdefStack, n, m)) }
 
 // Called after lexing #if IDENT/#else/#endif - this checks whether there is nothing except end of line 
 // or end of file and then calls the lexing function specified by 'cont' - either token or ifdefSkip 
@@ -896,37 +989,37 @@ and endline cont args skip = parse
    { let tok = fail args lexbuf (FSComp.SR.pplexExpectedSingleLineComment()) (WHITESPACE (LexCont.Token args.ifdefStack))
      if not skip then tok else token args skip lexbuf }     
 
-and string sargs skip = parse
+and singleQuoteString sargs skip = parse
  |  '\\' newline anywhite* 
-    { let (_buf,_fin,m,args) = sargs 
+    { let (_buf, _fin, m, kind, args) = sargs 
       newline lexbuf 
-      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m)))  else string sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf }
 
  |  escape_char
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       addByteChar buf (escape (lexeme lexbuf).[1])
-      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m)))  else string sargs skip lexbuf } 
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf } 
 
  | trigraph
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       let s = lexeme lexbuf 
       addByteChar buf (trigraph s.[1] s.[2] s.[3])
-      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m)))  else string sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf }
 
  | hexGraphShort
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       addUnicodeChar buf (int (hexGraphShort (lexemeTrimLeft lexbuf 2)))
-      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m)))  else string sargs skip lexbuf  }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf  }
       
  | unicodeGraphShort
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       addUnicodeChar buf (int (unicodeGraphShort (lexemeTrimLeft lexbuf 2)))
-      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m)))  else string sargs skip lexbuf  }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf  }
      
  | unicodeGraphLong
-    { let (buf,_fin,m,args) = sargs
+    { let (buf, _fin, m, kind, args) = sargs
       let hexChars = lexemeTrimLeft lexbuf 2
-      let result () = if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m))) else string sargs skip lexbuf
+      let result () = if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf
       match unicodeGraphLong hexChars with
       | Invalid ->
           fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) (result ())
@@ -939,213 +1032,257 @@ and string sargs skip = parse
           result () }
      
  |  '"' 
-    { let (buf,fin,_m,_args) = sargs 
-      let m2 = lexbuf.LexemeRange  
-      callStringFinisher fin buf m2 false }
+    { let (buf, fin, _m, kind, _args) = sargs 
+      fin.Finish buf kind false }
 
  |  '"''B' 
-    { let (buf,fin,_m,_args) = sargs 
-      let m2 = lexbuf.LexemeRange 
-      callStringFinisher fin buf m2 true }
+    { let (buf, fin, _m, kind, _args) = sargs 
+      fin.Finish buf { kind with IsByteString = true } false }
+
+ | ("{{" | "}}")
+    { let (buf, _fin, m, kind, args) = sargs 
+      let s = lexeme lexbuf
+      addUnicodeString buf (if kind.IsInterpolated then s.[0..0] else s)
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf }
+
+ | "{"
+    { let (buf, fin, m, kind, args) = sargs 
+      if kind.IsInterpolated then
+          args.interpolatedStringNesting <- (1, LexerStringStyle.SingleQuote) :: args.interpolatedStringNesting
+          fin.Finish buf kind true
+      else
+          addUnicodeString buf (lexeme lexbuf) 
+          if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf 
+    }
 
  | newline
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       newline lexbuf 
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m)))  else string sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf }
 
  | ident  
-    { let (buf,_fin,m,args) = sargs  
+    { let (buf, _fin, m, kind, args) = sargs  
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m)))  else string sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf }
 
  | integer 
  | xinteger
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m)))  else string sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf }
 
  | anywhite +  
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m)))  else string sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf }
 
  | eof  
-    { let (_buf,_fin,m,args) = sargs 
-      EOF (LexCont.String(args.ifdefStack,m)) }
+    { let (_buf, _fin, m, kind, args) = sargs 
+      EOF (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m)) }
 
  | surrogateChar surrogateChar // surrogate code points always come in pairs      
 
  | _ 
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack,m))) else string sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.SingleQuote, kind, m))) else singleQuoteString sargs skip lexbuf }
 
 and verbatimString sargs skip = parse
  |  '"' '"'
-   { let (buf,_fin,m,args) = sargs 
+   { let (buf, _fin, m, kind, args) = sargs
      addByteChar buf '\"'
-     if not skip then (STRING_TEXT (LexCont.VerbatimString(args.ifdefStack,m)))  else verbatimString sargs skip lexbuf } 
+     if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, kind, m))) else verbatimString sargs skip lexbuf } 
 
  |  '"' 
-    { let (buf,fin,_m,_args) = sargs 
-      let m2 = lexbuf.LexemeRange 
-      callStringFinisher fin buf m2 false }
+    { let (buf, fin, _m, kind, _args) = sargs 
+      fin.Finish buf kind false }
 
  |  '"''B' 
-    { let (buf,fin,_m,_args) = sargs 
-      let m2 = lexbuf.LexemeRange 
-      callStringFinisher fin buf m2 true }
+    { let (buf, fin, _m, kind, _args) = sargs 
+      fin.Finish buf { kind with IsByteString = true } false }
 
  | newline 
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       newline lexbuf 
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.VerbatimString(args.ifdefStack,m)))  else verbatimString sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, kind, m))) else verbatimString sargs skip lexbuf }
+
+ | ("{{" | "}}")
+    { let (buf, _fin, m, kind, args) = sargs 
+      let s = lexeme lexbuf
+      addUnicodeString buf (if kind.IsInterpolated then s.[0..0] else s)
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, kind, m))) else verbatimString sargs skip lexbuf }
+
+ | "{"
+    { let (buf, fin, m, kind, args) = sargs 
+      if kind.IsInterpolated then
+          args.interpolatedStringNesting <- (1, LexerStringStyle.Verbatim) :: args.interpolatedStringNesting
+          fin.Finish buf kind true
+      else
+          addUnicodeString buf (lexeme lexbuf) 
+          if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, kind, m))) else verbatimString sargs skip lexbuf 
+    }
 
  | ident  
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.VerbatimString(args.ifdefStack,m)))  else verbatimString sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, kind, m))) else verbatimString sargs skip lexbuf }
 
  | integer 
  | xinteger
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.VerbatimString(args.ifdefStack,m)))  else verbatimString sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, kind, m))) else verbatimString sargs skip lexbuf }
 
  | anywhite +  
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.VerbatimString(args.ifdefStack,m)))  else verbatimString sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, kind, m))) else verbatimString sargs skip lexbuf }
 
  | eof 
-    { let (_buf,_fin,m,args) = sargs 
-      EOF (LexCont.VerbatimString(args.ifdefStack,m)) }
+    { let (_buf, _fin, m, kind, args) = sargs 
+      EOF (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, kind, m)) }
+
  | surrogateChar surrogateChar // surrogate code points always come in pairs            
  | _ 
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.VerbatimString(args.ifdefStack,m))) else verbatimString sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.Verbatim, kind, m))) else verbatimString sargs skip lexbuf }
 
 and tripleQuoteString sargs skip = parse
  |  '"' '"' '"' 
-    { let (buf,fin,_m,_args) = sargs 
-      let m2 = lexbuf.LexemeRange 
-      callStringFinisher fin buf m2 false }
+    { let (buf, fin, _m, kind, _args) = sargs 
+      fin.Finish buf kind false }
 
  | newline 
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       newline lexbuf 
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.TripleQuoteString(args.ifdefStack,m)))  else tripleQuoteString sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, kind, m))) else tripleQuoteString sargs skip lexbuf }
 
 // The rest is to break into pieces to allow double-click-on-word and other such things 
  | ident  
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.TripleQuoteString(args.ifdefStack,m)))  else tripleQuoteString sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, kind, m))) else tripleQuoteString sargs skip lexbuf }
 
  | integer 
  | xinteger
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.TripleQuoteString(args.ifdefStack,m)))  else tripleQuoteString sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, kind, m))) else tripleQuoteString sargs skip lexbuf }
 
  | anywhite +  
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.TripleQuoteString(args.ifdefStack,m)))  else tripleQuoteString sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, kind, m))) else tripleQuoteString sargs skip lexbuf }
+
+ | ("{{" | "}}")
+    { let (buf, _fin, m, kind, args) = sargs 
+      let s = lexeme lexbuf
+      addUnicodeString buf (if kind.IsInterpolated then s.[0..0] else s)
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, kind, m))) else tripleQuoteString sargs skip lexbuf }
+
+ | "{"
+    { let (buf, fin, m, kind, args) = sargs 
+      if kind.IsInterpolated then
+          args.interpolatedStringNesting <- (1, LexerStringStyle.TripleQuote) :: args.interpolatedStringNesting
+          fin.Finish buf kind true
+      else
+          addUnicodeString buf (lexeme lexbuf) 
+          if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, kind, m))) else tripleQuoteString sargs skip lexbuf 
+    }
 
  | eof 
-    { let (_buf,_fin,m,args) = sargs 
-      EOF (LexCont.TripleQuoteString(args.ifdefStack,m)) }
+    { let (_buf, _fin, m, kind, args) = sargs 
+      EOF (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, kind, m)) }
 
  | surrogateChar surrogateChar // surrogate code points always come in pairs            
  | _ 
-    { let (buf,_fin,m,args) = sargs 
+    { let (buf, _fin, m, kind, args) = sargs 
       addUnicodeString buf (lexeme lexbuf) 
-      if not skip then (STRING_TEXT (LexCont.TripleQuoteString(args.ifdefStack,m))) else tripleQuoteString sargs skip lexbuf }
+      if not skip then (STRING_TEXT (LexCont.String(args.ifdefStack, LexerStringStyle.TripleQuote, kind, m))) else tripleQuoteString sargs skip lexbuf }
 
 // Parsing single-line comment - we need to split it into words for Visual Studio IDE 
 and singleLineComment cargs skip = parse 
  | newline
-     { let buff,_n,_m,args = cargs 
+     { let buff,_n, _m, args = cargs 
        trySaveXmlDoc lexbuf buff
        newline lexbuf 
        // Saves the documentation (if we're collecting any) into a buffer-local variable.
        if not skip then (LINE_COMMENT (LexCont.Token args.ifdefStack)) else token args skip lexbuf }
  
  | eof 
-     { let _, _n,_m,args = cargs 
+     { let _, _n, _m, args = cargs 
        // NOTE: it is legal to end a file with this comment, so we'll return EOF as a token 
        EOF (LexCont.Token args.ifdefStack) } 
       
  | [^ ' ' '\n' '\r' ]+
  | anywhite+
-     { let buff,n,m,args = cargs 
+     { let buff, n, m, args = cargs 
        // Append the current token to the XML documentation if we're collecting it 
        tryAppendXmlDoc buff (lexeme lexbuf)
-       if not skip then (LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack,n,m))) else singleLineComment (buff,n,m,args) skip lexbuf  } 
+       if not skip then (LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, n, m))) else singleLineComment (buff,n, m, args) skip lexbuf  } 
        
  | surrogateChar surrogateChar
- | _ { let _, _n,_m,args = cargs 
-      if not skip then (LINE_COMMENT (LexCont.Token args.ifdefStack)) else token args skip lexbuf }
+ | _ { let _, _n, _m, args = cargs 
+       if not skip then (LINE_COMMENT (LexCont.Token args.ifdefStack)) else token args skip lexbuf }
 
        
 and comment cargs skip = parse
  |  char
-    { let n,m,args = cargs 
-      if not skip then (COMMENT (LexCont.Comment(args.ifdefStack,n,m))) else comment (n,m,args) skip lexbuf  } 
+    { let n, m, args = cargs 
+      if not skip then (COMMENT (LexCont.Comment(args.ifdefStack, n, m))) else comment (n, m, args) skip lexbuf  } 
     
  | '"'   
-    { let n,m,args = cargs 
-      if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack,n,m))) else stringInComment n m args skip lexbuf }
+    { let n, m, args = cargs 
+      if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.SingleQuote, n, m))) else stringInComment n m args skip lexbuf }
 
  | '"' '"' '"'  
-    { let n,m,args = cargs 
-      if not skip then (COMMENT (LexCont.TripleQuoteStringInComment(args.ifdefStack,n,m))) else tripleQuoteStringInComment n m args skip lexbuf }
+    { let n, m, args = cargs 
+      if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.TripleQuote, n, m))) else tripleQuoteStringInComment n m args skip lexbuf }
 
  | '@' '"'
-    { let n,m,args = cargs 
-      if not skip then (COMMENT (LexCont.VerbatimStringInComment(args.ifdefStack,n,m))) else verbatimStringInComment n m args skip lexbuf }
+    { let n, m, args = cargs 
+      if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.Verbatim, n, m))) else verbatimStringInComment n m args skip lexbuf }
 
  | "(*)"
-    { let n,m,args = cargs 
-      if not skip then (COMMENT (LexCont.Comment(args.ifdefStack,n,m))) else comment cargs skip lexbuf }
+    { let n, m, args = cargs 
+      if not skip then (COMMENT (LexCont.Comment(args.ifdefStack, n, m))) else comment cargs skip lexbuf }
 
  | '(' '*'
-    { let n,m,args = cargs 
-      if not skip then (COMMENT (LexCont.Comment(args.ifdefStack,n+1,m))) else comment (n+1,m,args) skip lexbuf }
+    { let n, m, args = cargs 
+      if not skip then (COMMENT (LexCont.Comment(args.ifdefStack, n+1, m))) else comment (n+1,m,args) skip lexbuf }
      
  | newline
-    { let n,m,args = cargs 
+    { let n, m, args = cargs 
       newline lexbuf 
-      if not skip then (COMMENT (LexCont.Comment(args.ifdefStack,n,m))) else comment cargs skip lexbuf }
+      if not skip then (COMMENT (LexCont.Comment(args.ifdefStack, n, m))) else comment cargs skip lexbuf }
  | "*)" 
     { 
-      let n,m,args = cargs 
+      let n, m, args = cargs 
       if n > 1 then if not skip then (COMMENT (LexCont.Comment(args.ifdefStack,n-1,m))) else comment (n-1,m,args) skip lexbuf 
       else if not skip then (COMMENT (LexCont.Token args.ifdefStack)) else token args skip lexbuf }
       
  | anywhite+
  | [^ '\'' '(' '*' '\n' '\r' '"' ')' '@' ' ' '\t' ]+  
-    { let n,m,args = cargs 
-      if not skip then (COMMENT (LexCont.Comment(args.ifdefStack,n,m))) else comment cargs skip lexbuf }
+    { let n, m, args = cargs 
+      if not skip then (COMMENT (LexCont.Comment(args.ifdefStack, n, m))) else comment cargs skip lexbuf }
     
  | eof 
-     { let n,m,args = cargs 
-       EOF (LexCont.Comment(args.ifdefStack,n,m)) }
+     { let n, m, args = cargs 
+       EOF (LexCont.Comment(args.ifdefStack, n, m)) }
      
  | surrogateChar surrogateChar
- | _ { let n,m,args = cargs 
-       if not skip then (COMMENT (LexCont.Comment(args.ifdefStack,n,m))) else comment (n,m,args) skip lexbuf }
+ | _ { let n, m, args = cargs 
+       if not skip then (COMMENT (LexCont.Comment(args.ifdefStack, n, m))) else comment (n, m, args) skip lexbuf }
 
 and stringInComment n m args skip = parse
  // Follow string lexing, skipping tokens until it finishes 
  |  '\\' newline anywhite* 
      { newline lexbuf 
-       if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack,n,m))) else stringInComment n m args skip lexbuf }
+       if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.SingleQuote, n, m))) else stringInComment n m args skip lexbuf }
 
  | escape_char
  | trigraph
@@ -1156,80 +1293,80 @@ and stringInComment n m args skip = parse
  | integer
  | xinteger
  | anywhite +  
-     { if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack,n,m))) else stringInComment n m args skip lexbuf }
+     { if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.SingleQuote, n, m))) else stringInComment n m args skip lexbuf }
 
 
  | '"' 
-     { if not skip then (COMMENT (LexCont.Comment(args.ifdefStack,n,m))) else comment (n,m,args) skip lexbuf }
+     { if not skip then (COMMENT (LexCont.Comment(args.ifdefStack, n, m))) else comment (n, m, args) skip lexbuf }
      
  | newline 
      { newline lexbuf  
-       if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack,n,m))) else stringInComment n m args skip lexbuf }
+       if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.SingleQuote, n, m))) else stringInComment n m args skip lexbuf }
      
  | eof 
-     { EOF (LexCont.StringInComment(args.ifdefStack,n,m)) }
+     { EOF (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.SingleQuote, n, m)) }
      
  | surrogateChar surrogateChar
  | _  
-     { if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack,n,m))) else stringInComment n m args skip lexbuf }
+     { if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.SingleQuote, n, m))) else stringInComment n m args skip lexbuf }
 
 and verbatimStringInComment n m args skip = parse
  // Follow verbatimString lexing, in short, skip double-quotes and other chars until we hit a single quote 
  | '"' '"'
-     { if not skip then (COMMENT (LexCont.VerbatimStringInComment(args.ifdefStack,n,m))) else verbatimStringInComment n m args skip lexbuf }
+     { if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.Verbatim, n, m))) else verbatimStringInComment n m args skip lexbuf }
 
  | '"' 
-     { if not skip then (COMMENT (LexCont.Comment(args.ifdefStack,n,m))) else comment (n,m,args) skip lexbuf }
+     { if not skip then (COMMENT (LexCont.Comment(args.ifdefStack, n, m))) else comment (n, m, args) skip lexbuf }
 
  | ident  
  | integer 
  | xinteger
  | anywhite +  
-     { if not skip then (COMMENT (LexCont.VerbatimStringInComment(args.ifdefStack,n,m))) else verbatimStringInComment n m args skip lexbuf }
+     { if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.Verbatim, n, m))) else verbatimStringInComment n m args skip lexbuf }
      
  | newline 
      { newline lexbuf
-       if not skip then (COMMENT (LexCont.VerbatimStringInComment(args.ifdefStack,n,m))) else verbatimStringInComment n m args skip lexbuf }
+       if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.Verbatim, n, m))) else verbatimStringInComment n m args skip lexbuf }
      
  | eof 
-     { EOF (LexCont.VerbatimStringInComment(args.ifdefStack,n,m)) }
+     { EOF (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.Verbatim, n, m)) }
  
  | surrogateChar surrogateChar
  | _  
-     { if not skip then (COMMENT (LexCont.VerbatimStringInComment(args.ifdefStack,n,m))) else verbatimStringInComment n m args skip lexbuf }
+     { if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.Verbatim, n, m))) else verbatimStringInComment n m args skip lexbuf }
      
 and tripleQuoteStringInComment n m args skip = parse
  // Follow tripleQuoteString lexing 
  | '"' '"' '"'
-     { if not skip then (COMMENT (LexCont.Comment(args.ifdefStack,n,m))) else comment (n,m,args) skip lexbuf }
+     { if not skip then (COMMENT (LexCont.Comment(args.ifdefStack, n, m))) else comment (n, m, args) skip lexbuf }
 
  | ident  
  | integer 
  | xinteger
  | anywhite +  
-     { if not skip then (COMMENT (LexCont.TripleQuoteStringInComment(args.ifdefStack,n,m))) else tripleQuoteStringInComment n m args skip lexbuf }
+     { if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.TripleQuote, n, m))) else tripleQuoteStringInComment n m args skip lexbuf }
      
  | newline 
      { newline lexbuf
-       if not skip then (COMMENT (LexCont.TripleQuoteStringInComment(args.ifdefStack,n,m))) else tripleQuoteStringInComment n m args skip lexbuf }
+       if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.TripleQuote, n, m))) else tripleQuoteStringInComment n m args skip lexbuf }
      
  | eof 
-     { EOF (LexCont.TripleQuoteStringInComment(args.ifdefStack,n,m)) }
+     { EOF (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.TripleQuote, n, m)) }
  
  | surrogateChar surrogateChar
  | _  
-     { if not skip then (COMMENT (LexCont.TripleQuoteStringInComment(args.ifdefStack,n,m))) else tripleQuoteStringInComment n m args skip lexbuf }
+     { if not skip then (COMMENT (LexCont.StringInComment(args.ifdefStack, LexerStringStyle.TripleQuote, n, m))) else tripleQuoteStringInComment n m args skip lexbuf }
      
 
 and mlOnly m args skip = parse
  | "\""
      { let buf = ByteBuffer.Create 100 
        let m2 = lexbuf.LexemeRange 
-       let _ = string (buf,defaultStringFinisher,m2,args) skip lexbuf 
-       if not skip then (COMMENT (LexCont.MLOnly(args.ifdefStack,m))) else mlOnly m args skip lexbuf }
+       let _ = singleQuoteString (buf, LexerStringFinisher.Default, m2, LexerStringKind.String, args) skip lexbuf 
+       if not skip then (COMMENT (LexCont.MLOnly(args.ifdefStack, m))) else mlOnly m args skip lexbuf }
 
  | newline 
-     { newline lexbuf;  if not skip then (COMMENT (LexCont.MLOnly(args.ifdefStack,m))) else mlOnly m args skip lexbuf }
+     { newline lexbuf;  if not skip then (COMMENT (LexCont.MLOnly(args.ifdefStack, m))) else mlOnly m args skip lexbuf }
 
  | "(*ENDIF-CAML*)"  
      {  if not skip then (COMMENT (LexCont.Token args.ifdefStack)) else token args skip lexbuf }
@@ -1238,11 +1375,11 @@ and mlOnly m args skip = parse
      {  if not skip then (COMMENT (LexCont.Token args.ifdefStack)) else token args skip lexbuf }
 
  | [^ '(' '"' '\n' '\r' ]+  
-     { if not skip then (COMMENT (LexCont.MLOnly(args.ifdefStack,m))) else mlOnly m args skip lexbuf }
+     { if not skip then (COMMENT (LexCont.MLOnly(args.ifdefStack, m))) else mlOnly m args skip lexbuf }
 
  | eof 
-     { EOF (LexCont.MLOnly(args.ifdefStack,m)) }
+     { EOF (LexCont.MLOnly(args.ifdefStack, m)) }
 
  | surrogateChar surrogateChar 
  | _ 
-     {  if not skip then (COMMENT (LexCont.MLOnly(args.ifdefStack,m))) else mlOnly m args skip lexbuf }
+     {  if not skip then (COMMENT (LexCont.MLOnly(args.ifdefStack, m))) else mlOnly m args skip lexbuf }

@@ -196,7 +196,10 @@ module CoreTests =
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun' "core/letrec-mutrec2" FSI_BASIC
 
     [<Test>]
-    let ``printf-FSC_BASIC`` () = singleTestBuildAndRun' "core/printf" FSC_BASIC
+    let ``printf`` () = singleTestBuildAndRun' "core/printf" FSC_BASIC
+
+    [<Test>]
+    let ``printf-interpolated`` () = singleTestBuildAndRunVersion' "core/printf-interpolated" FSC_BASIC "preview"
 
     [<Test>]
     let ``tlr-FSC_BASIC`` () = singleTestBuildAndRun' "core/tlr" FSC_BASIC

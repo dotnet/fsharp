@@ -1166,6 +1166,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_EOF -> getErrorString("Parser.TOKEN.EOF")
               | Parser.TOKEN_CONST -> getErrorString("Parser.TOKEN.CONST")
               | Parser.TOKEN_FIXED -> getErrorString("Parser.TOKEN.FIXED")
+              | Parser.TOKEN_INTERP_STRING_BEGIN_END -> getErrorString("Parser.TOKEN.INTERP.STRING.BEGIN.END")
+              | Parser.TOKEN_INTERP_STRING_BEGIN_PART -> getErrorString("Parser.TOKEN.INTERP.STRING.BEGIN.PART")
+              | Parser.TOKEN_INTERP_STRING_PART -> getErrorString("Parser.TOKEN.INTERP.STRING.PART")
+              | Parser.TOKEN_INTERP_STRING_END -> getErrorString("Parser.TOKEN.INTERP.STRING.END")
               | unknown ->           
                   Debug.Assert(false, "unknown token tag")
                   let result = sprintf "%+A" unknown
