@@ -181,7 +181,7 @@ module public AstTraversal =
                 | SynModuleDecl.DoExpr(_sequencePointInfoForBinding, synExpr, _range) -> traverseSynExpr path synExpr  
                 | SynModuleDecl.Types(synTypeDefnList, _range) -> synTypeDefnList |> List.map (fun x -> dive x x.Range (traverseSynTypeDefn path)) |> pick decl
                 | SynModuleDecl.Exception(_synExceptionDefn, _range) -> None
-                | SynModuleDecl.Open(_longIdent, _range) -> None
+                | SynModuleDecl.Open(_longIdent, _isOpenType, _range) -> None
                 | SynModuleDecl.Attributes(_synAttributes, _range) -> None
                 | SynModuleDecl.HashDirective(_parsedHashDirective, range) -> visitor.VisitHashDirective range
                 | SynModuleDecl.NamespaceFragment(synModuleOrNamespace) -> traverseSynModuleOrNamespace path synModuleOrNamespace
@@ -611,7 +611,7 @@ module public AstTraversal =
             let pick (debugObj:obj) = pick m.Range debugObj
             let path = TraverseStep.MemberDefn m :: path
             match m with
-            | SynMemberDefn.Open(_longIdent, _range) -> None
+            | SynMemberDefn.Open(_longIdent, _isOpenType, _range) -> None
             | SynMemberDefn.Member(synBinding, _range) -> traverseSynBinding path synBinding
             | SynMemberDefn.ImplicitCtor(_synAccessOption, _synAttributes, simplePats, _identOption, _range) ->
                 match simplePats with

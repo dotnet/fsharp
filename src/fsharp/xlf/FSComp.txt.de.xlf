@@ -112,9 +112,9 @@
         <target state="new">nullable optional interop</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureOpenStaticClasses">
-        <source>open static classes</source>
-        <target state="new">open static classes</target>
+      <trans-unit id="featureOpenTypeDeclaration">
+        <source>open type declaration</source>
+        <target state="new">open type declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">

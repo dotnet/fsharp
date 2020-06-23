@@ -844,14 +844,14 @@ type internal TypeCheckInfo
                          | _ when IsAttribute infoReader cItem.Item -> true
                          | _ -> false), denv, m)
             
-            | Some(CompletionContext.OpenDeclaration) ->
+            | Some(CompletionContext.OpenDeclaration isOpenType) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                     items 
                     |> List.filter (fun x ->
                         match x.Item with
-                        | Item.ModuleOrNamespaces _ -> true
-                        | Item.Types (_, tcrefs) when tcrefs |> List.exists (fun ty -> isAppTy g ty && isStaticClass g (tcrefOfAppTy g ty)) -> true
+                        | Item.ModuleOrNamespaces _ when not isOpenType -> true
+                        | Item.Types (_, tcrefs) when isOpenType && tcrefs |> List.exists (fun ty -> isAppTy g ty) -> true
                         | _ -> false), denv, m)
             
             // Completion at '(x: ...)"

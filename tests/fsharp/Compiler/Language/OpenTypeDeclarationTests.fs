@@ -14,7 +14,7 @@ open FSharp.Test.Utilities.Utilities
 *)
 
 [<TestFixture>]
-module OpenStaticClassesTests =
+module OpenTypeDeclarationTests =
 
     let baseModule = """
 module Core_OpenStaticClasses
@@ -37,13 +37,13 @@ type NotAllowedToOpen() =
 """
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenSystemMathOnce - langversion:v4.6`` () =
+    let ``OpenSystemMathOnce - langversion:v4.6`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
             (baseModule + """
 module OpenSystemMathOnce =
 
-               open System.Math
+               open type System.Math
                let x = Min(1.0, 2.0)""")
             [|
                 (FSharpErrorSeverity.Error, 39, (22,28,22,32), "The namespace 'Math' is not defined.");
@@ -51,27 +51,27 @@ module OpenSystemMathOnce =
             |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenSystemMathOnce - langversion:preview`` () =
+    let ``OpenSystemMathOnce - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:preview" |]
             (baseModule + """
 module OpenSystemMathOnce =
 
-                       open System.Math
+                       open type System.Math
                        let x = Min(1.0, 2.0)""")
             [| |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenSystemMathTwice - langversion:v4.6`` () =
+    let ``OpenSystemMathTwice - langversion:v4.6`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
             (baseModule + """
 module OpenSystemMathTwice = 
 
-    open System.Math
+    open type System.Math
     let x = Min(1.0, 2.0)
 
-    open System.Math
+    open type System.Math
     let x2 = Min(2.0, 1.0)""")
             [|
                 (FSharpErrorSeverity.Error, 39, (22,17,22,21), "The namespace 'Math' is not defined.");
@@ -81,24 +81,24 @@ module OpenSystemMathTwice =
             |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenSystemMathTwice - langversion:preview`` () =
+    let ``OpenSystemMathTwice - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:preview" |]
             (baseModule + """
 module OpenSystemMathOnce =
 
-                   open System.Math
+                   open type System.Math
                    let x = Min(1.0, 2.0)""")
             [| |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenMyMathOnce - langversion:v4.6`` () =
+    let ``OpenMyMathOnce - langversion:v4.6`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
             (baseModule + """
 module OpenMyMathOnce = 
 
-    open MyMath
+    open type MyMath
     let x = Min(1.0, 2.0)
     let x2 = Min(1, 2)""")
             [|
@@ -108,19 +108,19 @@ module OpenMyMathOnce =
             |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenMyMathOnce - langversion:preview`` () =
+    let ``OpenMyMathOnce - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:preview" |]
             (baseModule + """
 module OpenMyMathOnce = 
 
-    open MyMath
+    open type MyMath
     let x = Min(1.0, 2.0)
     let x2 = Min(1, 2)""")
             [| |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - DontOpenAutoMath - langversion:v4.6`` () =
+    let ``DontOpenAutoMath - langversion:v4.6`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
             (baseModule + """
@@ -134,7 +134,7 @@ module DontOpenAutoMath =
             |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - DontOpenAutoMath - langversion:preview`` () =
+    let ``DontOpenAutoMath - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:preview" |]
             (baseModule + """
@@ -145,13 +145,13 @@ module DontOpenAutoMath =
             [| |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenAutoMath - langversion:v4.6`` () =
+    let ``OpenAutoMath - langversion:v4.6`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
             (baseModule + """
 module OpenAutoMath = 
-    open AutoOpenMyMath
-    //open NotAllowedToOpen
+    open type AutoOpenMyMath
+    //open type NotAllowedToOpen
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
@@ -162,25 +162,25 @@ module OpenAutoMath =
             |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenAutoMath - langversion:preview`` () =
+    let ``OpenAutoMath - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:preview" |]
             (baseModule + """
 module OpenAutoMath = 
-    open AutoOpenMyMath
-    //open NotAllowedToOpen
+    open type AutoOpenMyMath
+    //open type NotAllowedToOpen
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
             [| |]
 
     [<Test>]
-    let ``OpenStaticClassesTests - OpenAccessibleFields - langversion:preview`` () =
+    let ``OpenAccessibleFields - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:preview" |]
             (baseModule + """
 module OpenAFieldFromMath =
-    open System.Math
+    open type System.Math
     
     let pi = PI""")
             [||]
@@ -217,7 +217,7 @@ namespace CSharpTest
 namespace FSharpTest
 
 open System
-open CSharpTest.Test
+open type CSharpTest.Test
 
 module Test =
     let x = NestedTest()
@@ -236,7 +236,7 @@ module Test =
         CompilerAssert.Compile(fsCmpl)
 
     [<Test>]
-    let ``Open generic type and use nested types as unqualified`` () =
+    let ``Open generic type and use nested types as unqualified - Error`` () =
         let csharpSource =
             """
 using System;
@@ -269,7 +269,7 @@ namespace CSharpTest
 namespace FSharpTest
 
 open System
-open CSharpTest.Test<byte>
+open type CSharpTest.Test<byte>
 
 module Test =
     let x = NestedTest()
@@ -285,7 +285,9 @@ module Test =
         let fsCmpl =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
 
-        CompilerAssert.Compile(fsCmpl)
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 10, (5, 26, 5, 27), "Unexpected type application  in implementation file. Expected incomplete structured construct at or before this point or other token.")
+        |])
 
     // TODO - wait for Will's integration of testing changes that makes this easlier
     // [<Test>]

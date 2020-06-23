@@ -289,6 +289,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <SyntaxTree.SynExceptionDefnRepr> exconCore
 %type <SyntaxTree.SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
 %type <SyntaxTree.LongIdentWithDots> openDecl
+%type <SyntaxTree.LongIdentWithDots> openTypeDecl
 %type <SyntaxTree.LongIdentWithDots> path
 %type <SyntaxTree.LongIdentWithDots> pathOp
 /*     LESS    GREATER        parsedOk   typeArgs           m for each   mWhole  */
@@ -768,7 +769,10 @@ moduleSpfn:
         SynModuleSigDecl.Exception(ec, rhs parseState 3) }
 
   | OPEN path 
-      { SynModuleSigDecl.Open ($2.Lid, unionRanges (rhs parseState 1) $2.Range) }
+      { SynModuleSigDecl.Open ($2.Lid, false, unionRanges (rhs parseState 1) $2.Range) }
+
+  | OPEN typeKeyword path
+      { SynModuleSigDecl.Open ($3.Lid, true, unionRanges (unionRanges (rhs parseState 1) (rhs parseState 2)) $3.Range) }
 
 valSpfn: 
   | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
@@ -1262,7 +1266,11 @@ moduleDefn:
 
   /* 'open' declarations */
   | openDecl 
-      { [SynModuleDecl.Open($1, $1.Range)] }
+      { [SynModuleDecl.Open($1, false, $1.Range)] }
+
+  /* 'open type' declarations */
+  | openTypeDecl
+      { [SynModuleDecl.Open($1, true, $1.Range)] }
 
 
 /* The right-hand-side of a module abbreviation definition */ 
@@ -2463,6 +2471,9 @@ exconRepr:
 
 openDecl:  
   | OPEN path { $2 }
+
+openTypeDecl:  
+  | OPEN typeKeyword path { $3 }
 
 /*-------------------------------------------------------------------------*/
 /* F# Definitions, Types, Patterns and Expressions  */

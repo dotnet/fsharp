@@ -1857,6 +1857,7 @@ type SynMemberDefn =
     /// An 'open' definition within a type
     | Open of
         longId: LongIdent *
+        isOpenType: bool *
         range: range
 
     /// A 'member' definition within a type
@@ -1989,6 +1990,7 @@ type SynModuleDecl =
     /// An 'open' definition within a module
     | Open of
         longDotId: LongIdentWithDots *
+        isOpenType: bool *
         range: range
 
     /// An attribute definition within a module, for assembly and .NET module attributes
@@ -2062,6 +2064,7 @@ type SynModuleSigDecl =
     /// An 'open' definition within a module or namespace in a signature file
     | Open of
         longId: LongIdent *
+        isOpenType: bool *
         range: range
 
     /// A hash directive within a module or namespace in a signature file

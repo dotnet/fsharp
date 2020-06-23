@@ -1073,23 +1073,19 @@ let GetNestedTypesOfTypeAsUnqualifiedItems infoReader amap ad m ty =
     }
 
 let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (tcref:TyconRef) =
-    // If OpenTypeDeclaration is not enabled then don't do this
-    if amap.g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration then
-        let ty = generalizedTyconRef tcref
-        let infoReader = InfoReader(g,amap)
+    let ty = generalizedTyconRef tcref
+    let infoReader = InfoReader(g,amap)
 
-        let items =
-            [| 
-                yield! GetNestedTypesOfTypeAsUnqualifiedItems infoReader amap ad m ty
-                yield! GetStaticMethodItems infoReader nenv ad m ty
-                yield! GetStaticPropertyItems infoReader nenv ad m ty
-                yield! GetStaticILFieldItems infoReader ad m ty
-                yield! GetStaticEventItems infoReader ad m ty
-            |]
+    let items =
+        [| 
+            yield! GetNestedTypesOfTypeAsUnqualifiedItems infoReader amap ad m ty
+            yield! GetStaticMethodItems infoReader nenv ad m ty
+            yield! GetStaticPropertyItems infoReader nenv ad m ty
+            yield! GetStaticILFieldItems infoReader ad m ty
+            yield! GetStaticEventItems infoReader ad m ty
+        |]
 
-        { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
-    else
-        nenv
+    { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
     
 /// Add any implied contents of a type definition to the environment.
 let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap ad m  nenv (tcref: TyconRef) =
@@ -1164,7 +1160,8 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
             eUnindexedExtensionMembers = eUnindexedExtensionMembers }
 
     let nenv = 
-        if TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true then
+        if amap.g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration &&
+           TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true then
            AddStaticContentOfTyconRefToNameEnv g amap ad m nenv tcref
         else
            nenv
@@ -2106,17 +2103,17 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 
 
 //-------------------------------------------------------------------------
-// Consume ids that refer to a namespace
+// Consume ids that refer to a namespace, module, or type
 //-------------------------------------------------------------------------
 
-/// Perform name resolution for an identifier which must resolve to be a namespace or module.
-let rec ResolveLongIdentAsModuleOrNamespace sink (atMostOne: ResultCollectionSettings) (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
+/// Perform name resolution for an identifier which must resolve to be a module or namespace.
+let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollectionSettings) (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl isType =
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
             error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         | id2 :: rest2 ->
-            ResolveLongIdentAsModuleOrNamespace sink atMostOne amap m false FullyQualified nenv ad id2 rest2 isOpenDecl
+            ResolveLongIdentAsModuleOrNamespaceAux sink atMostOne amap m false FullyQualified nenv ad id2 rest2 isOpenDecl isType
     else
         let moduleOrNamespaces = nenv.ModulesAndNamespaces fullyQualified
         let namespaceNotFound = lazy(
@@ -2152,11 +2149,23 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (atMostOne: ResultCollectionSet
             CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occurence, ad)
 
         let erefs = 
-            let modrefs = 
-                match moduleOrNamespaces.TryGetValue id.idText with 
-                | true, modrefs -> modrefs 
-                | _ -> []
-            modrefs 
+            let modrefs =
+                // If we are not resolving a type, then always resolve a module or namespace.
+                // If we are resolving a type, but the rest is not empty, we might need to resolve a module or namespace.
+                if not isType || (isType && not rest.IsEmpty) then
+                    match moduleOrNamespaces.TryGetValue id.idText with 
+                    | true, modrefs -> modrefs 
+                    | _ -> []
+                else
+                    []
+            
+            let tcrefs =
+                if isType then
+                    LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
+                else
+                    []
+            
+            modrefs @ tcrefs
 
         if not erefs.IsEmpty then 
             /// Look through the sub-namespaces and/or modules
@@ -2167,12 +2176,22 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (atMostOne: ResultCollectionSet
                     success  [ (depth, modref, mty) ]
 
                 | id :: rest ->
-                    let especs  = 
-                        let mspecs = 
-                            match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with 
-                            | true, res -> [res]
-                            | _ -> []
-                        mspecs
+                    let especs =
+                        let modrefs =
+                            if not isType || (isType && not rest.IsEmpty) then
+                                match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with 
+                                | true, res -> [res]
+                                | _ -> []
+                            else
+                                []
+
+                        let tcrefs =
+                            if isType then
+                                LookupTypeNameInEntityNoArity id.idRange id.idText mty
+                             else
+                                []
+
+                        modrefs @ tcrefs
                     
                     if not especs.IsEmpty then 
                         especs 
@@ -2198,8 +2217,12 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (atMostOne: ResultCollectionSet
         else
             raze (namespaceNotFound.Force())
 
+/// Perform name resolution for an identifier which must resolve to be a module or namespace.
+let ResolveLongIdentAsModuleOrNamespace sink atMostOne amap m first fullyQualified nenv ad id rest isOpenDecl =
+    ResolveLongIdentAsModuleOrNamespaceAux sink atMostOne amap m first fullyQualified nenv ad id rest isOpenDecl false
+
 // Note - 'rest' is annotated due to a bug currently in Unity (see: https://github.com/dotnet/fsharp/pull/7427)
-let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id (rest: Ident list) isOpenDecl f =
+let ResolveLongIdentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv: NameResolutionEnv) ad id (rest: Ident list) isOpenDecl f =
     match ResolveLongIdentAsModuleOrNamespace sink ResultCollectionSettings.AllResults amap m true fullyQualified nenv ad id [] isOpenDecl with
     | Result modrefs ->
         match rest with
@@ -2210,6 +2233,14 @@ let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualifie
                 let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange, modref)
                 f resInfo (depth+1) id.idRange modref mty id2 rest2)
     | Exception err -> Exception err
+
+/// Perform name resolution for an identifier which must resolve to be a type to be used as a module or namespace.
+let ResolveTypeLongIdentAsModuleOrNamespace sink atMostOne (amap: Import.ImportMap) m first fullyQualified nenv ad id rest isOpenDecl =
+    let g = amap.g
+    if tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.OpenTypeDeclaration m then
+        ResolveLongIdentAsModuleOrNamespaceAux sink atMostOne amap m first fullyQualified nenv ad id rest isOpenDecl true
+    else
+        NoResultsOrUsefulErrors
 
 //-------------------------------------------------------------------------
 // Bind name used in "new Foo.Bar(...)" constructs
@@ -2739,7 +2770,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
               // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
               // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
               let moduleSearch ad () =
-                   ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl
+                   ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl
                        (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
 
               // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
@@ -2924,7 +2955,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
         // Long identifiers in patterns
         else
             let moduleSearch ad () =
-                ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest false
                     (ResolvePatternLongIdentInModuleOrNamespace ncenv nenv numTyArgsOpt ad)
 
             let tyconSearch ad =
@@ -3138,12 +3169,12 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                         NoResultsOrUsefulErrors
 
             let modulSearch =
-                ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv ad id rest false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv ad id rest false
                     (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo ad genOk)
                 |?> List.concat
 
             let modulSearchFailed() =
-                ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv AccessibleFromSomeFSharpCode id rest false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m2 fullyQualified nenv AccessibleFromSomeFSharpCode id rest false
                     (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
                 |?> List.concat
 
@@ -3345,7 +3376,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             match lid with
             | [] -> NoResultsOrUsefulErrors
             | id2 :: rest2 ->
-                ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id2 rest2 false
+                ResolveLongIdentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad id2 rest2 false
                     (ResolveFieldInModuleOrNamespace ncenv nenv ad)
 
         let resInfo, item, rest =
@@ -3639,7 +3670,7 @@ let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f plid (m
         | true, mty -> PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f rest (modref.NestedTyconRef mty)
         | _ -> []
 
-let PartialResolveLongIndentAsModuleOrNamespaceThen (nenv: NameResolutionEnv) plid f =
+let PartialResolveLongIdentAsModuleOrNamespaceThen (nenv: NameResolutionEnv) plid f =
     match plid with
     | id :: rest ->
         match nenv.eModulesAndNamespaces.TryGetValue id with
@@ -4188,7 +4219,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
 
         // Look in the namespaces 'id'
         let namespaces =
-            PartialResolveLongIndentAsModuleOrNamespaceThen nenv [id] (fun modref ->
+            PartialResolveLongIdentAsModuleOrNamespaceThen nenv [id] (fun modref ->
               let allowObsolete = rest <> [] && allowObsolete
               if EntityRefContainsSomethingAccessible ncenv m ad modref then
                 ResolvePartialLongIdentInModuleOrNamespace ncenv nenv isApplicableMeth m ad modref rest allowObsolete
@@ -4349,7 +4380,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
     | id :: rest ->
         // Get results
         let modsOrNs =
-            PartialResolveLongIndentAsModuleOrNamespaceThen nenv [id] (fun modref ->
+            PartialResolveLongIdentAsModuleOrNamespaceThen nenv [id] (fun modref ->
               let allowObsolete = rest <> [] && allowObsolete
               if EntityRefContainsSomethingAccessible ncenv m ad modref then
                 ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad modref rest allowObsolete
@@ -4707,7 +4738,7 @@ let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f pli
             PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest (modref.NestedTyconRef mty)
         | _ -> Seq.empty
 
-let PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv: NameResolutionEnv) plid f =
+let PartialResolveLongIdentAsModuleOrNamespaceThenLazy (nenv: NameResolutionEnv) plid f =
     seq {
         match plid with
         | id :: rest ->
@@ -4782,7 +4813,7 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
 
             // Look in the namespaces 'id'
             yield!
-                PartialResolveLongIndentAsModuleOrNamespaceThenLazy nenv [id] (fun modref ->
+                PartialResolveLongIdentAsModuleOrNamespaceThenLazy nenv [id] (fun modref ->
                     if EntityRefContainsSomethingAccessible ncenv m ad modref then
                         ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad modref rest item
                     else Seq.empty)
