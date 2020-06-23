@@ -8,6 +8,19 @@ namespace FSharp.Core.UnitTests.Operators
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
+open System.Globalization
+open System.Threading
+
+/// If this type compiles without error it is correct
+/// Wrong if you see: FS0670 This code is not sufficiently generic. The type variable ^T could not be generalized because it would escape its scope.
+type TestFs0670Error<'T> =
+    | TestFs0670Error of 'T
+    override this.ToString() =
+        match this with
+        | TestFs0670Error x -> 
+            // This used to raise FS0670 because the type is generic, and 'string' was inline
+            // See: https://github.com/dotnet/fsharp/issues/7958
+            Operators.string x
 
 [<TestFixture>]
 type OperatorsModule2() =
@@ -718,6 +731,53 @@ type OperatorsModule2() =
         // reference type
         let result = Operators.string "ABC"
         Assert.AreEqual("ABC", result)
+
+        // reference type without a `ToString()` overload
+        let result = Operators.string (obj())
+        Assert.AreEqual("System.Object", result)
+
+        let result = Operators.string 1un
+        Assert.AreEqual("1", result)
+
+        let result = Operators.string (obj())
+        Assert.AreEqual("System.Object", result)
+
+        let result = Operators.string 123.456M
+        Assert.AreEqual("123.456", result)
+
+        // Following tests ensure that InvariantCulture is used if type implements IFormattable
+        
+        // safe current culture, then switch culture
+        let currentCI = Thread.CurrentThread.CurrentCulture
+        Thread.CurrentThread.CurrentCulture <- CultureInfo.GetCultureInfo("de-DE")
+
+        // make sure the culture switch happened, and verify
+        let wrongResult = 123.456M.ToString()
+        Assert.AreEqual("123,456", wrongResult)
+
+        // test that culture has no influence on decimals with `string`
+        let correctResult = Operators.string 123.456M
+        Assert.AreEqual("123.456", correctResult)
+
+        // make sure that the German culture is indeed selected for DateTime
+        let dttm = DateTime(2020, 6, 23)
+        let wrongResult = dttm.ToString()
+        Assert.AreEqual("23.06.2020 00:00:00", wrongResult)
+
+        // test that culture has no influence on DateTime types when used with `string`
+        let correctResult = Operators.string dttm
+        Assert.AreEqual("06/23/2020 00:00:00", correctResult)
+
+        // reset the culture
+        Thread.CurrentThread.CurrentCulture <- currentCI
+
+    [<Test>]
+    member _.``string: don't raise FS0670 anymore``() =
+        // The type used here, when compiled, should not raise this error:
+        // "FS0670 This code is not sufficiently generic. The type variable ^T could not be generalized because it would escape its scope."
+        // See: https://github.com/dotnet/fsharp/issues/7958
+        let result = TestFs0670Error 32uy |> Operators.string
+        Assert.AreEqual("32", result)
         
     [<Test>]
     member _.tan() =
