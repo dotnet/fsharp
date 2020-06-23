@@ -6,7 +6,7 @@ open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-module ``Numeric Literlas`` =
+module ``Numeric Literals`` =
 
     [<Fact>]
     let ``1up is invalid Numeric Literal``() =
