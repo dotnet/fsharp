@@ -2115,16 +2115,30 @@ let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollection
         | id2 :: rest2 ->
             ResolveLongIdentAsModuleOrNamespaceAux sink atMostOne amap m false FullyQualified nenv ad id2 rest2 isOpenDecl isType
     else
-        let moduleOrNamespaces = nenv.ModulesAndNamespaces fullyQualified
-        let namespaceNotFound = lazy(
-            let suggestModulesAndNamespaces (addToBuffer: string -> unit) =
-                for kv in moduleOrNamespaces do
-                    for modref in kv.Value do
-                        if IsEntityAccessible amap m ad modref then
-                            addToBuffer modref.DisplayName
-                            addToBuffer modref.DemangledModuleOrNamespaceName
+        let notFoundAux (id: Ident) depth error (tcrefs: TyconRef seq) =
+            let suggestNames (addToBuffer: string -> unit) =
+                for tcref in tcrefs do
+                    if IsEntityAccessible amap m ad tcref then
+                        addToBuffer tcref.DisplayName
+                        addToBuffer tcref.DemangledModuleOrNamespaceName
 
-            UndefinedName(0, FSComp.SR.undefinedNameNamespaceOrModule, id, suggestModulesAndNamespaces))
+            UndefinedName(depth, error, id, suggestNames)
+
+        let moduleOrNamespaces = nenv.ModulesAndNamespaces fullyQualified
+        let namespaceNotFound =
+            lazy
+                if isType then
+                    seq { for kv in nenv.TyconsByDemangledNameAndArity fullyQualified do 
+                            match kv.Key with
+                            // We choose arity 0 as F# does not support opening parameterized types.
+                            | NameArityPair(_, 0) -> kv.Value
+                            | _ -> () }
+                    |> notFoundAux id 0 FSComp.SR.undefinedNameType
+                else
+                    seq { for kv in moduleOrNamespaces do
+                            for modref in kv.Value do 
+                                modref }
+                    |> notFoundAux id 0 FSComp.SR.undefinedNameNamespaceOrModule
 
         // Avoid generating the same error and name suggestion thunk twice It's not clear this is necessary
         // since it's just saving an allocation.
@@ -2133,18 +2147,28 @@ let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollection
             match moduleNotFoundErrorCache with
             | Some (oldId, error) when Range.equals oldId id.idRange -> error
             | _ ->
-                let suggestNames (addToBuffer: string -> unit) =
-                    for kv in mty.ModulesAndNamespacesByDemangledName do
-                        if IsEntityAccessible amap m ad (modref.NestedTyconRef kv.Value) then
-                            addToBuffer kv.Value.DisplayName
-                            addToBuffer kv.Value.DemangledModuleOrNamespaceName
-
-                let error = raze (UndefinedName(depth, FSComp.SR.undefinedNameNamespace, id, suggestNames))
+                let error =
+                    if isType then
+                        seq { for kv in mty.TypesByDemangledNameAndArity m do
+                                match kv.Key with
+                                | NameArityPair(_, 0) -> modref.NestedTyconRef kv.Value
+                                | _ -> () }
+                        |> notFoundAux id depth FSComp.SR.undefinedNameType
+                    else
+                        seq { for kv in mty.ModulesAndNamespacesByDemangledName do
+                                modref.NestedTyconRef kv.Value }
+                        |> notFoundAux id depth FSComp.SR.undefinedNameNamespace
+                let error = raze error
                 moduleNotFoundErrorCache <- Some(id.idRange, error)
                 error
 
-        let notifyNameResolution (modref: ModuleOrNamespaceRef) m =
-            let item = Item.ModuleOrNamespaces [modref]
+        let notifyNameResolution nm (modref: ModuleOrNamespaceRef) m =
+            let item = 
+                if isType && not modref.IsModuleOrNamespace then 
+                    // F# does not support opening parameterized types.
+                    Item.Types (nm, [generalizedTyconRef modref]) 
+                else 
+                    Item.ModuleOrNamespaces [modref]
             let occurence = if isOpenDecl then ItemOccurence.Open else ItemOccurence.Use
             CallNameResolutionSink sink (m, nenv, item, emptyTyparInst, occurence, ad)
 
@@ -2161,7 +2185,9 @@ let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollection
             
             let tcrefs =
                 if isType then
+                    // F# does not support opening parameterized types.
                     LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
+                    |> List.filter (fun x -> x.TyparsNoRange.IsEmpty)
                 else
                     []
             
@@ -2178,6 +2204,8 @@ let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollection
                 | id :: rest ->
                     let especs =
                         let modrefs =
+                            // If we are not resolving a type, then always resolve a module or namespace.
+                            // If we are resolving a type, but the rest is not empty, we might need to resolve a module or namespace.
                             if not isType || (isType && not rest.IsEmpty) then
                                 match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with 
                                 | true, res -> [res]
@@ -2187,7 +2215,9 @@ let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollection
 
                         let tcrefs =
                             if isType then
+                                // F# does not support opening parameterized types.
                                 LookupTypeNameInEntityNoArity id.idRange id.idText mty
+                                |> List.filter (fun x -> x.TyparsNoRange.IsEmpty)
                              else
                                 []
 
@@ -2198,7 +2228,7 @@ let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollection
                         |> List.map (fun espec ->
                             let subref = modref.NestedTyconRef espec
                             if IsEntityAccessible amap m ad subref then
-                                notifyNameResolution subref id.idRange
+                                notifyNameResolution id.idText subref id.idRange
                                 look (depth+1) subref rest
                             else
                                 moduleNotFound modref mty id depth) 
@@ -2209,7 +2239,7 @@ let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollection
             erefs 
             |> List.map (fun eref ->
                 if IsEntityAccessible amap m ad eref then
-                    notifyNameResolution eref id.idRange
+                    notifyNameResolution id.idText eref id.idRange
                     look 1 eref rest
                 else
                     raze (namespaceNotFound.Force()))
@@ -2236,11 +2266,7 @@ let ResolveLongIdentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified
 
 /// Perform name resolution for an identifier which must resolve to be a type to be used as a module or namespace.
 let ResolveTypeLongIdentAsModuleOrNamespace sink atMostOne (amap: Import.ImportMap) m first fullyQualified nenv ad id rest isOpenDecl =
-    let g = amap.g
-    if tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.OpenTypeDeclaration m then
-        ResolveLongIdentAsModuleOrNamespaceAux sink atMostOne amap m first fullyQualified nenv ad id rest isOpenDecl true
-    else
-        NoResultsOrUsefulErrors
+    ResolveLongIdentAsModuleOrNamespaceAux sink atMostOne amap m first fullyQualified nenv ad id rest isOpenDecl true
 
 //-------------------------------------------------------------------------
 // Bind name used in "new Foo.Bar(...)" constructs

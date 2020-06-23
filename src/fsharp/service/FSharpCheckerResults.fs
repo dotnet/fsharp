@@ -850,8 +850,11 @@ type internal TypeCheckInfo
                     items 
                     |> List.filter (fun x ->
                         match x.Item with
-                        | Item.ModuleOrNamespaces _ when not isOpenType -> true
-                        | Item.Types (_, tcrefs) when isOpenType && tcrefs |> List.exists (fun ty -> isAppTy g ty) -> true
+                        | Item.ModuleOrNamespaces _ -> true
+                        | Item.Types (_, tcrefs) 
+                            when isOpenType && 
+                                 g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration && 
+                                 tcrefs |> List.exists (fun ty -> isAppTy g ty) -> true
                         | _ -> false), denv, m)
             
             // Completion at '(x: ...)"

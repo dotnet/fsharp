@@ -190,6 +190,9 @@ and [<Class>] public FSharpEntity =
     /// Indicates if the entity is union type
     member IsFSharpUnion   : bool
 
+    /// Indicates if the entity is a type
+    member IsType : bool
+
     /// Indicates if the entity is a struct or enum
     member IsValueType : bool
 

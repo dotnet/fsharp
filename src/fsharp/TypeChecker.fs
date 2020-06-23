@@ -12951,7 +12951,10 @@ let TcOpenLidAndPermitAutoResolve tcSink env amap (longId : Ident list) isOpenTy
         | Exception err ->
             errorR(err); []
 
-let TcOpenDecl tcSink g amap m scopem env longId isOpenType = 
+let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env longId isOpenType = 
+    if isOpenType then
+        checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration m
+
     match TcOpenLidAndPermitAutoResolve tcSink env amap longId isOpenType with
     | [] -> env
     | modrefs ->

@@ -85,7 +85,19 @@ module UnusedOpens =
                  if firstId.idText = MangledGlobalName then 
                      None
                  else
-                     Some { OpenedGroups = openDecl.Modules |> List.map OpenedModuleGroup.Create
+                     Some { OpenedGroups = 
+                                openDecl.Modules 
+                                |> List.map (fun entity ->
+                                    if entity.IsFSharpAbbreviation then
+                                        let ty = entity.AbbreviatedType
+                                        let ty2 =
+                                            if ty.HasTypeDefinition && ty.IsAbbreviation then
+                                                ty.AbbreviatedType
+                                            else
+                                                ty
+                                        OpenedModuleGroup.Create ty2.TypeDefinition
+                                    else
+                                        OpenedModuleGroup.Create entity)
                             Range = range
                             AppliedScope = openDecl.AppliedScope }
              | _ -> None)
@@ -136,7 +148,7 @@ module UnusedOpens =
             match symbol with
             | :? FSharpMemberOrFunctionOrValue as f ->
                 match f.DeclaringEntity with
-                | Some ent when ent.IsNamespace || ent.IsFSharpModule -> true
+                | Some ent when ent.IsNamespace || ent.IsFSharpModule || ent.IsType -> true
                 | _ -> false
             | _ -> false)
 
@@ -204,14 +216,14 @@ module UnusedOpens =
     /// Async to allow cancellation.
     let filterOpenStatements (symbolUses1: FSharpSymbolUse[], symbolUses2: FSharpSymbolUse[]) openStatements =
         async {
-            // the key is a namespace or module, the value is a list of FSharpSymbolUse range of symbols defined in the 
-            // namespace or module. So, it's just symbol uses ranges grouped by namespace or module where they are _defined_. 
+            // the key is a namespace or module or type, the value is a list of FSharpSymbolUse range of symbols defined in the 
+            // namespace or module or type. So, it's just symbol uses ranges grouped by namespace or module where they are _defined_. 
             let symbolUsesRangesByDeclaringEntity = Dictionary<FSharpEntity, range list>(entityHash)
             for symbolUse in symbolUses1 do
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as f ->
                     match f.DeclaringEntity with
-                    | Some entity when entity.IsNamespace || entity.IsFSharpModule -> 
+                    | Some entity when entity.IsNamespace || entity.IsFSharpModule || entity.IsType -> 
                         symbolUsesRangesByDeclaringEntity.BagAdd(entity, symbolUse.RangeAlternate)
                     | _ -> ()
                 | _ -> ()

@@ -16,6 +16,9 @@ open FSharp.Test.Utilities.Utilities
 [<TestFixture>]
 module OpenTypeDeclarationTests =
 
+    [<Literal>]
+    let targetVersion = "'preview'"
+
     let baseModule = """
 module Core_OpenStaticClasses
 
@@ -37,7 +40,7 @@ type NotAllowedToOpen() =
 """
 
     [<Test>]
-    let ``OpenSystemMathOnce - langversion:v4.6`` () =
+    let ``OpenSystemMathOnce - langversion:v4_6`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
             (baseModule + """
@@ -46,7 +49,7 @@ module OpenSystemMathOnce =
                open type System.Math
                let x = Min(1.0, 2.0)""")
             [|
-                (FSharpErrorSeverity.Error, 39, (22,28,22,32), "The namespace 'Math' is not defined.");
+                (FSharpErrorSeverity.Error, 3350, (22, 26, 22, 37), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
                 (FSharpErrorSeverity.Error, 39, (23,24,23,27), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
             |]
 
@@ -62,7 +65,7 @@ module OpenSystemMathOnce =
             [| |]
 
     [<Test>]
-    let ``OpenSystemMathTwice - langversion:v4.6`` () =
+    let ``OpenSystemMathTwice - langversion:v4_6`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
             (baseModule + """
@@ -74,9 +77,9 @@ module OpenSystemMathTwice =
     open type System.Math
     let x2 = Min(2.0, 1.0)""")
             [|
-                (FSharpErrorSeverity.Error, 39, (22,17,22,21), "The namespace 'Math' is not defined.");
+                (FSharpErrorSeverity.Error, 3350, (22, 15, 22, 26), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
                 (FSharpErrorSeverity.Error, 39, (23,13,23,16), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-                (FSharpErrorSeverity.Error, 39, (25,17,25,21), "The namespace 'Math' is not defined.");
+                (FSharpErrorSeverity.Error, 3350, (25, 15, 25, 26), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
                 (FSharpErrorSeverity.Error, 39, (26,14,26,17), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
             |]
 
@@ -92,7 +95,7 @@ module OpenSystemMathOnce =
             [| |]
 
     [<Test>]
-    let ``OpenMyMathOnce - langversion:v4.6`` () =
+    let ``OpenMyMathOnce - langversion:v4_6`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
             (baseModule + """
@@ -102,7 +105,7 @@ module OpenMyMathOnce =
     let x = Min(1.0, 2.0)
     let x2 = Min(1, 2)""")
             [|
-                (FSharpErrorSeverity.Error, 39, (22,10,22,16), "The namespace or module 'MyMath' is not defined. Maybe you want one of the following:\r\n   Math");
+                (FSharpErrorSeverity.Error, 3350, (22, 15, 22, 21), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
                 (FSharpErrorSeverity.Error, 39, (23,13,23,16), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
                 (FSharpErrorSeverity.Error, 39, (24,14,24,17), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
             |]
@@ -120,7 +123,7 @@ module OpenMyMathOnce =
             [| |]
 
     [<Test>]
-    let ``DontOpenAutoMath - langversion:v4.6`` () =
+    let ``DontOpenAutoMath - langversion:v4_6`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
             (baseModule + """
@@ -129,7 +132,7 @@ module DontOpenAutoMath =
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
             [|
-                (FSharpErrorSeverity.Error, 39, (22,13,22,20), "The value or constructor 'AutoMin' is not defined.");
+                (FSharpErrorSeverity.Error, 39, (22,13,22,20), "The value or constructor 'AutoMin' is not defined.")
                 (FSharpErrorSeverity.Error, 39, (23,14,23,21), "The value or constructor 'AutoMin' is not defined.")
             |]
 
@@ -145,7 +148,7 @@ module DontOpenAutoMath =
             [| |]
 
     [<Test>]
-    let ``OpenAutoMath - langversion:v4.6`` () =
+    let ``OpenAutoMath - langversion:v4_6`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
             [| "--langversion:4.6" |]
             (baseModule + """
@@ -156,7 +159,7 @@ module OpenAutoMath =
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
             [|
-                (FSharpErrorSeverity.Error, 39, (21,10,21,24), "The namespace or module 'AutoOpenMyMath' is not defined.");
+                (FSharpErrorSeverity.Error, 3350, (21, 15, 21, 29), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
                 (FSharpErrorSeverity.Error, 39, (24,13,24,20), "The value or constructor 'AutoMin' is not defined.")
                 (FSharpErrorSeverity.Error, 39, (25,14,25,21), "The value or constructor 'AutoMin' is not defined.")
             |]
@@ -367,6 +370,22 @@ module Test =
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 39, (5, 17, 5, 21), "The namespace 'Test' is not defined.")
             (FSharpErrorSeverity.Error, 39, (8, 13, 8, 14), "The value or constructor 'A' is not defined.")
+        |])
+
+    [<Test>]
+    let ``Open type declaration on a namespace - Error`` () =
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open type System
+            """
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 39, (4, 11, 4, 17), "The type 'System' is not defined.")
         |])
 
     // TODO - wait for Will's integration of testing changes that makes this easlier
