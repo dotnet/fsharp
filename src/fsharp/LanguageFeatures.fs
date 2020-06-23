@@ -71,6 +71,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.WitnessPassing, previewVersion
             LanguageFeature.StringInterpolation, previewVersion
             LanguageFeature.NameOf, previewVersion
+            LanguageFeature.StringInterpolation, previewVersion
         ]
 
     let specified =
