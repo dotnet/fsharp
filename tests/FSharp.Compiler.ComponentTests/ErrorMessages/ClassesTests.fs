@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ErrorMessages.ComponentTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-[<TestFixture>]
 module ``Classes`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Tuple In Abstract Method``() =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -27,7 +26,7 @@ let x =
                 FSharpErrorSeverity.Error, 783, (6, 9, 6, 19), "At least one override did not correctly implement its corresponding abstract member"
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Wrong Arity``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -43,7 +42,7 @@ MyType.MyMember("", 0, 0)
             (7, 1, 7, 26)
             "A member or object constructor 'MyMember' taking 3 arguments is not accessible from this code location. All accessible versions of method 'MyMember' take 2 arguments."
 
-    [<Test>]
+    [<Fact>]
     let ``Method Is Not Static``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -57,7 +56,7 @@ let x = Class1.X()
             (5, 9, 5, 17)
             "Method or object constructor 'X' is not static"
 
-    [<Test>]
+    [<Fact>]
     let ``Matching Method With Same Name Is Not Abstract``() =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -75,7 +74,7 @@ let foo =
                 FSharpErrorSeverity.Error, 783, (6, 11, 6, 14), "At least one override did not correctly implement its corresponding abstract member"
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``No Matching Abstract Method With Same Name``() =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -89,13 +88,13 @@ let x =
   }
             """
             [|
-                FSharpErrorSeverity.Error, 767, (8, 14, 8, 34), "The member 'Function' does not correspond to any abstract or virtual method available to override or implement. Maybe you want one of the following:\r\n   MyFunction"
+                FSharpErrorSeverity.Error, 767, (8, 14, 8, 34), "The member 'Function' does not correspond to any abstract or virtual method available to override or implement. Maybe you want one of the following:" + System.Environment.NewLine + "   MyFunction"
                 FSharpErrorSeverity.Error, 17, (8, 19, 8, 27), "The member 'Function : 'a * 'b -> unit' does not have the correct type to override any given virtual method"
-                FSharpErrorSeverity.Error, 366, (7, 3, 9, 4), "No implementation was given for those members: \r\n\t'abstract member IInterface.MyFunction : int32 * int32 -> unit'\r\n\t'abstract member IInterface.SomeOtherFunction : int32 * int32 -> unit'\r\nNote that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+                FSharpErrorSeverity.Error, 366, (7, 3, 9, 4), "No implementation was given for those members: " + System.Environment.NewLine + "\t'abstract member IInterface.MyFunction : int32 * int32 -> unit'" + System.Environment.NewLine + "\t'abstract member IInterface.SomeOtherFunction : int32 * int32 -> unit'" + System.Environment.NewLine + "Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
                 FSharpErrorSeverity.Error, 783, (7, 9, 7, 19), "At least one override did not correctly implement its corresponding abstract member"
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Member Has Multiple Possible Dispatch Slots``() =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -108,11 +107,11 @@ type Overload =
         override __.Bar _ = 1
             """
             [|
-                FSharpErrorSeverity.Error, 366, (7, 15, 7, 24), "No implementation was given for those members: \r\n\t'abstract member IOverload.Bar : double -> int'\r\n\t'abstract member IOverload.Bar : int -> int'\r\nNote that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
-                FSharpErrorSeverity.Error, 3213, (8, 21, 8, 24), "The member 'Bar<'a0> : 'a0 -> int' matches multiple overloads of the same method.\nPlease restrict it to one of the following:\r\n   Bar : double -> int\r\n   Bar : int -> int."
+                FSharpErrorSeverity.Error, 366, (7, 15, 7, 24), "No implementation was given for those members: " + System.Environment.NewLine + "\t'abstract member IOverload.Bar : double -> int'" + System.Environment.NewLine + "\t'abstract member IOverload.Bar : int -> int'" + System.Environment.NewLine + "Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'."
+                FSharpErrorSeverity.Error, 3213, (8, 21, 8, 24), "The member 'Bar<'a0> : 'a0 -> int' matches multiple overloads of the same method.\nPlease restrict it to one of the following:" + System.Environment.NewLine + "   Bar : double -> int" + System.Environment.NewLine + "   Bar : int -> int."
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Do Cannot Have Visibility Declarations``() =
         CompilerAssert.ParseWithErrors
             """
