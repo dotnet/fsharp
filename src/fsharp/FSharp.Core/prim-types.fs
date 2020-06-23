@@ -781,8 +781,8 @@ namespace Microsoft.FSharp.Core
 
         let inline anyToString nullStr x = 
             match box x with 
-            | null -> nullStr
             | :? System.IFormattable as f -> f.ToString(null,System.Globalization.CultureInfo.InvariantCulture)
+            | null -> nullStr
             | obj ->  obj.ToString()
 
         let anyToStringShowingNull x = anyToString "null" x
@@ -4457,23 +4457,11 @@ namespace Microsoft.FSharp.Core
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
         [<CompiledName("ToString")>]
-        let inline string (value: ^T) = 
-             anyToString "" value
-             // since we have static optimization conditionals for ints below, we need to special-case Enums.
-             // This way we'll print their symbolic value, as opposed to their integral one (Eg., "A", rather than "1")
-             when ^T struct = anyToString "" value
-             when ^T : float      = (# "" value : float      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : float32    = (# "" value : float32    #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int64      = (# "" value : int64      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int32      = (# "" value : int32      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int16      = (# "" value : int16      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : nativeint  = (# "" value : nativeint  #).ToString()
-             when ^T : sbyte      = (# "" value : sbyte      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : uint64     = (# "" value : uint64     #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : uint32     = (# "" value : uint32     #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int16      = (# "" value : int16      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : unativeint = (# "" value : unativeint #).ToString()
-             when ^T : byte       = (# "" value : byte       #).ToString("g",CultureInfo.InvariantCulture)
+        let string (value: 'T) = 
+            match box value with 
+            | :? System.IFormattable as f -> f.ToString(null,System.Globalization.CultureInfo.InvariantCulture)
+            | null -> ""
+            | obj ->  obj.ToString()
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
