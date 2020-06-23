@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ErrorMessages.ComponentTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-[<TestFixture>]
+
 module ``Module Abbreviations`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Public Module Abbreviation``() =
         CompilerAssert.TypeCheckSingleError
             """
