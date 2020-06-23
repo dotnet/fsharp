@@ -236,6 +236,46 @@ module Test =
         CompilerAssert.Compile(fsCmpl)
 
     [<Test>]
+    let ``Open a nested type as qualified`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public static class Test
+    {
+        public class NestedTest
+        {
+            public static void A()
+            {
+            }
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+open type CSharpTest.Test.NestedTest
+
+module Test =
+    let x = A()
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
     let ``Open generic type and use nested types as unqualified - Error`` () =
         let csharpSource =
             """
@@ -287,6 +327,46 @@ module Test =
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 10, (5, 26, 5, 27), "Unexpected type application  in implementation file. Expected incomplete structured construct at or before this point or other token.")
+        |])
+
+    [<Test>]
+    let ``Using the 'open' declaration on a possible type identifier - Error`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public static class Test
+    {
+        public static void A()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+open CSharpTest.Test
+
+module Test =
+    let x = A()
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 39, (5, 17, 5, 21), "The namespace 'Test' is not defined.")
+            (FSharpErrorSeverity.Error, 39, (8, 13, 8, 14), "The value or constructor 'A' is not defined.")
         |])
 
     // TODO - wait for Will's integration of testing changes that makes this easlier
