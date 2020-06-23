@@ -1082,6 +1082,12 @@ type Entity =
     /// Indicates if this is an F#-defined class type definition 
     member x.IsFSharpClassTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconClass -> true | _ -> false
 
+    /// Indicates if this is a .NET-defined delegate type definition
+    member x.IsILDelegateTycon = x.IsILTycon && x.ILTyconRawMetadata.IsDelegate
+
+    /// Indicates if this is a delegate type definition
+    member x.IsDelegateTycon = x.IsFSharpDelegateTycon || x.IsILDelegateTycon
+
     /// Indicates if this is a .NET-defined enum type definition 
     member x.IsILEnumTycon = x.IsILTycon && x.ILTyconRawMetadata.IsEnum
 
@@ -3540,6 +3546,12 @@ type EntityRef =
 
     /// Indicates if this is an F#-defined enum type definition 
     member x.IsFSharpEnumTycon = x.Deref.IsFSharpEnumTycon
+
+    /// Indicates if this is a .NET-defined delegate type definition
+    member x.IsILDelegateTycon = x.Deref.IsILDelegateTycon
+
+    /// Indicates if this is a delegate type definition
+    member x.IsDelegateTycon = x.Deref.IsDelegateTycon
 
     /// Indicates if this is a .NET-defined enum type definition 
     member x.IsILEnumTycon = x.Deref.IsILEnumTycon

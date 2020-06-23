@@ -2106,6 +2106,11 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 // Consume ids that refer to a namespace, module, or type
 //-------------------------------------------------------------------------
 
+/// If we are not looking up a type, then always lookup a module or namespace.
+/// If we are looking up a type, but the rest is not empty, we need to lookup a module or namespace.
+let CanLookupModuleOrNamespace (rest: Ident list) isType =
+    not isType || (isType && not rest.IsEmpty)
+
 /// Perform name resolution for an identifier which must resolve to be a module or namespace.
 let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollectionSettings) (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl isType =
     if first && id.idText = MangledGlobalName then
@@ -2174,9 +2179,7 @@ let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollection
 
         let erefs = 
             let modrefs =
-                // If we are not resolving a type, then always resolve a module or namespace.
-                // If we are resolving a type, but the rest is not empty, we might need to resolve a module or namespace.
-                if not isType || (isType && not rest.IsEmpty) then
+                if CanLookupModuleOrNamespace rest isType then
                     match moduleOrNamespaces.TryGetValue id.idText with 
                     | true, modrefs -> modrefs 
                     | _ -> []
@@ -2185,9 +2188,8 @@ let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollection
             
             let tcrefs =
                 if isType then
-                    // F# does not support opening parameterized types.
                     LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
-                    |> List.filter (fun x -> x.TyparsNoRange.IsEmpty)
+                    |> List.filter (fun x -> isOpenableTycon x.Deref)
                 else
                     []
             
@@ -2204,9 +2206,7 @@ let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollection
                 | id :: rest ->
                     let especs =
                         let modrefs =
-                            // If we are not resolving a type, then always resolve a module or namespace.
-                            // If we are resolving a type, but the rest is not empty, we might need to resolve a module or namespace.
-                            if not isType || (isType && not rest.IsEmpty) then
+                            if CanLookupModuleOrNamespace rest isType then
                                 match mty.ModulesAndNamespacesByDemangledName.TryGetValue id.idText with 
                                 | true, res -> [res]
                                 | _ -> []
@@ -2215,9 +2215,8 @@ let rec ResolveLongIdentAsModuleOrNamespaceAux sink (atMostOne: ResultCollection
 
                         let tcrefs =
                             if isType then
-                                // F# does not support opening parameterized types.
                                 LookupTypeNameInEntityNoArity id.idRange id.idText mty
-                                |> List.filter (fun x -> x.TyparsNoRange.IsEmpty)
+                                |> List.filter isOpenableTycon
                              else
                                 []
 
@@ -2264,7 +2263,7 @@ let ResolveLongIdentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified
                 f resInfo (depth+1) id.idRange modref mty id2 rest2)
     | Exception err -> Exception err
 
-/// Perform name resolution for an identifier which must resolve to be a type to be used as a module or namespace.
+/// Perform name resolution for an identifier which must resolve to be a type to be used like a module or namespace.
 let ResolveTypeLongIdentAsModuleOrNamespace sink atMostOne (amap: Import.ImportMap) m first fullyQualified nenv ad id rest isOpenDecl =
     ResolveLongIdentAsModuleOrNamespaceAux sink atMostOne amap m first fullyQualified nenv ad id rest isOpenDecl true
 

@@ -13,10 +13,10 @@ module UnusedOpens =
 
     let symbolHash = HashIdentity.FromFunctions (fun (x: FSharpSymbol) -> x.GetEffectivelySameAsHash()) (fun x y -> x.IsEffectivelySameAs(y))
 
-    /// Represents one namespace or module opened by an 'open' statement
+    /// Represents one namespace or module or type opened by an 'open'/'open type' declaration
     type OpenedModule(entity: FSharpEntity, isNestedAutoOpen: bool) = 
 
-        /// Compute an indexed table of the set of symbols revealed by 'open', on-demand
+        /// Compute an indexed table of the set of symbols revealed by 'open'/'open type', on-demand
         let revealedSymbols : Lazy<HashSet<FSharpSymbol>> =
            lazy
             let symbols = 
@@ -42,8 +42,8 @@ module UnusedOpens =
                   for apCase in entity.ActivePatternCases do
                       yield apCase :> FSharpSymbol
 
-                  // The IsNamespace and IsFSharpModule cases are handled by looking at DeclaringEntity below
-                  if not entity.IsNamespace && not entity.IsFSharpModule then
+                  // The IsNamespace and IsFSharpModule and IsOpenableType cases are handled by looking at DeclaringEntity below
+                  if not entity.IsNamespace && not entity.IsFSharpModule && not entity.IsOpenableType then
                       for fv in entity.MembersFunctionsAndValues do 
                           yield fv :> FSharpSymbol |]
 
@@ -60,7 +60,7 @@ module UnusedOpens =
             let rec getModuleAndItsAutoOpens (isNestedAutoOpen: bool) (modul: FSharpEntity) =
                 [ yield OpenedModule (modul, isNestedAutoOpen)
                   for ent in modul.NestedEntities do
-                    if ent.IsFSharpModule && Symbol.hasAttribute<AutoOpenAttribute> ent.Attributes then
+                    if (ent.IsFSharpModule || ent.IsOpenableType) && Symbol.hasAttribute<AutoOpenAttribute> ent.Attributes then
                       yield! getModuleAndItsAutoOpens true ent ]
             { OpenedModules = getModuleAndItsAutoOpens false modul }
 
@@ -85,19 +85,7 @@ module UnusedOpens =
                  if firstId.idText = MangledGlobalName then 
                      None
                  else
-                     Some { OpenedGroups = 
-                                openDecl.Modules 
-                                |> List.map (fun entity ->
-                                    if entity.IsFSharpAbbreviation then
-                                        let ty = entity.AbbreviatedType
-                                        let ty2 =
-                                            if ty.HasTypeDefinition && ty.IsAbbreviation then
-                                                ty.AbbreviatedType
-                                            else
-                                                ty
-                                        OpenedModuleGroup.Create ty2.TypeDefinition
-                                    else
-                                        OpenedModuleGroup.Create entity)
+                     Some { OpenedGroups = openDecl.Modules |> List.map OpenedModuleGroup.Create
                             Range = range
                             AppliedScope = openDecl.AppliedScope }
              | _ -> None)
@@ -148,7 +136,7 @@ module UnusedOpens =
             match symbol with
             | :? FSharpMemberOrFunctionOrValue as f ->
                 match f.DeclaringEntity with
-                | Some ent when ent.IsNamespace || ent.IsFSharpModule || ent.IsType -> true
+                | Some ent when ent.IsNamespace || ent.IsFSharpModule || ent.IsOpenableType -> true
                 | _ -> false
             | _ -> false)
 
@@ -223,7 +211,7 @@ module UnusedOpens =
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as f ->
                     match f.DeclaringEntity with
-                    | Some entity when entity.IsNamespace || entity.IsFSharpModule || entity.IsType -> 
+                    | Some entity when entity.IsNamespace || entity.IsFSharpModule || entity.IsOpenableType -> 
                         symbolUsesRangesByDeclaringEntity.BagAdd(entity, symbolUse.RangeAlternate)
                     | _ -> ()
                 | _ -> ()

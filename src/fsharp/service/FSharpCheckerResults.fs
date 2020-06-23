@@ -853,8 +853,12 @@ type internal TypeCheckInfo
                         | Item.ModuleOrNamespaces _ -> true
                         | Item.Types (_, tcrefs) 
                             when isOpenType && 
-                                 g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration && 
-                                 tcrefs |> List.exists (fun ty -> isAppTy g ty) -> true
+                                 tcrefs 
+                                 |> List.exists (fun ty ->
+                                    match ty with
+                                    | TType_app (tcref, _) when tcref.CanDeref -> 
+                                        not tcref.IsTypeAbbrev && (isOpenableTycon tcref.Deref || (* IL types might have nested types *) (tcref.IsILTycon && not tcref.IsILDelegateTycon))
+                                    | _ -> false) -> true
                         | _ -> false), denv, m)
             
             // Completion at '(x: ...)"
