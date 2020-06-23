@@ -60,6 +60,8 @@ module Utilities =
         | None = 0x0
         | InternalsVisibleTo = 0x1
 
+    // TODO: this and Compilation.Compile needs to be merged for sake of consistency.
+    // TODO: After merging, add new type of FSharp compilation.
     [<RequireQualifiedAccess>]
     type TestCompilation =
         | CSharp of CSharpCompilation
@@ -96,18 +98,19 @@ module Utilities =
     [<AbstractClass; Sealed>]
     type CompilationUtil private () =
 
-        static member CreateCSharpCompilation (source: string, lv: CSharpLanguageVersion, ?tf, ?additionalReferences) =
+        static member CreateCSharpCompilation (source: string, lv: CSharpLanguageVersion, ?tf, ?additionalReferences, ?name) =
             let lv =
                 match lv with
                     | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
                     | _ -> LanguageVersion.Default
 
             let tf = defaultArg tf TargetFramework.NetStandard20
+            let n = defaultArg name (Guid.NewGuid().ToString ())
             let additionalReferences = defaultArg additionalReferences ImmutableArray.Empty
             let references = TargetFrameworkUtil.getReferences tf
             let c =
                 CSharpCompilation.Create(
-                    Guid.NewGuid().ToString (),
+                    n,
                     [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
                     references.As<MetadataReference>().AddRange additionalReferences,
                     CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
