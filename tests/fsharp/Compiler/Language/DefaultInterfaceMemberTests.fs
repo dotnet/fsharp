@@ -813,7 +813,7 @@ type Test () =
         member __.M(_x: int) = Console.Write("InTest")
 
         member __.M<'Item> (x: int, y: 'Item) = 
-            Console.Write(string x)
+            Console.Write(x.ToString())
             Console.Write(y.ToString ())
 
         member __.M<'TTT> (x: 'TTT) =
@@ -821,7 +821,7 @@ type Test () =
 
         member __.M (x: int, text: string) =
             Console.Write("ABC")
-            Console.Write(string x)
+            Console.Write(x.ToString())
             Console.Write(text)
 
         member __.M<'U> (_x: 'U, _y: int) = ()
@@ -1166,7 +1166,8 @@ type Test () =
 let main _ =
     let x = Test () :> I1
     let y = Test () :> I2
-    Console.Write(string (x + y))
+    let result = x + y
+    Console.Write(result.ToString())
     0
             """
 
@@ -4229,7 +4230,7 @@ type Test () =
         member __.M(_x: int) = Console.Write("InTest")
 
         member __.M<'Item> (x: int, y: 'Item) = 
-            Console.Write(string x)
+            Console.Write(x.ToString())
             Console.Write(y.ToString ())
 
         member __.M<'TTT> (x: 'TTT) =
@@ -4237,7 +4238,7 @@ type Test () =
 
         member __.M (x: int, text: string) =
             Console.Write("ABC")
-            Console.Write(string x)
+            Console.Write(x.ToString())
             Console.Write(text)
 
 type Test2 () =
