@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ErrorMessages.ComponentTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-[<TestFixture>]
+
 module ``Unit generic abstract Type`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Unit can not be used as return type of abstract method paramete on return type``() =    
         CompilerAssert.TypeCheckSingleError
             """
