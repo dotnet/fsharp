@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ErrorMessages.ComponentTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-[<TestFixture>]
+
 module ``Else branch has wrong type`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Else branch is int while if branch is string``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -23,7 +23,7 @@ let y =
             (5, 10, 5, 13)
             "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'string'. This branch returns a value of type 'int'."
 
-    [<Test>]
+    [<Fact>]
     let ``Else branch is a function that returns int while if branch is string``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -39,7 +39,7 @@ let y =
             "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'string'. This branch returns a value of type 'int'."
 
 
-    [<Test>]
+    [<Fact>]
     let ``Else branch is a sequence of expressions that returns int while if branch is string``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -58,7 +58,7 @@ let y =
             "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'string'. This branch returns a value of type 'int'."
 
 
-    [<Test>]
+    [<Fact>]
     let ``Else branch is a longer sequence of expressions that returns int while if branch is string``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -79,7 +79,7 @@ let y =
             "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'string'. This branch returns a value of type 'int'."
 
 
-    [<Test>]
+    [<Fact>]
     let ``Else branch context doesn't propagate into function application``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -95,7 +95,7 @@ let y =
             (7, 11, 7, 14)
             "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    "
 
-    [<Test>]
+    [<Fact>]
     let ``Else branch context doesn't propagate into function application even if not last expr``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -112,7 +112,7 @@ let y =
             (7, 11, 7, 14)
             "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    "
 
-    [<Test>]
+    [<Fact>]
     let ``Else branch context doesn't propagate into for loop``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -131,7 +131,7 @@ let y =
             (7, 14, 7, 22)
             "This expression was expected to have type\n    'int'    \nbut here has type\n    'string'    "
 
-    [<Test>]
+    [<Fact>]
     let ``Else branch context doesn't propagate to lines before last line``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -149,7 +149,7 @@ let y =
             (7, 22, 7, 23)
             "This expression was expected to have type\n    'string'    \nbut here has type\n    'int'    "
 
-    [<Test>]
+    [<Fact>]
     let ``Else branch should not have wrong context type``() =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -162,7 +162,7 @@ let y : bool =
                FSharpErrorSeverity.Error, 1, (5, 10, 5, 13), "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'bool'. This branch returns a value of type 'string'." |]
 
 
-    [<Test>]
+    [<Fact>]
     let ``Else branch has wrong type in nested if``() =
         CompilerAssert.TypeCheckWithErrors
             """

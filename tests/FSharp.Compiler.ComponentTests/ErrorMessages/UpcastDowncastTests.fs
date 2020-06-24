@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ErrorMessages.ComponentTests
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-[<TestFixture>]
 module ``Upcast and Downcast`` =
 
-    [<Test>]
+    [<Fact>]
     let ``Downcast Instead Of Upcast``() =
         CompilerAssert.TypeCheckSingleError
             """
@@ -23,7 +22,7 @@ let c = orig :> Dictionary<obj,obj>
             (5, 9, 5, 36)
             "Type constraint mismatch. The type \n    'IDictionary<obj,obj>'    \nis not compatible with type\n    'Dictionary<obj,obj>'    \n"
 
-    [<Test>]
+    [<Fact>]
     let ``Upcast Instead Of Downcast``() =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -37,7 +36,7 @@ let c = orig :?> IDictionary<obj,obj>
                 FSharpErrorSeverity.Error, 3198, (5, 9, 5, 38), "The conversion from Dictionary<obj,obj> to IDictionary<obj,obj> is a compile-time safe upcast, not a downcast. Consider using the :> (upcast) operator instead of the :?> (downcast) operator."
             |]
 
-    [<Test>]
+    [<Fact>]
     let ``Upcast Function Instead Of Downcast``() =
         CompilerAssert.TypeCheckWithErrors
             """

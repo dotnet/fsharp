@@ -383,6 +383,14 @@ let OpenEntities tcSink g amap scopem root env mvvs openDeclaration =
     CallOpenDeclarationSink tcSink openDeclaration
     env
 
+/// Adjust the TcEnv to account for opening the set of modules, namespaces or static classes implied by an `open` declaration
+let OpenTypeStaticContent tcSink g amap scopem env (typ: TType) openDeclaration =
+    let env =
+        { env with eNameResEnv = AddTypeStaticContentsToNameEnv g amap env.eAccessRights scopem env.eNameResEnv typ }
+    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
+    CallOpenDeclarationSink tcSink openDeclaration
+    env
+
 /// Adjust the TcEnv to account for a new root Ccu being available, e.g. a referenced assembly
 let AddRootModuleOrNamespaceRefs g amap m env modrefs =
     if isNil modrefs then env else
@@ -651,7 +659,8 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
             match ResolveLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
-                let openDecl = OpenDeclaration.Create (enclosingNamespacePathToOpen, modrefs, scopem, true)
+                let openTarget = SynOpenDeclTarget.ModuleOrNamespace(enclosingNamespacePathToOpen)
+                let openDecl = OpenDeclaration.Create (openTarget, modrefs, [], scopem, true)
                 OpenEntities tcSink g amap scopem false env modrefs openDecl
             | Exception _ -> env
         | _ -> env
@@ -3626,16 +3635,20 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
 // Mutually recursive shapes
 //------------------------------------------------------------------------- 
 
+type MutRecDataForOpen = MutRecDataForOpen of SynOpenDeclTarget * range * appliedScope: range
+type MutRecDataForOpenType = MutRecDataForOpenType of SynType * range * appliedScope: range
+type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
+
 /// Represents the shape of a mutually recursive group of declarations including nested modules
 [<RequireQualifiedAccess>]
-type MutRecShape<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> = 
+type MutRecShape<'TypeData, 'LetsData, 'ModuleData> = 
     | Tycon of 'TypeData
     | Lets of 'LetsData
-    | Module of 'ModuleData * MutRecShapes<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> 
-    | ModuleAbbrev of 'ModuleAbbrevData 
-    | Open of 'OpenData
+    | Module of 'ModuleData * MutRecShapes<'TypeData, 'LetsData, 'ModuleData> 
+    | ModuleAbbrev of MutRecDataForModuleAbbrev
+    | Open of MutRecDataForOpen
 
-and MutRecShapes<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> = MutRecShape<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> list
+and MutRecShapes<'TypeData, 'LetsData, 'ModuleData> = MutRecShape<'TypeData, 'LetsData, 'ModuleData> list
 
 module MutRecShapes = 
    let rec map f1 f2 f3 x = 
@@ -3772,7 +3785,7 @@ let EliminateInitializationGraphs
       (getLetBinds: 'LetDataIn list -> PreInitializationGraphEliminationBinding list) 
       (morphLetBinds: (PreInitializationGraphEliminationBinding list -> Binding list) -> 'LetDataIn list -> Binding list)
       g mustHaveArity denv 
-      (fixupsAndBindingsWithoutLaziness: MutRecShape<_, _, _, _, _> list) bindsm =
+      (fixupsAndBindingsWithoutLaziness: MutRecShape<_, _, _> list) bindsm =
 
     let recursiveVals = 
         let hash = ValHash<Val>.Create()
@@ -4231,21 +4244,18 @@ type ValSpecResult = ValSpecResult of ParentRef * ValMemberInfoTransient option 
 
 type RecDefnBindingInfo = RecDefnBindingInfo of ContainerInfo * NewSlotsOK * DeclKind * SynBinding
 
-type MutRecDataForOpen = MutRecDataForOpen of LongIdent * isOpenType: bool * range * appliedScope: range
-type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
-
-type MutRecSigsInitialData = MutRecShape<SynTypeDefnSig, SynValSig, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
-type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecSigsInitialData = MutRecShape<SynTypeDefnSig, SynValSig, SynComponentInfo> list
+type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynComponentInfo> list
 
 type MutRecDefnsPhase1DataForTycon = MutRecDefnsPhase1DataForTycon of SynComponentInfo * SynTypeDefnSimpleRepr * (SynType * range) list * preEstablishedHasDefaultCtor: bool * hasSelfReferentialCtor: bool * isAtOriginalTyconDefn: bool
-type MutRecDefnsPhase1Data = MutRecShape<MutRecDefnsPhase1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecDefnsPhase1Data = MutRecShape<MutRecDefnsPhase1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo> list
 
 type MutRecDefnsPhase2DataForTycon = MutRecDefnsPhase2DataForTycon of Tycon option * ParentRef * DeclKind * TyconRef * Val option * SafeInitData * Typars * SynMemberDefn list * range * NewSlotsOK * fixupFinalAttribs: (unit -> unit)
 type MutRecDefnsPhase2DataForModule = MutRecDefnsPhase2DataForModule of ModuleOrNamespaceType ref * ModuleOrNamespace
-type MutRecDefnsPhase2Data = MutRecShape<MutRecDefnsPhase2DataForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecDefnsPhase2Data = MutRecShape<MutRecDefnsPhase2DataForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
 type MutRecDefnsPhase2InfoForTycon = MutRecDefnsPhase2InfoForTycon of Tycon option * TyconRef * Typars * DeclKind * TyconBindingDefn list * fixupFinalAttrs: (unit -> unit)
-type MutRecDefnsPhase2Info = MutRecShape<MutRecDefnsPhase2InfoForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecDefnsPhase2Info = MutRecShape<MutRecDefnsPhase2InfoForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
 
 /// RecursiveBindingInfo - flows through initial steps of TcLetrec 
@@ -12941,21 +12951,14 @@ let TcOpenLidAndPermitAutoResolve tcSink env amap (longId : Ident list) isOpenTy
     | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        let resOrEx = 
-            if isOpenType then
-                ResolveTypeLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true
-            else
-                ResolveLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true
+        let resOrEx = ResolveLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true
         match resOrEx with 
         | Result res -> res
         | Exception err ->
             errorR(err); []
 
-let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env longId isOpenType = 
-    if isOpenType then
-        checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration m
-
-    match TcOpenLidAndPermitAutoResolve tcSink env amap longId isOpenType with
+let TcOpenModuleOrNamespaceDecl tcSink g amap m scopem env (longId: Ident list) = 
+    match TcOpenLidAndPermitAutoResolve tcSink env amap longId with
     | [] -> env
     | modrefs ->
 
@@ -13006,10 +13009,23 @@ let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env longId isOpenType =
     let modrefs = List.map p23 modrefs
     modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
 
-    let openDecl = OpenDeclaration.Create (longId, modrefs, scopem, false)
+    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.ModuleOrNamespace longId, modrefs, [], scopem, false)
     let env = OpenEntities tcSink g amap scopem false env modrefs openDecl
+    env    
+
+let TcOpenTypeDecl (cenv: cenv) scopem env (synType: SynType) =
+    checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration m
+
+    let typ, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Open env emptyUnscopedTyparEnv synType
+    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.Type synType, [], [typ], scopem, false)
+    let env = OpenTypeStaticContent cenv.tcSink cenv.g cenv.amap scopem env typ openDecl
     env
 
+let TcOpenDecl cenv m scopem env (content: SynOpenDeclTarget) = 
+    match content with
+    | SynOpenDeclTarget.ModuleOrNamespace (longId) -> TcOpenModuleOrNamespaceDecl cenv.tcSink cenv.g cenv.amap m scopem env longId
+    | SynOpenDeclTarget.Type synType -> TcOpenTypeDecl cenv scopem env synType
+        
 exception ParameterlessStructCtor of range
 
 /// Incremental class definitions
@@ -13856,7 +13872,7 @@ module MutRecBindingChecking =
       | TyconBindingsPhase2A of Tycon option * DeclKind * Val list * TyconRef * Typar list * TType * TyconBindingPhase2A list
 
     /// The collected syntactic input definitions for a recursive group of type or type-extension definitions
-    type MutRecDefnsPhase2AData = MutRecShape<TyconBindingsPhase2A, PreCheckingRecursiveBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
+    type MutRecDefnsPhase2AData = MutRecShape<TyconBindingsPhase2A, PreCheckingRecursiveBinding list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
     /// Represents one element in a type definition, after the second phase
     type TyconBindingPhase2B =
@@ -13875,7 +13891,7 @@ module MutRecBindingChecking =
 
     type TyconBindingsPhase2B = TyconBindingsPhase2B of Tycon option * TyconRef * TyconBindingPhase2B list
 
-    type MutRecDefnsPhase2BData = MutRecShape<TyconBindingsPhase2B, int list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
+    type MutRecDefnsPhase2BData = MutRecShape<TyconBindingsPhase2B, int list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
     /// Represents one element in a type definition, after the third phase
     type TyconBindingPhase2C =
@@ -13889,7 +13905,7 @@ module MutRecBindingChecking =
 
     type TyconBindingsPhase2C = TyconBindingsPhase2C of Tycon option * TyconRef * TyconBindingPhase2C list
 
-    type MutRecDefnsPhase2CData = MutRecShape<TyconBindingsPhase2C, PreInitializationGraphEliminationBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
+    type MutRecDefnsPhase2CData = MutRecShape<TyconBindingsPhase2C, PreInitializationGraphEliminationBinding list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
 
 
@@ -14240,9 +14256,9 @@ module MutRecBindingChecking =
                             
                             
 #if OPEN_IN_TYPE_DECLARATIONS
-                        | Phase2AOpen(mp, isOpenType, m) -> 
-                            let envInstance = TcOpenDecl cenv.tcSink g cenv.amap m scopem envInstance mp isOpenType
-                            let envStatic = TcOpenDecl cenv.tcSink g cenv.amap m scopem envStatic mp isOpenType
+                        | Phase2AOpen(target, m) -> 
+                            let envInstance = TcOpenDecl cenv m scopem envInstance target
+                            let envStatic = TcOpenDecl cenv m scopem envStatic target
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
                             Phase2BOpen, innerState
 #endif
@@ -14549,7 +14565,7 @@ module MutRecBindingChecking =
                 // Add the modules being defined
                 let envForDecls = (envForDecls, mspecs) ||> List.fold ((if report then AddLocalSubModuleAndReport cenv.tcSink scopem else AddLocalSubModule) cenv.g cenv.amap m)
                 // Process the 'open' declarations                
-                let envForDecls = (envForDecls, opens) ||> List.fold (fun env (mp, isOpenType, m, moduleRange) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m moduleRange env mp isOpenType)
+                let envForDecls = (envForDecls, opens) ||> List.fold (fun env (target, m, moduleRange) -> TcOpenDecl cenv m moduleRange env target)
                 // Add the type definitions being defined
                 let envForDecls = (if report then AddLocalTyconsAndReport cenv.tcSink scopem else AddLocalTycons) cenv.g cenv.amap m tycons envForDecls 
                 // Add the exception definitions being defined
@@ -15469,7 +15485,7 @@ module EstablishTypeDefinitionCores =
     let AdjustModuleName modKind nm = (match modKind with FSharpModuleWithSuffix -> nm+FSharpModuleSuffix | _ -> nm)
 
 
-    let TypeNamesInMutRecDecls cenv env (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>) =
+    let TypeNamesInMutRecDecls cenv env (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
         [ for d in compDecls do 
                 match d with 
                 | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(ComponentInfo(_, typars, _, ids, _, _, _, _), _, _, _, _, isAtOriginalTyconDefn), _) -> 
@@ -15941,7 +15957,7 @@ module EstablishTypeDefinitionCores =
 
     // Third phase: check and publish the super types. Run twice, once before constraints are established
     // and once after
-    let private TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig pass (envMutRec, mutRecDefns: MutRecShape<(_ * (Tycon * (Attribs * _)) option), _, _, _, _> list) = 
+    let private TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig pass (envMutRec, mutRecDefns: MutRecShape<(_ * (Tycon * (Attribs * _)) option), _, _> list) = 
         let checkCxs = if (pass = SecondPass) then CheckCxs else NoCheckCxs
         let firstPass = (pass = FirstPass)
 
@@ -16618,7 +16634,7 @@ module EstablishTypeDefinitionCores =
                | _ -> ())
 
 
-    let TcMutRecDefns_Phase1 mkLetInfo cenv envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>) =
+    let TcMutRecDefns_Phase1 mkLetInfo cenv envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
         let g = cenv.g
         // Phase1A - build Entity for type definitions, exception definitions and module definitions.
         // Also for abbreviations of any of these. Augmentations are skipped in this phase.
@@ -17306,9 +17322,9 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let env = TcDeclarations.TcMutRecSignatureDecls cenv env parent typeNames emptyUnscopedTyparEnv m scopem None mutRecDefns
             return env 
 
-        | SynModuleSigDecl.Open (mp, isOpenType, m) -> 
+        | SynModuleSigDecl.Open (target, m) -> 
             let scopem = unionRanges m.EndRange endm
-            let env = TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp isOpenType
+            let env = TcOpenDecl cenv m scopem env target
             return env
 
         | SynModuleSigDecl.Val (vspec, m) -> 
@@ -17426,7 +17442,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
                     // If the namespace is an interactive fragment e.g. FSI_0002, then open FSI_0002 in the subsequent environment.
                     let env = 
                         match TryStripPrefixPath cenv.g enclosingNamespacePath with 
-                        | Some(p, _) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m.EndRange m.EndRange env [p] false
+                        | Some(p, _) -> TcOpenModuleOrNamespaceDecl cenv.tcSink cenv.g cenv.amap m.EndRange m.EndRange env [p]
                         | None -> env
 
                     // Publish the combined module type
@@ -17538,7 +17554,7 @@ let ElimModuleDoBinding bind =
         SynModuleDecl.Let(false, [bind2], m)
     | _ -> bind
 
-let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _, _, _>) env = 
+let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _>) env = 
     let freeInEnv = GeneralizationHelpers.ComputeUnabstractableTycons env
     let checkTycon (tycon: Tycon) = 
         if not tycon.IsTypeAbbrev && Zset.contains tycon freeInEnv then 
@@ -17600,9 +17616,9 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
           return (exprfWithEscapeCheck, []), envAfter, envAfter
 
-      | SynModuleDecl.Open (LongIdentWithDots(mp, _), isOpenType, m) -> 
+      | SynModuleDecl.Open (target, m) -> 
           let scopem = unionRanges m.EndRange scopem
-          let env = TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp isOpenType
+          let env = TcOpenDecl cenv m scopem env target
           return ((fun e -> e), []), env, env
 
       | SynModuleDecl.Let (letrec, binds, m) -> 
@@ -17735,7 +17751,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                   // If the namespace is an interactive fragment e.g. FSI_0002, then open FSI_0002 in the subsequent environment
                   let env = 
                       match TryStripPrefixPath cenv.g enclosingNamespacePath with 
-                      | Some(p, _) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m.EndRange m.EndRange env [p] false
+                      | Some(p, _) -> TcOpenModuleOrNamespaceDecl cenv.tcSink cenv.g cenv.amap m.EndRange m.EndRange env [p]
                       | None -> env
 
                   // Publish the combined module type
@@ -17802,9 +17818,9 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames m envInitial mutRecN
                   let decls = [MutRecShape.Module (compInfo, mutRecDefs)]
                   decls, (false, false, attrs)
 
-              | SynModuleDecl.Open (LongIdentWithDots(lid, _), isOpenType, m) ->  
+              | SynModuleDecl.Open (target, m) ->  
                   if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(), m))
-                  let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, isOpenType, m, moduleRange)) ]
+                  let decls = [ MutRecShape.Open (MutRecDataForOpen(target, m, moduleRange)) ]
                   decls, (openOk, moduleAbbrevOk, attrs)
 
               | SynModuleDecl.Exception (SynExceptionDefn(repr, members, _), _m) -> 
@@ -17907,7 +17923,8 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     match modref.TryDeref with 
     | ValueNone -> warn()
     | ValueSome _ -> 
-        let openDecl = OpenDeclaration.Create ([], [modref], scopem, false)
+        let openTarget = SynOpenDeclTarget.ModuleOrNamespace([])
+        let openDecl = OpenDeclaration.Create (openTarget, [modref], [], scopem, false)
         OpenEntities TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 
 // Add the CCU and apply the "AutoOpen" attributes

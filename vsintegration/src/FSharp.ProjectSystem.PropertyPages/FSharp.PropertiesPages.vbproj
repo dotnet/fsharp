@@ -92,46 +92,24 @@
     </Compile>
     <Compile Include="Package\Constants.vb" />
     <Compile Include="Package\InternalException.vb" />
-    <Compile Include="PropertyPages\ApplicationPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\ApplicationPropPageBase.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\BuildEventCommandLineDialog.vb">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="PropertyPages\ApplicationPropPage.vb" />
+    <Compile Include="PropertyPages\ApplicationPropPageBase.vb" />
+    <Compile Include="PropertyPages\BuildEventCommandLineDialog.vb" />
     <Compile Include="PropertyPages\BuildEventCommandLineDialogService.vb" />
-    <Compile Include="PropertyPages\BuildEventsPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\BuildPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\DebugPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="PropertyPages\BuildEventsPropPage.vb" />
+    <Compile Include="PropertyPages\BuildPropPage.vb" />
+    <Compile Include="PropertyPages\DebugPropPage.vb" />
     <Compile Include="PropertyPages\PropertyListener.vb" />
     <Compile Include="PropertyPages\skumatrix.vb" />
-    <Compile Include="PropertyPages\FSharpApplicationPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\ReferencePathsPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="PropertyPages\FSharpApplicationPropPage.vb" />
+    <Compile Include="PropertyPages\ReferencePathsPropPage.vb" />
     <Compile Include="PropertyPages\PropPage.vb" />
-    <Compile Include="DesignFramework\BaseDialog.vb">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="DesignFramework\BaseDialog.vb" />
     <Compile Include="PropertyPages\ValidationException.vb" />
     <Compile Include="PropertyPages\PropertyControlData.vb" />
     <Compile Include="PropertyPages\ControlDataFlags.vb" />
-    <Compile Include="PropertyPages\PropPageHostDialog.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\PropPageUserControlBase.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="PropertyPages\PropPageHostDialog.vb" />
+    <Compile Include="PropertyPages\PropPageUserControlBase.vb" />
     <Compile Include="PropertyPages\VSProductSKU.vb" />
     <Compile Include="PropertyPages\ValidationResult.vb" />
     <Compile Include="PropertyPages\ChildPageSite.vb" />

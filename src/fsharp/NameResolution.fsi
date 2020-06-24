@@ -244,6 +244,9 @@ val internal AddModuleOrNamespaceRefToNameEnv                    : TcGlobals -> 
 /// Add a list of modules or namespaces to the name resolution environment
 val internal AddEntitiesContentsToNameEnv : TcGlobals -> ImportMap -> AccessorDomain -> range -> bool -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
 
+/// Add the static content of a type to the name resolution environment
+val internal AddTypeStaticContentsToNameEnv : TcGlobals -> ImportMap -> AccessorDomain -> range -> NameResolutionEnv -> TType -> NameResolutionEnv
+
 /// A flag which indicates if it is an error to have two declared type parameters with identical names
 /// in the name resolution environment.
 type CheckForDuplicateTyparFlag =
@@ -373,8 +376,8 @@ type internal TcSymbolUses =
 
 /// Represents open declaration statement.
 type internal OpenDeclaration =
-    { /// Long identifier as it's presented in source code.
-      LongId: Ident list
+    { /// Syntax after 'open' as it's presented in source code.
+      Target: SynOpenDeclTarget
       
       /// Full range of the open declaration.
       Range : range option
@@ -382,6 +385,9 @@ type internal OpenDeclaration =
       /// Modules or namespaces which is opened with this declaration.
       Modules: ModuleOrNamespaceRef list 
       
+      /// Types whose static content is opened with this declaration.
+      Types: TType list
+
       /// Scope in which open declaration is visible.
       AppliedScope: range 
       
@@ -389,7 +395,7 @@ type internal OpenDeclaration =
       IsOwnNamespace: bool }
     
     /// Create a new instance of OpenDeclaration.
-    static member Create : longId: Ident list * modules: ModuleOrNamespaceRef list * appliedScope: range * isOwnNamespace: bool -> OpenDeclaration
+    static member Create : target: SynOpenDeclTarget * modules: ModuleOrNamespaceRef list * types: TType list * appliedScope: range * isOwnNamespace: bool -> OpenDeclaration
     
 /// Source text and an array of line end positions, used for format string parsing
 type FormatStringCheckContext =

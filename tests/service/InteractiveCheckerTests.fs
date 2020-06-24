@@ -42,7 +42,7 @@ let internal identsAndRanges (input: ParsedInput) =
         | SynModuleDecl.Let(_, _, _) -> failwith "Not implemented yet"
         | SynModuleDecl.DoExpr(_, _, _range) -> failwith "Not implemented yet"
         | SynModuleDecl.Exception(_, _range) -> failwith "Not implemented yet"
-        | SynModuleDecl.Open(longIdentWithDots, _, range) -> [ identAndRange (longIdentWithDotsToString longIdentWithDots) range ]
+        | SynModuleDecl.Open(lid, range) -> [ identAndRange (longIdentToString lid) range ]
         | SynModuleDecl.Attributes(_attrs, _range) -> failwith "Not implemented yet"
         | SynModuleDecl.HashDirective(_, _range) -> failwith "Not implemented yet"
         | SynModuleDecl.NamespaceFragment(moduleOrNamespace) -> extractFromModuleOrNamespace moduleOrNamespace

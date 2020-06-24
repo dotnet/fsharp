@@ -1054,16 +1054,22 @@ and [<Class>] public FSharpAttribute =
 [<Sealed>]
 type public FSharpOpenDeclaration =
 
-    internal new : longId: Ident list * range: range option * modules: FSharpEntity list * appliedScope: range * isOwnNamespace: bool -> FSharpOpenDeclaration
+    internal new : target: SynOpenDeclTarget * range: range option * modules: FSharpEntity list * types: FSharpType list * appliedScope: range * isOwnNamespace: bool -> FSharpOpenDeclaration
 
-    /// Idents.
-    member LongId: Ident list 
+    /// The syntactic target of the declaration
+    member LongId: Ident list
+
+    /// The syntactic target of the declaration
+    member Target: SynOpenDeclTarget
       
     /// Range of the open declaration.
     member Range: range option
 
     /// Modules or namespaces which is opened with this declaration.
     member Modules: FSharpEntity list 
+      
+    /// Types whose static content is opened with this declaration.
+    member Types: FSharpType list 
       
     /// Scope in which open declaration is visible.
     member AppliedScope: range 

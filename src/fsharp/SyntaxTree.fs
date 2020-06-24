@@ -1856,8 +1856,7 @@ type SynMemberDefn =
 
     /// An 'open' definition within a type
     | Open of
-        longId: LongIdent *
-        isOpenType: bool *
+        target: SynOpenDeclTarget *
         range: range
 
     /// A 'member' definition within a type
@@ -1989,8 +1988,7 @@ type SynModuleDecl =
 
     /// An 'open' definition within a module
     | Open of
-        longDotId: LongIdentWithDots *
-        isOpenType: bool *
+        target: SynOpenDeclTarget *
         range: range
 
     /// An attribute definition within a module, for assembly and .NET module attributes
@@ -2020,6 +2018,11 @@ type SynModuleDecl =
         | SynModuleDecl.HashDirective (range=m)
         | SynModuleDecl.NamespaceFragment (SynModuleOrNamespace (range=m))
         | SynModuleDecl.Attributes (range=m) -> m
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynOpenDeclTarget = 
+    | ModuleOrNamespace of Ident list
+    | Type of SynType
 
 /// Represents the right hand side of an exception definition in a signature file
 [<NoEquality; NoComparison>]
@@ -2063,8 +2066,7 @@ type SynModuleSigDecl =
 
     /// An 'open' definition within a module or namespace in a signature file
     | Open of
-        longId: LongIdent *
-        isOpenType: bool *
+        target: SynOpenDeclTarget *
         range: range
 
     /// A hash directive within a module or namespace in a signature file
