@@ -2019,9 +2019,10 @@ type SynModuleDecl =
         | SynModuleDecl.NamespaceFragment (SynModuleOrNamespace (range=m))
         | SynModuleDecl.Attributes (range=m) -> m
 
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynOpenDeclTarget = 
-    | OpenModuleOrNamespace of Ident list
-    | OpenType of SynType
+    | ModuleOrNamespace of Ident list
+    | Type of SynType
 
 /// Represents the right hand side of an exception definition in a signature file
 [<NoEquality; NoComparison>]

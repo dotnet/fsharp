@@ -659,7 +659,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
             match ResolveLongIndentAsModuleOrNamespaceOrStaticClass tcSink ResultCollectionSettings.AllResults amap scopem true true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
-                let openTarget = SynOpenDeclTarget.OpenModuleOrNamespace(enclosingNamespacePathToOpen)
+                let openTarget = SynOpenDeclTarget.ModuleOrNamespace(enclosingNamespacePathToOpen)
                 let openDecl = OpenDeclaration.Create (openTarget, modrefs, [], scopem, true)
                 OpenEntities tcSink g amap scopem false env modrefs openDecl
             | Exception _ -> env
@@ -13008,20 +13008,20 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap m scopem env (longId: Ident list) 
     let modrefs = List.map p23 modrefs
     modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
 
-    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.OpenModuleOrNamespace longId, modrefs, [], scopem, false)
+    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.ModuleOrNamespace longId, modrefs, [], scopem, false)
     let env = OpenEntities tcSink g amap scopem false env modrefs openDecl
     env    
 
 let TcOpenTypeDecl (cenv: cenv) scopem env (synType: SynType) = 
     let typ, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Open env emptyUnscopedTyparEnv synType
-    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.OpenType synType, [], [typ], scopem, false)
+    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.Type synType, [], [typ], scopem, false)
     let env = OpenTypeStaticContent cenv.tcSink cenv.g cenv.amap scopem env typ openDecl
     env
 
 let TcOpenDecl cenv m scopem env (content: SynOpenDeclTarget) = 
     match content with
-    | SynOpenDeclTarget.OpenModuleOrNamespace (longId) -> TcOpenModuleOrNamespaceDecl cenv.tcSink cenv.g cenv.amap m scopem env longId
-    | SynOpenDeclTarget.OpenType synType -> TcOpenTypeDecl cenv scopem env synType
+    | SynOpenDeclTarget.ModuleOrNamespace (longId) -> TcOpenModuleOrNamespaceDecl cenv.tcSink cenv.g cenv.amap m scopem env longId
+    | SynOpenDeclTarget.Type synType -> TcOpenTypeDecl cenv scopem env synType
         
 exception ParameterlessStructCtor of range
 
@@ -17920,7 +17920,7 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     match modref.TryDeref with 
     | ValueNone -> warn()
     | ValueSome _ -> 
-        let openTarget = SynOpenDeclTarget.OpenModuleOrNamespace([])
+        let openTarget = SynOpenDeclTarget.ModuleOrNamespace([])
         let openDecl = OpenDeclaration.Create (openTarget, [modref], [], scopem, false)
         OpenEntities TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 

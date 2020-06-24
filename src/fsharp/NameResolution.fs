@@ -1439,13 +1439,13 @@ type OpenDeclaration =
         { Target = target
           Range =
             match target with 
-            | SynOpenDeclTarget.OpenModuleOrNamespace(longId) ->
+            | SynOpenDeclTarget.ModuleOrNamespace(longId) ->
                 match longId with
                 | [] -> None
                 | first :: rest ->
                     let last = rest |> List.tryLast |> Option.defaultValue first
                     Some (mkRange appliedScope.FileName first.idRange.Start last.idRange.End)
-            | SynOpenDeclTarget.OpenType(synType) ->
+            | SynOpenDeclTarget.Type(synType) ->
                 Some synType.Range
           Types = types
           Modules = modules
