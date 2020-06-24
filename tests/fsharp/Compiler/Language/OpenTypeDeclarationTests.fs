@@ -49,7 +49,7 @@ module OpenSystemMathOnce =
                open type System.Math
                let x = Min(1.0, 2.0)""")
             [|
-                (FSharpErrorSeverity.Error, 3350, (22, 26, 22, 37), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+                (FSharpErrorSeverity.Error, 3350, (22, 16, 22, 37), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
                 (FSharpErrorSeverity.Error, 39, (23,24,23,27), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
             |]
 
@@ -77,9 +77,9 @@ module OpenSystemMathTwice =
     open type System.Math
     let x2 = Min(2.0, 1.0)""")
             [|
-                (FSharpErrorSeverity.Error, 3350, (22, 15, 22, 26), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+                (FSharpErrorSeverity.Error, 3350, (22, 5, 22, 26), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
                 (FSharpErrorSeverity.Error, 39, (23,13,23,16), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-                (FSharpErrorSeverity.Error, 3350, (25, 15, 25, 26), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+                (FSharpErrorSeverity.Error, 3350, (25, 5, 25, 26), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
                 (FSharpErrorSeverity.Error, 39, (26,14,26,17), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
             |]
 
@@ -105,7 +105,7 @@ module OpenMyMathOnce =
     let x = Min(1.0, 2.0)
     let x2 = Min(1, 2)""")
             [|
-                (FSharpErrorSeverity.Error, 3350, (22, 15, 22, 21), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+                (FSharpErrorSeverity.Error, 3350, (22, 5, 22, 21), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
                 (FSharpErrorSeverity.Error, 39, (23,13,23,16), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
                 (FSharpErrorSeverity.Error, 39, (24,14,24,17), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
             |]
@@ -159,7 +159,7 @@ module OpenAutoMath =
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
             [|
-                (FSharpErrorSeverity.Error, 3350, (21, 15, 21, 29), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+                (FSharpErrorSeverity.Error, 3350, (21, 5, 21, 29), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
                 (FSharpErrorSeverity.Error, 39, (24,13,24,20), "The value or constructor 'AutoMin' is not defined.")
                 (FSharpErrorSeverity.Error, 39, (25,14,25,21), "The value or constructor 'AutoMin' is not defined.")
             |]
@@ -283,7 +283,7 @@ open type Abbrev.NestedTest
         CompilerAssert.Compile(fsCmpl)
 
     [<Test>]
-    let ``Open a type where the type declaration uses a type abbreviation - Error`` () =
+    let ``Open a type where the type declaration uses a type abbreviation`` () =
         let csharpSource =
             """
 using System;
@@ -325,9 +325,7 @@ open type Abbrev
         let fsCmpl =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
 
-        CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 39, (6, 11, 6, 17), "The type 'Abbrev' is not defined.")
-        |])
+        CompilerAssert.Compile(fsCmpl)
 
     [<Test>]
     let ``Open a nested type as qualified`` () =
@@ -370,7 +368,7 @@ module Test =
         CompilerAssert.Compile(fsCmpl)
 
     [<Test>]
-    let ``Open generic type and use nested types as unqualified - Error`` () =
+    let ``Open generic type and use nested types as unqualified`` () =
         let csharpSource =
             """
 using System;
@@ -419,9 +417,7 @@ module Test =
         let fsCmpl =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
 
-        CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 10, (5, 26, 5, 27), "Unexpected type application  in implementation file. Expected incomplete structured construct at or before this point or other token.")
-        |])
+        CompilerAssert.Compile(fsCmpl)
 
     [<Test>]
     let ``Using the 'open' declaration on a possible type identifier - Error`` () =

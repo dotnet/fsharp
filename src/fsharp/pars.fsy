@@ -1268,7 +1268,7 @@ openDecl:
   | OPEN path
       { SynOpenDeclTarget.ModuleOrNamespace $2.Lid }
 
-  | OPEN TYPE appType
+  | OPEN typeKeyword appType
       { SynOpenDeclTarget.Type $3 }
 
 /* The right-hand-side of a module abbreviation definition */ 
