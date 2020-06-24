@@ -3149,18 +3149,18 @@ let destReadOnlySpanTy g m ty =
 ///     - erased types
 ///     - F# exception types
 /// parameterized types, type abbreviations, measureable types, or special types from FSharp.Core.
-let isOpenableTycon (tycon: Tycon) =
+let isOpenableTyconRef (tcref: TyconRef) =
     // While a Tycon is an Entity and an Entity that is a module or namespace can be opened,
     // we disallow it here to be explicit that this function only operates on type definitions.
-    not tycon.IsModuleOrNamespace &&
-    tycon.TyparsNoRange.IsEmpty &&
-    not tycon.IsTypeAbbrev &&
-    not tycon.IsMeasureableReprTycon &&
-    not tycon.IsAsmReprTycon &&
-    not tycon.IsDelegateTycon &&
-    not tycon.IsHiddenReprTycon &&
-    not tycon.IsErased &&
-    not tycon.IsExceptionDecl
+    not tcref.IsModuleOrNamespace &&
+    tcref.TyparsNoRange.IsEmpty &&
+    not tcref.IsTypeAbbrev &&
+    not tcref.IsMeasureableReprTycon &&
+    not tcref.IsAsmReprTycon &&
+    not tcref.IsDelegateTycon &&
+    not tcref.IsHiddenReprTycon &&
+    not tcref.IsErased &&
+    not tcref.IsExceptionDecl
 
 //-------------------------------------------------------------------------
 // List and reference types...

@@ -211,7 +211,9 @@ module UnusedOpens =
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as f ->
                     match f.DeclaringEntity with
-                    | Some entity when entity.IsNamespace || entity.IsFSharpModule || entity.IsOpenableType -> 
+                    // Show namespaces, modules, openable types, and type abbreviations.
+                    // We show type abbreviations because they may have nested types that could be accessed.
+                    | Some entity when entity.IsNamespace || entity.IsFSharpModule || entity.IsOpenableType || entity.IsFSharpAbbreviation -> 
                         symbolUsesRangesByDeclaringEntity.BagAdd(entity, symbolUse.RangeAlternate)
                     | _ -> ()
                 | _ -> ()

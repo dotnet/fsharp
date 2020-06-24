@@ -857,7 +857,8 @@ type internal TypeCheckInfo
                                  |> List.exists (fun ty ->
                                     match ty with
                                     | TType_app (tcref, _) when tcref.CanDeref -> 
-                                        not tcref.IsTypeAbbrev && (isOpenableTycon tcref.Deref || (* IL types might have nested types *) (tcref.IsILTycon && not tcref.IsILDelegateTycon))
+                                        // Type abbreviations may have nested types that are valid, so show them.
+                                        tcref.IsTypeAbbrev || isOpenableTyconRef tcref
                                     | _ -> false) -> true
                         | _ -> false), denv, m)
             

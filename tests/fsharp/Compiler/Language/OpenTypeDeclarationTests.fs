@@ -219,7 +219,6 @@ namespace CSharpTest
             """
 namespace FSharpTest
 
-open System
 open type CSharpTest.Test
 
 module Test =
@@ -237,6 +236,98 @@ module Test =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
 
         CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
+    let ``Open a type where the type declaration uses a type abbreviation as a qualifier to a real nested type`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public static class Test
+    {
+        public class NestedTest
+        {
+            public void A()
+            {
+            }
+        }
+
+        public class NestedTest<T>
+        {
+            public void B()
+            {
+            }
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+type Abbrev = CSharpTest.Test
+open type Abbrev.NestedTest
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
+    let ``Open a type where the type declaration uses a type abbreviation - Error`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public static class Test
+    {
+        public class NestedTest
+        {
+            public void A()
+            {
+            }
+        }
+
+        public class NestedTest<T>
+        {
+            public void B()
+            {
+            }
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+type Abbrev = CSharpTest.Test
+open type Abbrev
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 39, (6, 11, 6, 17), "The type 'Abbrev' is not defined.")
+        |])
 
     [<Test>]
     let ``Open a nested type as qualified`` () =

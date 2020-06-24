@@ -2142,7 +2142,7 @@ val tryDestReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TTy
 
 val destReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType)
 
-val isOpenableTycon : Tycon -> bool
+val isOpenableTyconRef : TyconRef -> bool
 
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors
