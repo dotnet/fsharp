@@ -767,7 +767,7 @@ moduleSpfn:
         SynModuleSigDecl.Exception(ec, rhs parseState 3) }
 
   | openDecl
-      { SynModuleSigDecl.Open(a, (rhs parseState 1)) }
+      { SynModuleSigDecl.Open($1, (rhs parseState 1)) }
 
 valSpfn: 
   | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
@@ -1261,7 +1261,7 @@ moduleDefn:
 
   /* 'open' declarations */
   | openDecl
-      { [ SynModuleDecl.Open(a, (rhs parseState 1)) ] }
+      { [ SynModuleDecl.Open($1, (rhs parseState 1)) ] }
 
 openDecl:
   /* 'open' declarations */

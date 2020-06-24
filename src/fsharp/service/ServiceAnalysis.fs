@@ -42,7 +42,7 @@ module UnusedOpens =
                   for apCase in entity.ActivePatternCases do
                       yield apCase :> FSharpSymbol
 
-                  // The IsNamespace and IsFSharpModule and IsOpenableType cases are handled by looking at DeclaringEntity below
+                  // The IsNamespace and IsFSharpModule cases are handled by looking at DeclaringEntity below
                   if not entity.IsNamespace && not entity.IsFSharpModule then
                       for fv in entity.MembersFunctionsAndValues do 
                           yield fv :> FSharpSymbol |]

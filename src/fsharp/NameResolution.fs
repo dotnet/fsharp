@@ -2116,23 +2116,8 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 // Consume ids that refer to a namespace, module, or type
 //-------------------------------------------------------------------------
 
-let ResolveNestedTypeThroughAbbreviation g (tcref: TyconRef) m =
-    if tcref.IsTypeAbbrev && tcref.Typars(m).IsEmpty then 
-        match tryAppTy g tcref.TypeAbbrev.Value with
-        | ValueSome (abbrevTcref, []) -> abbrevTcref
-        | _ -> tcref
-    else
-        tcref
-
-/// If we are not looking up a type, then always lookup a module or namespace.
-/// If we are looking up a type, but the rest is not empty, we need to lookup a module or namespace.
-let CanLookupModuleOrNamespace (rest: Ident list) isType =
-    not isType || (isType && not rest.IsEmpty)
-
 /// Perform name resolution for an identifier which must resolve to be a module or namespace.
 let rec ResolveLongIdentAsModuleOrNamespace sink (atMostOne: ResultCollectionSettings) (amap: Import.ImportMap) m first fullyQualified (nenv: NameResolutionEnv) ad (id:Ident) (rest: Ident list) isOpenDecl =
-    let g = amap.g
-
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
@@ -2185,7 +2170,6 @@ let rec ResolveLongIdentAsModuleOrNamespace sink (atMostOne: ResultCollectionSet
         if not modrefs.IsEmpty then 
             /// Look through the sub-namespaces and/or modules
             let rec look depth (modref: ModuleOrNamespaceRef) (lid: Ident list) =
-                let modref = if not lid.IsEmpty then ResolveNestedTypeThroughAbbreviation g modref m else modref
                 let mty = modref.ModuleOrNamespaceType
                 match lid with
                 | [] -> 
@@ -2992,10 +2976,17 @@ let ResolvePatternLongIdent sink (ncenv: NameResolver) warnOnUpper newDef m ad n
 //
 // X.ListEnumerator // does not resolve
 //
+let ResolveNestedTypeThroughAbbreviation (ncenv: NameResolver) (tcref: TyconRef) m =
+    if tcref.IsTypeAbbrev && tcref.Typars(m).IsEmpty then 
+        match tryAppTy ncenv.g tcref.TypeAbbrev.Value with
+        | ValueSome (abbrevTcref, []) -> abbrevTcref
+        | _ -> tcref
+    else
+        tcref
 
 /// Resolve a long identifier representing a type name
 let rec ResolveTypeLongIdentInTyconRefPrim (ncenv: NameResolver) (typeNameResInfo: TypeNameResolutionInfo) ad resInfo genOk depth m (tcref: TyconRef) (id: Ident) (rest: Ident list) =
-    let tcref = ResolveNestedTypeThroughAbbreviation ncenv.g tcref m
+    let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
     match rest with
     | [] ->
 #if !NO_EXTENSIONTYPING
@@ -4131,7 +4122,7 @@ let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) 
             LookupTypeNameInEnvNoArity OpenQualified id nenv
             |> List.tryHead
             |> Option.map (fun tcref ->
-                let tcref = ResolveNestedTypeThroughAbbreviation g tcref m
+                let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
                 FreshenTycon ncenv m tcref)
     | _ -> None
 
@@ -4228,7 +4219,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
             [ if not isItemVal then
                 // type.lookup: lookup a static something in a type
                 for tcref in LookupTypeNameInEnvNoArity OpenQualified id nenv do
-                    let tcref = ResolveNestedTypeThroughAbbreviation g tcref m
+                    let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
                     let ty = FreshenTycon ncenv m tcref
                     yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad true rest ty ]
 
@@ -4812,7 +4803,7 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
             | _ ->
                 // type.lookup: lookup a static something in a type
                 for tcref in LookupTypeNameInEnvNoArity OpenQualified id nenv do
-                    let tcref = ResolveNestedTypeThroughAbbreviation g tcref m
+                    let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
                     let ty = FreshenTycon ncenv m tcref
                     yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad true rest item ty
     }

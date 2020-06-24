@@ -7,19 +7,13 @@ open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Utilities
 open FSharp.Compiler.SourceCodeServices
 
-[<AutoOpen>]
-module private DefaultInterfaceMemberConsumptionLanguageVersion =
-
-    [<Literal>]
-    let targetVersion = "5.0"
-
 #if NETCOREAPP
 
 [<TestFixture>]
 module DefaultInterfaceMemberConsumptionTests_LanguageVersion_4_6 =
 
     [<Literal>]
-    let targetVersion = "'preview'"
+    let targetVersion = "5.0"
 
     [<Test>]
     let ``IL - Errors with lang version not supported`` () =
@@ -953,7 +947,7 @@ type Test2 () =
 module DefaultInterfaceMemberConsumptionTests_LanguageVersion_4_6_net472 =
 
     [<Literal>]
-    let targetVersion = "'preview'"
+    let targetVersion = "5.0"
 
     [<Test>]
     let ``IL - Errors with lang version and target runtime not supported`` () =
@@ -4964,7 +4958,7 @@ let f () =
 module DefaultInterfaceMemberConsumptionTests_net472 =
 
     [<Literal>]
-    let targetVersion = "'preview'"
+    let targetVersion = "5.0"
 
     [<Test>]
     let ``IL - Errors with target runtime not supported`` () =
