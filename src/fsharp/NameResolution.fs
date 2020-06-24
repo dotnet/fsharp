@@ -770,10 +770,9 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: UnqualifiedItems) (ucrefs: Un
             let item = Item.UnionCase(GeneralizeUnionCaseRef ucref, false)
             acc.Add (ucref.CaseName, item))
 
-let AddStaticContentOfTyconRefToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (tcref:TyconRef) =
+let AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
     // If OpenStaticClasses is not enabled then don't do this
     if amap.g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses then
-        let ty = generalizedTyconRef tcref
         let infoReader = InfoReader(g,amap)
         let items =
             [| let methGroups = 
@@ -881,10 +880,13 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
             eUnindexedExtensionMembers = eUnindexedExtensionMembers }
 
     let nenv = 
-        if TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true && isStaticClass g tcref then
-           AddStaticContentOfTyconRefToNameEnv g amap ad m nenv tcref
+        if TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true 
+           && amap.g.langVersion.SupportsFeature LanguageFeature.OpenStaticClasses then
+            if tcref.Typars(m).Length > 0 then failwith "nope" // TODO proper error
+            let ty = generalizedTyconRef tcref
+            AddStaticContentOfTypeToNameEnv g amap ad m nenv ty
         else
-           nenv
+            nenv
 
     nenv
 
@@ -1011,11 +1013,14 @@ and AddModuleOrNamespaceContentsToNameEnv (g: TcGlobals) amap (ad: AccessorDomai
 and AddEntitiesContentsToNameEnv g amap ad m root nenv modrefs =
    (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddEntityContentsToNameEnv g amap ad m root acc modref)
 
+and AddTypeStaticContentsToNameEnv g amap ad m nenv (typ: TType) =
+    assert (isAppTy g typ)
+    assert not (tcrefOfAppTy g typ).IsModuleOrNamespace
+    AddStaticContentOfTypeToNameEnv g amap ad m nenv typ
+
 and AddEntityContentsToNameEnv g amap ad m root nenv (modref: EntityRef) =
-    if modref.IsModuleOrNamespace then 
-        AddModuleOrNamespaceContentsToNameEnv g amap ad m root nenv modref
-    else
-        AddStaticContentOfTyconRefToNameEnv g amap ad m nenv modref
+    assert modref.IsModuleOrNamespace 
+    AddModuleOrNamespaceContentsToNameEnv g amap ad m root nenv modref
 
 /// Add a single modules or namespace to the name resolution environment
 let AddModuleOrNamespaceRefToNameEnv g amap m root ad nenv (modref: EntityRef) =
@@ -1423,20 +1428,26 @@ type ItemOccurence =
     | Open
 
 type OpenDeclaration =
-    { LongId: Ident list
+    { Target: SynOpenDeclTarget
       Range: range option
       Modules: ModuleOrNamespaceRef list
+      Types: TType list
       AppliedScope: range
       IsOwnNamespace: bool }
 
-    static member Create(longId: Ident list, modules: ModuleOrNamespaceRef list, appliedScope: range, isOwnNamespace: bool) =
-        { LongId = longId
+    static member Create(target: SynOpenDeclTarget, modules: ModuleOrNamespaceRef list, types: TType list, appliedScope: range, isOwnNamespace: bool) =
+        { Target = target
           Range =
-            match longId with
-            | [] -> None
-            | first :: rest ->
-                let last = rest |> List.tryLast |> Option.defaultValue first
-                Some (mkRange appliedScope.FileName first.idRange.Start last.idRange.End)
+            match target with 
+            | SynOpenDeclTarget.OpenModuleOrNamespace(longId) ->
+                match longId with
+                | [] -> None
+                | first :: rest ->
+                    let last = rest |> List.tryLast |> Option.defaultValue first
+                    Some (mkRange appliedScope.FileName first.idRange.Start last.idRange.End)
+            | SynOpenDeclTarget.OpenType(synType) ->
+                Some synType.Range
+          Types = types
           Modules = modules
           AppliedScope = appliedScope
           IsOwnNamespace = isOwnNamespace }

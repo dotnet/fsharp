@@ -26,7 +26,7 @@ val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * assemblyName: s
 val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
 val AddLocalVal : NameResolution.TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
 val AddLocalSubModule : TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespace -> TcEnv
-val TcOpenDecl         : NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> range -> TcEnv -> LongIdent -> TcEnv 
+val TcOpenModuleOrNamespaceDecl: NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> range -> TcEnv -> LongIdent -> TcEnv 
 
 type TopAttribs =
     { mainMethodAttrs : Attribs;

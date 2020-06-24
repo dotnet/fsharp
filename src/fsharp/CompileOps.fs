@@ -5580,7 +5580,7 @@ let GetInitialTcEnv (thisAssemblyName: string, initm: range, tcConfig: TcConfig,
     let tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, thisAssemblyName, ccus)
 
     if tcConfig.checkOverflow then
-        try TcOpenDecl TcResultsSink.NoSink tcGlobals amap initm initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName))
+        try TcOpenModuleOrNamespaceDecl TcResultsSink.NoSink tcGlobals amap initm initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName))
         with e -> errorRecovery e initm; tcEnv
     else
         tcEnv
@@ -5737,7 +5737,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
                   | None -> tcEnv 
                   | Some prefixPath -> 
                       let m = qualNameOfFile.Range
-                      TcOpenDecl tcSink tcGlobals amap m m tcEnv prefixPath
+                      TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m m tcEnv prefixPath
 
               let tcState = 
                    { tcState with 
@@ -5785,13 +5785,13 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
               // Open the prefixPath for fsi.exe (tcImplEnv)
               let tcImplEnv = 
                   match prefixPathOpt with 
-                  | Some prefixPath -> TcOpenDecl tcSink tcGlobals amap m m tcImplEnv prefixPath
+                  | Some prefixPath -> TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m m tcImplEnv prefixPath
                   | _ -> tcImplEnv 
 
               // Open the prefixPath for fsi.exe (tcSigEnv)
               let tcSigEnv = 
                   match prefixPathOpt with 
-                  | Some prefixPath when not hadSig -> TcOpenDecl tcSink tcGlobals amap m m tcSigEnv prefixPath
+                  | Some prefixPath when not hadSig -> TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m m tcSigEnv prefixPath
                   | _ -> tcSigEnv 
 
               let ccuSig = CombineCcuContentFragments m [implFileSigType; tcState.tcsCcuSig ]

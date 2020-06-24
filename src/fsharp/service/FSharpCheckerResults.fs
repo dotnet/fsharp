@@ -1913,7 +1913,10 @@ type FSharpCheckFileResults
         scopeOptX 
         |> Option.map (fun scope -> 
             let cenv = scope.SymbolEnv
-            scope.OpenDeclarations |> Array.map (fun x -> FSharpOpenDeclaration(x.LongId, x.Range, (x.Modules |> List.map (fun x -> FSharpEntity(cenv, x))), x.AppliedScope, x.IsOwnNamespace)))
+            scope.OpenDeclarations |> Array.map (fun x -> 
+                let modules = x.Modules |> List.map (fun x -> FSharpEntity(cenv, x))
+                let types = x.Types |> List.map (fun x -> FSharpType(cenv, x))
+                FSharpOpenDeclaration(x.Target, x.Range, modules, types, x.AppliedScope, x.IsOwnNamespace)))
         |> Option.defaultValue [| |]
 
     override __.ToString() = "FSharpCheckFileResults(" + filename + ")"

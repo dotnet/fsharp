@@ -2499,11 +2499,26 @@ and FSharpAssembly internal (cenv, ccu: CcuThunk) =
 
 /// Represents open declaration in F# code.
 [<Sealed>]
-type FSharpOpenDeclaration(longId: Ident list, range: range option, modules: FSharpEntity list, appliedScope: range, isOwnNamespace: bool) =
+type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: range option, modules: FSharpEntity list, types: FSharpType list, appliedScope: range, isOwnNamespace: bool) =
 
-    member __.LongId = longId
+    member __.Target= target
+
+    member __.LongId = 
+        match target with 
+        | SynOpenDeclTarget.OpenModuleOrNamespace(longId) -> longId
+        | SynOpenDeclTarget.OpenType(synType) ->
+            let rec get ty = 
+                match ty with 
+                | SynType.LongIdent (LongIdentWithDots(lid, _)) -> lid
+                | SynType.App (ty2, _, _, _, _, _, _) -> get ty2
+                | SynType.LongIdentApp (ty2, _, _, _, _, _, _) -> get ty2
+                | SynType.Paren (ty2, _) -> get ty2
+                | _ -> []
+            get synType
 
     member __.Range = range
+
+    member __.Types = types
 
     member __.Modules = modules
 
