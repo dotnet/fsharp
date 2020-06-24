@@ -13,10 +13,10 @@ module UnusedOpens =
 
     let symbolHash = HashIdentity.FromFunctions (fun (x: FSharpSymbol) -> x.GetEffectivelySameAsHash()) (fun x y -> x.IsEffectivelySameAs(y))
 
-    /// Represents one namespace or module or type opened by an 'open'/'open type' declaration
+    /// Represents one namespace or module or type opened by an 'open' declaration
     type OpenedModule(entity: FSharpEntity, isNestedAutoOpen: bool) = 
 
-        /// Compute an indexed table of the set of symbols revealed by 'open'/'open type', on-demand
+        /// Compute an indexed table of the set of symbols revealed by 'open', on-demand
         let revealedSymbols : Lazy<HashSet<FSharpSymbol>> =
            lazy
             let symbols = 
@@ -43,7 +43,7 @@ module UnusedOpens =
                       yield apCase :> FSharpSymbol
 
                   // The IsNamespace and IsFSharpModule and IsOpenableType cases are handled by looking at DeclaringEntity below
-                  if not entity.IsNamespace && not entity.IsFSharpModule && not entity.IsOpenableType then
+                  if not entity.IsNamespace && not entity.IsFSharpModule then
                       for fv in entity.MembersFunctionsAndValues do 
                           yield fv :> FSharpSymbol |]
 
@@ -60,7 +60,7 @@ module UnusedOpens =
             let rec getModuleAndItsAutoOpens (isNestedAutoOpen: bool) (modul: FSharpEntity) =
                 [ yield OpenedModule (modul, isNestedAutoOpen)
                   for ent in modul.NestedEntities do
-                    if (ent.IsFSharpModule || ent.IsOpenableType) && Symbol.hasAttribute<AutoOpenAttribute> ent.Attributes then
+                    if (not ent.IsNamespace) && Symbol.hasAttribute<AutoOpenAttribute> ent.Attributes then
                       yield! getModuleAndItsAutoOpens true ent ]
             { OpenedModules = getModuleAndItsAutoOpens false modul }
 
@@ -136,7 +136,7 @@ module UnusedOpens =
             match symbol with
             | :? FSharpMemberOrFunctionOrValue as f ->
                 match f.DeclaringEntity with
-                | Some ent when ent.IsNamespace || ent.IsFSharpModule || ent.IsOpenableType -> true
+                | Some _ when not f.IsInstanceMember -> true
                 | _ -> false
             | _ -> false)
 
@@ -213,7 +213,7 @@ module UnusedOpens =
                     match f.DeclaringEntity with
                     // Show namespaces, modules, openable types, and type abbreviations.
                     // We show type abbreviations because they may have nested types that could be accessed.
-                    | Some entity when entity.IsNamespace || entity.IsFSharpModule || entity.IsOpenableType || entity.IsFSharpAbbreviation -> 
+                    | Some entity when not f.IsInstanceMember -> 
                         symbolUsesRangesByDeclaringEntity.BagAdd(entity, symbolUse.RangeAlternate)
                     | _ -> ()
                 | _ -> ()

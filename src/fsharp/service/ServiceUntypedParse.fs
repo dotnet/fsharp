@@ -1325,7 +1325,7 @@ module UntypedParseImpl =
 
                     member __.VisitModuleDecl(defaultTraverse, decl) =
                         match decl with
-                        | SynModuleDecl.Open(_, isOpenType, m) -> 
+                        | SynModuleDecl.Open(target, m) -> 
                             // in theory, this means we're "in an open"
                             // in practice, because the parse tree/walkers do not handle attributes well yet, need extra check below to ensure not e.g. $here$
                             //     open System
@@ -1333,7 +1333,11 @@ module UntypedParseImpl =
                             //     let f() = ()
                             // inside an attribute on the next item
                             let pos = mkPos pos.Line (pos.Column - 1) // -1 because for e.g. "open System." the dot does not show up in the parse tree
-                            if rangeContainsPos m pos then  
+                            if rangeContainsPos m pos then
+                                let isOpenType =
+                                    match target with
+                                    | SynOpenDeclTarget.Type _ -> true
+                                    | SynOpenDeclTarget.ModuleOrNamespace _ -> false
                                 Some (CompletionContext.OpenDeclaration isOpenType)
                             else
                                 None

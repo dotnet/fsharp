@@ -586,7 +586,7 @@ module Structure =
             |> List.choose selectRanges
             |> acc.AddRange
 
-        let collectOpens = getConsecutiveModuleDecls (function SynModuleDecl.Open (_, _, r) -> Some r | _ -> None) Scope.Open
+        let collectOpens = getConsecutiveModuleDecls (function SynModuleDecl.Open (_, r) -> Some r | _ -> None) Scope.Open
 
         let collectHashDirectives =
              getConsecutiveModuleDecls(
@@ -730,7 +730,7 @@ module Structure =
                 | SynModuleSigDecl.Types (typeSigs, r) -> lastTypeDefnSigRangeElse r typeSigs
                 | SynModuleSigDecl.Val (ValSpfn(range=r), _) -> r
                 | SynModuleSigDecl.Exception(_, r) -> r
-                | SynModuleSigDecl.Open(_, _, r) -> r
+                | SynModuleSigDecl.Open(_, r) -> r
                 | SynModuleSigDecl.ModuleAbbrev(_, _, r) -> r
                 | _ -> range
 
@@ -821,7 +821,7 @@ module Structure =
                     Some (mkRange "" (mkPos r.StartLine prefixLength) r.End)
                 | _ -> None) Scope.HashDirective
 
-        let collectSigOpens = getConsecutiveSigModuleDecls (function SynModuleSigDecl.Open (_, _, r) -> Some r | _ -> None) Scope.Open
+        let collectSigOpens = getConsecutiveSigModuleDecls (function SynModuleSigDecl.Open (_, r) -> Some r | _ -> None) Scope.Open
 
         let rec parseModuleSigDeclaration (decl: SynModuleSigDecl) =
             match decl with

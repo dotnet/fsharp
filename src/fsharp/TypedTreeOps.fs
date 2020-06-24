@@ -3138,30 +3138,6 @@ let destReadOnlySpanTy g m ty =
     | ValueSome(struct(tcref, ty)) -> struct(tcref, ty)
     | _ -> failwith "destReadOnlySpanTy"    
 
-/// Is the type able to be opened?
-/// F# does not support opening the following types:
-///     - parameterized types
-///     - type abbreviations
-///     - measureable types
-///     - special types from FSharp.Core
-///     - delegate types
-///     - hidden types
-///     - erased types
-///     - F# exception types
-/// parameterized types, type abbreviations, measureable types, or special types from FSharp.Core.
-let isOpenableTyconRef (tcref: TyconRef) =
-    // While a Tycon is an Entity and an Entity that is a module or namespace can be opened,
-    // we disallow it here to be explicit that this function only operates on type definitions.
-    not tcref.IsModuleOrNamespace &&
-    tcref.TyparsNoRange.IsEmpty &&
-    not tcref.IsTypeAbbrev &&
-    not tcref.IsMeasureableReprTycon &&
-    not tcref.IsAsmReprTycon &&
-    not tcref.IsDelegateTycon &&
-    not tcref.IsHiddenReprTycon &&
-    not tcref.IsErased &&
-    not tcref.IsExceptionDecl
-
 //-------------------------------------------------------------------------
 // List and reference types...
 //------------------------------------------------------------------------- 

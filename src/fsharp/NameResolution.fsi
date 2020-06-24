@@ -532,9 +532,6 @@ type PermitDirectReferenceToGeneratedType =
 /// Resolve a long identifier to a namespace, module.
 val internal ResolveLongIdentAsModuleOrNamespace     : TcResultsSink -> ResultCollectionSettings -> Import.ImportMap -> range -> first: bool -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident -> Ident list -> isOpenDecl: bool -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
 
-/// Resolve a long identifier to a type to be used like a namespace, module.
-val internal ResolveTypeLongIdentAsModuleOrNamespace : TcResultsSink -> ResultCollectionSettings -> Import.ImportMap -> range -> first: bool -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident -> Ident list -> isOpenDecl: bool -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
-
 /// Resolve a long identifier to an object constructor.
 val internal ResolveObjectConstructor                : NameResolver -> DisplayEnv -> range -> AccessorDomain -> TType -> ResultOrException<Item>
 

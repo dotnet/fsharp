@@ -190,9 +190,6 @@ and [<Class>] public FSharpEntity =
     /// Indicates if the entity is union type
     member IsFSharpUnion   : bool
 
-    /// Indicates if the entity is a type that can be opened via 'open type' declarations
-    member IsOpenableType : bool
-
     /// Indicates if the entity is a struct or enum
     member IsValueType : bool
 

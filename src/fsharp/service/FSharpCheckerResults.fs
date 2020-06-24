@@ -851,15 +851,7 @@ type internal TypeCheckInfo
                     |> List.filter (fun x ->
                         match x.Item with
                         | Item.ModuleOrNamespaces _ -> true
-                        | Item.Types (_, tcrefs) 
-                            when isOpenType && 
-                                 tcrefs 
-                                 |> List.exists (fun ty ->
-                                    match ty with
-                                    | TType_app (tcref, _) when tcref.CanDeref -> 
-                                        // Type abbreviations may have nested types that are valid, so show them.
-                                        tcref.IsTypeAbbrev || isOpenableTyconRef tcref
-                                    | _ -> false) -> true
+                        | Item.Types _ when isOpenType -> true
                         | _ -> false), denv, m)
             
             // Completion at '(x: ...)"

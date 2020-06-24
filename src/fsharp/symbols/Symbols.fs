@@ -532,9 +532,6 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     member __.IsFSharpUnion = 
         isResolvedAndFSharp() && entity.IsUnionTycon
 
-    member __.IsOpenableType =
-        isResolved() && isOpenableTyconRef entity
-
     member __.HasAssemblyCodeRepresentation = 
         isResolvedAndFSharp() && (entity.IsAsmReprTycon || entity.IsMeasureableReprTycon)
 
