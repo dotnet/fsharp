@@ -9,6 +9,30 @@ open FSharp.Test.Utilities
 [<TestFixture>]
 module ``Sign Tests`` =
 
+    [<Test>]
+    let ``Sign of signed types``() =
+        Assert.areEqual (sign 1y) 1       // byte
+        Assert.areEqual (sign 1s) 1       // int16
+        Assert.areEqual (sign 1) 1        // int32
+        Assert.areEqual (sign 1L) 1       // int64
+        Assert.areEqual (sign 1.0f) 1     // float
+        Assert.areEqual (sign 1.0) 1      // double
+        Assert.areEqual (sign 1.0m) 1     // decimal
+        Assert.areEqual (sign 0y) 0       // byte
+        Assert.areEqual (sign 0s) 0       // int16
+        Assert.areEqual (sign 0) 0        // int32
+        Assert.areEqual (sign 0L) 0       // int64
+        Assert.areEqual (sign 0.0f) 0     // float
+        Assert.areEqual (sign 0.0) 0      // double
+        Assert.areEqual (sign 0.0m) 0     // decimal
+        Assert.areEqual (sign -1y) -1     // byte
+        Assert.areEqual (sign -1s) -1     // int16
+        Assert.areEqual (sign -1) -1      // int32
+        Assert.areEqual (sign -1L) -1     // int64
+        Assert.areEqual (sign -1.0f) -1   // float
+        Assert.areEqual (sign -1.0) -1    // double
+        Assert.areEqual (sign -1.0m) -1   // decimal
+
     // #Regression #Libraries #Operators 
     // Test sign function on unsigned primitives, should get error.
 
