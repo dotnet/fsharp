@@ -71,6 +71,7 @@
     <Compile Include="Compiler\Libraries\Core\Operators\AbsTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Operators\CastTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Operators\HashTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\SignTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
