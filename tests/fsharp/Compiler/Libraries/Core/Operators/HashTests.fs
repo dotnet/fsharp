@@ -12,7 +12,7 @@ module ``Hash Tests`` =
     [<Test>]
     let ``Hash of function values``() =
         // Regression test for FSHARP1.0:5436
-        // You should not be able to hash F# function values)
+        // You should not be able to hash F# function values
         // Note: most positive cases already covered under fsharp\typecheck\sigs
         // I'm adding this simple one since I did not see it there.
         
@@ -24,3 +24,17 @@ hash id |> ignore
             1
             (2, 6, 2, 8)
             "The type '('a -> 'a)' does not support the 'equality' constraint because it is a function type"
+
+    [<Test>]
+    let ``Unchecked hash of function values``() =
+        // Regression test for FSHARP1.0:5436
+        // You should not be able to hash F# function values
+        // Note: most positive cases already covered under fsharp\typecheck\sigs
+        // I'm adding this simple one since I did not see it there.
+
+        // This is ok (unchecked)
+        CompilerAssert.TypeCheckWithErrors
+            """
+Unchecked.hash id |> ignore
+            """
+            [||]
