@@ -68,6 +68,7 @@
     <Compile Include="Compiler\Libraries\Core\Collections\ListTests.fs" />
     <Compile Include="Compiler\Libraries\Core\ExtraTopLevelOperators\DictionaryTests.fs" />
     <Compile Include="Compiler\Libraries\Core\NativeInterop\StackallocTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\AbsTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
