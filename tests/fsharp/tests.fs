@@ -254,7 +254,7 @@ module CoreTests =
         begin
             use testOkFile = fileguard cfg "test.ok"
 
-            fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+            fsc cfg "%s -o:test.exe -g --langversion:5.0" cfg.fsc_flags ["test.fsx"]
 
             singleNegTest cfg "test"
 

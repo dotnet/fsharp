@@ -1169,8 +1169,9 @@ let AdjustCallerArgForOptional tcFieldInit eCallerMemberName (infoReader: InfoRe
     let calledArg = assignedArg.CalledArg
     let calledArgTy = calledArg.CalledArgumentType
     match calledArg.OptArgInfo with
-    | NotOptional when not (g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop) ->
-        if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
+    | NotOptional ->
+        if not (g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop) &&
+           isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
         assignedArg
 
     | _ ->
