@@ -70,6 +70,7 @@
     <Compile Include="Compiler\Libraries\Core\NativeInterop\StackallocTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Operators\AbsTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Operators\CastTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\HashTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
