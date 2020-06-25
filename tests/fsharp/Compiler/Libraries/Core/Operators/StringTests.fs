@@ -3,9 +3,38 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open System
 
 [<TestFixture>]
 module ``String Tests`` =
+
+    type CalcSum(x : int, y: int) = 
+        let mutable x = x
+        let mutable y = y
+    
+        member __.Sum () = x + y
+   
+        interface IFormattable with
+            member x.ToString (format: string, _ : IFormatProvider) = 
+                match format with
+                | null | ""
+                | "g" | "G" -> String.Format("X + Y = {0}", x.Sum())
+                | "s" | "S" -> x.Sum().ToString() // Short form
+                | _ -> invalidArg format "Format is wrong!"
+
+        override x.ToString() = (x :> IFormattable).ToString(null, null)
+
+    [<Test>]
+    let ``String of custom type``() =
+        let calc = CalcSum(10, 20)
+        Assert.areEqual (string calc) "X + Y = 30"
+
+        let testDelegate = TestDelegate (fun () ->
+            printfn "%s" (calc.ToString())
+            Console.WriteLine("{0:S}", calc)
+            Console.Write("{0} {1} {2:D}", 10, 20, calc))
+        let e = Assert.Throws<ArgumentException> testDelegate
+        Assert.areEqual e.ParamName "D"
 
     // int32
     type Foo =
