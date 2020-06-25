@@ -1021,7 +1021,7 @@ let GetNestedTyconRefsOfType (infoReader: InfoReader) (amap: Import.ImportMap) (
             match optFilter with
             | Some nm ->
                 LookupTypeNameInEntityMaybeHaveArity (amap, m, ad, nm, staticResInfo, tcref)
-                |> List.map (fun tcref -> (tinst, tcref))
+                |> List.map (fun tcref -> (tinst @ (tcref.Typars(m) |> List.map mkTyparTy), tcref))
             | None ->
 #if !NO_EXTENSIONTYPING
                 match tycon.TypeReprInfo with
@@ -1030,14 +1030,14 @@ let GetNestedTyconRefsOfType (infoReader: InfoReader) (amap: Import.ImportMap) (
                         let nestedTypeName = nestedType.PUntaint((fun t -> t.Name), m)
                         yield! 
                             LookupTypeNameInEntityMaybeHaveArity (amap, m, ad, nestedTypeName, staticResInfo, tcref)
-                            |> List.map (fun tcref -> (tinst, tcref)) ]
+                            |> List.map (fun tcref -> ((tinst @ (tcref.Typars(m) |> List.map mkTyparTy), tcref))) ]
 
                 | _ ->
 #endif
                     mty.TypesByAccessNames.Values
                     |> List.choose (fun entity ->
                         let tcref = tcref.NestedTyconRef entity
-                        if IsEntityAccessible amap m ad tcref then Some (tinst, tcref) else None)
+                        if IsEntityAccessible amap m ad tcref then Some ((tinst @ (tcref.Typars(m) |> List.map mkTyparTy)), tcref) else None)
         | _ -> [])
 
 /// Make a type that refers to a nested type.
@@ -1054,12 +1054,7 @@ let GetNestedTypesOfType (ad, ncenv: NameResolver, optFilter, staticResInfo, che
     GetNestedTyconRefsOfType ncenv.InfoReader ncenv.amap (ad, optFilter, staticResInfo, checkForGenerated, m) ty
     |> List.map (fun (tinst, tcref) -> MakeNestedType ncenv tinst m tcref)
 
-let MakeNestedTypeNoInstantiation (tinst: TType list) m (tcrefNested: TyconRef) =
-    let tps = List.skip tinst.Length (tcrefNested.Typars m)
-    let tinstNested = tps |> List.map mkTyparTy
-    mkAppTy tcrefNested (tinst @ tinstNested)
-
-let GetNestedTypesOfTypeAsUnqualifiedItems infoReader amap ad m ty =
+let GetNestedTypesOfTypeAsUnqualifiedItems infoReader (amap: Import.ImportMap) ad m ty =
     let nestedTcrefGroups =
         GetNestedTyconRefsOfType infoReader amap (ad, None, TypeNameResolutionStaticArgsInfo.Indefinite, true, m) ty
         |> List.groupBy (fun (_, m) -> DemangleGenericTypeName m.LogicalName)
@@ -1069,25 +1064,36 @@ let GetNestedTypesOfTypeAsUnqualifiedItems infoReader amap ad m ty =
             let nested =
                 nestedTypeGroups
                 |> List.map (fun (_, tcref) -> tcref)
+                
             yield KeyValuePair(nestedTypeName, Item.UnqualifiedType(nested))
     }
 
-let AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
+let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
     let infoReader = InfoReader(g,amap)
 
+    let nestedItems = GetNestedTypesOfTypeAsUnqualifiedItems infoReader amap ad m ty
     let items =
         [| 
-            yield! GetNestedTypesOfTypeAsUnqualifiedItems infoReader amap ad m ty
+            yield! nestedItems
             yield! GetStaticMethodItems infoReader nenv ad m ty
             yield! GetStaticPropertyItems infoReader nenv ad m ty
             yield! GetStaticILFieldItems infoReader ad m ty
             yield! GetStaticEventItems infoReader ad m ty
         |]
 
+    //let nenv =
+    //    (nenv, nestedItems)
+    //    ||> Seq.fold (fun nenv kv ->
+    //        match kv.Value with
+    //        | Item.UnqualifiedType nestedTcrefs ->
+    //            Item.
+    //            AddTyconRefsToNameEnv BulkAdd.Yes false amap.g amap ad m false nenv nestedTcrefs
+    //        | _ -> nenv)
+
     { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
     
 /// Add any implied contents of a type definition to the environment.
-let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap ad m  nenv (tcref: TyconRef) =
+and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap ad m  nenv (tcref: TyconRef) =
 
     let isIL = tcref.IsILTycon
     let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef
@@ -1170,7 +1176,7 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
     nenv
 
 /// Add a set of type definitions to the name resolution environment
-let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs =
+and AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs =
     if isNil tcrefs then nenv else
     let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap ad m) nenv tcrefs
     // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace

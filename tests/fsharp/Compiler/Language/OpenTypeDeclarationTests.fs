@@ -404,9 +404,9 @@ open System
 open type CSharpTest.Test<byte>
 
 module Test =
-    let x = NestedTest()
-    let y = NestedTest<int>()
-    let a = x.A()
+  //  let x: NestedTest = NestedTest()
+    let y: CSharpTest.Test<byte>.NestedTest<int> = NestedTest<int>()
+   // let a = x.A()
     let b = y.B()
             """
 
