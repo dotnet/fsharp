@@ -17,36 +17,36 @@ module internal QuickInfoViewProvider =
         | ActivePatternCase
         | ActivePatternResult
         | UnionCase
-        | Enum -> ClassificationTypeNames.EnumName // Roslyn-style classification name
+        | Enum -> ClassificationTypeNames.EnumName
+        | Struct -> ClassificationTypeNames.StructName
+        | TypeParameter -> ClassificationTypeNames.TypeParameterName
         | Alias
         | Class
-        | Module
         | Record
-        | Struct
-        | TypeParameter
         | Union
-        | UnknownType -> PredefinedClassificationTypeNames.Type
-        | Interface -> ClassificationTypeNames.InterfaceName // Roslyn-style classification name
-        | Keyword -> PredefinedClassificationTypeNames.Keyword
-        | Delegate
-        | Event
-        | Field
-        | Local
-        | Member
-        | Method
-        | ModuleBinding
-        | Namespace
-        | Parameter
+        | UnknownType // Default to class until/unless we use classification data
+        | Module -> ClassificationTypeNames.ClassName
+        | Interface -> ClassificationTypeNames.InterfaceName
+        | Keyword -> ClassificationTypeNames.Keyword
+        | Method -> ClassificationTypeNames.MethodName
         | Property
-        | RecordField -> PredefinedClassificationTypeNames.Identifier
+        | RecordField
+        | Member -> ClassificationTypeNames.PropertyName
+        | Parameter
+        | Local -> ClassificationTypeNames.LocalName
+        | Namespace -> ClassificationTypeNames.NamespaceName
+        | Delegate -> ClassificationTypeNames.DelegateName
+        | Event -> ClassificationTypeNames.EventName
+        | Field -> ClassificationTypeNames.FieldName
+        | ModuleBinding -> ClassificationTypeNames.Identifier
         | LineBreak
-        | Space -> PredefinedClassificationTypeNames.WhiteSpace
-        | NumericLiteral -> PredefinedClassificationTypeNames.Number
-        | Operator -> PredefinedClassificationTypeNames.Operator
-        | StringLiteral -> PredefinedClassificationTypeNames.String
-        | Punctuation
-        | Text
-        | UnknownEntity -> PredefinedClassificationTypeNames.Other
+        | Space -> ClassificationTypeNames.WhiteSpace
+        | NumericLiteral -> ClassificationTypeNames.NumericLiteral
+        | Operator -> ClassificationTypeNames.Operator
+        | StringLiteral -> ClassificationTypeNames.StringLiteral
+        | Punctuation -> ClassificationTypeNames.Punctuation
+        | UnknownEntity
+        | Text -> ClassificationTypeNames.Text
 
     let provideContent
         (
