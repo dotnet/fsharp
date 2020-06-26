@@ -1233,7 +1233,7 @@ let AdjustCallerArgForOptional tcFieldInit eCallerMemberName (infoReader: InfoRe
     | None -> assignedArg
     | Some callerArgExpr2 ->
         let callerArg2 = CallerArg(tyOfExpr g callerArgExpr2, m, isOptCallerArg, callerArgExpr2)
-        { assignedArg with CallerArg = callerArg2 }
+        { assignedArg with CallerArg=callerArg2 }
 
 // Handle CallerSide optional arguments. 
 //
