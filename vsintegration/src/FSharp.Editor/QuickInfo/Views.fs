@@ -28,10 +28,10 @@ module internal QuickInfoViewProvider =
         | Module -> ClassificationTypeNames.ClassName
         | Interface -> ClassificationTypeNames.InterfaceName
         | Keyword -> ClassificationTypeNames.Keyword
+        | Member
         | Method -> ClassificationTypeNames.MethodName
         | Property
-        | RecordField
-        | Member -> ClassificationTypeNames.PropertyName
+        | RecordField -> ClassificationTypeNames.PropertyName
         | Parameter
         | Local -> ClassificationTypeNames.LocalName
         | Namespace -> ClassificationTypeNames.NamespaceName
