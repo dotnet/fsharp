@@ -1150,85 +1150,90 @@ let GetDefaultExpressionForOptionalArg tcFieldInit g (calledArg: CalledArg) eCal
     let callerArg = CallerArg(calledArgTy, mMethExpr, false, expr)
     preBinder, { NamedArgIdOpt = None; CalledArg = calledArg; CallerArg = callerArg }
 
+
 let MakeNullableExprIfNeeded (infoReader: InfoReader) calledArgTy callerArgTy callerArgExpr m =
     let g = infoReader.g
     let amap = infoReader.amap
     if isNullableTy g callerArgTy then 
-        callerArgExpr
+        None
     else
+        // this happens when the caller and callee are not both nullable, I.e the scenario enabled by LanguageFeature.NullableOptionalInterop
+        tryLanguageFeatureError g.langVersion LanguageFeature.NullableOptionalInterop m
         let calledNonOptTy = destNullableTy g calledArgTy 
         let minfo = GetIntrinsicConstructorInfosOfType infoReader m calledArgTy |> List.head
         let callerArgExprCoerced = mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr
-        MakeMethInfoCall amap m minfo [] [callerArgExprCoerced]
+        Some (MakeMethInfoCall amap m minfo [] [callerArgExprCoerced])
 
 // Adjust all the optional arguments, filling in values for defaults, 
 let AdjustCallerArgForOptional tcFieldInit eCallerMemberName (infoReader: InfoReader) (assignedArg: AssignedCalledArg<_>) =
+
     let g = infoReader.g
     let callerArg = assignedArg.CallerArg
     let (CallerArg(callerArgTy, m, isOptCallerArg, callerArgExpr)) = callerArg
     let calledArg = assignedArg.CalledArg
     let calledArgTy = calledArg.CalledArgumentType
-    match calledArg.OptArgInfo with
-    | NotOptional ->
-        if not (g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop) &&
-           isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
-        assignedArg
 
-    | _ ->
+    // callerArgExprOpt
+    // For caller/callee's where we can generate nullable compensation using MakeNullableExprIfNeeded
+    // generate assignedarg.
+    // callerArgExprOpt either:
+    // Some the generated compensation expression, or None
+    let callerArgExprOpt = 
+        match calledArg.OptArgInfo with 
+        | NotOptional ->
+            //  T --> Nullable<T> widening at callsites
+            if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
+            if isNullableTy g calledArgTy then
+                MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr m
+            else
+                None
 
-        let callerArgExpr2 = 
-            match calledArg.OptArgInfo with 
-            | NotOptional ->
-                //  T --> Nullable<T> widening at callsites
-                if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
-                if isNullableTy g calledArgTy then 
+        | CallerSide dfltVal -> 
+            let calledArgTy = calledArg.CalledArgumentType
+
+            if isOptCallerArg then 
+                // CSharpMethod(?x=b) 
+                if isOptionTy g callerArgTy then 
+                    if isNullableTy g calledArgTy then 
+                        // CSharpMethod(?x=b) when 'b' has optional type and 'x' has nullable type --> CSharpMethod(x=Option.toNullable b)
+                        Some (mkOptionToNullable g m (destOptionTy g callerArgTy) callerArgExpr)
+                    else 
+                        // CSharpMethod(?x=b) when 'b' has optional type and 'x' has non-nullable type --> CSharpMethod(x=Option.defaultValue DEFAULT v)
+                        let _wrapper, defaultExpr = GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg calledArgTy dfltVal eCallerMemberName m
+                        let ty = destOptionTy g callerArgTy
+                        Some (mkOptionDefaultValue g m ty defaultExpr callerArgExpr)
+                else
+                    // This should be unreachable but the error will be reported elsewhere
+                    None
+            else
+                if isNullableTy g calledArgTy  then 
+                    // CSharpMethod(x=b) when 'x' has nullable type
+                    // CSharpMethod(x=b) when both 'x' and 'b' have nullable type --> CSharpMethod(x=b)
+                    // CSharpMethod(x=b) when 'x' has nullable type and 'b' does not --> CSharpMethod(x=Nullable(b))
                     MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr m
-                else
-                    callerArgExpr
-            
-            | CallerSide dfltVal -> 
-                let calledArgTy = calledArg.CalledArgumentType
+                else 
+                    // CSharpMethod(x=b) --> CSharpMethod(?x=b)
+                    None
 
-                if isOptCallerArg then 
-                    // CSharpMethod(?x=b) 
-                    if isOptionTy g callerArgTy then 
-                        if isNullableTy g calledArgTy then 
-                            // CSharpMethod(?x=b) when 'b' has optional type and 'x' has nullable type --> CSharpMethod(x=Option.toNullable b)
-                            mkOptionToNullable g m (destOptionTy g callerArgTy) callerArgExpr
-                        else 
-                            // CSharpMethod(?x=b) when 'b' has optional type and 'x' has non-nullable type --> CSharpMethod(x=Option.defaultValue DEFAULT v)
-                            let _wrapper, defaultExpr = GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g calledArg calledArgTy dfltVal eCallerMemberName m
-                            let ty = destOptionTy g callerArgTy
-                            mkOptionDefaultValue g m ty defaultExpr callerArgExpr
-                    else
-                        // This should be unreachable but the error will be reported elsewhere
-                        callerArgExpr
+        | CalleeSide -> 
+            if isOptCallerArg then 
+                // CSharpMethod(?x=b) --> CSharpMethod(?x=b)
+                None
+            else                            
+                // CSharpMethod(x=b) when CSharpMethod(A) --> CSharpMethod(?x=Some(b :> A))
+                if isOptionTy g calledArgTy then 
+                    let calledNonOptTy = destOptionTy g calledArgTy 
+                    let callerArgExprCoerced = mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr
+                    Some (mkSome g calledNonOptTy callerArgExprCoerced m)
                 else
-                    if isNullableTy g calledArgTy  then 
-                        // CSharpMethod(x=b) when 'x' has nullable type
-                        // CSharpMethod(x=b) when both 'x' and 'b' have nullable type --> CSharpMethod(x=b)
-                        // CSharpMethod(x=b) when 'x' has nullable type and 'b' does not --> CSharpMethod(x=Nullable(b))
-                        MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr m
-                    else 
-                        // CSharpMethod(x=b) --> CSharpMethod(?x=b)
-                        callerArgExpr
-
-            | CalleeSide -> 
-                if isOptCallerArg then 
-                    // CSharpMethod(?x=b) --> CSharpMethod(?x=b)
-                    callerArgExpr 
-                else                            
-                    // CSharpMethod(x=b) when CSharpMethod(A) --> CSharpMethod(?x=Some(b :> A))
-                    if isOptionTy g calledArgTy then 
-                        let calledNonOptTy = destOptionTy g calledArgTy 
-                        let callerArgExprCoerced = mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr
-                        mkSome g calledNonOptTy callerArgExprCoerced m
-                    else 
-                        assert false
-                        callerArgExpr // defensive code - this case is unreachable 
+                    assert false
+                    None            // defensive code - this case is unreachable 
                         
+    match callerArgExprOpt with
+    | None -> assignedArg
+    | Some callerArgExpr2 ->
         let callerArg2 = CallerArg(tyOfExpr g callerArgExpr2, m, isOptCallerArg, callerArgExpr2)
-        { assignedArg with CallerArg=callerArg2 }
+        { assignedArg with CallerArg = callerArg2 }
 
 // Handle CallerSide optional arguments. 
 //
