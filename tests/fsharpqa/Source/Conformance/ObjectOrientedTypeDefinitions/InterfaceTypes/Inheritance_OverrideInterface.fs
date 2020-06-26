@@ -44,12 +44,4 @@ type C5() =
     interface IB<float32> with
         member x.X() = 10
 
-// see https://github.com/fsharp/fslang-design/issues/185#issuecomment-331737819
-// currently fails to compile
-// open question whether "by-design" or bug
-//type C6<'T>() =
-//    inherit C5()
-//    interface IB<'T> with
-//        member x.X() = 11
-    
 exit 0
