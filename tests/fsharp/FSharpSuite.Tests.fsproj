@@ -33,6 +33,7 @@
     <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
+    <Compile Include="Compiler\Conformance\Properties\ILMemberAccessTests.fs" />
     <Compile Include="Compiler\ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="Compiler\ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
@@ -68,6 +69,13 @@
     <Compile Include="Compiler\Libraries\Core\Collections\ListTests.fs" />
     <Compile Include="Compiler\Libraries\Core\ExtraTopLevelOperators\DictionaryTests.fs" />
     <Compile Include="Compiler\Libraries\Core\NativeInterop\StackallocTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\AbsTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\CastTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\HashTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\PowTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\RoundTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\SignTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\StringTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
