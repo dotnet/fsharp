@@ -74,7 +74,7 @@ module Eventually =
     let tryWith e handler =    
         catch e 
         |> bind (function Result v -> Done v | Exception e -> handler e)
-    
+
     let rec doWhile f e =    
         if f() then e |> bind (fun () -> doWhile f e) else Eventually.Done ()
     

@@ -1276,7 +1276,6 @@ CONSIDER: get this from CodeDom</comment>
   <data name="RSE_GraphicSizeFormat" xml:space="preserve">
     <value>{0} x {1}</value>
     <comment>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</comment>
@@ -1696,14 +1695,8 @@ CONSIDER: get this from CodeDom</comment>
   <data name="SD_ComboBoxItem_ApplicationScope" xml:space="preserve">
     <value>Application</value>
   </data>
-  <data name="SD_ComboBoxItem_WebApplicationScope" xml:space="preserve">
-    <value>Application (Web)</value>
-  </data>
   <data name="SD_ComboBoxItem_UserScope" xml:space="preserve">
     <value>User</value>
-  </data>
-  <data name="SD_ComboBoxItem_WebUserScope" xml:space="preserve">
-    <value>User (Web)</value>
   </data>
   <data name="SD_GridViewNameColumnHeaderText" xml:space="preserve">
     <value>Name</value>

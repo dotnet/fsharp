@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">Befehlszeile für P&amp;räbuildereignis</target>
+        <target state="translated">Befehlszeile für P&amp;räbuildereignis:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items2">
         <source>When the build updates the project output</source>
-        <target state="translated">Bei der Aktualisierung der Projektausgabe während der Erstellung</target>
+        <target state="translated">Wenn der Build die Projektausgabe aktualisiert</target>
         <note />
       </trans-unit>
     </body>

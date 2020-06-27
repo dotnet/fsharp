@@ -9,7 +9,7 @@
       </trans-unit>
       <trans-unit id="Win32ResourceFileBrowse.Text">
         <source>...</source>
-        <target state="translated">...</target>
+        <target state="new">...</target>
         <note />
       </trans-unit>
       <trans-unit id="ResourcesLabel.Text">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="OutputTypeLabel.Text">
         <source>O&amp;utput type:</source>
-        <target state="translated">&amp;Çıkış türü:</target>
+        <target state="translated">Ç&amp;ıkış türü:</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetFrameworkLabel.Text">

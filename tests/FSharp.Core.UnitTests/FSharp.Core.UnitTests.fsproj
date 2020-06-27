@@ -1,75 +1,39 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
-    <ProjectGuid>{88e2d422-6852-46e3-a740-83e391dc7973}</ProjectGuid>
-    <DOTNET_PUBLISH_TEST>true</DOTNET_PUBLISH_TEST>
-    <DOTNET_PUBLISH_COMPILERS>false</DOTNET_PUBLISH_COMPILERS>
-  </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <SchemaVersion>2.0</SchemaVersion>
-    <AllowCrossTargeting>true</AllowCrossTargeting>
-    <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
+    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
     <OutputType>Library</OutputType>
-    <StrongNames>false</StrongNames>
+
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
-    <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
-    <Optimize>false</Optimize>
-    <Tailcalls>false</Tailcalls>
-    <TargetProfile Condition=" '$(TargetDotnetProfile)' == 'coreclr' ">netcore</TargetProfile>
-    <NoWarn>$(NoWarn);217</NoWarn>
+    <PackageId>Microsoft.FSharp.Core.UnitTests</PackageId>
+    <PackageVersion>$(FSCoreUnitTestsPackageVersion)</PackageVersion>
+    <PreRelease>true</PreRelease>
+    <LangVersion>preview</LangVersion>
+
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <UnitTestType>nunit</UnitTestType>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>true</IsPackable>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseUrl></PackageLicenseUrl>
+
+    <!-- must be false so FsCheck can be loaded -->
+    <SignAssembly>false</SignAssembly>
+    <TailCalls>true</TailCalls>
   </PropertyGroup>
+
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);$(TargetDotnetProfile.ToLower())</DefineConstants>
+    <DefineConstants Condition="'$(UnitTestType)' == 'xunit'">$(DefineConstants);XUNIT</DefineConstants>
+    <DefineConstants Condition="'$(UnitTestType)' != 'xunit'">$(DefineConstants);NUNIT</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <Optimize>false</Optimize>
-    <DefineConstants>$(DefineConstants);DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>3</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <Optimize>true</Optimize>
-    <DefineConstants>$(DefineConstants);TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>3</WarningLevel>
-  </PropertyGroup>
-  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' ">
-    <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
-    <Reference Include="nunit.framework, Version=$(NUnitFullVersion), Culture=neutral, PublicKeyToken=2638cd05610744eb">
-      <SpecificVersion>true</SpecificVersion>
-      <Private>True</Private>
-      <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="FsCheck, Version=$(FsCheckFullVersion)" Condition=" '$(TargetDotnetProfile)' != 'portable47' ">
-      <SpecificVersion>true</SpecificVersion>
-      <Private>True</Private>
-      <HintPath Condition="'$(TargetDotnetProfile)' == 'net40'">$(FsCheckLibDir)\net452\FsCheck.dll</HintPath>
-    </Reference>
-    <Reference Include="System.ValueTuple">
-        <HintPath>..\..\packages\System.ValueTuple.$(SystemValueTuplePackageVersion)\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
-        <Private>True</Private>
-    </Reference>
-  </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-      <Name>FSharp.Core</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr'">
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Numerics" Condition="'$(TargetDotnetProfile)' == 'net40'" />
-    <Reference Include="System.Core" />
-  </ItemGroup>
-  <ItemGroup>
+    <Compile Include="NUnitFrameworkShims.fs" />
     <Compile Include="LibraryTestFx.fs" />
+
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
@@ -94,6 +58,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqProperties.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqMultipleIteration.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
     <Compile Include="FSharp.Core\ComparersRegression.fs" />
     <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" />
@@ -106,9 +71,9 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\PrintfTests.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\ResultTests.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\ExtraTopLevelOperatorsTests.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\LazyType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\Cancellation.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncType.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\LazyType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\MailboxProcessorType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Control\ObservableModule.fs" />
@@ -117,13 +82,28 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
     <Compile Include="StructTuples.fs" />
-    <Compile Include="SurfaceArea.$(TargetDotnetProfile).fs" />
-    <Compile Include="Program.fs" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
-    <CopyAndSubstituteText Include="FSharp.Core.UnitTests.dll.config">
-      <TargetFilename>FSharp.Core.UnitTests.dll.config</TargetFilename>
-      <Pattern1>FSCoreVersion</Pattern1>
-      <Replacement1>$(FSCoreVersion)</Replacement1>
-    </CopyAndSubstituteText>
+
+    <Compile Include="SurfaceArea.coreclr.fs" Condition="$(TargetFramework.StartsWith('netcoreapp'))" />
+    <Compile Include="SurfaceArea.net40.fs" Condition="$(TargetFramework.StartsWith('net4'))" />
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <ItemGroup>
+    <Content Include="**/*" Exclude="**/*.bak;Directory.Build.Props;Directory.Build.targets;FSharp.Core.UnitTests.fsproj" CopyToOutputDirectory="never" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' == 'true'">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <PackageReference Include="FsCheck" Version="$(FsCheckVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' != 'true'">
+   <PackageReference Include="FSharp.Core" Version="4.6.0" />
+   <PackageReference Include="FsCheck" Version="3.0.0-alpha4" />
+ </ItemGroup>
+
+  <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
+    <PackageReference Include="xunit" Version="2.4.1" PrivateAssets="All" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" PrivateAssets="All" />
+  </ItemGroup>
+
 </Project>

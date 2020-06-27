@@ -6,7 +6,7 @@ open NUnit.Framework
 open System
 open System.IO
 open System.Diagnostics
-open Microsoft.FSharp.Build
+open FSharp.Build
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open UnitTests.TestLib.Utils.FilesystemHelpers
@@ -40,8 +40,8 @@ type MyLogger(f : string -> unit) =
 type FauxHostObject() =
     let mutable myFlags : string[] = null
     let mutable mySources : string[] = null
-    member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
-        myFlags <- flags        
+    member x.Compile(compile:System.Func<int>, flags:string[], sources:string[]) =
+        myFlags <- flags
         mySources <- sources
         0
     member x.Flags = myFlags
@@ -71,17 +71,17 @@ type Build() =
 
     [<Test>]
     member public this.MissingToolPathError() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.ToolPath <- ""
         try
             let p = tool.InternalGenerateFullPathToTool()
             Assert.Fail("should not succeed")
         with e -> 
-            e.Message.AssertMatchesPattern("ToolPath is unknown; specify the path to fsc.exe as the ToolPath property.")
+            e.Message.AssertMatchesPattern("ToolPath is unknown; specify the path to the tool.")
         
     [<Test>]
     member public this.TestCodePage() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         printfn "By the way, the registry or app.config tool path is %s" tool.ToolPath
         tool.CodePage <- "65001"
         AssertEqual "65001" tool.CodePage 
@@ -92,12 +92,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-"  + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestDebugSymbols() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.DebugSymbols <- true
         AssertEqual true tool.DebugSymbols
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -107,12 +108,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestDebugType() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.DebugType <- "pdbONly"
         AssertEqual "pdbONly" tool.DebugType
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -122,12 +124,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestDefineConstants() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.DefineConstants <- [| MakeTaskItem "FOO=3"
                                    MakeTaskItem "BAR=4" |]
         AssertEqual 2 tool.DefineConstants.Length 
@@ -139,12 +142,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestDisabledWarnings1() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.DisabledWarnings <- "52;109"
         AssertEqual "52;109" tool.DisabledWarnings
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -154,12 +158,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestDisabledWarnings2() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.DisabledWarnings <- ";"  // e.g. someone may have <NoWarn>$(NoWarn);$(SomeOtherVar)</NoWarn> and both vars are empty
         AssertEqual ";" tool.DisabledWarnings
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -168,12 +173,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestWarningsNotAsErrors() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.WarningsNotAsErrors <- "52;109"
         AssertEqual "52;109" tool.WarningsNotAsErrors
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -183,12 +189,13 @@ type Build() =
                      "--warnaserror-:52,109" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestVersionFile() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.VersionFile <- "src/version"
         AssertEqual "src/version" tool.VersionFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -198,12 +205,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestDocumentationFile() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.DocumentationFile <- "foo.xml"
         AssertEqual "foo.xml" tool.DocumentationFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -213,12 +221,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestGenerateInterfaceFile() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.GenerateInterfaceFile <- "foo.fsi"
         AssertEqual "foo.fsi" tool.GenerateInterfaceFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -228,12 +237,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestKeyFile() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.KeyFile <- "key.txt"
         AssertEqual "key.txt" tool.KeyFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -243,12 +253,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestNoFramework() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.NoFramework <- true
         AssertEqual true tool.NoFramework 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -258,12 +269,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestOptimize() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.Optimize <- false
         AssertEqual false tool.Optimize 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -272,12 +284,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestTailcalls() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.Tailcalls <- true
         AssertEqual true tool.Tailcalls
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -287,12 +300,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestOtherFlags() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.OtherFlags <- "--yadda yadda"
         AssertEqual "--yadda yadda" tool.OtherFlags 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -302,13 +316,14 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine +
                      "--yadda" + Environment.NewLine +
-                     "yadda" + Environment.NewLine)
+                     "yadda")
                     cmd
 
     [<Test>]
     member public this.TestOutputAssembly() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.OutputAssembly <- "oUt.dll"
         AssertEqual "oUt.dll" tool.OutputAssembly 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -318,12 +333,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestPdbFile() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.PdbFile <- "out.pdb"
         AssertEqual "out.pdb" tool.PdbFile 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -333,12 +349,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestPlatform1() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.Platform <- "x64"
         AssertEqual "x64" tool.Platform 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -348,12 +365,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestPlatform3() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.Platform <- "x86"
         AssertEqual "x86" tool.Platform 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -363,12 +381,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestReferences() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         let dll = "c:\\sd\\staging\\tools\\nunit\\nunit.framework.dll"
         tool.References <- [| MakeTaskItem dll |]
         AssertEqual 1 tool.References.Length 
@@ -379,12 +398,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestReferencePath() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         let path = "c:\\sd\\staging\\tools\\nunit\\;c:\\Foo"
         tool.ReferencePath <- path
         AssertEqual path tool.ReferencePath 
@@ -395,11 +415,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine) cmd
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
+                    cmd
 
     [<Test>]
     member public this.TestReferencePathWithSpaces() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         let path = "c:\\program files;c:\\sd\\staging\\tools\\nunit;c:\\Foo"
         tool.ReferencePath <- path
         AssertEqual path tool.ReferencePath 
@@ -410,12 +432,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestResources() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.Resources <- [| MakeTaskItem "Foo.resources" |]
         AssertEqual 1 tool.Resources.Length 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -425,12 +448,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestSources() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         let src = "foo.fs"
         let iti = MakeTaskItem src
         tool.Sources <- [| iti; iti |]
@@ -442,14 +466,15 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore" + Environment.NewLine +
                      src + Environment.NewLine +
-                     src + Environment.NewLine)
+                     src)
                     cmd
         ()
 
     [<Test>]
     member public this.TestTargetType1() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.TargetType <- "Library"
         AssertEqual "Library" tool.TargetType 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -459,12 +484,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestTargetType2() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.TargetType <- "Winexe"
         AssertEqual "Winexe" tool.TargetType 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -474,12 +500,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestTargetType3() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.TargetType <- "Module"
         AssertEqual "Module" tool.TargetType 
         let cmd = tool.InternalGenerateResponseFileCommands()
@@ -489,12 +516,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestUtf8Output() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.Utf8Output <- true
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
@@ -503,12 +531,13 @@ type Build() =
                      "--utf8output" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestWin32Res() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.Win32ResourceFile <- "foo.res"
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
@@ -517,12 +546,13 @@ type Build() =
                      "--win32res:foo.res" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
     member public this.TestWin32Manifest() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.Win32ManifestFile <- "foo.manifest"
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
@@ -531,12 +561,13 @@ type Build() =
                      "--win32manifest:foo.manifest" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd 
 
     [<Test>]
     member public this.TestHighEntropyVA() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.HighEntropyVA <- true
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
@@ -544,12 +575,13 @@ type Build() =
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
-                     "--highentropyva+" + Environment.NewLine)
+                     "--highentropyva+" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd 
 
     [<Test>]
     member public this.TestSubsystemVersion() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.SubsystemVersion <- "6.02"
         let cmd = tool.InternalGenerateResponseFileCommands()
         printfn "cmd=\"%s\"" cmd
@@ -558,12 +590,13 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--subsystemversion:6.02" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
+                     "--highentropyva-" + Environment.NewLine +
+                     "--nocopyfsharpcore")
                     cmd 
 
     [<Test>]
     member public this.TestAllCombo() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
+        let tool = new FSharp.Build.Fsc()
         tool.CodePage <- "65001"
         tool.DebugSymbols <- true
         tool.DebugType <- "full"
@@ -627,11 +660,12 @@ type Build() =
             "--flaterrors" + Environment.NewLine +
             "--subsystemversion:4.0" + Environment.NewLine +
             "--highentropyva-" + Environment.NewLine +
+            "--nocopyfsharpcore" + Environment.NewLine +
             "--yadda:yadda" + Environment.NewLine +
             "--other:internal quote" + Environment.NewLine +
             "blah" + Environment.NewLine +
             "foo.fs" + Environment.NewLine +
-            @"C:\Program Files\spaces.fs" + Environment.NewLine
+            @"C:\Program Files\spaces.fs"
 
         AssertEqual expected cmd
 
@@ -670,6 +704,7 @@ type Build() =
             "--flaterrors"
             "--subsystemversion:4.0"
             "--highentropyva-"
+            "--nocopyfsharpcore"
             "--yadda:yadda"
             "--other:internal quote" // note stripped internal quotes
             "blah" |]

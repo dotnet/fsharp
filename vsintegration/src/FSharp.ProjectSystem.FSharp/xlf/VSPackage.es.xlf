@@ -84,7 +84,7 @@
       </trans-unit>
       <trans-unit id="ProjectFolder">
         <source>Project Folder</source>
-        <target state="translated">Carpeta de proyecto</target>
+        <target state="translated">Carpeta del proyecto</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectFolderDescription">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Script.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">File.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
@@ -289,7 +289,7 @@
       </trans-unit>
       <trans-unit id="5031">
         <source>An empty text file</source>
-        <target state="translated">Archivo de texto vacío.</target>
+        <target state="translated">Archivo de texto vacío</target>
         <note />
       </trans-unit>
       <trans-unit id="5032">
@@ -299,7 +299,7 @@
       </trans-unit>
       <trans-unit id="5033">
         <source>A blank XML file</source>
-        <target state="translated">Archivo XML en blanco.</target>
+        <target state="translated">Archivo XML en blanco</target>
         <note />
       </trans-unit>
       <trans-unit id="5034">
@@ -399,7 +399,7 @@
       </trans-unit>
       <trans-unit id="5054">
         <source>A file for storing resources</source>
-        <target state="translated">Archivo para almacenar recursos.</target>
+        <target state="translated">Archivo para almacenar recursos</target>
         <note />
       </trans-unit>
       <trans-unit id="6000">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Herramientas de Microsoft Visual F# 10.2 para F# 4.5</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Herramientas de Microsoft Visual F# {{FSProductVersion}} para F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Herramientas de Microsoft Visual F# 10.2 para F# 4.5</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Herramientas de Microsoft Visual F# {{FSProductVersion}} para F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Herramientas de Visual F# 10.2 para F# 4.5</target>
+        <source>Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Herramientas de Visual F# {{FSProductVersion}} para F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

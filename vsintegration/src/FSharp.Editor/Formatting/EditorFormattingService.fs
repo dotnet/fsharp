@@ -10,13 +10,13 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open System.Threading
 open System.Windows.Forms
 
-[<Shared>]
-[<ExportLanguageService(typeof<IEditorFormattingService>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpEditorFormattingService>)>]
 type internal FSharpEditorFormattingService
     [<ImportingConstructor>]
     (
@@ -151,7 +151,7 @@ type internal FSharpEditorFormattingService
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-            let projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let! projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
             let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, projectOptionsOpt, position)
             return textChange |> Option.toList |> toIList
         }
@@ -162,7 +162,7 @@ type internal FSharpEditorFormattingService
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
             
-            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject document with
+            match! projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken) with
             | Some (parsingOptions, _) ->
                 let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
                 return textChanges |> Option.defaultValue Seq.empty |> toIList
@@ -170,7 +170,7 @@ type internal FSharpEditorFormattingService
                 return toIList Seq.empty
         }
         
-    interface IEditorFormattingService with
+    interface IFSharpEditorFormattingService with
         member val SupportsFormatDocument = false
         member val SupportsFormatSelection = false
         member val SupportsFormatOnPaste = true

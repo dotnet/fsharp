@@ -1,0 +1,9 @@
+<Project>
+
+  <PropertyGroup>
+    <UseFSharpProductVersion>true</UseFSharpProductVersion>
+  </PropertyGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+</Project>

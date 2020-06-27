@@ -13,4 +13,4 @@ namespace N2
 
 // Regression test for FSHARP1.0:4995
 // Note that what we are really testing in this case is the span (which was incorrectly (3,1-7-10))
-//<Expect span="(4,5-4,6)" status="error" id="FS0201">Namespaces cannot contain values\. Consider using a module to hold your value declarations\.$</Expect>
+//<Expect span="(4,5-4,6)" status="error" id="FS0201">Namespaces cannot contain values\. Consider using a module to hold your value declarations\.$</Expects>

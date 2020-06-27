@@ -13,18 +13,16 @@
 //----------------------------------------------------------------------------
 
 
-module internal Sample.Microsoft.FSharp.Compiler.Interactive.Main
+module internal Sample.FSharp.Compiler.Interactive.Main
 
 open System
 open System.Globalization
-open System.IO
 open System.Reflection
 open System.Threading
 open System.Windows.Forms
 
-open Microsoft.FSharp.Compiler.Interactive.Shell
-open Microsoft.FSharp.Compiler.Interactive
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler
 
 #nowarn "55"
 
@@ -53,7 +51,7 @@ let WinFormsEventLoop(lcid : int option) =
     do mainForm.DoCreateHandle();
     // Set the default thread exception handler
     let restart = ref false
-    { new Microsoft.FSharp.Compiler.Interactive.IEventLoop with
+    { new FSharp.Compiler.Interactive.IEventLoop with
          member x.Run() =  
              restart := false
              Application.Run()
@@ -151,7 +149,7 @@ let MainMain argv =
 #endif
 
     try
-        let console = new Microsoft.FSharp.Compiler.Interactive.ReadLineConsole()
+        let console = new FSharp.Compiler.Interactive.ReadLineConsole()
         let getConsoleReadLine (probeToSeeIfConsoleWorks) = 
             let consoleIsOperational =
               if probeToSeeIfConsoleWorks then 

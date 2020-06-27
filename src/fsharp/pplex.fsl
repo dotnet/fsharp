@@ -2,13 +2,14 @@
 
 {
 
-module internal Microsoft.FSharp.Compiler.PPLexer
+module internal FSharp.Compiler.PPLexer
 
 open System
 
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Lexhelp
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.SyntaxTree
 
 open Internal.Utilities.Text.Lexing
 

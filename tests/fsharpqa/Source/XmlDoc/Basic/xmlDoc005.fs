@@ -1,6 +1,6 @@
 // #Regression #XMLDoc
 // Verify that XmlDoc names are generated, but no empty members are generated re: issue #148
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light 
 

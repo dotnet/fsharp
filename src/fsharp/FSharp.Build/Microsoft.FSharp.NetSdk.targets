@@ -22,6 +22,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <DefineCommonItemSchemas Condition=" '$(DefineCommonItemSchemas)' == '' ">true</DefineCommonItemSchemas>
     <DefineCommonReferenceSchemas Condition=" '$(DefineCommonReferenceSchemas)' == '' ">true</DefineCommonReferenceSchemas>
     <DefineCommonCapabilities Condition=" '$(DefineCommonCapabilities)' == '' ">true</DefineCommonCapabilities>
+    <SimpleResolution>true</SimpleResolution>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(_DebugSymbolsProduced)' == 'true' and '$(PdbFile)' != ''">
@@ -39,7 +40,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' " >mscorlib</TargetProfile>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' " >netcore</TargetProfile>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' >= '2.0' " >netstandard</TargetProfile>
-    <OtherFlags>$(OtherFlags) --simpleresolution --nocopyfsharpcore</OtherFlags>
   </PropertyGroup>
 
   <Import Project="Microsoft.FSharp.Targets" />
@@ -52,6 +52,20 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
+  <!-- When the developer specifies UseFSharpPreview=true then resolve the highest preview package from the F# myget feed -->
+  <PropertyGroup Condition="'$(UseFSharpPreview)' == 'true'">
+    <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePreviewPackageVersion)</FSharpCoreImplicitPackageVersion>
+    <RestoreSources>$(RestoreSources); https://dotnet.myget.org/F/fsharp/api/v3/index.json</RestoreSources>
+  </PropertyGroup>
+
+  <Target Name="CollectFSharpDesignTimeTools" BeforeTargets="BeforeCompile" DependsOnTargets="_GetFrameworkAssemblyReferences">
+    <ItemGroup>
+      <PropertyNames Include = "Pkg$([System.String]::Copy('%(PackageReference.FileName)').Replace('.','_'))" Condition = " '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' == '' "/>
+      <PropertyNames Include = "Pkg$([System.String]::Copy('%(PackageReference.FileName)%(PackageReference.Extension)').Replace('.','_'))" Condition = " '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' != '' "/>
+      <FscCompilerTools Include = "$(%(PropertyNames.Identity))" />
+    </ItemGroup>
+  </Target>
+
   <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">
     <PropertyGroup>
       <FSharpDesignTimeProtocol Condition = " '$(FSharpDesignTimeProtocol)' == '' ">fsharp41</FSharpDesignTimeProtocol>
@@ -62,16 +76,31 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <Error Text="The 'FSharpDesignTimeProtocol'  property can be only 'fsharp41'" Condition="'$(FSharpDesignTimeProtocol)' != 'fsharp41'" />
 
     <ItemGroup>
-      <_ResolvedProjectOutputFiles
-          Include="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/*" 
-          Exclude="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/FSharp.Core.dll;%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/System.ValueTuple.dll" 
+      <_ResolvedOutputFiles
+          Include="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/*"
+          Exclude="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/FSharp.Core.dll;%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/System.ValueTuple.dll"
           Condition="'%(_ResolvedProjectReferencePaths.IsFSharpDesignTimeProvider)' == 'true'">
         <NearestTargetFramework>%(_ResolvedProjectReferencePaths.NearestTargetFramework)</NearestTargetFramework>
-      </_ResolvedProjectOutputFiles>
+      </_ResolvedOutputFiles>
 
-      <TfmSpecificPackageFile Include="@(_ResolvedProjectOutputFiles)">
-         <PackagePath>$(FSharpToolsDirectory)/$(FSharpDesignTimeProtocol)/%(_ResolvedProjectOutputFiles.NearestTargetFramework)/%(_ResolvedProjectOutputFiles.FileName)%(_ResolvedProjectOutputFiles.Extension)</PackagePath>
+      <_ResolvedOutputFiles
+          Include="@(BuiltProjectOutputGroupKeyOutput)"
+          Condition=" '$(IsFSharpDesignTimeProvider)' == 'true' and '%(BuiltProjectOutputGroupKeyOutput->Filename)%(BuiltProjectOutputGroupKeyOutput->Extension)' != 'FSharp.Core.dll' and '%(BuiltProjectOutputGroupKeyOutput->Filename)%(BuiltProjectOutputGroupKeyOutput->Extension)' != 'System.ValueTuple.dll' ">
+        <NearestTargetFramework>$(TargetFramework)</NearestTargetFramework>
+      </_ResolvedOutputFiles>
+
+      <TfmSpecificPackageFile Include="@(_ResolvedOutputFiles)">
+         <PackagePath>$(FSharpToolsDirectory)/$(FSharpDesignTimeProtocol)/%(_ResolvedOutputFiles.NearestTargetFramework)/%(_ResolvedOutputFiles.FileName)%(_ResolvedOutputFiles.Extension)</PackagePath>
       </TfmSpecificPackageFile>
+
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CollectFSharpDesignTimeTools" BeforeTargets="BeforeCompile" DependsOnTargets="_GetFrameworkAssemblyReferences">
+    <ItemGroup>
+      <PropertyNames Include = "Pkg$([System.String]::Copy('%(PackageReference.FileName)').Replace('.','_'))" Condition = " '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' == '' "/>
+      <PropertyNames Include = "Pkg$([System.String]::Copy('%(PackageReference.FileName)%(PackageReference.Extension)').Replace('.','_'))" Condition = " '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' != '' "/>
+      <FscCompilerTools Include = "$(%(PropertyNames.Identity))" />
     </ItemGroup>
   </Target>
 

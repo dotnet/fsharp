@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net461"
 (**
 Compiler Services: Notes on FSharp.Core.dll
 =================================================
@@ -8,19 +8,16 @@ Shipping an FSharp.Core with your application
 ---------------------------------------------
 
 When building applications or plug-in components which use FSharp.Compiler.Service.dll, you will normally also
-include a copy of FSharp.Core.dll as part of your application.  
+include a copy of FSharp.Core.dll as part of your application.
 
 For example, if you build a ``HostedCompiler.exe``, you will normally place an FSharp.Core.dll (say 4.3.1.0) alongside
-your ``HostedCompiler.exe``.  
-
-If doing dynamic compilation and execution you may also need to include 
-an FSharp.Core.optdata and FSharp.Core.sigdata, see below for guidance.
+your ``HostedCompiler.exe``.
 
 Binding redirects for your application
 --------------------------------------
 
 The FSharp.Compiler.Service.dll component depends on FSharp.Core 4.4.0.0.  Normally your application will target
-a later version of FSharp.Core, and you will need a [binding redirect](http://msdn.microsoft.com/en-us/library/7wd6ex19(v=vs.110).aspx) to ensure
+a later version of FSharp.Core, and you may need a [binding redirect](https://docs.microsoft.com/en-us/dotnet/framework/configure-apps/redirect-assembly-versions) to ensure
 that other versions of FSharp.Core forward to the final version of FSharp.Core.dll your application uses.
 Binding redirect files are normally generated automatically by build tools. If not, you can use one like this
 (if your tool is called ``HostedCompiler.exe``, the binding redirect file is called ``HostedCompiler.exe.config``)
@@ -40,7 +37,7 @@ Some other dependencies may also need to be reconciled and forwarded.
               <bindingRedirect oldVersion="1.0.0.0-1.2.0.0" newVersion="1.2.1.0" />
             </dependentAssembly>
           </assemblyBinding>
-        </runtime>	
+        </runtime>
     </configuration>
 
 Which FSharp.Core and .NET Framework gets referenced in compilation?
@@ -54,18 +51,18 @@ To target a specific FSharp.Core and/or .NET Framework assemblies, use the ``--n
 and the appropriate command-line arguments:
 
     [<Literal>]
-    let fsharpCorePath = 
+    let fsharpCorePath =
         @"C:\Program Files (x86)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0\FSharp.Core.dll"
-    let errors2, exitCode2 = 
+    let errors2, exitCode2 =
       scs.Compile(
-        [| "fsc.exe"; "--noframework"; 
-           "-r"; fsharpCorePath; 
-           "-r"; @"C:\Windows\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll"; 
-           "-o"; fn3; 
+        [| "fsc.exe"; "--noframework";
+           "-r"; fsharpCorePath;
+           "-r"; @"C:\Windows\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll";
+           "-o"; fn3;
            "-a"; fn2 |])
 
 You will need to determine the location of these assemblies.  The easiest way to locate these DLLs in a cross-platform way and
-convert them to command-line arguments is to [crack an F# project file](http://fsharp.github.io/FSharp.Compiler.Service/project.html).  
+convert them to command-line arguments is to [crack an F# project file](https://fsharp.github.io/FSharp.Compiler.Service/project.html).
 Alternatively you can compute SDK paths yourself, and some helpers to do this are in [the tests for FSharp.Compiler.Service.dll](https://github.com/fsharp/FSharp.Compiler.Service/blob/8a943dd3b545648690cb3bed652a469bdb6dd869/tests/service/Common.fs#L54).
 
 
@@ -76,31 +73,16 @@ If you do _not_ explicitly reference an FSharp.Core.dll from an SDK location, or
 using ``FsiEvaluationSession`` or ``GetCheckOptionsFromScriptRoot``, then an implicit reference to FSharp.Core will be made
 by the following choice:
 
-1. The version of FSharp.Core.dll statically referenced by the host assembly returned by ``System.Reflection.Assembly.GetEntryAssembly()``. 
+1. The version of FSharp.Core.dll statically referenced by the host assembly returned by ``System.Reflection.Assembly.GetEntryAssembly()``.
 
-2. If there is no static reference to FSharp.Core in the host assembly, then 
+2. If there is no static reference to FSharp.Core in the host assembly, then
 
-   - For FSharp.Compiler.Service 0.x series, a reference to FSharp.Core version 4.3.0.0 is added
-
-   - For FSharp.Compiler.Service 1.3.1.x (F# 3.1 series), a reference to FSharp.Core version 4.3.1.0 is added
-
-   - For FSharp.Compiler.Service 1.4.0.x (F# 4.0 series), a reference to FSharp.Core version 4.4.0.0 is added
+   - For FSharp.Compiler.Service 1.4.0.x above (F# 4.0 series), a reference to FSharp.Core version 4.4.0.0 is added
 
 Do I need to include FSharp.Core.optdata and FSharp.Core.sigdata?
 --------------------------------------
 
-If your compilation arguments explicitly reference an FSharp.Core.dll from an SDK location, then FSharp.Core.sigdata and FSharp.Core.optdata should be alongside the DLL
-(if these files are not installed, then that's a bug in the F# SDK installation).  If your compilation
-arguments are always making an explicit reference, then you should _not_ include FSharp.Core.optdata and FSharp.Core.sigdata as part of your application.
-
-If you are relying on an implicit reference (e.g. for script processing, see above), this means your tool may reference the FSharp.Core.dll
-that is part of your application.  In this case, you may either get an error that FSharp.Core.optdata and FSharp.Core.sigdata are not
-found alongside FSharp.Core.dll.  **If you want to implicitly reference the FSharp.Core.dll you are including in your application,
-then also add FSharp.Core.sigdata and FSharp.Core.optdata as two additional files to your application**.  When using ``CompileToDynamicAssembly``, this problem
-can also manifest itself as [a stack overflow during assembly resolution](https://github.com/fsharp/FSharp.Compiler.Service/issues/258).
-
-Tools that dynamically compile and execute code (e.g. a ``HostedExecution.exe``) often make an implicit 
-reference to FSharp.Core.dll, which means they normally also include FSharp.Core.optdata and FSharp.Core.sigdata.
+No, unless you are doing something with very old FSharp.Core.dll.
 
 Summary
 -------

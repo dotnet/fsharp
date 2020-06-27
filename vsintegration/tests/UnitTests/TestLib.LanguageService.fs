@@ -12,14 +12,17 @@ open Salsa.VsOpsUtils
 open Salsa.VsMocks
 open UnitTests.TestLib.Salsa
 open UnitTests.TestLib.Utils
-open Microsoft.FSharp.Compiler
+open FSharp.Compiler
 open System.Text.RegularExpressions 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
+open Microsoft.VisualStudio.FSharp
+
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
 [<AutoOpen>]
-module internal Globals = 
-    let checker = FSharpChecker.Create(legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
+module internal Globals =
+    let checker = FSharpChecker.Create(legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver())
+
 
 //open Internal.Utilities
 type internal TextSpan       = Microsoft.VisualStudio.TextManager.Interop.TextSpan
@@ -243,6 +246,8 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
 /// various functions that abstract actions over vs.
 type LanguageServiceBaseTests() =  
 
+    let _resolver = AssemblyResolver.addResolver ()
+
     let mutable defaultSolution : OpenSolution = Unchecked.defaultof<_>
     let cache = System.Collections.Generic.Dictionary()
 
@@ -276,10 +281,11 @@ type LanguageServiceBaseTests() =
             ?defines : list<string>, 
             ?fileKind : SourceFileKind, 
             ?disabledWarnings : list<string>,
-            ?fileName : string
+            ?fileName : string,
+            ?otherFlags: string
         ) = 
         let content = content.Split( [|"\r\n"|], StringSplitOptions.None) |> List.ofArray
-        this.CreateSingleFileProject(content, ?references = references, ?defines = defines, ?fileKind = fileKind, ?disabledWarnings = disabledWarnings, ?fileName = fileName)
+        this.CreateSingleFileProject(content, ?references = references, ?defines = defines, ?fileKind = fileKind, ?disabledWarnings = disabledWarnings, ?fileName = fileName, ?otherFlags = otherFlags)
 
     member internal this.CreateSingleFileProject
         (
@@ -288,7 +294,8 @@ type LanguageServiceBaseTests() =
             ?defines : list<string>, 
             ?fileKind : SourceFileKind, 
             ?disabledWarnings : list<string>,
-            ?fileName : string
+            ?fileName : string,
+            ?otherFlags: string
         ) = 
         assert (box currentVS = box defaultVS)
         let mkKeyComponent l = 
@@ -307,7 +314,7 @@ type LanguageServiceBaseTests() =
             let refs = mkKeyComponent references
             let defines = mkKeyComponent defines
             let warnings = mkKeyComponent disabledWarnings
-            (refs, defines, disabledWarnings, fileName.ToLower())
+            (refs, defines, warnings, otherFlags, fileName.ToLower())
 
         match cache.TryGetValue key with
         | true, (proj, file) ->
@@ -331,6 +338,10 @@ type LanguageServiceBaseTests() =
 
             for r in (defaultArg references []) do 
                 GlobalFunctions.AddAssemblyReference(proj, r)
+
+            match otherFlags with 
+            | None -> ()
+            | Some flags -> GlobalFunctions.SetOtherFlags(proj, flags) 
 
             let content = String.concat Environment.NewLine content
             let _ = AddFileFromTextBlob(proj, fileName, content)
@@ -386,8 +397,7 @@ type LanguageServiceBaseTests() =
         AppDomain.CurrentDomain.AssemblyLoad.Add AssertNotBackVersionAssembly
 
         UIStuff.SetupSynchronizationContext()
-        new Microsoft.VisualStudio.FSharp.Editor.FSharpPackage() |> ignore  // will force us to capture the dummy context we just set up
-            
+
         defaultVS <- ops.CreateVisualStudio()
         currentVS <- defaultVS
         

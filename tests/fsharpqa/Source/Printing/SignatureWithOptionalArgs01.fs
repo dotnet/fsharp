@@ -2,20 +2,20 @@
 // Regression test for FSHARP1.0:1110
 // pretty printing signatures with optional arguments
 
-//<Expects status=success>type AsyncTimer =</Expects>
-//<Expects status=success>  class</Expects>
-//<Expects status=success>    new : f:\(unit -> unit\) \* \?delay:int -> AsyncTimer</Expects>
-//<Expects status=success>    member Start : unit -> unit</Expects>
-//<Expects status=success>    member Stop : unit -> unit</Expects>
-//<Expects status=success>    member Delay : int option</Expects>
-//<Expects status=success>    member Delay : int option with set</Expects>
-//<Expects status=success>  end</Expects>
+//<Expects status="success">type AsyncTimer =</Expects>
+//<Expects status="success">  class</Expects>
+//<Expects status="success">    new : f:\(unit -> unit\) \* \?delay:int -> AsyncTimer</Expects>
+//<Expects status="success">    member Start : unit -> unit</Expects>
+//<Expects status="success">    member Stop : unit -> unit</Expects>
+//<Expects status="success">    member Delay : int option</Expects>
+//<Expects status="success">    member Delay : int option with set</Expects>
+//<Expects status="success">  end</Expects>
 
 open Microsoft.FSharp.Control
  
 type AsyncTimer(f, ?delay ) =
   let mutable does_again = true
-  let mutable delay = delay
+  let mutable delay: int option = delay
   
   member t.Delay 
     with get() = delay

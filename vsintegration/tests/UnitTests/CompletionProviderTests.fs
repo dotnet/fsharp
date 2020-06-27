@@ -31,7 +31,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
@@ -148,14 +148,14 @@ System.Console.WriteLine(x + y)
     Assert.AreEqual(shouldBeTriggered, triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result")
 
 [<Test>]
-let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertion() = 
-    for triggerKind in [CompletionTriggerKind.Deletion; CompletionTriggerKind.Invoke; CompletionTriggerKind.Snippets ] do
-    let fileContents = "System.Console.WriteLine(123)"
-    let caretPosition = fileContents.IndexOf("System.")
-    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, triggerKind, getInfo, IntelliSenseOptions.Default)
-    Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertionOrDeletion() = 
+    for triggerKind in [ CompletionTriggerKind.Invoke; CompletionTriggerKind.Snippets ] do
+        let fileContents = "System.Console.WriteLine(123)"
+        let caretPosition = fileContents.IndexOf("rite")
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, triggerKind, getInfo, IntelliSenseOptions.Default)
+        Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
     
 [<Test>]
 let ShouldNotTriggerCompletionInStringLiterals() =
@@ -445,6 +445,14 @@ List().
     VerifyCompletionListExactly(fileContents, "List().", expected)
 
 [<Test>]
+let ``Completion for open contains namespaces and static types``() =
+    let fileContents = """
+open System.Ma
+"""
+    let expected = ["Management"; "Math"] // both namespace and static type
+    VerifyCompletionList(fileContents, "System.Ma", expected, [])
+
+[<Test>]
 let ``No completion on type name at declaration site``() =
     let fileContents = """
 type T
@@ -611,6 +619,34 @@ let _ =
     }
 """
     VerifyCompletionList(fileContents, "        join", ["groupJoin"; "join"; "leftOuterJoin"; "joinLocal"], [])
+
+[<Test>]
+let ``Byref Extension Methods`` () =
+    let fileContents = """
+module Extensions =
+    open System
+    open System.Runtime.CompilerServices
+
+    [<Struct>]
+    type Message = Message of String
+
+    [<Sealed; AbstractClass; Extension>]
+    type MessageExtensions private () =
+        let (|Message|) (Message message) = message
+
+        [<Extension>]
+        static member Print (Message message : Message) =
+            printfn "%s" message
+
+        [<Extension>]
+        static member PrintRef (Message message : inref<Message>) =
+            printfn "%s" message
+
+    let wrappedMessage = Message "Hello World"
+
+    wrappedMessage.
+"""
+    VerifyCompletionList(fileContents, "wrappedMessage.", ["PrintRef"], [])
 
 #if EXE
 ShouldDisplaySystemNamespace()

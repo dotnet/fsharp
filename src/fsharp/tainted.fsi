@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 #if !NO_EXTENSIONTYPING
 
@@ -8,8 +8,8 @@ namespace Microsoft.FSharp.Compiler
 open System
 open System.Reflection
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Range
+open FSharp.Compiler.AbstractIL.IL
 
 /// Stores and transports aggregated list of errors reported by the type provider
 type internal TypeProviderError =

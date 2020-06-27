@@ -1550,7 +1550,7 @@ module internal VsMocks =
                 0
         }
         
-    let MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService() = 
+    let MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService() =
         let vsSolutionBuildManager, configChangeNotifier = MakeVsSolutionBuildManagerAndConfigChangeNotifier()
         let sp = new OleServiceProvider()
 
@@ -1646,38 +1646,38 @@ module internal VsActual =
 
     let vsInstallDir =
         // use the environment variable to find the VS installdir
-        let vsvar = 
-            let var = Environment.GetEnvironmentVariable("VS150COMNTOOLS")
-            if String.IsNullOrEmpty var then Environment.GetEnvironmentVariable("VSAPPIDDIR") 
-            else var
-        if String.IsNullOrEmpty vsvar then failwith "VS150COMNTOOLS and VSAPPIDDIR environment variables not found."
+        let vsvar =
+            let var = Environment.GetEnvironmentVariable("VS160COMNTOOLS")
+            if String.IsNullOrEmpty var then
+                Environment.GetEnvironmentVariable("VSAPPIDDIR")
+            else
+                var
+        if String.IsNullOrEmpty vsvar then failwith "VS160COMNTOOLS and VSAPPIDDIR environment variables not found."
         Path.Combine(vsvar, "..")
 
     let CreateEditorCatalog() =
         let thisAssembly = Assembly.GetExecutingAssembly().Location
-        let editorAssemblyDir = Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\Editor")
-        let privateAssemblyDir = Path.Combine(vsInstallDir, @"IDE\PrivateAssemblies")
-        let publicAssemblyDir = Path.Combine(vsInstallDir, @"IDE\PublicAssemblies")
-
-        let CreateAssemblyCatalog(path, file) =
-            let fullPath = Path.GetFullPath(Path.Combine(path, file))
-            if File.Exists(fullPath) then
-                new AssemblyCatalog(fullPath)
-            else
-                failwith("could not find " + fullPath)
-
+        let thisAssemblyDir = Path.GetDirectoryName(thisAssembly)
         let list = new ResizeArray<ComposablePartCatalog>()
+        let add p =
+            let fullPath = Path.GetFullPath(Path.Combine(thisAssemblyDir, p))
+            if File.Exists(fullPath) then
+                list.Add(new AssemblyCatalog(fullPath))
+            else
+                failwith <| sprintf "unable to find assembly %s" p
+
         list.Add(new AssemblyCatalog(thisAssembly))
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.Data.dll"))
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.Logic.dll"))
-        list.Add(CreateAssemblyCatalog(privateAssemblyDir, "Microsoft.VisualStudio.Text.Internal.dll"))
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.UI.dll"))
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Text.UI.Wpf.dll"))
-        list.Add(CreateAssemblyCatalog(privateAssemblyDir, "Microsoft.VisualStudio.Threading.dll"))
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Platform.VSEditor.dll"))
-        list.Add(CreateAssemblyCatalog(editorAssemblyDir,  "Microsoft.VisualStudio.Editor.Implementation.dll"))
-        list.Add(CreateAssemblyCatalog(publicAssemblyDir,  "Microsoft.VisualStudio.ComponentModelHost.dll"))
-        list.Add(CreateAssemblyCatalog(publicAssemblyDir,  "Microsoft.VisualStudio.Shell.15.0.dll"))
+        [ "Microsoft.VisualStudio.Text.Data.dll"
+          "Microsoft.VisualStudio.Text.Logic.dll"
+          "Microsoft.VisualStudio.Text.Internal.dll"
+          "Microsoft.VisualStudio.Text.UI.dll"
+          "Microsoft.VisualStudio.Text.UI.Wpf.dll"
+          "Microsoft.VisualStudio.Threading.dll"
+          "Microsoft.VisualStudio.Platform.VSEditor.dll"
+          "Microsoft.VisualStudio.Editor.Implementation.dll"
+          "Microsoft.VisualStudio.ComponentModelHost.dll"
+          "Microsoft.VisualStudio.Shell.15.0.dll" ]
+        |> List.iter add
         new AggregateCatalog(list)
 
     let exportProvider = new CompositionContainer(new AggregateCatalog(CreateEditorCatalog()), true, null)

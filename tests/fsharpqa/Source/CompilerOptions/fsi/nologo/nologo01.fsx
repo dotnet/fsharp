@@ -1,3 +1,3 @@
 // #NoMT #CompilerOptions 
-//<Expects status=notin>NOTE</Expects>
+//<Expects status="notin">NOTE</Expects>
 #q;;

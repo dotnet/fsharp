@@ -127,7 +127,7 @@ let WouldFailAtRuntimeTest2 () =
   and a3 = (fun x -> a2 + 2) 1 in 
   a2 + a3
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETCOREAPP
 open System
 open System.Windows.Forms
 
@@ -303,7 +303,7 @@ module RecursiveInterfaceObjectExpressions = begin
   
 end
 
-#if !TESTS_AS_APP && !NETCOREAPP1_0
+#if !TESTS_AS_APP && !NETCOREAPP
 module RecursiveInnerConstrainedGenerics = begin
 
     open System.Windows.Forms

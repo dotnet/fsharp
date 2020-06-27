@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="Build">
         <source>Build</source>
-        <target state="translated">Kompiluj</target>
+        <target state="translated">Kompilacja</target>
         <note />
       </trans-unit>
       <trans-unit id="5001">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Script.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -179,7 +179,7 @@
       </trans-unit>
       <trans-unit id="5008">
         <source>Windows</source>
-        <target state="translated">Windows</target>
+        <target state="translated">System Windows</target>
         <note />
       </trans-unit>
       <trans-unit id="5009">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">File.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Microsoft Visual F# Tools {{FSProductVersion}} dla języka F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Microsoft Visual F# Tools {{FSProductVersion}} dla języka F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Visual F# Tools 10.2 for F# 4.5</target>
+        <source>Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Visual F# Tools {{FSProductVersion}} dla języka F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
@@ -484,7 +484,7 @@
       </trans-unit>
       <trans-unit id="ProjectRenderFolderMultiple">
         <source>The project '{0}' could not be opened because opening it would cause a folder to be rendered multiple times in the solution explorer. One such problematic item is '{1}'. To open this project in Visual Studio, first edit the project file and fix the problem.</source>
-        <target state="translated">Nie można otworzyć projektu „{0}”, ponieważ spowodowałoby to wielokrotne renderowanie folderu w eksploratorze rozwiązań. Jednym z elementów powodujących problemy jest „{1}”. Aby otworzyć ten projekt w programie Visual Studio, najpierw edytuj plik projektu i rozwiąż problem.</target>
+        <target state="translated">Nie można otworzyć projektu „{0}”, ponieważ spowodowałoby to wielokrotne zrenderowanie folderu w eksploratorze rozwiązań. Jednym z elementów powodujących problemy jest „{1}”. Aby otworzyć ten projekt w programie Visual Studio, najpierw edytuj plik projektu i rozwiąż problem.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropertyDefaultNamespace">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="6005">
         <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">Zmień ścieżkę i argumenty wiersza polecenia przekazywane do narzędzia F# Interactive</target>
+        <target state="translated">Zmień ścieżkę i argumenty wiersza polecenia przekazywane do programu F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="6006">

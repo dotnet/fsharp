@@ -64,12 +64,12 @@
       </trans-unit>
       <trans-unit id="ApplicationIconDescription">
         <source>Sets the .ico file to use as your application icon.</source>
-        <target state="translated">Consente di impostare il file con estensione da usare come icona dell'applicazione.</target>
+        <target state="translated">Imposta il file ico da utilizzare come icona dell'applicazione.</target>
         <note />
       </trans-unit>
       <trans-unit id="Project">
         <source>Project</source>
-        <target state="translated">Progetto</target>
+        <target state="translated">PROGETTO</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectFile">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Script.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">File.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
@@ -329,7 +329,7 @@
       </trans-unit>
       <trans-unit id="5040">
         <source>A project item for consuming a .NET Managed Resources File (Resx) using ResxFile type provider.</source>
-        <target state="translated">Elemento di progetto per l'utilizzo di un file di risorse gestite .NET (Resx) con il provider di tipi ResxFile.</target>
+        <target state="translated">Elemento di progetto per l'utilizzo di un file di risorse gestite .NET (Resx) utilizzando il provider di tipi ResxFile.</target>
         <note />
       </trans-unit>
       <trans-unit id="5041">
@@ -339,7 +339,7 @@
       </trans-unit>
       <trans-unit id="5042">
         <source>A project item for using the SqlDataConnection (LINQ to SQL) type provider to generate types and consume data in a live SQL database.</source>
-        <target state="translated">Elemento di progetto per l'uso del provider di tipi SqlDataConnection (LINQ to SQL) per generare i tipi e utilizzare i dati in un database SQL attivo.</target>
+        <target state="translated">Elemento di progetto per l'utilizzo del provider di tipi SqlDataConnection (LINQ to SQL) per generare i tipi e utilizzare i dati in un database SQL attivo.</target>
         <note />
       </trans-unit>
       <trans-unit id="5043">
@@ -349,7 +349,7 @@
       </trans-unit>
       <trans-unit id="5044">
         <source>A project item for using the SqlEntityConnection (Entity Data Model) type provider to generate types and consume data in a live SQL database.</source>
-        <target state="translated">Elemento di progetto per l'uso del provider di tipi SqlEntityConnection (Entity Data Model) per generare i tipi e utilizzare i dati in un database SQL attivo.</target>
+        <target state="translated">Elemento di progetto per l'utilizzo del provider di tipi SqlEntityConnection (Entity Data Model) per generare i tipi e utilizzare i dati in un database SQL attivo.</target>
         <note />
       </trans-unit>
       <trans-unit id="5045">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 per F# 4.5</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Microsoft Visual F# Tools {{FSProductVersion}} per F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Microsoft Visual F# Tools 10.2 per F# 4.5</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Microsoft Visual F# Tools {{FSProductVersion}} per F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.2 for F# 4.5</source>
-        <target state="translated">Visual F# Tools 10.2 per F# 4.5</target>
+        <source>Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">Visual F# Tools {{FSProductVersion}} per F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
@@ -539,7 +539,7 @@
       </trans-unit>
       <trans-unit id="AddReferenceAssemblyPageDialogNoItemsText">
         <source>All of the Framework assemblies are already referenced. Please use the Object Browser to explore the references in the Framework.</source>
-        <target state="translated">Si è già fatto riferimento a tutti gli assembly del framework. Usare Visualizzatore oggetti per esplorare i riferimenti nel framework.</target>
+        <target state="translated">Si è già fatto riferimento a tutti gli assembly del framework. Utilizzare Visualizzatore oggetti per esplorare i riferimenti nel framework.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpCoreVersionIsNotLegacyCompatible">

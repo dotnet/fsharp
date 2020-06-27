@@ -1,16 +1,18 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
+open FSharp.Compiler.XmlDoc
 
 /// Represent an Xml documentation block in source code
 type XmlDocable =
     | XmlDocable of line:int * indent:int * paramNames:string list
 
 module XmlDocParsing =
-    open Microsoft.FSharp.Compiler.Range
-    open Microsoft.FSharp.Compiler.Ast
         
     let (|ConstructorPats|) = function
         | Pats ps -> ps
@@ -38,10 +40,10 @@ module XmlDocParsing =
         | SynPat.InstanceMember _
         | SynPat.FromParseError _ -> []
 
-    let getXmlDocablesImpl(sourceCodeLinesOfTheFile: string [], input: ParsedInput option) =
+    let getXmlDocablesImpl(sourceText: ISourceText, input: ParsedInput option) =
         let indentOf (lineNum: int) =
             let mutable i = 0
-            let line = sourceCodeLinesOfTheFile.[lineNum-1] // -1 because lineNum reported by xmldocs are 1-based, but array is 0-based
+            let line = sourceText.GetLineString(lineNum-1) // -1 because lineNum reported by xmldocs are 1-based, but array is 0-based
             while i < line.Length && line.Chars(i) = ' ' do
                 i <- i + 1
             i
@@ -146,7 +148,7 @@ module XmlDocParsing =
 
         and getXmlDocablesInput input =
             match input with
-            | ParsedInput.ImplFile(ParsedImplFileInput(modules = symModules))-> 
+            | ParsedInput.ImplFile (ParsedImplFileInput (modules = symModules))-> 
                 symModules |> List.collect getXmlDocablesSynModuleOrNamespace
             | ParsedInput.SigFile _ -> []
 
@@ -184,7 +186,7 @@ module XmlDocComment =
         res
 
 module XmlDocParser =
+
     /// Get the list of Xml documentation from current source code
-    let getXmlDocables (sourceCodeOfTheFile, input) =
-        let sourceCodeLinesOfTheFile = String.getLines sourceCodeOfTheFile
-        XmlDocParsing.getXmlDocablesImpl (sourceCodeLinesOfTheFile, input)
+    let getXmlDocables (sourceText: ISourceText, input) =
+        XmlDocParsing.getXmlDocablesImpl (sourceText, input)

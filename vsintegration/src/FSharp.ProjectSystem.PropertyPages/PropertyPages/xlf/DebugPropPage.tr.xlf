@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="StartProgram.AccessibleName">
         <source>Program to start</source>
-        <target state="translated">Başlatılacak Program</target>
+        <target state="translated">Başlatılacak program</target>
         <note />
       </trans-unit>
       <trans-unit id="StartProgramBrowse.AccessibleName">
@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="StartProgramBrowse.Text">
         <source>...</source>
-        <target state="translated">...</target>
+        <target state="new">...</target>
         <note />
       </trans-unit>
       <trans-unit id="StartOptionsLabel.Text">
@@ -64,7 +64,7 @@
       </trans-unit>
       <trans-unit id="StartWorkingDirectoryBrowse.Text">
         <source>...</source>
-        <target state="translated">...</target>
+        <target state="new">...</target>
         <note />
       </trans-unit>
       <trans-unit id="EnableDebuggerLabel.Text">
@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="EnableSQLServerDebugging.Text">
         <source>Enable SQ&amp;L Server debugging</source>
-        <target state="translated">SQ&amp;L Server üzerinde hata ayıklamayı etkinleştir</target>
+        <target state="translated">SQ&amp;L Server hata ayıklamasını etkinleştir</target>
         <note />
       </trans-unit>
       <trans-unit id="UseVSHostingProcess.Text">

@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../debug/bin/net45/"
+#I "../../../../artifacts/bin/fcs/net461"
 (**
 コンパイラサービス: ファイルシステム仮想化
 ==========================================
@@ -21,7 +21,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Text
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 let defaultFileSystem = Shim.FileSystem
 
@@ -41,36 +41,44 @@ let B = File1.A + File1.A"""
     interface IFileSystem with
         // 読み取りおよび書き込み用にファイルをオープンする機能を実装
         member __.FileStreamReadShim(fileName) = 
-            match files.TryGetValue(fileName) with
+            match files.TryGetValue fileName with
             | true, text -> new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
             | _ -> defaultFileSystem.FileStreamReadShim(fileName)
 
         member __.FileStreamCreateShim(fileName) = 
             defaultFileSystem.FileStreamCreateShim(fileName)
 
+        member __.IsStableFileHeuristic(fileName) = 
+            defaultFileSystem.IsStableFileHeuristic(fileName)
+
         member __.FileStreamWriteExistingShim(fileName) = 
             defaultFileSystem.FileStreamWriteExistingShim(fileName)
 
         member __.ReadAllBytesShim(fileName) = 
-            match files.TryGetValue(fileName) with
+            match files.TryGetValue fileName with
             | true, text -> Encoding.UTF8.GetBytes(text)
             | _ -> defaultFileSystem.ReadAllBytesShim(fileName)
 
         // 一時パスおよびファイルのタイムスタンプに関連する機能を実装
         member __.GetTempPathShim() = 
             defaultFileSystem.GetTempPathShim()
+
         member __.GetLastWriteTimeShim(fileName) = 
             defaultFileSystem.GetLastWriteTimeShim(fileName)
+
         member __.GetFullPathShim(fileName) = 
             defaultFileSystem.GetFullPathShim(fileName)
+
         member __.IsInvalidPathShim(fileName) = 
             defaultFileSystem.IsInvalidPathShim(fileName)
+
         member __.IsPathRootedShim(fileName) = 
             defaultFileSystem.IsPathRootedShim(fileName)
 
         // ファイルの存在確認および削除に関連する機能を実装
         member __.SafeExists(fileName) = 
             files.ContainsKey(fileName) || defaultFileSystem.SafeExists(fileName)
+
         member __.FileDelete(fileName) = 
             defaultFileSystem.FileDelete(fileName)
 
@@ -78,6 +86,7 @@ let B = File1.A + File1.A"""
         // 型プロバイダやF# Interactiveで使用される。
         member __.AssemblyLoadFrom(fileName) = 
             defaultFileSystem.AssemblyLoadFrom fileName
+
         member __.AssemblyLoad(assemblyName) = 
             defaultFileSystem.AssemblyLoad assemblyName 
 
@@ -90,7 +99,7 @@ FileSystemによるコンパイルの実行
 --------------------------------
 
 *)
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 
 let checker = FSharpChecker.Create()
 let projectOptions = 
@@ -114,7 +123,11 @@ let projectOptions =
                  yield "-r:" + r |]
  
     { ProjectFileName = @"c:\mycode\compilation.fsproj" // 現在のディレクトリで一意な名前を指定
-      ProjectFileNames = [| fileName1; fileName2 |]
+      ProjectId = None
+      SourceFiles = [| fileName1; fileName2 |]
+      OriginalLoadReferences = []
+      ExtraProjectInfo=None
+      Stamp = None
       OtherOptions = allFlags 
       ReferencedProjects=[| |]
       IsIncompleteTypeCheckEnvironment = false

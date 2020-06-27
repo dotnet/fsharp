@@ -42,6 +42,11 @@
         <target state="translated">入力候補一覧</target>
         <note />
       </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="translated">診断</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">パフォーマンス</target>
@@ -100,6 +105,11 @@
       <trans-unit id="Solid_underline">
         <source>_Solid underline</source>
         <target state="translated">実線の下線(_S)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="translated">テキスト ホバー</target>
         <note />
       </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
@@ -164,27 +174,32 @@
       </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
-        <target state="new">Always add new line on enter</target>
+        <target state="translated">Enter を押すと常に新しい行を追加します</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_never">
         <source>Never add new line on enter</source>
-        <target state="new">Never add new line on enter</target>
+        <target state="translated">Enter 時に新しい行を追加しません</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_only">
         <source>Only add new line on enter after end of fully typed word</source>
-        <target state="new">Only add new line on enter after end of fully typed word</target>
+        <target state="translated">単語を完全に入力した後 Enter キーで新しい行のみを追加する</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_Key_Rule">
         <source>Enter key behavior</source>
-        <target state="new">Enter key behavior</target>
+        <target state="translated">Enter キー入力時動作</target>
         <note />
       </trans-unit>
       <trans-unit id="Format_on_paste">
         <source>Re-format indentation on paste</source>
-        <target state="new">Re-format indentation on paste</target>
+        <target state="translated">貼り付け時にインデントを再フォーマットする</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Suggest_names_for_errors_code_fix">
+        <source>Suggest names for unresolved identifiers</source>
+        <target state="translated">未解決の識別子の名前を提案します</target>
         <note />
       </trans-unit>
     </body>

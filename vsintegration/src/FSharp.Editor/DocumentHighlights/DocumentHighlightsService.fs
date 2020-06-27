@@ -11,17 +11,17 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.DocumentHighlighting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.DocumentHighlighting
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 
 type internal FSharpHighlightSpan =
     { IsDefinition: bool
       TextSpan: TextSpan }
     override this.ToString() = sprintf "%+A" this
 
-[<Shared>]
-[<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpConstants.FSharpLanguageName)>]
+[<Export(typeof<IFSharpDocumentHighlightsService>)>]
 type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
 
     static let userOpName = "DocumentHighlights"
@@ -59,7 +59,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! symbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, languageServicePerformanceOptions,  userOpName = userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, languageServicePerformanceOptions,  userOpName = userOpName)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
             return 
@@ -72,10 +72,10 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                 |> fixInvalidSymbolSpans sourceText symbol.Ident.idText
         }
 
-    interface IDocumentHighlightsService with
-        member __.GetDocumentHighlightsAsync(document, position, _documentsToSearch, cancellationToken) : Task<ImmutableArray<DocumentHighlights>> =
+    interface IFSharpDocumentHighlightsService with
+        member __.GetDocumentHighlightsAsync(document, position, _documentsToSearch, cancellationToken) : Task<ImmutableArray<FSharpDocumentHighlights>> =
             asyncMaybe {
-                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) 
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
@@ -85,11 +85,11 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                 let highlightSpans = 
                     spans 
                     |> Array.map (fun span ->
-                        let kind = if span.IsDefinition then HighlightSpanKind.Definition else HighlightSpanKind.Reference
-                        HighlightSpan(span.TextSpan, kind))
+                        let kind = if span.IsDefinition then FSharpHighlightSpanKind.Definition else FSharpHighlightSpanKind.Reference
+                        FSharpHighlightSpan(span.TextSpan, kind))
                     |> Seq.toImmutableArray
                 
-                return ImmutableArray.Create(DocumentHighlights(document, highlightSpans))
+                return ImmutableArray.Create(FSharpDocumentHighlights(document, highlightSpans))
             }   
-            |> Async.map (Option.defaultValue ImmutableArray<DocumentHighlights>.Empty)
+            |> Async.map (Option.defaultValue ImmutableArray<FSharpDocumentHighlights>.Empty)
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

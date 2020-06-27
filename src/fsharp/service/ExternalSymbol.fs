@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Reflection
-open Microsoft.FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.IL
 open System.Diagnostics
 
 module private Option =
@@ -18,14 +18,18 @@ module private Option =
 /// Represents a type in an external (non F#) assembly.
 [<RequireQualifiedAccess>]
 type ExternalType =
-      /// Type defined in non-F# assembly.
+    /// Type defined in non-F# assembly.
     | Type of fullName: string * genericArgs: ExternalType list
-      /// Array of type that is defined in non-F# assembly.
+
+    /// Array of type that is defined in non-F# assembly.
     | Array of inner: ExternalType
-      /// Pointer defined in non-F# assembly.
+
+    /// Pointer defined in non-F# assembly.
     | Pointer of inner: ExternalType
-      /// Type variable defined in non-F# assembly.
+
+    /// Type variable defined in non-F# assembly.
     | TypeVar of typeName: string
+
     override this.ToString() =
         match this with
         | Type (name, genericArgs) ->
@@ -89,6 +93,7 @@ type ExternalSymbol =
     | Field of typeName: string * name: string
     | Event of typeName: string * name: string
     | Property of typeName: string * name: string
+
     override this.ToString () =
         match this with
         | Type fullName -> fullName

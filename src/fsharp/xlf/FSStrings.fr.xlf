@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../FSStrings.resx">
     <body>
+      <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
+        <source>symbol '..^'</source>
+        <target state="translated">symbole '..^'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">. Voir aussi {0}.</target>
@@ -63,23 +68,13 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">En règle générale, les identificateurs de variable en majuscules ne doivent pas être utilisés dans les modèles. En outre, ils peuvent indiquer une erreur d'orthographe dans le nom du modèle.</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="needs-review-translation">En règle générale, les identificateurs de variable en majuscules ne doivent pas être utilisés dans les modèles. En outre, ils peuvent indiquer une erreur d'orthographe dans le nom du modèle.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">Les cas d'union discriminés et les étiquettes d'exception doivent être des identificateurs en majuscules</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Surcharge possible : '{0}'. {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\nMeilleure surcharge possible : '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -184,7 +179,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">Ce type est 'abstract', car certains membres abstraits n'ont pas reçu d'implémentation. Si cela est intentionnel, ajoutez l'attribut '[&lt;AbstractClass&gt;]' à votre type.</target>
+        <target state="translated">Ce type est 'abstract', car des membres abstraits n'ont pas reçu d'implémentation. Si cela est intentionnel, ajoutez l'attribut '[&lt;AbstractClass&gt;]' à votre type.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -959,7 +954,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COMMENT">
         <source>comment</source>
-        <target state="translated">commentaire</target>
+        <target state="translated">Commentaire</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LINE.COMMENT">
@@ -1279,7 +1274,7 @@
       </trans-unit>
       <trans-unit id="DeprecatedThreadStaticBindingWarning">
         <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">Les liaisons 'let' statiques de thread et de contexte sont déconseillées. Utilisez plutôt une déclaration sous la forme 'static val mutable &lt;ident&gt; : &lt;type&gt;' dans une classe. Ajoutez l'attribut 'DefaultValue' à cette déclaration pour indiquer que la valeur est initialisée à la valeur par défaut pour chaque nouveau thread.</target>
+        <target state="translated">Les liaisons static 'let' de thread et de contexte sont dépréciées. Utilisez plutôt une déclaration de la forme 'static val mutable &lt;ident&gt; : &lt;type&gt;' dans une classe. Ajoutez l'attribut 'DefaultValue' à cette déclaration pour indiquer que la valeur est initialisée sur la valeur par défaut sur chaque nouveau thread.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionValueUnexpected">
@@ -1289,7 +1284,7 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
         <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">Le résultat de cette expression a le type '{0}' et est implicitement ignoré. Utilisez 'ignore' pour abandonner cette valeur de manière explicite, par exemple 'expr |&gt; ignore', ou 'let' pour lier le résultat à un nom, par exemple 'let result = expr'.</target>
+        <target state="translated">Le résultat de cette expression a le type '{0}' et est implicitement ignoré. Utilisez 'ignore' pour ignorer explicitement cette valeur, par ex. 'expr |&gt; ignore', ou 'let' pour lier le résultat à un nom, par ex. 'let result = expr'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
@@ -1299,17 +1294,17 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">Le résultat de cette expression d'égalité a le type '{0}' et est implicitement abandonné. Utilisez 'let' pour lier le résultat à un nom, par exemple 'let result = expression'. Si vous avez l'intention de définir une valeur pour une propriété, utilisez l'opérateur '&lt;-'. Exemple : '{1}.{2} &lt;- expression'.</target>
+        <target state="translated">Le résultat de cette expression d'égalité a le type '{0}' et est implicitement ignoré. Utilisez 'let' pour lier le résultat à un nom, par ex. 'let result = expression'. Si vous voulez définir une valeur sur une propriété, utilisez l'opérateur '&lt;-', par ex. '{1}.{2} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Le résultat de cette expression d'égalité a le type '{0}' et est implicitement abandonné. Utilisez 'let' pour lier le résultat à un nom, par exemple 'let result = expression'. Si vous avez l'intention de muter une valeur, marquez cette valeur à l'aide de 'mutable' et utilisez l'opérateur '&lt;-'. Exemple : '{1} &lt;- expression'.</target>
+        <target state="translated">Le résultat de cette expression d'égalité a le type '{0}' et est implicitement ignoré. Utilisez 'let' pour lier le résultat à un nom, par ex. 'let result = expression'. Si vous voulez muter une valeur, marquez la valeur avec 'mutable' et utilisez l'opérateur '&lt;-', par ex. '{1} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Le résultat de cette expression d'égalité a le type '{0}' et est implicitement abandonné. Utilisez 'let' pour lier le résultat à un nom, par exemple 'let result = expression'. Si vous avez l'intention de muter une valeur, utilisez l'opérateur '&lt;-'. Exemple : '{1} &lt;- expression'.</target>
+        <target state="translated">Le résultat de cette expression d'égalité a le type '{0}' et est implicitement ignoré. Utilisez 'let' pour lier le résultat à un nom, par ex. 'let result = expression'. Si vous voulez muter une valeur, utilisez l'opérateur '&lt;-', par ex. '{1} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
@@ -1344,7 +1339,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">Les références récursives à l'objet défini seront soumises à un contrôle de l'initialisation au moment de l'exécution via l'utilisation d'une référence différée. Placez des auto-références dans les membres ou dans une expression de fin sous la forme '&lt;ctor-expr&gt; then &lt;expr&gt;'.</target>
+        <target state="translated">Les références récursives à l'objet en cours de définition sont soumises à un contrôle d'initialisation au moment de l'exécution à l'aide d'une référence différée. Placez des auto-références dans les membres ou dans une expression de fin de la forme '&lt;ctor-expr&gt; then &lt;expr&gt;'.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1619,12 +1614,17 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.BAR">
         <source>symbol '{|'</source>
-        <target state="new">symbol '{|'</target>
+        <target state="translated">symbole '{|'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
-        <target state="new">symbol '|}'</target>
+        <target state="translated">symbole '|}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="translated">mot clé 'and!'</target>
         <note />
       </trans-unit>
     </body>

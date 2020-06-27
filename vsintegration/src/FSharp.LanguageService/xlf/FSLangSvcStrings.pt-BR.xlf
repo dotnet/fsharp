@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="GotoDefinitionFailed_Generic">
         <source>Cannot navigate to definition.</source>
-        <target state="translated">Não é possível navegar para definição.</target>
+        <target state="translated">Não é possível navegar até a definição.</target>
         <note />
       </trans-unit>
       <trans-unit id="GotoDefinitionFailed_NotIdentifier">

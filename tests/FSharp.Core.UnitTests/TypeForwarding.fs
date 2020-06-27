@@ -2,15 +2,13 @@
 
 // Various tests for Microsoft.FSharp.Core type forwarding
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Type_Forwarding
+namespace FSharp.Core.UnitTests.Type_Forwarding
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
 
-#if NETSTANDARD1_6
-// TODO named #define ?
-#else
+#if NET46
 [<TestFixture>]
 type TypeForwardingModule() =
     [<Test>]
@@ -30,5 +28,7 @@ type TypeForwardingModule() =
         | ("v4.0.30319", "v4.0.30319") ->
             Assert.AreEqual(tupleAssemblyName, mscorlib4AssemblyName)
         | _ -> failwith "Unknown scenario."
-        () 
+        ()
+#else
+// TODO named #define ?
 #endif

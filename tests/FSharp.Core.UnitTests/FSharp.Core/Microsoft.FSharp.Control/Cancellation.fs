@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control
+namespace FSharp.Core.UnitTests.Control
 #nowarn "52"
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
@@ -199,7 +199,6 @@ type CancellationType() =
         let asyncs = seq { for i in 1..1000 do yield async { cts.Cancel() } }
         asyncs |> Async.Parallel |> Async.RunSynchronously |> ignore
         Assert.IsTrue(!callbackRun, "Callback should run at least once")
-        
 
     [<Test>]
     member this.TestRegistrationRace() =
@@ -215,7 +214,7 @@ type CancellationType() =
                         }                     
             }               
         (asyncs |> Async.Parallel |> Async.RunSynchronously |> ignore)
-        
+
     [<Test>]
     member this.LinkedSourceCancellationRace() =
         let asyncs =
@@ -279,8 +278,10 @@ type CancellationType() =
         } |> Async.Start
 
         try
-            let res = t.Wait(1000)
-            Assert.Fail (sprintf "Excepted TimeoutException wrapped in an AggregateException, but got %A" res)
+            let res = t.Wait(2000)
+            let msg = sprintf "Excepted TimeoutException wrapped in an AggregateException, but got %A" res
+            printfn "failure msg: %s" msg
+            Assert.Fail (msg)
         with :? AggregateException as agg -> ()
 
     [<Test>]

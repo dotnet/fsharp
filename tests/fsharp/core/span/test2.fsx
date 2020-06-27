@@ -1,5 +1,4 @@
-#r @"..\..\..\..\packages\System.Memory.4.5.0-rc1\lib\netstandard2.0\System.Memory.dll"
-#r @"..\..\..\..\packages\NETStandard.Library.NETFramework.2.0.0-preview2-25405-01\build\net461\ref\netstandard.dll"
+#load "refs.generated.fsx"
 
 #nowarn "9"
 #nowarn "51"

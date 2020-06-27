@@ -64,7 +64,7 @@
       </trans-unit>
       <trans-unit id="ConfirmExtensionChange">
         <source>If you change a file name extension, the file may become unusable. Are you sure you want to change it?</source>
-        <target state="translated">파일 확장명을 바꾸면 파일을 사용할 수 없게 될 수도 있습니다. 확장명을 바꾸시겠습니까?</target>
+        <target state="translated">확장명을 바꾸면 파일을 사용할 수 없게 될 수도 있습니다. 확장명을 바꾸시겠습니까?</target>
         <note />
       </trans-unit>
       <trans-unit id="CannotAddFileThatIsOpenInEditor">
@@ -89,7 +89,7 @@
       </trans-unit>
       <trans-unit id="CopyToLocalDescription">
         <source>Indicates whether the reference will be copied to the output directory.</source>
-        <target state="translated">참조를 출력 디렉터리로 복사할지 여부를 나타냅니다.</target>
+        <target state="translated">참조를 출력 디렉터리에 복사할지 여부를 나타냅니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Detailed">
@@ -152,7 +152,7 @@
       </trans-unit>
       <trans-unit id="Exe">
         <source>Console Application</source>
-        <target state="translated">콘솔 응용 프로그램</target>
+        <target state="translated">콘솔 애플리케이션</target>
         <note />
       </trans-unit>
       <trans-unit id="ExpectedObjectOfType">
@@ -252,7 +252,7 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">최소</target>
+        <target state="translated">minimal</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
@@ -262,12 +262,12 @@
       </trans-unit>
       <trans-unit id="None">
         <source>None</source>
-        <target state="translated">없음</target>
+        <target state="translated">None</target>
         <note />
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">보통</target>
+        <target state="translated">NORMAL</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -392,7 +392,7 @@
       </trans-unit>
       <trans-unit id="WinExe">
         <source>Windows Application</source>
-        <target state="translated">Windows 응용 프로그램</target>
+        <target state="translated">Windows 애플리케이션</target>
         <note />
       </trans-unit>
       <trans-unit id="InvalidAutomationObject">
@@ -487,7 +487,7 @@
       </trans-unit>
       <trans-unit id="CustomToolDescription">
         <source>Specifies the tool that transforms a file at design time and places the output of that transformation into another file. For example, a dataset (.xsd) file comes with a default custom tool.</source>
-        <target state="translated">디자인 타임에 파일을 변환하고 변환 결과를 다른 파일에 저장하는 도구를 지정합니다. 예를 들어 데이터 집합 파일(.xsd)의 경우 기본 사용자 지정 도구가 제공됩니다.</target>
+        <target state="translated">디자인 타임에 파일을 변환하고 변환 결과를 다른 파일에 저장하는 도구를 지정합니다. 예를 들어 데이터 세트 파일(.xsd)의 경우 기본 사용자 지정 도구가 제공됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="CustomToolNamespace">
@@ -532,7 +532,7 @@
       </trans-unit>
       <trans-unit id="OutputXmlSerializer">
         <source>XML Serialization Assemblies</source>
-        <target state="translated">XML Serialization 어셈블리</target>
+        <target state="translated">XML 직렬화 어셈블리</target>
         <note />
       </trans-unit>
       <trans-unit id="OutputBuiltDescription">
@@ -587,7 +587,7 @@
       </trans-unit>
       <trans-unit id="ErrorReferenceCouldNotBeAdded">
         <source>A reference to {0} could not be added. Please make sure that the file is accessible, and that it is a valid assembly or COM component.</source>
-        <target state="translated">{0}에 대한 참조를 추가할 수 없습니다. 파일에 액세스할 수 있는지, 올바른 어셈블리 또는 COM 구성 요소인지 확인하세요.</target>
+        <target state="translated">{0}에 대한 참조를 추가할 수 없습니다. 파일이 액세스 가능한지, 올바른 어셈블리 또는 COM 구성 요소인지 확인하십시오.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsImport">
@@ -627,7 +627,7 @@
       </trans-unit>
       <trans-unit id="ProjectLocationNotTrusted">
         <source>The project location is not trusted:{0}{0}{1}{0}{0}Running the application may result in security exceptions when it attempts to perform actions which require full trust.{0}{0}Click OK to ignore and continue.</source>
-        <target state="translated">프로젝트 위치를 신뢰할 수 없습니다.{0}{0}{1}{0}{0}응용 프로그램을 실행하면 완전 신뢰가 필요한 작업을 수행할 때 보안 예외가 발생할 수 있습니다.{0}{0}무시하고 계속하려면 [확인]5D;을 클릭하세요.</target>
+        <target state="translated">프로젝트 위치를 신뢰할 수 없습니다.{0}{0}{1}{0}{0}애플리케이션을 실행하면 완전 신뢰가 필요한 작업을 수행할 때 보안 예외가 발생할 수 있습니다.{0}{0}무시하고 계속하려면 [확인]을 클릭하십시오.</target>
         <note />
       </trans-unit>
       <trans-unit id="BuildEventError">
@@ -642,7 +642,7 @@
       </trans-unit>
       <trans-unit id="CopyToOutputDirectory">
         <source>Copy to Output Directory</source>
-        <target state="translated">출력 디렉터리에 복사</target>
+        <target state="translated">출력 디렉터리로 복사</target>
         <note />
       </trans-unit>
       <trans-unit id="CopyToOutputDirectoryDescription">

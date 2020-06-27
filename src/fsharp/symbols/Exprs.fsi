@@ -1,13 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.CompileOps
-
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 
 /// Represents the definitional contents of an assembly, as seen by the F# language
 type public FSharpAssemblyContents = 
@@ -89,7 +88,7 @@ module public BasicPatterns =
     /// Matches expressions which are type abstractions
     val (|TypeLambda|_|) : FSharpExpr -> (FSharpGenericParameter list * FSharpExpr) option   
 
-    /// Matches expressions with a decision expression, each branch of which ends in DecisionTreeSuccess pasing control and values to one of the targets.
+    /// Matches expressions with a decision expression, each branch of which ends in DecisionTreeSuccess passing control and values to one of the targets.
     val (|DecisionTree|_|) : FSharpExpr -> (FSharpExpr * (FSharpMemberOrFunctionOrValue list * FSharpExpr) list) option
 
     /// Special expressions at the end of a conditional decision structure in the decision expression node of a DecisionTree .
@@ -126,6 +125,13 @@ module public BasicPatterns =
 
     /// Matches record expressions 
     val (|NewRecord|_|) : FSharpExpr -> (FSharpType * FSharpExpr list) option 
+
+    /// Matches anonymous record expressions 
+    val (|NewAnonRecord|_|) : FSharpExpr -> (FSharpType * FSharpExpr list) option 
+
+    /// Matches expressions getting a field from an anonymous record. The integer represents the
+    /// index into the sorted fields of the anonymous record.
+    val (|AnonRecordGet|_|) : FSharpExpr -> (FSharpExpr * FSharpType * int) option 
 
     /// Matches expressions which get a field from a record or class
     val (|FSharpFieldGet|_|) : FSharpExpr -> (FSharpExpr option * FSharpType * FSharpField) option 
@@ -210,5 +216,5 @@ module public BasicPatterns =
     val (|ObjectExpr|_|) : FSharpExpr -> (FSharpType * FSharpExpr * FSharpObjectExprOverride list * (FSharpType * FSharpObjectExprOverride list) list) option
 
     /// Matches expressions for an unresolved call to a trait 
-    val (|TraitCall|_|) : FSharpExpr -> (FSharpType list * string * Ast.MemberFlags * FSharpType list * FSharpType list * FSharpExpr list) option 
+    val (|TraitCall|_|) : FSharpExpr -> (FSharpType list * string * MemberFlags * FSharpType list * FSharpType list * FSharpExpr list) option 
 

@@ -230,12 +230,12 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_InvalidVersion">
         <source>Invalid version format, expected "[Major]", "[Major].[Minor]", "[Major].[Minor].[Build]" or "[Major].[Minor].[Build].[Revision]"</source>
-        <target state="translated">Formato de versión no válido, se esperaba "[Principal]", "[Principal].[Secundaria]", "[Principal].[Secundaria].[Compilación]" o "[Principal].[Secundaria].[Compilación].[Revisión]"</target>
+        <target state="translated">Formato de versión no válido; se esperaba "[Principal]", "[Principal].[Secundaria]", "[Principal].[Secundaria].[Compilación]" o "[Principal].[Secundaria].[Compilación].[Revisión]"</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_BadWildcard">
         <source>A wildcard ("*") is not allowed in this field.</source>
-        <target state="translated">No se permite el carácter comodín ("*") en este campo.</target>
+        <target state="translated">No se permite el uso de caracteres comodín ("*") en este campo.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_AssemblyInfo_VersionOutOfRange_2Args">
@@ -315,7 +315,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupFormLabelText">
         <source>Startup f&amp;orm:</source>
-        <target state="translated">F&amp;ormulario de inicio:</target>
+        <target state="translated">&amp;Formulario de inicio:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
@@ -355,7 +355,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">Ninguno</target>
+        <target state="translated">NONE</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -390,7 +390,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42104">
         <source>Use of variable prior to assignment</source>
-        <target state="translated">Uso de variable anterior a la asignación.</target>
+        <target state="translated">Uso de variable anterior a la asignación</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_420XX">
@@ -400,7 +400,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42024">
         <source>Unused local variable</source>
-        <target state="translated">Variable local no usada.</target>
+        <target state="translated">Variable local no usada</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42025">
@@ -502,7 +502,7 @@ Si cambia este valor, se restablecerán los valores de todas las configuraciones
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_CustomZone">
         <source>(Custom)</source>
-        <target state="translated">(Personalizada)</target>
+        <target state="translated">(Personalizado)</target>
         <note>Don't use</note>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_ZoneDefault">
@@ -684,7 +684,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_NewPassMismatch">
         <source>The new passwords do not match. Enter the password again.</source>
-        <target state="translated">Las contraseñas no coinciden. Vuelva a escribir la contraseña.</target>
+        <target state="translated">Las nuevas contraseñas no coinciden. Vuelva a escribir la contraseña.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_NewPassTooShort">
@@ -784,7 +784,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
         <source>Enter &amp;password to open file {0}</source>
-        <target state="translated">Escriba la &amp;contraseña para abrir el archivo {0}</target>
+        <target state="translated">Escriba la &amp;contraseña para abrir archivo {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_CreateNewKeyPasswordPrompt">
@@ -950,7 +950,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PropPage_ReferenceNotFound">
         <source>&lt;The system cannot find the reference specified&gt;</source>
-        <target state="translated">&lt;El sistema no encuentra la referencia especificada&gt;</target>
+        <target state="translated">&lt;El sistema no puede encontrar la referencia especificada&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceTitle">
@@ -985,7 +985,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">La dirección base debe ser un número hexadecimal con 8 dígitos o menos, por ejemplo, &amp;H11000000.</target>
+        <target state="translated">La dirección base debe ser un número hexadecimal con 8 dígitos o menos; por ejemplo, &amp;H11000000.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -1087,7 +1087,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_Property_AssemblyVersion">
         <source>Assembly Version</source>
-        <target state="translated">Versión del ensamblado</target>
+        <target state="translated">Versión de ensamblado</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Property_AssemblyFileVersion">
@@ -1830,7 +1830,6 @@ CONSIDER: get this from CodeDom</note>
         <source>{0} x {1}</source>
         <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
@@ -1894,7 +1893,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_ExistingFile">
         <source>&amp;Existing File...</source>
-        <target state="translated">Archivo &amp;existente...</target>
+        <target state="translated">&amp;Archivo existente...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_String">
@@ -1904,32 +1903,32 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image">
         <source>New &amp;Image</source>
-        <target state="translated">Nueva i&amp;magen</target>
+        <target state="translated">Nueva &amp;imagen</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_PNG">
         <source>&amp;PNG Image...</source>
-        <target state="translated">Imagen &amp;PNG...</target>
+        <target state="translated">&amp;Imagen PNG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_BMP">
         <source>&amp;BMP Image...</source>
-        <target state="translated">Imagen &amp;BMP...</target>
+        <target state="translated">&amp;Imagen BMP...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_GIF">
         <source>&amp;GIF Image...</source>
-        <target state="translated">Imagen &amp;GIF...</target>
+        <target state="translated">&amp;Imagen GIF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_JPEG">
         <source>&amp;JPEG Image...</source>
-        <target state="translated">Imagen &amp;JPEG...</target>
+        <target state="translated">&amp;Imagen JPEG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_TIFF">
         <source>&amp;TIFF Image...</source>
-        <target state="translated">Imagen &amp;TIFF...</target>
+        <target state="translated">&amp;Imagen TIFF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Icon">
@@ -1939,7 +1938,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_TextFile">
         <source>New &amp;Text File...</source>
-        <target state="translated">Nuevo archivo de te&amp;xto...</target>
+        <target state="translated">Nuevo &amp;archivo de texto...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Type_BMP">
@@ -2344,19 +2343,9 @@ CONSIDER: get this from CodeDom</note>
         <target state="translated">Aplicación</target>
         <note />
       </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebApplicationScope">
-        <source>Application (Web)</source>
-        <target state="translated">Aplicación (web)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
         <source>User</source>
         <target state="translated">Usuario</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SD_ComboBoxItem_WebUserScope">
-        <source>User (Web)</source>
-        <target state="translated">Usuario (web)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
@@ -2517,12 +2506,12 @@ El nuevo valor del archivo app.config es '{1}'
       </trans-unit>
       <trans-unit id="SD_MNU_AddSettingText">
         <source>&amp;Add Setting</source>
-        <target state="translated">&amp;Agregar valor de configuración</target>
+        <target state="translated">&amp;Agregar ajuste</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_MNU_RemoveSettingText">
         <source>R&amp;emove Setting</source>
-        <target state="translated">&amp;Quitar valor de configuración</target>
+        <target state="translated">Quit&amp;ar ajuste</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_FullDescriptionText">
@@ -2675,7 +2664,7 @@ El nuevo valor del archivo app.config es '{1}'
       </trans-unit>
       <trans-unit id="PPG_Application_RootNamespaceJSharp">
         <source>Default pac&amp;kage:</source>
-        <target state="translated">Paq&amp;uete predeterminado:</target>
+        <target state="translated">Pa&amp;quete predeterminado:</target>
         <note>J# Specific String for Root Namespace</note>
       </trans-unit>
       <trans-unit id="RSE_AccessModifier_Custom">
@@ -2725,12 +2714,12 @@ El nuevo valor del archivo app.config es '{1}'
       </trans-unit>
       <trans-unit id="PPG_Application_StartupObjectLabelText">
         <source>Startup &amp;object:</source>
-        <target state="translated">&amp;Objeto de inicio:</target>
+        <target state="translated">Objeto de &amp;inicio:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">
         <source>Startup &amp;URI:</source>
-        <target state="translated">&amp;URI de inicio:</target>
+        <target state="translated">URI de &amp;inicio:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_AppXamlOpenInUnsupportedEditor">
@@ -2830,22 +2819,22 @@ El nuevo valor del archivo app.config es '{1}'
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
         <source>seconds</source>
-        <target state="translated">segundos</target>
+        <target state="translated">Segundos</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Minutes">
         <source>minutes</source>
-        <target state="translated">minutos</target>
+        <target state="translated">Minutos</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Hours">
         <source>hours</source>
-        <target state="translated">horas</target>
+        <target state="translated">Horas</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Days">
         <source>days</source>
-        <target state="translated">días</target>
+        <target state="translated">Días</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">
@@ -2855,7 +2844,7 @@ El nuevo valor del archivo app.config es '{1}'
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidAppConfigXml">
         <source>An error occurred while reading the Application configuration file.  The file might be corrupted or contain invalid XML.</source>
-        <target state="translated">Error al leer el archivo de configuración de la aplicación. Puede que el archivo esté dañado o que contenga código XML no válido.</target>
+        <target state="translated">Error al leer el archivo de configuración de la aplicación.  Puede que esté dañado o que contenga código XML no válido.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidUrl">

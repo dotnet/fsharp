@@ -207,7 +207,7 @@
       </trans-unit>
       <trans-unit id="FileNameCannotContainALeadingPeriod">
         <source>File and folder names cannot contain a leading period.</source>
-        <target state="translated">I nomi di file e di cartella non possono iniziare con un punto.</target>
+        <target state="translated">I nomi di file e di cartelle non possono iniziare con un punto.</target>
         <note />
       </trans-unit>
       <trans-unit id="FileNameDescription">
@@ -222,7 +222,7 @@
       </trans-unit>
       <trans-unit id="FolderNameDescription">
         <source>Name of this folder</source>
-        <target state="translated">Nome di questa cartella</target>
+        <target state="translated">Nome della cartella corrente</target>
         <note />
       </trans-unit>
       <trans-unit id="FullPath">
@@ -252,7 +252,7 @@
       </trans-unit>
       <trans-unit id="Minimal">
         <source>Minimal</source>
-        <target state="translated">Minimo</target>
+        <target state="translated">Minima</target>
         <note />
       </trans-unit>
       <trans-unit id="Misc">
@@ -267,7 +267,7 @@
       </trans-unit>
       <trans-unit id="Normal">
         <source>Normal</source>
-        <target state="translated">Normale</target>
+        <target state="translated">NORMAL</target>
         <note />
       </trans-unit>
       <trans-unit id="PasteFailed">
@@ -282,7 +282,7 @@
       </trans-unit>
       <trans-unit id="Project">
         <source>Project</source>
-        <target state="translated">Progetto</target>
+        <target state="translated">PROGETTO</target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectContainsCircularReferences">
@@ -442,7 +442,7 @@
       </trans-unit>
       <trans-unit id="ProjectProperties">
         <source>Project Properties</source>
-        <target state="translated">Proprietà del progetto</target>
+        <target state="translated">Proprietà progetto</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferenceProperties">
@@ -492,7 +492,7 @@
       </trans-unit>
       <trans-unit id="CustomToolNamespace">
         <source>Custom Tool Namespace</source>
-        <target state="translated">Spazio dei nomi strumento personalizzato</target>
+        <target state="translated">Spazio dei nomi dello strumento personalizzato</target>
         <note />
       </trans-unit>
       <trans-unit id="CustomToolNamespaceDescription">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">Percorso</target>
+        <target state="translated">PERCORSO</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

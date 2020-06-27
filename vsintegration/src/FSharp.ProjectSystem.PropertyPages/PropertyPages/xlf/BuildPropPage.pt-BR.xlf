@@ -44,12 +44,12 @@
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">Caminho de &amp;saída:</target>
+        <target state="translated">Caminh&amp;o de saída:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
         <source>A&amp;ll</source>
-        <target state="translated">Tud&amp;o</target>
+        <target state="translated">T&amp;odos</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">

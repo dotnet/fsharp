@@ -39,7 +39,7 @@ type Symbols = Symbol list
 //---------------------------------------------------------------------
 // Output Raw Parser Spec AST
 
-let StringOfSym sym = match sym with Terminal s -> "'" + s + "'" | NonTerminal s -> s
+let StringOfSym sym = match sym with Terminal s -> "'" ^ s ^ "'" | NonTerminal s -> s
 
 let OutputSym os sym = fprintf os "%s" (StringOfSym sym)
 
@@ -211,7 +211,7 @@ let ProcessWorkList start f =
     let rec loop() = 
         match !work with 
         | [] -> ()
-        | x::t -> 
+        | x :: t -> 
             work := t; 
             f queueWork x;
             loop()
@@ -353,7 +353,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec) =
     stopWatch.Start()
 
     // Augment the grammar 
-    let fakeStartNonTerminals = spec.StartSymbols |> List.map(fun nt -> "_start" + nt) 
+    let fakeStartNonTerminals = spec.StartSymbols |> List.map(fun nt -> "_start"^nt) 
     let nonTerminals = fakeStartNonTerminals@spec.NonTerminals
     let endOfInputTerminal = "$$"
     let dummyLookahead = "#"
@@ -400,7 +400,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec) =
                         let rhs = Array.toList (prodTab.Symbols prodIdx)
                         let rec place l =
                             match l with
-                            | (yi::t) -> 
+                            | (yi :: t) -> 
                                 res := 
                                    List.choose 
                                      (function None -> None | Some a -> Some (PNonTerminal nonTermX,Some a)) 
@@ -428,7 +428,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec) =
             let rec add l = 
                 match l with 
                 | [] -> acc.Add(term)
-                | sym::moreSyms -> 
+                | sym :: moreSyms -> 
                     let firstSetOfSym = computedFirstTable.[sym]
                     firstSetOfSym |> Set.iter (function None -> () | Some v -> acc.Add(v)) 
                     if firstSetOfSym.Contains(None) then add moreSyms 
@@ -466,7 +466,7 @@ let CompilerLalrParserSpec logf (spec : ProcessedParserSpec) =
     let IsStartItem item0 = fakeStartNonTerminalsSet.Contains(ntIdx_of_item0 item0)
     let IsKernelItem item0 = (IsStartItem item0 || dotIdx_of_item0 item0 <> 0)
 
-    let StringOfSym sym = match sym with PTerminal s -> "'" + termTab.OfIndex s + "'" | PNonTerminal s -> ntTab.OfIndex s
+    let StringOfSym sym = match sym with PTerminal s -> "'" ^ termTab.OfIndex s ^ "'" | PNonTerminal s -> ntTab.OfIndex s
 
     let OutputSym os sym = fprintf os "%s" (StringOfSym sym)
 

@@ -1,24 +1,29 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 open System
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.SourceCodeServices
+
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.CompileOps
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
+
     member Get : CompilationThreadToken * TcConfig -> Cancellable<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
+
     member Clear: CompilationThreadToken -> unit
+
     member Downsize: CompilationThreadToken -> unit
   
 /// Used for unit testing
@@ -34,10 +39,14 @@ module internal IncrementalBuilderEventTesting =
 
 /// Represents the state in the incremental graph associated with checking a file
 type internal PartialCheckResults = 
-    { /// This field is None if a major unrecovered error occurred when preparing the initial state
+    {
+      /// This field is None if a major unrecovered error occurred when preparing the initial state
       TcState : TcState
+
       TcImports: TcImports 
+
       TcGlobals: TcGlobals 
+
       TcConfig: TcConfig 
 
       /// This field is None if a major unrecovered error occurred when preparing the initial state
@@ -55,9 +64,12 @@ type internal PartialCheckResults =
       /// Represents open declarations
       TcOpenDeclarationsRev: OpenDeclaration[] list
 
+      /// Disambiguation table for module names
+      ModuleNamesDict: ModuleNamesDict
+
       TcDependencyFiles: string list
 
-      /// Represents the collected attributes to apply to the module of assuembly generates
+      /// Represents the collected attributes to apply to the module of assembly generates
       TopAttribs: TypeChecker.TopAttribs option
 
       TimeStamp: DateTime 
@@ -67,7 +79,14 @@ type internal PartialCheckResults =
       LatestImplementationFile: TypedImplFile option 
       
       /// Represents latest inferred signature contents.
-      LastestCcuSigForFile: ModuleOrNamespaceType option}
+      LatestCcuSigForFile: ModuleOrNamespaceType option
+      
+      /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
+      ItemKeyStore: ItemKeyStore option
+      
+      /// If enabled, holds semantic classification information for Item(symbol)s in a file.
+      SemanticClassification: struct (range * SemanticClassificationType) []
+    }
 
     member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
 
@@ -76,9 +95,6 @@ type internal PartialCheckResults =
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]
 type internal IncrementalBuilder = 
-
-      /// Check if the builder is not disposed
-      member IsAlive : bool
 
       /// The TcConfig passed in to the builder creation.
       member TcConfig : TcConfig
@@ -101,15 +117,17 @@ type internal IncrementalBuilder =
       /// overall analysis results for the project will be quick.
       member ProjectChecked : IEvent<unit>
 
+#if !NO_EXTENSIONTYPING
       /// Raised when a type provider invalidates the build.
-      member ImportedCcusInvalidated : IEvent<string>
+      member ImportsInvalidatedByTypeProvider : IEvent<string>
+#endif
+
+      /// Tries to get the current successful TcImports. This is only used in testing. Do not use it for other stuff.
+      member TryGetCurrentTcImports : unit -> TcImports option
 
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]
-#if !NO_EXTENSIONTYPING
-      /// Whether there are any 'live' type providers that may need a refresh when a project is Cleaned
-      member ThereAreLiveTypeProviders : bool
-#endif
+
       /// Perform one step in the F# build. Return true if the background work is finished.
       member Step : CompilationThreadToken -> Cancellable<bool>
 
@@ -151,26 +169,20 @@ type internal IncrementalBuilder =
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
       member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
 
-      member DeduplicateParsedInputModuleNameInProject: Ast.ParsedInput -> Ast.ParsedInput
-
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: TimeStampCache * CompilationThreadToken -> DateTime
+
+      /// Does the given file exist in the builder's pipeline?
+      member ContainsFile: filename: string -> bool
 
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
+      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
 
-      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 * tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
+      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 * tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot * suggestNamesForErrors: bool * keepAllBackgroundSymbolUses: bool * enableBackgroundItemKeyStoreAndSemanticClassification: bool -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
 
-      /// Increment the usage count on the IncrementalBuilder by 1. This initial usage count is 0 so immediately after creation 
-      /// a call to KeepBuilderAlive should be made. The returns an IDisposable which will 
-      /// decrement the usage count and dispose if the usage count goes to zero
-      static member KeepBuilderAlive : IncrementalBuilder option -> IDisposable
-
-      member IsBeingKeptAliveApartFromCacheEntry : bool
-
-/// Generalized Incremental Builder. This is exposed only for unittesting purposes.
+/// Generalized Incremental Builder. This is exposed only for unit testing purposes.
 module internal IncrementalBuild =
     type INode = 
         abstract Name: string
@@ -252,10 +264,13 @@ module internal IncrementalBuild =
     /// Only required for unit testing.
     type BuildDescriptionScope = 
         new : unit -> BuildDescriptionScope
+
         /// Declare a named scalar output.
         member DeclareScalarOutput : output:Scalar<'T> -> unit
+
         /// Declare a named vector output.
         member DeclareVectorOutput : output:Vector<'T> -> unit
+
         /// Set the concrete inputs for this build. 
         member GetInitialPartialBuild : vectorinputs: BuildInput list -> PartialBuild
 

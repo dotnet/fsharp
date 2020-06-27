@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="ComboMembersTip">
         <source>Members</source>
-        <target state="translated">Member</target>
+        <target state="translated">Mitglieder</target>
         <note>Tooltip for the drop down combo at top of document window showing list of known members.</note>
       </trans-unit>
       <trans-unit id="ComboTypesTip">

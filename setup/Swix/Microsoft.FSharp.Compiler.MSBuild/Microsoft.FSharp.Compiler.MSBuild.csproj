@@ -1,0 +1,131 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsc\fsc.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsi\fsi.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsiAnyCpu\fsiAnyCpu.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
+  </ItemGroup>
+
+  <!--
+  Splits the $(XlfLanguages) property into an item group.  E.g., this:
+
+    <PropertyGroup>
+      <XlfLanguages>cs;de;...</XlfLanguages>
+    </PropertyGroup>
+
+  turns into this:
+
+    <ItemGroup>
+      <_XlfLanguages Include="cs" />
+      <_XlfLanguages Include="de" />
+      ...
+    </ItemGroup>
+
+   -->
+  <Target Name="_GenerateLanguageList">
+    <CreateItem Include="$(XlfLanguages)">
+      <Output TaskParameter="Include" ItemName="_XlfLanguages" />
+    </CreateItem>
+  </Target>
+
+  <!-- For each localization language, include the appropriate satellite assemblies. -->
+  <Target Name="_GenerateLocSwrFileContents"
+          DependsOnTargets="_GenerateLanguageList"
+          Outputs="%(_XlfLanguages.Identity)">
+    <PropertyGroup>
+      <_Line>
+<![CDATA[
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\%(_XlfLanguages.Identity)"
+  file source="$(ArtifactsBinDir)FSharp.Build\$(Configuration)\$(TargetFramework)\%(_XlfLanguages.Identity)\FSharp.Build.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.Compiler.Interactive.Settings\$(Configuration)\$(TargetFramework)\%(_XlfLanguages.Identity)\FSharp.Compiler.Interactive.Settings.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\%(_XlfLanguages.Identity)\FSharp.Compiler.Private.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.Core\$(Configuration)\net45\%(_XlfLanguages.Identity)\FSharp.Core.resources.dll"
+]]>
+      </_Line>
+    </PropertyGroup>
+    <ItemGroup>
+      <_BuiltSwrLines Include="$(_Line)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_SetSwrFilePath">
+    <PropertyGroup>
+      <_SwrFilePath>$(IntermediateOutputPath)Microsoft.FSharp.Compiler.swr</_SwrFilePath>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="_GenerateSwrFile"
+          AfterTargets="Build"
+          BeforeTargets="SwixBuild"
+          DependsOnTargets="_SetSwrFilePath;_GenerateLocSwrFileContents"
+          Outputs="$(_SwrFilePath)">
+
+    <PropertyGroup>
+      <_Lines>
+        <![CDATA[use vs
+
+package name=Microsoft.FSharp.Compiler
+        version=$(VsixVersion)
+
+vs.dependencies
+  vs.dependency id=Microsoft.FSharp.Dependencies
+                version=$(VsixVersion)
+                type=Required
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
+  file source="$(BinariesFolder)\fsc\$(Configuration)\$(TargetFramework)\fsc.exe" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsc.exe"
+  file source="$(BinariesFolder)\fsc\$(Configuration)\$(TargetFramework)\fsc.exe.config"
+  file source="$(BinariesFolder)\fsi\$(Configuration)\$(TargetFramework)\fsi.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X86 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsi.exe"
+  file source="$(BinariesFolder)\fsi\$(Configuration)\$(TargetFramework)\fsi.exe.config"
+  file source="$(BinariesFolder)\fsiAnyCpu\$(Configuration)\$(TargetFramework)\fsiAnyCpu.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsiAnyCpu.exe"
+  file source="$(BinariesFolder)\fsiAnyCpu\$(Configuration)\$(TargetFramework)\fsiAnyCpu.exe.config"
+  file source="$(BinariesFolder)\FSharp.Compiler.Interactive.Settings\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Interactive.Settings.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Private.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Buffers.dll"
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Memory.dll"
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Numerics.Vectors.dll"
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Reflection.Metadata.dll"
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Resources.Extensions.dll"
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Runtime.CompilerServices.Unsafe.dll"
+  file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Threading.Tasks.Dataflow.dll"
+  file source="$(BinariesFolder)\FSharp.Compiler.Server.Shared\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Server.Shared.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\FSharp.Core.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\FSharp.Core.optdata"
+  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\net45\FSharp.Core.sigdata"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\FSharp.Build.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\Microsoft.DotNet.DependencyManager\$(Configuration)\net472\Microsoft.DotNet.DependencyManager.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Build.dll"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Build.Framework.dll"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Build.Tasks.Core.dll"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Build.Utilities.Core.dll"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Portable.FSharp.Targets"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\System.Collections.Immutable.dll"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.FSharp.NetSdk.props"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.FSharp.NetSdk.targets"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.FSharp.Overrides.NetSdk.targets"
+  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.FSharp.Targets"
+
+@(_BuiltSwrLines)
+]]>
+      </_Lines>
+    </PropertyGroup>
+
+    <WriteLinesToFile File="$(_SwrFilePath)" Lines="$(_Lines)" Overwrite="true" />
+
+    <ItemGroup>
+      <FileWrites Include="$(_SwrFilePath)" />
+      <SwrFile Include="$(_SwrFilePath)" />
+    </ItemGroup>
+
+  </Target>
+
+</Project>

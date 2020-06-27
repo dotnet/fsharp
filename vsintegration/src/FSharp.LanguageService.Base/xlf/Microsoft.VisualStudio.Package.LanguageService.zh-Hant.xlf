@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="ComboTypesTip">
         <source>Types</source>
-        <target state="translated">類型</target>
+        <target state="translated">型別</target>
         <note>Tooltip for the drop down combo at top of document window showing list of known types.</note>
       </trans-unit>
       <trans-unit id="CommentSelection">

@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Exceptions 
 // Exception definition define new discriminated union cases
 // Verify that we can use misc types (notice that the "sig-spec" cannot be used [covered in another testcase]
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 exception E1

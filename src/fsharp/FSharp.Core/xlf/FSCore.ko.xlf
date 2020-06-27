@@ -314,7 +314,7 @@
       </trans-unit>
       <trans-unit id="QtmmExpectedFunction">
         <source>Type mismatch when building '{0}': expected function type in function application or let binding. Expected '{1}', but received type '{2}'.</source>
-        <target state="translated">{0}'을(를) 작성하는 동안 형식 불일치 문제가 발생했습니다. 함수 응용 프로그램 또는 let 바인딩에 함수 형식이 필요합니다. '{1}'이(가) 필요한데 '{2}' 형식을 수신했습니다.</target>
+        <target state="translated">'{0}'을(를) 작성하는 동안 형식 불일치 문제가 발생했습니다. 함수 애플리케이션 또는 let 바인딩에 함수 형식이 필요합니다. '{1}'이(가) 필요한데 '{2}' 형식을 수신했습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtmmExprNotMatchTuple">
@@ -705,6 +705,11 @@
       <trans-unit id="unsupportedQueryConstructKind">
         <source>This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
         <target state="translated">올바른 쿼리 식이 아닙니다. '{0}' 구문이 쿼리에 사용되었지만 F#-to-LINQ 쿼리 변환기에서 인식할 수 없습니다. 허용되는 쿼리의 사양을 확인하고 일부 연산을 쿼리 식 외부로 이동하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism은 양수여야 하는데 {0}였습니다.</target>
         <note />
       </trans-unit>
     </body>

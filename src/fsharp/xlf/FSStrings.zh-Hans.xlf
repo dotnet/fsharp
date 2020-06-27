@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../FSStrings.resx">
     <body>
+      <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
+        <source>symbol '..^'</source>
+        <target state="translated">符号 "..^"</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">。请参见 {0}。</target>
@@ -63,23 +68,13 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">通常不应在模式中使用大写的变量标识符，这可能标明某个模式名称存在拼写错误。</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="needs-review-translation">通常不应在模式中使用大写的变量标识符，这可能标明某个模式名称存在拼写错误。</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">可区分的联合用例和异常标签必须是大写的标识符</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">可能的重载:“{0}”。{1}。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\n可能的最佳重载:“{0}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -184,7 +179,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">由于未为一些抽象成员给定实现，因此此类型为“abstract”。如果是有意为之，请为类型添加“[&lt;AbstractClass&gt;]”特性。</target>
+        <target state="translated">由于未向一些抽象成员提供实现，因此该类型为 "abstract"。如果是故意如此，请向你的类型添加 "[&lt;AbstractClass&gt;]" 属性。</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -254,7 +249,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.GREATER">
         <source>symbol ':&gt;'</source>
-        <target state="translated">符号“:&gt;”</target>
+        <target state="translated">符号 ":&gt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.COLON">
@@ -289,7 +284,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON.QMARK.GREATER">
         <source>symbol ':?&gt;'</source>
-        <target state="translated">符号“:?&gt;”</target>
+        <target state="translated">符号 ":?&gt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INFIX.STAR.DIV.MOD.OP">
@@ -304,12 +299,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP">
         <source>symbol '&amp;'</source>
-        <target state="translated">符号 '&amp;'</target>
+        <target state="translated">符号 "&amp; amp;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP.AMP">
         <source>symbol '&amp;&amp;'</source>
-        <target state="translated">符号“&amp;&amp;”</target>
+        <target state="translated">符号 "&amp;&amp;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.BAR">
@@ -319,12 +314,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LESS">
         <source>symbol '&lt;'</source>
-        <target state="translated">符号“&lt;”</target>
+        <target state="translated">符号 "&lt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER">
         <source>symbol '&gt;'</source>
-        <target state="translated">符号“&gt;”</target>
+        <target state="translated">符号 "&gt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.QMARK">
@@ -379,7 +374,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LARROW">
         <source>symbol '&lt;-'</source>
-        <target state="translated">符号“&lt;-”</target>
+        <target state="translated">符号 "&lt;-"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.EQUALS">
@@ -389,7 +384,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.BAR.RBRACK">
         <source>symbol '&gt;|]'</source>
-        <target state="translated">符号“&gt;|]”</target>
+        <target state="translated">符号 "&gt;|]"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.MINUS">
@@ -424,7 +419,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HASH">
         <source>symbol #</source>
-        <target state="translated">意外的</target>
+        <target state="translated">符号 #</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.UNDERSCORE">
@@ -474,7 +469,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACK.LESS">
         <source>symbol '[&lt;'</source>
-        <target state="translated">符号“[&lt;”</target>
+        <target state="translated">符号 "[&lt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE">
@@ -484,7 +479,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.LESS">
         <source>symbol '{&lt;'</source>
-        <target state="translated">符号“{&lt;”</target>
+        <target state="translated">符号 "{&lt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACK">
@@ -494,12 +489,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.RBRACE">
         <source>symbol '&gt;}'</source>
-        <target state="translated">符号“&gt;}”</target>
+        <target state="translated">符号 "&gt;}"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.GREATER.RBRACK">
         <source>symbol '&gt;]'</source>
-        <target state="translated">符号“&gt;]”</target>
+        <target state="translated">符号 "&gt;]"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RQUOTE">
@@ -694,7 +689,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.RARROW">
         <source>symbol '-&gt;'</source>
-        <target state="translated">符号“-&gt;”</target>
+        <target state="translated">符号 "-&gt;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.SIG">
@@ -984,7 +979,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.STRING">
         <source>string literal</source>
-        <target state="translated">字符串</target>
+        <target state="translated">字符串文本</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.EOF">
@@ -1174,7 +1169,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">关键字 </target>
+        <target state="translated">关键字</target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">
@@ -1279,7 +1274,7 @@
       </trans-unit>
       <trans-unit id="DeprecatedThreadStaticBindingWarning">
         <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">线程静态的和上下文静态的“let”绑定已弃用。请改为在类中使用“static val mutable &lt;ident&gt; : &lt;type&gt;”格式的声明。将“DefaultValue”特性添加到此声明以指示在每个新线程上将该值初始化为默认值。</target>
+        <target state="translated">线程静态的和上下文静态的 "let" 绑定已弃用。请改为在类中使用 "static val mutable &lt;ident&gt; : &lt;type&gt;" 格式的声明。请将 "DefaultValue" 添加到此声明，以指示在每个新线程上将该值初始化为默认值。</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionValueUnexpected">
@@ -1289,7 +1284,7 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
         <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">此表达式的结果为类型“{0}”且被隐式忽略。请考虑使用 "ignore" 显式放弃该值，例如使用 "expr |&gt; ignore" 或 "let" 将结果绑定到名称，例如 "let result = expr"。</target>
+        <target state="translated">此表达式的结果具有类型“{0}”且已被隐式忽略。请考虑使用 "ignore" 以显式弃用此值(例如 "expr |&gt; ignore")，或使用 "let" 将结果绑定到名称上(例如 "let result = expr")。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
@@ -1299,17 +1294,17 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">此等式表达式的结果为类型“{0}”且被隐式放弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要为某属性设置值，请使用 "&lt;-" 运算符，例如 "{1}.{2} &lt;- expression"。</target>
+        <target state="translated">此相等表达式的结果具有类型“{0}”并被隐式丢弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要将值设置为属性，请使用 "&lt;-" 运算符(例如 "{1}.{2} &lt;- expression")。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">此等式表达式的结果为类型“{0}”且被隐式放弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要转变某个值，则将此值标记为 "mutable" 并使用 "&lt;-" 运算符，例如 "{1} &lt;- expression"。</target>
+        <target state="translated">此等式表达式的结果具有类型“{0}”并被隐式丢弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果想要转变某个值，则将此值标记为 "mutable" 并使用 "&lt;-" 运算符(例如 "{1} &lt;- expression")。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">此等式表达式的结果为类型“{0}”且被隐式放弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要转变某个值，请使用 "&lt;-" 运算符，例如 "{1} &lt;- expression"。</target>
+        <target state="translated">此相等表达式的结果具有类型“{0}”并被隐式丢弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要对值进行突变, 请使用 "&lt;-" 运算符(例如 "{1} &lt;- expression")。</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
@@ -1344,7 +1339,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">将检查对要定义的对象的递归引用，以查看其在运行时能否通过使用延迟的引用来完整地进行初始化。请考虑在成员中或“&lt;ctor-expr&gt; then &lt;expr&gt;”格式的尾随表达式中放置自引用。</target>
+        <target state="translated">将检查对要定义的对象的递归引用，以查看其在运行时能否通过使用延迟的引用来完整地进行初始化。请考虑在成员中或 "&lt;ctor-expr&gt; then &lt;expr&gt;" 格式的尾随表达式中放置自引用。</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1619,12 +1614,17 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.BAR">
         <source>symbol '{|'</source>
-        <target state="new">symbol '{|'</target>
+        <target state="translated">符号 "{|"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
-        <target state="new">symbol '|}'</target>
+        <target state="translated">符号 "|}"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="translated">关键字 "and!"</target>
         <note />
       </trans-unit>
     </body>

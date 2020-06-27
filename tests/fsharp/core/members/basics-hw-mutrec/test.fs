@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles #Classes #ObjectConstructors #ObjectOrientedTypes #Fields #MemberDefinitions #MethodsAndProperties #Unions #InterfacesAndImplementations #Events #Overloading #Recursion #Regression 
+    // #Regression #Conformance #SignatureFiles #Classes #ObjectConstructors #ObjectOrientedTypes #Fields #MemberDefinitions #MethodsAndProperties #Unions #InterfacesAndImplementations #Events #Overloading #Recursion #Regression 
 
 
 
@@ -5549,7 +5549,7 @@ module Devdiv2_Bug_5385 =
                     g "1" |> ignore; // note, use of non-generic 'g' within a generic, generalized memoized function
                     2
 
-        and g : string -> int = memoize f // note, computed function value using generic “f” at an instance
+        and g : string -> int = memoize f // note, computed function value using generic ï¿½fï¿½ at an instance
         g "1"                                        
 
     let res = test3e()
