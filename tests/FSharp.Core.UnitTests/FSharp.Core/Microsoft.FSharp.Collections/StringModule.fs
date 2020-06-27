@@ -87,17 +87,24 @@ type StringModule() =
 
     [<Test>]
     member this.Filter() =
-        let e1 = String.filter (fun c -> true) "foo"
-        Assert.AreEqual("foo", e1)
+        let e1 = String.filter (fun c -> true) "Taradiddle"
+        Assert.AreEqual("Taradiddle", e1)
 
         let e2 = String.filter (fun c -> true) null 
         Assert.AreEqual("", e2)
 
-        let e3 = String.filter (fun c -> c <> 'o') "foo bar"
-        Assert.AreEqual("f bar", e3)
+        let e3 = String.filter Char.IsUpper "How Vexingly Quick Daft Zebras Jump!"
+        Assert.AreEqual("HVQDZJ", e3)
 
         let e4 = String.filter (fun c -> c <> 'o') ""
         Assert.AreEqual("", e4)
+
+        let e5 = String.filter (fun c -> c > 'B' ) "ABRACADABRA"
+        Assert.AreEqual("RCDR", e5)
+
+        // LOH test with 55k string, which is 110k bytes
+        let e5 = String.filter (fun c -> c > 'B' ) (String.replicate 5_000 "ABRACADABRA")
+        Assert.AreEqual(String.replicate 5_000 "RCDR", e5)
 
     [<Test>]
     member this.Collect() =
