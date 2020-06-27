@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -103,7 +103,7 @@ Kliknij przycisk OK, aby to zignorować i kontynuować. Kliknij przycisk ANULUJ,
       </trans-unit>
       <trans-unit id="PPG_KeyFileNewText">
         <source>&lt;New...&gt;</source>
-        <target state="translated">&lt;Nowa...&gt;</target>
+        <target state="translated">&lt;Nowy...&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_KeyFileBrowseText">
@@ -754,7 +754,7 @@ Błąd:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_AllPurposes">
         <source>&lt;All&gt;</source>
-        <target state="translated">&lt;Wszystkie&gt;</target>
+        <target state="translated">&lt;Wszystko&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_PasswordMismatch">
@@ -985,7 +985,7 @@ Błąd:</target>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">&amp;Adres bazowy musi być liczbą szesnastkową o maksymalnie 8 cyfrach, na przykład: H11000000.</target>
+        <target state="translated">Adres podstawowy musi być liczbą szesnastkową o długości maksymalnie 8 cyfr, na przykład &amp;H11000000.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="needs-review-translation">{0} x {1}</target>
+        <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -1974,7 +1974,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Type_TIFF">
         <source>Tag Image File Format</source>
-        <target state="translated">Znacznikowy format pliku obrazu TIF</target>
+        <target state="translated">Tag Image File Format</target>
         <note>Friendly Image types</note>
       </trans-unit>
       <trans-unit id="RSE_Type_Icon">
@@ -2090,7 +2090,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_FilterSave_TIFF">
         <source>Tag Image File Format</source>
-        <target state="translated">Znacznikowy format pliku obrazu TIF</target>
+        <target state="translated">Tag Image File Format</target>
         <note># File dialog filters
 #
 # E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources
@@ -2118,7 +2118,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_Thumbnail">
         <source>&amp;Thumbnail</source>
-        <target state="translated">&amp;Miniatura</target>
+        <target state="translated">&amp;Miniatury</target>
         <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
       </trans-unit>
       <trans-unit id="RSE_ResourceEditor">
@@ -2512,7 +2512,7 @@ Czy chcesz zaktualizować wartość w pliku settings?</target>
       </trans-unit>
       <trans-unit id="SD_MNU_RemoveSettingText">
         <source>R&amp;emove Setting</source>
-        <target state="translated">U&amp;suń ustawienie</target>
+        <target state="translated">&amp;Usuń ustawienie</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_FullDescriptionText">
@@ -2665,7 +2665,7 @@ Czy chcesz zaktualizować wartość w pliku settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Application_RootNamespaceJSharp">
         <source>Default pac&amp;kage:</source>
-        <target state="translated">Pa&amp;kiet domyślny:</target>
+        <target state="translated">Pak&amp;iet domyślny:</target>
         <note>J# Specific String for Root Namespace</note>
       </trans-unit>
       <trans-unit id="RSE_AccessModifier_Custom">
@@ -2715,7 +2715,7 @@ Czy chcesz zaktualizować wartość w pliku settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupObjectLabelText">
         <source>Startup &amp;object:</source>
-        <target state="translated">Obiekt &amp;uruchomieniowy:</target>
+        <target state="translated">&amp;Obiekt początkowy:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">

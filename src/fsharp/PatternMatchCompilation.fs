@@ -1331,7 +1331,7 @@ let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (o
             // If the remainder of the match boiled away to nothing interesting.
             // We measure this simply by seeing if the range of the resulting expression is identical to matchm.
             let spTarget = 
-                if expr.Range = matchm then SuppressSequencePointAtTarget 
+                if Range.equals expr.Range matchm then SuppressSequencePointAtTarget 
                 else SequencePointAtTarget
 
             // Make the clause that represents the remaining cases of the pattern match

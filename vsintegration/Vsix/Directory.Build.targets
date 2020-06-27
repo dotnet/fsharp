@@ -2,6 +2,11 @@
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
 
+  <PropertyGroup>
+    <BaseOutputPath>$(ArtifactsDir)\VSSetup\$(Configuration)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(ArtifactsDir)\VSSetup.obj\$(Configuration)\Microsoft.FSharp\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6">
       <Visible>False</Visible>

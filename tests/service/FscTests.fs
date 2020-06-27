@@ -48,7 +48,7 @@ type PEVerifier () =
             Some ("pedump", "--verify all")
         else
             let peverifyPath configuration =
-                Path.Combine(__SOURCE_DIRECTORY__, "..", "fsharpqa", "testenv", "src", "PEVerify", "bin", configuration, "net472", "PEVerify.exe")
+                Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "artifacts", "bin", "PEVerify", configuration, "net472", "PEVerify.exe")
             let peverify =
                 if File.Exists(peverifyPath "Debug") then peverifyPath "Debug"
                 else peverifyPath "Release"

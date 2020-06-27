@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSComp.resx">
     <body>
@@ -84,17 +84,17 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
         <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="needs-review-translation">清單建構函式運算式的所有分支都必須是同一種類型。此運算式應具備類型 '{0}'，但卻為類型 '{1}'。</target>
+        <target state="translated">清單建構函式運算式的所有分支都必須是同一種類型。此運算式應具備類型 '{0}'，但卻為類型 '{1}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
         <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="needs-review-translation">陣列建構函式運算式的所有項目都必須是同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
+        <target state="translated">陣列建構函式運算式的所有項目都必須是同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
         <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
-        <target state="needs-review-translation">'if' 運算式遺漏 'else' 分支。'then' 分支具有類型 '{0}'。因為 'if' 為運算式而非陳述式，所以請新增會傳回的值類型相同的 'else' 分支。</target>
+        <target state="translated">'if' 運算式遺漏 'else' 分支。'then' 分支具有類型 '{0}'。因為 'if' 為運算式而非陳述式，所以請新增會傳回的值類型相同的 'else' 分支。</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -104,12 +104,12 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
         <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">if' 運算式的所有分支都必須是同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
+        <target state="translated">if' 運算式的所有分支都必須是同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">符合運算式的所有模式分支都必須傳回相同類型的值。第一個分支傳回了類型 '{0}' 的值，但此分支卻傳回類型 '{1}' 的值。</target>
+        <target state="translated">模式比對運算式的所有分支，都必須傳回相同類型的值。第一個分支傳回了類型 '{0}' 的值，但此分支卻傳回了類型 '{1}' 的值。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -289,17 +289,17 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashIDirective">
         <source>Invalid directive. Expected '#I \"&lt;path&gt;\"'.</source>
-        <target state="translated">無效的指示詞。必須是 '#I \"&lt;path&gt;\"'。</target>
+        <target state="translated">指示詞無效。應為 '#I \"&lt;path&gt;\"'。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashrDirective">
         <source>Invalid directive. Expected '#r \"&lt;file-or-assembly&gt;\"'.</source>
-        <target state="translated">無效的指示詞。必須是 '#r \"&lt;file-or-assembly&gt;\"'。</target>
+        <target state="translated">指示詞無效。應為 '#r \"&lt;file-or-assembly&gt;\"'。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashloadDirective">
         <source>Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</source>
-        <target state="translated">無效的指示詞。必須是 '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'。</target>
+        <target state="translated">指示詞無效。應為 '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
@@ -529,12 +529,12 @@
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityGenericParametersAreDifferentKinds">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe generic parameters in the signature and implementation have different kinds. Perhaps there is a missing [&lt;Measure&gt;] attribute.</source>
-        <target state="translated">模組 '{0}' 包含\n    {1}    \n但其簽章卻指定了\n    {2}    \n簽章與實作中泛型參數的種類不同。可能遺漏了 [&lt;Measure&gt;] 屬性。</target>
+        <target state="translated">模組 '{0}' 包含\n {1} \n但其特徵標記指定了\n {2} \n特徵標記和實作中的泛型參數種類不同。可能缺少 [&lt;Measure&gt;] 屬性。</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityAritiesDiffer">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe arities in the signature and implementation differ. The signature specifies that '{3}' is function definition or lambda expression accepting at least {4} argument(s), but the implementation is a computed function value. To declare that a computed function value is a permitted implementation simply parenthesize its type in the signature, e.g.\n\tval {5}: int -&gt; (int -&gt; int)\ninstead of\n\tval {6}: int -&gt; int -&gt; int.</source>
-        <target state="translated">模組 '{0}' 包含\n    {1}    \n但它的簽章卻指定\n    {2}    \n簽章與實作中的 Arity 不同。簽章指定 '{3}' 是函式定義或 Lambda 運算式，且接受至少 {4} 個引數，但實作則是計算的函式值。若要宣告計算的函式值是允許的實作，只要將簽章中它的類型括在括號內，例如\n\tval {5}: int -&gt; (int -&gt; int)\n而不是\n\tval {6}: int -&gt; int -&gt; int。</target>
+        <target state="translated">模組 '{0}' 包含\n    {1}    \n但其特徵標記指定了\n    {2}    \n特徵標記和實作中的發行項不同。特徵標記會指定 '{3}' 為函式定義或 lambda 運算式，並接受至少 {4} 個引數，但實作是計算函式值。若要宣告計算函式值為允許的實作，只要在特徵標記中將其類型括在括號內即可，例如\n\tval {5}: int -&gt; (int -&gt; int)\n而不是\n\tval {6}: int -&gt; int -&gt; int。</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityDotNetNamesDiffer">
@@ -624,22 +624,22 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">因為實作類型為已密封，但簽章卻將其隱含為非密封，所以簽章與實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;Sealed&gt;] 屬性新增至簽章。</target>
+        <target state="translated">因為實作類型已密封，特徵標記卻表示未密封，所以特徵標記和實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;Sealed&gt;] 屬性新增到特徵標記。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">因為實作類型為非密封，但簽章卻將其隱含為已密封，所以簽章與實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;Sealed&gt;] 屬性新增至實作。</target>
+        <target state="translated">因為實作類型未密封，但特徵標記表示其已密封，所以特徵標記和實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;Sealed&gt;] 屬性新增到實作。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation is an abstract class but the signature is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the signature.</source>
-        <target state="translated">因為實作為抽象類別，但簽章卻不是，所以簽章與實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;AbstractClass&gt;] 屬性新增至簽章。</target>
+        <target state="translated">因為實作是抽象類別，但特徵標記並不是，所以特徵標記和實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;AbstractClass&gt;] 屬性新增到特徵標記。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature is an abstract class but the implementation is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the implementation.</source>
-        <target state="translated">因為簽章為抽象類別，但實作卻不是，所以簽章與實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;AbstractClass&gt;] 屬性新增至實作。</target>
+        <target state="translated">因為特徵標記是抽象類別。但實作並不是，所以特徵標記和實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;AbstractClass&gt;] 屬性新增到實作。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes">
@@ -1039,12 +1039,12 @@
       </trans-unit>
       <trans-unit id="augRefEqCantHaveObjEquals">
         <source>A type with attribute 'ReferenceEquality' cannot have an explicit implementation of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">具 'ReferenceEquality' 屬性的類型不能有 'Object.Equals(obj)'、'System.IEquatable&lt;_&gt;' 或 'System.Collections.IStructuralEquatable' 的明確實作</target>
+        <target state="translated">屬性為 'ReferenceEquality' 的類型不能有 'Object.Equals(obj)'、'System.IEquatable&lt;_&gt;' 或 'System.Collections.IStructuralEquatable' 的明確實作</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomEqNeedsObjEquals">
         <source>A type with attribute 'CustomEquality' must have an explicit implementation of at least one of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">具 'CustomEquality' 屬性的類型必須至少有 'Object.Equals(obj)'、'System.IEquatable&lt;_&gt;' 或 'System.Collections.IStructuralEquatable' 其中之一的明確實作</target>
+        <target state="translated">屬性為 'CustomEquality' 的類型必須至少有 'Object.Equals(obj)'、'System.IEquatable&lt;_&gt;' 或 'System.Collections.IStructuralEquatable' 其中之一的明確實作</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomCompareNeedsIComp">
@@ -1059,7 +1059,7 @@
       </trans-unit>
       <trans-unit id="augNoCompCantImpIComp">
         <source>A type with attribute 'NoComparison' should not usually have an explicit implementation of 'System.IComparable', 'System.IComparable&lt;_&gt;' or 'System.Collections.IStructuralComparable'. Disable this warning if this is intentional for interoperability purposes</source>
-        <target state="translated">具 'NoComparison' 屬性的類型通常不應該有 'System.IComparable'、'System.IComparable&lt;_&gt;' 或 'System.Collections.IStructuralComparable' 的明確實作。如果是為了互通性，請停用這個警告</target>
+        <target state="translated">屬性為 'NoComparison' 的類型不應時常有 'System.IComparable'、'System.IComparable&lt;_&gt;' 或 'System.Collections.IStructuralComparable' 的明確實作。若是為了達成互通性而這樣做，則請停用此警示</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomEqNeedsNoCompOrCustomComp">
@@ -1159,7 +1159,7 @@
       </trans-unit>
       <trans-unit id="chkByrefUsedInInvalidWay">
         <source>The byref-typed variable '{0}' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.</source>
-        <target state="translated">ByRef 類型變數 '{0}' 的使用方式無效。ByRef 無法由關閉捕捉或傳遞到內部函式。</target>
+        <target state="translated">ByRef 類型變數 '{0}' 的使用方式無效。ByRef 無法由關閉擷取或傳遞到內部函式。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkBaseUsedInInvalidWay">
@@ -1179,7 +1179,7 @@
       </trans-unit>
       <trans-unit id="chkSystemVoidOnlyInTypeof">
         <source>'System.Void' can only be used as 'typeof&lt;System.Void&gt;' in F#</source>
-        <target state="translated">'System.Void' 在 F# 中只能以 'typeof&lt;System.Void&gt;' 形式使用</target>
+        <target state="translated">'System.Void' 在 F# 中只能用作 'typeof&lt;System.Void&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="chkErrorUseOfByref">
@@ -1279,7 +1279,7 @@
       </trans-unit>
       <trans-unit id="chkReflectedDefCantSplice">
         <source>[&lt;ReflectedDefinition&gt;] terms cannot contain uses of the prefix splice operator '%'</source>
-        <target state="translated">[&lt;ReflectedDefinition&gt;] 字詞不可使用前置接合運算子 '%'</target>
+        <target state="translated">[&lt;ReflectedDefinition&gt;] 字詞不能包含前置詞接合運算子 '%' 的用法</target>
         <note />
       </trans-unit>
       <trans-unit id="chkEntryPointUsage">
@@ -2124,12 +2124,12 @@
       </trans-unit>
       <trans-unit id="parsIncompleteIf">
         <source>Incomplete conditional. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">不完整的條件式。必須是 'if &lt;expr&gt; then &lt;expr&gt;' 或 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'。</target>
+        <target state="translated">條件不完整。應為 'if &lt;expr&gt; then &lt;expr&gt;' 或 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAssertIsNotFirstClassValue">
         <source>'assert' may not be used as a first class value. Use 'assert &lt;expr&gt;' instead.</source>
-        <target state="translated">'assert' 無法當做第一個類別值使用。請改用 'assert &lt;expr&gt;'。</target>
+        <target state="translated">'assert' 不能用作第一個類別值。請改用 'assert &lt;expr&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIdentifierExpected">
@@ -2144,7 +2144,7 @@
       </trans-unit>
       <trans-unit id="parsArrowUseIsLimited">
         <source>The use of '-&gt;' in sequence and computation expressions is limited to the form 'for pat in expr -&gt; expr'. Use the syntax 'for ... in ... do ... yield...' to generate elements in more complex sequence expressions.</source>
-        <target state="translated">在循序項運算式和計算運算式中使用 '-&gt;' 僅限於 'for pat in expr -&gt; expr' 形式。使用 'for ... in ... do ... yield...' 語法可在更為複雜的循序項運算式中產生項目。</target>
+        <target state="translated">'-&gt;' 在序列和計算運算式中的用法只能是 'for pat in expr -&gt; expr' 形式。請使用 'for ... in ... do ... yield...' 語法在更複雜的序列運算式中產生元素。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSuccessiveArgsShouldBeSpacedOrTupled">
@@ -2214,7 +2214,7 @@
       </trans-unit>
       <trans-unit id="parsMultiArgumentGenericTypeFormDeprecated">
         <source>The syntax '(typ,...,typ) ident' is not used in F# code. Consider using 'ident&lt;typ,...,typ&gt;' instead</source>
-        <target state="translated">F# 程式碼中不使用語法 '(typ,...,typ) ident'。請考慮改用 'ident&lt;typ,...,typ&gt;'</target>
+        <target state="translated">F# 程式碼中未使用 '(typ,...,typ) ident' 語法。請考慮改用 'ident&lt;typ,...,typ&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidLiteralInType">
@@ -2294,7 +2294,7 @@
       </trans-unit>
       <trans-unit id="tcNonZeroConstantCannotHaveGenericUnit">
         <source>Non-zero constants cannot have generic units. For generic zero, write 0.0&lt;_&gt;.</source>
-        <target state="translated">非零常數不能有泛型單位。請將泛型的零寫成 0.0&lt;_&gt;。</target>
+        <target state="translated">非零常數不能有泛型單位。如需泛型的零，請寫成 0.0&lt;_&gt;。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSeqResultsUseYield">
@@ -2324,7 +2324,7 @@
       </trans-unit>
       <trans-unit id="tcParameterRequiresName">
         <source>A parameter with attributes must also be given a name, e.g. '[&lt;Attribute&gt;] Name : Type'</source>
-        <target state="translated">必須為有屬性的參數指定名稱，例如 '[&lt;Attribute&gt;] Name : Type'</target>
+        <target state="translated">具有屬性的參數也必須有名稱，例如 '[&lt;Attribute&gt;] Name : Type'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnValuesCannotHaveNames">
@@ -2409,7 +2409,7 @@
       </trans-unit>
       <trans-unit id="tcImplementsGenericIComparableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IComparable&lt;_&gt;' explicitly. You must apply the 'CustomComparison' attribute to the type, and should also provide a consistent implementation of the non-generic interface System.IComparable.</source>
-        <target state="translated">結構、記錄或等位型別 '{0}' 明確實作了介面 'System.IComparable&lt;_&gt;'。您必須將 'CustomComparison' 屬性套用到該型別，也應該為非泛型介面 System.Icomparable 提供一致的實作。</target>
+        <target state="translated">結構、記錄或等位型別 '{0}' 會明確實作介面 'System.IComparable&lt;_&gt;'。您必須將 'CustomComparison' 屬性套用到類型，也應提供一致的非泛型介面 System.IComparable 實作。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplementsIStructuralComparableExplicitly">
@@ -2459,7 +2459,7 @@
       </trans-unit>
       <trans-unit id="tcTypeParametersInferredAreNotStable">
         <source>The type parameters inferred for this value are not stable under the erasure of type abbreviations. This is due to the use of type abbreviations which drop or reorder type parameters, e.g. \n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nConsider declaring the type parameters for this value explicitly, e.g.\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x).</source>
-        <target state="translated">為這個值推斷的型別參數在清除類型縮寫後會不穩定。這是因為使用類型縮寫，導致卸除或重新排列型別參數，例如 \n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a。\n請考慮明確宣告這個值的型別參數，例如\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x)。</target>
+        <target state="translated">為這個值推斷的類型參數在清除類型縮寫後會不穩定。這是因為使用了會卸除或重新排序類型參數的類型縮寫，例如 \n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a。\n請考慮明確宣告類型參數，例如\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x)。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeParameterInvalid">
@@ -2604,7 +2604,7 @@
       </trans-unit>
       <trans-unit id="tcTypeCannotBeEnumerated">
         <source>The type '{0}' is not a type whose values can be enumerated with this syntax, i.e. is not compatible with either seq&lt;_&gt;, IEnumerable&lt;_&gt; or IEnumerable and does not have a GetEnumerator method</source>
-        <target state="translated">類型 '{0}' 不是可以用這個語法列舉值的類型，也就是它與 seq&lt;_&gt;、IEnumerable&lt;_&gt; 或 IEnumerable 不相容，而且沒有 GetEnumerator 方法</target>
+        <target state="translated">類型 '{0}' 不是可透過此語法來列舉其值的類型，也就是與 seq&lt;_&gt;、IEnumerable&lt;_&gt; 或 IEnumerable 不相容，而且沒有 GetEnumerator 方法</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMixtureOfRecursiveForms">
@@ -2629,7 +2629,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidEnumConstraint">
         <source>An 'enum' constraint must be of the form 'enum&lt;type&gt;'</source>
-        <target state="translated">'enum' 條件約束必須採用 'enum&lt;type&gt;' 形式</target>
+        <target state="translated">'enum' 條件約束的形式必須為 'enum&lt;類型&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidNewConstraint">
@@ -2639,12 +2639,12 @@
       </trans-unit>
       <trans-unit id="tcInvalidPropertyType">
         <source>This property has an invalid type. Properties taking multiple indexer arguments should have types of the form 'ty1 * ty2 -&gt; ty3'. Properties returning functions should have types of the form '(ty1 -&gt; ty2)'.</source>
-        <target state="translated">這個屬性有無效的類型。接受多個索引子引數的屬性應該具有 'ty1 * ty2 -&gt; ty3' 格式的類型。傳回函式的屬性應該具有 '(ty1 -&gt; ty2)' 形式的類型。</target>
+        <target state="translated">此屬性的類型無效。採用多個索引子引數的屬性類型形式應為 'ty1 * ty2 -&gt; ty3'。傳回函式的屬性類型形式應為 '(ty1 -&gt; ty2)'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpectedUnitOfMeasureMarkWithAttribute">
         <source>Expected unit-of-measure parameter, not type parameter. Explicit unit-of-measure parameters must be marked with the [&lt;Measure&gt;] attribute.</source>
-        <target state="translated">必須是測量單位參數，而非型別參數。明確的測量單位參數必須標記有 [&lt;Measure&gt;] 屬性。</target>
+        <target state="translated">應為測量單位參數，而非類型參數。必須以 [&lt;Measure&gt;] 屬性標示明確的測量單位參數。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpectedTypeParameter">
@@ -2729,7 +2729,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidNonPrimitiveLiteralInPatternMatch">
         <source>Non-primitive numeric literal constants cannot be used in pattern matches because they can be mapped to multiple different types through the use of a NumericLiteral module. Consider using replacing with a variable, and use 'when &lt;variable&gt; = &lt;constant&gt;' at the end of the match clause.</source>
-        <target state="translated">非基本數值常值常數不能用在模式比對中，因為它們可以透過使用 NumericLiteral 模組對應到多種不同類型。請考慮用變數取代，並在比對子句結尾使用 'when &lt;variable&gt; = &lt;constant&gt;'。</target>
+        <target state="translated">因為非基本數值的常值常數可以透過使用 NumericLiteral 模組來對應到多個不同的類型，所以無法用於模式比對。請考慮以變數取代，並在比對子句的結尾使用 'when &lt;variable&gt; = &lt;constant&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeArgumentUsage">
@@ -3179,7 +3179,7 @@
       </trans-unit>
       <trans-unit id="tcConstructorsCannotBeFirstClassValues">
         <source>Constructors must be applied to arguments and cannot be used as first-class values. If necessary use an anonymous function '(fun arg1 ... argN -&gt; new Type(arg1,...,argN))'.</source>
-        <target state="translated">建構函式必須套用到引數，不能做為第一級值使用。如有必要，請使用匿名函式 '(fun arg1 ... argN -&gt; new Type(arg1,...,argN))'。</target>
+        <target state="translated">建構函式必須套用到引數，且無法用作第一個類別值。如有必要，請使用匿名函式 '(fun arg1 ... argN -&gt; new Type(arg1,...,argN))'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields">
@@ -3279,7 +3279,7 @@
       </trans-unit>
       <trans-unit id="tcMutableValuesSyntax">
         <source>Mutable function values should be written 'let mutable f = (fun args -&gt; ...)'</source>
-        <target state="translated">可變動的函式值應該寫成 'let mutable f = (fun args -&gt; ...)'</target>
+        <target state="translated">可變動的函式值應寫成 'let mutable f = (fun args -&gt; ...)'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyFunctionsCanBeInline">
@@ -3289,7 +3289,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalAttributesForLiteral">
         <source>A literal value cannot be given the [&lt;ThreadStatic&gt;] or [&lt;ContextStatic&gt;] attributes</source>
-        <target state="translated">無法為常值指定 [&lt;ThreadStatic&gt;] 或 [&lt;ContextStatic&gt;] 屬性</target>
+        <target state="translated">不得為常值指定 [&lt;ThreadStatic&gt;] 或 [&lt;ContextStatic&gt;] 屬性</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralCannotBeMutable">
@@ -3384,7 +3384,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBinding">
         <source>'use' bindings must be of the form 'use &lt;var&gt; = &lt;expr&gt;'</source>
-        <target state="translated">'use' 繫結必須採用 'use &lt;var&gt; = &lt;expr&gt;' 形式</target>
+        <target state="translated">'use' 繫結的形式必須為 'use &lt;var&gt; = &lt;expr&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAbstractMembersIllegalInAugmentation">
@@ -3499,17 +3499,17 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
         <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
-        <target state="translated">如果一併指定了常數值，則宣告只可為 [&lt;Literal&gt;] 屬性，例如 'val x : int = 1'</target>
+        <target state="translated">若也提供了常數值，宣告就只能是 [&lt;Literal&gt;] 屬性，例如 'val x : int = 1'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">
         <source>A declaration may only be given a value in a signature if the declaration has the [&lt;Literal&gt;] attribute</source>
-        <target state="translated">只有當宣告有 [&lt;Literal&gt;] 屬性時，才能為簽章中的宣告指定值</target>
+        <target state="translated">若宣告有 [&lt;Literal&gt;] 屬性，宣告就只能有特徵標記中的值</target>
         <note />
       </trans-unit>
       <trans-unit id="tcThreadStaticAndContextStaticMustBeStatic">
         <source>Thread-static and context-static variables must be static and given the [&lt;DefaultValue&gt;] attribute to indicate that the value is initialized to the default value on each new thread</source>
-        <target state="translated">Thread-static 與 context-static 變數必須是靜態變數，且必須為其指定 [&lt;DefaultValue&gt;] 屬性，以表示每個新執行緒的該值都會初始化為預設值</target>
+        <target state="translated">靜態執行緒和環境變數必須是靜態的，且必須為其指定 [&lt;DefaultValue&gt;] 屬性，以指出值會在每個新的執行緒均初始化為預設值</target>
         <note />
       </trans-unit>
       <trans-unit id="tcVolatileFieldsMustBeMutable">
@@ -3519,12 +3519,12 @@
       </trans-unit>
       <trans-unit id="tcUninitializedValFieldsMustBeMutable">
         <source>Uninitialized 'val' fields must be mutable and marked with the '[&lt;DefaultValue&gt;]' attribute. Consider using a 'let' binding instead of a 'val' field.</source>
-        <target state="translated">未初始化的 'val' 欄位必須是可變動欄位，並標記有 '[&lt;DefaultValue&gt;]' 屬性。請考慮使用 'let' 繫結來取代 'val' 欄位。</target>
+        <target state="translated">未初始化的 'val'欄位必須是可變的，並以 '[&lt;DefaultValue&gt;]' 屬性標示。請考慮使用 'let' 繫結，而不使用 'val' 欄位。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStaticValFieldsMustBeMutableAndPrivate">
         <source>Static 'val' fields in types must be mutable, private and marked with the '[&lt;DefaultValue&gt;]' attribute. They are initialized to the 'null' or 'zero' value for their type. Consider also using a 'static let mutable' binding in a class type.</source>
-        <target state="translated">類型中的靜態 'val' 欄位必須是可變動欄位且為私用，並標記有 '[&lt;DefaultValue&gt;]' 屬性。它們會始化為成其類型的 'null' 或 'zero' 值。請一併考慮在類別類型中使用 'static let mutable' 繫結。</target>
+        <target state="translated">類型中的靜態 'val' 欄位必須是可變、私人的，並以 '[&lt;DefaultValue&gt;]' 標示。這些欄位會依據其類型，初始化為 'null' 或 'zero' 值。請考慮也在類別類型中使用 'static let mutable' 繫結。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldRequiresName">
@@ -3539,7 +3539,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalFormForExplicitTypeDeclaration">
         <source>Explicit type declarations for constructors must be of the form 'ty1 * ... * tyN -&gt; resTy'. Parentheses may be required around 'resTy'</source>
-        <target state="translated">建構函式的明確類型宣告必須採用 'ty1 * ... * tyN -&gt; resTy' 形式。可能必須在 'resTy' 周圍使用括號</target>
+        <target state="translated">建構函式的明確類型宣告形式必須為 'ty1 * ... * tyN -&gt; resTy'。'resTy' 前後可能需要括號</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnTypesForUnionMustBeSameAsType">
@@ -3689,7 +3689,7 @@
       </trans-unit>
       <trans-unit id="tcImplementsIEquatableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IEquatable&lt;_&gt;' explicitly. Apply the 'CustomEquality' attribute to the type and provide a consistent implementation of the non-generic override 'System.Object.Equals(obj)'.</source>
-        <target state="translated">結構、記錄或等位型別 '{0}' 明確實作了介面 'System.IEquatable&lt;_&gt;'。您必須將 'CustomEquality' 屬性套用到該型別，並為非泛型覆寫 'System.Object.Equals(obj)' 提供一致的實作。</target>
+        <target state="translated">結構、記錄或等位型別 '{0}' 會明確實作介面 'System.IEquatable&lt;_&gt;'。請將 'CustomEquality' 屬性套用到類型，並提供一致的非泛型覆寫 'System.Object.Equals(obj)' 實作。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors">
@@ -3754,7 +3754,7 @@
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationHasTypeParametersMissingOnType">
         <source>This type abbreviation has one or more declared type parameters that do not appear in the type being abbreviated. Type abbreviations must use all declared type parameters in the type being abbreviated. Consider removing one or more type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C&lt;'a&gt; = C of ...'.</source>
-        <target state="translated">這個類型縮寫有一個或多個未出現在所縮寫類型中的宣告型別參數。類型縮寫必須使用所縮寫類型中的所有宣告型別參數。請考慮移除一個或多個型別參數，或使用包裝基礎類型的具象類型定義，例如 'type C&lt;'a&gt; = C of ...'。</target>
+        <target state="translated">這個類型縮寫有一或多個已宣告的類型參數未出現在接受縮寫的類型中。類型縮寫必須使用接受縮寫的類型中所有已宣告的類型參數。請考慮移除一或多個類型參數，或使用會包裝基礎類型的實體類型定義，例如 'type C&lt;'a&gt; = C of ...'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes">
@@ -3789,7 +3789,7 @@
       </trans-unit>
       <trans-unit id="tcRepresentationOfTypeHiddenBySignature">
         <source>The representation of this type is hidden by the signature. It must be given an attribute such as [&lt;Sealed&gt;], [&lt;Class&gt;] or [&lt;Interface&gt;] to indicate the characteristics of the type.</source>
-        <target state="translated">此類型的表示法已由簽章所隱藏。必須為其指定 [&lt;Sealed&gt;]、[&lt;Class&gt;] 或 [&lt;Interface&gt;] 一類的屬性，以指示該類型的特性。</target>
+        <target state="translated">特徵標記隱藏了此類型的表示法。必須賦予其 [&lt;Sealed&gt;]、[&lt;Class&gt;] 或 [&lt;Interface&gt;] 這類的屬性，以指出類型的特性。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyClassesCanHaveAbstract">
@@ -3869,12 +3869,12 @@
       </trans-unit>
       <trans-unit id="tcInvalidDelegateSpecification">
         <source>Delegate specifications must be of the form 'typ -&gt; typ'</source>
-        <target state="translated">委派規格必須採用 'typ -&gt; typ' 形式</target>
+        <target state="translated">委派規格的形式必須為 'typ -&gt; typ'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDelegatesCannotBeCurried">
         <source>Delegate specifications must not be curried types. Use 'typ * ... * typ -&gt; typ' for multi-argument delegates, and 'typ -&gt; (typ -&gt; typ)' for delegates returning function values.</source>
-        <target state="translated">委派規格不可以是局部調用類型。請使用 'typ * ... * typ -&gt; typ' 用於多引數委派，使用 'typ -&gt; (typ -&gt; typ)' 用於傳回函式值的委派。</target>
+        <target state="translated">委派規格不得為局部調用的類型。若為多引數委派，請使用 'typ * ... * typ -&gt; typ'; 若為傳回函式值的委派，則使用 'typ -&gt; (typ -&gt; typ)'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForLiteralEnumeration">
@@ -3894,7 +3894,7 @@
       </trans-unit>
       <trans-unit id="tcReservedSyntaxForAugmentation">
         <source>The syntax 'type X with ...' is reserved for augmentations. Types whose representations are hidden but which have members are now declared in signatures using 'type X = ...'. You may also need to add the '[&lt;Sealed&gt;] attribute to the type definition in the signature</source>
-        <target state="translated">語法 'type X with ...' 已保留供增強指定使用。對於其表示式已隱藏，但是有成員的類型而言，現在會使用 'type X = ...' 宣告於簽章中。您也必須將 '[&lt;Sealed&gt;] 屬性新增至簽章中的類型定義</target>
+        <target state="translated">語法 'type X with ...' 已保留以用於擴增。已隱藏表示法但有成員的類型，現在會使用 'type X = ...' 在特徵標記中宣告。您也可能必須將 '[&lt;Sealed&gt;] 屬性新增到特徵標記中的類型定義</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMembersThatExtendInterfaceMustBePlacedInSeparateModule">
@@ -4204,7 +4204,7 @@
       </trans-unit>
       <trans-unit id="optsLinkresource">
         <source>Link the specified resource to this assembly where the resinfo format is &lt;file&gt;[,&lt;string name&gt;[,public|private]]</source>
-        <target state="translated">將指定的資源連結至此組件，其中 resinfo 的格式是 &lt;檔案&gt;[,&lt;字串名稱&gt;[,public|private]]</target>
+        <target state="translated">將指定的資源連結到此組件，其中 resinfo 格式為 &lt;檔案&gt;[,&lt;字串名稱&gt;[,public|private]]</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDebugPM">
@@ -4619,7 +4619,7 @@
       </trans-unit>
       <trans-unit id="eventHasNonStandardType">
         <source>The event '{0}' has a non-standard type. If this event is declared in another CLI language, you may need to access this event using the explicit {1} and {2} methods for the event. If this event is declared in F#, make the type of the event an instantiation of either 'IDelegateEvent&lt;_&gt;' or 'IEvent&lt;_,_&gt;'.</source>
-        <target state="translated">事件 '{0}' 有非標準類型。如果這個事件是在另一個 CLI 語言中宣告，您必須使用這個事件的明確 {1} 和 {2} 方法來存取這個事件。如果這個事件是在 F# 中宣告，則請將事件的類型設為 'IDelegateEvent&lt;_&gt;' 或 'IEvent&lt;_,_&gt;' 的具現化。</target>
+        <target state="translated">事件 '{0}' 有非標準的類型。若使用了另一種 CLI 語言宣告這個事件，您可能必須對這個事件使用明確的 {1} 和 {2} 方法加以存取。若使用了 F# 宣告這個事件，請讓事件類型成為 'IDelegateEvent&lt;_&gt;' 或 'IEvent&lt;_,_&gt;' 的具現化。</target>
         <note />
       </trans-unit>
       <trans-unit id="typeIsNotAccessible">
@@ -5124,17 +5124,17 @@
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
         <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="needs-review-translation">型別參數必須放在緊鄰類型名稱的位置，例如 \"type C&lt;'T&gt;\"，而不是 type \"C   &lt;'T&gt;\"</target>
+        <target state="translated">請移除類型名稱和類型參數之間的空格，例如 \"type C&lt;'T&gt;\" 而非 \"C   &lt;'T&gt;\"。類型參數必須緊接著類型名稱。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
         <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="needs-review-translation">型別引數必須放在緊鄰類型名稱的位置，例如 \"C&lt;'T&gt;\"，而不是 \"C  &lt;'T&gt;\"</target>
+        <target state="translated">請移除類型名稱和類型參數之間的空格，例如 \"C&lt;'T&gt;\" 而非 \"C &lt;'T&gt;\"。類型參數必須緊接著類型名稱。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
         <source>The use of the type syntax 'int C' and 'C  &lt;int&gt;' is not permitted here. Consider adjusting this type to be written in the form 'C&lt;int&gt;'</source>
-        <target state="translated">此處不允許使用類型語法 'int C' 和 'C  &lt;int&gt;'。請考慮調整這種類型，寫成 'C&lt;int&gt;' 形式</target>
+        <target state="translated">此處不允許使用類型語法 'int C' 和 'C &lt;int&gt;'。請考慮將此類型調整為以 'C&lt;int&gt;' 形式撰寫</target>
         <note />
       </trans-unit>
       <trans-unit id="tastUndefinedItemRefModuleNamespace">
@@ -5159,7 +5159,7 @@
       </trans-unit>
       <trans-unit id="tcParameterInferredByref">
         <source>The parameter '{0}' was inferred to have byref type. Parameters of byref type must be given an explicit type annotation, e.g. 'x1: byref&lt;int&gt;'. When used, a byref parameter is implicitly dereferenced.</source>
-        <target state="translated">參數 '{0}' 已被推斷為具有 ByRef 類型。具有 ByRef 類型的參數都必須指定明確的類型註釋，例如 'x1: byref&lt;int&gt;'。使用時會隱含解除對 ByRef 參數的參照。</target>
+        <target state="translated">已推斷出參數 '{0}' 擁有 byref 類型。必須為 byref 類型的參數提供明確的類型註釋，例如 'x1: byref&lt;int&gt;'。使用時，會對 byref 參數隱含取值。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNonUniformMemberUse">
@@ -5224,7 +5224,7 @@
       </trans-unit>
       <trans-unit id="activePatternChoiceHasFreeTypars">
         <source>Active pattern '{0}' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x'</source>
-        <target state="translated">現用模式 '{0}' 的結果類型包含不是由輸入決定的類型變數。發生的原因通常是因為未提及結果案例，例如 'let (|A|B|) (x:int) = A x'。使用類型條件約束就可以修正這種情況，例如 'let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x'</target>
+        <target state="translated">使用中模式 '{0}' 的結果類型包含類型變數，但輸入無法予以判斷。最常見的原因是未提及結果案例，例如 'let (|A|B|) (x:int) = A x'。您可使用類型條件約束予以修正，例如 'let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x'</target>
         <note />
       </trans-unit>
       <trans-unit id="ilFieldHasOffsetForSequentialLayout">
@@ -5249,7 +5249,7 @@
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
         <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">MDB 檔案的名稱必須是 &lt;assembly-file-name&gt;.mdb。將忽略 --pdb 選項。</target>
+        <target state="translated">MDB 檔案的名稱必須是 &lt;組件檔名稱&gt;.mdb。會略過 --pdb 選項。</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBMemberMissing">
@@ -5299,7 +5299,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBinding">
         <source>'use!' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;'</source>
-        <target state="translated">'use!' 繫結的格式必須是 'use! &lt;var&gt; = &lt;expr&gt;'</target>
+        <target state="translated">'use!' 繫結的形式必須為 'use! &lt;var&gt; = &lt;expr&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="crefNoInnerGenericsInQuotations">
@@ -5334,12 +5334,12 @@
       </trans-unit>
       <trans-unit id="parsMissingGreaterThan">
         <source>Unmatched '&lt;'. Expected closing '&gt;'</source>
-        <target state="translated">不成對的 '&lt;'。必須有結束 '&gt;'</target>
+        <target state="translated">'&lt;' 不對稱。應有右方的 '&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
         <source>Unexpected quotation operator '&lt;@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '&lt;' and '@' characters.</source>
-        <target state="translated">型別定義中不能有引號運算子 '&lt;@'。如果您想要將逐字字串當做靜態引數傳遞至型別提供者，請在 '&lt;' 和 '@' 字元之間加上一個空格。</target>
+        <target state="translated">類型定義中有未預期的引號運算子 '&lt;@'。若您想要以靜態引數形式將逐字字串傳遞給類型提供者，請在 '&lt;' 和 '@' 字元之間加入空格。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsErrorParsingAsOperatorName">
@@ -5529,7 +5529,7 @@
       </trans-unit>
       <trans-unit id="fscResxSourceFileDeprecated">
         <source>Passing a .resx file ({0}) as a source file to the compiler is deprecated. Use resgen.exe to transform the .resx file into a .resources file to pass as a --resource option. If you are using MSBuild, this can be done via an &lt;EmbeddedResource&gt; item in the .fsproj project file.</source>
-        <target state="translated">將 .resx 檔案 ({0}) 當做原始程式檔傳遞至編譯器已被取代。請使用 resgen.exe 將 .resx 檔案轉換為 .resources 檔案，然後傳遞做為 --resource 選項。如果您要使用 MSBuild，可以透過 .fsproj 專案檔中的 &lt;EmbeddedResource&gt; 項目來完成。</target>
+        <target state="translated">以來源檔案形式將 .resx 檔案 ({0}) 傳遞到編譯器的行為已淘汰。請使用 resgen.exe 將 .resx 檔案轉換成 .resources 檔案，以 --resource 選項的形式傳遞。若您使用 MSBuild，可以透過 .fsproj 專案檔中的 &lt;EmbeddedResource&gt; 項目完成這個動作。</target>
         <note />
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoProfileMismatches">
@@ -5694,7 +5694,7 @@
       </trans-unit>
       <trans-unit id="etDirectReferenceToGeneratedTypeNotAllowed">
         <source>A direct reference to the generated type '{0}' is not permitted. Instead, use a type definition, e.g. 'type TypeAlias = &lt;path&gt;'. This indicates that a type provider adds generated types to your assembly.</source>
-        <target state="translated">不允許所產生型別 '{0}' 的直接參考。請改用型別定義，例如 'type TypeAlias = &lt;path&gt;'。這表示型別提供者會將產生的型別加入您的組件。</target>
+        <target state="translated">不允許直接參考所產生的類型 '{0}'。請改用類型定義 'type TypeAlias = &lt;path&gt;'。這表示類型提供者會將所產生的類型新增到您的組件。</target>
         <note />
       </trans-unit>
       <trans-unit id="etProvidedTypeHasUnexpectedPath">
@@ -5849,7 +5849,7 @@
       </trans-unit>
       <trans-unit id="etStaticParameterRequiresAValue">
         <source>The static parameter '{0}' of the provided type or method '{1}' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. '{2}&lt;{3}=...&gt;'.</source>
-        <target state="translated">所提供之類型或方法 '{1}' 的靜態參數 '{0}' 需要值。型別提供者可以選擇使用具名引數 (例如 '{2}&lt;{3}=...&gt;') 來指定靜態參數。</target>
+        <target state="translated">所提供類型的靜態參數 '{0}' 或方法 '{1}' 需要值。您可以使用具名引數，選擇性地指定類型提供者的靜態參數，例如 '{2}&lt;{3}=...&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
@@ -5914,17 +5914,17 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeJoin">
         <source>{0} var in collection {1} (outerKey = innerKey). Note that parentheses are required after '{2}'</source>
-        <target state="translated">{0} var in collection {1} (outerKey = innerKey)。注意: '{2}' 之後須有括號</target>
+        <target state="translated">集合 {1} 中的 {0} var (outerKey = innerKey)。請注意，'{2}' 後需要括弧</target>
         <note />
       </trans-unit>
       <trans-unit id="customOperationTextLikeGroupJoin">
         <source>{0} var in collection {1} (outerKey = innerKey) into group. Note that parentheses are required after '{2}'</source>
-        <target state="translated">{0} var in collection {1} (outerKey = innerKey) into group。注意: '{2}' 之後須有括號</target>
+        <target state="translated">集合 {1} 中的 {0} var (outerKey = innerKey) 進入群組。請注意，'{2}' 後需要括弧。</target>
         <note />
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">{0} var in collection</target>
+        <target state="translated">集合中的 {0} var</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">
@@ -5959,27 +5959,27 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedLBrackLess">
         <source>Unmatched '[&lt;'. Expected closing '&gt;]'</source>
-        <target state="translated">'[&lt;' 不成對。必須要有結尾的 '&gt;]'</target>
+        <target state="translated">不對稱的 '[&lt;'。應有右方 '&gt;]'</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileMatch">
         <source>Unexpected end of input in 'match' expression. Expected 'match &lt;expr&gt; with | &lt;pat&gt; -&gt; &lt;expr&gt; | &lt;pat&gt; -&gt; &lt;expr&gt; ...'.</source>
-        <target state="translated">'match' 運算式中不能以輸入結尾。必須是 'match &lt;expr&gt; with | &lt;pat&gt; -&gt; &lt;expr&gt; | &lt;pat&gt; -&gt; &lt;expr&gt; ...'。</target>
+        <target state="translated">'match' 運算式中有未預期的輸入結尾。應為 'match &lt;expr&gt; with | &lt;pat&gt; -&gt; &lt;expr&gt; | &lt;pat&gt; -&gt; &lt;expr&gt; ...'。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileTry">
         <source>Unexpected end of input in 'try' expression. Expected 'try &lt;expr&gt; with &lt;rules&gt;' or 'try &lt;expr&gt; finally &lt;expr&gt;'.</source>
-        <target state="translated">'try' 運算式中不能以輸入結尾。必須是 'try &lt;expr&gt; with &lt;rules&gt;' 或 'try &lt;expr&gt; finally &lt;expr&gt;'。</target>
+        <target state="translated">'try' 運算式中有未預期的輸入結尾。應為 'try &lt;expr&gt; with &lt;rules&gt;' 或 'try &lt;expr&gt; finally &lt;expr&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileWhile">
         <source>Unexpected end of input in 'while' expression. Expected 'while &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">'while' 運算式中不能以輸入結尾。必須是 'while &lt;expr&gt; do &lt;expr&gt;'。</target>
+        <target state="translated">'while' 運算式中有未預期的輸入結尾。應為 'while &lt;expr&gt; do &lt;expr&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFor">
         <source>Unexpected end of input in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">'for' 運算式中不能以輸入結尾。必須是 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'。</target>
+        <target state="translated">'for' 運算式中有未預期的輸入結尾。應為 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileWith">
@@ -5989,17 +5989,17 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileThen">
         <source>Unexpected end of input in 'then' branch of conditional expression. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">條件運算式的 'then' 分支中不能以輸入結尾。必須是 'if &lt;expr&gt; then &lt;expr&gt;' 或 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'。</target>
+        <target state="translated">條件運算式的 'then' 分支中有未預期的輸入結尾。應為 'if &lt;expr&gt; then &lt;expr&gt;' 或 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElse">
         <source>Unexpected end of input in 'else' branch of conditional expression. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">條件運算式的 'else' 分支中不能以輸入結尾。必須是 'if &lt;expr&gt; then &lt;expr&gt;' 或 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'。</target>
+        <target state="translated">條件運算式的 'else' 分支中有未預期的輸入結尾。應為 'if &lt;expr&gt; then &lt;expr&gt;' 或 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFunBody">
         <source>Unexpected end of input in body of lambda expression. Expected 'fun &lt;pat&gt; ... &lt;pat&gt; -&gt; &lt;expr&gt;'.</source>
-        <target state="translated">Lambda 運算式的主體中不能以輸入結尾。必須是 'fun &lt;pat&gt; ... &lt;pat&gt; -&gt; &lt;expr&gt;'。</target>
+        <target state="translated">Lambda 運算式的主體中有未預期的輸入結尾。應為 'fun &lt;pat&gt; ... &lt;pat&gt; -&gt; &lt;expr&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileTypeArgs">
@@ -6059,17 +6059,17 @@
       </trans-unit>
       <trans-unit id="parsWhileDoExpected">
         <source>Missing 'do' in 'while' expression. Expected 'while &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">'while' 運算式中遺漏 'do'。必須是 'while &lt;expr&gt; do &lt;expr&gt;'。</target>
+        <target state="translated">'while' 運算式中缺少 'do'。應為 'while &lt;expr&gt; do &lt;expr&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsForDoExpected">
         <source>Missing 'do' in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">'for' 運算式中遺漏 'do'。必須是 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'。</target>
+        <target state="translated">'for' 運算式中缺少 'do'。應為 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidRelationInJoin">
         <source>Invalid join relation in '{0}'. Expected 'expr &lt;op&gt; expr', where &lt;op&gt; is =, =?, ?= or ?=?.</source>
-        <target state="translated">'{0}' 中的聯結關聯無效。必須是 'expr &lt;op&gt; expr'，其中 &lt;op&gt; 是 =、=?、?= 或 ?=?。</target>
+        <target state="translated">'{0}' 中的連結關聯無效。應為 'expr &lt;op&gt; expr'，其中 &lt;op&gt; 為 =、=?、?= 或 ?=?。</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoCallsWord">
@@ -6134,7 +6134,7 @@
       </trans-unit>
       <trans-unit id="chkNoByrefsOfByrefs">
         <source>Type '{0}' is illegal because in byref&lt;T&gt;, T cannot contain byref types.</source>
-        <target state="translated">類型 '{0}' 不合法，因為在 byref&lt;T&gt; 中，T 不能包含 byref 類型。</target>
+        <target state="translated">因為在 byref&lt;T&gt; 中，T 不能包含 byref 類型，所以 '{0}' 類型不合法。</target>
         <note />
       </trans-unit>
       <trans-unit id="tastopsMaxArrayThirtyTwo">
@@ -6329,7 +6329,7 @@
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">
         <source>The union case '{0}' does not have a field named '{1}'.</source>
-        <target state="needs-review-translation">等位/例外狀況 '{0}' 沒有名為 '{1}' 的欄位。</target>
+        <target state="translated">聯集 '{0}' 沒有名為 '{1}' 的欄位。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseFieldCannotBeUsedMoreThanOnce">
@@ -6354,7 +6354,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalStructTypeForConstantExpression">
         <source>This is not valid literal expression. The [&lt;Literal&gt;] attribute will be ignored.</source>
-        <target state="translated">這不是有效的常值運算式。將忽略 [&lt;Literal&gt;] 屬性。</target>
+        <target state="translated">這不是有效的常值運算式。將會略過 [&lt;Literal&gt;] 屬性。</target>
         <note />
       </trans-unit>
       <trans-unit id="fscSystemRuntimeInteropServicesIsRequired">
@@ -6469,7 +6469,7 @@
       </trans-unit>
       <trans-unit id="considerUpcastOperator">
         <source>The conversion from {0} to {1} is a compile-time safe upcast, not a downcast. Consider using the :&gt; (upcast) operator instead of the :?&gt; (downcast) operator.</source>
-        <target state="translated">從 {0} 轉換為 {1} 屬於編譯時間安全的向上轉換，而非向下轉換。請考慮使用 :&gt; (upcast) 運算子而不使用 :?&gt; (downcast) 運算子。</target>
+        <target state="translated">從 {0} 到 {1} 的轉換在編譯時間會是安全的向上轉換，而不是向下轉換。請考慮使用 :&gt; (向上轉換) 運算子，而不要使用 :?&gt; (向下轉換) 運算子。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRecImplied">
@@ -6709,7 +6709,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
         <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
-        <target state="review-required-translation">用於非同步工作流程，以將名稱繫結到非同步計算的結果，或在其他計算運算式中，用於將名稱繫結到屬於計算類型的結果。</target>
+        <target state="translated">在計算運算式中用來將名稱繫結到另一個計算運算式的結果。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6789,12 +6789,12 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
         <source>Used to provide a value for the result of the containing computation expression.</source>
-        <target state="review-required-translation">用以指出要作為計算運算式結果提供的值。</target>
+        <target state="translated">用來為內含的計算運算式結果提供值。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
         <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
-        <target state="review-required-translation">用以指出在評估時提供內含計算運算式結果的計算運算式。</target>
+        <target state="translated">用來為內含的計算運算式提供值，而該值本身來自另一個計算運算式的結果。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6839,12 +6839,12 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable"</source>
-        <target state="needs-review-translation">用來對需要 Dispose 才能呼叫以釋放資源的值取代 let。</target>
+        <target state="translated">用來取代 let 以得出會實作 IDisposable" 的值</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
         <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
-        <target state="review-required-translation">用來在非同步工作流程或其他計算運算式中，對需要 Dispose 才能呼叫以釋放資源的值取代 let!。</target>
+        <target state="translated">在計算運算式中用來取代 let!，以得出會實作 IDisposable 的計算運算式結果。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -6999,12 +6999,12 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">函式或方法所傳回的 byref 指標，隱含會取值為 F# 4.5。如需將傳回值擷取為指標，請使用 address-of 運算子，例如 '&amp;f(x)' 或 '&amp;obj.Method(arg1, arg2)'。</target>
+        <target state="translated">自 F# 4.5 起，會對函式或方法所傳回的 byref 指標隱含取值。若要取得傳回值作為指標，請使用 address-of 運算子，例如 '&amp;f(x)' 或 '&amp;obj.Method(arg1, arg2)'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">
         <source>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="translated">標註有 IsByRefLike 的類型，必須是結構。請考慮對該類型新增 [&lt;Struct&gt;] 屬性。</target>
+        <target state="translated">有 IsByRefLike 標註的類型也必須是結構。請考慮將 [&lt;Struct&gt;] 屬性新增到類型。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAddressOfLocal">
@@ -7024,7 +7024,7 @@
       </trans-unit>
       <trans-unit id="tcIsReadOnlyNotStruct">
         <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="translated">標註有 IsReadOnly 的類型，必須是結構。請考慮對該類型新增 [&lt;Struct&gt;] 屬性。</target>
+        <target state="translated">有 IsReadOnly 標註的類型也必須是結構。請考慮將 [&lt;Struct&gt;] 屬性新增到該類型。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
@@ -7059,82 +7059,82 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedBraceBar">
         <source>Unmatched '{{|'</source>
-        <target state="new">Unmatched '{{|'</target>
+        <target state="translated">不對稱的 '{{|'</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoAnonRecdField">
         <source>anonymous record field</source>
-        <target state="new">anonymous record field</target>
+        <target state="translated">匿名記錄欄位</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
         <source>The exception '{0}' does not have a field named '{1}'.</source>
-        <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
+        <target state="translated">例外狀況 '{0}' 沒有名為 '{1}' 的欄位。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternsDoNotHaveFields">
         <source>Active patterns do not have fields. This syntax is invalid.</source>
-        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
+        <target state="translated">使用中的模式沒有欄位。此語法無效。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
         <source>The constructor does not have a field named '{0}'.</source>
-        <target state="new">The constructor does not have a field named '{0}'.</target>
+        <target state="translated">建構函式沒有名為 '{0}' 的欄位。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdCcuMismatch">
         <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
-        <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
+        <target state="translated">有兩個匿名的記錄類型來自不同的組件 '{0}' 和 '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
-        <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
+        <target state="translated">兩個匿名的記錄類型有兩組不相符的欄位名稱 '{0}' 和 '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <target state="translated">無法呼叫 byref 擴充方法 '{0}。第一個參數需要值可變動，或為非唯讀 byref 類型。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
         <source>Byref types are not allowed to have optional type extensions.</source>
-        <target state="new">Byref types are not allowed to have optional type extensions.</target>
+        <target state="translated">Byref 類型不得有選擇性類型延伸模組。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
         <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
-        <target state="new">Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</target>
+        <target state="translated">因為第一個參數是 byref 類型，所以無法部分套用擴充方法 '{0}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotInheritAttribute">
         <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
-        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <target state="translated">此類型不會繼承 Attribute，因此無法搭配其他 .NET 語言正確執行。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidAnonRecdExpr">
         <source>Invalid anonymous record expression</source>
-        <target state="new">Invalid anonymous record expression</target>
+        <target state="translated">匿名記錄運算式無效</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidAnonRecdType">
         <source>Invalid anonymous record type</source>
-        <target state="new">Invalid anonymous record type</target>
+        <target state="translated">匿名記錄類型無效</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateNeedsRecordType">
         <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
-        <target state="new">The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</target>
+        <target state="translated">對於會建立匿名記錄的複製並更新運算式，必須輸入匿名記錄或記錄</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInvalidFunctionParameterType">
         <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
-        <target state="new">The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</target>
+        <target state="translated">參數 '{0}' 的類型 '{1}' 無效。Common IL 的規則不允許此狀況。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInvalidFunctionReturnType">
         <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
-        <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
+        <target state="translated">函式或方法的傳回型別 '{0}' 無效。Common IL 的規則不允許此狀況。</target>
         <note />
       </trans-unit>
     </body>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSStrings.resx">
     <body>
@@ -184,7 +184,7 @@
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
         <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">Toto je typ abstract, protože se neimplementovali někteří abstraktní členové. Pokud je to záměr, pak do typu přidejte atribut [&lt;AbstractClass&gt;].</target>
+        <target state="translated">Tento typ je abstract, protože se neimplementovali někteří abstraktní členové. Pokud je to záměr, pak k typu přidejte atribut [&lt;AbstractClass&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="NonRigidTypar1">
@@ -304,7 +304,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP">
         <source>symbol '&amp;'</source>
-        <target state="translated">symbol „&amp;“</target>
+        <target state="translated">symbol &amp;</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP.AMP">
@@ -1279,7 +1279,7 @@
       </trans-unit>
       <trans-unit id="DeprecatedThreadStaticBindingWarning">
         <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">Vazby let, které jsou statické na úrovni vlákna nebo kontextu, jsou zastaralé. Použijte místo nich deklaraci ve třídě v podobě static val mutable &lt;ident&gt; : &lt;type&gt;. Přidáním atributu DefaultValue do této deklarace můžete určit, že se bude hodnota v každém novém vláknu inicializovat na výchozí hodnotu.</target>
+        <target state="translated">Vazby let, které jsou statické na úrovni vlákna nebo kontextu, jsou zastaralé. Použijte místo nich deklaraci ve třídě v podobě static val mutable &lt;ident&gt; : &lt;typ&gt;. Přidáním atributu DefaultValue do této deklarace můžete určit, že se bude hodnota v každém novém vláknu inicializovat na výchozí hodnotu.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionValueUnexpected">
@@ -1289,7 +1289,7 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
         <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">Výsledek tohoto výrazu má typ {0} a implicitně se ignoruje. Zvažte možnost použít klíčové slovo ignore, aby se tato hodnota explicitně zahodila, třeba expr |&gt; ignore, nebo klíčové slovo let, aby se výsledek svázal s názvem, třeba let výsledek = expr.</target>
+        <target state="translated">Výsledek tohoto výrazu má typ {0} a implicitně se ignoruje. Zvažte možnost zahodit tuto hodnotu explicitně pomocí klíčového slova ignore (například výraz |&gt; ignore) nebo vytvořit vazbu výsledku na název pomocí klíčového slova let (například let výsledek = výraz).</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
@@ -1299,17 +1299,17 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli nastavit hodnotu na vlastnost, použijte operátor &lt;-, např. {1}.{2} &lt;- výraz.</target>
+        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, například let výsledek = výraz. Pokud jste chtěli nastavit hodnotu na vlastnost, použijte operátor &lt;-, například {1}.{2} &lt;- výraz.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli mutovat hodnotu, označte hodnotu jako mutable a použijte operátor &lt;-, např. {1} &lt;- výraz.</target>
+        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, například let výsledek = výraz. Pokud jste chtěli mutovat hodnotu, označte hodnotu jako mutable a použijte operátor &lt;-, například {1} &lt;- výraz.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli mutovat hodnotu, použijte operátor &lt;-, např. {1} &lt;- výraz.</target>
+        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, například let výsledek = výraz. Pokud jste chtěli mutovat hodnotu, použijte operátor &lt;-, například {1} &lt;- výraz.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
@@ -1344,7 +1344,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">U rekurzivních odkazů na definované objekty se bude kontrolovat stabilita inicializace za běhu pomocí zpožděného odkazování. Zvažte možnost přidat do členů nebo koncového výrazu v podobě &lt;výraz-konstruktoru&gt; then &lt;výraz&gt; odkazy na sebe sama.</target>
+        <target state="translated">U rekurzivních odkazů na definované objekty se bude kontrolovat stabilita inicializace za běhu pomocí zpožděného odkazování. Zvažte možnost přidat odkazy na sebe sama do členů nebo koncového výrazu v podobě &lt;výraz-konstruktoru&gt; then &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1619,12 +1619,12 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.LBRACE.BAR">
         <source>symbol '{|'</source>
-        <target state="new">symbol '{|'</target>
+        <target state="translated">symbol {|</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
-        <target state="new">symbol '|}'</target>
+        <target state="translated">symbol |}</target>
         <note />
       </trans-unit>
     </body>

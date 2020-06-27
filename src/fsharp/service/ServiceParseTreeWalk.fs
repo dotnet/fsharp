@@ -458,9 +458,12 @@ module public AstTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr
                      dive synExpr3 synExpr3.Range traverseSynExpr]
                     |> pick expr
-                | SynExpr.TypeTest(synExpr, _synType, _range) -> traverseSynExpr synExpr
-                | SynExpr.Upcast(synExpr, _synType, _range) -> traverseSynExpr synExpr
-                | SynExpr.Downcast(synExpr, _synType, _range) -> traverseSynExpr synExpr
+                | SynExpr.TypeTest(synExpr, synType, _range)
+                | SynExpr.Upcast(synExpr, synType, _range)
+                | SynExpr.Downcast(synExpr, synType, _range) ->
+                    [dive synExpr synExpr.Range traverseSynExpr
+                     dive synType synType.Range traverseSynType]
+                    |> pick expr
                 | SynExpr.InferredUpcast(synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.InferredDowncast(synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.Null(_range) -> None

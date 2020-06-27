@@ -62,10 +62,10 @@ type ProjectConfiguration = {
 
 let replaceTokens tag (replacement:string) (template:string) = template.Replace(tag, replacement)
 
-let generateProps testCompilerVersion=
+let generateProps testCompilerVersion =
     let template = @"<Project>
   <PropertyGroup>
-    <Configuration Condition=""'$(Configuration)' == ''"">release</Configuration>
+    <Configuration Condition=""'$(Configuration)' == ''"">Release</Configuration>
     <FSharpTestCompilerVersion>$(TESTCOMPILERVERSION)</FSharpTestCompilerVersion>
   </PropertyGroup>
   <Import Project=""$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(PROJECTDIRECTORY)'))"" />
@@ -89,20 +89,20 @@ let generateOverrides =
 </Project>"
     template
 
-let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework =
+let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework configuration =
     let computeSourceItems addDirectory addCondition (compileItem:CompileItem) sources =
         let computeInclude src =
             let fileName = if addDirectory then Path.Combine(pc.SourceDirectory, src) else src
             let condition = if addCondition then " Condition=\"Exists('" + fileName + "')\"" else ""
             match compileItem with
             | CompileItem.Compile ->
-                "\n    <Compile Include ='" + fileName + "'" + condition + " />"
+                "\n    <Compile Include='" + fileName + "'" + condition + " />"
             | CompileItem.Reference ->
-                "\n    <Reference Include ='" + fileName + "'" + condition + " />"
+                "\n    <Reference Include='" + fileName + "'" + condition + " />"
             | CompileItem.UseSource ->
-                "\n    <UseSource Include ='" + fileName + "'" + condition + " />"
+                "\n    <UseSource Include='" + fileName + "'" + condition + " />"
             | CompileItem.LoadSource ->
-                "\n    <LoadSource Include ='" + fileName + "'" + condition + " />"
+                "\n    <LoadSource Include='" + fileName + "'" + condition + " />"
 
         sources
         |> List.map(fun src -> computeInclude src)
@@ -130,6 +130,8 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework =
     <DefineConstants>FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants Condition=""'$(OutputType)' == 'Script' and '$(FSharpTestCompilerVersion)' == 'coreclr'"">NETCOREAPP</DefineConstants>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
+    <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
   </PropertyGroup>
 
   <!-- Utility sources -->
@@ -170,6 +172,8 @@ let generateProjectArtifacts (pc:ProjectConfiguration) targetFramework =
         |> replaceTokens "$(OPTIMIZE)" optimize
         |> replaceTokens "$(DEBUG)" debug
         |> replaceTokens "$(TARGETFRAMEWORK)" targetFramework
+        |> replaceTokens "$(RestoreFromArtifactsPath)" (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/packages/" + configuration)
+
     generateProjBody
 
 let singleTestBuildAndRunCore cfg copyFiles p =
@@ -214,20 +218,20 @@ let singleTestBuildAndRunCore cfg copyFiles p =
                 let executeFsc testCompilerVersion targetFramework =
                     let propsBody = generateProps testCompilerVersion
                     emitFile propsFileName propsBody
-                    let projectBody = generateProjectArtifacts pc targetFramework 
+                    let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
                     emitFile projectFileName projectBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
-                    exec { cfg with Directory = directory }  cfg.DotNet20Exe (sprintf "run -f %s" targetFramework)
+                    exec { cfg with Directory = directory }  cfg.DotNetExe (sprintf "run -f %s" targetFramework)
                     testOkFile.CheckExists()
                 executeFsc compilerType targetFramework
             else
                 let executeFsi testCompilerVersion targetFramework =
                     let propsBody = generateProps testCompilerVersion
                     emitFile propsFileName propsBody
-                    let projectBody = generateProjectArtifacts pc targetFramework 
+                    let projectBody = generateProjectArtifacts pc targetFramework cfg.BUILD_CONFIG
                     emitFile projectFileName projectBody
                     use testOkFile = new FileGuard(Path.Combine(directory, "test.ok"))
-                    exec { cfg with Directory = directory }  cfg.DotNet20Exe "build /t:RunFSharpScript"
+                    exec { cfg with Directory = directory }  cfg.DotNetExe "build /t:RunFSharpScript"
                     testOkFile.CheckExists()
                 executeFsi compilerType targetFramework
                 result <- true

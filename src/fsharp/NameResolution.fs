@@ -898,7 +898,7 @@ let AddResults res1 res2 =
     | Exception _,Result l -> Result l
     | Result x,Exception _ -> Result x
     // If we have error messages for the same symbol, then we can merge suggestions.
-    | Exception (UndefinedName(n1,f,id1,suggestions1)),Exception (UndefinedName(n2,_,id2,suggestions2)) when n1 = n2 && id1.idText = id2.idText && id1.idRange = id2.idRange ->
+    | Exception (UndefinedName(n1,f,id1,suggestions1)),Exception (UndefinedName(n2,_,id2,suggestions2)) when n1 = n2 && id1.idText = id2.idText && Range.equals id1.idRange id2.idRange ->
         let suggestions = HashSet(suggestions1())
         suggestions.UnionWith(suggestions2())
         Exception(UndefinedName(n1,f,id1,fun () -> suggestions))
@@ -1213,7 +1213,7 @@ let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, chec
 //------------------------------------------------------------------------- 
 
 /// Represents the kind of the occurrence when reporting a name in name resolution
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; Struct>]
 type ItemOccurence = 
     /// This is a binding / declaration of the item
     | Binding 
@@ -1354,8 +1354,10 @@ let tyconRefDefnEq g (eref1:EntityRef) (eref2: EntityRef) =
     tyconRefEq g eref1 eref2 || 
 
     // Signature items considered equal to implementation items
-    eref1.DefinitionRange <> Range.rangeStartup && eref1.DefinitionRange <> Range.range0 && eref1.DefinitionRange <> Range.rangeCmdArgs &&
-    (eref1.DefinitionRange = eref2.DefinitionRange || eref1.SigRange = eref2.SigRange) &&
+    not (Range.equals eref1.DefinitionRange Range.rangeStartup) &&
+    not (Range.equals eref1.DefinitionRange Range.range0) &&
+    not (Range.equals eref1.DefinitionRange Range.rangeCmdArgs) &&
+    (Range.equals eref1.DefinitionRange eref2.DefinitionRange || Range.equals eref1.SigRange eref2.SigRange) &&
     eref1.LogicalName = eref2.LogicalName
 
 let valRefDefnHash (_g: TcGlobals) (vref1:ValRef) =
@@ -1365,8 +1367,10 @@ let valRefDefnEq g (vref1:ValRef) (vref2: ValRef) =
     valRefEq g vref1 vref2 ||
 
     // Signature items considered equal to implementation items
-    vref1.DefinitionRange <> Range.rangeStartup && vref1.DefinitionRange <> Range.range0 && vref1.DefinitionRange <> Range.rangeCmdArgs &&
-    (vref1.DefinitionRange = vref2.DefinitionRange || vref1.SigRange = vref2.SigRange) && 
+    not (Range.equals vref1.DefinitionRange Range.rangeStartup) &&
+    not (Range.equals vref1.DefinitionRange Range.range0) &&
+    not (Range.equals vref1.DefinitionRange Range.rangeCmdArgs) &&
+    (Range.equals vref1.DefinitionRange vref2.DefinitionRange || Range.equals vref1.SigRange vref2.SigRange) && 
     vref1.LogicalName = vref2.LogicalName
 
 let unionCaseRefDefnEq g (uc1:UnionCaseRef) (uc2: UnionCaseRef) =
@@ -1385,7 +1389,7 @@ let ItemsAreEffectivelyEqual g orig other =
          | TType_var tp1, TType_var tp2 -> 
             not tp1.IsCompilerGenerated && not tp1.IsFromError && 
             not tp2.IsCompilerGenerated && not tp2.IsFromError && 
-            tp1.Range = tp2.Range
+            Range.equals tp1.Range tp2.Range
          | AbbrevOrAppTy tcref1, AbbrevOrAppTy tcref2 -> 
             tyconRefDefnEq g tcref1 tcref2
          | _ -> false)
@@ -1394,7 +1398,7 @@ let ItemsAreEffectivelyEqual g orig other =
         valRefDefnEq g vref1 vref2 
 
     | ActivePatternCaseUse (range1, range1i, idx1), ActivePatternCaseUse (range2, range2i, idx2) -> 
-        (idx1 = idx2) && (range1 = range2 || range1i = range2i)
+        (idx1 = idx2) && (Range.equals range1 range2 || Range.equals range1i range2i)
 
     | MethodUse minfo1, MethodUse minfo2 -> 
         MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2 ||
@@ -1411,10 +1415,10 @@ let ItemsAreEffectivelyEqual g orig other =
         | _ -> false
 
     | Item.ArgName (id1,_, _), Item.ArgName (id2,_, _) -> 
-        (id1.idText = id2.idText && id1.idRange = id2.idRange)
+        (id1.idText = id2.idText && Range.equals id1.idRange id2.idRange)
 
     | (Item.ArgName (id,_, _), ValUse vref) | (ValUse vref, Item.ArgName (id, _, _)) -> 
-        ((id.idRange = vref.DefinitionRange || id.idRange = vref.SigRange) && id.idText = vref.DisplayName)
+        ((Range.equals id.idRange vref.DefinitionRange || Range.equals id.idRange vref.SigRange) && id.idText = vref.DisplayName)
 
     | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) -> Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
 
@@ -1497,17 +1501,24 @@ type TcSymbolUseData =
 /// This is a memory-critical data structure - allocations of this data structure and its immediate contents
 /// is one of the highest memory long-lived data structures in typical uses of IDEs. Not many of these objects
 /// are allocated (one per file), but they are large because the allUsesOfAllSymbols array is large.
-type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) = 
-    
+type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) =
+
     // Make sure we only capture the information we really need to report symbol uses
-    let allUsesOfSymbols = [| for cnr in capturedNameResolutions -> { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range } |]
+    let allUsesOfSymbols =
+        capturedNameResolutions
+        |> ResizeArray.mapToSmallArrayChunks (fun cnr -> { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range })
+
     let capturedNameResolutions = () 
     do ignore capturedNameResolutions // don't capture this!
 
     member this.GetUsesOfSymbol(item) = 
-        [| for symbolUse in allUsesOfSymbols do
-               if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.Item) then
-                  yield symbolUse |]
+        // This member returns what is potentially a very large array, which may approach the size constraints of the Large Object Heap.
+        // This is unlikely in practice, though, because we filter down the set of all symbol uses to those specifically for the given `item`.
+        // Consequently we have a much lesser chance of ending up with an array large enough to be promoted to the LOH.
+        [| for symbolUseChunk in allUsesOfSymbols do
+            for symbolUse in symbolUseChunk do
+                if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.Item) then
+                    yield symbolUse |]
 
     member this.AllUsesOfSymbols = allUsesOfSymbols
 
@@ -1530,7 +1541,7 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
         new System.Collections.Generic.HashSet<range * Item>
             ( { new IEqualityComparer<range * Item> with 
                     member __.GetHashCode ((m, _)) = hash m
-                    member __.Equals ((m1, item1), (m2, item2)) = m1 = m2 && ItemsAreEffectivelyEqual g item1 item2 } )
+                    member __.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual g item1 item2 } )
 
     let capturedMethodGroupResolutions = ResizeArray<_>()
     let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
@@ -1576,8 +1587,8 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
             // for the same identifier at the same location.
             if allowedRange m then
                 if replace then 
-                    capturedNameResolutions.RemoveAll(fun cnr -> cnr.Range = m) |> ignore
-                    capturedMethodGroupResolutions.RemoveAll(fun cnr -> cnr.Range = m) |> ignore
+                    capturedNameResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
+                    capturedMethodGroupResolutions.RemoveAll(fun cnr -> Range.equals cnr.Range m) |> ignore
                 else
                     let alreadyDone =
                         match item with
@@ -1841,7 +1852,7 @@ let rec ResolveLongIndentAsModuleOrNamespace sink atMostOne amap m first fullyQu
         let mutable moduleNotFoundErrorCache = None
         let moduleNotFound (modref: ModuleOrNamespaceRef) (mty:ModuleOrNamespaceType) (id:Ident) depth =
             match moduleNotFoundErrorCache with
-            | Some (oldId, error) when oldId = id.idRange -> error
+            | Some (oldId, error) when Range.equals oldId id.idRange -> error
             | _ ->
                 let suggestNames() =
                     mty.ModulesAndNamespacesByDemangledName
@@ -2593,7 +2604,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) first fullyQualified 
                           } |> HashSet
 
                       match innerSearch with
-                      | Exception (UndefinedName(0,_,id1,suggestionsF)) when id.idRange = id1.idRange ->
+                      | Exception (UndefinedName(0,_,id1,suggestionsF)) when Range.equals id.idRange id1.idRange ->
                             let mergeSuggestions() =
                                 let res = suggestEverythingInScope()
                                 res.UnionWith(suggestionsF())
@@ -3281,7 +3292,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
         match lid with
         | [] | [_] -> false
         | head :: ids ->
-            ids |> List.forall (fun id -> id.idRange = head.idRange)
+            ids |> List.forall (fun id -> Range.equals id.idRange head.idRange)
 
     let callSink (refinedItem, tpinst) =
         if not isFakeIdents then

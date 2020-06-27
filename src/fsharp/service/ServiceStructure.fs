@@ -610,14 +610,14 @@ module Structure =
                 parseAttributes attrs
             | _ -> ()
 
-        let parseModuleOrNamespace isScript (SynModuleOrNamespace (longId,_,isModule,decls,_,attribs,_,r)) =
+        let parseModuleOrNamespace (SynModuleOrNamespace (longId,_,kind,decls,_,attribs,_,r)) =
             parseAttributes attribs
             let idRange = longIdentRange longId
             let fullrange = Range.startToEnd idRange r  
             let collapse = Range.endToEnd idRange r 
         
             // do not return range for top level implicit module in scripts
-            if isModule && not isScript then
+            if kind = NamedModule then
                 rcheck Scope.Module Collapse.Below fullrange collapse
 
             collectHashDirectives decls
@@ -833,14 +833,14 @@ module Structure =
                 List.iter parseModuleSigDeclaration decls
             | _ -> ()
 
-        let parseModuleOrNamespaceSigs (SynModuleOrNamespaceSig(longId,_,isModule,decls,_,attribs,_,r)) =
+        let parseModuleOrNamespaceSigs (SynModuleOrNamespaceSig(longId,_,kind,decls,_,attribs,_,r)) =
             parseAttributes attribs
             let rangeEnd = lastModuleSigDeclRangeElse r decls
             let idrange = longIdentRange longId
             let fullrange = Range.startToEnd idrange rangeEnd
             let collapse = Range.endToEnd idrange rangeEnd
             
-            if isModule then
+            if kind.IsModule then
                 rcheck Scope.Module Collapse.Below fullrange collapse
 
             collectSigHashDirectives decls
@@ -848,8 +848,8 @@ module Structure =
             List.iter parseModuleSigDeclaration decls
 
         match parsedInput with
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules; isScript = isScript)) ->
-            modules |> List.iter (parseModuleOrNamespace isScript)
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) ->
+            modules |> List.iter parseModuleOrNamespace
             getCommentRanges sourceLines
         | ParsedInput.SigFile (ParsedSigFileInput (modules = moduleSigs)) ->
             List.iter parseModuleOrNamespaceSigs moduleSigs

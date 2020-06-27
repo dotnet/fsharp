@@ -1409,7 +1409,7 @@ and
     SynModuleDecl =
     | ModuleAbbrev of ident:Ident * longId:LongIdent * range:range
     | NestedModule of SynComponentInfo * isRecursive:bool * SynModuleDecls * bool * range:range
-    | Let of bool * SynBinding list * range:range
+    | Let of isRecursive:bool * SynBinding list * range:range
     | DoExpr of SequencePointInfoForBinding * SynExpr * range:range
     | Types of SynTypeDefn list * range:range
     | Exception of SynExceptionDefn * range:range
@@ -1462,11 +1462,23 @@ and
 
 and SynModuleSigDecls = SynModuleSigDecl list
 
-/// SynModuleOrNamespace(lid,isRec,isModule,decls,xmlDoc,attribs,SynAccess,m)
+and
+    [<Struct>]
+    SynModuleOrNamespaceKind =
+        | NamedModule
+        | AnonModule
+        | DeclaredNamespace
+        | GlobalNamespace
+
+        member x.IsModule =
+            match x with
+            | NamedModule | AnonModule -> true
+            | _ -> false
+
 and
     [<NoEquality; NoComparison>]
     SynModuleOrNamespace =
-    | SynModuleOrNamespace of longId:LongIdent * isRecursive:bool * isModule:bool * decls:SynModuleDecls * xmlDoc:PreXmlDoc * attribs:SynAttributes * accessibility:SynAccess option * range:range
+    | SynModuleOrNamespace of longId:LongIdent * isRecursive:bool * kind:SynModuleOrNamespaceKind * decls:SynModuleDecls * xmlDoc:PreXmlDoc * attribs:SynAttributes * accessibility:SynAccess option * range:range
     member this.Range =
         match this with
         | SynModuleOrNamespace (range=m) -> m
@@ -1474,7 +1486,7 @@ and
 and
     [<NoEquality; NoComparison>]
     SynModuleOrNamespaceSig =
-    | SynModuleOrNamespaceSig of longId:LongIdent * isRecursive:bool * isModule:bool * SynModuleSigDecls * xmlDoc:PreXmlDoc * attribs:SynAttributes * accessibility:SynAccess option * range:range
+    | SynModuleOrNamespaceSig of longId:LongIdent * isRecursive:bool * kind:SynModuleOrNamespaceKind * SynModuleSigDecls * xmlDoc:PreXmlDoc * attribs:SynAttributes * accessibility:SynAccess option * range:range
 
 and [<NoEquality; NoComparison>]
     ParsedHashDirective =
@@ -1484,13 +1496,13 @@ and [<NoEquality; NoComparison>]
 type ParsedImplFileFragment =
     | AnonModule of SynModuleDecls * range:range
     | NamedModule of SynModuleOrNamespace
-    | NamespaceFragment of longId:LongIdent * bool * bool * SynModuleDecls * xmlDoc:PreXmlDoc * SynAttributes * range:range
+    | NamespaceFragment of longId:LongIdent * bool * SynModuleOrNamespaceKind * SynModuleDecls * xmlDoc:PreXmlDoc * SynAttributes * range:range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedSigFileFragment =
     | AnonModule of SynModuleSigDecls * range:range
     | NamedModule of SynModuleOrNamespaceSig
-    | NamespaceFragment of longId:LongIdent * bool * bool * SynModuleSigDecls * xmlDoc:PreXmlDoc * SynAttributes * range:range
+    | NamespaceFragment of longId:LongIdent * bool * SynModuleOrNamespaceKind * SynModuleSigDecls * xmlDoc:PreXmlDoc * SynAttributes * range:range
 
 [<NoEquality; NoComparison>]
 type ParsedFsiInteraction =

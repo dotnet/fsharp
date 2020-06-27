@@ -855,8 +855,8 @@ let testFlag tcConfigB =
                                             | str                -> warning(Error(FSComp.SR.optsUnknownArgumentToTheTestSwitch(str),rangeCmdArgs))), None,
                            None)
 
-// not shown in fsc.exe help, no warning on use, motivation is for use from VS
-let vsSpecificFlags (tcConfigB: TcConfigBuilder) = 
+// Not shown in fsc.exe help, no warning on use, motivation is for use from tooling.
+let editorSpecificFlags (tcConfigB: TcConfigBuilder) = 
   [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.VSErrors), None, None)
     CompilerOption("validate-type-providers", tagNone, OptionUnit (id), None, None)  // preserved for compatibility's sake, no longer has any effect
     CompilerOption("LCID", tagInt, OptionInt ignore, None, None)
@@ -864,7 +864,8 @@ let vsSpecificFlags (tcConfigB: TcConfigBuilder) =
     CompilerOption("sqmsessionguid", tagNone, OptionString ignore, None, None)
     CompilerOption("gccerrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.GccErrors), None, None) 
     CompilerOption("exename", tagNone, OptionString (fun s -> tcConfigB.exename <- Some(s)), None, None)
-    CompilerOption("maxerrors", tagInt, OptionInt (fun n -> tcConfigB.maxErrors <- n), None, None) ]
+    CompilerOption("maxerrors", tagInt, OptionInt (fun n -> tcConfigB.maxErrors <- n), None, None)
+    CompilerOption("noconditionalerasure", tagNone, OptionUnit (fun () -> tcConfigB.noConditionalErasure <- true), None, None) ]
 
 let internalFlags (tcConfigB:TcConfigBuilder) =
   [
@@ -903,7 +904,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     CompilerOption("alwayscallvirt",tagNone,OptionSwitch(callVirtSwitch tcConfigB),Some(InternalCommandLineOption("alwayscallvirt",rangeCmdArgs)), None)
     CompilerOption("nodebugdata",tagNone, OptionUnit (fun () -> tcConfigB.noDebugData<-true),Some(InternalCommandLineOption("--nodebugdata",rangeCmdArgs)), None)
     testFlag tcConfigB  ] @
-  vsSpecificFlags tcConfigB @
+  editorSpecificFlags tcConfigB @
   [ CompilerOption("jit", tagNone, OptionSwitch (jitoptimizeSwitch tcConfigB), Some(InternalCommandLineOption("jit", rangeCmdArgs)), None)
     CompilerOption("localoptimize", tagNone, OptionSwitch(localoptimizeSwitch tcConfigB),Some(InternalCommandLineOption("localoptimize", rangeCmdArgs)), None)
     CompilerOption("splitting", tagNone, OptionSwitch(splittingSwitch tcConfigB),Some(InternalCommandLineOption("splitting", rangeCmdArgs)), None)

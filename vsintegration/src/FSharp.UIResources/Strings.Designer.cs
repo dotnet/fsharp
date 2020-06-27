@@ -19,7 +19,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Strings {
@@ -115,7 +115,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Show type signature annotations in the editor.
+        ///   Looks up a localized string similar to Enable CodeLens (Experimental).
         /// </summary>
         public static string CodeLens_Switch {
             get {
@@ -169,15 +169,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Re-format indentation on paste.
-        /// </summary>
-        public static string Format_on_paste {
-            get {
-                return ResourceManager.GetString("Format_on_paste", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Enable stale data for IntelliSense features.
         /// </summary>
         public static string Enable_Stale_IntelliSense_Results {
@@ -219,6 +210,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Enter_Key_Rule {
             get {
                 return ResourceManager.GetString("Enter_Key_Rule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Re-format indentation on paste.
+        /// </summary>
+        public static string Format_on_paste {
+            get {
+                return ResourceManager.GetString("Format_on_paste", resourceCulture);
             }
         }
         
@@ -345,6 +345,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Solid_underline {
             get {
                 return ResourceManager.GetString("Solid_underline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Suggest names for unresolved identifiers.
+        /// </summary>
+        public static string Suggest_names_for_errors_code_fix {
+            get {
+                return ResourceManager.GetString("Suggest_names_for_errors_code_fix", resourceCulture);
             }
         }
         

@@ -13,7 +13,6 @@
     <OtherFlags>$(OtherFlags) --staticlink:FSharp.Core</OtherFlags>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <IsPackable>false</IsPackable>
-    <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ProjectCrackerOptions.fs" />

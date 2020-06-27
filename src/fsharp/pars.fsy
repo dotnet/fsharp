@@ -675,14 +675,14 @@ fileModuleSpec:
       (fun (isRec2,path,_) -> 
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(),m2))
         let lid = path@path2 
-        ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, (isRec || isRec2), true, $4, xml,$1,vis,m)))  }
+        ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, (isRec || isRec2), NamedModule, $4, xml,$1,vis,m)))  }
 
   | moduleSpfnsPossiblyEmptyBlock 
     { let m = (rhs parseState 1) 
       (fun (isRec, path, xml) -> 
         match path with 
         | [] -> ParsedSigFileFragment.AnonModule($1, m)  
-        | _ -> ParsedSigFileFragment.NamespaceFragment(path, isRec, false, $1, xml,[],m))  } 
+        | _ -> ParsedSigFileFragment.NamespaceFragment(path, isRec, DeclaredNamespace, $1, xml,[],m))  } 
 
 
 moduleSpfnsPossiblyEmptyBlock: 
@@ -1097,14 +1097,14 @@ fileModuleImpl:
       (fun (isRec, path, _) -> 
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(),m2))
         let lid = path@path2 
-        ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, (isRec || isRec2), true, $4, xml,$1,vis,m))) }
+        ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, (isRec || isRec2), NamedModule, $4, xml,$1,vis,m))) }
 
   | moduleDefnsOrExprPossiblyEmptyOrBlock 
     { let m = (rhs parseState 1) 
       (fun (isRec, path, xml) -> 
         match path with 
         | [] -> ParsedImplFileFragment.AnonModule($1,m)  
-        | _ -> ParsedImplFileFragment.NamespaceFragment(path, isRec, false, $1, xml,[],m)) } 
+        | _ -> ParsedImplFileFragment.NamespaceFragment(path, isRec, DeclaredNamespace, $1, xml,[],m)) } 
 
 
 /* A collection/block of definitions or expressions making up a module or namespace, possibly empty */
@@ -3834,7 +3834,7 @@ parenExpr:
 
   | LPAREN parenExprBody ends_other_than_rparen_coming_soon_or_recover
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
-        let lhsm = unionRangeWithPos (rhs parseState 1) (rhs parseState 3).Start
+        let lhsm = unionRangeWithPos (rhs parseState 1) (rhs parseState 2).End
         SynExpr.Paren(exprFromParseError ($2 lhsm), rhs parseState 1, None, lhsm) }
 
   | LPAREN error rparen 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -93,7 +93,7 @@ Pokud chcete tento stav ignorovat a pokračovat v operaci , klikněte na OK. Pok
       </trans-unit>
       <trans-unit id="PPG_BrowseText">
         <source>&lt;Browse...&gt;</source>
-        <target state="translated">&lt;procházet...&gt;</target>
+        <target state="translated">&lt;Procházet...&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_StartupObjectNone">
@@ -103,12 +103,12 @@ Pokud chcete tento stav ignorovat a pokračovat v operaci , klikněte na OK. Pok
       </trans-unit>
       <trans-unit id="PPG_KeyFileNewText">
         <source>&lt;New...&gt;</source>
-        <target state="translated">&lt;nové...&gt;</target>
+        <target state="translated">&lt;Nový...&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_KeyFileBrowseText">
         <source>&lt;Browse...&gt;</source>
-        <target state="translated">&lt;procházet...&gt;</target>
+        <target state="translated">&lt;Procházet...&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ComboBoxSelect_None">
@@ -315,7 +315,7 @@ Vyberte prosím platnou cestu ke složce.</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupFormLabelText">
         <source>Startup f&amp;orm:</source>
-        <target state="translated">Úv&amp;odní formulář:</target>
+        <target state="translated">Sp&amp;ouštěcí formulář:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
@@ -784,12 +784,12 @@ Chyba:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
         <source>Enter &amp;password to open file {0}</source>
-        <target state="translated">Zadejte heslo &amp;pro otevření souboru {0}</target>
+        <target state="translated">Zadejte &amp;heslo pro otevření souboru {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_CreateNewKeyPasswordPrompt">
         <source>Enter &amp;password for new file {0}</source>
-        <target state="translated">Zadejte heslo &amp;pro nový soubor {0}</target>
+        <target state="translated">Zadejte &amp;heslo pro nový soubor {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_ProjectAlreadyContainsFile">
@@ -950,7 +950,7 @@ Chyba:</target>
       </trans-unit>
       <trans-unit id="PropPage_ReferenceNotFound">
         <source>&lt;The system cannot find the reference specified&gt;</source>
-        <target state="translated">&lt;Systému se nepovedlo najít zadané odkazy.&gt;</target>
+        <target state="translated">&lt;Systém nemůže najít zadaný odkaz.&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceTitle">
@@ -960,7 +960,7 @@ Chyba:</target>
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceRemoveButton">
         <source>&amp;Remove</source>
-        <target state="translated">O&amp;debrat</target>
+        <target state="translated">Odeb&amp;rat</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceNoUnusedReferences">
@@ -985,7 +985,7 @@ Chyba:</target>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">Základní adresa musí být hexadecimální číslo s osmi nebo méně číslicemi, např. &amp;H11000000.</target>
+        <target state="translated">Základní adresa musí být hexadecimální číslo s osmi nebo méně číslicemi, třeba &amp;H11000000.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="needs-review-translation">{0} x {1}</target>
+        <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -1884,7 +1884,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Remove">
         <source>&amp;Remove</source>
-        <target state="translated">O&amp;debrat</target>
+        <target state="translated">Odeb&amp;rat</target>
         <note>Add, Delete and Views button text in the main ToolStrip</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views">
@@ -1894,42 +1894,42 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_ExistingFile">
         <source>&amp;Existing File...</source>
-        <target state="translated">Stávají&amp;cí soubor...</target>
+        <target state="translated">&amp;Existující soubor...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_String">
         <source>New &amp;String</source>
-        <target state="translated">Nový ře&amp;tězec</target>
+        <target state="translated">No&amp;vý řetězec</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image">
         <source>New &amp;Image</source>
-        <target state="translated">Nový obráze&amp;k</target>
+        <target state="translated">Nový o&amp;brázek</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_PNG">
         <source>&amp;PNG Image...</source>
-        <target state="translated">Obrázek &amp;PNG...</target>
+        <target state="translated">Obrázek ve formátu &amp;PNG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_BMP">
         <source>&amp;BMP Image...</source>
-        <target state="translated">Obrázek &amp;BMP...</target>
+        <target state="translated">O&amp;brázek ve formátu BMP...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_GIF">
         <source>&amp;GIF Image...</source>
-        <target state="translated">Obrázek &amp;GIF...</target>
+        <target state="translated">Obrázek ve formátu &amp;GIF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_JPEG">
         <source>&amp;JPEG Image...</source>
-        <target state="translated">Obrázek &amp;JPEG...</target>
+        <target state="translated">Obrázek ve formátu &amp;JPEG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_TIFF">
         <source>&amp;TIFF Image...</source>
-        <target state="translated">Obrázek &amp;TIFF...</target>
+        <target state="translated">Obrázek ve formá&amp;tu TIFF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Icon">
@@ -2108,17 +2108,17 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_List">
         <source>&amp;List</source>
-        <target state="translated">Sezna&amp;m</target>
+        <target state="translated">&amp;Seznam</target>
         <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_Details">
         <source>&amp;Details</source>
-        <target state="translated">Po&amp;drobnosti</target>
+        <target state="translated">&amp;Podrobnosti</target>
         <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_Thumbnail">
         <source>&amp;Thumbnail</source>
-        <target state="translated">Minia&amp;tura</target>
+        <target state="translated">&amp;Miniatura</target>
         <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
       </trans-unit>
       <trans-unit id="RSE_ResourceEditor">
@@ -2715,12 +2715,12 @@ Chcete aktualizovat hodnotu v souboru .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupObjectLabelText">
         <source>Startup &amp;object:</source>
-        <target state="translated">Spouštěcí &amp;objekt:</target>
+        <target state="translated">Sp&amp;ouštěcí objekt:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">
         <source>Startup &amp;URI:</source>
-        <target state="translated">Spouštěcí identifikátor &amp;URI:</target>
+        <target state="translated">Spo&amp;uštěcí URI:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_AppXamlOpenInUnsupportedEditor">

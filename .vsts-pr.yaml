@@ -17,7 +17,7 @@ jobs:
   - script: $(_command) $(_args)
   - task: PublishBuildArtifacts@1
     inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)/tests/TestResults'
+      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults'
       ArtifactName: 'Linux $(_command) $(_args)'
       publishLocation: Container
     continueOnError: true
@@ -26,7 +26,7 @@ jobs:
 - job: Windows
   pool:
     vmImage: vs2017-win2016
-  timeoutInMinutes: 90
+  timeoutInMinutes: 120
   strategy:
     maxParallel: 7
     matrix:
@@ -55,7 +55,7 @@ jobs:
   - script: $(_command) $(_args)
   - task: PublishBuildArtifacts@1
     inputs:
-      PathtoPublish: '$(Build.SourcesDirectory)\tests\TestResults'
+      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults'
       ArtifactName: 'Windows $(_command) $(_args)'
       publishLocation: Container
     continueOnError: true

@@ -125,7 +125,7 @@ let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f  =
 
 // Attach a range if this is a range dual exception.
 let rec AttachRange m (exn:exn) = 
-    if m = range0 then exn
+    if Range.equals m range0 then exn
     else 
         match exn with
         // Strip TargetInvocationException wrappers

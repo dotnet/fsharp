@@ -11,7 +11,7 @@
                     netstandard1.6      (netstandard1.6)
                     netstandard2.0      (netstandard2.0)
 
-                Commit hash: $githeadsha$.
+                Commit hash: $githeadsha$
         </description>
         <owners>$owners$</owners>
         <version>$version$</version>
@@ -56,18 +56,18 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="bin\$configuration$\netstandard1.6\FSharp.Core.dll"          target="lib\netstandard1.6" />
-        <file src="bin\$configuration$\netstandard1.6\FSharp.Core.sigdata"      target="lib\netstandard1.6" />
-        <file src="bin\$configuration$\netstandard1.6\FSharp.Core.optdata"      target="lib\netstandard1.6" />
-        <file src="bin\$configuration$\netstandard1.6\FSharp.Core.xml"          target="lib\netstandard1.6" />
+        <file src="$artifactsbindir$\FSharp.Core\$configuration$\netstandard1.6\FSharp.Core.dll"     target="lib\netstandard1.6" />
+        <file src="$artifactsbindir$\FSharp.Core\$configuration$\netstandard1.6\FSharp.Core.sigdata" target="lib\netstandard1.6" />
+        <file src="$artifactsbindir$\FSharp.Core\$configuration$\netstandard1.6\FSharp.Core.optdata" target="lib\netstandard1.6" />
+        <file src="$artifactsbindir$\FSharp.Core\$configuration$\netstandard1.6\FSharp.Core.xml"     target="lib\netstandard1.6" />
 
-        <file src="bin\$configuration$\net45\FSharp.Core.dll"            target="lib\net45" />
-        <file src="bin\$configuration$\net45\FSharp.Core.sigdata"        target="lib\net45" />
-        <file src="bin\$configuration$\net45\FSharp.Core.optdata"        target="lib\net45" />
-        <file src="bin\$configuration$\net45\FSharp.Core.xml"            target="lib\net45" />
+        <file src="$artifactsbindir$\FSharp.Core\$configuration$\net45\FSharp.Core.dll"     target="lib\net45" />
+        <file src="$artifactsbindir$\FSharp.Core\$configuration$\net45\FSharp.Core.sigdata" target="lib\net45" />
+        <file src="$artifactsbindir$\FSharp.Core\$configuration$\net45\FSharp.Core.optdata" target="lib\net45" />
+        <file src="$artifactsbindir$\FSharp.Core\$configuration$\net45\FSharp.Core.xml"     target="lib\net45" />
 
         <!-- resources -->
-        <file src="bin\$configuration$\netstandard1.6\**\FSharp.Core.resources.dll" target="lib\netstandard1.6" />
-        <file src="bin\$configuration$\net45\**\FSharp.Core.resources.dll"   target="lib\net45" />
+        <file src="$artifactsbindir$\FSharp.Core\$configuration$\netstandard1.6\**\FSharp.Core.resources.dll" target="lib\netstandard1.6" />
+        <file src="$artifactsbindir$\FSharp.Core\$configuration$\net45\**\FSharp.Core.resources.dll"                target="lib\net45" />
     </files>
 </package>

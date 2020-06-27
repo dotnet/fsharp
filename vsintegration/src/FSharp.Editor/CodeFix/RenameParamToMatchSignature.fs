@@ -58,7 +58,7 @@ type internal FSharpRenameParamToMatchSignature
                                 return changes 
                             }
                         let title = FSComp.SR.replaceWithSuggestion suggestion
-                        let codefix = createTextChangeCodeFix(title, context, computeChanges)
+                        let codefix = CodeFixHelpers.createTextChangeCodeFix(title, context, computeChanges)
                         context.RegisterCodeFix(codefix, diagnostics)
             | _ -> ()
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

@@ -115,15 +115,16 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
     let cpsCommandLineOptions = new ConcurrentDictionary<ProjectId, string[] * string[]>()
 
     let cache = Dictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
-    let singleFileCache = Dictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
+    let singleFileCache = Dictionary<DocumentId, VersionStamp * DateTime * FSharpParsingOptions * FSharpProjectOptions>()
 
-    let rec tryComputeOptionsByFile (document: Document) cancellationToken =
+    let rec tryComputeOptionsByFile (document: Document) cancellationToken (loadTime: DateTime option) =
         async {
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! fileStamp = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
-            let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText(), DateTime.Now)
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let loadTime = defaultArg loadTime DateTime.Now
+                let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText(), loadTime)
                 let projectOptions =
                     if isScriptFile document.FilePath then
                         scriptProjectOptions
@@ -145,18 +146,18 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
 
                 cancellationToken.ThrowIfCancellationRequested()
 
-                checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = true, userOpName = "computeOptions")
+                checkerProvider.Checker.CheckProjectInBackground(projectOptions, userOpName="checkOptions")
 
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                singleFileCache.[document.Id] <- (fileStamp, parsingOptions, projectOptions)
+                singleFileCache.[document.Id] <- (fileStamp, loadTime, parsingOptions, projectOptions)
 
                 return Some(parsingOptions, projectOptions)
 
-            | true, (fileStamp2, parsingOptions, projectOptions) ->
+            | true, (fileStamp2, loadTime2, parsingOptions, projectOptions) ->
                 if fileStamp <> fileStamp2 then
                     singleFileCache.Remove(document.Id) |> ignore
-                    return! tryComputeOptionsByFile document cancellationToken
+                    return! tryComputeOptionsByFile document cancellationToken  (Some loadTime2)
                 else
                     return Some(parsingOptions, projectOptions)
         }
@@ -200,7 +201,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                     |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
                     |> Array.ofSeq
                     |> Array.append (
-                            project.MetadataReferences.OfType<VisualStudioMetadataReference.Snapshot>()
+                            project.MetadataReferences.OfType<PortableExecutableReference>()
                             |> Seq.map (fun x -> "-r:" + x.FilePath)
                             |> Array.ofSeq
                             |> Array.append (
@@ -259,7 +260,7 @@ type private FSharpProjectOptionsReactor (workspace: VisualStudioWorkspaceImpl, 
                         if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
                             reply.Reply(None)
                         elif document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
-                            let! options = tryComputeOptionsByFile document cancellationToken
+                            let! options = tryComputeOptionsByFile document cancellationToken None
                             reply.Reply(options)
                         else
                             let! options = tryComputeOptions document.Project cancellationToken

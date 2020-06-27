@@ -37,8 +37,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
         // Used when checking attributes.
         let sigToImplRemap = 
             let remap = Remap.Empty 
-            let remap = (remapInfo.mrpiEntities,remap) ||> List.foldBack (fun (implTcref ,signTcref) acc -> addTyconRefRemap signTcref implTcref acc) 
-            let remap = (remapInfo.mrpiVals    ,remap) ||> List.foldBack (fun (implValRef,signValRef) acc -> addValRemap signValRef.Deref implValRef.Deref acc) 
+            let remap = (remapInfo.RepackagedEntities,remap) ||> List.foldBack (fun (implTcref ,signTcref) acc -> addTyconRefRemap signTcref implTcref acc) 
+            let remap = (remapInfo.RepackagedVals    ,remap) ||> List.foldBack (fun (implValRef,signValRef) acc -> addValRemap signValRef.Deref implValRef.Deref acc) 
             remap
             
         // For all attributable elements (types, modules, exceptions, record fields, unions, parameters, generic type parameters)

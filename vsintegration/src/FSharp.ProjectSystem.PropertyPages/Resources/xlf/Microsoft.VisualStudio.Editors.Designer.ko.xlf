@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="PPG_ApplicationTitle">
         <source>Application</source>
-        <target state="translated">응용 프로그램</target>
+        <target state="translated">애플리케이션</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_CompileTitle">
@@ -87,7 +87,7 @@
 The application may throw security exceptions when it attempts to perform actions which require full trust.
 Click OK to ignore and continue. Click CANCEL to choose a different output path.</source>
         <target state="translated">출력 경로를 신뢰할 수 없습니다.
-완전 신뢰가 필요한 동작을 수행할 때 응용 프로그램에서 보안 예외를 throw할 수 있습니다.
+완전 신뢰가 필요한 동작을 수행할 때 애플리케이션에서 보안 예외를 throw할 수 있습니다.
 무시하고 계속 실행하려면 [확인]을 클릭하고 다른 출력 경로를 선택하려면 [취소]를 클릭하세요.</target>
         <note />
       </trans-unit>
@@ -250,7 +250,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Application_InvalidSubMainStartup">
         <source>Startup object must be a form when 'Enable application framework' is checked.</source>
-        <target state="translated">'응용 프로그램 프레임워크 사용'이 선택된 경우 시작 개체는 폼이어야 합니다.</target>
+        <target state="translated">'애플리케이션 프레임워크 사용'이 선택된 경우 시작 개체는 폼이어야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_StartupObjectNotSet">
@@ -295,7 +295,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Application_MyAppCommentLine4">
         <source> Solution Explorer), and make changes on the Application tab.</source>
-        <target state="translated"> 두 번 클릭)한 다음 [응용 프로그램] 탭에서 변경하세요.</target>
+        <target state="translated">두 번 클릭)한 다음 [애플리케이션] 탭에서 변경하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_InvalidIdentifierStartupForm_1Arg">
@@ -325,22 +325,22 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine3">
         <source>Startup: Raised when the application starts, before the startup form is created.</source>
-        <target state="translated">Startup: 응용 프로그램이 시작되고 시작 폼이 만들어지기 전에 발생합니다.</target>
+        <target state="translated">Startup: 애플리케이션이 시작되고 시작 폼이 만들어지기 전에 발생합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine4">
         <source>Shutdown: Raised after all application forms are closed.  This event is not raised if the application terminates abnormally.</source>
-        <target state="translated">Shutdown: 모든 응용 프로그램 폼이 닫힌 후에 발생합니다.  이 이벤트는 응용 프로그램이 비정상적으로 종료되는 경우에는 발생하지 않습니다.</target>
+        <target state="translated">Shutdown: 모든 애플리케이션 폼이 닫힌 후에 발생합니다.  이 이벤트는 애플리케이션이 비정상적으로 종료되는 경우에는 발생하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine5">
         <source>UnhandledException: Raised if the application encounters an unhandled exception.</source>
-        <target state="translated">UnhandledException: 응용 프로그램에서 처리되지 않은 예외가 발생하는 경우 이 이벤트가 발생합니다.</target>
+        <target state="translated">UnhandledException: 애플리케이션에서 처리되지 않은 예외가 발생하는 경우 이 이벤트가 발생합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine6">
         <source>StartupNextInstance: Raised when launching a single-instance application and the application is already active. </source>
-        <target state="translated">StartupNextInstance: 단일 인스턴스 응용 프로그램을 시작할 때 해당 응용 프로그램이 이미 활성 상태인 경우 발생합니다. </target>
+        <target state="translated">StartupNextInstance: 단일 인스턴스 애플리케이션을 시작할 때 해당 애플리케이션이 이미 활성 상태인 경우 발생합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine7">
@@ -442,7 +442,7 @@ Changing this setting will reset the settings in all configurations.</source>
       </trans-unit>
       <trans-unit id="PPG_MyApplication_AuthenMode_ApplicationDefined">
         <source>Application-defined</source>
-        <target state="translated">응용 프로그램 정의</target>
+        <target state="translated">애플리케이션 정의</target>
         <note>Authentication modes</note>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_Cancel">
@@ -522,7 +522,7 @@ Changing this setting will reset the settings in all configurations.</source>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_FullTrustToolTip">
         <source>The application will require elevated permissions to run in the selected zone. Click the help link above for more info.</source>
-        <target state="translated">응용 프로그램을 선택한 영역에서 실행하려면 고급 권한이 필요합니다. 자세한 내용을 보려면 위에 있는 도움말 링크를 클릭하세요.</target>
+        <target state="translated">애플리케이션을 선택한 영역에서 실행하려면 고급 권한이 필요합니다. 자세한 내용을 보려면 위에 있는 도움말 링크를 클릭하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_BadPermissionToolTip">
@@ -547,7 +547,7 @@ Changing this setting will reset the settings in all configurations.</source>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_HelpLabelText">
         <source>Specify the code access security permissions that your ClickOnce application requires in order to run. Learn more about code access security...</source>
-        <target state="translated">ClickOnce 응용 프로그램 실행에 필요한 코드 액세스 보안 권한을 지정합니다. 코드 액세스 보안에 대한 자세한 정보...</target>
+        <target state="translated">ClickOnce 애플리케이션 실행에 필요한 코드 액세스 보안 권한을 지정합니다. 코드 액세스 보안에 대한 자세한 정보...</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_HelpLabelLink">
@@ -562,17 +562,17 @@ Changing this setting will reset the settings in all configurations.</source>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_SecurityPermissionCannotBeExcluded">
         <source>The SecurityPermission must be included in your application with the Execute flag set or your application will not run. Mark this permission as "Zone Default" or "Include."</source>
-        <target state="translated">응용 프로그램에 Execute 플래그가 설정된 SecurityPermission이 포함되지 않으면 응용 프로그램이 실행되지 않습니다. 이 사용 권한을 "영역 기본값" 또는 "포함"으로 표시하세요.</target>
+        <target state="translated">애플리케이션에 Execute 플래그가 설정된 SecurityPermission이 포함되지 않으면 애플리케이션이 실행되지 않습니다. 이 사용 권한을 "영역 기본값" 또는 "포함"으로 표시하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_ExecuteCannotBeExcluded">
         <source>The SecurityPermission must be included in your application with the Execute flag set or your application will not run. The Execute flag has been added to the SecurityPermission in your manifest.</source>
-        <target state="translated">응용 프로그램에 Execute 플래그가 설정된 SecurityPermission이 포함되지 않으면 응용 프로그램이 실행되지 않습니다. Execute 플래그는 사용자 매니페스트의 SecurityPermission에 추가되었습니다.</target>
+        <target state="translated">애플리케이션에 Execute 플래그가 설정된 SecurityPermission이 포함되지 않으면 애플리케이션이 실행되지 않습니다. 이 사용 권한을 "영역 기본값" 또는 "포함"으로 표시하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_SwitchToFullTrustDialog">
         <source>This application requires full trust to run correctly. Would you like to set this as a full trust application?</source>
-        <target state="translated">응용 프로그램을 올바르게 실행되려면 완전 신뢰가 필요합니다. 이 응용 프로그램을 완전 신뢰 응용 프로그램으로 설정하시겠습니까?</target>
+        <target state="translated">애플리케이션을 올바르게 실행되려면 완전 신뢰가 필요합니다. 이 애플리케이션을 완전 신뢰 애플리케이션으로 설정하시겠습니까?</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_SwitchToFullTrustDialogTitle">
@@ -819,7 +819,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_WindowsApp">
         <source>Windows Application</source>
-        <target state="translated">Windows 응용 프로그램</target>
+        <target state="translated">Windows 애플리케이션</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WindowsService">
@@ -834,7 +834,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_CommandLineApp">
         <source>Console Application</source>
-        <target state="translated">콘솔 응용 프로그램</target>
+        <target state="translated">콘솔 애플리케이션</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WebControlLib">
@@ -1082,7 +1082,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Property_ApplicationIcon">
         <source>Application Icon</source>
-        <target state="translated">응용 프로그램 아이콘</target>
+        <target state="translated">애플리케이션 아이콘</target>
         <note>Property Friendly Names (for transaction names) - NOTE: All of these are optional</note>
       </trans-unit>
       <trans-unit id="PPG_Property_AssemblyVersion">
@@ -1102,7 +1102,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Property_CustomSubMain">
         <source>Enable application framework</source>
-        <target state="translated">응용 프로그램 프레임워크 사용</target>
+        <target state="translated">애플리케이션 프레임워크 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Property_StartProgram">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="needs-review-translation">{0} x {1}</target>
+        <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -1889,7 +1889,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views">
         <source>&amp;Views</source>
-        <target state="translated">보기(&amp;V)</target>
+        <target state="translated">뷰(&amp;V)</target>
         <note>Add, Delete and Views button text in the main ToolStrip</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_ExistingFile">
@@ -2341,7 +2341,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="SD_ComboBoxItem_ApplicationScope">
         <source>Application</source>
-        <target state="translated">응용 프로그램</target>
+        <target state="translated">애플리케이션</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_ComboBoxItem_UserScope">
@@ -2517,12 +2517,12 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="SD_FullDescriptionText">
         <source>Application settings allow you to store and retrieve property settings and other information for your application dynamically. For example, the application can save a user's color preferences, then retrieve them the next time it runs.</source>
-        <target state="translated">응용 프로그램 설정에서 응용 프로그램에 대한 속성 설정 및 기타 정보를 동적으로 저장하고 가져올 수 있습니다. 예를 들어 사용자의 색 기본 설정을 저장하여 다음에 응용 프로그램이 실행될 때 이 설정을 가져올 수 있습니다.</target>
+        <target state="translated">애플리케이션 설정에서 애플리케이션에 대한 속성 설정 및 기타 정보를 동적으로 저장하고 가져올 수 있습니다. 예를 들어 사용자의 색 기본 설정을 저장하여 다음에 애플리케이션이 실행될 때 이 설정을 가져올 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_LinkPartOfDescriptionText">
         <source>Learn more about application settings...</source>
-        <target state="translated">응용 프로그램 설정에 대한 자세한 정보...</target>
+        <target state="translated">애플리케이션 설정에 대한 자세한 정보...</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_IncludeSensitiveInfoInConnectionStringWarning">
@@ -2617,7 +2617,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="SD_DESCR_Scope">
         <source>Specifies whether the setting is per-application (read-only) or per-user (read-write).</source>
-        <target state="translated">설정이 응용 프로그램별로 적용되는지(읽기 전용) 사용자별로 적용되는지(읽기/쓰기) 여부를 지정합니다.</target>
+        <target state="translated">설정이 애플리케이션별로 적용되는지(읽기 전용) 사용자별로 적용되는지(읽기/쓰기) 여부를 지정합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_DESCR_SerializedSettingType">
@@ -2660,7 +2660,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="General_MissingService">
         <source>Unable to find service '{0}'.  Ensure that the application is installed correctly.</source>
-        <target state="translated">'{0}' 서비스를 찾을 수 없습니다.  응용 프로그램이 제대로 설치되어 있는지 확인하세요.</target>
+        <target state="translated">'{0}' 서비스를 찾을 수 없습니다.  애플리케이션이 제대로 설치되어 있는지 확인하세요.</target>
         <note>Settings Global-Object-Provider Strings</note>
       </trans-unit>
       <trans-unit id="PPG_Application_RootNamespaceJSharp">
@@ -2680,7 +2680,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_WindowsApp_WPF">
         <source>WPF Application</source>
-        <target state="translated">WPF 응용 프로그램</target>
+        <target state="translated">WPF 애플리케이션</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_InvalidShutdownMode">
@@ -2705,7 +2705,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_WPFApp_Xaml_CouldntFindRootElement">
         <source>Could not find the expected root element "{0}" in the application definition file.</source>
-        <target state="translated">응용 프로그램 정의 파일에서 필요한 루트 요소 "{0}"을(를) 찾을 수 없습니다.</target>
+        <target state="translated">애플리케이션 정의 파일에서 필요한 루트 요소 "{0}"을(를) 찾을 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_Xaml_UnexpectedFormat_2Args">
@@ -2725,17 +2725,17 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_WPFApp_AppXamlOpenInUnsupportedEditor">
         <source>The application definition file is already opened in an incompatible editor.  Please close the other editor and reload the project properties page.</source>
-        <target state="translated">호환되지 않는 편집기에 응용 프로그램 정의 파일이 이미 열려 있습니다.  다른 편집기를 닫고 프로젝트 속성 페이지를 다시 로드하세요.</target>
+        <target state="translated">호환되지 않는 편집기에 애플리케이션 정의 파일이 이미 열려 있습니다.  다른 편집기를 닫고 프로젝트 속성 페이지를 다시 로드하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_CantOpenOrCreateAppXaml_1Arg">
         <source>There was an error trying to open or create the application definition file for this project.  {0}</source>
-        <target state="translated">이 프로젝트에 대한 응용 프로그램 정의 파일을 열거나 만드는 동안 오류가 발생했습니다. {0}</target>
+        <target state="translated">이 프로젝트에 대한 애플리케이션 정의 파일을 열거나 만드는 동안 오류가 발생했습니다. {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_ErrorControlMessage_1Arg">
         <source>An error occurred trying to load the application definition file for this project.  The file '{0}' could not be parsed.  Please edit the file in the XAML editor to fix the error.</source>
-        <target state="translated">이 프로젝트에 대한 응용 프로그램 정의 파일을 로드하는 동안 오류가 발생했습니다.  ‘{0}’ 파일을 구문 분석할 수 없습니다.  XAML 편집기에서 파일을 편집하여 오류를 수정하세요.</target>
+        <target state="translated">이 프로젝트에 대한 애플리케이션 정의 파일을 로드하는 동안 오류가 발생했습니다.  '{0}' 파일을 구문 분석할 수 없습니다.  오류를 수정하려면 XAML 편집기에서 파일을 편집하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_CantReadPropertyValue">
@@ -2750,12 +2750,12 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_WPFApp_CantFindAppXaml">
         <source>This project does not contain an application definition file.</source>
-        <target state="translated">이 프로젝트에 응용 프로그램 정의 파일이 없습니다.</target>
+        <target state="translated">이 프로젝트에 애플리케이션 정의 파일이 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_CouldntCreateApplicationEventsFile_1Arg">
         <source>An error occurred trying to create the application events file.  {0}</source>
-        <target state="translated">응용 프로그램 이벤트 파일을 만드는 동안 오류가 발생했습니다. {0}</target>
+        <target state="translated">애플리케이션 이벤트 파일을 만드는 동안 오류가 발생했습니다. {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="General_InvalidArgument_1Arg">
@@ -2765,7 +2765,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_CommandLineApp_WPF">
         <source>WPF Console Application</source>
-        <target state="translated">WPF 콘솔 응용 프로그램</target>
+        <target state="translated">WPF 콘솔 애플리케이션</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WindowsClassLib_WPF">
@@ -2780,7 +2780,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_Application_NoManifestText">
         <source>Create application without a manifest</source>
-        <target state="translated">매니페스트 없이 응용 프로그램 만들기</target>
+        <target state="translated">매니페스트 없이 애플리케이션 만들기</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_BadManifest">
@@ -2795,12 +2795,12 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_Services_HelpLabelText">
         <source>Client application services enable your Windows-based applications to use the ASP.NET login (authentication), roles, and profile (settings) services.  </source>
-        <target state="translated">클라이언트 응용 프로그램 서비스를 사용하면 Windows 기반 응용 프로그램에서 ASP.NET 로그인(인증), 역할 및 프로필(설정) 서비스를 사용할 수 있습니다.  </target>
+        <target state="translated">클라이언트 애플리케이션 서비스를 사용하면 Windows 기반 애플리케이션에서 ASP.NET 로그인(인증), 역할 및 프로필(설정) 서비스를 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_HelpLabelLink">
         <source>Learn more about client application services...</source>
-        <target state="translated">클라이언트 응용 프로그램 서비스에 대한 자세한 정보...</target>
+        <target state="translated">클라이언트 애플리케이션 서비스에 대한 자세한 정보...</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ServicesAdvancedPage_Title">
@@ -2810,12 +2810,12 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_Services_ConfirmRemoveServices">
         <source>Disabling application services will clear the default services for Authentication, Roles, and Settings.  Click OK to disable application services.</source>
-        <target state="translated">응용 프로그램 서비스를 사용하지 않도록 설정하면 인증, 역할 및 설정에 대한 기본 서비스가 지워집니다.  응용 프로그램 서비스를 사용하지 않도록 설정하려면 [확인]을 클릭하세요.</target>
+        <target state="translated">애플리케이션 서비스를 사용하지 않도록 설정하면 인증, 역할 및 설정에 대한 기본 서비스가 지워집니다.  애플리케이션 서비스를 사용하지 않도록 설정하려면 [확인]을 클릭하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_ConfirmRemoveServices_Caption">
         <source>Disable Application Services</source>
-        <target state="translated">응용 프로그램 서비스 사용 안 함</target>
+        <target state="translated">애플리케이션 서비스 사용 안 함</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_Seconds">
@@ -2840,12 +2840,12 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">
         <source>To enable client application services, you must set the Target Framework for your application to .NET Framework 3.5 or later. In C#, you can do this on the Application property page. In Visual Basic, you can do this one the Compile property page by clicking Advanced Compile Options.</source>
-        <target state="translated">클라이언트 응용 프로그램 서비스를 사용하려면 응용 프로그램의 대상 프레임워크를 .NET Framework 3.5 이상으로 설정해야 합니다. C#에서는 [응용 프로그램]5D; 속성 페이지에서 이를 수행할 수 있습니다. Visual Basic에서는 [컴파일]5D; 속성 페이지에서 [고급 컴파일 옵션]5D;을 클릭하면 이를 수행할 수 있습니다.</target>
+        <target state="translated">클라이언트 애플리케이션 서비스를 사용하려면 애플리케이션의 대상 프레임워크를 .NET Framework 3.5 이상으로 설정해야 합니다. C#에서는 [애플리케이션] 속성 페이지에서 이를 수행할 수 있습니다. Visual Basic에서는 [컴파일] 속성 페이지에서 [고급 컴파일 옵션]을 클릭하면 이를 수행할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidAppConfigXml">
         <source>An error occurred while reading the Application configuration file.  The file might be corrupted or contain invalid XML.</source>
-        <target state="translated">지정한 응용 프로그램 구성 파일을 읽는 동안 오류가 발생했습니다.  파일이 손상되었거나 잘못된 XML이 포함되어 있습니다.</target>
+        <target state="translated">지정한 애플리케이션 구성 파일을 읽는 동안 오류가 발생했습니다.  파일이 손상되었거나 잘못된 XML이 포함되어 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidUrl">
@@ -2855,17 +2855,17 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidUrls">
         <source>A service URL in the application configuration file is not in the expected format.</source>
-        <target state="translated">응용 프로그램 구성 파일의 서비스 URL 형식이 잘못되었습니다.</target>
+        <target state="translated">애플리케이션 구성 파일의 서비스 URL 형식이 잘못되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_ConnectionStringsDontMatch">
         <source>Authentication, Roles and Web Settings providers have been configured via the Application configuration file such that they do not share a common connection string.</source>
-        <target state="translated">응용 프로그램 구성 파일을 통해 인증, 역할 및 웹 설정 공급자가 공용 연결 문자열을 공유하지 않도록 구성되었습니다.</target>
+        <target state="translated">애플리케이션 구성 파일을 통해 인증, 역할 및 웹 설정 공급자가 공용 연결 문자열을 공유하지 않도록 구성되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_connectionStringValueDefaultDisplayValue">
         <source>Specify a connection string to a SQL Server database, or use the special connection string "Data Source = |SQL/CE|", which causes SQL Server Compact to generate local database files for offline storage.</source>
-        <target state="translated">SQL Server 데이터베이스에 대한 연결 문자열을 지정하거나 "Data Source = |SQL/CE|"라는 특정 연결 문자열을 사용하세요. 이 특정 연결 문자열을 사용하면 SQL Server Compact에서 오프라인 저장소에 로컬 데이터베이스 파일을 생성합니다.</target>
+        <target state="translated">SQL Server 데이터베이스에 대한 연결 문자열을 지정하거나 "Data Source = |SQL/CE|"라는 특정 연결 문자열을 사용하세요. 이 특정 연결 문자열을 사용하면 SQL Server Compact에서 오프라인 스토리지에 로컬 데이터베이스 파일을 생성합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_ERR_UnreferencedTypeNameList_1Arg">
@@ -2885,7 +2885,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_WindowsFormsApp">
         <source>Windows Forms Application</source>
-        <target state="translated">Windows Forms 응용 프로그램</target>
+        <target state="translated">Windows Forms 애플리케이션</target>
         <note>The "Windows Forms" distinguishes it from a WPF application</note>
       </trans-unit>
       <trans-unit id="PPG_ServiceReferenceNamespaceDescription">
@@ -2930,7 +2930,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_XBAPOutOfTrustZoneToolTip">
         <source>The application will fail to run in the selected zone because of this requested elevated permission. Click the help link above for more info.</source>
-        <target state="translated">고급 권한이 없으므로 응용 프로그램을 선택한 영역에서 실행할 수 없습니다. 자세한 내용을 보려면 위에 있는 도움말 링크를 클릭하세요.</target>
+        <target state="translated">고급 권한이 없으므로 애플리케이션을 선택한 영역에서 실행할 수 없습니다. 자세한 내용을 보려면 위에 있는 도움말 링크를 클릭하세요.</target>
         <note />
       </trans-unit>
     </body>

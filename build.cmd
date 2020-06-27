@@ -1,7 +1,6 @@
 rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 @if "%_echo%"=="" echo off
-
-setlocal enableDelayedExpansion
+setlocal enableDelayedExpansion 
 
 :ARGUMENTS_VALIDATION
 if /I "%1" == "--help"  (goto :USAGE)
@@ -63,9 +62,10 @@ set BUILD_CORECLR=0
 set BUILD_FROMSOURCE=0
 set BUILD_VS=0
 set BUILD_FCS=0
-set BUILD_CONFIG=release
+set BUILD_CONFIG=Release
 set BUILD_DIAG=
 set BUILD_PUBLICSIGN=0
+set BUILD_FSHARP_PROJ=1
 
 set TEST_NET40_COMPILERUNIT_SUITE=0
 set TEST_NET40_COREUNIT_SUITE=0
@@ -108,10 +108,12 @@ if /i "%_autoselect%" == "1" (
 
 if /i "%_autoselect_tests%" == "1" (
     if /i "%BUILD_NET40_FSHARP_CORE%" == "1" (
+        set BUILD_NUGET=1
         set TEST_NET40_COREUNIT_SUITE=1
     )
 
     if /i "%BUILD_NET40%" == "1" (
+        set BUILD_NUGET=1
         set TEST_NET40_COMPILERUNIT_SUITE=1
         set TEST_NET40_COREUNIT_SUITE=1
         set TEST_NET40_FSHARP_SUITE=1
@@ -162,7 +164,6 @@ if /i "%ARG%" == "net40" (
 
 if /i "%ARG%" == "coreclr" (
     set _autoselect=0
-    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
     set BUILD_FROMSOURCE=1
 )
@@ -228,8 +229,8 @@ if /i "%ARG%" == "microbuild" (
     set CI=1
 
     REM redirecting TEMP directories
-    set TEMP=%~dp0%BUILD_CONFIG%\TEMP
-    set TMP=%~dp0%BUILD_CONFIG%\TEMP
+    set TEMP=%~dp0artifacts\tmp
+    set TMP=%~dp0artifacts\tmp
 )
 
 if /i "%ARG%" == "nuget" (
@@ -237,7 +238,7 @@ if /i "%ARG%" == "nuget" (
 
     set BUILD_PROTO=1
     set BUILD_NET40_FSHARP_CORE=1
-    set BUILD_PROTO_WITH_CORECLR_LKG=1
+    set BUILD_NET40=1
     set BUILD_CORECLR=1
     set BUILD_NUGET=1
 )
@@ -265,6 +266,7 @@ if /i "%ARG%" == "ci_part2" (
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NUGET=1
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARPQA_SUITE=1
@@ -295,6 +297,7 @@ if /i "%ARG%" == "ci_part4" (
     set BUILD_CORECLR=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
+    set BUILD_NUGET=1
     set BUILD_FCS=1
     set TEST_FCS=1
     set CI=1
@@ -319,11 +322,11 @@ if /i "%ARG%" == "diag" (
 )
 
 if /i "%ARG%" == "debug" (
-    set BUILD_CONFIG=debug
+    set BUILD_CONFIG=Debug
 )
 
 if /i "%ARG%" == "release" (
-    set BUILD_CONFIG=release
+    set BUILD_CONFIG=Release
 )
 
 if /i "%ARG%" == "test-sign" (
@@ -394,6 +397,7 @@ if /i "%ARG%" == "test-net40-ideunit" (
 if /i "%ARG%" == "test-net40-coreunit" (
     set _autoselect=0
     set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NUGET=1
     set TEST_NET40_COREUNIT_SUITE=1
 )
 
@@ -401,6 +405,7 @@ if /i "%ARG%" == "test-coreclr-coreunit" (
     set _autoselect=0
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
+    set BUILD_NUGET=1
     set TEST_CORECLR_COREUNIT_SUITE=1
 )
 
@@ -464,8 +469,13 @@ if /i "%TEST_NET40_FSHARP_SUITE" == "1" (
 )
 
 rem Decide if Proto need building
-if NOT EXIST Proto\net40\bin\fsc.exe (
+if NOT EXIST "%~dp0artifacts\bin\fsc\Proto\net472\fsc.exe" (
   set BUILD_PROTO=1
+)
+
+rem decide if FSharp.Proj needs building
+if "%BUILD_NET40%"=="0" if "%BUILD_NET40_FSHARP_CORE%"=="0" if "%BUILD_CORECLR%"=="0" if "%BUILD_VS%"=="0" if "%BUILD_FCS%"=="0" if "%TEST_NET40_COMPILERUNIT_SUITE%"=="0" if "%TEST_NET40_COREUNIT_SUITE%"=="0" if "%TEST_NET40_FSHARP_SUITE%"=="0" if "%TEST_NET40_FSHARPQA_SUITE%"=="0" if "%TEST_CORECLR_COREUNIT_SUITE%"=="0" if "%TEST_CORECLR_FSHARP_SUITE%"=="0" if "%TEST_VS_IDEUNIT_SUITE%"=="0" if "%TEST_FCS%"=="0" if "%TEST_END_2_END%"=="0" if "%COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES%"=="0" (
+   set BUILD_FSHARP_PROJ=0
 )
 
 rem
@@ -483,7 +493,6 @@ echo BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG%
 echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_NET40_FSHARP_CORE=%BUILD_NET40_FSHARP_CORE%
 echo BUILD_CORECLR=%BUILD_CORECLR%
-echo BUILD_FROMSOURCE=%BUILD_FROMSOURCE%
 echo BUILD_VS=%BUILD_VS%
 echo BUILD_FCS=%BUILD_FCS%
 echo BUILD_SETUP=%BUILD_SETUP%
@@ -491,6 +500,8 @@ echo BUILD_NUGET=%BUILD_NUGET%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 echo BUILD_MICROBUILD=%BUILD_MICROBUILD%
+echo BUILD_FROMSOURCE=%BUILD_FROMSOURCE%
+echo BUILD_FSHARP_PROJ=%BUILD_FSHARP_PROJ%
 echo.
 echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
@@ -608,19 +619,15 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 echo ---------------- Done with prepare, starting package restore ----------------
 
-:: create a global.json
-set /p DOTNET_TOOLS_VERSION=<"%~dp0DotnetCLIToolsVersion.txt"
-echo { "sdk": { "version": "%DOTNET_TOOLS_VERSION%" } }>global.json
-
 :: Restore the Tools directory
 call "%~dp0init-tools.cmd"
-set _dotnetexe=%~dp0Tools\dotnet20\dotnet.exe
-set path=%~dp0Tools\dotnet20\;%path%
+set _dotnetexe=%~dp0artifacts\toolset\dotnet\dotnet.exe
+set path=%~dp0artifacts\toolset\dotnet;%path%
 
 if not "%PB_PackageVersionPropsUrl%" == "" (
     echo ----------- do dependency uptake check -----------
 
-    set dependencyUptakeDir=%~dp0Tools\dependencyUptake
+    set dependencyUptakeDir=%~dp0artifacts\dependencyUptake
     if not exist "!dependencyUptakeDir!" mkdir "!dependencyUptakeDir!"
 
     :: download package version overrides
@@ -647,31 +654,31 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 )
 
 echo ---------------- Done with package restore, starting proto ------------------------
-set logdir=%~dp0%BUILD_CONFIG%\logs
+set logdir=%~dp0artifacts\log\%BUILD_CONFIG%
 if not exist "!logdir!" mkdir "!logdir!"
 
 rem Build Proto
 if "%BUILD_PROTO%" == "1" (
-    rmdir /s /q Proto
+    rmdir /s /q artifacts/bin/fsc/Proto
 
-    echo %_msbuildexe% proto.proj /t:Restore /bl:%~dp0Proto\proto.proj.restore.binlog
-         %_msbuildexe% proto.proj /t:Restore /bl:%~dp0Proto\proto.proj.restore.binlog
+    echo %_msbuildexe% proto.proj /t:Restore /bl:%~dp0artifacts\log\Proto\proto.proj.restore.binlog
+         %_msbuildexe% proto.proj /t:Restore /bl:%~dp0artifacts\log\Proto\proto.proj.restore.binlog
     @if ERRORLEVEL 1 echo Error restoring proto failed && goto :failure
 
-    echo %_msbuildexe% proto.proj /t:Build /bl:%~dp0Proto\proto.proj.build.binlog
-         %_msbuildexe% proto.proj /t:Build /bl:%~dp0Proto\proto.proj.build.binlog
+    echo %_msbuildexe% proto.proj /t:Build /bl:%~dp0artifacts\log\Proto\proto.proj.build.binlog
+         %_msbuildexe% proto.proj /t:Build /bl:%~dp0artifacts\log\Proto\proto.proj.build.binlog
     @if ERRORLEVEL 1 echo Error building proto failed && goto :failure
 )
 
 echo ---------------- Done with SDK restore, starting build ------------------------
 
-if "%BUILD_PHASE%" == "1" (
+if "%BUILD_PHASE%" == "1" if "%BUILD_FSHARP_PROJ%" == "1" (
 
-    echo %_msbuildexe% fsharp.proj /t:Restore /p:Configuration=%BUILD_CONFIG% /bl:%~dp0%BUILD_CONFIG%\fsharp.proj.restore.binlog
-         %_msbuildexe% fsharp.proj /t:Restore /p:Configuration=%BUILD_CONFIG% /bl:%~dp0%BUILD_CONFIG%\fsharp.proj.restore.binlog
+    echo %_dotnetexe% restore fsharp.proj /p:Configuration=%BUILD_CONFIG% /bl:!logdir!\fsharp.proj.restore.binlog
+         %_dotnetexe% restore fsharp.proj /p:Configuration=%BUILD_CONFIG% /bl:!logdir!\fsharp.proj.restore.binlog
 
-    echo %_msbuildexe% fsharp.proj /t:Build /p:Configuration=%BUILD_CONFIG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN% /bl:%~dp0%BUILD_CONFIG%\fsharp.proj.build.binlog
-         %_msbuildexe% fsharp.proj /t:Build /p:Configuration=%BUILD_CONFIG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN% /bl:%~dp0%BUILD_CONFIG%\fsharp.proj.build.binlog
+    echo %_msbuildexe% fsharp.proj /t:Build /p:Configuration=%BUILD_CONFIG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN% /bl:!logdir!\fsharp.proj.build.binlog
+         %_msbuildexe% fsharp.proj /t:Build /p:Configuration=%BUILD_CONFIG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN% /bl:!logdir!\fsharp.proj.build.binlog
 
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
@@ -681,8 +688,8 @@ set asmvercheckpath=%~dp0tests\fsharpqa\testenv\src\AssemblyVersionCheck
 
 if "%BUILD_NET40%" == "1" (
   echo #r @"%USERPROFILE%\.nuget\packages\Newtonsoft.Json\9.0.1\lib\net45\Newtonsoft.Json.dll">%asmvercheckpath%\assemblies.fsx
-  echo "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
-       "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
+  echo "%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net472\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0artifacts"
+       "%~dp0artifacts\bin\fsi\%BUILD_CONFIG%\net472\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0artifacts"
   if ERRORLEVEL 1 echo Error verifying assembly versions and commit hashes. && goto :failure
 )
 
@@ -692,55 +699,39 @@ if not "%SIGN_TYPE%" == "" (
     echo %_msbuildexe% build\projects\Signing.proj /t:Restore
          %_msbuildexe% build\projects\Signing.proj /t:Restore
 
-    echo %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:ConfigFile=%~dp0build\config\AssemblySignToolData.json
-         %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:ConfigFile=%~dp0build\config\AssemblySignToolData.json
+    echo %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasePath=%~dp0artifacts /p:ConfigFile=%~dp0build\config\AssemblySignToolData.json
+         %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasePath=%~dp0artifacts /p:ConfigFile=%~dp0build\config\AssemblySignToolData.json
 
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
 
-echo ---------------- Done with assembly signing, start package creation ---------------
-
-echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /t:Pack /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
-     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG% /t:Pack /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-nuget-packages.build.%BUILD_CONFIG%.binlog
-if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
-
 if not "%SIGN_TYPE%" == "" (
-    echo %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:ConfigFile=%~dp0build\config\PackageSignToolData.json
-         %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:ConfigFile=%~dp0build\config\PackageSignToolData.json
+    echo %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasepath=%~dp0artifacts\packages\%BUILD_CONFIG% /p:ConfigFile=%~dp0build\config\PackageSignToolData.json
+         %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasepath=%~dp0artifacts\packages\%BUILD_CONFIG% /p:ConfigFile=%~dp0build\config\PackageSignToolData.json
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
 
 if "%BUILD_SETUP%" == "1" (
-    echo %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
-         %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
+    echo %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:!logdir!\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%  /bl:!logdir!\msbuild.build-insertion.build.%BUILD_CONFIG%.binlog
     if ERRORLEVEL 1 echo Error building insertion packages && goto :failure
 )
 
 if not "%SIGN_TYPE%" == "" (
-    echo %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:ConfigFile=%~dp0build\config\InsertionSignToolData.json
-         %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:ConfigFile=%~dp0build\config\InsertionSignToolData.json
+    echo %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasepath=%~dp0artifacts\VSSetup\%BUILD_CONFIG%\Insertion /p:ConfigFile=%~dp0build\config\InsertionSignToolData.json
+         %_msbuildexe% build\projects\Signing.proj /t:DoSigning /p:SignType=%SIGN_TYPE% /p:Configuration=%BUILD_CONFIG% /p:BinaryBasePath=%~dp0artifacts\VSSetup\%BUILD_CONFIG%\Insertion /p:ConfigFile=%~dp0build\config\InsertionSignToolData.json
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
 
 echo ---------------- Done with signing, building insertion files ---------------
 
 if "%BUILD_SETUP%" == "1" (
-    echo %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG% /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
-         %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG% /bl:%~dp0%BUILD_CONFIG%\logs\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
+    echo %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG% /bl:!logdir!\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
+         %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG% /bl:!logdir!\msbuild.setup-swix.build.%BUILD_CONFIG%.binlog
     if ERRORLEVEL 1 echo Error building .vsmanproj && goto :failure
 )
 
 echo ---------------- Done building insertion files, starting pack/update/prepare ---------------
-
-if "%BUILD_NET40_FSHARP_CORE%" == "1" (
-  echo ----------------  start update.cmd ---------------
-  call src\update.cmd %BUILD_CONFIG% -ngen
-)
-
-if "%COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES%" == "1" (
-  echo ----------------  copy fscomp resource for build from sources ---------------
-  copy /y src\fsharp\FSharp.Compiler.Private\obj\%BUILD_CONFIG%\net40\FSComp.* src\buildfromsource\FSharp.Compiler.Private
-)
 
 set X86_PROGRAMFILES=%ProgramFiles%
 if "%OSARCH%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
@@ -787,26 +778,31 @@ if not exist "%link_exe%" (
 
 if /I not "%single_threaded%" == "true" (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
-set FSCBINPATH=%~dp0%BUILD_CONFIG%\net40\bin
-set RESULTSDIR=%~dp0tests\TestResults
-if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
+set FSCBINPATH=%~dp0artifacts\bin\fsc\%BUILD_CONFIG%\net472
 
 ECHO FSCBINPATH=%FSCBINPATH%
-ECHO RESULTSDIR=%RESULTSDIR%
 ECHO link_exe=%link_exe%
 
 REM ---------------- test-net40-fsharp  -----------------------
 
+set TESTLOGDIR=%~dp0artifacts\TestResults\%BUILD_CONFIG%
 if "%TEST_NET40_FSHARP_SUITE%" == "1" (
 
-    set LOGFILE=%~dp0tests\TestResults\FSharp.Tests.FSharpSuite.net40.trx
-    echo "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
-         "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
+    set LOGFILE=%TESTLOGDIR%\FSharp.Tests.FSharpSuite_net472.trx
+    echo "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo --------------------------------------------------------------
         echo Error: Running tests net40-fsharp failed, see file `!LOGFILE!`
         echo --------------------------------------------------------------
+        goto :failure
+    )
+
+    if not exist "!LOGFILE!" (
+        echo --------------------------------------------------------
+        echo Test results file !LOGFILE! not found, ensure tests ran.
+        echo --------------------------------------------------------
         goto :failure
     )
 )
@@ -815,9 +811,9 @@ REM ---------------- test-fcs  -----------------------
 
 if "%TEST_FCS%" == "1" (
 
-    set LOGFILE=%~dp0tests\TestResults\FSharp.Compiler.Service.Tests.net40.trx
-    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
-         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+    set LOGFILE=%TESTLOGDIR%\FSharp.Compiler.Service.Tests_net46.trx
+    echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net46 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo --------------------------------------------------------------
@@ -826,7 +822,14 @@ if "%TEST_FCS%" == "1" (
         goto :failure
     )
 
-    set LOGFILE=%~dp0tests\TestResults\FSharp.Compiler.Service.Tests.coreclr.trx
+    if not exist "!LOGFILE!" (
+        echo --------------------------------------------------------
+        echo Test results file !LOGFILE! not found, ensure tests ran.
+        echo --------------------------------------------------------
+        goto :failure
+    )
+
+    set LOGFILE=%TESTLOGDIR%\FSharp.Compiler.Service.Tests_netcoreapp2.0.trx
     echo "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
          "%_dotnetexe%" test "%~dp0fcs\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
 
@@ -834,6 +837,13 @@ if "%TEST_FCS%" == "1" (
         echo --------------------------------------------------------------
         echo Error: Running coreclr fcs tests, see file `!LOGFILE!`
         echo --------------------------------------------------------------
+        goto :failure
+    )
+
+    if not exist "!LOGFILE!" (
+        echo --------------------------------------------------------
+        echo Test results file !LOGFILE! not found, ensure tests ran.
+        echo --------------------------------------------------------
         goto :failure
     )
 )
@@ -871,6 +881,7 @@ if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
     set perlexe=%USERPROFILE%\.nuget\packages\StrawberryPerl64\5.22.2.1\Tools\perl\bin\perl.exe
     if not exist !perlexe! (echo Error: perl was not downloaded from check the packages directory: !perlexe! && goto :failure )
 
+    set RESULTSDIR=%~dp0artifacts\TestResults\%BUILD_CONFIG%
     set OUTPUTFILE=test-net40-fsharpqa-results.log
     set ERRORFILE=test-net40-fsharpqa-errors.log
     set FAILENV=test-net40-fsharpqa-errors
@@ -881,9 +892,10 @@ if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
 
     popd
     if ERRORLEVEL 1 (
-        type "%RESULTSDIR%\!OUTPUTFILE!"
         echo -----------------------------------------------------------------
-        type "%RESULTSDIR%\!ERRORFILE!"
+        type "!RESULTSDIR!\!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
+        type "!RESULTSDIR!\!ERRORFILE!"
         echo -----------------------------------------------------------------
         echo Error: Running tests net40-fsharpqa failed, see logs above -- FAILED
         echo -----------------------------------------------------------------
@@ -895,7 +907,7 @@ REM ---------------- net40-compilerunit  -----------------------
 
 if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
 
-    set LOGFILE=%~dp0tests\TestResults\FSharp.Compiler.UnitTests.net40.trx
+    set LOGFILE=%TESTLOGDIR%\FSharp.Compiler.UnitTests_net472.trx
     echo "%_dotnetexe%" test "%~dp0tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
          "%_dotnetexe%" test "%~dp0tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
@@ -906,7 +918,14 @@ if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
         goto :failure
     )
 
-    set LOGFILE=%~dp0tests\TestResults\FSharp.Build.UnitTests.net40.trx
+    if not exist "!LOGFILE!" (
+        echo --------------------------------------------------------
+        echo Test results file !LOGFILE! not found, ensure tests ran.
+        echo --------------------------------------------------------
+        goto :failure
+    )
+
+    set LOGFILE=%TESTLOGDIR%\FSharp.Build.UnitTests_net472.trx
     echo "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
          "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
@@ -916,13 +935,20 @@ if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
         echo -----------------------------------------------------------------
         goto :failure
     )
+
+    if not exist "!LOGFILE!" (
+        echo --------------------------------------------------------
+        echo Test results file !LOGFILE! not found, ensure tests ran.
+        echo --------------------------------------------------------
+        goto :failure
+    )
 )
 
 REM ---------------- net40-coreunit  -----------------------
 
 if "%TEST_NET40_COREUNIT_SUITE%" == "1" (
 
-    set LOGFILE=%~dp0tests\TestResults\FSharp.Core.UnitTests.net40.trx
+    set LOGFILE=%TESTLOGDIR%\FSharp.Core.UnitTests_net472.trx
     echo "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
          "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
@@ -932,13 +958,20 @@ if "%TEST_NET40_COREUNIT_SUITE%" == "1" (
         echo -----------------------------------------------------------------
         goto :failure
     )
+
+    if not exist "!LOGFILE!" (
+        echo --------------------------------------------------------
+        echo Test results file !LOGFILE! not found, ensure tests ran.
+        echo --------------------------------------------------------
+        goto :failure
+    )
 )
 
 REM  ---------------- coreclr-coreunit  -----------------------
 
 if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" (
 
-    set LOGFILE=%~dp0tests\TestResults\FSharp.Build.UnitTests.coreclr.trx
+    set LOGFILE=%TESTLOGDIR%\FSharp.Build.UnitTests_netcoreapp2.0.trx
     echo "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
          "%_dotnetexe%" test "%~dp0tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
 
@@ -949,7 +982,14 @@ if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" (
         goto :failure
     )
 
-    set LOGFILE=%~dp0tests\TestResults\FSharp.Core.UnitTests.coreclr.trx
+    if not exist "!LOGFILE!" (
+        echo --------------------------------------------------------
+        echo Test results file !LOGFILE! not found, ensure tests ran.
+        echo --------------------------------------------------------
+        goto :failure
+    )
+
+    set LOGFILE=%TESTLOGDIR%\FSharp.Core.UnitTests_netcoreapp2.0.trx
     echo "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
          "%_dotnetexe%" test "%~dp0tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
 
@@ -959,14 +999,21 @@ if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" (
         echo ------------------------------------------------------------------
         goto :failure
     )
+
+    if not exist "!LOGFILE!" (
+        echo --------------------------------------------------------
+        echo Test results file !LOGFILE! not found, ensure tests ran.
+        echo --------------------------------------------------------
+        goto :failure
+    )
 )
 
 REM ---------------- coreclr-fsharp  -----------------------
 
 if "%TEST_CORECLR_FSHARP_SUITE%" == "1" (
-    set LOGFILE=%~dp0tests\TestResults\FSharp.Tests.FSharpSuite.coreclr.trx
-    echo "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\coreclr\bin"
-         "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\coreclr\bin"
+    set LOGFILE=%TESTLOGDIR%\FSharp.Tests.FSharpSuite_netcoreapp2.0.trx
+    echo "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0tests\fsharp\FSharp.Tests.FSharpSuite.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f netcoreapp2.0 -l "trx;LogFileName=!LOGFILE!"
 
     if errorlevel 1 (
         echo ----------------------------------------------------------------
@@ -974,12 +1021,19 @@ if "%TEST_CORECLR_FSHARP_SUITE%" == "1" (
         echo ----------------------------------------------------------------
         goto :failure
     )
+
+    if not exist "!LOGFILE!" (
+        echo --------------------------------------------------------
+        echo Test results file !LOGFILE! not found, ensure tests ran.
+        echo --------------------------------------------------------
+        goto :failure
+    )
 )
 
 REM ---------------- vs-ideunit  -----------------------
 
 if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
-    set LOGFILE=%~dp0tests\TestResults\GetTypesVSUnitTests.net40.trx
+    set LOGFILE=%TESTLOGDIR%\GetTypesVSUnitTests_net472.trx
     echo "%_dotnetexe%" test "%~dp0vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
          "%_dotnetexe%" test "%~dp0vsintegration\tests\GetTypesVSUnitTests\GetTypesVSUnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
 
@@ -990,13 +1044,27 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         goto :failure
     )
 
-    set LOGFILE=%~dp0tests\TestResults\VisualFSharp.UnitTests.net40.trx
-    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
-         "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!" -o "%~dp0%BUILD_CONFIG%\net40\bin"
+    if not exist "!LOGFILE!" (
+        echo --------------------------------------------------------
+        echo Test results file !LOGFILE! not found, ensure tests ran.
+        echo --------------------------------------------------------
+        goto :failure
+    )
+
+    set LOGFILE=%TESTLOGDIR%\VisualFSharp.UnitTests_net472.trx
+    echo "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
+         "%_dotnetexe%" test "%~dp0vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" --no-restore --no-build -c %BUILD_CONFIG% -f net472 -l "trx;LogFileName=!LOGFILE!"
     if errorlevel 1 (
         echo ------------------------------------------------------------
         echo Error: Running tests vs-ideunit failed, see file `!LOGFILE!`
         echo ------------------------------------------------------------
+        goto :failure
+    )
+
+    if not exist "!LOGFILE!" (
+        echo --------------------------------------------------------
+        echo Test results file !LOGFILE! not found, ensure tests ran.
+        echo --------------------------------------------------------
         goto :failure
     )
 )
@@ -1005,6 +1073,7 @@ goto :success
 REM ------ exit -------------------------------------
 :failure
 endlocal
+@echo
 exit /b 1
 
 :success

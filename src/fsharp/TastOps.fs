@@ -1773,7 +1773,8 @@ let isRefTy g ty =
         isFunTy g ty || 
         isReprHiddenTy g ty || 
         isFSharpObjModelRefTy g ty || 
-        isUnitTy g ty
+        isUnitTy g ty ||
+        (isAnonRecdTy g ty && not (isStructAnonRecdTy g ty))
     )
 
 // ECMA C# LANGUAGE SPECIFICATION, 27.2
@@ -3442,7 +3443,7 @@ module DebugPrint = begin
     let rec MemberL (v:Val) (membInfo:ValMemberInfo) = 
         (aboveListL [ wordL(tagText "compiled_name! = ") ^^ wordL (tagText v.CompiledName) ;
                       wordL(tagText "membInfo-slotsig! = ") ^^ listL slotSigL membInfo.ImplementedSlotSigs ]) 
-    and vspecAtBindL  v = 
+    and valAtBindL  v = 
         let vL = valL v  in
         let mutL = (if v.IsMutable then wordL(tagText "mutable") ++ vL else vL)
         mutL  --- (aboveListL (List.concat [[wordL(tagText ":") ^^ typeL v.Type];
@@ -3512,7 +3513,7 @@ module DebugPrint = begin
             then emptyL 
             else 
                 let iimplsLs = iimpls |> List.map (fun (ty, _, _) -> wordL(tagText "interface") --- typeL ty)
-                let adhocLs  = adhoc  |> List.map (fun vref -> vspecAtBindL  vref.Deref)
+                let adhocLs  = adhoc  |> List.map (fun vref -> valAtBindL  vref.Deref)
                 (wordL(tagText "with") @@-- aboveListL (iimplsLs @ adhocLs)) @@ wordL(tagText "end")
 
         let layoutUnionCaseArgTypes argtys = sepListL (wordL(tagText "*")) (List.map typeL argtys)
@@ -3559,7 +3560,7 @@ module DebugPrint = begin
                     let vsprs = 
                         tycon.MembersOfFSharpTyconSorted 
                             |> List.filter (fun v -> v.IsDispatchSlot) 
-                            |> List.map (fun vref -> vspecAtBindL vref.Deref)
+                            |> List.map (fun vref -> valAtBindL vref.Deref)
                     let vals  = tycon.TrueFieldsAsList |> List.map (fun f -> (if f.IsStatic then wordL(tagText "static") else emptyL) ^^ wordL(tagText "val") ^^ layoutRecdField f)
                     let alldecls = inherits @ vsprs @ vals
                     let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
@@ -3590,7 +3591,7 @@ module DebugPrint = begin
     //--------------------------------------------------------------------------
 
     and bindingL (TBind(v, repr, _)) =
-        vspecAtBindL v --- (wordL(tagText "=") ^^ exprL repr)
+        valAtBindL v --- (wordL(tagText "=") ^^ exprL repr)
 
     and exprL expr = exprWrapL false expr
     and atomL expr = exprWrapL true  expr // true means bracket if needed to be atomic expr 
@@ -3628,11 +3629,11 @@ module DebugPrint = begin
                     | ThenDoSeq   -> "; (*ThenDo*)" 
                 ((exprL x0 ^^ rightL (tagText flag)) @@ exprL x1) |> wrap
             | Expr.Lambda(_, _, baseValOpt, argvs, body, _, _)  -> 
-                let formalsL = spaceListL (List.map vspecAtBindL argvs) in
+                let formalsL = spaceListL (List.map valAtBindL argvs) in
                 let bindingL = 
                     match baseValOpt with
                     | None       -> wordL(tagText "lam") ^^ formalsL ^^ rightL(tagText ".")
-                    | Some basev -> wordL(tagText "lam") ^^ (leftL(tagText "base=") ^^ vspecAtBindL basev) --- formalsL ^^ rightL(tagText ".") in
+                    | Some basev -> wordL(tagText "lam") ^^ (leftL(tagText "base=") ^^ valAtBindL basev) --- formalsL ^^ rightL(tagText ".") in
                 (bindingL ++ exprL body) |> wrap
             | Expr.TyLambda(_, argtyvs, body, _, _) -> 
                 ((wordL(tagText "LAM")    ^^ spaceListL (List.map typarL       argtyvs) ^^ rightL(tagText ".")) ++ exprL body) |> wrap
@@ -3727,7 +3728,7 @@ module DebugPrint = begin
             | Expr.Obj (_lambdaId, ty, basev, ccall, overrides, iimpls, _)              -> 
                 wordL(tagText "OBJ:") ^^ aboveListL [typeL ty;
                                             exprL ccall;
-                                            optionL vspecAtBindL basev;
+                                            optionL valAtBindL basev;
                                             aboveListL (List.map overrideL overrides);
                                             aboveListL (List.map iimplL iimpls)]
 
@@ -3812,7 +3813,7 @@ module DebugPrint = begin
     and tmethodL (TObjExprMethod(TSlotSig(nm, _, _, _, _, _), _, tps, vs, e, _)) =
         (wordL(tagText "TObjExprMethod") --- (wordL (tagText nm)) ^^ wordL(tagText "=")) --
           (wordL(tagText "METH-LAM") --- angleBracketListL (List.map typarL       tps) ^^ rightL(tagText ".")) ---
-          (wordL(tagText "meth-lam") --- tupleL (List.map (List.map vspecAtBindL >> tupleL) vs)  ^^ rightL(tagText ".")) ---
+          (wordL(tagText "meth-lam") --- tupleL (List.map (List.map valAtBindL >> tupleL) vs)  ^^ rightL(tagText ".")) ---
           (atomL e) 
     and overrideL tmeth     = wordL(tagText "with") ^^ tmethodL tmeth 
     and iimplL (ty, tmeths) = wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map tmethodL tmeths) 
@@ -3850,33 +3851,33 @@ let SigTypeOfImplFile (TImplFile(_, _, mexpr, _, _, _)) = mexpr.Type
 //--------------------------------------------------------------------------
 
 type SignatureRepackageInfo = 
-    { mrpiVals  : (ValRef * ValRef) list;
-      mrpiEntities: (TyconRef * TyconRef) list  }
+    { RepackagedVals  : (ValRef * ValRef) list;
+      RepackagedEntities: (TyconRef * TyconRef) list  }
     
-    member remapInfo.ImplToSigMapping = { TypeEquivEnv.Empty with EquivTycons = TyconRefMap.OfList remapInfo.mrpiEntities }
-    static member Empty = { mrpiVals = []; mrpiEntities= [] } 
+    member remapInfo.ImplToSigMapping = { TypeEquivEnv.Empty with EquivTycons = TyconRefMap.OfList remapInfo.RepackagedEntities }
+    static member Empty = { RepackagedVals = []; RepackagedEntities= [] } 
 
 type SignatureHidingInfo = 
-    { mhiTycons     : Zset<Tycon>; 
-      mhiTyconReprs : Zset<Tycon>;  
-      mhiVals       : Zset<Val>; 
-      mhiRecdFields : Zset<RecdFieldRef>; 
-      mhiUnionCases : Zset<UnionCaseRef> }
+    { HiddenTycons     : Zset<Tycon>; 
+      HiddenTyconReprs : Zset<Tycon>;  
+      HiddenVals       : Zset<Val>; 
+      HiddenRecdFields : Zset<RecdFieldRef>; 
+      HiddenUnionCases : Zset<UnionCaseRef> }
 
     static member Empty = 
-        { mhiTycons      = Zset.empty tyconOrder; 
-          mhiTyconReprs  = Zset.empty tyconOrder;  
-          mhiVals        = Zset.empty valOrder; 
-          mhiRecdFields  = Zset.empty recdFieldRefOrder; 
-          mhiUnionCases  = Zset.empty unionCaseRefOrder }
+        { HiddenTycons      = Zset.empty tyconOrder; 
+          HiddenTyconReprs  = Zset.empty tyconOrder;  
+          HiddenVals        = Zset.empty valOrder; 
+          HiddenRecdFields  = Zset.empty recdFieldRefOrder; 
+          HiddenUnionCases  = Zset.empty unionCaseRefOrder }
 
 let addValRemap v v' tmenv = 
     { tmenv with valRemap= tmenv.valRemap.Add v (mkLocalValRef v')  }
 
 let mkRepackageRemapping mrpi = 
-    { valRemap = ValMap.OfList (mrpi.mrpiVals |> List.map (fun (vref, x) -> vref.Deref, x));
+    { valRemap = ValMap.OfList (mrpi.RepackagedVals |> List.map (fun (vref, x) -> vref.Deref, x));
       tpinst = emptyTyparInst; 
-      tyconRefRemap = TyconRefMap.OfList mrpi.mrpiEntities
+      tyconRefRemap = TyconRefMap.OfList mrpi.RepackagedEntities
       removeTraitSolutions = false }
 
 //--------------------------------------------------------------------------
@@ -3888,18 +3889,18 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
     match sigtyconOpt with 
     | None -> 
         // The type constructor is not present in the signature. Hence it is hidden. 
-        let mhi = { mhi with mhiTycons = Zset.add entity mhi.mhiTycons }
+        let mhi = { mhi with HiddenTycons = Zset.add entity mhi.HiddenTycons }
         (mrpi, mhi) 
     | Some sigtycon  -> 
         // The type constructor is in the signature. Hence record the repackage entry 
         let sigtcref = mkLocalTyconRef sigtycon
         let tcref = mkLocalTyconRef entity
-        let mrpi = { mrpi with mrpiEntities = ((tcref, sigtcref) :: mrpi.mrpiEntities) }
+        let mrpi = { mrpi with RepackagedEntities = ((tcref, sigtcref) :: mrpi.RepackagedEntities) }
         // OK, now look for hidden things 
         let mhi = 
             if (match entity.TypeReprInfo with TNoRepr -> false | _ -> true) && (match sigtycon.TypeReprInfo with TNoRepr -> true | _ -> false) then 
                 // The type representation is absent in the signature, hence it is hidden 
-                { mhi with mhiTyconReprs = Zset.add entity mhi.mhiTyconReprs } 
+                { mhi with HiddenTyconReprs = Zset.add entity mhi.HiddenTyconReprs } 
             else 
                 // The type representation is present in the signature. 
                 // Find the fields that have been hidden or which were non-public anyway. 
@@ -3912,7 +3913,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
                             | _ -> 
                                 // The field is not in the signature. Hence it is regarded as hidden. 
                                 let rfref = tcref.MakeNestedRecdFieldRef rfield
-                                { mhi with mhiRecdFields =  Zset.add rfref mhi.mhiRecdFields })
+                                { mhi with HiddenRecdFields =  Zset.add rfref mhi.HiddenRecdFields })
                         entity.AllFieldsArray
                 |> List.foldBack  (fun (ucase:UnionCase) mhi ->
                             match sigtycon.GetUnionCaseByName ucase.DisplayName with 
@@ -3922,7 +3923,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi) =
                             | _ -> 
                                 // The constructor is not in the signature. Hence it is regarded as hidden. 
                                 let ucref = tcref.MakeNestedUnionCaseRef ucase
-                                { mhi with mhiUnionCases =  Zset.add ucref mhi.mhiUnionCases })
+                                { mhi with HiddenUnionCases =  Zset.add ucref mhi.HiddenUnionCases })
                         (entity.UnionCasesAsList)  
         (mrpi, mhi) 
 
@@ -3931,13 +3932,13 @@ let accSubEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi)
     match sigtyconOpt with 
     | None -> 
         // The type constructor is not present in the signature. Hence it is hidden. 
-        let mhi = { mhi with mhiTycons = Zset.add entity mhi.mhiTycons }
+        let mhi = { mhi with HiddenTycons = Zset.add entity mhi.HiddenTycons }
         (mrpi, mhi) 
     | Some sigtycon  -> 
         // The type constructor is in the signature. Hence record the repackage entry 
         let sigtcref = mkLocalTyconRef sigtycon
         let tcref = mkLocalTyconRef entity
-        let mrpi = { mrpi with mrpiEntities = ((tcref, sigtcref) :: mrpi.mrpiEntities) }
+        let mrpi = { mrpi with RepackagedEntities = ((tcref, sigtcref) :: mrpi.RepackagedEntities) }
         (mrpi, mhi) 
 
 let valLinkageAEquiv g aenv (v1:Val) (v2:Val) = 
@@ -3955,11 +3956,11 @@ let accValRemap g aenv (msigty:ModuleOrNamespaceType) (implVal:Val) (mrpi, mhi) 
     match sigValOpt with 
     | None -> 
         if verbose then dprintf "accValRemap, hide = %s#%d\n" implVal.LogicalName implVal.Stamp
-        let mhi = { mhi with mhiVals = Zset.add implVal mhi.mhiVals }
+        let mhi = { mhi with HiddenVals = Zset.add implVal mhi.HiddenVals }
         (mrpi, mhi) 
     | Some (sigVal:Val)  -> 
         // The value is in the signature. Add the repackage entry. 
-        let mrpi = { mrpi with mrpiVals = (vref, mkLocalValRef sigVal) :: mrpi.mrpiVals }
+        let mrpi = { mrpi with RepackagedVals = (vref, mkLocalValRef sigVal) :: mrpi.RepackagedVals }
         (mrpi, mhi) 
 
 let getCorrespondingSigTy nm (msigty:ModuleOrNamespaceType) = 
@@ -4053,9 +4054,9 @@ let ComputeRemappingFromImplementationToSignature g mdef msigty =
 let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
     if not (canAccessFromEverywhere tycon.Accessibility) then 
         // The type constructor is not public, hence hidden at the assembly boundary. 
-        { mhi with mhiTycons = Zset.add tycon mhi.mhiTycons } 
+        { mhi with HiddenTycons = Zset.add tycon mhi.HiddenTycons } 
     elif not (canAccessFromEverywhere tycon.TypeReprAccessibility) then 
-        { mhi with mhiTyconReprs = Zset.add tycon mhi.mhiTyconReprs } 
+        { mhi with HiddenTyconReprs = Zset.add tycon mhi.HiddenTyconReprs } 
     else 
         mhi 
         |> Array.foldBack  
@@ -4063,7 +4064,7 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                    if not (canAccessFromEverywhere rfield.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
                        let rfref = tcref.MakeNestedRecdFieldRef rfield
-                       { mhi with mhiRecdFields = Zset.add rfref mhi.mhiRecdFields } 
+                       { mhi with HiddenRecdFields = Zset.add rfref mhi.HiddenRecdFields } 
                    else mhi)
                tycon.AllFieldsArray  
         |> List.foldBack  
@@ -4071,7 +4072,7 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                    if not (canAccessFromEverywhere ucase.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
                        let ucref = tcref.MakeNestedUnionCaseRef ucase
-                       { mhi with mhiUnionCases = Zset.add ucref mhi.mhiUnionCases } 
+                       { mhi with HiddenUnionCases = Zset.add ucref mhi.HiddenUnionCases } 
                    else mhi)
                (tycon.UnionCasesAsList)   
 
@@ -4086,7 +4087,7 @@ let accValHidingInfoAtAssemblyBoundary (vspec:Val) mhi =
        // anything that's not a module or member binding gets assembly visibility
        not vspec.IsMemberOrModuleBinding then 
         // The value is not public, hence hidden at the assembly boundary. 
-        { mhi with mhiVals = Zset.add vspec mhi.mhiVals } 
+        { mhi with HiddenVals = Zset.add vspec mhi.HiddenVals } 
     else 
         mhi
 
@@ -4121,10 +4122,10 @@ let IsHidden setF accessF remapF debugF =
         if verbose then dprintf "IsHidden, #mrmi = %d, %s = %b\n" mrmi.Length (showL (debugF x)) res;
         res
         
-let IsHiddenTycon     mrmi x = IsHidden (fun mhi -> mhi.mhiTycons)     (fun tc -> tc.Accessibility)        (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
-let IsHiddenTyconRepr mrmi x = IsHidden (fun mhi -> mhi.mhiTyconReprs) (fun v -> v.TypeReprAccessibility)  (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
-let IsHiddenVal       mrmi x = IsHidden (fun mhi -> mhi.mhiVals)       (fun v -> v.Accessibility)          (fun rpi x ->  (remapValRef rpi (mkLocalValRef x)).Deref) DebugPrint.valL mrmi x 
-let IsHiddenRecdField mrmi x = IsHidden (fun mhi -> mhi.mhiRecdFields) (fun rfref -> rfref.RecdField.Accessibility) (fun rpi x ->  remapRecdFieldRef rpi.tyconRefRemap x) DebugPrint.recdFieldRefL mrmi x 
+let IsHiddenTycon     mrmi x = IsHidden (fun mhi -> mhi.HiddenTycons)     (fun tc -> tc.Accessibility)        (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
+let IsHiddenTyconRepr mrmi x = IsHidden (fun mhi -> mhi.HiddenTyconReprs) (fun v -> v.TypeReprAccessibility)  (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
+let IsHiddenVal       mrmi x = IsHidden (fun mhi -> mhi.HiddenVals)       (fun v -> v.Accessibility)          (fun rpi x ->  (remapValRef rpi (mkLocalValRef x)).Deref) DebugPrint.valL mrmi x 
+let IsHiddenRecdField mrmi x = IsHidden (fun mhi -> mhi.HiddenRecdFields) (fun rfref -> rfref.RecdField.Accessibility) (fun rpi x ->  remapRecdFieldRef rpi.tyconRefRemap x) DebugPrint.recdFieldRefL mrmi x 
 
 
 //--------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -315,7 +315,7 @@ Selezionare un percorso della cartella valido.</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupFormLabelText">
         <source>Startup f&amp;orm:</source>
-        <target state="translated">&amp;Form di avvio:</target>
+        <target state="translated">F&amp;orm di avvio:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
@@ -754,7 +754,7 @@ Errore:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_AllPurposes">
         <source>&lt;All&gt;</source>
-        <target state="translated">&lt;Tutti&gt;</target>
+        <target state="translated">&lt;Tutto&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_PasswordMismatch">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="needs-review-translation">{0} x {1}</target>
+        <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -1894,52 +1894,52 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_ExistingFile">
         <source>&amp;Existing File...</source>
-        <target state="translated">&amp;File esistente...</target>
+        <target state="translated">File &amp;Esistente...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_String">
         <source>New &amp;String</source>
-        <target state="translated">&amp;Nuova stringa</target>
+        <target state="translated">Nuova &amp;Stringa</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image">
         <source>New &amp;Image</source>
-        <target state="translated">&amp;Nuova immagine</target>
+        <target state="translated">Nuova &amp;immagine</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_PNG">
         <source>&amp;PNG Image...</source>
-        <target state="translated">&amp;Immagine PNG...</target>
+        <target state="translated">Immagine &amp;PNG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_BMP">
         <source>&amp;BMP Image...</source>
-        <target state="translated">&amp;Immagine BMP...</target>
+        <target state="translated">Immagine &amp;BMP...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_GIF">
         <source>&amp;GIF Image...</source>
-        <target state="translated">&amp;Immagine GIF...</target>
+        <target state="translated">Immagine &amp;GIF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_JPEG">
         <source>&amp;JPEG Image...</source>
-        <target state="translated">&amp;Immagine JPEG...</target>
+        <target state="translated">Immagine &amp;JPEG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_TIFF">
         <source>&amp;TIFF Image...</source>
-        <target state="translated">&amp;Immagine TIFF...</target>
+        <target state="translated">Immagine &amp;TIFF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Icon">
         <source>New I&amp;con...</source>
-        <target state="translated">&amp;Nuova icona...</target>
+        <target state="translated">Nuova I&amp;cona...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_TextFile">
         <source>New &amp;Text File...</source>
-        <target state="translated">&amp;Nuovo file di testo...</target>
+        <target state="translated">Nuovo file di &amp;testo...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Type_BMP">
@@ -2512,7 +2512,7 @@ Aggiornare il valore nel file .settings?</target>
       </trans-unit>
       <trans-unit id="SD_MNU_RemoveSettingText">
         <source>R&amp;emove Setting</source>
-        <target state="translated">&amp;Rimuovi impostazione</target>
+        <target state="translated">R&amp;imuovi impostazione</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_FullDescriptionText">
@@ -2665,7 +2665,7 @@ Aggiornare il valore nel file .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Application_RootNamespaceJSharp">
         <source>Default pac&amp;kage:</source>
-        <target state="translated">&amp;Pacchetto predefinito:</target>
+        <target state="translated">Pacc&amp;hetto predefinito:</target>
         <note>J# Specific String for Root Namespace</note>
       </trans-unit>
       <trans-unit id="RSE_AccessModifier_Custom">
@@ -2720,7 +2720,7 @@ Aggiornare il valore nel file .settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">
         <source>Startup &amp;URI:</source>
-        <target state="translated">&amp;URI di avvio:</target>
+        <target state="translated">&amp;URI di Avvio:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_AppXamlOpenInUnsupportedEditor">

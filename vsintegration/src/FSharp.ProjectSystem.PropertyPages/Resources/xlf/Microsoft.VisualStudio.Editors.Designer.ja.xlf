@@ -103,7 +103,7 @@ Click OK to ignore and continue. Click CANCEL to choose a different output path.
       </trans-unit>
       <trans-unit id="PPG_KeyFileNewText">
         <source>&lt;New...&gt;</source>
-        <target state="translated">&lt;新規...&gt;</target>
+        <target state="translated">&lt;新しい...&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_KeyFileBrowseText">
@@ -452,7 +452,7 @@ Changing this setting will reset the settings in all configurations.</source>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_Calculate">
         <source>&amp;Calculate Permissions</source>
-        <target state="translated">アクセス許可の計算(&amp;C)</target>
+        <target state="translated">アクセス許可の検出(&amp;C)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_MgdStatus_Stopped">
@@ -784,12 +784,12 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
         <source>Enter &amp;password to open file {0}</source>
-        <target state="translated">ファイル {0} を開くためのパスワードを入力する(&amp;P)</target>
+        <target state="translated">ファイル {0} を開くためのパスワードを入力(&amp;P)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_CreateNewKeyPasswordPrompt">
         <source>Enter &amp;password for new file {0}</source>
-        <target state="translated">新しいファイル {0} のパスワードを入力する(&amp;P)</target>
+        <target state="translated">新しいファイル {0} のパスワードを入力(&amp;P)</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_ProjectAlreadyContainsFile">
@@ -950,7 +950,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PropPage_ReferenceNotFound">
         <source>&lt;The system cannot find the reference specified&gt;</source>
-        <target state="translated">&lt;システムでは、指定された参照が見つかりません&gt;</target>
+        <target state="translated">&lt;システムは、指定された参照を見つけることができません&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceTitle">
@@ -985,7 +985,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">ベース アドレスは 8 桁以下の 16 進数である必要があります (例: &amp;H11000000)。</target>
+        <target state="translated">ベース アドレスは、8 桁以下の 16 進数値 (例: &amp;H11000000) でなければなりません。</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -1828,7 +1828,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="needs-review-translation">{0} x {1}</target>
+        <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
 
 #  {0} = width (as an integer)
@@ -1934,7 +1934,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Icon">
         <source>New I&amp;con...</source>
-        <target state="translated">新しいアイコン(&amp;I)...</target>
+        <target state="translated">新しいアイコン(&amp;C)...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_TextFile">
@@ -2108,7 +2108,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_List">
         <source>&amp;List</source>
-        <target state="translated">一覧(&amp;L)</target>
+        <target state="translated">リスト(&amp;L)</target>
         <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_Details">
@@ -2233,7 +2233,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_CategiesLabel">
         <source>&amp;Categories:</source>
-        <target state="translated">カテゴリ(&amp;C)：</target>
+        <target state="translated">カテゴリ(&amp;C):</target>
         <note>The label in the menu strip for the combobox that holds the categories of resources to display</note>
       </trans-unit>
       <trans-unit id="RSE_PropDesc_Name">
@@ -2507,7 +2507,7 @@ app.config ファイルでの新しい値は '{1}' です
       </trans-unit>
       <trans-unit id="SD_MNU_AddSettingText">
         <source>&amp;Add Setting</source>
-        <target state="translated">設定の追加(&amp;A)</target>
+        <target state="translated">設定を追加(&amp;A)</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_MNU_RemoveSettingText">

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSComp.resx">
     <body>
@@ -84,17 +84,17 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
         <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="needs-review-translation">Všechny elementy výrazu konstruktoru seznamu musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
+        <target state="translated">Všechny elementy výrazu konstruktoru seznamu musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
         <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="needs-review-translation">Všechny elementy výrazu konstruktoru pole musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
+        <target state="translated">Všechny elementy výrazu konstruktoru pole musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
         <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
-        <target state="needs-review-translation">Ve výrazu if chybí větev else. Větev then je typu {0}. Protože if je výraz a ne příkaz, přidejte větev else, která vrátí hodnotu stejného typu.</target>
+        <target state="translated">Ve výrazu if chybí větev else. Větev then je typu {0}. Protože if je výraz a ne příkaz, přidejte větev else, která vrátí hodnotu stejného typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -104,12 +104,12 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
         <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">Všechny větve výrazu if musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
+        <target state="translated">Všechny větve výrazu if musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">Všechny větve výrazu porovnávacího vzorku musí vracet hodnoty stejného typu. První větev vrátila hodnotu typu {0}, ale tato větev vrátila hodnotu typu {1}.</target>
+        <target state="translated">Všechny větve výrazu porovnání vzorů musí vracet hodnoty stejného typu. První větev vrátila hodnotu typu {0}, ale tato větev vrátila hodnotu typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -289,17 +289,17 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashIDirective">
         <source>Invalid directive. Expected '#I \"&lt;path&gt;\"'.</source>
-        <target state="translated">Neplatná direktiva. Očekávaná direktiva je #I \"&lt;cesta&gt;\".</target>
+        <target state="translated">Neplatná direktiva. Očekávalo se: #I \"&lt;cesta&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashrDirective">
         <source>Invalid directive. Expected '#r \"&lt;file-or-assembly&gt;\"'.</source>
-        <target state="translated">Neplatná direktiva. Očekávaná direktiva je #r \"&lt;file-or-assembly&gt;\".</target>
+        <target state="translated">Neplatná direktiva. Očekávalo se #r \"&lt;soubor-nebo-sestavení&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashloadDirective">
         <source>Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</source>
-        <target state="translated">Neplatná direktiva. Očekávaná direktiva je #load \"&lt;soubor&gt;\" ... \"&lt;soubor&gt;\".</target>
+        <target state="translated">Neplatná direktiva. Očekávalo se #load \"&lt;soubor&gt;\" ... \"&lt;soubor&gt;\"'.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
@@ -529,12 +529,12 @@
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityGenericParametersAreDifferentKinds">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe generic parameters in the signature and implementation have different kinds. Perhaps there is a missing [&lt;Measure&gt;] attribute.</source>
-        <target state="translated">Modul {0} obsahuje hodnotu\n    {1},    \nale jeho signatura definuje hodnotu\n    {2}.    \nObecné parametry v signatuře a implementaci jsou různých druhů. Je možné, že chybí atribut [&lt;Measure&gt;].</target>
+        <target state="translated">Modul {0} obsahuje hodnotu\n    {1},    \nale jeho signatura určuje hodnotu\n    {2}.    \nObecné parametry v signatuře a implementaci jsou různých druhů. Je možné, že chybí atribut [&lt;Measure&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityAritiesDiffer">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe arities in the signature and implementation differ. The signature specifies that '{3}' is function definition or lambda expression accepting at least {4} argument(s), but the implementation is a computed function value. To declare that a computed function value is a permitted implementation simply parenthesize its type in the signature, e.g.\n\tval {5}: int -&gt; (int -&gt; int)\ninstead of\n\tval {6}: int -&gt; int -&gt; int.</source>
-        <target state="translated">Modul {0} obsahuje hodnotu\n    {1},    \nale jeho signatura definuje hodnotu\n    {2}.    \nArity v signatuře a implementaci se liší. Signatura určuje, že {3} je definice funkce nebo výraz lambda přijímající argumenty aspoň v počtu {4}, ale implementace je vypočítaná hodnota funkce. Pokud chcete deklarovat vypočítanou hodnotu funkce jako povolenou implementaci, jednoduše ohraničte její typ v signatuře závorkami, třeba pomocí notace\n\tval {5}: int -&gt; (int -&gt; int),\nkterá nahradí notaci\n\tval {6}: int -&gt; int -&gt; int.</target>
+        <target state="translated">Modul {0} obsahuje hodnotu\n    {1},    \nale jeho signatura určuje hodnotu\n    {2}.    \nArity v signatuře a implementaci se liší. Signatura určuje, že {3} je definice funkce nebo výraz lambda přijímající argumenty aspoň v počtu {4}, ale implementace je vypočítaná hodnota funkce. Pokud chcete deklarovat vypočítanou hodnotu funkce jako povolenou implementaci, jednoduše ohraničte její typ v signatuře závorkami, třeba pomocí notace\n\tval {5}: int -&gt; (int -&gt; int),\nkterá nahradí notaci\n\tval {6}: int -&gt; int -&gt; int.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityDotNetNamesDiffer">
@@ -624,12 +624,12 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože typ implementace je zapečetěný, ale ze signatury vyplývá, že není. Zvažte možnost přidat k signatuře atribut [&lt;Sealed&gt;].</target>
+        <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože typ implementace je zapečetěný, ale signatura uvádí, že není. Zvažte možnost přidat k signatuře atribut [&lt;Sealed&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože typ implementace není zapečetěný, ale ze signatury vyplývá, že je. Zvažte možnost přidat k implementaci atribut [&lt;Sealed&gt;].</target>
+        <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože typ implementace není zapečetěný, ale signatura uvádí, že je. Zvažte možnost přidat k implementaci atribut [&lt;Sealed&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
@@ -1044,7 +1044,7 @@
       </trans-unit>
       <trans-unit id="augCustomEqNeedsObjEquals">
         <source>A type with attribute 'CustomEquality' must have an explicit implementation of at least one of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">Typ s atributem CustomEquality musí mít explicitní implementaci aspoň jednoho z následujících: Object.Equals(obj), System.IEquatable&lt;_&gt;, nebo System.Collections.IStructuralEquatable.</target>
+        <target state="translated">Typ s atributem CustomEquality musí mít explicitní implementaci aspoň jednoho z následujících: Object.Equals(obj), System.IEquatable&lt;_&gt; nebo System.Collections.IStructuralEquatable.</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomCompareNeedsIComp">
@@ -2129,7 +2129,7 @@
       </trans-unit>
       <trans-unit id="parsAssertIsNotFirstClassValue">
         <source>'assert' may not be used as a first class value. Use 'assert &lt;expr&gt;' instead.</source>
-        <target state="translated">Metoda assert se nedá použít jako hodnota první třídy. Použijte místo ní assert &lt;výraz&gt;.</target>
+        <target state="translated">assert nejde použít jako první hodnotu třídy. Použijte místo toho assert &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIdentifierExpected">
@@ -2144,7 +2144,7 @@
       </trans-unit>
       <trans-unit id="parsArrowUseIsLimited">
         <source>The use of '-&gt;' in sequence and computation expressions is limited to the form 'for pat in expr -&gt; expr'. Use the syntax 'for ... in ... do ... yield...' to generate elements in more complex sequence expressions.</source>
-        <target state="translated">Použití -&gt; ve výrazech pořadí a výpočtu je omezené na formu for pat in expr -&gt; expr. Ke generování prvků v komplexnějších výrazech pořadí použijte syntaxi for ... in ... do ... yield...</target>
+        <target state="translated">Použití -&gt; ve výrazech pořadí a výpočtu je omezené na formu for vzor in výraz -&gt; výraz. Ke generování prvků v komplexnějších výrazech pořadí použijte syntaxi for ... in ... do ... yield...</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSuccessiveArgsShouldBeSpacedOrTupled">
@@ -2214,7 +2214,7 @@
       </trans-unit>
       <trans-unit id="parsMultiArgumentGenericTypeFormDeprecated">
         <source>The syntax '(typ,...,typ) ident' is not used in F# code. Consider using 'ident&lt;typ,...,typ&gt;' instead</source>
-        <target state="translated">Syntaxe (typ,...,typ) ident se v kódu F# nepoužívá. Zvažte možnost použít místo ní syntaxi ident&lt;typ,...,typ&gt;.</target>
+        <target state="translated">Syntaxe (typ,...,typ) ident se v kódu F# nepoužívá. Místo toho zkuste použít ident&lt;typ,...,typ&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidLiteralInType">
@@ -2324,7 +2324,7 @@
       </trans-unit>
       <trans-unit id="tcParameterRequiresName">
         <source>A parameter with attributes must also be given a name, e.g. '[&lt;Attribute&gt;] Name : Type'</source>
-        <target state="translated">Parametr s atributy vyžaduje rovněž název, například [&lt;atribut&gt;] Název : Typ.</target>
+        <target state="translated">Parametr s atributy vyžaduje také název, třeba [&lt;Atribut&gt;] Název : Typ.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnValuesCannotHaveNames">
@@ -2409,7 +2409,7 @@
       </trans-unit>
       <trans-unit id="tcImplementsGenericIComparableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IComparable&lt;_&gt;' explicitly. You must apply the 'CustomComparison' attribute to the type, and should also provide a consistent implementation of the non-generic interface System.IComparable.</source>
-        <target state="translated">Typ struktura, záznam nebo sjednocení {0} implementuje explicitně rozhraní System.IComparable&lt;_&gt;. Pro tento typ musíte použít atribut CustomComparison a vytvořit konzistentní implementaci rozhraní System.IComparable, které není obecné.</target>
+        <target state="translated">Typ struktury, záznamu nebo sjednocení {0} explicitně implementuje rozhraní System.IComparable&lt;_&gt;. Pro typ je třeba použít atribut CustomComparison a měli byste také poskytnout konzistentní implementaci neobecného rozhraní System.IComparable.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplementsIStructuralComparableExplicitly">
@@ -2459,7 +2459,7 @@
       </trans-unit>
       <trans-unit id="tcTypeParametersInferredAreNotStable">
         <source>The type parameters inferred for this value are not stable under the erasure of type abbreviations. This is due to the use of type abbreviations which drop or reorder type parameters, e.g. \n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nConsider declaring the type parameters for this value explicitly, e.g.\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x).</source>
-        <target state="translated">Parametry typu odvozené pro tuto hodnotu nejsou v případě vymazání zkratek typů stabilní. To je způsobené použitím zkratek typu, které vypouštějí nebo mění pořadí parametrů typu, třeba pomocí notace\n\ttype taggedInt&lt;'a&gt; = int nebo\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nZvažte deklarování parametrů typu pro tuto hodnotu explicitně, třeba pomocí notace\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x).</target>
+        <target state="translated">Parametry typu odvozené pro tuto hodnotu nejsou v případě vymazání zkratek typů stabilní. Způsobuje to použití zkratek typu, které vypouštějí nebo mění pořadí parametrů typu, třeba pomocí notace\n\ttype taggedInt&lt;'a&gt; = int nebo\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nZvažte možnost deklarování parametrů typu pro tuto hodnotu explicitně, třeba pomocí notace\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeParameterInvalid">
@@ -2604,7 +2604,7 @@
       </trans-unit>
       <trans-unit id="tcTypeCannotBeEnumerated">
         <source>The type '{0}' is not a type whose values can be enumerated with this syntax, i.e. is not compatible with either seq&lt;_&gt;, IEnumerable&lt;_&gt; or IEnumerable and does not have a GetEnumerator method</source>
-        <target state="translated">Typ {0} není typem, u kterého by se dal pomocí této syntaxe vytvořit výčet hodnot, tj. není kompatibilní s seq&lt;_&gt;, IEnumerable&lt;_&gt; ani IEnumerable a nemá metodu GetEnumerator.</target>
+        <target state="translated">Typ {0} není typem, u kterého by se dal pomocí této syntaxe vytvořit výčet hodnot, tj. není kompatibilní se seq&lt;_&gt;, IEnumerable&lt;_&gt; ani IEnumerable a nemá metodu GetEnumerator.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMixtureOfRecursiveForms">
@@ -2629,7 +2629,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidEnumConstraint">
         <source>An 'enum' constraint must be of the form 'enum&lt;type&gt;'</source>
-        <target state="translated">Omezení enum musí mít notaci enum&lt;type&gt;.</target>
+        <target state="translated">Omezení enum musí být ve formátu enum&lt;typ&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidNewConstraint">
@@ -2639,7 +2639,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidPropertyType">
         <source>This property has an invalid type. Properties taking multiple indexer arguments should have types of the form 'ty1 * ty2 -&gt; ty3'. Properties returning functions should have types of the form '(ty1 -&gt; ty2)'.</source>
-        <target state="translated">Tato vlastnost je neplatného typu. Vlastnosti, které přebírají víc argumentů indexeru, by měly mít typy s notací ty1 * ty2 -&gt; ty3. Vlastnosti, které vrací funkce, by měly mít typy s notací (ty1 -&gt; ty2).</target>
+        <target state="translated">Tato vlastnost nemá platný typ. Vlastnosti, které přebírají více argumentů indexeru, by měly mít typy s notací ty1 * ty2 -&gt; ty3. Vlastnosti, které vrací funkce, by měly mít typy s notací (ty1 -&gt; ty2).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpectedUnitOfMeasureMarkWithAttribute">
@@ -2729,7 +2729,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidNonPrimitiveLiteralInPatternMatch">
         <source>Non-primitive numeric literal constants cannot be used in pattern matches because they can be mapped to multiple different types through the use of a NumericLiteral module. Consider using replacing with a variable, and use 'when &lt;variable&gt; = &lt;constant&gt;' at the end of the match clause.</source>
-        <target state="translated">Konstanty číselných literálů, které nejsou primitivní, se nedají použít u porovnání vzorů, protože můžou být během použití modulu NumericLiteral mapované na víc různých typů. Zvažte možnost nahrazení proměnnou a na konci klauzule porovnání použijte when &lt;variable&gt; = &lt;constant&gt;.</target>
+        <target state="translated">Konstanty číselných literálů, které nejsou primitivní, se nedají použít u porovnání vzorů, protože můžou být během použití modulu NumericLiteral mapované na více různých typů. Zvažte možnost nahrazení proměnnou a na konci klauzule porovnání použijte when &lt;proměnná&gt; = &lt;konstanta&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeArgumentUsage">
@@ -3279,7 +3279,7 @@
       </trans-unit>
       <trans-unit id="tcMutableValuesSyntax">
         <source>Mutable function values should be written 'let mutable f = (fun args -&gt; ...)'</source>
-        <target state="translated">Zápis proměnlivých hodnot funkcí by měl být let mutable f = (fun args -&gt; ...).</target>
+        <target state="translated">Zápis proměnlivých hodnot funkcí by měl být let mutable f = (fun arg -&gt; ...).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyFunctionsCanBeInline">
@@ -3289,7 +3289,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalAttributesForLiteral">
         <source>A literal value cannot be given the [&lt;ThreadStatic&gt;] or [&lt;ContextStatic&gt;] attributes</source>
-        <target state="translated">Hodnotě literálu se nedají předávat atributy [&lt;ThreadStatic&gt;] nebo [&lt;ContextStatic&gt;].</target>
+        <target state="translated">Literálové hodnotě nejde přiřadit atribut [&lt;ThreadStatic&gt;] nebo [&lt;ContextStatic&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralCannotBeMutable">
@@ -3384,7 +3384,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBinding">
         <source>'use' bindings must be of the form 'use &lt;var&gt; = &lt;expr&gt;'</source>
-        <target state="translated">Vazby use musí mít notaci use &lt;var&gt; = &lt;expr&gt;.</target>
+        <target state="translated">Vazby use musí být ve formátu use &lt;proměnná&gt; = &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAbstractMembersIllegalInAugmentation">
@@ -3499,7 +3499,7 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
         <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
-        <target state="translated">Pokud se předává také hodnota konstanty, například val x : int = 1, může být deklarací jenom atribut [&lt;Literal&gt;].</target>
+        <target state="translated">Pokud se definuje také hodnota konstanty, třeba val x : int = 1, může být deklarací jenom atribut [&lt;Literal&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">
@@ -3519,7 +3519,7 @@
       </trans-unit>
       <trans-unit id="tcUninitializedValFieldsMustBeMutable">
         <source>Uninitialized 'val' fields must be mutable and marked with the '[&lt;DefaultValue&gt;]' attribute. Consider using a 'let' binding instead of a 'val' field.</source>
-        <target state="translated">Neinicializovaná pole val musí být měnitelná a označená atributem [&lt;DefaultValue&gt;]. Zvažte možnost použít místo pole val vazbu let.</target>
+        <target state="translated">Neinicializovaná pole val musí být měnitelná a musí být označená atributem [&lt;DefaultValue&gt;]. Zvažte možnost použít místo pole val vazbu let.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStaticValFieldsMustBeMutableAndPrivate">
@@ -3539,7 +3539,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalFormForExplicitTypeDeclaration">
         <source>Explicit type declarations for constructors must be of the form 'ty1 * ... * tyN -&gt; resTy'. Parentheses may be required around 'resTy'</source>
-        <target state="translated">Explicitní deklarace typu pro konstruktory musí mít formulaci ty1 * ... * tyN -&gt; resTy. Je možné, že výraz resTy bude potřeba uzavřít do závorek.</target>
+        <target state="translated">Explicitní deklarace typu pro konstruktory musí mít formát ty1 * ... * tyN -&gt; resTy. Je možné, že výraz resTy bude potřeba uzavřít do závorek.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnTypesForUnionMustBeSameAsType">
@@ -3689,7 +3689,7 @@
       </trans-unit>
       <trans-unit id="tcImplementsIEquatableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IEquatable&lt;_&gt;' explicitly. Apply the 'CustomEquality' attribute to the type and provide a consistent implementation of the non-generic override 'System.Object.Equals(obj)'.</source>
-        <target state="translated">Typ struktura, záznam nebo sjednocení {0} implementuje explicitně rozhraní System.IEquatable&lt;_&gt;. Použijte pro tento typ atribut CustomEquality a vytvořte konzistentní implementaci přepsání System.Object.Equals(obj), které není obecné.</target>
+        <target state="translated">Typ struktury, záznamu nebo sjednocení {0} explicitně implementuje rozhraní System.IEquatable&lt;_&gt;. Použijte pro typ atribut CustomEquality a poskytněte konzistentní implementaci neobecného přepsání System.Object.Equals(obj).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors">
@@ -3754,7 +3754,7 @@
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationHasTypeParametersMissingOnType">
         <source>This type abbreviation has one or more declared type parameters that do not appear in the type being abbreviated. Type abbreviations must use all declared type parameters in the type being abbreviated. Consider removing one or more type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C&lt;'a&gt; = C of ...'.</source>
-        <target state="translated">Tato zkratka typu má aspoň jeden parametr deklarovaného typu, který se u zkracovaného typu nevyskytuje. Při zkracování typů se musí použít všechny parametry deklarovaného typu. Zvažte možnost odebrání jednoho nebo víc parametrů typu, nebo použijte konkrétní definici typu, která zabaluje nadřízený typ, třeba type C&lt;'a&gt; = C f ...</target>
+        <target state="translated">Tato zkratka typu má aspoň jeden parametr deklarovaného typu, který se u zkracovaného typu nevyskytuje. Při zkracování typů se musí použít všechny parametry deklarovaného typu. Zvažte možnost odebrání jednoho nebo více parametrů typu, nebo použijte konkrétní definici typu, která zabaluje nadřízený typ, třeba type C&lt;'a&gt; = C of ...</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes">
@@ -3789,7 +3789,7 @@
       </trans-unit>
       <trans-unit id="tcRepresentationOfTypeHiddenBySignature">
         <source>The representation of this type is hidden by the signature. It must be given an attribute such as [&lt;Sealed&gt;], [&lt;Class&gt;] or [&lt;Interface&gt;] to indicate the characteristics of the type.</source>
-        <target state="translated">Signatura skrývá reprezentaci tohoto typu. Charakteristiku typu je potřeba určit pomocí atributu, jako je [&lt;Sealed&gt;], [&lt;Class&gt;] nebo [&lt;Interface&gt;].</target>
+        <target state="translated">Signatura reprezentaci tohoto typu skrývá. Charakteristiku typu je potřeba určit pomocí atributu, jako je třeba [&lt;Sealed&gt;], [&lt;Class&gt;] nebo [&lt;Interface&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyClassesCanHaveAbstract">
@@ -3869,12 +3869,12 @@
       </trans-unit>
       <trans-unit id="tcInvalidDelegateSpecification">
         <source>Delegate specifications must be of the form 'typ -&gt; typ'</source>
-        <target state="translated">Určení delegátů musí mít notaci typ -&gt; typ.</target>
+        <target state="translated">Specifikace delegátů musí mít notaci typ -&gt; typ.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDelegatesCannotBeCurried">
         <source>Delegate specifications must not be curried types. Use 'typ * ... * typ -&gt; typ' for multi-argument delegates, and 'typ -&gt; (typ -&gt; typ)' for delegates returning function values.</source>
-        <target state="translated">Specifikace delegátů nesmí být curryfikované typy. Pro delegáty, kteří mají víc argumentů, použijte typ * ... * typ -&gt; typ a pro delegáty, kteří vrací hodnoty funkcí, použijte typ -&gt; (typ -&gt; typ).</target>
+        <target state="translated">Specifikace delegátů nesmí být curryfikované typy. Pro delegáty, kteří mají více argumentů, použijte typ * ... * typ -&gt; typ a pro delegáty, kteří vrací hodnoty funkcí, použijte typ -&gt; (typ -&gt; typ).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForLiteralEnumeration">
@@ -3894,7 +3894,7 @@
       </trans-unit>
       <trans-unit id="tcReservedSyntaxForAugmentation">
         <source>The syntax 'type X with ...' is reserved for augmentations. Types whose representations are hidden but which have members are now declared in signatures using 'type X = ...'. You may also need to add the '[&lt;Sealed&gt;] attribute to the type definition in the signature</source>
-        <target state="translated">Syntaxe type X with ... je rezervovaná pro rozšíření. Typy, které mají skrytou reprezentaci, ale mají členy, se teď v signaturách deklarují pomocí notace type X = ... Je možné, že k definici typu v signatuře budete muset přidat také atribut [&lt;Sealed&gt;].</target>
+        <target state="translated">Syntaxe type X with ... je vyhrazená pro rozšíření. Typy, které mají skrytou reprezentaci, ale mají členy, se teď v signaturách deklarují pomocí notace type X = ... Je možné, že k definici typu v signatuře bude potřeba přidat také atribut [&lt;Sealed&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMembersThatExtendInterfaceMustBePlacedInSeparateModule">
@@ -4619,7 +4619,7 @@
       </trans-unit>
       <trans-unit id="eventHasNonStandardType">
         <source>The event '{0}' has a non-standard type. If this event is declared in another CLI language, you may need to access this event using the explicit {1} and {2} methods for the event. If this event is declared in F#, make the type of the event an instantiation of either 'IDelegateEvent&lt;_&gt;' or 'IEvent&lt;_,_&gt;'.</source>
-        <target state="translated">Událost {0} je nestandardního typu. Pokud je tato událost deklarovaná v jiném jazyce CLI, bude možná potřeba k této události přistoupit pomocí jejích explicitních metod {1} a {2}. Pokud je tato událost deklarovaná v jazyce F#, vytvořte její typ jako instanci buď IDelegateEvent&lt;_&gt;, nebo IEvent&lt;_,_&gt;.</target>
+        <target state="translated">Událost {0} je nestandardního typu. Pokud je tato událost deklarovaná v jiném jazyce CLI, bude možná potřeba k této události přistoupit pomocí jejích explicitních metod {1} a {2}. Pokud je tato událost deklarovaná v jazyce F#, vytvořte její typ jako instanci IDelegateEvent&lt;_&gt; nebo IEvent&lt;_,_&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeIsNotAccessible">
@@ -5124,12 +5124,12 @@
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
         <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="needs-review-translation">Parametry typu je potřeba zadat bezprostředně za název typu, třeba \"type C&lt;'T&gt;\", ne     type \"C   &lt;'T&gt;\".</target>
+        <target state="translated">Odeberte mezery mezi názvem a parametrem typu, například \"type C&lt;'T&gt;\", ne type \"C &lt;'T&gt;\". Parametry typu je potřeba zadat bezprostředně za název typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
         <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="needs-review-translation">Argumenty typu je potřeba zadat bezprostředně za název typu, třeba \"C&lt;'T&gt;\", ne \"C  &lt;'T&gt;\".</target>
+        <target state="translated">Odeberte mezery mezi názvem a parametrem typu, například \"C&lt;'T&gt;\", ne \"C &lt;'T&gt;\". Parametry typu je potřeba zadat bezprostředně za název typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -5159,7 +5159,7 @@
       </trans-unit>
       <trans-unit id="tcParameterInferredByref">
         <source>The parameter '{0}' was inferred to have byref type. Parameters of byref type must be given an explicit type annotation, e.g. 'x1: byref&lt;int&gt;'. When used, a byref parameter is implicitly dereferenced.</source>
-        <target state="translated">Parametr {0} je odvozený jako parametr typu ByRef. Parametrům typu ByRef se musí předávat explicitní poznámka typu, třeba x1: byref&lt;int&gt;. V případě jejího použití se k parametru typu ByRef přistoupí implicitně přes ukazatel.</target>
+        <target state="translated">Parametr {0} je odvozený jako parametr typu byref. Parametrům typu byref se musí předávat explicitní anotace typu, třeba x1: byref&lt;int&gt;. V případě jejího použití se k parametru typu byref přistoupí implicitně přes ukazatel.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNonUniformMemberUse">
@@ -5249,7 +5249,7 @@
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
         <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">Název souboru MDB musí být &lt;název-souboru-sestavení&gt;.mdb. Možnost --pdb se bude ignorovat.</target>
+        <target state="translated">Název souboru MDB musí být &lt;název-souboru-sestavení&gt;.mdb. Parametr --pdb se bude ignorovat.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBMemberMissing">
@@ -5299,7 +5299,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBinding">
         <source>'use!' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;'</source>
-        <target state="translated">Vazby use! musí mít notaci use! &lt;var&gt; = &lt;expr&gt;.</target>
+        <target state="translated">Vazby use! musí mít formát use! &lt;proměnná&gt; = &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="crefNoInnerGenericsInQuotations">
@@ -5529,7 +5529,7 @@
       </trans-unit>
       <trans-unit id="fscResxSourceFileDeprecated">
         <source>Passing a .resx file ({0}) as a source file to the compiler is deprecated. Use resgen.exe to transform the .resx file into a .resources file to pass as a --resource option. If you are using MSBuild, this can be done via an &lt;EmbeddedResource&gt; item in the .fsproj project file.</source>
-        <target state="translated">Předávat kompilátoru soubor .resx ({0}) jako zdrojový soubor je zastaralý postup. Pomocí souboru resgen.exe převeďte soubor .resx na soubor .resources, aby se předával jako možnost --resource. Pokud používáte MSBuild, dá se to udělat prostřednictvím položky &lt;EmbeddedResource&gt; v souboru projektu .fsproj.</target>
+        <target state="translated">Předávat kompilátoru soubor .resx ({0}) jako zdrojový soubor je zastaralý postup. Pomocí programu resgen.exe převeďte soubor .resx na soubor .resources, aby se předával jako parametr --resource. Pokud používáte MSBuild, dá se to udělat prostřednictvím položky &lt;EmbeddedResource&gt; v souboru projektu .fsproj.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoProfileMismatches">
@@ -5959,27 +5959,27 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedLBrackLess">
         <source>Unmatched '[&lt;'. Expected closing '&gt;]'</source>
-        <target state="translated">Nespárovaný výraz [&lt;. Očekává se výraz &gt;].</target>
+        <target state="translated">Nespárovaná dvojice znaků [&lt;. Očekávala se dvojice znaků &gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileMatch">
         <source>Unexpected end of input in 'match' expression. Expected 'match &lt;expr&gt; with | &lt;pat&gt; -&gt; &lt;expr&gt; | &lt;pat&gt; -&gt; &lt;expr&gt; ...'.</source>
-        <target state="translated">Neočekávaný konec vstupu ve výrazu match. Očekávaná notace je match &lt;výraz&gt; with | &lt;cesta&gt; -&gt; &lt;výraz&gt; | &lt;cesta&gt; -&gt; &lt;výraz&gt; </target>
+        <target state="translated">Neočekávaný konec vstupu ve výrazu match. Očekávaná notace je match &lt;výraz&gt; with | &lt;vzor&gt; -&gt; &lt;výraz&gt; | &lt;vzor&gt; -&gt; &lt;výraz&gt; ...</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileTry">
         <source>Unexpected end of input in 'try' expression. Expected 'try &lt;expr&gt; with &lt;rules&gt;' or 'try &lt;expr&gt; finally &lt;expr&gt;'.</source>
-        <target state="translated">Neočekávaný konec vstupu ve výrazu try. Očekávaná notace je try &lt;výraz&gt; with &lt;pravidla&gt; nebo try &lt;výraz&gt; finally &lt;výraz&gt;.</target>
+        <target state="translated">Neočekávaný konec vstupu ve výrazu try. Očekávalo se try &lt;výraz&gt; with &lt;pravidla&gt; nebo try &lt;výraz&gt; finally &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileWhile">
         <source>Unexpected end of input in 'while' expression. Expected 'while &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Neočekávaný konec vstupu ve výrazu while. Očekávaná notace je while &lt;výraz&gt; do &lt;výraz&gt;.</target>
+        <target state="translated">Neočekávaný konec vstupu ve výrazu while. Očekávalo se while &lt;výraz&gt; do &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFor">
         <source>Unexpected end of input in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Neočekávaný konec vstupu ve výrazu for. Očekávaná notace je for &lt;vzor&gt; in &lt;výraz&gt; do &lt;výraz&gt;.</target>
+        <target state="translated">Neočekávaný konec vstupu ve výrazu for. Očekávaná notace je for &lt;vzor&gt; in &lt;výraz&gt; do &lt;výraz&gt;'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileWith">
@@ -5989,17 +5989,17 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileThen">
         <source>Unexpected end of input in 'then' branch of conditional expression. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Neočekávaný konec vstupu ve větvi then podmínky. Očekávaná notace je if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
+        <target state="translated">Neočekávaný konec vstupu ve větvi then podmíněného výrazu. Očekávalo se if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElse">
         <source>Unexpected end of input in 'else' branch of conditional expression. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Neočekávaný konec vstupu ve větvi else podmínky. Očekávaná notace je if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
+        <target state="translated">Neočekávaný konec vstup ve větvi else podmíněného výrazu. Očekávalo se if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFunBody">
         <source>Unexpected end of input in body of lambda expression. Expected 'fun &lt;pat&gt; ... &lt;pat&gt; -&gt; &lt;expr&gt;'.</source>
-        <target state="translated">Neočekávaný konec vstupu v těle výrazu lambda. Očekávaná notace je fun &lt;cesta&gt; ... &lt;cesta&gt; -&gt; &lt;výraz&gt;.</target>
+        <target state="translated">Neočekávaný konec vstupu v těle výrazu lambda. Očekávaná notace je fun &lt;vzor&gt; ... &lt;vzor&gt; -&gt; &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileTypeArgs">
@@ -6059,17 +6059,17 @@
       </trans-unit>
       <trans-unit id="parsWhileDoExpected">
         <source>Missing 'do' in 'while' expression. Expected 'while &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Ve výrazu while chybí do. Očekávaná notace je while &lt;výraz&gt; do &lt;výraz&gt;.</target>
+        <target state="translated">Chybí do ve výrazu while. Očekávalo se while &lt;výraz&gt; do &lt;výraz&gt;'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsForDoExpected">
         <source>Missing 'do' in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Ve výrazu for chybí klíčové slovo do. Očekávaná notace je for &lt;cesta&gt; in &lt;výraz&gt; do &lt;výraz&gt;.</target>
+        <target state="translated">Chybí do ve výrazu for. Očekávalo se for &lt;vzor&gt; in &lt;výraz&gt; do &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidRelationInJoin">
         <source>Invalid join relation in '{0}'. Expected 'expr &lt;op&gt; expr', where &lt;op&gt; is =, =?, ?= or ?=?.</source>
-        <target state="translated">Neplatná relace spojení v {0}. Očekávaná notace je expr &lt;op&gt; expr, kde &lt;op&gt; je =, =?, ?= nebo ?=?.</target>
+        <target state="translated">Neplatná relace spojení v {0}. Očekávaná notace je výraz &lt;op&gt; výraz, kde &lt;op&gt; je =, =?, ?= nebo ?=?.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoCallsWord">
@@ -6134,7 +6134,7 @@
       </trans-unit>
       <trans-unit id="chkNoByrefsOfByrefs">
         <source>Type '{0}' is illegal because in byref&lt;T&gt;, T cannot contain byref types.</source>
-        <target state="translated">Typ {0} je neplatný, protože T v byref&lt;T&gt; nemůže obsahovat typy ByRef.</target>
+        <target state="translated">Typ {0} je neplatný, protože T v byref&lt;T&gt; nemůže obsahovat typy byref.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastopsMaxArrayThirtyTwo">
@@ -6329,7 +6329,7 @@
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">
         <source>The union case '{0}' does not have a field named '{1}'.</source>
-        <target state="needs-review-translation">Výjimka nebo případ typu union {0} nemá pole s názvem {1}.</target>
+        <target state="translated">Případ typu union {0} nemá žádné pole s názvem {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseFieldCannotBeUsedMoreThanOnce">
@@ -6469,7 +6469,7 @@
       </trans-unit>
       <trans-unit id="considerUpcastOperator">
         <source>The conversion from {0} to {1} is a compile-time safe upcast, not a downcast. Consider using the :&gt; (upcast) operator instead of the :?&gt; (downcast) operator.</source>
-        <target state="translated">Převod z {0} na {1} je přetypování nahoru bezpečné v době kompilace, ne přetypování dolů. Zvažte použití operátoru :&gt; (upcast) namísto :?&gt; (downcast).</target>
+        <target state="translated">Převod z {0} na {1} je přetypování nahoru bezpečné v době kompilace, ne přetypování dolů. Zvažte použití operátoru :&gt; (přetypování nahoru) namísto :?&gt; (přetypování dolů).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRecImplied">
@@ -6709,7 +6709,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
         <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
-        <target state="review-required-translation">Slouží v asynchronních pracovních postupech k vytvoření vazby názvu s výsledkem asynchronního výpočtu. V jiných výrazech výpočtu se používá k vytvoření vazby názvu s výsledkem, který je výpočetního typu.</target>
+        <target state="translated">Používá se ve výrazech výpočtu k navázání názvu na výsledek jiného výrazu výpočtu.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6789,12 +6789,12 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
         <source>Used to provide a value for the result of the containing computation expression.</source>
-        <target state="review-required-translation">Slouží k označení hodnoty, která vznikne jako výsledek výrazu výpočtu.</target>
+        <target state="translated">Používá se k poskytnutí hodnoty pro výsledek obsahujícího výrazu výpočtu.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
         <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
-        <target state="review-required-translation">Slouží k označení výrazu výpočtu, který po vyhodnocení poskytne výsledek obsahujícího výrazu výpočtu.</target>
+        <target state="translated">Používá se k poskytnutí hodnoty pro výsledek obsahujícího výrazu výpočtu, když tato hodnota sama pochází z výsledku jiného výrazu výpočtu.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6839,12 +6839,12 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable"</source>
-        <target state="needs-review-translation">Používá se místo výrazu let u hodnot, které k uvolnění prostředků vyžadují volání funkce Dispose.</target>
+        <target state="translated">Používá se místo let pro hodnoty, které implementují IDisposable.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
         <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
-        <target state="review-required-translation">Používá se místo výrazu let! v asynchronních pracovních postupech a jiných výrazech výpočtu pro hodnoty, které k uvolnění prostředků vyžadují volání funkce Dispose.</target>
+        <target state="translated">Používá se místo let! ve výpočetních výrazech pro výsledky výpočetních výrazů, které implementují IDisposable.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -6999,12 +6999,12 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">Přes ukazatel byref vrácený funkcí nebo metodou se ve výchozím nastavení přistupuje od verze F# 4.5. Pokud chcete získat vrácenou hodnotu jako ukazatel, použijte operátor address-of, např. &amp;f(x) nebo &amp;obj.Method(arg1, arg2).</target>
+        <target state="translated">K ukazateli byref vrácenému funkcí nebo metodou se od F# 4.5 implicitně přistupuje přes ukazatel. Pokud chcete návratovou hodnotu získat jako ukazatel, použijte operátor adresy, například &amp;f(x) nebo &amp;obj.Metoda(arg1, arg2).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">
         <source>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="translated">Typ s přidanou poznámkou IsByRefLike musí být také struktura. Bylo by vhodné přidat do typu atribut [&lt;Struct&gt;].</target>
+        <target state="translated">Typ označený IsByRefLike musí být také strukturou. Zvažte možnost přidat k typu atribut [&lt;Struct&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAddressOfLocal">
@@ -7024,7 +7024,7 @@
       </trans-unit>
       <trans-unit id="tcIsReadOnlyNotStruct">
         <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="translated">Typ s přidanou poznámkou IsReadOnly musí být také struktura. Bylo by vhodné přidat do typu atribut [&lt;Struct&gt;].</target>
+        <target state="translated">Typ označený IsReadOnly musí být také strukturou. Zvažte možnost přidat k typu atribut [&lt;Struct&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
@@ -7059,82 +7059,82 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedBraceBar">
         <source>Unmatched '{{|'</source>
-        <target state="new">Unmatched '{{|'</target>
+        <target state="translated">Nespárované znaky {{|</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoAnonRecdField">
         <source>anonymous record field</source>
-        <target state="new">anonymous record field</target>
+        <target state="translated">pole anonymního záznamu</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
         <source>The exception '{0}' does not have a field named '{1}'.</source>
-        <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
+        <target state="translated">Výjimka {0} nemá žádné pole s názvem {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternsDoNotHaveFields">
         <source>Active patterns do not have fields. This syntax is invalid.</source>
-        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
+        <target state="translated">Aktivní vzory nemají žádná pole. Tato syntaxe je neplatná.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
         <source>The constructor does not have a field named '{0}'.</source>
-        <target state="new">The constructor does not have a field named '{0}'.</target>
+        <target state="translated">Konstruktor nemá žádné pole s názvem {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdCcuMismatch">
         <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
-        <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
+        <target state="translated">Dva typy anonymních záznamů jsou z různých sestavení: {0} a {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
-        <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
+        <target state="translated">Dva typy anonymních záznamů mají odlišné sady názvů polí: {0} a {1}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <target state="translated">Nejde volat metodu rozšíření byref {0}. První parametr vyžaduje, aby hodnota byla měnitelná nebo typu byref, která není jen pro čtení.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
         <source>Byref types are not allowed to have optional type extensions.</source>
-        <target state="new">Byref types are not allowed to have optional type extensions.</target>
+        <target state="translated">Typy ByRef nesmí mít rozšíření volitelného typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
         <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
-        <target state="new">Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</target>
+        <target state="translated">Nejde částečně použít rozšiřující metodu {0}, protože první parametr je typu byref.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotInheritAttribute">
         <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
-        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <target state="translated">Tento typ nedědí atribut. S jinými jazyky .NET nebude správně fungovat.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidAnonRecdExpr">
         <source>Invalid anonymous record expression</source>
-        <target state="new">Invalid anonymous record expression</target>
+        <target state="translated">Neplatný výraz anonymního záznamu</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidAnonRecdType">
         <source>Invalid anonymous record type</source>
-        <target state="new">Invalid anonymous record type</target>
+        <target state="translated">Neplatný typ anonymního záznamu</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateNeedsRecordType">
         <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
-        <target state="new">The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</target>
+        <target state="translated">Vstupem výrazu pro kopírování a aktualizaci, který vytvoří anonymní záznam, musí být anonymní záznam nebo záznam.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInvalidFunctionParameterType">
         <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
-        <target state="new">The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</target>
+        <target state="translated">Parametr {0} má neplatný typ {1}. To nepovolují pravidla Common IL.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInvalidFunctionReturnType">
         <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
-        <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
+        <target state="translated">Funkce nebo metoda má neplatný návratový typ {0}. To nepovolují pravidla Common IL.</target>
         <note />
       </trans-unit>
     </body>

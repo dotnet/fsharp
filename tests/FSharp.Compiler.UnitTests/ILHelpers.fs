@@ -10,9 +10,10 @@ open NUnit.Framework
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+[<RequireQualifiedAccess>]
 module ILChecker =
 
-    let checker = FSharpChecker.Create()
+    let checker = Compiler.checker
 
     let private (++) a b = Path.Combine(a,b)
 

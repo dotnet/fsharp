@@ -32,7 +32,7 @@ type IntelliSenseOptions =
     EnterKeySetting : EnterKeySetting }
     static member Default =
       { ShowAfterCharIsTyped = true
-        ShowAfterCharIsDeleted = true
+        ShowAfterCharIsDeleted = false
         IncludeSymbolsFromUnopenedNamespacesOrModules = false
         EnterKeySetting = EnterKeySetting.NeverNewline}
 
@@ -53,14 +53,16 @@ type CodeFixesOptions =
     { SimplifyName: bool
       AlwaysPlaceOpensAtTopLevel: bool
       UnusedOpens: bool 
-      UnusedDeclarations: bool }
+      UnusedDeclarations: bool
+      SuggestNamesForErrors: bool }
     static member Default =
       { // We have this off by default, disable until we work out how to make this low priority 
         // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
         SimplifyName = false 
         AlwaysPlaceOpensAtTopLevel = true
         UnusedOpens = true 
-        UnusedDeclarations = true }
+        UnusedDeclarations = true
+        SuggestNamesForErrors = true }
 
 [<CLIMutable>]
 type LanguageServicePerformanceOptions = 

@@ -19,7 +19,7 @@
 
     <!-- synchronized build package sources -->
     <RestoreSources Condition="'$(PB_RestoreSource)' != ''">$(PB_RestoreSource);$(RestoreSources)</RestoreSources>
-    <DotNetPackageVersionPropsPath>$(MSBuildThisFileDirectory)..\..\Tools\dependencyUptake\PackageVersions.props</DotNetPackageVersionPropsPath>
+    <DotNetPackageVersionPropsPath>$(MSBuildThisFileDirectory)..\..\artifacts\dependencyUptake\PackageVersions.props</DotNetPackageVersionPropsPath>
 
     <!-- version numbers from files -->
     <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>
@@ -133,9 +133,9 @@
     <MicrosoftVisualFSharpTypeProvidersRedistPackageVersion>1.0.0</MicrosoftVisualFSharpTypeProvidersRedistPackageVersion>
     <MicrosoftWin32RegistryPackageVersion>4.3.0</MicrosoftWin32RegistryPackageVersion>
     <NewtonsoftJsonPackageVersion>9.0.1</NewtonsoftJsonPackageVersion>
-    <NUnitPackageVersion>3.10.1</NUnitPackageVersion>
-    <NUnit3TestAdapterPackageVersion>3.10.0</NUnit3TestAdapterPackageVersion>
-    <NUnitLitePackageVersion>3.10.1</NUnitLitePackageVersion>
+    <NUnitPackageVersion>3.11.0</NUnitPackageVersion>
+    <NUnit3TestAdapterPackageVersion>3.11.2</NUnit3TestAdapterPackageVersion>
+    <NUnitLitePackageVersion>3.11.0</NUnitLitePackageVersion>
     <RoslynToolsSignToolPackageVersion>1.0.0-beta2-dev3</RoslynToolsSignToolPackageVersion>
     <StrawberryPerl64PackageVersion>5.22.2.1</StrawberryPerl64PackageVersion>
     <XliffTasksPackageVersion>0.2.0-beta-000081</XliffTasksPackageVersion>

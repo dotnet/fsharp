@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../FSComp.resx">
     <body>
@@ -84,17 +84,17 @@
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
         <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="needs-review-translation">Wszystkie elementy wyrażenia konstruktora listy muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
+        <target state="translated">Wszystkie elementy wyrażenia konstruktora listy muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
         <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="needs-review-translation">Wszystkie elementy wyrażenia konstruktora tablicy muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
+        <target state="translated">Wszystkie elementy wyrażenia konstruktora tablicy muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
         <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
-        <target state="needs-review-translation">W wyrażeniu „if” brakuje gałęzi „else”. Gałąź „then” ma typ „{0}”. Jako że „if” jest wyrażeniem, a nie instrukcją, dodaj gałąź „else”, która będzie zwracać wartość tego samego typu.</target>
+        <target state="translated">W wyrażeniu „if” brakuje gałęzi „else”. Gałąź „then” ma typ „{0}”. Jako że „if” jest wyrażeniem, a nie instrukcją, dodaj gałąź „else”, która będzie zwracać wartość tego samego typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -104,12 +104,12 @@
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
         <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">Wszystkie gałęzie wyrażenia „if” muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
+        <target state="translated">Wszystkie gałęzie wyrażenia „if” muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="needs-review-translation">Wszystkie gałęzie wyrażenia dopasowywania wzorca muszą zwracać wartości tego samego typu. Pierwsza gałąź zwróciła wartość typu „{0}”, ale ta gałąź zwróciła wartość typu „{1}”.</target>
+        <target state="translated">Wszystkie gałęzie wyrażenia dopasowania do wzorca muszą zwracać wartości tego samego typu. Pierwsza gałąź zwróciła wartość typu „{0}”, ale ta gałąź zwróciła wartość typu „{1}”</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -289,17 +289,17 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashIDirective">
         <source>Invalid directive. Expected '#I \"&lt;path&gt;\"'.</source>
-        <target state="translated">Nieprawidłowa dyrektywa. Oczekiwano „#I \"&lt;ścieżka&gt;\"„.</target>
+        <target state="translated">Nieprawidłowa dyrektywa. Oczekiwano dyrektywy „#I \"&lt;ścieżka&gt;\"”.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashrDirective">
         <source>Invalid directive. Expected '#r \"&lt;file-or-assembly&gt;\"'.</source>
-        <target state="translated">Nieprawidłowa dyrektywa. Oczekiwano „#r \"&lt;plik-lub-zestaw&gt;\"”.</target>
+        <target state="translated">Nieprawidłowa dyrektywa. Oczekiwano dyrektywy „#r \"&lt;plik-lub-zestaw&gt;\"”.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashloadDirective">
         <source>Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</source>
-        <target state="translated">Nieprawidłowa dyrektywa. Oczekiwano „#load \"&lt;plik&gt;\" ... \"&lt;plik&gt;\"”.</target>
+        <target state="translated">Nieprawidłowa dyrektywa. Oczekiwano dyrektywy „#load \"&lt;plik&gt;\" ... \"&lt;plik&gt;\"”.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
@@ -529,12 +529,12 @@
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityGenericParametersAreDifferentKinds">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe generic parameters in the signature and implementation have different kinds. Perhaps there is a missing [&lt;Measure&gt;] attribute.</source>
-        <target state="translated">Moduł „{0}” zawiera element\n    {1}    \nale jego sygnatura określa element\n    {2}    \nParametry ogólne w sygnaturze i implementacji są różnego rodzaju. Być może brakuje atrybutu [&lt;Measure&gt;].</target>
+        <target state="translated">Moduł „{0}” zawiera element\n    {1},    \nale jego podpis określa element\n    {2}    \nParametry ogólne w podpisie i implementacji są różnego rodzaju. Być może brakuje atrybutu [&lt;Measure&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityAritiesDiffer">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe arities in the signature and implementation differ. The signature specifies that '{3}' is function definition or lambda expression accepting at least {4} argument(s), but the implementation is a computed function value. To declare that a computed function value is a permitted implementation simply parenthesize its type in the signature, e.g.\n\tval {5}: int -&gt; (int -&gt; int)\ninstead of\n\tval {6}: int -&gt; int -&gt; int.</source>
-        <target state="translated">Moduł „{0}” zawiera element\n    {1},    \nale jego sygnatura określa element\n    {2}    \nLiczby argumentów w sygnaturze i implementacji są różne. Sygnatura określa, że „{3}” to definicja funkcji lub wyrażenie lambda akceptujące liczbę argumentów wynoszącą co najmniej {4}, ale implementacja jest obliczaną wartością funkcji. Aby zadeklarować, że obliczana wartość funkcji to dozwolona implementacja, po prostu umieść w nawiasach okrągłych jej typ w sygnaturze, np.\n\tval {5}: int -&gt; (int -&gt; int)\nzamiast\n\tval {6}: int -&gt; int -&gt; int.</target>
+        <target state="translated">Moduł „{0}” zawiera element\n    {1},    \nale jego podpis określa element\n    {2}    \nLiczby argumentów w podpisie i implementacji są różne. Podpis określa, że „{3}” to definicja funkcji lub wyrażenie lambda akceptujące liczbę argumentów wynoszącą co najmniej {4}, ale implementacja jest obliczaną wartością funkcji. Aby zadeklarować, że obliczana wartość funkcji to dozwolona implementacja, po prostu w podpisie umieść jej typ w nawiasie, np.\n\tval {5}: int -&gt; (int -&gt; int)\nzamiast\n\tval {6}: int -&gt; int -&gt; int.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityDotNetNamesDiffer">
@@ -624,22 +624,22 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">Definicje {0} dla typu „{1}” w sygnaturze i implementacji są niezgodne, ponieważ typ implementacji jest zapieczętowany, ale sygnatura sugeruje, że nie jest zapieczętowany. Rozważ dodanie atrybutu [&lt;Sealed&gt;] do sygnatury.</target>
+        <target state="translated">Definicje {0} dla typu „{1}” w podpisie i implementacji są niezgodne, ponieważ typ implementacji jest zapieczętowany, ale podpis sugeruje, że nie jest zapieczętowany. Rozważ dodanie atrybutu [&lt;Sealed&gt;] do podpisu.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">Definicje {0} dla typu „{1}” w sygnaturze i implementacji są niezgodne, ponieważ typ implementacji nie jest zapieczętowany, ale sygnatura sugeruje, że jest zapieczętowany. Rozważ dodanie atrybutu [&lt;Sealed&gt;] do implementacji.</target>
+        <target state="translated">Definicje {0} dla typu „{1}” w podpisie i implementacji są niezgodne, ponieważ typ implementacji nie jest zapieczętowany, ale sygnatura sugeruje, że jest zapieczętowany. Rozważ dodanie atrybutu [&lt;Sealed&gt;] do implementacji.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation is an abstract class but the signature is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the signature.</source>
-        <target state="translated">Definicje {0} dla typu „{1}” w sygnaturze i implementacji są niezgodne, ponieważ implementacja jest klasą abstrakcyjną, ale sygnatura nią nie jest. Rozważ dodanie atrybutu [&lt;AbstractClass&gt;] do sygnatury.</target>
+        <target state="translated">Definicje {0} dla typu „{1}” w podpisie i implementacji są niezgodne, ponieważ implementacja jest klasą abstrakcyjną, a podpis nie. Rozważ dodanie atrybutu [&lt;AbstractClass&gt;] do podpisu.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature is an abstract class but the implementation is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the implementation.</source>
-        <target state="translated">Definicje {0} dla typu „{1}” w sygnaturze i implementacji są niezgodne, ponieważ sygnatura jest klasą abstrakcyjną, a implementacja nią nie jest. Rozważ dodanie atrybutu [&lt;AbstractClass&gt;] do implementacji.</target>
+        <target state="translated">Definicje {0} typu „{1}” w podpisie i implementacji są niezgodne, ponieważ podpis jest klasą abstrakcyjną, a implementacja nią nie jest. Rozważ dodanie atrybutu [&lt;AbstractClass&gt;] do implementacji.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes">
@@ -1039,7 +1039,7 @@
       </trans-unit>
       <trans-unit id="augRefEqCantHaveObjEquals">
         <source>A type with attribute 'ReferenceEquality' cannot have an explicit implementation of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">Typ z atrybutem „ReferenceEquality” nie może mieć jawnej implementacji metody „Object.Equals(obiekt)”, interfejsu „System.IEquatable&lt;_&gt;” lub interfejsu „System.Collections.IStructuralEquatable”</target>
+        <target state="translated">Typ z atrybutem „ReferenceEquality” nie może mieć jawnej implementacji metody „Object.Equals(obiekt)”, interfejsu „System.IEquatable&lt;_&gt;” ani interfejsu „System.Collections.IStructuralEquatable”</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomEqNeedsObjEquals">
@@ -1059,7 +1059,7 @@
       </trans-unit>
       <trans-unit id="augNoCompCantImpIComp">
         <source>A type with attribute 'NoComparison' should not usually have an explicit implementation of 'System.IComparable', 'System.IComparable&lt;_&gt;' or 'System.Collections.IStructuralComparable'. Disable this warning if this is intentional for interoperability purposes</source>
-        <target state="translated">Typ z atrybutem „NoComparison” nie powinien zwykle mieć jawnej implementacji interfejsu „System.IComparable”, interfejsu „System.IComparable&lt;_&gt;” lub interfejsu „System.Collections.IStructuralComparable”. Wyłącz to ostrzeżenie, jeśli jest to zamierzone do celów związanych z międzyoperacyjnością</target>
+        <target state="translated">Typ z atrybutem „NoComparison” nie powinien zwykle mieć jawnej implementacji interfejsu „System.IComparable”, interfejsu „System.IComparable&lt;_&gt;” ani interfejsu „System.Collections.IStructuralComparable”. Wyłącz to ostrzeżenie, jeśli jest to zamierzone na potrzeby współdziałania</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomEqNeedsNoCompOrCustomComp">
@@ -1279,7 +1279,7 @@
       </trans-unit>
       <trans-unit id="chkReflectedDefCantSplice">
         <source>[&lt;ReflectedDefinition&gt;] terms cannot contain uses of the prefix splice operator '%'</source>
-        <target state="translated">Warunki [&lt;ReflectedDefinition&gt;] nie mogą zawierać zastosowań operatora łączenia prefiksów „%”</target>
+        <target state="translated">W warunkach [&lt;ReflectedDefinition&gt;] nie można używać operatora łączenia prefiksu „%”</target>
         <note />
       </trans-unit>
       <trans-unit id="chkEntryPointUsage">
@@ -2124,12 +2124,12 @@
       </trans-unit>
       <trans-unit id="parsIncompleteIf">
         <source>Incomplete conditional. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Niekompletna instrukcja warunkowa. Oczekiwano konstrukcji „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt;” lub „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt; else &lt;wyrażenie&gt;”.</target>
+        <target state="translated">Niekompletne wyrażenie warunkowe. Oczekiwano konstrukcji „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt;” lub „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt; else &lt;wyrażenie&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAssertIsNotFirstClassValue">
         <source>'assert' may not be used as a first class value. Use 'assert &lt;expr&gt;' instead.</source>
-        <target state="translated">Element „assert” nie może być używany jako wartość pierwszoklasowa. Użyj elementu „assert &lt;wyrażenie&gt;”.</target>
+        <target state="translated">Element „assert” nie może być używany jako wartość pierwszej klasy. Zamiast tego użyj elementu „assert &lt;wyrażenie&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIdentifierExpected">
@@ -2144,7 +2144,7 @@
       </trans-unit>
       <trans-unit id="parsArrowUseIsLimited">
         <source>The use of '-&gt;' in sequence and computation expressions is limited to the form 'for pat in expr -&gt; expr'. Use the syntax 'for ... in ... do ... yield...' to generate elements in more complex sequence expressions.</source>
-        <target state="translated">Użycie konstrukcji „-&gt;” w wyrażeniach obliczenia i sekwencji jest ograniczone do postaci „for wzorzec in wyrażenie -&gt; wyrażenie”. Użyj składni „for ... in ... do ... yield...”, aby wygenerować elementy w bardziej złożonych wyrażeniach sekwencji.</target>
+        <target state="translated">Użycie konstrukcji „-&gt;” w wyrażeniach obliczeń i sekwencji jest ograniczone do postaci „for wzorzec in wyrażenie -&gt; wyrażenie”. Użyj składni „for ... in ... do ... yield...”, aby wygenerować elementy w bardziej złożonych wyrażeniach sekwencji.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSuccessiveArgsShouldBeSpacedOrTupled">
@@ -2214,7 +2214,7 @@
       </trans-unit>
       <trans-unit id="parsMultiArgumentGenericTypeFormDeprecated">
         <source>The syntax '(typ,...,typ) ident' is not used in F# code. Consider using 'ident&lt;typ,...,typ&gt;' instead</source>
-        <target state="translated">Składnia „(typ,...,typ) ident” nie jest używana w kodzie języka F#. Rozważ użycie składni „ident&lt;typ,...,typ&gt;”</target>
+        <target state="translated">Składnia „(typ,...,typ) identyfikator” nie jest używana w kodzie F#. Rozważ użycie zamiast tego składni „identyfikator&lt;typ,...,typ&gt;”</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidLiteralInType">
@@ -2324,7 +2324,7 @@
       </trans-unit>
       <trans-unit id="tcParameterRequiresName">
         <source>A parameter with attributes must also be given a name, e.g. '[&lt;Attribute&gt;] Name : Type'</source>
-        <target state="translated">Parametr z atrybutami musi mieć też nazwę, na przykład „[&lt;Atrybut&gt;] nazwa : typ”</target>
+        <target state="translated">Parametrowi z atrybutami należy również nadać nazwę, np. „[&lt;atrybut&gt;] nazwa : typ”</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnValuesCannotHaveNames">
@@ -2604,7 +2604,7 @@
       </trans-unit>
       <trans-unit id="tcTypeCannotBeEnumerated">
         <source>The type '{0}' is not a type whose values can be enumerated with this syntax, i.e. is not compatible with either seq&lt;_&gt;, IEnumerable&lt;_&gt; or IEnumerable and does not have a GetEnumerator method</source>
-        <target state="translated">Typ „{0}” nie jest typem, którego wartości mogą być wyliczane przy użyciu tej składni. Oznacza to, że nie jest zgodny z elementem seq&lt;_&gt;, IEnumerable&lt;_&gt; lub IEnumerable i nie ma metody GetEnumerator</target>
+        <target state="translated">Typ „{0}” nie jest typem, którego wartości mogą być wyliczane przy użyciu tej składni. Oznacza to, że nie jest on zgodny z elementem seq&lt;_&gt;, IEnumerable&lt;_&gt; ani IEnumerable i nie ma metody GetEnumerator</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMixtureOfRecursiveForms">
@@ -2644,7 +2644,7 @@
       </trans-unit>
       <trans-unit id="tcExpectedUnitOfMeasureMarkWithAttribute">
         <source>Expected unit-of-measure parameter, not type parameter. Explicit unit-of-measure parameters must be marked with the [&lt;Measure&gt;] attribute.</source>
-        <target state="translated">Oczekiwano parametru jednostki miary, a nie parametru typu. Jawne parametry jednostki miary muszą być oznaczone za pomocą atrybutu [&lt;Measure&gt;].</target>
+        <target state="translated">Oczekiwano parametru jednostki miary, a nie parametru typu. Jawne parametry jednostki miary muszą być oznaczone atrybutem [&lt;Measure&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpectedTypeParameter">
@@ -3179,7 +3179,7 @@
       </trans-unit>
       <trans-unit id="tcConstructorsCannotBeFirstClassValues">
         <source>Constructors must be applied to arguments and cannot be used as first-class values. If necessary use an anonymous function '(fun arg1 ... argN -&gt; new Type(arg1,...,argN))'.</source>
-        <target state="translated">Konstruktory muszą być stosowane do argumentów i nie mogą być używane jako wartości pierwszoklasowe. Jeśli to konieczne, użyj funkcji anonimowej „(fun arg1 ... argN -&gt; new Typ(arg1,...,argN))”.</target>
+        <target state="translated">Konstruktory muszą być stosowane do argumentów i nie mogą być używane jako wartości pierwszej klasy. Jeśli to konieczne, użyj funkcji anonimowej „(fun argument1 ... argumentN -&gt; new Type(argument1,...,argumentN))”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields">
@@ -3279,7 +3279,7 @@
       </trans-unit>
       <trans-unit id="tcMutableValuesSyntax">
         <source>Mutable function values should be written 'let mutable f = (fun args -&gt; ...)'</source>
-        <target state="translated">Modyfikowalne wartości funkcji powinny mieć postać „let mutable f = (fun args -&gt; ...)”</target>
+        <target state="translated">Modyfikowalne wartości funkcji powinny mieć postać „let mutable f = (fun argumenty -&gt; ...)”</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyFunctionsCanBeInline">
@@ -3289,7 +3289,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalAttributesForLiteral">
         <source>A literal value cannot be given the [&lt;ThreadStatic&gt;] or [&lt;ContextStatic&gt;] attributes</source>
-        <target state="translated">Wartość literału nie może mieć atrybutu [&lt;ThreadStatic&gt;] lub [&lt;ContextStatic&gt;]</target>
+        <target state="translated">Wartości literału nie można przypisać atrybutu [&lt;ThreadStatic&gt;] ani [&lt;ContextStatic&gt;]</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralCannotBeMutable">
@@ -3499,17 +3499,17 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
         <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x : int = 1'</source>
-        <target state="translated">Deklaracja może mieć postać atrybutu [&lt;Literal&gt;] tylko wtedy, gdy jest też podana wartość stałej, na przykład „val x : int = 1”</target>
+        <target state="translated">Deklaracja może być atrybutem [&lt;Literal&gt;] tylko wtedy, gdy zostanie również podana wartość stała, np. „val x : int = 1”</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">
         <source>A declaration may only be given a value in a signature if the declaration has the [&lt;Literal&gt;] attribute</source>
-        <target state="translated">Deklaracja może mieć określoną wartość w sygnaturze tylko wtedy, gdy deklaracja zawiera atrybut [&lt;Literal&gt;]</target>
+        <target state="translated">Deklaracja może otrzymać wartość w podpisie tylko wtedy, gdy ma atrybut [&lt;Literal&gt;]</target>
         <note />
       </trans-unit>
       <trans-unit id="tcThreadStaticAndContextStaticMustBeStatic">
         <source>Thread-static and context-static variables must be static and given the [&lt;DefaultValue&gt;] attribute to indicate that the value is initialized to the default value on each new thread</source>
-        <target state="translated">Zmienne ze statycznymi wątkami i kontekstami muszą być statyczne i mieć określony atrybut [&lt;DefaultValue&gt;] w celu określenia, że wartość została zainicjowana w każdym nowym wątku przy użyciu wartości domyślnej</target>
+        <target state="translated">Zmienne statyczne dla wątku i kontekstu muszą być określone jako statyczne i mieć atrybut [&lt;DefaultValue&gt;] w celu wskazania, że wartość jest inicjowana w każdym nowym wątku przy użyciu wartości domyślnej</target>
         <note />
       </trans-unit>
       <trans-unit id="tcVolatileFieldsMustBeMutable">
@@ -3539,7 +3539,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalFormForExplicitTypeDeclaration">
         <source>Explicit type declarations for constructors must be of the form 'ty1 * ... * tyN -&gt; resTy'. Parentheses may be required around 'resTy'</source>
-        <target state="translated">Jawne deklaracje typów w przypadku konstruktorów muszą mieć postać „typ1 * ... * typN -&gt; typWynikowy”. Może być konieczne ujęcie elementu „typWynikowy” w nawiasy</target>
+        <target state="translated">Jawne deklaracje typów w przypadku konstruktorów muszą mieć postać „ty1 * ... * tyN -&gt; resTy”. Może być konieczne ujęcie ciągu „resTy” w nawias</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnTypesForUnionMustBeSameAsType">
@@ -3689,7 +3689,7 @@
       </trans-unit>
       <trans-unit id="tcImplementsIEquatableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IEquatable&lt;_&gt;' explicitly. Apply the 'CustomEquality' attribute to the type and provide a consistent implementation of the non-generic override 'System.Object.Equals(obj)'.</source>
-        <target state="translated">Typ struktury, rekordu lub unii „{0}” zawiera jawną implementację interfejsu „System.IEquatable&lt;_&gt;”. Zastosuj atrybut „CustomEquality” do typu i określ spójną implementację nieogólnego przesłonięcia „System.Object.Equals(obj)”.</target>
+        <target state="translated">Typ struktury, rekordu lub unii „{0}” zawiera jawną implementację interfejsu „System.IEquatable&lt;_&gt;”. Zastosuj atrybut „CustomEquality” do typu i określ spójną implementację nieogólnego przesłonięcia „System.Object.Equals(obiekt)”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors">
@@ -3754,7 +3754,7 @@
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationHasTypeParametersMissingOnType">
         <source>This type abbreviation has one or more declared type parameters that do not appear in the type being abbreviated. Type abbreviations must use all declared type parameters in the type being abbreviated. Consider removing one or more type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C&lt;'a&gt; = C of ...'.</source>
-        <target state="translated">Ten skrót typu zawiera co najmniej jeden zadeklarowany parametr typu, który nie występuje w skracanym typie. Skróty typu muszą używać wszystkich zadeklarowanych parametrów typu w skracanym typie. Rozważ usunięcie co najmniej jednego parametru typu lub użyj konkretnej definicji typu, która opakowuje odpowiedni typ, na przykład „type C&lt;'a&gt; = C of ...”.</target>
+        <target state="translated">Ten skrót typu zawiera co najmniej jeden zadeklarowany parametr typu, który nie występuje w skracanym typie. Skróty typu muszą używać wszystkich zadeklarowanych parametrów typu w skracanym typie. Rozważ usunięcie co najmniej jednego parametru typu lub użyj konkretnej definicji typu, która opakowuje typ podstawowy, na przykład „type C&lt;'a&gt; = C of ...”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes">
@@ -3789,7 +3789,7 @@
       </trans-unit>
       <trans-unit id="tcRepresentationOfTypeHiddenBySignature">
         <source>The representation of this type is hidden by the signature. It must be given an attribute such as [&lt;Sealed&gt;], [&lt;Class&gt;] or [&lt;Interface&gt;] to indicate the characteristics of the type.</source>
-        <target state="translated">Reprezentacja tego typu została ukryta przez sygnaturę. W celu wskazania charakterystyki typu musi ona zawierać atrybut, taki jak [&lt;Sealed&gt;], [&lt;Class&gt;] lub [&lt;Interface&gt;].</target>
+        <target state="translated">Reprezentacja tego typu została ukryta przez podpis. W celu wskazania charakterystyki typu musi ona zawierać atrybut, taki jak [&lt;Sealed&gt;], [&lt;Class&gt;] lub [&lt;Interface&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyClassesCanHaveAbstract">
@@ -3869,12 +3869,12 @@
       </trans-unit>
       <trans-unit id="tcInvalidDelegateSpecification">
         <source>Delegate specifications must be of the form 'typ -&gt; typ'</source>
-        <target state="translated">Specyfikacje delegatów muszą mieć postać „typ -&gt; typ”.</target>
+        <target state="translated">Specyfikacje delegatów muszą mieć postać „typ -&gt; typ”</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDelegatesCannotBeCurried">
         <source>Delegate specifications must not be curried types. Use 'typ * ... * typ -&gt; typ' for multi-argument delegates, and 'typ -&gt; (typ -&gt; typ)' for delegates returning function values.</source>
-        <target state="translated">Specyfikacje delegatów nie mogą być typu curried. Użyj konstrukcji „typ * ... * typ -&gt; typ” w przypadku delegatów z wieloma argumentami i konstrukcji „typ -&gt; (typ -&gt; typ)” w przypadku delegatów zwracających wartości funkcji..</target>
+        <target state="translated">Specyfikacje delegatów nie mogą być typu curried. Użyj konstrukcji „typ * ... * typ -&gt; typ” w przypadku delegatów z wieloma argumentami i konstrukcji „typ -&gt; (typ -&gt; typ)” w przypadku delegatów zwracających wartości funkcji.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForLiteralEnumeration">
@@ -3894,7 +3894,7 @@
       </trans-unit>
       <trans-unit id="tcReservedSyntaxForAugmentation">
         <source>The syntax 'type X with ...' is reserved for augmentations. Types whose representations are hidden but which have members are now declared in signatures using 'type X = ...'. You may also need to add the '[&lt;Sealed&gt;] attribute to the type definition in the signature</source>
-        <target state="translated">Składnia „type X with ...” jest zarezerwowana dla powiększeń. Typy, które mają ukryte reprezentacje, ale zawierają elementy członkowskie, są obecnie deklarowane w sygnaturach przy użyciu składni „type X = ...”. Może być też konieczne dodanie atrybutu [&lt;Sealed&gt;] do definicji typu w sygnaturze</target>
+        <target state="translated">Składnia „type X with ...” jest zarezerwowana dla rozszerzeń. Typy, które mają ukryte reprezentacje, ale zawierają składowe, są obecnie deklarowane w podpisach przy użyciu składni „type X = ...”. Może być też konieczne dodanie atrybutu [&lt;Sealed&gt;] do definicji typu w podpisie</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMembersThatExtendInterfaceMustBePlacedInSeparateModule">
@@ -4204,7 +4204,7 @@
       </trans-unit>
       <trans-unit id="optsLinkresource">
         <source>Link the specified resource to this assembly where the resinfo format is &lt;file&gt;[,&lt;string name&gt;[,public|private]]</source>
-        <target state="translated">Połącz określony zasób z tym zestawem, gdzie format informacji o zasobie to &lt;plik&gt;[,&lt;nazwa_ciągu&gt;[,public|private]]</target>
+        <target state="translated">Połącz określony zasób z tym zestawem, gdzie format informacji o zasobie to &lt;plik&gt;[,&lt;nazwa ciągu&gt;[,public|private]]</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDebugPM">
@@ -4619,7 +4619,7 @@
       </trans-unit>
       <trans-unit id="eventHasNonStandardType">
         <source>The event '{0}' has a non-standard type. If this event is declared in another CLI language, you may need to access this event using the explicit {1} and {2} methods for the event. If this event is declared in F#, make the type of the event an instantiation of either 'IDelegateEvent&lt;_&gt;' or 'IEvent&lt;_,_&gt;'.</source>
-        <target state="translated">Zdarzenie „{0}” ma niestandardowy typ. Jeśli to zdarzenie zadeklarowano w innym języku infrastruktury CLI, może być konieczne uzyskanie dostępu do tego zdarzenia przy użyciu jawnych metod {1} i {2} zdarzenia. Jeśli to zdarzenie zadeklarowano w języku F#, utwórz dla typu zdarzenia wystąpienie interfejsu „IDelegateEvent&lt;_&gt;” lub interfejsu „IEvent&lt;_,_&gt;”.</target>
+        <target state="translated">Zdarzenie „{0}” ma niestandardowy typ. Jeśli to zdarzenie zadeklarowano w innym języku interfejsu CLI, może być konieczne uzyskanie dostępu do tego zdarzenia przy użyciu jawnych metod {1} i {2} zdarzenia. Jeśli to zdarzenie zadeklarowano w języku F#, określ typ zdarzenia jako wystąpienie interfejsu „IDelegateEvent&lt;_&gt;” lub „IEvent&lt;_,_&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeIsNotAccessible">
@@ -5124,17 +5124,17 @@
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
         <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="needs-review-translation">Parametry typu muszą być umieszczone w bezpośrednim sąsiedztwie nazwy typu (np. \"type C&lt;'T&gt;\", a nie     type \"C   &lt;'T&gt;\")</target>
+        <target state="translated">Usuń spacje między nazwą i parametrem typu, np. \"type C&lt;'T&gt;\", a nie type \"C   &lt;'T&gt;\". Parametry typów muszą bezpośrednio przylegać do nazw typów.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
         <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="needs-review-translation">Argumenty typu muszą być umieszczone w bezpośrednim sąsiedztwie nazwy typu (np. \"C&lt;'T&gt;\", a nie \"C  &lt;'T&gt;\")</target>
+        <target state="translated">Usuń spacje między nazwą i parametrem typu, np. \"C&lt;'T&gt;\", a nie \"C &lt;'T&gt;\". Parametry typów muszą bezpośrednio przylegać do nazw typów.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
         <source>The use of the type syntax 'int C' and 'C  &lt;int&gt;' is not permitted here. Consider adjusting this type to be written in the form 'C&lt;int&gt;'</source>
-        <target state="translated">Użycie składni typu „int C” i „C  &lt;int&gt;” jest tutaj niedozwolone. Rozważ dopasowanie tego typu w celu zapisania go w postaci „C&lt;int&gt;”</target>
+        <target state="translated">Użycie składni typu „int C” i „C  &lt;int&gt;” nie jest tutaj dozwolone. Rozważ dopasowanie tego typu w celu zapisania go w postaci „C&lt;int&gt;”</target>
         <note />
       </trans-unit>
       <trans-unit id="tastUndefinedItemRefModuleNamespace">
@@ -5224,7 +5224,7 @@
       </trans-unit>
       <trans-unit id="activePatternChoiceHasFreeTypars">
         <source>Active pattern '{0}' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x'</source>
-        <target state="translated">Aktywny wzorzec „{0}” ma typ wyniku zawierający zmienne typu, które nie są określone przez dane wejściowe. Częstą przyczyną jest brak podanego przypadku wyniku (np. „let (|A|B|) (x:int) = A x”). Można to naprawić za pomocą ograniczenia typu (np. „let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x”)</target>
+        <target state="translated">Aktywny wzorzec „{0}” ma typ wyniku zawierający zmienne typu, które nie są określone przez dane wejściowe. Częstą przyczyną jest brak podanego przypadku wyniku, np. „let (|A|B|) (x:int) = A x”. Można to naprawić za pomocą ograniczenia typu, np. „let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x”</target>
         <note />
       </trans-unit>
       <trans-unit id="ilFieldHasOffsetForSequentialLayout">
@@ -5249,7 +5249,7 @@
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
         <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">Nazwa pliku MDB musi mieć postać: &lt;nazwa-pliku-zestawu&gt;.mdb. Opcja --pdb zostanie zignorowana.</target>
+        <target state="translated">Plik MDB musi mieć nazwę &lt;nazwa-pliku-zestawu&gt;.mdb. Opcja --pdb zostanie zignorowana.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBMemberMissing">
@@ -5299,7 +5299,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBinding">
         <source>'use!' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;'</source>
-        <target state="translated">Powiązania „use!” muszą mieć postać „use! &lt;var&gt; = &lt;expr&gt;”</target>
+        <target state="translated">Powiązania „use!” muszą mieć format „use! &lt;zmienna&gt; = &lt;wyrażenie&gt;”</target>
         <note />
       </trans-unit>
       <trans-unit id="crefNoInnerGenericsInQuotations">
@@ -5529,7 +5529,7 @@
       </trans-unit>
       <trans-unit id="fscResxSourceFileDeprecated">
         <source>Passing a .resx file ({0}) as a source file to the compiler is deprecated. Use resgen.exe to transform the .resx file into a .resources file to pass as a --resource option. If you are using MSBuild, this can be done via an &lt;EmbeddedResource&gt; item in the .fsproj project file.</source>
-        <target state="translated">Przekazywanie pliku .resx ({0}) jako pliku źródłowego do kompilatora jest przestarzałe. Użyj programu resgen.exe, aby przekształcić plik .resx w plik .resources w celu przekazania go w opcji --resource. Jeśli używasz narzędzia MSBuild, może to zostać zrealizowane za pośrednictwem elementu &lt;EmbeddedResource&gt; w pliku projektu .fsproj.</target>
+        <target state="translated">Przekazywanie pliku resx ({0}) jako pliku źródłowego do kompilatora jest przestarzałe. Użyj programu resgen.exe, aby przekształcić plik resx w plik resources w celu przekazania go w opcji --resource. Jeśli używasz narzędzia MSBuild, można to zrobić za pośrednictwem elementu &lt;EmbeddedResource&gt; w pliku projektu fsproj.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoProfileMismatches">
@@ -5694,7 +5694,7 @@
       </trans-unit>
       <trans-unit id="etDirectReferenceToGeneratedTypeNotAllowed">
         <source>A direct reference to the generated type '{0}' is not permitted. Instead, use a type definition, e.g. 'type TypeAlias = &lt;path&gt;'. This indicates that a type provider adds generated types to your assembly.</source>
-        <target state="translated">Bezpośrednie odwołanie do wygenerowanego typu „{0}” jest niedozwolone. Użyj definicji typu (np. „type AliasTypu = &lt;ścieżka&gt;”). Wskazuje to, że dostawca typów dodaje wygenerowane typy do używanego zestawu.</target>
+        <target state="translated">Bezpośrednie odwołanie do wygenerowanego typu „{0}” nie jest dozwolone. Zamiast tego użyj definicji typu, np. „type TypeAlias = &lt;ścieżka&gt;”. Wskazuje to, że dostawca typów dodaje wygenerowane typy do używanego zestawu.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProvidedTypeHasUnexpectedPath">
@@ -5849,7 +5849,7 @@
       </trans-unit>
       <trans-unit id="etStaticParameterRequiresAValue">
         <source>The static parameter '{0}' of the provided type or method '{1}' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. '{2}&lt;{3}=...&gt;'.</source>
-        <target state="translated">Parametr statyczny „{0}” podanego typu lub podanej metody „{1}” wymaga wartości. Parametry statyczne dostawców typów mogą być opcjonalnie określane przy użyciu argumentów nazwanych (np. „{2}&lt;{3}=...&gt;”).</target>
+        <target state="translated">Parametr statyczny „{0}” podanego typu lub podanej metody „{1}” wymaga wartości. Parametry statyczne dostawców typów mogą być opcjonalnie określane przy użyciu argumentów nazwanych, np. „{2}&lt;{3}=...&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
@@ -5959,12 +5959,12 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedLBrackLess">
         <source>Unmatched '[&lt;'. Expected closing '&gt;]'</source>
-        <target state="translated">Niedopasowane znaki „[&lt;”. Oczekiwano znaków zamykających „&gt;]”</target>
+        <target state="translated">Niedopasowany element „[&lt;”. Oczekiwano elementu zamykającego „&gt;]”</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileMatch">
         <source>Unexpected end of input in 'match' expression. Expected 'match &lt;expr&gt; with | &lt;pat&gt; -&gt; &lt;expr&gt; | &lt;pat&gt; -&gt; &lt;expr&gt; ...'.</source>
-        <target state="translated">Nieoczekiwane zakończenie danych wejściowych w wyrażeniu „match”. Oczekiwana wartość: „match &lt;expr&gt; with | &lt;pat&gt; -&gt; &lt;expr&gt; | &lt;pat&gt; -&gt; &lt;expr&gt; ...”.</target>
+        <target state="translated">Nieoczekiwane zakończenie danych wejściowych w wyrażeniu „match”. Oczekiwano konstrukcji „match &lt;wyrażenie&gt; with | &lt;wzorzec&gt; -&gt; &lt;wyrażenie&gt; | &lt;wzorzec&gt; -&gt; &lt;wyrażenie&gt; ...”.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileTry">
@@ -5979,7 +5979,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFor">
         <source>Unexpected end of input in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Nieoczekiwane zakończenie danych wejściowych w wyrażeniu „for”. Oczekiwana wartość: „for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;”.</target>
+        <target state="translated">Nieoczekiwane zakończenie danych wejściowych w wyrażeniu „for”. Oczekiwano konstrukcji „for &lt;wzorzec&gt; in &lt;wyrażenie&gt; do &lt;wyrażenie&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileWith">
@@ -5989,12 +5989,12 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileThen">
         <source>Unexpected end of input in 'then' branch of conditional expression. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Nieoczekiwane zakończenie danych wejściowych w rozgałęzieniu „then” wyrażenia warunkowego. Oczekiwano konstrukcji „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt;” lub „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt; else &lt;wyrażenie&gt;”.</target>
+        <target state="translated">Nieoczekiwane zakończenie danych wejściowych w gałęzi „then” wyrażenia warunkowego. Oczekiwano konstrukcji „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt;” lub „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt; else &lt;wyrażenie&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElse">
         <source>Unexpected end of input in 'else' branch of conditional expression. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Nieoczekiwany koniec danych wejściowych w rozgałęzieniu „else” wyrażenia warunkowego. Oczekiwano instrukcji „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt;” lub „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt; else &lt;wyrażenie&gt;”.</target>
+        <target state="translated">Nieoczekiwane zakończenie danych wejściowych w gałęzi „else” wyrażenia warunkowego. Oczekiwano konstrukcji „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt;” lub „if &lt;wyrażenie&gt; then &lt;wyrażenie&gt; else &lt;wyrażenie&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFunBody">
@@ -6064,12 +6064,12 @@
       </trans-unit>
       <trans-unit id="parsForDoExpected">
         <source>Missing 'do' in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Brak instrukcji „do” w wyrażeniu „for”. Oczekiwano konstrukcji „for &lt;wzorzec&gt; in &lt;wyrażenie&gt; do &lt;wyrażenie&gt;”.</target>
+        <target state="translated">Brak powiązania „do” w wyrażeniu „for”. Oczekiwano konstrukcji „for &lt;wzorzec&gt; in &lt;wyrażenie&gt; do &lt;wyrażenie&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidRelationInJoin">
         <source>Invalid join relation in '{0}'. Expected 'expr &lt;op&gt; expr', where &lt;op&gt; is =, =?, ?= or ?=?.</source>
-        <target state="translated">Nieprawidłowa relacja połączenia w elemencie „{0}”.Oczekiwany ciąg: „expr &lt;op&gt; expr”, gdzie &lt;op&gt; to =, =?, ?= lub ?=?.</target>
+        <target state="translated">Nieprawidłowa relacja sprzężenia w elemencie „{0}”. Oczekiwano konstrukcji „wyrażenie &lt;operator&gt; wyrażenie”, gdzie &lt;operator&gt; to =, =?, ?= lub ?=?.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoCallsWord">
@@ -6214,7 +6214,7 @@
       </trans-unit>
       <trans-unit id="tcUnrecognizedQueryBinaryOperator">
         <source>Arguments to query operators may require parentheses, e.g. 'where (x &gt; y)' or 'groupBy (x.Length / 10)'</source>
-        <target state="translated">Argumenty operatorów zapytania mogą wymagać nawiasów, na przykład „where (x &gt; y)” lub „groupBy (x.Length / 10)”</target>
+        <target state="translated">Argumenty operatorów zapytań mogą wymagać nawiasów, np. „where (x &gt; y)” lub „groupBy (x.Length / 10)”</target>
         <note />
       </trans-unit>
       <trans-unit id="crefNoSetOfHole">
@@ -6329,7 +6329,7 @@
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">
         <source>The union case '{0}' does not have a field named '{1}'.</source>
-        <target state="needs-review-translation">Przypadek unii/wyjątek „{0}” nie ma pola o nazwie „{1}”.</target>
+        <target state="translated">Przypadek unii „{0}” nie ma pola o nazwie „{1}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseFieldCannotBeUsedMoreThanOnce">
@@ -6709,7 +6709,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionLetBang">
         <source>Used in computation expressions to bind a name to the result of another computation expression.</source>
-        <target state="review-required-translation">Używane w asynchronicznych przepływach pracy do powiązywania nazwy z wynikiem obliczenia asynchronicznego lub w innych wyrażeniach obliczenia do powiązywania nazwy z wynikiem, którego typ to obliczenie.</target>
+        <target state="translated">Używane w wyrażeniach obliczeń, aby powiązać nazwę z wynikiem innego wyrażenia obliczenia.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatch">
@@ -6789,12 +6789,12 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionReturn">
         <source>Used to provide a value for the result of the containing computation expression.</source>
-        <target state="review-required-translation">Używane do wskazywania wartości do podania jako wyniku wyrażenia obliczenia.</target>
+        <target state="translated">Używane do udostępniania wartości dla wyniku zawierającego wyrażenia obliczenia.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionReturnBang">
         <source>Used to provide a value for the result of the containing computation expression, where that value itself comes from the result another computation expression.</source>
-        <target state="review-required-translation">Używane do wskazywania wyrażenia obliczenia, które po obliczeniu udostępnia wynik zawartego wyrażenia obliczenia.</target>
+        <target state="translated">Używane do udostępniania wyniku zawierającego wyrażenia obliczenia, gdy ta wartość pochodzi z wyniku innego wyrażenia obliczenia.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionSelect">
@@ -6839,12 +6839,12 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionUse">
         <source>Used instead of let for values that implement IDisposable"</source>
-        <target state="needs-review-translation">Używane zamiast instrukcji let na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
+        <target state="translated">Używane zamiast powiązania let w przypadku wartości implementujących interfejs IDisposable</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionUseBang">
         <source>Used instead of let! in computation expressions for computation expression results that implement IDisposable.</source>
-        <target state="review-required-translation">Używane zamiast instrukcji let! w asynchronicznych przepływach pracy i innych wyrażeniach obliczenia na potrzeby wartości, które wymagają wywołania operacji Dispose w celu zwolnienia zasobów.</target>
+        <target state="translated">Używane zamiast powiązania let! w wyrażeniach obliczeń, aby uzyskać wyniki wyrażenia obliczeń implementujące interfejs IDisposable.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionVal">
@@ -6999,12 +6999,12 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">Wskaźnik byref zwracany przez funkcję lub metodę jest niejawnie wyłuskiwany, począwszy od wersji 4.5 języka F#. Aby pobrać wartość zwracaną jako wskaźnik, użyj operatora address-of, np. „&amp;f(x)” lub „&amp;obj.Method(arg1, arg2)”.</target>
+        <target state="translated">Wskaźnik byref zwracany przez funkcję lub metodę jest niejawnie wyłuskiwany w języku F# 4.5 i nowszych. Aby uzyskać wartość zwracaną jako wskaźnik, użyj operatora address-of, np. „&amp;f(x)” lub „&amp;obj.Method(argument1, argument2)”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">
         <source>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="translated">Typ z adnotacją IsByRefLike musi również być strukturą. Rozważ dodanie atrybutu [&lt;Struct&gt;] do tego typu.</target>
+        <target state="translated">Typ z adnotacją IsByRefLike musi być również strukturą. Rozważ dodanie atrybutu [&lt;Struct&gt;] do typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefAddressOfLocal">
@@ -7024,7 +7024,7 @@
       </trans-unit>
       <trans-unit id="tcIsReadOnlyNotStruct">
         <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="translated">Typ z adnotacją IsReadOnly musi również być strukturą. Rozważ dodanie atrybutu [&lt;Struct&gt;] do tego typu.</target>
+        <target state="translated">Typ z adnotacją IsReadOnly musi również być strukturą. Rozważ dodanie atrybutu [&lt;Struct&gt;] do typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
@@ -7059,82 +7059,82 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedBraceBar">
         <source>Unmatched '{{|'</source>
-        <target state="new">Unmatched '{{|'</target>
+        <target state="translated">Niedopasowany element „{{|”</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoAnonRecdField">
         <source>anonymous record field</source>
-        <target state="new">anonymous record field</target>
+        <target state="translated">pole rekordu anonimowego</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExceptionConstructorDoesNotHaveFieldWithGivenName">
         <source>The exception '{0}' does not have a field named '{1}'.</source>
-        <target state="new">The exception '{0}' does not have a field named '{1}'.</target>
+        <target state="translated">Wyjątek „{0}” nie ma pola o nazwie „{1}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcActivePatternsDoNotHaveFields">
         <source>Active patterns do not have fields. This syntax is invalid.</source>
-        <target state="new">Active patterns do not have fields. This syntax is invalid.</target>
+        <target state="translated">Aktywne wzorce nie mają pól. Składnia jest nieprawidłowa.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorDoesNotHaveFieldWithGivenName">
         <source>The constructor does not have a field named '{0}'.</source>
-        <target state="new">The constructor does not have a field named '{0}'.</target>
+        <target state="translated">Konstruktor nie ma pola o nazwie „{0}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdCcuMismatch">
         <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
-        <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
+        <target state="translated">Dwa typy rekordów anonimowych pochodzą z różnych zestawów: „{0}” i „{1}”</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
-        <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
+        <target state="translated">Dwa typy rekordów anonimowych mają niezgodne zestawy nazw pól „{0}” i „{1}”</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
         <source>Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</source>
-        <target state="new">Cannot call the byref extension method '{0}. The first parameter requires the value to be mutable or a non-readonly byref type.</target>
+        <target state="translated">Nie można wywołać metody rozszerzenia byref „{0}”. Pierwszy parametr wymaga, aby wartość była typem byref zmiennym lub innym niż tylko do odczytu.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByrefsMayNotHaveTypeExtensions">
         <source>Byref types are not allowed to have optional type extensions.</source>
-        <target state="new">Byref types are not allowed to have optional type extensions.</target>
+        <target state="translated">Typy Byref nie mogą mieć opcjonalnych rozszerzeń typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotPartiallyApplyExtensionMethodForByref">
         <source>Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</source>
-        <target state="new">Cannot partially apply the extension method '{0}' because the first parameter is a byref type.</target>
+        <target state="translated">Nie można częściowo zastosować metody rozszerzenia „{0}”, ponieważ pierwszy parametr jest typu byref.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeDoesNotInheritAttribute">
         <source>This type does not inherit Attribute, it will not work correctly with other .NET languages.</source>
-        <target state="new">This type does not inherit Attribute, it will not work correctly with other .NET languages.</target>
+        <target state="translated">Ten typ nie dziedziczy atrybutu, więc nie będzie działać prawidłowo z innymi językami .NET.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidAnonRecdExpr">
         <source>Invalid anonymous record expression</source>
-        <target state="new">Invalid anonymous record expression</target>
+        <target state="translated">Nieprawidłowe wyrażenie rekordu anonimowego</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidAnonRecdType">
         <source>Invalid anonymous record type</source>
-        <target state="new">Invalid anonymous record type</target>
+        <target state="translated">Nieprawidłowy typ rekordu anonimowego</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateNeedsRecordType">
         <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
-        <target state="new">The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</target>
+        <target state="translated">Dane wejściowe wyrażenia kopiowania i aktualizowania, które tworzy rekord anonimowy, muszą być rekordem lub rekordem anonimowym</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInvalidFunctionParameterType">
         <source>The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</source>
-        <target state="new">The parameter '{0}' has an invalid type '{1}'. This is not permitted by the rules of Common IL.</target>
+        <target state="translated">Parametr „{0}” ma nieprawidłowy typ „{1}”. Nie jest to dozwolone przez reguły języka Common IL.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInvalidFunctionReturnType">
         <source>The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</source>
-        <target state="new">The function or method has an invalid return type '{0}'. This is not permitted by the rules of Common IL.</target>
+        <target state="translated">Funkcja lub metoda ma nieprawidłowy zwracany typ „{0}”. Nie jest to dozwolone przez reguły języka Common IL.</target>
         <note />
       </trans-unit>
     </body>

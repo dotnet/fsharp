@@ -558,7 +558,7 @@ namespace Microsoft.FSharp.Collections
             for (KeyValue(x,y)) in this do
                 res <- combineHash res (hash x)
                 res <- combineHash res (Unchecked.hash y)
-            abs res
+            res
 
         override this.Equals(that) = 
             match that with 

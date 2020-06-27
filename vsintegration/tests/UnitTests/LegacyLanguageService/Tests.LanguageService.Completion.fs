@@ -1528,6 +1528,7 @@ let x = new MyClass2(0)
 
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``AfterConstructor.5039_1``() =
         AssertAutoCompleteContainsNoCoffeeBreak 
           [ "let someCall(x) = null"
@@ -1537,6 +1538,7 @@ let x = new MyClass2(0)
           [ "LastIndexOfAny" ] // should not contain (String)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member public this.``AfterConstructor.5039_1.CoffeeBreak``() =
         AssertAutoCompleteContains
           [ "let someCall(x) = null"
@@ -2494,6 +2496,7 @@ let x = new MyClass2(0)
     [<Test>]
     [<Category("QueryExpressions")>]
     [<Category("Expensive")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member this.``QueryExpressions.QueryAndSequenceExpressionWithForYieldLoopSystematic``() = 
 
         let prefix =  """
@@ -2595,6 +2598,7 @@ let aaaaaa = 0
     [<Test>]
     [<Category("QueryExpressions")>]
     [<Category("Expensive")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     /// Incrementally enter query with a 'join' and check for availability of quick info, auto completion and dot completion 
     member this.``QueryAndOtherExpressions.WordByWordSystematicJoinQueryOnSingleLine``() = 
 
@@ -2649,6 +2653,7 @@ let aaaaaa = 0
     /// This is a sanity check that the multiple-line case is much the same as the single-line cae
     [<Category("QueryExpressions")>]
     [<Category("Expensive")>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member this.``QueryAndOtherExpressions.WordByWordSystematicJoinQueryOnMultipleLine``() = 
 
         let prefix =  """
@@ -4881,6 +4886,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         gpatcc.AssertExactly(0,0)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member this.``BadCompletionAfterQuicklyTyping.Bug72561.Noteworthy.NowWorks``() =        
         let code = [ "123      " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
@@ -4903,6 +4909,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         gpatcc.AssertExactly(0,0)
 
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
     member this.``BadCompletionAfterQuicklyTyping.Bug130733.NowWorks``() =        
         let code = [ "let someCall(x) = null"
                      "let xe = someCall(System.IO.StringReader()  "]

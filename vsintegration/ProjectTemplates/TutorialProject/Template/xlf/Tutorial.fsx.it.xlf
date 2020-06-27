@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../Tutorial.fsx">
     <body>
@@ -1299,12 +1299,12 @@
       </trans-unit>
       <trans-unit id="Option-Line2">
         <source>They are used extensively in F# code to represent the cases where many other</source>
-        <target state="translated">Questi valori sono ampiamente usati nel codice F# per rappresentare i casi in cui molti altri</target>
+        <target state="translated">Questi valori sono ampiamente utilizzati nel codice F# per rappresentare i casi in cui molti altri</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line3">
         <source>languages would use null references.</source>
-        <target state="translated">linguaggi userebbero riferimenti Null.</target>
+        <target state="translated">linguaggi utilizzerebbero riferimenti null.</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line4">
@@ -1389,7 +1389,7 @@
       </trans-unit>
       <trans-unit id="ComputeMileToMeter">
         <source>Compute  metric-system constant</source>
-        <target state="translated">Calcola la costate del sistema metrico</target>
+        <target state="translated">Calcola la costante del sistema metrico</target>
         <note />
       </trans-unit>
       <trans-unit id="PrintUnitsOfMeasure">

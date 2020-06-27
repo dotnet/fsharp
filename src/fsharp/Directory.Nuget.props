@@ -20,6 +20,7 @@
       tags=$(PackageTags);
       githeadsha=$(NormalizedGitHeadSha);
       configuration=$(Configuration);
+      artifactsbindir=$(ArtifactsBinDir);
     </NuspecProperties>
   </PropertyGroup>
 

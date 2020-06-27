@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <PackageId>Testing.FSharp.Compiler</PackageId>
+    <PreRelease>true</PreRelease>
   </PropertyGroup>
 
 </Project>

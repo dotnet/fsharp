@@ -115,38 +115,41 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
         member __.DisplayTaggedParts = ImmutableArray<TaggedText>.Empty
         member __.ChildItems = ImmutableArray<INavigableItem>.Empty
 
+// TODO: Uncomment code when VS has a fix for updating the status bar.
 type internal StatusBar(statusBar: IVsStatusbar) =
-    let mutable searchIcon = int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj
+    let mutable _searchIcon = int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj
 
-    let clear() =
+    let _clear() =
         // unfreeze the statusbar
         statusBar.FreezeOutput 0 |> ignore  
         statusBar.Clear() |> ignore
         
-    member __.Message(msg: string) =
-        let _, frozen = statusBar.IsFrozen()
-        // unfreeze the status bar
-        if frozen <> 0 then statusBar.FreezeOutput 0 |> ignore
-        statusBar.SetText msg |> ignore
-        // freeze the status bar
-        statusBar.FreezeOutput 1 |> ignore
+    member __.Message(_msg: string) =
+        ()
+        //let _, frozen = statusBar.IsFrozen()
+        //// unfreeze the status bar
+        //if frozen <> 0 then statusBar.FreezeOutput 0 |> ignore
+        //statusBar.SetText msg |> ignore
+        //// freeze the status bar
+        //statusBar.FreezeOutput 1 |> ignore
 
-    member this.TempMessage(msg: string) =
-        this.Message msg
-        async {
-            do! Async.Sleep 4000
-            match statusBar.GetText() with
-            | 0, currentText when currentText <> msg -> ()
-            | _ -> clear()
-        }|> Async.Start
+    member this.TempMessage(_msg: string) =
+        ()
+        //this.Message msg
+        //async {
+        //    do! Async.Sleep 4000
+        //    match statusBar.GetText() with
+        //    | 0, currentText when currentText <> msg -> ()
+        //    | _ -> clear()
+        //}|> Async.Start
     
-    member __.Clear() = clear()
+    member __.Clear() = () //clear()
 
     /// Animated magnifying glass that displays on the status bar while a symbol search is in progress.
     member __.Animate() : IDisposable = 
-        statusBar.Animation (1, &searchIcon) |> ignore
+        //statusBar.Animation (1, &searchIcon) |> ignore
         { new IDisposable with
-            member __.Dispose() = statusBar.Animation(0, &searchIcon) |> ignore }
+            member __.Dispose() = () } //statusBar.Animation(0, &searchIcon) |> ignore }
 
 type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
     let userOpName = "GoToDefinition"

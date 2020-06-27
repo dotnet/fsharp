@@ -1,10 +1,17 @@
+variables:
+- name: PB_PublishBlobFeedUrl
+  value: https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
+- group: DotNet-Blob-Feed
+- name: PB_PublishBlobFeedKey
+  value: $(dotnetfeed-storage-access-key-1)
+
 jobs:
 - job: Full_Signed
   pool:
     name: VSEng-MicroBuildVS2017
   timeoutInMinutes: 300
   variables:
-    MSBuildConfiguration: 'Release'
+    BuildConfiguration: 'Release'
   steps:
   # Install Signing Plugin
   - task: ms-vseng.MicroBuildTasks.30666190-6959-11e5-9f96-f56098202fef.MicroBuildSigningPlugin@1
@@ -29,22 +36,51 @@ jobs:
     displayName: Publish nightly package to MyGet
     inputs:
       scriptName: 'setup\publish-assets.ps1'
-      arguments: '-binariesPath $(MSBuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
+      arguments: '-binariesPath artifacts\bin -configuration $(BuildConfiguration) -branchName $(Build.SourceBranch) -apiKey $(FSharp.MyGetApiKey)'
     condition: and(succeeded(), contains(variables['PB_PublishType'], 'myget'))
 
-  # Publish packages to Azure Blob Storage
+  # Package publish
+  - task: CmdLine@1
+    displayName: Restore package publishing
+    inputs:
+      filename: '.nuget\NuGet.exe'
+      arguments: 'restore packages.config -PackagesDirectory packages -Source https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json'
+    condition: and(succeeded(), contains(variables['PB_PublishType'], 'blob'))
   - task: MSBuild@1
     displayName: Publish packages to Azure Blob Storage
     inputs:
       solution: PublishToBlob.proj
-      msbuildArguments: '/t:Build /p:ExpectedFeedUrl=$(PB_PublishBlobFeedUrl) /p:AccountKey=$(PB_PublishBlobFeedKey) /p:ManifestBranch=$(SourceBranch) /p:ManifestCommit=$(SourceVersion) /p:ManifestBuildId=$(OfficialBuildId)'
+      msbuildArguments: '/t:Build /p:Configuration=$(BuildConfiguration) /p:ExpectedFeedUrl=$(PB_PublishBlobFeedUrl) /p:AccountKey=$(PB_PublishBlobFeedKey) /p:ManifestRepouri=$(Build.Repository.Uri) /p:ManifestBranch=$(Build.SourceBranch) /p:ManifestCommit=$(Build.SourceVersion) /p:ManifestBuildId=$(Build.BuildNumber) /bl:$(Build.SourcesDirectory)/artifacts/log/$(BuildConfiguration)/pub/publish.binlog'
+    condition: and(succeeded(), contains(variables['PB_PublishType'], 'blob'))
+  - task: PublishBuildArtifacts@1
+    displayName: Publish publishing bin log
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log/$(BuildConfiguration)/pub'
+      ArtifactName: 'Publish_bin_log'
+      publishLocation: Container
+    continueOnError: true
+    condition: and(succeeded(), contains(variables['PB_PublishType'], 'blob'))
+  - task: CopyFiles@2
+    displayName: Gather Asset Manifests
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/artifacts/log/$(BuildConfiguration)/AssetManifest'
+      TargetFolder: '$(Build.StagingDirectory)/AssetManifests'
+    continueOnError: true
+    condition: and(succeeded(), contains(variables['PB_PublishType'], 'blob'))
+  - task: PublishBuildArtifacts@1
+    displayName: Push Asset Manifests
+    inputs:
+      PathtoPublish: '$(Build.StagingDirectory)/AssetManifests'
+      PublishLocation: Container
+      ArtifactName: AssetManifests
+    continueOnError: true
     condition: and(succeeded(), contains(variables['PB_PublishType'], 'blob'))
 
   # Create static drop
   - task: PublishBuildArtifacts@1
     displayName: Create static drop
     inputs:
-      PathtoPublish: '$(MSBuildConfiguration)'
+      PathtoPublish: 'artifacts'
       ArtifactName: '$(Build.BuildNumber)'
       publishLocation: FilePath
       TargetPath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)'
@@ -58,7 +94,7 @@ jobs:
     inputs:
       SymbolsPath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)\$(Build.BuildNumber)\Symbols'
       SearchPattern: '**\*.dll;**\*.exe;**\*.pdb'
-      SymbolsFolder: '$(Build.SourcesDirectory)\$(MSBuildConfiguration)'
+      SymbolsFolder: '$(Build.SourcesDirectory)\artifacts\SymStore'
       TreatNotIndexedAsWarning: true
       SymbolsProduct: '$(Build.DefinitionName)'
       SymbolsVersion: '$(Build.BuildNumber)'
@@ -69,7 +105,7 @@ jobs:
   - task: ms-vseng.MicroBuildTasks.4305a8de-ba66-4d8b-b2d1-0dc4ecbbf5e8.MicroBuildUploadVstsDropFolder@1
     displayName: Upload VSTS Drop
     inputs:
-      DropFolder: '$(Build.SourcesDirectory)\$(MSBuildConfiguration)\insertion'
+      DropFolder: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(BuildConfiguration)\Insertion'
     condition: and(succeeded(), contains(variables['PB_PublishType'], 'vsts'))
 
   # Execute cleanup tasks
@@ -91,6 +127,14 @@ jobs:
     displayName: Publish symbols to SymWeb
     inputs:
       symbolServiceURI: 'https://microsoft.artifacts.visualstudio.com/DefaultCollection'
-      sourcePath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)\$(Build.BuildNumber)\Symbols'
+      sourcePath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)\$(Build.BuildNumber)\SymStore'
       usePat: false
     condition: and(succeeded(), contains(variables['PB_PublishType'], 'symweb'))
+
+- template: /eng/common/templates/job/publish-build-assets.yml
+  parameters:
+    dependsOn:
+    - Full_Signed
+    pool:
+      vmImage: vs2017-win2016
+    enablePublishBuildArtifacts: true

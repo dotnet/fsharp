@@ -1263,18 +1263,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
 
-            // =====================================================================================================
-            // Todo: x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) for VS2017.7
-            // Earlier buildtasks usesd System.Converter<int,int> for cross platform we are moving to Func<int>
-            // This is so that during the interim, earlier VS's will still load the OSS project
-            // =====================================================================================================
-            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) =
-                x.CoreCompile(flags, sources)
-                if actuallyBuild then
-                    compile.Invoke(0)
-                else
-                    0
-
             member x.Compile(compile:Func<int>, flags:string[], sources:string[]) =
                 x.CoreCompile(flags, sources)
                 if actuallyBuild then

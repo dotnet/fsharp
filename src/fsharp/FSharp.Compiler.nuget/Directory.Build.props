@@ -6,8 +6,6 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <NuspecFile>Microsoft.FSharp.Compiler.nuspec</NuspecFile>
-    <PreReleaseSuffix Condition="'$(PreRelease)' != 'false'">-rtm-$(NuGetPackageVersionSuffix)</PreReleaseSuffix>
-    <PackageVersion>$(FSPackageVersion)$(PreReleaseSuffix)</PackageVersion>
   </PropertyGroup>
 
 </Project>

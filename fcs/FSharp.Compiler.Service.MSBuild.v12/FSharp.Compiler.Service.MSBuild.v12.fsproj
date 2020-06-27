@@ -7,7 +7,6 @@
   <PropertyGroup>
     <TargetFrameworks>net45</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>
     <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
   </PropertyGroup>

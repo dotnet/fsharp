@@ -978,11 +978,11 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
     // Under those checks, the further hidden* checks may be subsumed (meaning, not required anymore).
 
     let hiddenTycon, hiddenTyconRepr, hiddenVal, hiddenRecdField, hiddenUnionCase = 
-        Zset.memberOf mhi.mhiTycons, 
-        Zset.memberOf mhi.mhiTyconReprs, 
-        Zset.memberOf mhi.mhiVals, 
-        Zset.memberOf mhi.mhiRecdFields, 
-        Zset.memberOf mhi.mhiUnionCases
+        Zset.memberOf mhi.HiddenTycons, 
+        Zset.memberOf mhi.HiddenTyconReprs, 
+        Zset.memberOf mhi.HiddenVals, 
+        Zset.memberOf mhi.HiddenRecdFields, 
+        Zset.memberOf mhi.HiddenUnionCases
 
     let rec abstractExprInfo ivalue = 
         match ivalue with 
@@ -1765,16 +1765,23 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
     | _ -> 
         //printfn "Not eliminating because no Run found"
         None
-                
-let IsSystemStringConcatOverload (methRef: ILMethodRef) =
-    methRef.Name = "Concat" && methRef.DeclaringTypeRef.FullName = "System.String" && 
-    methRef.ReturnType.BasicQualifiedName = "System.String" &&
-    methRef.ArgTypes |> List.forall(fun ilty -> ilty.BasicQualifiedName = "System.String")
 
-let IsSystemStringConcatArray (methRef: ILMethodRef) =
-    methRef.Name = "Concat" && methRef.DeclaringTypeRef.FullName = "System.String" && 
-    methRef.ReturnType.BasicQualifiedName = "System.String" &&
-    methRef.ArgTypes.Length = 1 && methRef.ArgTypes.Head.BasicQualifiedName = "System.String[]"
+let IsILMethodRefDeclaringTypeSystemString (ilg: ILGlobals) (mref: ILMethodRef) =
+    mref.DeclaringTypeRef.Scope.IsAssemblyRef &&
+    mref.DeclaringTypeRef.Scope.AssemblyRef.Name = ilg.typ_String.TypeRef.Scope.AssemblyRef.Name &&
+    mref.DeclaringTypeRef.BasicQualifiedName = ilg.typ_String.BasicQualifiedName
+                
+let IsILMethodRefSystemStringConcatOverload (ilg: ILGlobals) (mref: ILMethodRef) =
+    IsILMethodRefDeclaringTypeSystemString ilg mref &&
+    mref.Name = "Concat" &&
+    mref.ReturnType.BasicQualifiedName = ilg.typ_String.BasicQualifiedName &&
+    mref.ArgCount >= 2 && mref.ArgCount <= 4 && mref.ArgTypes |> List.forall(fun ilty -> ilty.BasicQualifiedName = ilg.typ_String.BasicQualifiedName)
+
+let IsILMethodRefSystemStringConcatArray (ilg: ILGlobals) (mref: ILMethodRef) =
+    IsILMethodRefDeclaringTypeSystemString ilg mref &&
+    mref.Name = "Concat" &&
+    mref.ReturnType.BasicQualifiedName = ilg.typ_String.BasicQualifiedName &&
+    mref.ArgCount = 1 && mref.ArgTypes.Head.BasicQualifiedName = "System.String[]"
     
 //-------------------------------------------------------------------------
 // The traversal
@@ -1889,10 +1896,10 @@ and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) =
 and MakeOptimizedSystemStringConcatCall cenv env m args =
     let rec optimizeArg e accArgs =
         match e, accArgs with
-        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ when IsSystemStringConcatArray methRef ->
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ when IsILMethodRefSystemStringConcatArray cenv.g.ilg mref ->
             optimizeArgs args accArgs
 
-        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, args, _), _ when IsSystemStringConcatOverload methRef ->
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args, _), _ when IsILMethodRefSystemStringConcatOverload cenv.g.ilg mref ->
             optimizeArgs args accArgs
 
         // Optimize string constants, e.g. "1" + "2" will turn into "12"
@@ -1922,7 +1929,7 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
             mkStaticCall_String_Concat_Array cenv.g m arg
 
     match e with
-    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _) as op, tyargs, args, m) when IsSystemStringConcatOverload methRef || IsSystemStringConcatArray methRef ->
+    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _) as op, tyargs, args, m) when IsILMethodRefSystemStringConcatOverload cenv.g.ilg mref || IsILMethodRefSystemStringConcatArray cenv.g.ilg mref ->
         OptimizeExprOpReductions cenv env (op, tyargs, args, m)
     | _ ->
         OptimizeExpr cenv env e
@@ -1995,9 +2002,9 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.ILAsm([], [ty]), _, [a] when typeEquiv cenv.g (tyOfExpr cenv.g a) ty -> OptimizeExpr cenv env a
 
     // Optimize calls when concatenating strings, e.g. "1" + "2" + "3" + "4" .. etc.
-    | TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] when IsSystemStringConcatArray methRef ->
+    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] when IsILMethodRefSystemStringConcatArray cenv.g.ilg mref ->
         MakeOptimizedSystemStringConcatCall cenv env m args
-    | TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, args when IsSystemStringConcatOverload methRef ->
+    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args when IsILMethodRefSystemStringConcatOverload cenv.g.ilg mref ->
         MakeOptimizedSystemStringConcatCall cenv env m args
 
     | _ -> 
@@ -3261,7 +3268,7 @@ and OptimizeModuleExpr cenv env x =
                     not (ValueIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) (bind, binfo)) &&
 
                     // Check the thing is hidden by the signature (if any)
-                    hidden.mhiVals.Contains bind.Var && 
+                    hidden.HiddenVals.Contains bind.Var && 
 
                     // Check the thing is not compiled as a static field or property, since reflected definitions and other reflective stuff might need it
                     not (IsCompiledAsStaticProperty cenv.g bind.Var))

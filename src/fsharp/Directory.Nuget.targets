@@ -8,14 +8,4 @@
     </NuspecProperties>
   </PropertyGroup>
 
-  <Target Name="CopyPackageToArtifactsDirectory"
-          AfterTargets="Pack">
-    <ItemGroup>
-      <NugetPackages Include="$(MSBuildProjectDirectory)\**\$(PackageId).*.nupkg" />
-    </ItemGroup>
-    <MakeDir Directories="$(RepoRoot)artifacts;$(RepoRoot)$(Configuration)\artifacts" />
-    <Copy SourceFiles="@(NugetPackages)" DestinationFolder="$(RepoRoot)\artifacts" />
-    <Copy SourceFiles="@(NugetPackages)" DestinationFolder="$(RepoRoot)\$(Configuration)\artifacts" />
-  </Target>
-
 </Project>

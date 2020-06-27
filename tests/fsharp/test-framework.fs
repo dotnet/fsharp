@@ -122,19 +122,19 @@ type TestConfig =
       BUILD_CONFIG : string
       FSC : string
       fsc_flags : string
-      BinPath : string
       FSCOREDLLPATH : string
       FSI : string
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
       FSIANYCPU : string
 #endif
       FSI_FOR_SCRIPTS : string
+      FSharpBuild : string
+      FSharpCompilerInteractiveSettings : string
       fsi_flags : string
       ILDASM : string
       PEVERIFY : string
       Directory: string 
       DotNetExe: string
-      DotNet20Exe: string
       DefaultPlatform: string}
 
 
@@ -157,11 +157,21 @@ let config configurationName envVars =
     let SCRIPT_ROOT = __SOURCE_DIRECTORY__
     let packagesDir = Environment.GetEnvironmentVariable("USERPROFILE") ++ ".nuget" ++ "packages"
 #if NET472
-    let architecture = "net40"
+    let fscArchitecture = "net472"
+    let fsiArchitecture = "net472"
+    let fsharpCoreArchitecture = "net45"
+    let fsharpBuildArchitecture = "net472"
+    let fsharpCompilerInteractiveSettingsArchitecture = "net472"
 #else
-    let architecture = "coreclr"
+    let fscArchitecture = "netcoreapp2.1"
+    let fsiArchitecture = "netcoreapp2.1"
+    let fsharpCoreArchitecture = "netstandard1.6"
+    let fsharpBuildArchitecture = "netstandard2.0"
+    let fsharpCompilerInteractiveSettingsArchitecture = "netstandard1.6"
 #endif
-    let BINPATH = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ architecture ++ "bin"
+    let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
+    let artifactsPath = repoRoot ++ "artifacts"
+    let artifactsBinPath = artifactsPath ++ "bin"
     let csc_flags = "/nologo" 
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
     let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
@@ -170,20 +180,20 @@ let config configurationName envVars =
     let CSC = requireFile (packagesDir ++ "Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "csc.exe")
     let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
     let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ "2.0.3" ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
-    let PEVERIFY = requireFile (SCRIPT_ROOT ++ ".." ++ "fsharpqa" ++ "testenv" ++ "src" ++ "PEVerify" ++ "bin" ++ configurationName ++ "net472" ++ "PEVerify.exe")
-    let FSI_FOR_SCRIPTS = BINPATH ++ "fsi.exe"
-    let toolsDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools"
-    let dotNetExe = toolsDir ++ "dotnetcli" ++ "dotnet.exe"
-    let dotNet20Exe = toolsDir ++ "dotnet20" ++ "dotnet.exe"
+    let PEVERIFY = requireFile (artifactsBinPath ++ "PEVerify" ++ configurationName ++ "net472" ++ "PEVerify.exe")
+    let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
+    let FSharpBuild = requireFile (artifactsBinPath ++ "FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
+    let FSharpCompilerInteractiveSettings = requireFile (artifactsBinPath ++ "FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
+    let dotNetExe = artifactsPath ++ "toolset" ++ "dotnet" ++ "dotnet.exe"
     // ildasm requires coreclr.dll to run which has already been restored to the packages directory
     File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
 
-    let FSI = requireFile (BINPATH ++ "fsi.exe")
+    let FSI = requireFile (FSI_FOR_SCRIPTS)
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    let FSIANYCPU = requireFile (BINPATH ++ "fsiAnyCpu.exe")
+    let FSIANYCPU = requireFile (artifactsBinPath ++ "fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
 #endif
-    let FSC = requireFile (BINPATH ++ "fsc.exe")
-    let FSCOREDLLPATH = requireFile (BINPATH ++ "FSharp.Core.dll")
+    let FSC = requireFile (artifactsBinPath ++ "fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
+    let FSCOREDLLPATH = requireFile (artifactsBinPath ++ "FSharp.Core" ++ configurationName ++ fsharpCoreArchitecture ++ "FSharp.Core.dll")
 
     let defaultPlatform = 
         match Is64BitOperatingSystem with 
@@ -193,7 +203,6 @@ let config configurationName envVars =
         | false -> "win7-x86"
 
     { EnvironmentVariables = envVars
-      BinPath = BINPATH |> Commands.pathAddBackslash
       FSCOREDLLPATH = FSCOREDLLPATH
       ILDASM = ILDASM
       PEVERIFY = PEVERIFY
@@ -205,12 +214,13 @@ let config configurationName envVars =
       FSIANYCPU = FSIANYCPU
 #endif
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
+      FSharpBuild = FSharpBuild
+      FSharpCompilerInteractiveSettings = FSharpCompilerInteractiveSettings
       csc_flags = csc_flags
       fsc_flags = fsc_flags 
       fsi_flags = fsi_flags 
       Directory="" 
       DotNetExe = dotNetExe
-      DotNet20Exe = dotNet20Exe
       DefaultPlatform = defaultPlatform }
 
 let logConfig (cfg: TestConfig) =
@@ -222,7 +232,6 @@ let logConfig (cfg: TestConfig) =
     log "csc_flags           =%s" cfg.csc_flags
     log "FSC                 =%s" cfg.FSC
     log "fsc_flags           =%s" cfg.fsc_flags
-    log "BINPATH             =%s" cfg.BinPath
     log "FSCOREDLLPATH       =%s" cfg.FSCOREDLLPATH
     log "FSI                 =%s" cfg.FSI
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
@@ -452,6 +461,7 @@ let rm cfg x = Commands.rm cfg.Directory x
 let rmdir cfg x = Commands.rmdir cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
 let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
+let copySystemValueTuple cfg = copy_y cfg (getDirectoryName(cfg.FSC) ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
 let diff normalize path1 path2 =
     let result = System.Text.StringBuilder()

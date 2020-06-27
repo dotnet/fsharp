@@ -764,7 +764,7 @@ let StorageForVal m v eenv =
         try eenv.valsInScope.[v]
         with :? KeyNotFoundException ->
           assert false
-          errorR(Error(FSComp.SR.ilUndefinedValue(showL(vspecAtBindL v)),m)) 
+          errorR(Error(FSComp.SR.ilUndefinedValue(showL(valAtBindL v)),m)) 
           notlazy (Arg 668(* random value for post-hoc diagnostic analysis on generated tree *) )
     v.Force()
 

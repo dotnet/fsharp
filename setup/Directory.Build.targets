@@ -1,4 +1,3 @@
 <Project>
   <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
-  <Import Project="$(NuGetPackageRoot)\MicroBuild.Core\$(MicroBuildCorePackageVersion)\build\MicroBuild.Core.targets" />
 </Project>

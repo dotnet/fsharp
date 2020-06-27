@@ -82,8 +82,7 @@
           Inputs="$(MSBuildThisFileFullPath);$(MSBuildProjectFile)"
           Outputs="$(GeneratedFSharpAssemblyVersionFile)"
           DependsOnTargets="PrepareGenerateAssemblyFileVersion;PrepareForBuild"
-          BeforeTargets="CoreCompile"
-          Condition="'$(Configuration)' != 'Proto'">
+          BeforeTargets="CoreCompile">
 
     <WriteCodeFragment AssemblyAttributes="@(_AssemblyVersionAttributes)"
                        Language="$(Language)"

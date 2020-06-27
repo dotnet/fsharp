@@ -27,7 +27,7 @@ type internal FSharpSimplifyNameCodeFixProvider() =
                    | true, longIdent -> sprintf "%s '%s'" (SR.SimplifyName()) longIdent
                    | _ -> SR.SimplifyName()
 
-               let codefix = createTextChangeCodeFix(title, context, (fun () -> asyncMaybe.Return [| TextChange(context.Span, "") |]))
+               let codefix = CodeFixHelpers.createTextChangeCodeFix(title, context, (fun () -> asyncMaybe.Return [| TextChange(context.Span, "") |]))
 
                context.RegisterCodeFix(codefix,  ImmutableArray.Create(diagnostic))
        } 
