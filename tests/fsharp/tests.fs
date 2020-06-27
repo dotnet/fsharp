@@ -1813,6 +1813,16 @@ module CoreTests =
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
+        
+        
+    [<Test>]
+    let ``property setter in method or constructor`` () =
+        let cfg = testConfig' "core/members/set-only-property"
+        csc cfg @"%s /target:library /out:cs.dll" cfg.csc_flags ["cs.cs"]
+        vbc cfg @"%s /target:library /out:vb.dll" cfg.vbc_flags ["vb.vb"]
+        fsc cfg @"%s /target:library /out:fs.dll" cfg.fsc_flags ["fs.fs"]
+        singleNegTest cfg "calls"
+
 #endif
 
 module VersionTests =
