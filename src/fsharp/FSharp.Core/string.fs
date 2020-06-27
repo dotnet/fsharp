@@ -42,9 +42,13 @@ namespace Microsoft.FSharp.Core
             if String.IsNullOrEmpty str then
                 String.Empty
             else
-                let res = StringBuilder str.Length
-                str |> iter (fun c -> res.Append(mapping c) |> ignore)
-                res.ToString()
+                let result = str.ToCharArray()
+                let mutable i = 0
+                for c in result do
+                    result.[i] <- mapping c
+                    i <- i + 1
+
+                new String(result)
 
         [<CompiledName("MapIndexed")>]
         let mapi (mapping: int -> char -> char) (str:string) =
