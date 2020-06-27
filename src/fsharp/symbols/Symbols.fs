@@ -301,7 +301,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
         | Item.ArgName(id, ty, argOwner) ->
             FSharpParameter(cenv, id, ty, argOwner) :> _
 
-        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) ->
+        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _, _)) }) ->
             FSharpMemberOrFunctionOrValue(cenv, V vref, item) :> _
 
         // TODO: the following don't currently return any interesting subtype
@@ -1234,7 +1234,8 @@ and FSharpAbstractSignature(cenv, info: SlotSig) =
     member __.DeclaringType = FSharpType(cenv, info.ImplementedType)
 
 and FSharpGenericParameterMemberConstraint(cenv, info: TraitConstraintInfo) = 
-    let (TTrait(tys, nm, flags, atys, rty, _)) = info 
+    let (TTrait(tys, nm, flags, atys, rty, _, _traitCtxt)) = info 
+
     member __.MemberSources = 
         tys   |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
 

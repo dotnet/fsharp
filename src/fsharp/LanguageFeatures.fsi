@@ -20,6 +20,7 @@ type LanguageFeature =
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
+    | ExtensionConstraintSolutions
 
 /// LanguageVersion management
 type LanguageVersion =
