@@ -67,6 +67,7 @@ module internal RoslynHelpers =
     | LayoutTag.Struct -> TextTags.Struct
     | LayoutTag.Keyword -> TextTags.Keyword
     | LayoutTag.Local -> TextTags.Local
+    | LayoutTag.Function -> TextTags.Method
     | LayoutTag.Member
     | LayoutTag.ModuleBinding
     | LayoutTag.RecordField

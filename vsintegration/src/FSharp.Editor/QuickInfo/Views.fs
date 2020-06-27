@@ -29,16 +29,17 @@ module internal QuickInfoViewProvider =
         | Interface -> ClassificationTypeNames.InterfaceName
         | Keyword -> ClassificationTypeNames.Keyword
         | Member
+        | Function
         | Method -> ClassificationTypeNames.MethodName
         | Property
         | RecordField -> ClassificationTypeNames.PropertyName
         | Parameter
         | Local -> ClassificationTypeNames.LocalName
+        | ModuleBinding -> ClassificationTypeNames.Identifier
         | Namespace -> ClassificationTypeNames.NamespaceName
         | Delegate -> ClassificationTypeNames.DelegateName
         | Event -> ClassificationTypeNames.EventName
         | Field -> ClassificationTypeNames.FieldName
-        | ModuleBinding -> ClassificationTypeNames.Identifier
         | LineBreak
         | Space -> ClassificationTypeNames.WhiteSpace
         | NumericLiteral -> ClassificationTypeNames.NumericLiteral

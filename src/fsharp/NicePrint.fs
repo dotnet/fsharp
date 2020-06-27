@@ -1329,7 +1329,18 @@ module private PrintTastMemberOrVals =
         let cxs = env.postfixConstraints
         let argInfos, rty = GetTopTauTypeInFSharpForm denv.g (arityOfVal v).ArgInfos tau v.Range
         let nameL =
-            (if v.IsModuleBinding then tagModuleBinding else tagUnknownEntity) v.DisplayName
+            let isDiscard (str: string) = str.StartsWith("_")
+
+            let tagF =
+                if not v.IsCompiledAsTopLevel && not(isDiscard v.DisplayName) then
+                    tagLocal
+                elif v.IsModuleBinding then
+                    tagModuleBinding
+                else
+                    tagUnknownEntity
+
+            v.DisplayName
+            |> tagF
             |> mkNav v.DefinitionRange
             |> wordL 
         let nameL = layoutAccessibility denv v.Accessibility nameL
