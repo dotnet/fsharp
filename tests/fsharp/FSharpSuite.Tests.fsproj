@@ -75,7 +75,7 @@
     <Compile Include="Compiler\Libraries\Core\Operators\RoundTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Operators\SignTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Operators\StringTests.fs" />
-    <Compile Include="Compiler\Libraries\Core\Unchecked\UncheckedTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Unchecked\DefaultOfTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 

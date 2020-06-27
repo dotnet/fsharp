@@ -5,7 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open NUnit.Framework
 
 [<TestFixture>]
-module ``Unchecked Tests`` =
+module ``DefaultOf Tests`` =
 
     type DUType = 
         | A
