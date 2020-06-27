@@ -45,3 +45,19 @@ module ``Unchecked Tests`` =
         Assert.areEqual Unchecked.defaultof<EnumType> (enum 0)
         Assert.areEqual Unchecked.defaultof<StructType>.IValue 0
         Assert.areEqual Unchecked.defaultof<StructType>.SValue null
+
+    type R = { x : int; y : string }
+    type U = | A of int | B of string
+    type S = struct val mutable x : int end
+    type C() = class end
+
+    [<Test>]
+    let ``Unchecked defaultof and equality``() =
+        // FSharp1.0:5417 - Unchecked.defaultof<_> on records/unions can cause structural equality check to throw
+        // Check that Unchecked.defaultof<_> works correctly on various types, mostly structs/unions/records
+
+        Assert.areEqual Unchecked.defaultof<R> Unchecked.defaultof<R>
+        Assert.areEqual Unchecked.defaultof<U> Unchecked.defaultof<U>
+        Assert.areEqual Unchecked.defaultof<S> Unchecked.defaultof<S>
+        Assert.areEqual Unchecked.defaultof<C> Unchecked.defaultof<C>
+        Assert.areEqual Unchecked.defaultof<int> Unchecked.defaultof<int>
