@@ -17,6 +17,7 @@ namespace Internal.Utilities.StructuredFormat
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
 
+<<<<<<< HEAD
 // Breakable block layout implementation.
 // This is a fresh implementation of pre-existing ideas.
 
@@ -201,6 +202,186 @@ module TaggedTextOps =
         let equals = tagOperator "="
         let arrow = tagPunctuation "->"
         let questionMark = tagPunctuation "?"
+=======
+    // Breakable block layout implementation.
+    // This is a fresh implementation of pre-existing ideas.
+
+    open System
+    open System.IO
+    open System.Reflection
+    open System.Globalization
+    open System.Collections.Generic
+    open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
+    open Microsoft.FSharp.Reflection
+    open Microsoft.FSharp.Collections
+
+    [<StructuralEquality; NoComparison>]
+    type LayoutTag =
+        | ActivePatternCase
+        | ActivePatternResult
+        | Alias
+        | Class
+        | Union
+        | UnionCase
+        | Delegate
+        | Enum
+        | Event
+        | Field
+        | Interface
+        | Keyword
+        | LineBreak
+        | Local
+        | Record
+        | RecordField
+        | Method
+        | Member
+        | ModuleBinding
+        | Function
+        | Module
+        | Namespace
+        | NumericLiteral
+        | Operator
+        | Parameter
+        | Property
+        | Space
+        | StringLiteral
+        | Struct
+        | TypeParameter
+        | Text
+        | Punctuation
+        | UnknownType
+        | UnknownEntity
+
+    type TaggedText =
+        abstract Tag: LayoutTag
+        abstract Text: string
+
+    type TaggedTextWriter =
+        abstract Write: t: TaggedText -> unit
+        abstract WriteLine: unit -> unit
+
+    /// A joint, between 2 layouts, is either:
+    ///  - unbreakable, or
+    ///  - breakable, and if broken the second block has a given indentation.
+    [<StructuralEquality; NoComparison>]
+    type Joint =
+     | Unbreakable
+     | Breakable of int
+     | Broken of int
+
+    /// Leaf juxt,data,juxt
+    /// Node juxt,left,juxt,right,juxt and joint
+    ///
+    /// If either juxt flag is true, then no space between words.
+    [<NoEquality; NoComparison>]
+    type Layout =
+     | ObjLeaf of bool * obj * bool
+     | Leaf of bool * TaggedText * bool
+     | Node of bool * layout * bool * layout * bool * joint
+     | Attr of string * (string * string) list * layout
+
+    and layout = Layout
+
+    and joint = Joint
+
+    [<NoEquality; NoComparison>]
+    type IEnvironment = 
+        abstract GetLayout : obj -> layout
+        abstract MaxColumns : int
+        abstract MaxRows : int
+
+    module TaggedTextOps =
+        let tag tag text = 
+          { new TaggedText with 
+            member x.Tag = tag
+            member x.Text = text }
+
+        let length (tt: TaggedText) = tt.Text.Length
+        let toText (tt: TaggedText) = tt.Text
+
+        let tagAlias t = tag LayoutTag.Alias t
+        let keywordFunctions =
+            [
+                "raise"
+                "reraise"
+                "typeof"
+                "typedefof"
+                "sizeof"
+                "nameof"
+                "char"
+                "decimal"
+                "double"
+                "float"
+                "float32"
+                "int"
+                "int8"
+                "int16"
+                "int32"
+                "int64"
+                "sbyte"
+                "seq" // seq x when 'x' is a string works, for example
+                "single"
+                "string"
+                "unit"
+                "uint"
+                "uint8"
+                "uint16"
+                "uint32"
+                "uint64"
+                "unativeint"
+            ]
+            |> Set.ofList
+        let tagClass name = tag LayoutTag.Class name
+        let tagUnionCase t = tag LayoutTag.UnionCase t
+        let tagDelegate t = tag LayoutTag.Delegate t
+        let tagEnum t = tag LayoutTag.Enum t
+        let tagEvent t = tag LayoutTag.Event t
+        let tagField t = tag LayoutTag.Field t
+        let tagInterface t = tag LayoutTag.Interface t
+        let tagKeyword t = tag LayoutTag.Keyword t
+        let tagLineBreak t = tag LayoutTag.LineBreak t
+        let tagLocal t = tag LayoutTag.Local t
+        let tagRecord t = tag LayoutTag.Record t
+        let tagRecordField t = tag LayoutTag.RecordField t
+        let tagMethod t = tag LayoutTag.Method t
+        let tagModule t = tag LayoutTag.Module t
+        let tagFunction t = tag LayoutTag.Function t
+        let tagModuleBinding name =
+            if keywordFunctions.Contains name then
+                tag LayoutTag.Function name
+            else
+                tag LayoutTag.ModuleBinding name
+        let tagNamespace t = tag LayoutTag.Namespace t
+        let tagNumericLiteral t = tag LayoutTag.NumericLiteral t
+        let tagOperator t = tag LayoutTag.Operator t
+        let tagParameter t = tag LayoutTag.Parameter t
+        let tagProperty t = tag LayoutTag.Property t
+        let tagSpace t = tag LayoutTag.Space t
+        let tagStringLiteral t = tag LayoutTag.StringLiteral t
+        let tagStruct t = tag LayoutTag.Struct t
+        let tagTypeParameter t = tag LayoutTag.TypeParameter t
+        let tagText t = tag LayoutTag.Text t
+        let tagPunctuation t = tag LayoutTag.Punctuation t
+
+        module Literals =
+            // common tagged literals
+            let lineBreak = tagLineBreak "\n"
+            let space = tagSpace " "
+            let comma = tagPunctuation ","
+            let semicolon = tagPunctuation ";"
+            let leftParen = tagPunctuation "("
+            let rightParen = tagPunctuation ")"
+            let leftBracket = tagPunctuation "["
+            let rightBracket = tagPunctuation "]"
+            let leftBrace= tagPunctuation "{"
+            let rightBrace = tagPunctuation "}"
+            let leftBraceBar = tagPunctuation "{|"
+            let rightBraceBar = tagPunctuation "|}"
+            let equals = tagOperator "="
+            let arrow = tagPunctuation "->"
+            let questionMark = tagPunctuation "?"
+>>>>>>> 034912b8e... tag intrinsics better and refactor
      
 module LayoutOps = 
     open TaggedTextOps
