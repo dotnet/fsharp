@@ -781,9 +781,9 @@ namespace Microsoft.FSharp.Core
 
         let inline anyToString nullStr x = 
             match box x with 
-            | :? System.IFormattable as f -> f.ToString(null,System.Globalization.CultureInfo.InvariantCulture)
+            | :? System.IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
             | null -> nullStr
-            | obj ->  obj.ToString()
+            | _ ->  x.ToString()
 
         let anyToStringShowingNull x = anyToString "null" x
 
@@ -3746,6 +3746,8 @@ namespace Microsoft.FSharp.Core
     open System.Diagnostics              
     open System.Collections.Generic
     open System.Globalization
+    open System.Text
+    open System.Numerics
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
@@ -4458,10 +4460,50 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("ToString")>]
         let string (value: 'T) = 
-            match box value with 
-            | :? System.IFormattable as f -> f.ToString(null,System.Globalization.CultureInfo.InvariantCulture)
-            | null -> ""
-            | obj ->  obj.ToString()
+             anyToString "" value
+             when 'T : string     = (# "" value : string #)     // force no-op
+
+             // Using 'let x = (# ... #) in x.ToString()' leads to better IL, without it, an extra stloc and ldloca.s (get address-of)
+             // gets emitted, which are unnecessary. With it, the extra address-of-variable is not created
+             when 'T : float      = let x = (# "" value : float #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : float32    = let x = (# "" value : float32 #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : decimal    = let x = (# "" value : decimal #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : BigInteger = let x = (# "" value : BigInteger #) in x.ToString(null, CultureInfo.InvariantCulture)
+
+             // no IFormattable
+             when 'T : char       = let x = (# "" value : char #) in x.ToString()
+             when 'T : bool       = let x = (# "" value : bool #) in x.ToString()
+
+             // For the int-types:
+             // It is not possible to distinguish statically between Enum and (any type of) int.
+             // This way we'll print their symbolic value, as opposed to their integral one 
+             // E.g.: 'string ConsoleKey.Backspace' gives "Backspace", rather than "8")
+             when 'T : sbyte      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : byte       = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : int16      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : uint16     = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : int32      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : uint32     = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : int64      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : uint64     = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+
+             // native ints cannot be used for enums, and do not implement IFormattable
+             when 'T : nativeint  = (# "" value : nativeint #).ToString()
+             when 'T : unativeint = (# "" value : unativeint #).ToString()
+
+             // other common mscorlib System struct types
+             when 'T : DateTime         = let x = (# "" value : DateTime #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : DateTimeOffset   = let x = (# "" value : DateTimeOffset #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : TimeSpan         = let x = (# "" value : TimeSpan #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : Guid             = let x = (# "" value : Guid #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T struct = 
+                match box value with
+                | :? System.IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
+                | _ -> value.ToString()
+
+             // other commmon mscorlib reference types
+             when 'T : StringBuilder = let x = (# "" value : StringBuilder #) in x.ToString()
+
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
