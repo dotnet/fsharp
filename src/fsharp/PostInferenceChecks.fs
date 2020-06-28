@@ -699,14 +699,13 @@ type TTypeEquality =
 
 let compareTypesWithRegardToTypeVariablesAndMeasures g amap m typ1 typ2 =
     
-    if (typeEquiv g typ1 typ2) then ExactlyEqual else
-    
-    let typ1 = typ1 |> stripTyEqnsWrtErasure EraseAll g |> stripMeasuresFromTType g 
-    let typ2 = typ2 |> stripTyEqnsWrtErasure EraseAll g |> stripMeasuresFromTType g 
-    if (typeEquiv g typ1 typ2 || TypesFeasiblyEquiv 0 g amap m typ1 typ2) then 
-        FeasiblyEqual
+    if (typeEquiv g typ1 typ2) then
+        ExactlyEqual
     else
-        NotEqual
+        if (typeEquiv g typ1 typ2 || TypesFeasiblyEquivStripMeasures g amap m typ1 typ2) then 
+            FeasiblyEqual
+        else
+            NotEqual
     
 let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list) isObjectExpression m =
     let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
