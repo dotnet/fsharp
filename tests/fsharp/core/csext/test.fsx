@@ -311,6 +311,8 @@ module TupleSRTP =
     let v1b =  (^T : (member get_Item2 : unit -> _ ) (new System.Tuple<int,int>(1,3)))
     let v2b =  (^T : (member get_Item2 : unit -> _ ) (System.Tuple<int,int>(1,3)))
     let v3b =  (^T : (member get_Item2 : unit -> _ ) ((1,3)))
+    
+    let areEqual = System.Tuple<_,_,_,_,_,_,_,_>(1,2,3,4,5,6,7,System.Tuple<_,_>(8,9)) =  (1,2,3,4,5,6,7,8,9)
 
 (*--------------------*)  
 
