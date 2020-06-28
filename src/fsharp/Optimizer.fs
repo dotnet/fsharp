@@ -1596,7 +1596,8 @@ let ExpandStructuralBindingRaw cenv expr =
     assert cenv.settings.ExpandStructuralValues()
     match expr with
     | Expr.Let (TBind(v, rhs, tgtSeqPtOpt), body, m, _) 
-        when (isRefTupleExpr rhs &&
+        when (isAnyTupleTy cenv.g v.Type &&
+              isRefTupleExpr rhs &&
               CanExpandStructuralBinding v) ->
           let args = tryDestRefTupleExpr rhs
           if List.forall ExprIsValue args then
