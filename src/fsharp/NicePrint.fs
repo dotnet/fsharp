@@ -64,7 +64,25 @@ module internal PrintUtilities =
         | (x :: rest) -> [ resultFunction x (layoutFunction x -- leftL (tagText (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n)))) ] 
         | _ -> []
     
-    let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) = 
+    let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) =
+        let tagEntityRefName (xref: EntityRef) name =
+            if xref.IsNamespace then tagNamespace name
+            elif xref.IsModule then tagModule name
+            elif xref.IsTypeAbbrev then
+                let ty = xref.TypeAbbrev.Value
+                match stripTyEqns denv.g ty with
+                | TType_app(tcref, _) when tcref.IsStructOrEnumTycon ->
+                    tagStruct name
+                | _ ->
+                    tagAlias name
+            elif xref.IsFSharpDelegateTycon then tagDelegate name
+            elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
+            elif xref.IsStructOrEnumTycon then tagStruct name
+            elif xref.IsFSharpInterfaceTycon || isInterfaceTyconRef xref then tagInterface name
+            elif xref.IsUnionTycon then tagUnion name
+            elif xref.IsRecordTycon then tagRecord name
+            else tagClass name
+
         let demangled = 
             let name =
                 if denv.includeStaticParametersInTypeNames then 
