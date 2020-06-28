@@ -404,10 +404,11 @@ open System
 open type CSharpTest.Test<byte>
 
 module Test =
-  //  let x: NestedTest = NestedTest()
-    let y: CSharpTest.Test<byte>.NestedTest<int> = NestedTest<int>()
-   // let a = x.A()
-    let b = y.B()
+    let x = NestedTest<byte, int>()
+    let xb = x.B()
+
+    let y = NestedTest<byte>()
+    let ya = y.A()
             """
 
         let csCmpl =

@@ -161,7 +161,7 @@ type NameResolutionEnv =
       eUnqualifiedItems: LayeredMap<string,Item>
 
       /// Type arguments that are associated with an unqualified type item
-      eUnqualifiedTyconTypeArgs: TyconRefMap<TTypes>
+      eUnqualifiedTyconTypeArgs: TyconRefMap<TypeInst>
 
       /// Data Tags and Active Pattern Tags available by unqualified name 
       ePatItems: NameMap<Item>
