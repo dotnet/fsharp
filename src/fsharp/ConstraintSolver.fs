@@ -379,6 +379,8 @@ let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
 
 let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
 
+let IsEncodedTuple tupInfo g ty = tyconRefEq g ty (if evalTupInfoIsStruct tupInfo then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
+
 // Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
 let GetMeasureOfType g ty =
     match ty with 
@@ -1025,6 +1027,11 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         -> SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
 
     | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+
+    // Catch System.Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest> arising from SRTP constructions
+    | TType_app (tc1, [a1;b1;c1;d1;e1;f1;g1;rest1]), TType_tuple (tupInfo, a2::b2::c2::d2::e2::f2::g2::rest2) when IsEncodedTuple tupInfo g tc1 ->
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None [a1;b1;c1;d1;e1;f1;g1;rest1] [a2;b2;c2;d2;e2;f2;g2;TType_tuple (tupInfo, rest2)]
+
     | TType_app (_, _), TType_app (_, _)   ->  localAbortD
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
