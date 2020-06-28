@@ -1350,7 +1350,7 @@ module private PrintTastMemberOrVals =
             let isDiscard (str: string) = str.StartsWith("_")
 
             let tagF =
-                if isFunction && not (isDiscard v.DisplayName) then
+                if isFunctionTy denv.g v.Type && not (isDiscard v.DisplayName) then
                     if IsOperatorName v.DisplayName then
                         tagOperator
                     else
@@ -1393,7 +1393,7 @@ module private PrintTastMemberOrVals =
         | Some literalValue -> valAndTypeL ++ layoutOfLiteralValue literalValue
         | None -> valAndTypeL
 
-    let prettyLayoutOfValOrMember isFunction denv typarInst (v: Val) =
+    let prettyLayoutOfValOrMember denv typarInst (v: Val) =
         let prettyTyparInst, vL = 
             match v.MemberInfo with 
             | None -> 
@@ -1403,14 +1403,14 @@ module private PrintTastMemberOrVals =
                 let tau = StripSelfRefCell(denv.g, v.BaseOrThisInfo, tau)
 
                 let (prettyTyparInst, prettyTypars, prettyTauTy), cxs = PrettyTypes.PrettifyInstAndTyparsAndType denv.g (typarInst, tps, tau)
-                let resL = layoutNonMemberVal isFunction denv (prettyTypars, v, prettyTauTy, cxs)
+                let resL = layoutNonMemberVal denv (prettyTypars, v, prettyTauTy, cxs)
                 prettyTyparInst, resL
             | Some _ -> 
                 prettyLayoutOfMember denv typarInst v
         prettyTyparInst, layoutAttribs denv true v.Type TyparKind.Type v.Attribs vL
 
     let prettyLayoutOfValOrMemberNoInst denv v =
-        prettyLayoutOfValOrMember false denv emptyTyparInst v |> snd
+        prettyLayoutOfValOrMember denv emptyTyparInst v |> snd
 
 let layoutTyparConstraint denv x = x |> PrintTypes.layoutTyparConstraint denv 
 
@@ -1570,7 +1570,7 @@ module InfoMemberPrinting =
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
             prettyTyparInst, PrintTypes.layoutTyconRef denv methInfo.ApparentEnclosingTyconRef ^^ wordL (tagPunctuation "()")
         | FSMeth(_, _, vref, _) -> 
-            let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember false { denv with showMemberContainers=true } typarInst vref.Deref
+            let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } typarInst vref.Deref
             prettyTyparInst, resL
         | ILMeth(_, ilminfo, _) -> 
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
@@ -2209,7 +2209,7 @@ let outputValOrMember denv os x = x |> PrintTastMemberOrVals.prettyLayoutOfValOr
 let stringValOrMember denv x = x |> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv |> showL
 
 /// Print members with a qualification showing the type they are contained in 
-let layoutQualifiedValOrMember isFunction denv typarInst v = PrintTastMemberOrVals.prettyLayoutOfValOrMember isFunction { denv with showMemberContainers=true; } typarInst v
+let layoutQualifiedValOrMember denv typarInst v = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true; } typarInst v
 
 let outputQualifiedValOrMember denv os v = outputValOrMember { denv with showMemberContainers=true; } os v
 

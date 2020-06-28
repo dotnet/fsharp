@@ -16,7 +16,6 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 
 [<RequireQualifiedAccess>]
 type SemanticClassificationType =
@@ -166,6 +165,7 @@ module TcResolutionsExtensions =
                         add m SemanticClassificationType.IntrinsicFunction
 
 <<<<<<< HEAD
+<<<<<<< HEAD
                     | (Item.Value vref), _, _, _, _, m when isFunction g vref.Type ->
                         if isDiscard vref.DisplayName then
                             add m SemanticClassificationType.Plaintext
@@ -173,6 +173,9 @@ module TcResolutionsExtensions =
                             add m SemanticClassificationType.Operator
 =======
                     | (Item.Value vref), _, _, _, _, m when isFunction g vref.Type && not (vref.IsConstructor) ->
+=======
+                    | (Item.Value vref), _, _, _, _, m when isFunctionTy g vref.Type && not (vref.IsConstructor) ->
+>>>>>>> 9219aa3c1... Move isFunction and use it in pretty-printing
                         if isDiscard vref.DisplayName then
                             ()
                         elif valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then 
@@ -303,7 +306,7 @@ module TcResolutionsExtensions =
                                     add m SemanticClassificationType.ValueType
                                 elif isRefTupleTy g ty then
                                     add m SemanticClassificationType.ReferenceType
-                                elif isFunction g ty then
+                                elif isFunctionTy g ty then
                                     add m SemanticClassificationType.Function
                                 elif isTyparTy g ty then
                                     add m SemanticClassificationType.ValueType

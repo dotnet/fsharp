@@ -316,11 +316,6 @@ type CompletionItem =
 
 [<AutoOpen>]
 module internal SymbolHelpers = 
-
-    let isFunction g ty =
-        let _, tau = tryDestForallTy g ty
-        isFunTy g tau 
-
     let OutputFullName isListItem ppF fnF r = 
       // Only display full names in quick info, not declaration lists or method lists
       if not isListItem then 
@@ -1036,15 +1031,8 @@ module internal SymbolHelpers =
             // operator with solution
             FormatItemDescriptionToToolTipElement isListItem infoReader m denv { item with Item = Item.Value vref }
 
-        | Item.Value vref when isFunction g vref.Type && not (vref.IsConstructor) ->
-            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember true denv item.TyparInst vref.Deref
-            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
-            let tpsL = FormatTyparMapping denv prettyTyparInst
-            
-            FSharpStructuredToolTipElement.Single(resL, xml, tpsL, remarks=remarks)
-
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
-            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember false denv item.TyparInst vref.Deref
+            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv item.TyparInst vref.Deref
             let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
             FSharpStructuredToolTipElement.Single(resL, xml, tpsL, remarks=remarks)
@@ -1534,8 +1522,8 @@ module internal SymbolHelpers =
         | Item.NewDef _ 
         | Item.ILField _ -> []
         | Item.Event _ -> []
-        | Item.RecdField rfinfo -> if isFunction g rfinfo.FieldType then [item] else []
-        | Item.Value v -> if isFunction g v.Type then [item] else []
+        | Item.RecdField rfinfo -> if isFunctionTy g rfinfo.FieldType then [item] else []
+        | Item.Value v -> if isFunctionTy g v.Type then [item] else []
         | Item.UnionCase(ucr, _) -> if not ucr.UnionCase.IsNullary then [item] else []
         | Item.ExnCase ecr -> if isNil (recdFieldsOfExnDefRef ecr) then [] else [item]
         | Item.Property(_, pinfos) -> 

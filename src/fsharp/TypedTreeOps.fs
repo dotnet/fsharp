@@ -1825,6 +1825,10 @@ let isRefTy g ty =
         (isAnonRecdTy g ty && not (isStructAnonRecdTy g ty))
     )
 
+let isFunctionTy g ty =
+    let _, tau = tryDestForallTy g ty
+    isFunTy g tau
+
 // ECMA C# LANGUAGE SPECIFICATION, 27.2
 // An unmanaged-type is any type that isn't a reference-type, a type-parameter, or a generic struct-type and
 // contains no fields whose type is not an unmanaged-type. In other words, an unmanaged-type is one of the
