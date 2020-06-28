@@ -1036,8 +1036,15 @@ module internal SymbolHelpers =
             // operator with solution
             FormatItemDescriptionToToolTipElement isListItem infoReader m denv { item with Item = Item.Value vref }
 
+        | Item.Value vref when isFunction g vref.Type && not (vref.IsConstructor) ->
+            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember true denv item.TyparInst vref.Deref
+            let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
+            let tpsL = FormatTyparMapping denv prettyTyparInst
+            
+            FSharpStructuredToolTipElement.Single(resL, xml, tpsL, remarks=remarks)
+
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
-            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv item.TyparInst vref.Deref
+            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember false denv item.TyparInst vref.Deref
             let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
             FSharpStructuredToolTipElement.Single(resL, xml, tpsL, remarks=remarks)

@@ -165,11 +165,19 @@ module TcResolutionsExtensions =
                     | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m ->
                         add m SemanticClassificationType.IntrinsicFunction
 
+<<<<<<< HEAD
                     | (Item.Value vref), _, _, _, _, m when isFunction g vref.Type ->
                         if isDiscard vref.DisplayName then
                             add m SemanticClassificationType.Plaintext
                         elif valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then
                             add m SemanticClassificationType.Operator
+=======
+                    | (Item.Value vref), _, _, _, _, m when isFunction g vref.Type && not (vref.IsConstructor) ->
+                        if isDiscard vref.DisplayName then
+                            ()
+                        elif valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then 
+                            ()
+>>>>>>> 168dba511... Color functions in tooltips + consistent operator treatment
                         elif vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                             add m SemanticClassificationType.Property
                         elif vref.IsMember then
