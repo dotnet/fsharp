@@ -387,9 +387,9 @@ namespace CSharpTest
 
         public class NestedTest<U>
         {
-            public (T, U) B()
+            public U B()
             {
-                return (default(T), default(U));
+                return default(U);
             }
         }
     }
