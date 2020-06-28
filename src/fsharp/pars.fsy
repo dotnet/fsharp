@@ -2702,7 +2702,7 @@ localBinding:
         let mRhs = expr.Range 
         let optReturnType = $4 
         let bindingBuilder, mBindLhs = $3 
-        let localBindingRange = unionRanges (rhs2 parseState 3 5) mRhs
+        let localBindingRange = unionRanges (rhs2 parseState 1 5) mRhs
         let localBindingBuilder = 
           (fun attrs vis mLetKwd -> 
             let mWhole = unionRanges mLetKwd mRhs
@@ -2711,7 +2711,7 @@ localBinding:
         localBindingRange, localBindingBuilder }
 
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints EQUALS  error
-      { let mWhole = rhs2 parseState 3 5 
+      { let mWhole = rhs2 parseState 1 5 
         let mRhs = rhs parseState 5
         let optReturnType = $4 
         let bindingBuilder, mBindLhs = $3 
@@ -2726,7 +2726,7 @@ localBinding:
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints recover
       { if not $5 then reportParseErrorAt (rhs parseState 5) (FSComp.SR.parsUnexpectedEndOfFileDefinition())
         let optReturnType = $4 
-        let mWhole = match optReturnType with None -> rhs parseState 3 | Some _ -> rhs2 parseState 3 4
+        let mWhole = rhs2 parseState 1 (match optReturnType with None -> 3 | _ -> 4)
         let mRhs = mWhole.EndRange  // zero-width range at end of last good token
         let bindingBuilder, mBindLhs = $3 
         let localBindingBuilder = 

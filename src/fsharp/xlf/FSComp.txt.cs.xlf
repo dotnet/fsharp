@@ -143,8 +143,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
-        <source>witness passing</source>
-        <target state="new">witness passing</target>
+        <source>witness passing for trait constraints in F# quotations</source>
+        <target state="new">witness passing for trait constraints in F# quotations</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
