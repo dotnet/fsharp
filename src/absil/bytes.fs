@@ -400,6 +400,9 @@ type internal ByteStream =
     { bytes: ReadOnlyByteMemory
       mutable pos: int 
       max: int }
+
+    member b.IsEOF = (b.pos >= b.max)
+
     member b.ReadByte() = 
         if b.pos >= b.max then failwith "end of stream"
         let res = b.bytes.[b.pos]

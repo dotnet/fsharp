@@ -77,7 +77,7 @@ module LegacyMSBuildReferenceResolver
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
     /// This is only used to specify the "last resort" path for assembly resolution.
-    let GetPathToDotNetFrameworkImlpementationAssemblies(v) =
+    let GetPathToDotNetFrameworkImlpementationAssemblies(v) : string list =
         let v =
             match v with
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
@@ -96,7 +96,7 @@ module LegacyMSBuildReferenceResolver
         | Some v -> 
             match ToolLocationHelper.GetPathToDotNetFramework v with
             | null -> []
-            | x -> [x]
+            | NonNull x -> [x]
         | _ -> []
 
     let GetPathToDotNetFrameworkReferenceAssemblies(version) = 

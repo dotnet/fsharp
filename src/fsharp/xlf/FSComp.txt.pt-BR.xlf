@@ -12,9 +12,19 @@
         <target state="new">Feature '{0}' is not supported by target runtime.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkValueWithDefaultValueMustHaveDefaultValueNulls">
+        <source>Nullness warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.</source>
+        <target state="new">Nullness warning. The 'DefaultValue' attribute is used but the type (or one of its fields if a struct) is non-nullable.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Sobrecargas disponíveis:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csDelegateComparisonConstraintInconsistent">
+        <source>The constraints 'delegate' and 'comparison' are inconsistent</source>
+        <target state="new">The constraints 'delegate' and 'comparison' are inconsistent</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
@@ -42,6 +52,11 @@
         <target state="translated">Parâmetro de tipo conhecido: {0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csNullNotNullConstraintInconsistent">
+        <source>The constraints 'null' and 'not null' are inconsistent</source>
+        <target state="new">The constraints 'null' and 'not null' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
         <source>Argument at index {0} doesn't match</source>
         <target state="translated">O argumento no índice {0} não corresponde</target>
@@ -50,6 +65,21 @@
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
         <target state="translated">O argumento '{0}' não corresponde</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csStructNullConstraintInconsistent">
+        <source>The constraints 'struct' and 'null' are inconsistent</source>
+        <target state="new">The constraints 'struct' and 'null' are inconsistent</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypeHasNullAsExtraValue">
+        <source>The type '{0}' has 'null' as an extra value but a constraint does not permit this</source>
+        <target state="new">The type '{0}' has 'null' as an extra value but a constraint does not permit this</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypeHasNullAsTrueValue">
+        <source>The type '{0}' has 'null' as a true representation value but a constraint does not permit this</source>
+        <target state="new">The type '{0}' has 'null' as a true representation value but a constraint does not permit this</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -112,6 +142,11 @@
         <target state="new">nullable optional interop</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNullnessChecking">
+        <source>nullness checking</source>
+        <target state="new">nullness checking</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureOpenStaticClasses">
         <source>open static classes</source>
         <target state="new">open static classes</target>
@@ -160,6 +195,11 @@
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
         <target state="translated">O cabeçalho do recurso que começa no deslocamento {0} está malformado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsCheckNulls">
+        <source>Enable nullness declarations and checks</source>
+        <target state="new">Enable nullness declarations and checks</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -222,14 +262,29 @@
         <target state="translated">Os atributos não podem ser aplicados às extensões de tipo.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcDefaultStructConstructorCallNulls">
+        <source>Nullness warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.</source>
+        <target state="new">Nullness warning. The default constructor of a struct type is required but one of the fields of struct type is non-nullable.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use! não pode ser combinado com and!</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNullnessCheckingNotEnabled">
+        <source>The /checknulls language feature is not enabled</source>
+        <target state="new">The /checknulls language feature is not enabled</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
         <target state="translated">O constructo 'let! ... and! ...' só pode ser usado se o construtor de expressões de computação definir um método '{0}' ou um método 'MergeSource' ou 'Bind' apropriado</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTypeDoesNotHaveAnyNull">
+        <source>The type '{0}' does not support a nullness qualitification.</source>
+        <target state="new">The type '{0}' does not support a nullness qualitification.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly SeqExpressionSteppingTest3
 {
@@ -29,20 +29,24 @@
 }
 .mresource public FSharpSignatureData.SeqExpressionSteppingTest3
 {
-  // Offset: 0x00000000 Length: 0x00000277
+  // Offset: 0x00000000 Length: 0x00000273
+}
+.mresource public FSharpSignatureDataB.SeqExpressionSteppingTest3
+{
+  // Offset: 0x00000278 Length: 0x00000005
 }
 .mresource public FSharpOptimizationData.SeqExpressionSteppingTest3
 {
-  // Offset: 0x00000280 Length: 0x000000AD
+  // Offset: 0x00000288 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest3.exe
-// MVID: {59B19240-2432-943F-A745-03834092B159}
+// MVID: {5E172EEB-2432-943F-A745-0383EB2E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02660000
+// Image base: 0x06F30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -95,7 +99,7 @@
         // Code size       116 (0x74)
         .maxstack  6
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SeqExpressionStepping\\SeqExpressionSteppingTest3.fs'
+        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SeqExpressionStepping\\SeqExpressionSteppingTest3.fs'
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 SeqExpressionSteppingTest3/SeqExpressionSteppingTest3/f2@6::pc
         IL_0006:  ldc.i4.1

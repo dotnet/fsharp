@@ -33,14 +33,18 @@
 }
 .mresource public FSharpSignatureData.Linq101Select01
 {
-  // Offset: 0x00000000 Length: 0x00000655
+  // Offset: 0x00000000 Length: 0x00000657
+}
+.mresource public FSharpSignatureDataB.Linq101Select01
+{
+  // Offset: 0x00000660 Length: 0x00000035
 }
 .mresource public FSharpOptimizationData.Linq101Select01
 {
-  // Offset: 0x00000660 Length: 0x00000204
+  // Offset: 0x000006A0 Length: 0x00000204
 }
 .module Linq101Select01.exe
-// MVID: {5ECD8279-6057-8F80-A745-03837982CD5E}
+// MVID: {5E172EEB-6057-8F80-A745-0383EB2E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000

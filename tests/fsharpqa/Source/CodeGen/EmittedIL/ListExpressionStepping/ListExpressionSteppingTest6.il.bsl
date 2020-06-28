@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 4:7:0:0
 }
 .assembly ListExpressionSteppingTest6
 {
@@ -29,20 +29,24 @@
 }
 .mresource public FSharpSignatureData.ListExpressionSteppingTest6
 {
-  // Offset: 0x00000000 Length: 0x0000029D
+  // Offset: 0x00000000 Length: 0x00000291
+}
+.mresource public FSharpSignatureDataB.ListExpressionSteppingTest6
+{
+  // Offset: 0x00000298 Length: 0x00000006
 }
 .mresource public FSharpOptimizationData.ListExpressionSteppingTest6
 {
   // Offset: 0x000002A8 Length: 0x000000BC
 }
 .module ListExpressionSteppingTest6.exe
-// MVID: {5B9A6329-98A2-AB14-A745-038329639A5B}
+// MVID: {5E172EE8-98A2-AB14-A745-0383E82E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x007B0000
+// Image base: 0x057E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -108,7 +112,7 @@
         .locals init ([0] int32 x,
                  [1] int32 V_1)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ListExpressionStepping\\ListExpressionSteppingTest6.fs'
+        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ListExpressionStepping\\ListExpressionSteppingTest6.fs'
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 ListExpressionSteppingTest6/ListExpressionSteppingTest6/f7@7::pc
         IL_0006:  ldc.i4.1
