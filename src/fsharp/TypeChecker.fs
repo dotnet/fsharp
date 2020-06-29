@@ -659,7 +659,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
             match ResolveLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
-                let openTarget = SynOpenDeclTarget.ModuleOrNamespace(enclosingNamespacePathToOpen)
+                let openTarget = SynOpenDeclTarget.ModuleOrNamespace(enclosingNamespacePathToOpen, scopem)
                 let openDecl = OpenDeclaration.Create (openTarget, modrefs, [], scopem, true)
                 OpenEntities tcSink g amap scopem false env modrefs openDecl
             | Exception _ -> env
@@ -3635,7 +3635,7 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
 // Mutually recursive shapes
 //------------------------------------------------------------------------- 
 
-type MutRecDataForOpen = MutRecDataForOpen of SynOpenDeclTarget * range * appliedScope: range
+type MutRecDataForOpen = MutRecDataForOpen of SynOpenDeclTarget * appliedScope: range
 type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
 
 /// Represents the shape of a mutually recursive group of declarations including nested modules
@@ -13007,7 +13007,7 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap m scopem env (longId: Ident list) 
     let modrefs = List.map p23 modrefs
     modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
 
-    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.ModuleOrNamespace longId, modrefs, [], scopem, false)
+    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.ModuleOrNamespace (longId, m), modrefs, [], scopem, false)
     let env = OpenEntities tcSink g amap scopem false env modrefs openDecl
     env    
 
@@ -13017,14 +13017,14 @@ let TcOpenTypeDecl (cenv: cenv) m scopem env (synType: SynType) =
     checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration m
 
     let typ, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Open env emptyUnscopedTyparEnv synType
-    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.Type synType, [], [typ], scopem, false)
+    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.Type (synType, m), [], [typ], scopem, false)
     let env = OpenTypeStaticContent cenv.tcSink g cenv.amap scopem env typ openDecl
     env
 
-let TcOpenDecl cenv m scopem env (content: SynOpenDeclTarget) = 
-    match content with
-    | SynOpenDeclTarget.ModuleOrNamespace (longId) -> TcOpenModuleOrNamespaceDecl cenv.tcSink cenv.g cenv.amap m scopem env longId
-    | SynOpenDeclTarget.Type synType -> TcOpenTypeDecl cenv m scopem env synType
+let TcOpenDecl cenv scopem env target = 
+    match target with
+    | SynOpenDeclTarget.ModuleOrNamespace (longId, m) -> TcOpenModuleOrNamespaceDecl cenv.tcSink cenv.g cenv.amap m scopem env longId
+    | SynOpenDeclTarget.Type (synType, m) -> TcOpenTypeDecl cenv m scopem env synType
         
 exception ParameterlessStructCtor of range
 
@@ -14257,8 +14257,8 @@ module MutRecBindingChecking =
                             
 #if OPEN_IN_TYPE_DECLARATIONS
                         | Phase2AOpen(target, m) -> 
-                            let envInstance = TcOpenDecl cenv m scopem envInstance target
-                            let envStatic = TcOpenDecl cenv m scopem envStatic target
+                            let envInstance = TcOpenDecl cenv scopem envInstance target
+                            let envStatic = TcOpenDecl cenv scopem envStatic target
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
                             Phase2BOpen, innerState
 #endif
@@ -14539,7 +14539,7 @@ module MutRecBindingChecking =
                 let tycons = decls |> List.choose (function MutRecShape.Tycon d -> getTyconOpt d | _ -> None) 
                 let mspecs = decls |> List.choose (function MutRecShape.Module (MutRecDefnsPhase2DataForModule (_, mspec), _) -> Some mspec | _ -> None)
                 let moduleAbbrevs = decls |> List.choose (function MutRecShape.ModuleAbbrev (MutRecDataForModuleAbbrev (id, mp, m)) -> Some (id, mp, m) | _ -> None)
-                let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpen (target, m, moduleRange)) -> Some (target, m, moduleRange) | _ -> None)
+                let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpen (target, moduleRange)) -> Some (target, moduleRange) | _ -> None)
                 let lets = decls |> List.collect (function MutRecShape.Lets binds -> getVals binds | _ -> [])
                 let exns = tycons |> List.filter (fun (tycon: Tycon) -> tycon.IsExceptionDecl)
 
@@ -14565,7 +14565,7 @@ module MutRecBindingChecking =
                 // Add the modules being defined
                 let envForDecls = (envForDecls, mspecs) ||> List.fold ((if report then AddLocalSubModuleAndReport cenv.tcSink scopem else AddLocalSubModule) cenv.g cenv.amap m)
                 // Process the 'open' declarations                
-                let envForDecls = (envForDecls, opens) ||> List.fold (fun env (target, m, moduleRange) -> TcOpenDecl cenv m moduleRange env target)
+                let envForDecls = (envForDecls, opens) ||> List.fold (fun env (target, moduleRange) -> TcOpenDecl cenv moduleRange env target)
                 // Add the type definitions being defined
                 let envForDecls = (if report then AddLocalTyconsAndReport cenv.tcSink scopem else AddLocalTycons) cenv.g cenv.amap m tycons envForDecls 
                 // Add the exception definitions being defined
@@ -17324,7 +17324,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
 
         | SynModuleSigDecl.Open (target, m) -> 
             let scopem = unionRanges m.EndRange endm
-            let env = TcOpenDecl cenv m scopem env target
+            let env = TcOpenDecl cenv scopem env target
             return env
 
         | SynModuleSigDecl.Val (vspec, m) -> 
@@ -17489,7 +17489,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
 
                 | SynModuleSigDecl.Open (target, m) -> 
                       if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(), m))
-                      let decls = [ MutRecShape.Open (MutRecDataForOpen(target, m, moduleRange)) ]
+                      let decls = [ MutRecShape.Open (MutRecDataForOpen(target, moduleRange)) ]
                       decls, (openOk, moduleAbbrevOk)
 
                 | SynModuleSigDecl.Exception (SynExceptionSig(exnRepr, members, _), _) ->
@@ -17618,7 +17618,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.Open (target, m) -> 
           let scopem = unionRanges m.EndRange scopem
-          let env = TcOpenDecl cenv m scopem env target
+          let env = TcOpenDecl cenv scopem env target
           return ((fun e -> e), []), env, env
 
       | SynModuleDecl.Let (letrec, binds, m) -> 
@@ -17820,7 +17820,7 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames m envInitial mutRecN
 
               | SynModuleDecl.Open (target, m) ->  
                   if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(), m))
-                  let decls = [ MutRecShape.Open (MutRecDataForOpen(target, m, moduleRange)) ]
+                  let decls = [ MutRecShape.Open (MutRecDataForOpen(target, moduleRange)) ]
                   decls, (openOk, moduleAbbrevOk, attrs)
 
               | SynModuleDecl.Exception (SynExceptionDefn(repr, members, _), _m) -> 
@@ -17923,7 +17923,7 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     match modref.TryDeref with 
     | ValueNone -> warn()
     | ValueSome _ -> 
-        let openTarget = SynOpenDeclTarget.ModuleOrNamespace([])
+        let openTarget = SynOpenDeclTarget.ModuleOrNamespace([], scopem)
         let openDecl = OpenDeclaration.Create (openTarget, [modref], [], scopem, false)
         OpenEntities TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 

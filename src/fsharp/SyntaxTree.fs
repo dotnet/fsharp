@@ -2019,10 +2019,21 @@ type SynModuleDecl =
         | SynModuleDecl.NamespaceFragment (SynModuleOrNamespace (range=m))
         | SynModuleDecl.Attributes (range=m) -> m
 
+/// Represents the target of the open declaration
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynOpenDeclTarget = 
-    | ModuleOrNamespace of Ident list
-    | Type of SynType
+
+    /// A 'open' declaration
+    | ModuleOrNamespace of longId: LongIdent * range: range
+
+    /// A 'open type' declaration
+    | Type of typeName: SynType * range: range
+
+    /// Gets the syntax range of this construct
+    member this.Range =
+        match this with
+        | ModuleOrNamespace (range=m) -> m
+        | Type (range=m) -> m
 
 /// Represents the right hand side of an exception definition in a signature file
 [<NoEquality; NoComparison>]
