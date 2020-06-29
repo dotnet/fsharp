@@ -383,10 +383,10 @@ let OpenEntities tcSink g amap scopem root env mvvs openDeclaration =
     CallOpenDeclarationSink tcSink openDeclaration
     env
 
-/// Adjust the TcEnv to account for opening the set of modules, namespaces or static classes implied by an `open` declaration
-let OpenTypeStaticContent tcSink g amap scopem env (typ: TType) openDeclaration =
+/// Adjust the TcEnv to account for opening the set of modules, namespaces or types implied by an `open` declaration
+let OpenTypeContent tcSink g amap scopem env (typ: TType) openDeclaration =
     let env =
-        { env with eNameResEnv = AddTypeStaticContentsToNameEnv g amap env.eAccessRights scopem env.eNameResEnv typ }
+        { env with eNameResEnv = AddTypeContentsToNameEnv g amap env.eAccessRights scopem env.eNameResEnv typ }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     CallOpenDeclarationSink tcSink openDeclaration
     env
@@ -13017,8 +13017,16 @@ let TcOpenTypeDecl (cenv: cenv) m scopem env (synType: SynType) =
     checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration m
 
     let typ, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Open env emptyUnscopedTyparEnv synType
+
+    if not (isAppTy g typ) then
+        error(Error(FSComp.SR.tcNamedTypeRequired(FSComp.SR.featureOpenTypeDeclaration()), m))
+
+    if isByrefTy g typ then
+        // TODO: Better error.
+        error(Error(FSComp.SR.tcByrefsMayNotHaveTypeExtensions(), m))
+
     let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.Type (synType, m), [], [typ], scopem, false)
-    let env = OpenTypeStaticContent cenv.tcSink g cenv.amap scopem env typ openDecl
+    let env = OpenTypeContent cenv.tcSink g cenv.amap scopem env typ openDecl
     env
 
 let TcOpenDecl cenv scopem env target = 

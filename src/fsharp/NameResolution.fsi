@@ -247,8 +247,8 @@ val internal AddModuleOrNamespaceRefToNameEnv                    : TcGlobals -> 
 /// Add a list of modules or namespaces to the name resolution environment
 val internal AddEntitiesContentsToNameEnv : TcGlobals -> ImportMap -> AccessorDomain -> range -> bool -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
 
-/// Add the static content of a type to the name resolution environment
-val internal AddTypeStaticContentsToNameEnv : TcGlobals -> ImportMap -> AccessorDomain -> range -> NameResolutionEnv -> TType -> NameResolutionEnv
+/// Add the content of a type to the name resolution environment
+val internal AddTypeContentsToNameEnv : TcGlobals -> ImportMap -> AccessorDomain -> range -> NameResolutionEnv -> TType -> NameResolutionEnv
 
 /// A flag which indicates if it is an error to have two declared type parameters with identical names
 /// in the name resolution environment.

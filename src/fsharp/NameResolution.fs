@@ -1058,7 +1058,7 @@ let GetNestedTypesOfType (ad, ncenv: NameResolver, optFilter, staticResInfo, che
     GetNestedTyconRefsOfType ncenv.InfoReader ncenv.amap (ad, optFilter, staticResInfo, checkForGenerated, m) ty
     |> List.map (fun (tcref, tinst) -> MakeNestedType ncenv tinst m tcref)
 
-let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
+let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
     let infoReader = InfoReader(g,amap)
 
     let items =
@@ -1166,7 +1166,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
            TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true then
             if tcref.Typars(m).Length > 0 then failwith "nope" // TODO proper error
             let ty = generalizedTyconRef tcref
-            AddStaticContentOfTypeToNameEnv g amap ad m nenv ty
+            AddContentOfTypeToNameEnv g amap ad m nenv ty
         else
             nenv
 
@@ -1295,10 +1295,10 @@ and AddModuleOrNamespaceContentsToNameEnv (g: TcGlobals) amap (ad: AccessorDomai
 and AddEntitiesContentsToNameEnv g amap ad m root nenv modrefs =
    (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddEntityContentsToNameEnv g amap ad m root acc modref)
 
-and AddTypeStaticContentsToNameEnv g amap ad m nenv (typ: TType) =
+and AddTypeContentsToNameEnv g amap ad m nenv (typ: TType) =
     assert (isAppTy g typ)
     assert not (tcrefOfAppTy g typ).IsModuleOrNamespace
-    AddStaticContentOfTypeToNameEnv g amap ad m nenv typ
+    AddContentOfTypeToNameEnv g amap ad m nenv typ
 
 and AddEntityContentsToNameEnv g amap ad m root nenv (modref: EntityRef) =
     assert modref.IsModuleOrNamespace 
