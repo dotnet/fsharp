@@ -13019,7 +13019,7 @@ let TcOpenTypeDecl (cenv: cenv) m scopem env (synType: SynType) =
     let typ, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Open env emptyUnscopedTyparEnv synType
 
     if not (isAppTy g typ) then
-        error(Error(FSComp.SR.tcNamedTypeRequired(FSComp.SR.featureOpenTypeDeclaration()), m))
+        error(Error(FSComp.SR.tcNamedTypeRequired("open type"), m))
 
     if isByrefTy g typ then
         // TODO: Better error.
