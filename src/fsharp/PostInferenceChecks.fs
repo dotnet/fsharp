@@ -707,49 +707,80 @@ let compareTypesWithRegardToTypeVariablesAndMeasures g amap m typ1 typ2 =
         else
             NotEqual
     
+//let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list) isObjectExpression m =
+//    let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
+//    if not(cenv.g.langVersion.SupportsFeature LanguageFeature.InterfacesWithMultipleGenericInstantiation) then
+//        let table = interfaces |> MultiMap.initBy keyf
+//        let firstInterfaceWithMultipleGenericInstantiations = 
+//            interfaces |> List.tryPick (fun typ1 -> 
+//                table |> MultiMap.find (keyf typ1) |> List.tryPick (fun typ2 -> 
+//                       if // same nominal type
+//                           tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
+//                           // different instantiations
+//                           not (typeEquivAux EraseNone cenv.g typ1 typ2) 
+//                        then Some (typ1, typ2)
+//                        else None))
+//        match firstInterfaceWithMultipleGenericInstantiations with 
+//        | None -> ()
+//        | Some (typ1, typ2) -> 
+//            let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
+//            let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
+//            errorR(Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations(typ1Str, typ2Str), m))
+//    else
+//        let groups = interfaces |> List.groupBy keyf
+//        let errors = seq {
+//            for (_, items) in groups do
+//                for i1 in 0 .. items.Length - 1 do
+//                    for i2 in i1 + 1 .. items.Length - 1 do
+//                        let typ1 = items.[i1]
+//                        let typ2 = items.[i2]
+//                        match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m typ1 typ2 with
+//                        | ExactlyEqual -> () // exact duplicates are checked in another place
+//                        | FeasiblyEqual ->
+//                            let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
+//                            let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
+//                            if isObjectExpression then
+//                                yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariableObjectExpression(tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
+//                            else
+//                                let typStr = NicePrint.minimalStringOfType cenv.denv typ
+//                                yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
+//                        | NotEqual -> ()
+//        }
+//        match Seq.tryHead errors with
+//        | None -> ()
+//        | Some e -> errorR(e)
+
 let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list) isObjectExpression m =
     let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
-    if not(cenv.g.langVersion.SupportsFeature LanguageFeature.InterfacesWithMultipleGenericInstantiation) then
-        let table = interfaces |> MultiMap.initBy keyf
-        let firstInterfaceWithMultipleGenericInstantiations = 
-            interfaces |> List.tryPick (fun typ1 -> 
-                table |> MultiMap.find (keyf typ1) |> List.tryPick (fun typ2 -> 
-                       if // same nominal type
-                           tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
-                           // different instantiations
-                           not (typeEquivAux EraseNone cenv.g typ1 typ2) 
-                        then Some (typ1, typ2)
-                        else None))
-        match firstInterfaceWithMultipleGenericInstantiations with 
-        | None -> ()
-        | Some (typ1, typ2) -> 
-            let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
-            let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
-            errorR(Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations(typ1Str, typ2Str), m))
-    else
-        let groups = interfaces |> List.groupBy keyf
-        let errors = seq {
-            for (_, items) in groups do
-                for i1 in 0 .. items.Length - 1 do
-                    for i2 in i1 + 1 .. items.Length - 1 do
-                        let typ1 = items.[i1]
-                        let typ2 = items.[i2]
-                        let tcRef1 = tcrefOfAppTy cenv.g typ1
-                        match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m typ1 typ2 with
-                        | ExactlyEqual -> () // exact duplicates are checked in another place
-                        | FeasiblyEqual ->
-                            let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
-                            let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
-                            if isObjectExpression then
-                                yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariableObjectExpression(tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
-                            else
-                                let typStr = NicePrint.minimalStringOfType cenv.denv typ
-                                yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
-                        | NotEqual -> ()
-        }
-        match Seq.tryHead errors with
-        | None -> ()
-        | Some e -> errorR(e)
+    let groups = interfaces |> List.groupBy keyf
+    let errors = seq {
+        for (_, items) in groups do
+            for i1 in 0 .. items.Length - 1 do
+                for i2 in i1 + 1 .. items.Length - 1 do
+                    let typ1 = items.[i1]
+                    let typ2 = items.[i2]
+                    let tcRef1 = tcrefOfAppTy cenv.g typ1
+                    match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m typ1 typ2 with
+                    | ExactlyEqual -> ()
+                    | FeasiblyEqual ->
+                        match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
+                        | None -> ()
+                        | Some e -> yield e
+                        let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
+                        let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
+                        if isObjectExpression then
+                            yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariableObjectExpression(tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
+                        else
+                            let typStr = NicePrint.minimalStringOfType cenv.denv typ
+                            yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
+                    | NotEqual ->
+                        match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
+                        | None -> ()
+                        | Some e -> yield e
+    }
+    match Seq.tryHead errors with
+    | None -> ()
+    | Some e -> errorR(e)
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
