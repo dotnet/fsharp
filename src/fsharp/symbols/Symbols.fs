@@ -2505,8 +2505,8 @@ type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: range option, modul
 
     member __.LongId = 
         match target with 
-        | SynOpenDeclTarget.ModuleOrNamespace(longId) -> longId
-        | SynOpenDeclTarget.Type(synType) ->
+        | SynOpenDeclTarget.ModuleOrNamespace(longId, _) -> longId
+        | SynOpenDeclTarget.Type(synType, _) ->
             let rec get ty = 
                 match ty with 
                 | SynType.LongIdent (LongIdentWithDots(lid, _)) -> lid
