@@ -37,6 +37,7 @@ let private CheckThrowsExn2<'a when 'a :> exn> s (f : unit -> unit) =
 // attribute to flag these exception's usage as a bug.
 let CheckThrowsNullRefException      f = CheckThrowsExn<NullReferenceException>   f
 let CheckThrowsIndexOutRangException f = CheckThrowsExn<IndexOutOfRangeException> f
+let CheckThrowsObjectDisposedException f = CheckThrowsExn<ObjectDisposedException> f
 
 // Legit exceptions
 let CheckThrowsNotSupportedException f = CheckThrowsExn<NotSupportedException>    f
@@ -49,6 +50,7 @@ let CheckThrowsDivideByZeroException f = CheckThrowsExn<DivideByZeroException>  
 let CheckThrowsOverflowException     f = CheckThrowsExn<OverflowException>        f
 let CheckThrowsInvalidOperationExn   f = CheckThrowsExn<InvalidOperationException> f
 let CheckThrowsFormatException       f = CheckThrowsExn<FormatException>           f
+let CheckThrowsArithmeticException   f = CheckThrowsExn<ArithmeticException>  f
 
 // Verifies two sequences are equal (same length, equiv elements)
 let VerifySeqsEqual (seq1 : seq<'T>) (seq2 : seq<'T>) =
