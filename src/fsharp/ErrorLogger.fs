@@ -677,15 +677,24 @@ type public FSharpErrorSeverityOptions =
 // let dummyMethodFOrBug6417A() = () 
 // let dummyMethodFOrBug6417B() = () 
 
-let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) error =
-    if not (langVersion.SupportsFeature langFeature) then 
+let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+    if not (langVersion.SupportsFeature langFeature) then
         let featureStr = langVersion.GetFeatureString langFeature
         let currentVersionStr = langVersion.SpecifiedVersionString
         let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
-        error (Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
+        Some (Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
+    else
+        None
 
 let internal tryLanguageFeatureError langVersion langFeature m =
-    tryLanguageFeatureErrorAux langVersion langFeature m error
+    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    | Some e -> error (e)
+    | None -> ()
 
 let internal tryLanguageFeatureErrorRecover langVersion langFeature m =
-    tryLanguageFeatureErrorAux langVersion langFeature m errorR
+    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    | Some e -> errorR e
+    | None -> ()
+
+let internal tryLanguageFeatureErrorOption langVersion langFeature m =
+    tryLanguageFeatureErrorAux langVersion langFeature m 
