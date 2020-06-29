@@ -3636,7 +3636,6 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
 //------------------------------------------------------------------------- 
 
 type MutRecDataForOpen = MutRecDataForOpen of SynOpenDeclTarget * range * appliedScope: range
-type MutRecDataForOpenType = MutRecDataForOpenType of SynType * range * appliedScope: range
 type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
 
 /// Represents the shape of a mutually recursive group of declarations including nested modules
