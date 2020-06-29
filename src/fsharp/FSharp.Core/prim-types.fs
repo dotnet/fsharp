@@ -781,7 +781,7 @@ namespace Microsoft.FSharp.Core
 
         let inline anyToString nullStr x = 
             match box x with 
-            | :? System.IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
+            | :? IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
             | null -> nullStr
             | _ ->  x.ToString()
 
@@ -4469,7 +4469,7 @@ namespace Microsoft.FSharp.Core
              when 'T : float32    = let x = (# "" value : float32 #) in x.ToString(null, CultureInfo.InvariantCulture)
              when 'T : decimal    = let x = (# "" value : decimal #) in x.ToString(null, CultureInfo.InvariantCulture)
              when 'T : BigInteger = let x = (# "" value : BigInteger #) in x.ToString(null, CultureInfo.InvariantCulture)
-
+             
              // no IFormattable
              when 'T : char       = let x = (# "" value : char #) in x.ToString()
              when 'T : bool       = let x = (# "" value : bool #) in x.ToString()
@@ -4498,12 +4498,12 @@ namespace Microsoft.FSharp.Core
              when 'T : Guid             = let x = (# "" value : Guid #) in x.ToString(null, CultureInfo.InvariantCulture)
              when 'T struct = 
                 match box value with
-                | :? System.IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
+                | :? IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
                 | _ -> value.ToString()
 
              // other commmon mscorlib reference types
              when 'T : StringBuilder = let x = (# "" value : StringBuilder #) in x.ToString()
-
+             when 'T : IFormattable = let x = (# "" value : IFormattable #) in x.ToString(null, CultureInfo.InvariantCulture)
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
