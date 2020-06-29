@@ -4504,6 +4504,7 @@ namespace Microsoft.FSharp.Core
              // other commmon mscorlib reference types
              when 'T : StringBuilder = let x = (# "" value : StringBuilder #) in x.ToString()
              when 'T : IFormattable = let x = (# "" value : IFormattable #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : option<_> = let x = (# "" value : option<_> #) in match x with None -> "None" | _ -> x.ToString()
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
