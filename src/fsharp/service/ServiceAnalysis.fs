@@ -136,7 +136,7 @@ module UnusedOpens =
             match symbol with
             | :? FSharpMemberOrFunctionOrValue as f ->
                 match f.DeclaringEntity with
-                | Some _ -> true
+                | Some entity when entity.IsNamespace || entity.IsFSharpModule -> true
                 | _ -> false
             | _ -> false)
 
@@ -212,7 +212,7 @@ module UnusedOpens =
                 | :? FSharpMemberOrFunctionOrValue as f ->
                     match f.DeclaringEntity with
                     // Show namespaces, modules, and types.
-                    | Some entity -> 
+                    | Some entity when entity.IsNamespace || entity.IsFSharpModule -> 
                         symbolUsesRangesByDeclaringEntity.BagAdd(entity, symbolUse.RangeAlternate)
                     | _ -> ()
                 | _ -> ()
