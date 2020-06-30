@@ -8464,16 +8464,15 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             /// gets the tuple-arity of a method assuming that methods' first parameter is a tuple
             let tupleArity (meth: MethInfo) =
                 let ps = meth.GetParamTypes(cenv.amap, letBindRange, [])
-                dprintfn "discovered %A params for %s" ps meth.DisplayName
+                //dprintfn "discovered %A params for %s" ps meth.DisplayName
                 match ps with
+                // this is the case when an SRTP'd member is provided
                 | [ [ TType_var typar ] ] when typar.typar_flags.StaticReq = TyparStaticReq.HeadTypeStaticReq -> Some Int32.MaxValue
+                // this is a 'bind', ie a set of inputs that are tupled + a function that consumes them
                 | [ [TType_tuple(_info, types); TType_fun (TType_tuple(_, funDomainTypes), _range) ] ] when (List.length types) = (List.length funDomainTypes) -> Some (List.length types)
+                // this is a 'normal' call, like MergeSources4(a,b,c,d) that has 4 parameters applied
                 | [ nonTupledParams ] -> Some (List.length nonTupledParams)
                 | _ -> None
-
-            // let methodArity (meth: MethInfo) =
-            //     meth.GetParamTypes(cenv.amap, letBindRange, [])
-            //     |> List.length
 
             if cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang then
                 if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), letBindRange))
@@ -8497,7 +8496,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                     TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env bindRange ad bindNReturnName builderTy
                     |> List.choose tupleArity
 
-                dprintfn "BindNReturnArities = %A" bindNReturnArities
+                // dprintfn "BindNReturnArities = %A" bindNReturnArities
 
                 let hasRequiredBindNReturnArity =
                     bindNReturnArities
@@ -8521,7 +8520,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env bindRange ad bindNName builderTy
                         |> List.choose tupleArity
 
-                    dprintfn "BindNArities = %A" bindNArities
+                    // dprintfn "BindNArities = %A" bindNArities
 
                     // Check if this is a BindN etc.
                     let hasRequiredBindNArity =
@@ -8564,7 +8563,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                             TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env bindRange ad mergeSourcesNName builderTy
                             |> List.choose tupleArity
 
-                        dprintfn "MergeSourcesNArities = %A" mergeSourcesNArities
+                        // dprintfn "MergeSourcesNArities = %A" mergeSourcesNArities
 
                         let hasMergeSourcesN =
                             not (isNil mergeSourcesNArities)
@@ -8575,13 +8574,13 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
                         let rec mergeSources (sourcesAndPats: (SynExpr * SynPat) list) =
                             let numSourcesAndPats = sourcesAndPats.Length
-                            dprintfn "handling %d patterns" numSourcesAndPats
+                            // dprintfn "handling %d patterns" numSourcesAndPats
                             assert (numSourcesAndPats <> 0)
                             if numSourcesAndPats = 1 then
-                                dprintfn "one pat remaining, returning it"
+                                // dprintfn "one pat remaining, returning it"
                                 sourcesAndPats.[0]
                             elif numSourcesAndPats = 2 then
-                                dprintfn "two pats left, calling MergeSources"
+                                // dprintfn "two pats left, calling MergeSources"
                                 // call MergeSources
                                 if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad mergeSourcesName builderTy) then
                                     error(Error(FSComp.SR.tcRequireMergeSourcesOrBindN(bindNName), bindRange))
@@ -8590,7 +8589,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                 source, consumePat
                             // we can handle this call with a MergeSources# call
                             elif numSourcesAndPats <= maxMergeSourcesNumeric then
-                                dprintfn "can handle all pats, calling MergeSources%d with %d pats" numSourcesAndPats numSourcesAndPats
+                                // dprintfn "can handle all pats, calling MergeSources%d with %d pats" numSourcesAndPats numSourcesAndPats
                                 // Call MergeSources%d
                                 let memberName = numericMergeSourcesName numSourcesAndPats
                                 if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad memberName builderTy) then
@@ -8600,7 +8599,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                 source, consumePat
                             // we can handle this call with a MergeSourcesN call
                             elif numSourcesAndPats <= maxMergeSourcesN then
-                                dprintfn "can handle all pats, calling MergeSourcesN with %d pats" numSourcesAndPats
+                                // dprintfn "can handle all pats, calling MergeSourcesN with %d pats" numSourcesAndPats
                                 // Call MergeSourcesN
 
                                 if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad mergeSourcesNName builderTy) then
@@ -8613,7 +8612,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                 // Call MergeSourcesMax(e1, e2, e3, e4, (...))
                                 let splitPoint = if maxMergeSourcesNumeric <> 1 then maxMergeSourcesNumeric else maxMergeSourcesN
                                 let nowSourcesAndPats, laterSourcesAndPats = List.splitAt (splitPoint - 1) sourcesAndPats
-                                dprintfn "cannot handle all pats, handling %d pats" (nowSourcesAndPats.Length)
+                                // dprintfn "cannot handle all pats, handling %d pats" (nowSourcesAndPats.Length)
 
                                 let laterSourceAndPat = mergeSources laterSourcesAndPats
                                 mergeSources (nowSourcesAndPats @ [laterSourceAndPat])
@@ -8854,7 +8853,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             let dataCompPriorToOp =
                 let consumeExpr = SynExpr.MatchLambda(false, consumePat.Range, [Clause(consumePat, None, innerExpr, innerRange, DebugPointForTarget.Yes)], spBind, innerRange)
                 let bindCall = mkSynCall bindName bindRange (bindArgs @ [consumeExpr])
-                printfn "BindReturn call:\n%A" bindCall
+                //dprintfn "BindReturn call:\n%A" bindCall
                 translatedCtxt bindCall
 
             match customOpInfo with
