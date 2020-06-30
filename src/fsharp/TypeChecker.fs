@@ -6599,7 +6599,7 @@ and TcNewExpr cenv env tpenv objTy mObjTyOpt superInit arg mWholeExprOrObjTy =
         
         mkCallCreateInstance cenv.g mWholeExprOrObjTy objTy, tpenv
     else 
-        if not (isAppTy cenv.g objTy) then error(Error(FSComp.SR.tcNamedTypeRequired(if superInit then "inherit" else "new"), mWholeExprOrObjTy))
+        if not (isAppTy cenv.g objTy) && not (isAnyTupleTy cenv.g objTy) then error(Error(FSComp.SR.tcNamedTypeRequired(if superInit then "inherit" else "new"), mWholeExprOrObjTy))
         let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mWholeExprOrObjTy ad objTy)
         
         TcCtorCall false cenv env tpenv objTy objTy mObjTyOpt item superInit [arg] mWholeExprOrObjTy [] None
