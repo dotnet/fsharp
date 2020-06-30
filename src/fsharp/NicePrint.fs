@@ -2192,10 +2192,6 @@ let stringOfParamData denv paramData = bufs (fun buf -> InfoMemberPrinting.forma
 
 let layoutOfParamData denv paramData = InfoMemberPrinting.layoutParamData denv paramData
 
-let outputILTypeRef denv os x = x |> PrintIL.layoutILTypeRef denv |> bufferL os
-
-let layoutILTypeRef denv x = x |> PrintIL.layoutILTypeRef denv
-
 let outputExnDef denv os x = x |> TastDefinitionPrinting.layoutExnDefn denv |> bufferL os
 
 let layoutExnDef denv x = x |> TastDefinitionPrinting.layoutExnDefn denv
