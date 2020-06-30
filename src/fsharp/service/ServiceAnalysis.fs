@@ -13,35 +13,38 @@ module UnusedOpens =
 
     let entityHash = HashIdentity.FromFunctions (fun (_x: FSharpEntity) -> 0) (fun x y -> x.LogicalName = y.LogicalName)
 
-    let isOpenDeclarationUsed (openDeclaration: FSharpOpenDeclaration) (usedEntities: HashSet<FSharpEntity>) =
-        openDeclaration.Modules |> List.exists usedEntities.Contains ||
-        openDeclaration.Types |> List.exists (fun x -> x.HasTypeDefinition && usedEntities.Contains x.TypeDefinition)
+    let rec isOpenEntityUsedByEntity (openEntity: FSharpEntity) (entity: FSharpEntity) =
+        openEntity.LogicalName = entity.LogicalName ||
+        match entity.DeclaringEntity with
+        | Some declaringEntity -> isOpenEntityUsedByEntity openEntity declaringEntity
+        | _ -> false
+
+    let isOpenEntityUsedBySymbol (openEntity: FSharpEntity) (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpMemberOrFunctionOrValue as f ->
+            match f.DeclaringEntity with
+            | Some entity -> isOpenEntityUsedByEntity openEntity entity
+            | _ -> false
+        | :? FSharpEntity as entity -> isOpenEntityUsedByEntity openEntity entity
+        | _ -> false
+
+    let isOpenDeclarationUsed (openDeclaration: FSharpOpenDeclaration) (symbolUses: FSharpSymbolUse seq) =
+        symbolUses
+        |> Seq.exists (fun symbolUse ->
+            if Range.rangeContainsRange openDeclaration.AppliedScope symbolUse.RangeAlternate then
+                openDeclaration.Modules |> List.exists (fun x -> isOpenEntityUsedBySymbol x symbolUse.Symbol) ||
+                openDeclaration.Types |> List.exists (fun x -> x.HasTypeDefinition && isOpenEntityUsedBySymbol x.TypeDefinition symbolUse.Symbol)
+            else
+                false)
 
     let filterOpenStatements (symbolUses: FSharpSymbolUse seq) (openDeclarations: FSharpOpenDeclaration seq) =
         async {
-            let usedEntities = HashSet entityHash
-
-            for symbolUse in symbolUses do
-                match symbolUse.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as f ->
-                    match f.DeclaringEntity with
-                    | Some entity when entity.IsFSharpModule ->                      
-                        usedEntities.Add entity |> ignore
-                    | Some entity ->
-                        match entity.DeclaringEntity with
-                        | Some entity2 ->
-                            usedEntities.Add entity2 |> ignore
-                        | _ -> ()                         
-                    | _ -> ()
-                | _ -> ()
-
-
             return 
                 [ for x in openDeclarations do
                     match x.Range with
                     | None -> ()
                     | Some r ->
-                        if not (isOpenDeclarationUsed x usedEntities) then
+                        if not (isOpenDeclarationUsed x symbolUses) then
                             yield r ]
         }
 
