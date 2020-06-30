@@ -152,6 +152,11 @@
         <target state="translated">Sondan dilimleme, 5.0 dil sürümünü gerektirir, /langversion:preview kullanın.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiInvalidDirective">
+        <source>Invalid directive '#{0} {1}'</source>
+        <target state="new">Invalid directive '#{0} {1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Akış null kaynakla başlamıyor ve '.RES' biçiminde değil.</target>

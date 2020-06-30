@@ -152,6 +152,11 @@
         <target state="translated">La segmentación desde el final requiere la versión de lenguaje 5.0, use /langversion:preview.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiInvalidDirective">
+        <source>Invalid directive '#{0} {1}'</source>
+        <target state="new">Invalid directive '#{0} {1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">El flujo no comienza con un recurso nulo ni está en formato ".RES".</target>
