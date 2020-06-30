@@ -1795,7 +1795,7 @@ module private TastDefinitionPrinting =
 
             let methLs = 
                 meths 
-                |> List.filter (fun md -> not (impliedNames.Contains md.DisplayName))
+                |> List.filter (fun md -> not (impliedNames.Contains md.DisplayName) && not (md.IsConstructor))
                 |> List.groupBy (fun md -> md.DisplayName)
                 |> List.collect (fun (_, group) -> shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun x xL -> (sortKey x, xL)) group)
 
