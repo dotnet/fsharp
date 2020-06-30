@@ -13868,7 +13868,7 @@ module MutRecBindingChecking =
       | Phase2AMember of PreCheckingRecursiveBinding
 #if OPEN_IN_TYPE_DECLARATIONS
       /// A dummy declaration, should we ever support 'open' in type definitions
-      | Phase2AOpen of LongIdent * isOpenType: bool * range
+      | Phase2AOpen of SynOpenDeclTarget * range
 #endif
       /// Indicates the super init has just been called, 'this' may now be published
       | Phase2AIncrClassCtorJustAfterSuperInit 
@@ -14050,9 +14050,9 @@ module MutRecBindingChecking =
                             cbinds, innerState
                         
 #if OPEN_IN_TYPE_DECLARATIONS
-                        | SynMemberDefn.Open (mp, isOpenType, m), _ ->
+                        | SynMemberDefn.Open (target, m), _ ->
                             let innerState = (incrClassCtorLhsOpt, env, tpenv, recBindIdx, prelimRecValuesRev, uncheckedBindsRev)
-                            [ Phase2AOpen (mp, isOpenType, m) ], innerState
+                            [ Phase2AOpen (target, m) ], innerState
 #endif
                         
                         | definition -> 
