@@ -1065,7 +1065,7 @@ type public FSharpOpenDeclaration =
     /// Modules or namespaces which is opened with this declaration.
     member Modules: FSharpEntity list 
       
-    /// Types whose static content is opened with this declaration.
+    /// Types whose static members and nested types is opened with this declaration.
     member Types: FSharpType list 
       
     /// Scope in which open declaration is visible.
