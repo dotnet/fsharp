@@ -4465,31 +4465,33 @@ namespace Microsoft.FSharp.Core
 
              // Using 'let x = (# ... #) in x.ToString()' leads to better IL, without it, an extra stloc and ldloca.s (get address-of)
              // gets emitted, which are unnecessary. With it, the extra address-of-variable is not created
-             when 'T : float      = let x = (# "" value : float #) in x.ToString(null, CultureInfo.InvariantCulture)
-             when 'T : float32    = let x = (# "" value : float32 #) in x.ToString(null, CultureInfo.InvariantCulture)
-             when 'T : decimal    = let x = (# "" value : decimal #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : float      = let x = (# "" value : float #)      in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : float32    = let x = (# "" value : float32 #)    in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : decimal    = let x = (# "" value : decimal #)    in x.ToString(null, CultureInfo.InvariantCulture)
              when 'T : BigInteger = let x = (# "" value : BigInteger #) in x.ToString(null, CultureInfo.InvariantCulture)
              
              // no IFormattable
-             when 'T : char       = let x = (# "" value : char #) in x.ToString()
-             when 'T : bool       = let x = (# "" value : bool #) in x.ToString()
+             when 'T : char       = let x = (# "" value : char #)       in x.ToString()
+             when 'T : bool       = let x = (# "" value : bool #)       in x.ToString()
+             when 'T : nativeint  = let x = (# "" value : nativeint #)  in x.ToString()
+             when 'T : unativeint = let x = (# "" value : unativeint #) in x.ToString()
 
              // For the int-types:
              // It is not possible to distinguish statically between Enum and (any type of) int.
              // This way we'll print their symbolic value, as opposed to their integral one 
              // E.g.: 'string ConsoleKey.Backspace' gives "Backspace", rather than "8")
              when 'T : sbyte      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
-             when 'T : byte       = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int16      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
-             when 'T : uint16     = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int32      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
-             when 'T : uint32     = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int64      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
-             when 'T : uint64     = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
 
-             // native ints cannot be used for enums, and do not implement IFormattable
-             when 'T : nativeint  = (# "" value : nativeint #).ToString()
-             when 'T : unativeint = (# "" value : unativeint #).ToString()
+             // unsigned integral types have equal behavior with ToString() vs IFormattable::ToString
+             // this allows us to issue the 'constrained' opcode with 'callvirt'
+             when 'T : byte       = let x = (# "" value : 'T #) in x.ToString()
+             when 'T : uint16     = let x = (# "" value : 'T #) in x.ToString()
+             when 'T : uint32     = let x = (# "" value : 'T #) in x.ToString()
+             when 'T : uint64     = let x = (# "" value : 'T #) in x.ToString()
+
 
              // other common mscorlib System struct types
              when 'T : DateTime         = let x = (# "" value : DateTime #) in x.ToString(null, CultureInfo.InvariantCulture)
