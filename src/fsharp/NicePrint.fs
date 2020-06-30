@@ -1701,9 +1701,7 @@ module private TastDefinitionPrinting =
         | TProvidedNamespaceExtensionPoint _
 #endif
         | TNoRepr -> false
-
-
-              
+      
 #if !NO_EXTENSIONTYPING
     let private layoutILFieldInfo denv amap m (e: ILFieldInfo) =
         let staticL = if e.IsStatic then WordL.keywordStatic else emptyL
@@ -1749,13 +1747,18 @@ module private TastDefinitionPrinting =
             
         let typL = layoutType denv (p.GetPropertyType(amap, m)) // shouldn't happen
                 
-        let specGetSetL =
+        let getterSetter =
             match p.HasGetter, p.HasSetter with
-            | false, false | true, false -> emptyL
-            | false, true -> WordL.keywordWith ^^ WordL.keywordSet
-            | true, true -> WordL.keywordWith ^^ WordL.keywordGet ^^ SepL.comma ^^ WordL.keywordSet
+            | (true, false) ->
+                wordL (tagKeyword "with") ^^ wordL (tagText "get")
+            | (false, true) ->
+                wordL (tagKeyword "with") ^^ wordL (tagText "set")
+            | (true, true) ->
+                wordL (tagKeyword "with") ^^ wordL (tagText "get, set")
+            | (false, false) ->
+                emptyL
 
-        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL ^^ specGetSetL
+        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL ^^ getterSetter
 
     let layoutTyconAux (denv: DisplayEnv) (infoReader: InfoReader) ad m lhsL ty (tycon: Tycon) simplified =
         match tycon.TypeAbbrev with
