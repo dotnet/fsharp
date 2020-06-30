@@ -1830,7 +1830,8 @@ module private TastDefinitionPrinting =
                     []
                 else
                     match GetSuperTypeOfType g amap m ty with 
-                    | Some super when not (isObjTy g super) -> [wordL (tagKeyword "inherit") ^^ (layoutType denv super)] 
+                    | Some super when not (isObjTy g super) && not (isValueTypeTy g super) ->
+                        [wordL (tagKeyword "inherit") ^^ (layoutType denv super)]
                     | _ -> []
 
             let erasedL = 

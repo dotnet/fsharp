@@ -1665,6 +1665,7 @@ let isArrayTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isA
 let isArray1DTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g tcref g.il_arr_tcr_map.[0] | _ -> false) 
 let isUnitTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.unit_tcr_canon tcref | _ -> false) 
 let isObjTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
+let isValueTypeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.system_Value_tcref tcref | _ -> false) 
 let isVoidTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.system_Void_tcref tcref | _ -> false) 
 let isILAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsILTycon | _ -> false) 
 let isNativePtrTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.nativeptr_tcr tcref | _ -> false) 

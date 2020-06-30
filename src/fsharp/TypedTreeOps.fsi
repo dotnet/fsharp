@@ -1506,6 +1506,9 @@ val isUnitTy : TcGlobals -> TType -> bool
 /// Determine if a type is the System.Object type
 val isObjTy : TcGlobals -> TType -> bool
 
+/// Determine if a type is the System.ValueType type
+val isValueTypeTy : TcGlobals -> TType -> bool
+
 /// Determine if a type is the System.Void type
 val isVoidTy : TcGlobals -> TType -> bool
 
