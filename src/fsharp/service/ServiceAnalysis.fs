@@ -11,33 +11,37 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 
 module UnusedOpens =
 
-    let entityHash = HashIdentity.FromFunctions (fun (_x: FSharpEntity) -> 0) (fun x y -> x.LogicalName = y.LogicalName)
-
-    let rec isOpenEntityUsedByEntity (openEntity: FSharpEntity) (entity: FSharpEntity) =
-        openEntity.LogicalName = entity.LogicalName ||
-        match entity.DeclaringEntity with
-        | Some declaringEntity -> isOpenEntityUsedByEntity openEntity declaringEntity
-        | _ -> false
+    let rec isOpenEntityUsedByEntity first (openEntity: FSharpEntity) (entity: FSharpEntity) =      
+        let isEqual = openEntity.Equals entity
+        if not isEqual && (first || Symbol.hasAttribute<AutoOpenAttribute> entity.Attributes) then
+            match entity.DeclaringEntity with
+            | Some entity -> isOpenEntityUsedByEntity false openEntity entity
+            | _ -> false
+        else
+            isEqual
 
     let isOpenEntityUsedBySymbol (openEntity: FSharpEntity) (symbol: FSharpSymbol) =
         match symbol with
         | :? FSharpMemberOrFunctionOrValue as f ->
             match f.DeclaringEntity with
-            | Some entity -> isOpenEntityUsedByEntity openEntity entity
+            | Some entity -> isOpenEntityUsedByEntity true openEntity entity
             | _ -> false
-        | :? FSharpEntity as entity -> isOpenEntityUsedByEntity openEntity entity
+        | :? FSharpEntity as entity ->
+            match entity.DeclaringEntity with
+            | Some entity -> isOpenEntityUsedByEntity false openEntity entity
+            | _ -> false
         | _ -> false
 
-    let isOpenDeclarationUsed (openDeclaration: FSharpOpenDeclaration) (symbolUses: FSharpSymbolUse seq) =
+    let isOpenDeclarationUsed (openDeclaration: FSharpOpenDeclaration) (symbolUses: FSharpSymbolUse []) =
         symbolUses
-        |> Seq.exists (fun symbolUse ->
-            if Range.rangeContainsRange openDeclaration.AppliedScope symbolUse.RangeAlternate then
+        |> Array.exists (fun symbolUse ->
+            if not symbolUse.IsFromOpenStatement && Range.rangeContainsRange openDeclaration.AppliedScope symbolUse.RangeAlternate then
                 openDeclaration.Modules |> List.exists (fun x -> isOpenEntityUsedBySymbol x symbolUse.Symbol) ||
                 openDeclaration.Types |> List.exists (fun x -> x.HasTypeDefinition && isOpenEntityUsedBySymbol x.TypeDefinition symbolUse.Symbol)
             else
                 false)
 
-    let filterOpenStatements (symbolUses: FSharpSymbolUse seq) (openDeclarations: FSharpOpenDeclaration seq) =
+    let filterOpenStatements (symbolUses: FSharpSymbolUse []) (openDeclarations: FSharpOpenDeclaration []) =
         async {
             return 
                 [ for x in openDeclarations do
@@ -45,7 +49,7 @@ module UnusedOpens =
                     | None -> ()
                     | Some r ->
                         if not (isOpenDeclarationUsed x symbolUses) then
-                            yield r ]
+                            r ]
         }
 
     /// Get the open statements whose contents are not referred to anywhere in the symbol uses.
