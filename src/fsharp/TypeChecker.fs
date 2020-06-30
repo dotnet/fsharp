@@ -7582,59 +7582,60 @@ and TcQuotationExpr cenv overallTy env tpenv (_oper, raw, ast, isFromQueryExpres
 /// Ignores an attribute
 and IgnoreAttribute _ = None
 
-and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builderTy tpenv (comp: SynExpr) =
+/// Used for all computation expressions except sequence expressions
+and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builderTy tpenv (comp: SynExpr) = 
 
-    // dprintfn "TcComputationExpression, comp = \n%A\n-------------------\n" comp
+    //dprintfn "TcComputationExpression, comp = \n%A\n-------------------\n" comp
     let ad = env.eAccessRights
 
     let mkSynDelay2 (e: SynExpr) = mkSynDelay (e.Range.MakeSynthetic()) e
-
+    
     let builderValName = CompilerGeneratedName "builder"
     let mBuilderVal = interpExpr.Range
-
+    
     // Give bespoke error messages for the FSharp.Core "query" builder
-    let isQuery =
-        match interpExpr with
-        | Expr.Val (vf, _, m) ->
+    let isQuery = 
+        match interpExpr with 
+        | Expr.Val (vf, _, m) -> 
             let item = Item.CustomBuilder (vf.DisplayName, vf)
             CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
-            valRefEq cenv.g vf cenv.g.query_value_vref
+            valRefEq cenv.g vf cenv.g.query_value_vref 
         | _ -> false
 
     /// Make a builder.Method(...) call
-    let mkSynCall nm (m: range) args =
+    let mkSynCall nm (m: range) args = 
         let m = m.MakeSynthetic() // Mark as synthetic so the language service won't pick it up.
-        let args =
-            match args with
+        let args = 
+            match args with 
             | [] -> SynExpr.Const (SynConst.Unit, m)
             | [arg] -> SynExpr.Paren (SynExpr.Paren (arg, range0, None, m), range0, None, m)
             | args -> SynExpr.Paren (SynExpr.Tuple (false, args, [], m), range0, None, m)
-
+                
         let builderVal = mkSynIdGet m builderValName
         mkSynApp1 (SynExpr.DotGet (builderVal, range0, LongIdentWithDots([mkSynId m nm], []), m)) args m
 
     let hasMethInfo nm = TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad nm builderTy |> isNil |> not
 
-    let sourceMethInfo = TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Source" builderTy
+    let sourceMethInfo = TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Source" builderTy 
 
     // Optionally wrap sources of "let!", "yield!", "use!" in "query.Source"
-    let mkSourceExpr callExpr =
-        match sourceMethInfo with
+    let mkSourceExpr callExpr = 
+        match sourceMethInfo with 
         | [] -> callExpr
         | _ -> mkSynCall "Source" callExpr.Range [callExpr]
 
-    let mkSourceExprConditional isFromSource callExpr =
+    let mkSourceExprConditional isFromSource callExpr = 
         if isFromSource then mkSourceExpr callExpr else callExpr
 
     /// Decide if the builder is an auto-quote builder
     let isAutoQuote = hasMethInfo "Quote"
 
-    let customOperationMethods =
+    let customOperationMethods = 
         AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults cenv.infoReader env.NameEnv None ad IgnoreOverrides mBuilderVal builderTy
-        |> List.choose (fun methInfo ->
+        |> List.choose (fun methInfo -> 
                 if not (IsMethInfoAccessible cenv.amap mBuilderVal ad methInfo) then None else
-                let nameSearch =
-                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo
+                let nameSearch = 
+                    TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
                         IgnoreAttribute // We do not respect this attribute for IL methods
                         (function (Attrib(_, _, [ AttribStringArg msg ], _, _, _, _)) -> Some msg | _ -> None)
                         IgnoreAttribute // We do not respect this attribute for provided methods
@@ -7643,13 +7644,13 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 | None -> None
                 | Some nm ->
                     let joinConditionWord =
-                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo
+                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
                             IgnoreAttribute // We do not respect this attribute for IL methods
                             (function (Attrib(_, _, _, ExtractAttribNamedArg "JoinConditionWord" (AttribStringArg s), _, _, _)) -> Some s | _ -> None)
                             IgnoreAttribute // We do not respect this attribute for provided methods
 
-                    let flagSearch (propName: string) =
-                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo
+                    let flagSearch (propName: string) = 
+                        TryBindMethInfoAttribute cenv.g mBuilderVal cenv.g.attrib_CustomOperationAttribute methInfo 
                             IgnoreAttribute // We do not respect this attribute for IL methods
                             (function (Attrib(_, _, _, ExtractAttribNamedArg propName (AttribBoolArg b), _, _, _)) -> Some b | _ -> None)
                             IgnoreAttribute // We do not respect this attribute for provided methods
@@ -7663,28 +7664,28 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
                     Some (nm, maintainsVarSpaceUsingBind, maintainsVarSpace, allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, joinConditionWord, methInfo))
 
-    let customOperationMethodsIndexedByKeyword =
+    let customOperationMethodsIndexedByKeyword = 
         customOperationMethods
         |> Seq.groupBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
         |> Seq.map (fun (nm, g) -> (nm, Seq.toList g))
         |> dict
 
     // Check for duplicates by method name (keywords and method names must be 1:1)
-    let customOperationMethodsIndexedByMethodName =
+    let customOperationMethodsIndexedByMethodName = 
         customOperationMethods
         |> Seq.groupBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
         |> Seq.map (fun (nm, g) -> (nm, Seq.toList g))
         |> dict
 
-
+        
     /// Decide if the identifier represents a use of a custom query operator
-    let tryGetDataForCustomOperation (nm: Ident) =
-        match customOperationMethodsIndexedByKeyword.TryGetValue nm.idText with
-        | true, [opData] ->
+    let tryGetDataForCustomOperation (nm: Ident) = 
+        match customOperationMethodsIndexedByKeyword.TryGetValue nm.idText with 
+        | true, [opData] -> 
             let (opName, maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, methInfo) = opData
-            if (maintainsVarSpaceUsingBind && maintainsVarSpace) || (isLikeZip && isLikeJoin) || (isLikeZip && isLikeGroupJoin) || (isLikeJoin && isLikeGroupJoin) then
+            if (maintainsVarSpaceUsingBind && maintainsVarSpace) || (isLikeZip && isLikeJoin) || (isLikeZip && isLikeGroupJoin) || (isLikeJoin && isLikeGroupJoin) then 
                  errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
-            match customOperationMethodsIndexedByMethodName.TryGetValue methInfo.LogicalName with
+            match customOperationMethodsIndexedByMethodName.TryGetValue methInfo.LogicalName with 
             | true, [_] -> ()
             | _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange))
             Some opData
@@ -7697,44 +7698,44 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
     let isCustomOperation nm = tryGetDataForCustomOperation nm |> Option.isSome
 
     // Check for the MaintainsVariableSpace on custom operation
-    let customOperationMaintainsVarSpace (nm: Ident) =
-        match tryGetDataForCustomOperation nm with
+    let customOperationMaintainsVarSpace (nm: Ident) = 
+        match tryGetDataForCustomOperation nm with 
         | None -> false
         | Some (_nm, _maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> maintainsVarSpace
 
-    let customOperationMaintainsVarSpaceUsingBind (nm: Ident) =
-        match tryGetDataForCustomOperation nm with
+    let customOperationMaintainsVarSpaceUsingBind (nm: Ident) = 
+        match tryGetDataForCustomOperation nm with 
         | None -> false
         | Some (_nm, maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> maintainsVarSpaceUsingBind
 
-    let customOperationIsLikeZip (nm: Ident) =
-        match tryGetDataForCustomOperation nm with
+    let customOperationIsLikeZip (nm: Ident) = 
+        match tryGetDataForCustomOperation nm with 
         | None -> false
         | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeZip
 
-    let customOperationIsLikeJoin (nm: Ident) =
-        match tryGetDataForCustomOperation nm with
+    let customOperationIsLikeJoin (nm: Ident) = 
+        match tryGetDataForCustomOperation nm with 
         | None -> false
         | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeJoin
 
-    let customOperationIsLikeGroupJoin (nm: Ident) =
-        match tryGetDataForCustomOperation nm with
+    let customOperationIsLikeGroupJoin (nm: Ident) = 
+        match tryGetDataForCustomOperation nm with 
         | None -> false
-        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeGroupJoin
+        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeGroupJoin 
 
-    let customOperationJoinConditionWord (nm: Ident) =
-        match tryGetDataForCustomOperation nm with
-        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, Some joinConditionWord, _methInfo) -> joinConditionWord
-        | _ -> "on"
+    let customOperationJoinConditionWord (nm: Ident) = 
+        match tryGetDataForCustomOperation nm with 
+        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, Some joinConditionWord, _methInfo) -> joinConditionWord 
+        | _ -> "on"  
 
-    let customOperationAllowsInto (nm: Ident) =
-        match tryGetDataForCustomOperation nm with
+    let customOperationAllowsInto (nm: Ident) = 
+        match tryGetDataForCustomOperation nm with 
         | None -> false
-        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> allowInto
+        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> allowInto 
 
-    let customOpUsageText nm =
+    let customOpUsageText nm = 
         match tryGetDataForCustomOperation nm with
-        | None -> None
+        | None -> None 
         | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, _methInfo) ->
             if isLikeGroupJoin then
                 Some (FSComp.SR.customOperationTextLikeGroupJoin(nm.idText, customOperationJoinConditionWord nm, customOperationJoinConditionWord nm))
@@ -7748,105 +7749,105 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
     /// Inside the 'query { ... }' use a modified name environment that contains fake 'CustomOperation' entries
     /// for all custom operations. This adds them to the completion lists and prevents them being used as values inside
     /// the query.
-    let env =
+    let env = 
         if List.isEmpty customOperationMethods then env else
-        { env with
+        { env with 
             eNameResEnv =
-                (env.eNameResEnv, customOperationMethods)
-                ||> Seq.fold (fun nenv (nm, _, _, _, _, _, _, _, methInfo) ->
+                (env.eNameResEnv, customOperationMethods) 
+                ||> Seq.fold (fun nenv (nm, _, _, _, _, _, _, _, methInfo) -> 
                     AddFakeNameToNameEnv nm nenv (Item.CustomOperation (nm, (fun () -> customOpUsageText (ident (nm, mBuilderVal))), Some methInfo))) }
 
     // Environment is needed for completions
     CallEnvSink cenv.tcSink (comp.Range, env.NameEnv, ad)
 
     // Check for the [<ProjectionParameter>] attribute on an argument position
-    let tryGetArgInfosForCustomOperator (nm: Ident) =
-        match tryGetDataForCustomOperation nm with
+    let tryGetArgInfosForCustomOperator (nm: Ident) = 
+        match tryGetDataForCustomOperation nm with 
         | None -> None
-        | Some (_nm, __maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, methInfo) ->
-            match methInfo with
-            | FSMeth(_, _, vref, _) ->
+        | Some (_nm, __maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, methInfo) -> 
+            match methInfo with 
+            | FSMeth(_, _, vref, _) -> 
                 match ArgInfosOfMember cenv.g vref with
                 | [curriedArgInfo] -> Some curriedArgInfo // one for the actual argument group
                 | _ -> None
             | _ -> None
 
-    let expectedArgCountForCustomOperator (nm: Ident) =
-        match tryGetArgInfosForCustomOperator nm with
+    let expectedArgCountForCustomOperator (nm: Ident) = 
+        match tryGetArgInfosForCustomOperator nm with 
         | None -> 0
         | Some argInfos -> max (argInfos.Length - 1) 0 // drop the computation context argument
 
     // Check for the [<ProjectionParameter>] attribute on an argument position
-    let isCustomOperationProjectionParameter i (nm: Ident) =
+    let isCustomOperationProjectionParameter i (nm: Ident) = 
         match tryGetArgInfosForCustomOperator nm with
         | None -> false
         | Some argInfos ->
-            i < argInfos.Length &&
+            i < argInfos.Length && 
             let (_, argInfo) = List.item i argInfos
             HasFSharpAttribute cenv.g cenv.g.attrib_ProjectionParameterAttribute argInfo.Attribs
 
-    let (|ForEachThen|_|) e =
-        match e with
+    let (|ForEachThen|_|) e = 
+        match e with 
         | SynExpr.ForEach (_spBind, SeqExprOnly false, isFromSource, pat1, expr1, SynExpr.Sequential (_, true, clause, rest, _), _) -> Some (isFromSource, pat1, expr1, clause, rest)
         | _ -> None
 
-    let (|CustomOpId|_|) predicate e =
-        match e with
+    let (|CustomOpId|_|) predicate e = 
+        match e with 
         | SingleIdent nm when isCustomOperation nm && predicate nm -> Some nm
         | _ -> None
 
     // e1 in e2 ('in' is parsed as 'JOIN_IN')
-    let (|InExpr|_|) (e: SynExpr) =
-        match e with
+    let (|InExpr|_|) (e: SynExpr) = 
+        match e with 
         | SynExpr.JoinIn (e1, _, e2, mApp) -> Some (e1, e2, mApp)
         | _ -> None
 
     // e1 on e2 (note: 'on' is the 'JoinConditionWord')
-    let (|OnExpr|_|) nm (e: SynExpr) =
-        match tryGetDataForCustomOperation nm with
+    let (|OnExpr|_|) nm (e: SynExpr) = 
+        match tryGetDataForCustomOperation nm with 
         | None -> None
-        | Some _ ->
-            match e with
-            | SynExpr.App (_, _, SynExpr.App (_, _, e1, SingleIdent opName, _), e2, _) when opName.idText = customOperationJoinConditionWord nm ->
+        | Some _ -> 
+            match e with 
+            | SynExpr.App (_, _, SynExpr.App (_, _, e1, SingleIdent opName, _), e2, _) when opName.idText = customOperationJoinConditionWord nm -> 
                 let item = Item.CustomOperation (opName.idText, (fun () -> None), None)
                 CallNameResolutionSink cenv.tcSink (opName.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
                 Some (e1, e2)
             | _ -> None
 
     // e1 into e2
-    let (|IntoSuffix|_|) (e: SynExpr) =
-        match e with
-        | SynExpr.App (_, _, SynExpr.App (_, _, x, SingleIdent nm2, _), ExprAsPat intoPat, _) when nm2.idText = CustomOperations.Into ->
+    let (|IntoSuffix|_|) (e: SynExpr) = 
+        match e with 
+        | SynExpr.App (_, _, SynExpr.App (_, _, x, SingleIdent nm2, _), ExprAsPat intoPat, _) when nm2.idText = CustomOperations.Into -> 
             Some (x, nm2.idRange, intoPat)
-        | _ ->
+        | _ -> 
             None
 
     let arbPat (m: range) = mkSynPatVar None (mkSynId (m.MakeSynthetic()) "_missingVar")
 
-    let MatchIntoSuffixOrRecover alreadyGivenError (nm: Ident) (e: SynExpr) =
-        match e with
-        | IntoSuffix (x, intoWordRange, intoPat) ->
+    let MatchIntoSuffixOrRecover alreadyGivenError (nm: Ident) (e: SynExpr) = 
+        match e with 
+        | IntoSuffix (x, intoWordRange, intoPat) -> 
             // record the "into" as a custom operation for colorization
             let item = Item.CustomOperation ("into", (fun () -> None), None)
             CallNameResolutionSink cenv.tcSink (intoWordRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
             (x, intoPat, alreadyGivenError)
-        | _ ->
-            if not alreadyGivenError then
+        | _ -> 
+            if not alreadyGivenError then 
                 errorR(Error(FSComp.SR.tcOperatorIncorrectSyntax(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
             (e, arbPat e.Range, true)
 
-    let MatchOnExprOrRecover alreadyGivenError nm (onExpr: SynExpr) =
-        match onExpr with
-        | OnExpr nm (innerSource, SynExprParen(keySelectors, _, _, _)) ->
+    let MatchOnExprOrRecover alreadyGivenError nm (onExpr: SynExpr) = 
+        match onExpr with 
+        | OnExpr nm (innerSource, SynExprParen(keySelectors, _, _, _)) -> 
             (innerSource, keySelectors)
-        | _ ->
-            if not alreadyGivenError then
+        | _ -> 
+            if not alreadyGivenError then 
                 suppressErrorReporting (fun () -> TcExprOfUnknownType cenv env tpenv onExpr) |> ignore
                 errorR(Error(FSComp.SR.tcOperatorIncorrectSyntax(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
             (arbExpr("_innerSource", onExpr.Range), mkSynBifix onExpr.Range "=" (arbExpr("_keySelectors", onExpr.Range)) (arbExpr("_keySelector2", onExpr.Range)))
 
-    let JoinOrGroupJoinOp detector e =
-        match e with
+    let JoinOrGroupJoinOp detector e = 
+        match e with 
         | SynExpr.App (_, _, CustomOpId detector nm, ExprAsPat innerSourcePat, mJoinCore) ->
             Some(nm, innerSourcePat, mJoinCore, false)
         // join with bad pattern (gives error on "join" and continues)
@@ -7854,10 +7855,10 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             errorR(Error(FSComp.SR.tcBinaryOperatorRequiresVariable(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
             Some(nm, arbPat mJoinCore, mJoinCore, true)
         // join (without anything after - gives error on "join" and continues)
-        | CustomOpId detector nm ->
+        | CustomOpId detector nm -> 
             errorR(Error(FSComp.SR.tcBinaryOperatorRequiresVariable(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
             Some(nm, arbPat e.Range, e.Range, true)
-        | _ ->
+        | _ -> 
             None
             // JoinOrGroupJoinOp customOperationIsLikeJoin
 
@@ -7866,100 +7867,100 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
     let arbKeySelectors m = mkSynBifix m "=" (arbExpr("_keySelectors", m)) (arbExpr("_keySelector2", m))
 
-    let (|JoinExpr|_|) (e: SynExpr) =
-        match e with
-        | InExpr (JoinOp(nm, innerSourcePat, _, alreadyGivenError), onExpr, mJoinCore) ->
+    let (|JoinExpr|_|) (e: SynExpr) = 
+        match e with 
+        | InExpr (JoinOp(nm, innerSourcePat, _, alreadyGivenError), onExpr, mJoinCore) -> 
             let (innerSource, keySelectors) = MatchOnExprOrRecover alreadyGivenError nm onExpr
             Some(nm, innerSourcePat, innerSource, keySelectors, mJoinCore)
         | JoinOp (nm, innerSourcePat, mJoinCore, alreadyGivenError) ->
-            if alreadyGivenError then
+            if alreadyGivenError then 
                 errorR(Error(FSComp.SR.tcOperatorRequiresIn(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
             Some (nm, innerSourcePat, arbExpr("_innerSource", e.Range), arbKeySelectors e.Range, mJoinCore)
         | _ -> None
 
-    let (|GroupJoinExpr|_|) (e: SynExpr) =
-        match e with
+    let (|GroupJoinExpr|_|) (e: SynExpr) = 
+        match e with 
         | InExpr (GroupJoinOp (nm, innerSourcePat, _, alreadyGivenError), intoExpr, mGroupJoinCore) ->
-            let onExpr, intoPat, alreadyGivenError = MatchIntoSuffixOrRecover alreadyGivenError nm intoExpr
+            let onExpr, intoPat, alreadyGivenError = MatchIntoSuffixOrRecover alreadyGivenError nm intoExpr 
             let innerSource, keySelectors = MatchOnExprOrRecover alreadyGivenError nm onExpr
             Some (nm, innerSourcePat, innerSource, keySelectors, intoPat, mGroupJoinCore)
         | GroupJoinOp (nm, innerSourcePat, mGroupJoinCore, alreadyGivenError) ->
-            if alreadyGivenError then
+            if alreadyGivenError then 
                errorR(Error(FSComp.SR.tcOperatorRequiresIn(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
             Some (nm, innerSourcePat, arbExpr("_innerSource", e.Range), arbKeySelectors e.Range, arbPat e.Range, mGroupJoinCore)
-        | _ ->
+        | _ -> 
             None
 
 
-    let (|JoinOrGroupJoinOrZipClause|_|) (e: SynExpr) =
-        match e with
+    let (|JoinOrGroupJoinOrZipClause|_|) (e: SynExpr) = 
+        match e with 
 
         // join innerSourcePat in innerSource on (keySelector1 = keySelector2)
-        | JoinExpr (nm, innerSourcePat, innerSource, keySelectors, mJoinCore) ->
+        | JoinExpr (nm, innerSourcePat, innerSource, keySelectors, mJoinCore) -> 
                 Some(nm, innerSourcePat, innerSource, Some keySelectors, None, mJoinCore)
 
         // groupJoin innerSourcePat in innerSource on (keySelector1 = keySelector2) into intoPat
-        | GroupJoinExpr (nm, innerSourcePat, innerSource, keySelectors, intoPat, mGroupJoinCore) ->
+        | GroupJoinExpr (nm, innerSourcePat, innerSource, keySelectors, intoPat, mGroupJoinCore) -> 
                 Some(nm, innerSourcePat, innerSource, Some keySelectors, Some intoPat, mGroupJoinCore)
 
-        // zip intoPat in secondSource
-        | InExpr (SynExpr.App (_, _, CustomOpId customOperationIsLikeZip nm, ExprAsPat secondSourcePat, _), secondSource, mZipCore) ->
+        // zip intoPat in secondSource 
+        | InExpr (SynExpr.App (_, _, CustomOpId customOperationIsLikeZip nm, ExprAsPat secondSourcePat, _), secondSource, mZipCore) -> 
                 Some(nm, secondSourcePat, secondSource, None, None, mZipCore)
 
         // zip (without secondSource or in - gives error)
-        | CustomOpId customOperationIsLikeZip nm ->
+        | CustomOpId customOperationIsLikeZip nm -> 
                 errorR(Error(FSComp.SR.tcOperatorIncorrectSyntax(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
                 Some(nm, arbPat e.Range, arbExpr("_secondSource", e.Range), None, None, e.Range)
 
         // zip secondSource (without in - gives error)
-        | SynExpr.App (_, _, CustomOpId customOperationIsLikeZip nm, ExprAsPat secondSourcePat, mZipCore) ->
+        | SynExpr.App (_, _, CustomOpId customOperationIsLikeZip nm, ExprAsPat secondSourcePat, mZipCore) -> 
                 errorR(Error(FSComp.SR.tcOperatorIncorrectSyntax(nm.idText, Option.get (customOpUsageText nm)), mZipCore))
                 Some(nm, secondSourcePat, arbExpr("_innerSource", e.Range), None, None, mZipCore)
 
-        | _ ->
+        | _ -> 
             None
 
-    let (|ForEachThenJoinOrGroupJoinOrZipClause|_|) e =
-        match e with
-        | ForEachThen (isFromSource, firstSourcePat, firstSource, JoinOrGroupJoinOrZipClause(nm, secondSourcePat, secondSource, keySelectorsOpt, pat3opt, mOpCore), innerComp)
-            when
-               (let _firstSourceSimplePats, later1 =
+    let (|ForEachThenJoinOrGroupJoinOrZipClause|_|) e = 
+        match e with 
+        | ForEachThen (isFromSource, firstSourcePat, firstSource, JoinOrGroupJoinOrZipClause(nm, secondSourcePat, secondSource, keySelectorsOpt, pat3opt, mOpCore), innerComp) 
+            when 
+               (let _firstSourceSimplePats, later1 = 
                     use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                    SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat
+                    SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat 
                 Option.isNone later1)
 
              -> Some (isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, pat3opt, mOpCore, innerComp)
 
-        | JoinOrGroupJoinOrZipClause(nm, pat2, expr2, expr3, pat3opt, mOpCore) ->
+        | JoinOrGroupJoinOrZipClause(nm, pat2, expr2, expr3, pat3opt, mOpCore) -> 
             errorR(Error(FSComp.SR.tcBinaryOperatorRequiresBody(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
             Some (true, arbPat e.Range, arbExpr("_outerSource", e.Range), nm, pat2, expr2, expr3, pat3opt, mOpCore, arbExpr("_innerComp", e.Range))
 
-        | _ ->
+        | _ -> 
             None
 
-    let (|StripApps|) e =
-        let rec strip e =
-            match e with
+    let (|StripApps|) e = 
+        let rec strip e = 
+            match e with 
             | SynExpr.FromParseError (SynExpr.App (_, _, f, arg, _), _)
-            | SynExpr.App (_, _, f, arg, _) ->
-                let g, acc = strip f
-                g, (arg :: acc)
+            | SynExpr.App (_, _, f, arg, _) -> 
+                let g, acc = strip f 
+                g, (arg :: acc) 
             | _ -> e, []
         let g, acc = strip e
         g, List.rev acc
 
-    let (|OptionalIntoSuffix|) e =
-        match e with
+    let (|OptionalIntoSuffix|) e = 
+        match e with 
         | IntoSuffix (body, intoWordRange, optInfo) -> (body, Some (intoWordRange, optInfo))
         | body -> (body, None)
 
-    let (|CustomOperationClause|_|) e =
-        match e with
-        | OptionalIntoSuffix(StripApps(SingleIdent nm, _) as core, optInto) when isCustomOperation nm ->
+    let (|CustomOperationClause|_|) e = 
+        match e with 
+        | OptionalIntoSuffix(StripApps(SingleIdent nm, _) as core, optInto) when isCustomOperation nm ->  
             // Now we know we have a custom operation, commit the name resolution
-            let optIntoInfo =
-                match optInto with
-                | Some (intoWordRange, optInfo) ->
+            let optIntoInfo = 
+                match optInto with 
+                | Some (intoWordRange, optInfo) -> 
                     let item = Item.CustomOperation ("into", (fun () -> None), None)
                     CallNameResolutionSink cenv.tcSink (intoWordRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
                     Some optInfo
@@ -7970,36 +7971,36 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
     let mkSynLambda p e m = SynExpr.Lambda (false, false, p, e, m)
 
-    let mkExprForVarSpace m (patvs: Val list) =
-        match patvs with
+    let mkExprForVarSpace m (patvs: Val list) = 
+        match patvs with 
         | [] -> SynExpr.Const (SynConst.Unit, m)
         | [v] -> SynExpr.Ident v.Id
-        | vs -> SynExpr.Tuple (false, (vs |> List.map (fun v -> SynExpr.Ident v.Id)), [], m)
+        | vs -> SynExpr.Tuple (false, (vs |> List.map (fun v -> SynExpr.Ident v.Id)), [], m)  
 
-    let mkSimplePatForVarSpace m (patvs: Val list) =
-        let spats =
-            match patvs with
+    let mkSimplePatForVarSpace m (patvs: Val list) = 
+        let spats = 
+            match patvs with 
             | [] -> []
             | [v] -> [mkSynSimplePatVar false v.Id]
             | vs -> vs |> List.map (fun v -> mkSynSimplePatVar false v.Id)
         SynSimplePats.SimplePats (spats, m)
 
-    let mkPatForVarSpace m (patvs: Val list) =
-        match patvs with
+    let mkPatForVarSpace m (patvs: Val list) = 
+        match patvs with 
         | [] -> SynPat.Const (SynConst.Unit, m)
         | [v] -> mkSynPatVar None v.Id
         | vs -> SynPat.Tuple(false, (vs |> List.map (fun x -> mkSynPatVar None x.Id)), m)
 
-    let (|OptionalSequential|) e =
-        match e with
+    let (|OptionalSequential|) e = 
+        match e with 
         | SynExpr.Sequential (_sp, true, dataComp1, dataComp2, _) -> (dataComp1, Some dataComp2)
         | _ -> (e, None)
 
     // "cexpr; cexpr" is treated as builder.Combine(cexpr1, cexpr1)
     // This is not pretty - we have to decide which range markers we use for the calls to Combine and Delay
     // NOTE: we should probably suppress these sequence points altogether
-    let rangeForCombine innerComp1 =
-        match innerComp1 with
+    let rangeForCombine innerComp1 = 
+        match innerComp1 with 
         | SynExpr.IfThenElse (_, _, _, _, _, mIfToThen, _m) -> mIfToThen
         | SynExpr.Match (DebugPointAtBinding mMatch, _, _, _) -> mMatch
         | SynExpr.TryWith (_, _, _, _, _, DebugPointAtTry.Yes mTry, _) -> mTry
@@ -8010,31 +8011,31 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
         | _ -> innerComp1.Range
 
     // Check for 'where x > y', 'select x, y' and other mis-applications of infix operators, give a good error message, and return a flag
-    let checkForBinaryApp comp =
-        match comp with
-        | StripApps(SingleIdent nm, [StripApps(SingleIdent nm2, args); arg2]) when
-                  PrettyNaming.IsInfixOperator nm.idText &&
+    let checkForBinaryApp comp = 
+        match comp with 
+        | StripApps(SingleIdent nm, [StripApps(SingleIdent nm2, args); arg2]) when 
+                  PrettyNaming.IsInfixOperator nm.idText && 
                   expectedArgCountForCustomOperator nm2 > 0 &&
-                  not (List.isEmpty args) ->
+                  not (List.isEmpty args) -> 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range arg2.Range
             errorR(Error(FSComp.SR.tcUnrecognizedQueryBinaryOperator(), estimatedRangeOfIntendedLeftAndRightArguments))
             true
-        | SynExpr.Tuple (false, (StripApps(SingleIdent nm2, args) :: _), _, m) when
+        | SynExpr.Tuple (false, (StripApps(SingleIdent nm2, args) :: _), _, m) when 
                   expectedArgCountForCustomOperator nm2 > 0 &&
-                  not (List.isEmpty args) ->
+                  not (List.isEmpty args) -> 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range m.EndRange
             errorR(Error(FSComp.SR.tcUnrecognizedQueryBinaryOperator(), estimatedRangeOfIntendedLeftAndRightArguments))
             true
-        | _ ->
+        | _ ->  
             false
-
-    let addVarsToVarSpace (varSpace: LazyWithContext<Val list * TcEnv, range>) f =
+                    
+    let addVarsToVarSpace (varSpace: LazyWithContext<Val list * TcEnv, range>) f = 
         LazyWithContext.Create
             ((fun m ->
-                  let (patvs: Val list, env) = varSpace.Force m
-                  let vs, envinner = f m env
+                  let (patvs: Val list, env) = varSpace.Force m 
+                  let vs, envinner = f m env 
                   let patvs = List.append patvs (vs |> List.filter (fun v -> not (patvs |> List.exists (fun v2 -> v.LogicalName = v2.LogicalName))))
-                  patvs, envinner),
+                  patvs, envinner), 
               id)
 
     let emptyVarSpace = LazyWithContext.NotLazy ([], env)
@@ -8053,26 +8054,26 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
     //                  hole to be filled by (part of) the results of translating 'comp'.
     let rec tryTrans firstTry q varSpace comp translatedCtxt =
 
-        match comp with
+        match comp with 
 
-        // for firstSourcePat in firstSource do
+        // for firstSourcePat in firstSource do 
         // join secondSourcePat in expr2 on (expr3 = expr4)
         // ...
-        //    -->
+        //    --> 
         // join expr1 expr2 (fun firstSourcePat -> expr3) (fun secondSourcePat -> expr4) (fun firstSourcePat secondSourcePat -> ...)
 
-        // for firstSourcePat in firstSource do
+        // for firstSourcePat in firstSource do 
         // groupJoin secondSourcePat in expr2 on (expr3 = expr4) into groupPat
         // ...
-        //    -->
+        //    --> 
         // groupJoin expr1 expr2 (fun firstSourcePat -> expr3) (fun secondSourcePat -> expr4) (fun firstSourcePat groupPat -> ...)
 
-        // for firstSourcePat in firstSource do
+        // for firstSourcePat in firstSource do 
         // zip secondSource into secondSourcePat
         // ...
-        //    -->
+        //    --> 
         // zip expr1 expr2 (fun pat1 pat3 -> ...)
-        | ForEachThenJoinOrGroupJoinOrZipClause (isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, secondResultPatOpt, mOpCore, innerComp) ->
+        | ForEachThenJoinOrGroupJoinOrZipClause (isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, secondResultPatOpt, mOpCore, innerComp) -> 
 
 
             if not q then error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedHere(), nm.idRange))
@@ -8080,37 +8081,37 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             let secondSource = mkSourceExpr secondSource
 
             // Add the variables to the variable space, on demand
-            let varSpaceWithFirstVars =
-                addVarsToVarSpace varSpace (fun _mCustomOp env ->
+            let varSpaceWithFirstVars = 
+                addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                         use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
                         let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (firstSourcePat, None)
                         vspecs, envinner)
 
-            let varSpaceWithSecondVars =
-                addVarsToVarSpace varSpaceWithFirstVars (fun _mCustomOp env ->
+            let varSpaceWithSecondVars = 
+                addVarsToVarSpace varSpaceWithFirstVars (fun _mCustomOp env -> 
                         use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
                         let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (secondSourcePat, None)
                         vspecs, envinner)
 
-            let varSpaceWithGroupJoinVars =
-                match secondResultPatOpt with
-                | Some pat3 ->
-                    addVarsToVarSpace varSpaceWithFirstVars (fun _mCustomOp env ->
+            let varSpaceWithGroupJoinVars = 
+                match secondResultPatOpt with 
+                | Some pat3 -> 
+                    addVarsToVarSpace varSpaceWithFirstVars (fun _mCustomOp env -> 
                         use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
                         let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat3, None)
                         vspecs, envinner)
                 | None -> varSpace
 
-            let firstSourceSimplePats, later1 = SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat
+            let firstSourceSimplePats, later1 = SimplePatsOfPat cenv.synArgNameGenerator firstSourcePat 
             let secondSourceSimplePats, later2 = SimplePatsOfPat cenv.synArgNameGenerator secondSourcePat
 
             if Option.isSome later1 then errorR (Error (FSComp.SR.tcJoinMustUseSimplePattern(nm.idText), firstSourcePat.Range))
             if Option.isSome later2 then errorR (Error (FSComp.SR.tcJoinMustUseSimplePattern(nm.idText), secondSourcePat.Range))
 
               // check 'join' or 'groupJoin' or 'zip' is permitted for this builder
-            match tryGetDataForCustomOperation nm with
+            match tryGetDataForCustomOperation nm with 
             | None -> error(Error(FSComp.SR.tcMissingCustomOperation(nm.idText), nm.idRange))
-            | Some (opName, _, _, _, _, _, _, _, methInfo) ->
+            | Some (opName, _, _, _, _, _, _, _, methInfo) -> 
 
             // Record the resolution of the custom operation for posterity
             let item = Item.CustomOperation (opName, (fun () -> customOpUsageText nm), Some methInfo)
@@ -8119,7 +8120,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             // of type variables in the quick info provided in the IDE.
             CallNameResolutionSink cenv.tcSink (nm.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
 
-            let mkJoinExpr keySelector1 keySelector2 innerPat e =
+            let mkJoinExpr keySelector1 keySelector2 innerPat e = 
                 let mSynthetic = mOpCore.MakeSynthetic()
                 mkSynCall methInfo.DisplayName mOpCore
                         [ firstSource
@@ -8128,19 +8129,19 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                           (mkSynLambda secondSourceSimplePats keySelector2 mSynthetic)
                           (mkSynLambda firstSourceSimplePats (mkSynLambda innerPat e mSynthetic) mSynthetic) ]
 
-            let mkZipExpr e =
+            let mkZipExpr e = 
                 let mSynthetic = mOpCore.MakeSynthetic()
                 mkSynCall methInfo.DisplayName mOpCore
                         [ firstSource
                           secondSource
                           (mkSynLambda firstSourceSimplePats (mkSynLambda secondSourceSimplePats e mSynthetic) mSynthetic) ]
-
-            // wraps given expression into sequence with result produced by arbExpr so result will look like:
+            
+            // wraps given expression into sequence with result produced by arbExpr so result will look like: 
             // l; SynExpr.ArbitraryAfterError (...)
             // this allows to handle cases like 'on (a > b)' // '>' is not permitted as correct join relation
             // after wrapping a and b can still be typechecked (so we'll have correct completion inside 'on' part)
             // but presence of SynExpr.ArbitraryAfterError allows to avoid errors about incompatible types in cases like
-            // query {
+            // query { 
             //      for a in [1] do
             //      join b in [""] on (a > b)
             //      }
@@ -8148,22 +8149,22 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             // 1. incorrect join relation
             // 2. incompatible types: int and string
             // with SynExpr.ArbitraryAfterError we have only first one
-            let wrapInArbErrSequence l caption =
+            let wrapInArbErrSequence l caption = 
                 SynExpr.Sequential (DebugPointAtSequential.Both, true, l, (arbExpr(caption, l.Range.EndRange)), l.Range)
 
             let mkOverallExprGivenVarSpaceExpr, varSpaceInner =
                 let isNullableOp opId =
                     match DecompileOpName opId with "?=" | "=?" | "?=?" -> true | _ -> false
-                match secondResultPatOpt, keySelectorsOpt with
-                // groupJoin
-                | Some secondResultPat, Some relExpr when customOperationIsLikeGroupJoin nm ->
+                match secondResultPatOpt, keySelectorsOpt with 
+                // groupJoin 
+                | Some secondResultPat, Some relExpr when customOperationIsLikeGroupJoin nm -> 
                     let secondResultSimplePats, later3 = SimplePatsOfPat cenv.synArgNameGenerator secondResultPat
                     if Option.isSome later3 then errorR (Error (FSComp.SR.tcJoinMustUseSimplePattern(nm.idText), secondResultPat.Range))
-                    match relExpr with
-                    | JoinRelation cenv env (keySelector1, keySelector2) ->
+                    match relExpr with 
+                    | JoinRelation cenv env (keySelector1, keySelector2) -> 
                         mkJoinExpr keySelector1 keySelector2 secondResultSimplePats, varSpaceWithGroupJoinVars
                     | BinOpExpr (opId, l, r) ->
-                        if isNullableOp opId.idText then
+                        if isNullableOp opId.idText then 
                             // When we cannot resolve NullableOps, recommend the relevant namespace to be added
                             errorR(Error(FSComp.SR.cannotResolveNullableOperators(DecompileOpName opId.idText), relExpr.Range))
                         else
@@ -8175,14 +8176,14 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         mkJoinExpr l r secondResultSimplePats, varSpaceWithGroupJoinVars
                     | _ ->
                         errorR(Error(FSComp.SR.tcInvalidRelationInJoin(nm.idText), relExpr.Range))
-                        // since the shape of relExpr doesn't match our expectations (JoinRelation)
-                        // then we assume that this is l.h.s. of the join relation
+                        // since the shape of relExpr doesn't match our expectations (JoinRelation) 
+                        // then we assume that this is l.h.s. of the join relation 
                         // so typechecker will treat relExpr as body of outerKeySelector lambda parameter in GroupJoin method
                         mkJoinExpr relExpr (arbExpr("_keySelector2", relExpr.Range)) secondResultSimplePats, varSpaceWithGroupJoinVars
-
-                | None, Some relExpr when customOperationIsLikeJoin nm ->
-                    match relExpr with
-                    | JoinRelation cenv env (keySelector1, keySelector2) ->
+                        
+                | None, Some relExpr when customOperationIsLikeJoin nm -> 
+                    match relExpr with 
+                    | JoinRelation cenv env (keySelector1, keySelector2) -> 
                         mkJoinExpr keySelector1 keySelector2 secondSourceSimplePats, varSpaceWithSecondVars
                     | BinOpExpr (opId, l, r) ->
                         if isNullableOp opId.idText then
@@ -8195,17 +8196,17 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         let l = wrapInArbErrSequence l "_keySelector1"
                         let r = wrapInArbErrSequence r "_keySelector2"
                         mkJoinExpr l r secondSourceSimplePats, varSpaceWithGroupJoinVars
-                    | _ ->
+                    | _ -> 
                         errorR(Error(FSComp.SR.tcInvalidRelationInJoin(nm.idText), relExpr.Range))
-                        // since the shape of relExpr doesn't match our expectations (JoinRelation)
-                        // then we assume that this is l.h.s. of the join relation
+                        // since the shape of relExpr doesn't match our expectations (JoinRelation) 
+                        // then we assume that this is l.h.s. of the join relation 
                         // so typechecker will treat relExpr as body of outerKeySelector lambda parameter in Join method
                         mkJoinExpr relExpr (arbExpr("_keySelector2", relExpr.Range)) secondSourceSimplePats, varSpaceWithGroupJoinVars
 
-                | None, None when customOperationIsLikeZip nm ->
+                | None, None when customOperationIsLikeZip nm -> 
                     mkZipExpr, varSpaceWithSecondVars
 
-                | _ ->
+                | _ -> 
                     assert false
                     failwith "unreachable"
 
@@ -8219,7 +8220,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             Some (trans true q varSpaceInner (SynExpr.ForEach (DebugPointAtFor.No, SeqExprOnly false, false, varSpacePat, joinExpr, innerComp, mOpCore)) translatedCtxt)
 
 
-        | SynExpr.ForEach (spForLoop, SeqExprOnly _seqExprOnly, isFromSource, pat, sourceExpr, innerComp, _) ->
+        | SynExpr.ForEach (spForLoop, SeqExprOnly _seqExprOnly, isFromSource, pat, sourceExpr, innerComp, _) -> 
             let wrappedSourceExpr = mkSourceExprConditional isFromSource sourceExpr
             let mFor = match spForLoop with DebugPointAtFor.Yes m -> m | _ -> pat.Range
             let mPat = pat.Range
@@ -8228,14 +8229,14 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 error(Error(FSComp.SR.tcRequireBuilderMethod("For"), mFor))
 
             // Add the variables to the query variable space, on demand
-            let varSpace =
-                addVarsToVarSpace varSpace (fun _mCustomOp env ->
+            let varSpace = 
+                addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                     use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None)
+                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
                     vspecs, envinner)
 
-            Some (trans true q varSpace innerComp
-                    (fun holeFill ->
+            Some (trans true q varSpace innerComp 
+                    (fun holeFill -> 
                         translatedCtxt (mkSynCall "For" mFor [wrappedSourceExpr; SynExpr.MatchLambda (false, sourceExpr.Range, [Clause(pat, None, holeFill, mPat, DebugPointForTarget.Yes)], spBind, mFor) ])) )
 
         | SynExpr.For (spBind, id, start, dir, finish, innerComp, m) ->
@@ -8243,7 +8244,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             if isQuery then errorR(Error(FSComp.SR.tcNoIntegerForLoopInQuery(), mFor))
             Some (trans true q varSpace (elimFastIntegerForLoop (spBind, id, start, dir, finish, innerComp, m)) translatedCtxt )
 
-        | SynExpr.While (spWhile, guardExpr, innerComp, _) ->
+        | SynExpr.While (spWhile, guardExpr, innerComp, _) -> 
             let mGuard = guardExpr.Range
             let mWhile = match spWhile with DebugPointAtWhile.Yes m -> m | _ -> mGuard
             if isQuery then error(Error(FSComp.SR.tcNoWhileInQuery(), mWhile))
@@ -8263,62 +8264,62 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 error(Error(FSComp.SR.tcRequireBuilderMethod("Delay"), mTry))
             Some (translatedCtxt (mkSynCall "TryFinally" mTry [mkSynCall "Delay" mTry [mkSynDelay innerComp.Range (transNoQueryOps innerComp)]; mkSynDelay2 unwindExpr]))
 
-        | SynExpr.Paren (_, _, _, m) ->
+        | SynExpr.Paren (_, _, _, m) -> 
             error(Error(FSComp.SR.tcConstructIsAmbiguousInComputationExpression(), m))
 
-        | SynExpr.ImplicitZero m ->
+        | SynExpr.ImplicitZero m -> 
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Zero" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Zero"), m))
             Some (translatedCtxt (mkSynCall "Zero" m []))
-
-        | OptionalSequential (JoinOrGroupJoinOrZipClause (_, _, _, _, _, mClause), _)
-                      when firstTry ->
+            
+        | OptionalSequential (JoinOrGroupJoinOrZipClause (_, _, _, _, _, mClause), _) 
+                      when firstTry -> 
 
             // 'join' clauses preceded by 'let' and other constructs get processed by repackaging with a 'for' loop.
             let patvs, _env = varSpace.Force comp.Range
             let varSpaceExpr = mkExprForVarSpace mClause patvs
             let varSpacePat = mkPatForVarSpace mClause patvs
-
-            let dataCompPrior =
+            
+            let dataCompPrior = 
                 translatedCtxt (transNoQueryOps (SynExpr.YieldOrReturn ((true, false), varSpaceExpr, mClause)))
 
-            // Rebind using for ...
-            let rebind =
+            // Rebind using for ... 
+            let rebind = 
                 SynExpr.ForEach (DebugPointAtFor.No, SeqExprOnly false, false, varSpacePat, dataCompPrior, comp, comp.Range)
-
+                    
             // Retry with the 'for' loop packaging. Set firstTry=false just in case 'join' processing fails
             tryTrans false q varSpace rebind id
 
 
-        | OptionalSequential (CustomOperationClause (nm, _, opExpr, mClause, _), _) ->
+        | OptionalSequential (CustomOperationClause (nm, _, opExpr, mClause, _), _) -> 
 
             if not q then error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedHere(), opExpr.Range))
 
             let patvs, _env = varSpace.Force comp.Range
             let varSpaceExpr = mkExprForVarSpace mClause patvs
-
-            let dataCompPriorToOp =
+            
+            let dataCompPriorToOp = 
                 let isYield = not (customOperationMaintainsVarSpaceUsingBind nm)
                 translatedCtxt (transNoQueryOps (SynExpr.YieldOrReturn ((isYield, false), varSpaceExpr, mClause)))
-
+            
 
             // Now run the consumeCustomOpClauses
             Some (consumeCustomOpClauses q varSpace dataCompPriorToOp comp false mClause)
 
-        | SynExpr.Sequential (sp, true, innerComp1, innerComp2, m) ->
+        | SynExpr.Sequential (sp, true, innerComp1, innerComp2, m) -> 
 
             // Check for 'where x > y' and other mis-applications of infix operators. If detected, give a good error message, and just ignore innerComp1
-          if isQuery && checkForBinaryApp innerComp1 then
-            Some (trans true q varSpace innerComp2 translatedCtxt)
+          if isQuery && checkForBinaryApp innerComp1 then 
+            Some (trans true q varSpace innerComp2 translatedCtxt) 
 
           else
-
-            if isQuery && not(innerComp1.IsArbExprAndThusAlreadyReportedError) then
-                match innerComp1 with
+            
+            if isQuery && not(innerComp1.IsArbExprAndThusAlreadyReportedError) then 
+                match innerComp1 with 
                 | SynExpr.JoinIn _ -> () // an error will be reported later when we process innerComp1 as a sequential
                 | _ -> errorR(Error(FSComp.SR.tcUnrecognizedQueryOperator(), innerComp1.RangeOfFirstPortion))
 
-            match tryTrans true false varSpace innerComp1 id with
-            | Some c ->
+            match tryTrans true false varSpace innerComp1 id with 
+            | Some c -> 
                 // "cexpr; cexpr" is treated as builder.Combine(cexpr1, cexpr1)
                 // This is not pretty - we have to decide which range markers we use for the calls to Combine and Delay
                 // NOTE: we should probably suppress these sequence points altogether
@@ -8328,26 +8329,26 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Delay" builderTy) then
                     error(Error(FSComp.SR.tcRequireBuilderMethod("Delay"), m))
                 Some (translatedCtxt (mkSynCall "Combine" m1 [c; mkSynCall "Delay" m1 [mkSynDelay innerComp2.Range (transNoQueryOps innerComp2)]]))
-            | None ->
+            | None -> 
                 // "do! expr; cexpr" is treated as { let! () = expr in cexpr }
-                match innerComp1 with
-                | SynExpr.DoBang (rhsExpr, m) ->
-                    let sp =
-                        match sp with
+                match innerComp1 with 
+                | SynExpr.DoBang (rhsExpr, m) -> 
+                    let sp = 
+                        match sp with 
                         | DebugPointAtSequential.ExprOnly -> DebugPointAtBinding m
-                        | DebugPointAtSequential.StmtOnly -> NoDebugPointAtDoBinding
+                        | DebugPointAtSequential.StmtOnly -> NoDebugPointAtDoBinding 
                         | DebugPointAtSequential.Both -> DebugPointAtBinding m
                     Some(trans true q varSpace (SynExpr.LetOrUseBang (sp, false, true, SynPat.Const(SynConst.Unit, rhsExpr.Range), rhsExpr, [], innerComp2, m)) translatedCtxt)
 
                 // "expr; cexpr" is treated as sequential execution
-                | _ ->
+                | _ -> 
                     Some (trans true q varSpace innerComp2 (fun holeFill ->
-                        let fillExpr =
+                        let fillExpr = 
                             if enableImplicitYield then
                                 // When implicit yields are enabled, then if the 'innerComp1' checks as type
                                 // 'unit' we interpret the expression as a sequential, and when it doesn't
                                 // have type 'unit' we interpret it as a 'Yield + Combine'.
-                                let combineExpr =
+                                let combineExpr = 
                                     let m1 = rangeForCombine innerComp1
                                     let implicitYieldExpr = mkSynCall "Yield" comp.Range [innerComp1]
                                     mkSynCall "Combine" m1 [implicitYieldExpr; mkSynCall "Delay" m1 [mkSynDelay holeFill.Range holeFill]]
@@ -8357,12 +8358,12 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         translatedCtxt fillExpr))
 
         | SynExpr.IfThenElse (guardExpr, thenComp, elseCompOpt, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch) ->
-            match elseCompOpt with
-            | Some elseComp ->
+            match elseCompOpt with 
+            | Some elseComp -> 
                 if isQuery then error(Error(FSComp.SR.tcIfThenElseMayNotBeUsedWithinQueries(), mIfToThen))
                 Some (translatedCtxt (SynExpr.IfThenElse (guardExpr, transNoQueryOps thenComp, Some(transNoQueryOps elseComp), spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch)))
-            | None ->
-                let elseComp =
+            | None -> 
+                let elseComp = 
                     if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mIfToThen ad "Zero" builderTy) then
                         error(Error(FSComp.SR.tcRequireBuilderMethod("Zero"), mIfToThen))
                     mkSynCall "Zero" mIfToThen []
@@ -8373,26 +8374,26 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
             // For 'query' check immediately
             if isQuery then
-                match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env) binds) with
-                | [NormalizedBinding(_, NormalBinding, (*inline*)false, (*mutable*)false, _, _, _, _, _, _, _, _)] when not isRec ->
+                match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env) binds) with 
+                | [NormalizedBinding(_, NormalBinding, (*inline*)false, (*mutable*)false, _, _, _, _, _, _, _, _)] when not isRec -> 
                     ()
-                | normalizedBindings ->
+                | normalizedBindings -> 
                     let failAt m = error(Error(FSComp.SR.tcNonSimpleLetBindingInQuery(), m))
-                    match normalizedBindings with
-                    | NormalizedBinding(_, _, _, _, _, _, _, _, _, _, mBinding, _) :: _ -> failAt mBinding
+                    match normalizedBindings with 
+                    | NormalizedBinding(_, _, _, _, _, _, _, _, _, _, mBinding, _) :: _ -> failAt mBinding 
                     | _ -> failAt m
 
             // Add the variables to the query variable space, on demand
-            let varSpace =
-                addVarsToVarSpace varSpace (fun mQueryOp env ->
+            let varSpace = 
+                addVarsToVarSpace varSpace (fun mQueryOp env -> 
                     // Normalize the bindings before detecting the bound variables
-                    match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env) binds) with
-                    | [NormalizedBinding(_vis, NormalBinding, false, false, _, _, _, _, pat, _, _, _)] ->
+                    match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env) binds) with 
+                    | [NormalizedBinding(_vis, NormalBinding, false, false, _, _, _, _, pat, _, _, _)] -> 
                         // successful case
                         use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None)
+                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
                         vspecs, envinner
-                    | _ ->
+                    | _ -> 
                         // error case
                         error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedInConjunctionWithNonSimpleLetBindings(), mQueryOp)))
 
@@ -8408,20 +8409,20 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 error(Error(FSComp.SR.tcRequireBuilderMethod("Using"), bindRange))
             Some (translatedCtxt (mkSynCall "Using" bindRange [rhsExpr; consumeExpr ]))
 
-        // 'let! pat = expr in expr'
+        // 'let! pat = expr in expr' 
         //    --> build.Bind(e1, (fun _argN -> match _argN with pat -> expr))
         //  or
         //    --> build.BindReturn(e1, (fun _argN -> match _argN with pat -> expr-without-return))
-        | SynExpr.LetOrUseBang (spBind, false, isFromSource, pat, rhsExpr, [], innerComp, _) ->
+        | SynExpr.LetOrUseBang (spBind, false, isFromSource, pat, rhsExpr, [], innerComp, _) -> 
 
             let bindRange = match spBind with DebugPointAtBinding m -> m | _ -> rhsExpr.Range
             if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), bindRange))
-
+                
             // Add the variables to the query variable space, on demand
-            let varSpace =
-                addVarsToVarSpace varSpace (fun _mCustomOp env ->
+            let varSpace = 
+                addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                         use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None)
+                        let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
                         vspecs, envinner)
 
             let rhsExpr = mkSourceExprConditional isFromSource rhsExpr
@@ -8506,10 +8507,10 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                     let consumePat = SynPat.Tuple(false, pats, letPat.Range)
                     let bindNReturnTupleArg = SynExpr.Tuple(false, sources, [], sourcesRange)
                     // Add the variables to the query variable space, on demand
-                    let varSpace =
-                        addVarsToVarSpace varSpace (fun _mCustomOp env ->
+                    let varSpace = 
+                        addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                                 use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                                let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (consumePat, None)
+                                let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (consumePat, None) 
                                 vspecs, envinner)
 
                     let memberName = if hasNumericBindNReturn then numericBindNReturnName else bindNReturnName
@@ -8536,10 +8537,10 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         let consumePat = SynPat.Tuple(false, pats, letPat.Range)
                         let bindNTupleArg = SynExpr.Tuple(false, sources, [], sourcesRange)
                         // Add the variables to the query variable space, on demand
-                        let varSpace =
-                            addVarsToVarSpace varSpace (fun _mCustomOp env ->
+                        let varSpace = 
+                            addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                                     use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (consumePat, None)
+                                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (consumePat, None) 
                                     vspecs, envinner)
                         let memberName = if hasRequiredNumericBindN then numericBindNName else bindNName
                         Some (transBind q varSpace bindRange memberName [bindNTupleArg] consumePat letSpBind innerComp translatedCtxt)
@@ -8618,12 +8619,12 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                 mergeSources (nowSourcesAndPats @ [laterSourceAndPat])
 
                         let mergedSources, consumePat = mergeSources (List.zip sources pats)
-
+                    
                         // Add the variables to the query variable space, on demand
-                        let varSpace =
-                            addVarsToVarSpace varSpace (fun _mCustomOp env ->
+                        let varSpace = 
+                            addVarsToVarSpace varSpace (fun _mCustomOp env -> 
                                     use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
-                                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (consumePat, None)
+                                    let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (consumePat, None) 
                                     vspecs, envinner)
 
                         // Build the 'Bind' call
@@ -8654,7 +8655,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
         | SynExpr.TryWith (innerComp, _mTryToWith, clauses, _mWithToLast, mTryToLast, spTry, _spWith) ->
             let mTry = match spTry with DebugPointAtTry.Yes m -> m | _ -> mTryToLast
-
+            
             if isQuery then error(Error(FSComp.SR.tcTryWithMayNotBeUsedInQueries(), mTry))
             let clauses = clauses |> List.map (fun (Clause(pat, cond, clauseComp, patm, sp)) -> Clause(pat, cond, transNoQueryOps clauseComp, patm, sp))
             let consumeExpr = SynExpr.MatchLambda(true, mTryToLast, clauses, NoDebugPointAtStickyBinding, mTryToLast)
@@ -8666,22 +8667,22 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
             Some(translatedCtxt (mkSynCall "TryWith" mTry [mkSynCall "Delay" mTry [mkSynDelay2 (transNoQueryOps innerComp)]; consumeExpr]))
 
-        | SynExpr.YieldOrReturnFrom ((isYield, _), yieldExpr, m) ->
+        | SynExpr.YieldOrReturnFrom ((isYield, _), yieldExpr, m) -> 
             let yieldExpr = mkSourceExpr yieldExpr
-            if isYield then
+            if isYield then 
                 if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "YieldFrom" builderTy) then
                     error(Error(FSComp.SR.tcRequireBuilderMethod("YieldFrom"), m))
                 Some (translatedCtxt (mkSynCall "YieldFrom" m [yieldExpr]))
-
+  
             else
                 if isQuery then error(Error(FSComp.SR.tcReturnMayNotBeUsedInQueries(), m))
-                if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "ReturnFrom" builderTy) then
+                if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "ReturnFrom" builderTy) then 
                     errorR(Error(FSComp.SR.tcRequireBuilderMethod("ReturnFrom"), m))
                     Some (translatedCtxt yieldExpr)
                 else
                     Some (translatedCtxt (mkSynCall "ReturnFrom" m [yieldExpr]))
 
-        | SynExpr.YieldOrReturn ((isYield, _), yieldExpr, m) ->
+        | SynExpr.YieldOrReturn ((isYield, _), yieldExpr, m) -> 
             let methName = (if isYield then "Yield" else "Return")
             if isQuery && not isYield then error(Error(FSComp.SR.tcReturnMayNotBeUsedInQueries(), m))
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad methName builderTy) then
@@ -8698,8 +8699,8 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 let varSpaceSimplePat = mkSimplePatForVarSpace mClause patvs
                 let varSpacePat = mkPatForVarSpace mClause patvs
 
-                match compClausesExpr with
-
+                match compClausesExpr with 
+                
                 // Detect one custom operation... This clause will always match at least once...
                 | OptionalSequential
                       (CustomOperationClause
@@ -8716,8 +8717,8 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
                     if isLikeZip || isLikeJoin || isLikeGroupJoin then
                         errorR(Error(FSComp.SR.tcBinaryOperatorRequiresBody(nm.idText, Option.get (customOpUsageText nm)), nm.idRange))
-                        match optionalCont with
-                        | None ->
+                        match optionalCont with 
+                        | None -> 
                             // we are about to drop the 'opExpr' AST on the floor. we've already reported an error. attempt to get name resolutions before dropping it
                             RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv opExpr
                             dataCompPrior
@@ -8727,46 +8728,46 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         let maintainsVarSpace = customOperationMaintainsVarSpace nm
                         let maintainsVarSpaceUsingBind = customOperationMaintainsVarSpaceUsingBind nm
 
-                        let expectedArgCount = expectedArgCountForCustomOperator nm
+                        let expectedArgCount = expectedArgCountForCustomOperator nm 
 
-                        let dataCompAfterOp =
-                            match opExpr with
-                            | StripApps(SingleIdent nm, args) ->
-                                if args.Length = expectedArgCount then
+                        let dataCompAfterOp = 
+                            match opExpr with 
+                            | StripApps(SingleIdent nm, args) -> 
+                                if args.Length = expectedArgCount then 
                                     // Check for the [<ProjectionParameter>] attribute on each argument position
-                                    let args = args |> List.mapi (fun i arg ->
-                                        if isCustomOperationProjectionParameter (i+1) nm then
+                                    let args = args |> List.mapi (fun i arg -> 
+                                        if isCustomOperationProjectionParameter (i+1) nm then 
                                             SynExpr.Lambda (false, false, varSpaceSimplePat, arg, arg.Range.MakeSynthetic())
                                         else arg)
                                     mkSynCall methInfo.DisplayName mClause (dataCompPrior :: args)
-                                else
+                                else 
                                     errorR(Error(FSComp.SR.tcCustomOperationHasIncorrectArgCount(nm.idText, expectedArgCount, args.Length), nm.idRange))
-                                    mkSynCall methInfo.DisplayName mClause ([ dataCompPrior ] @ List.init expectedArgCount (fun i -> arbExpr("_arg" + string i, mClause)))
+                                    mkSynCall methInfo.DisplayName mClause ([ dataCompPrior ] @ List.init expectedArgCount (fun i -> arbExpr("_arg" + string i, mClause))) 
                             | _ -> failwith "unreachable"
 
-                        match optionalCont with
-                        | None ->
-                            match optionalIntoPat with
+                        match optionalCont with 
+                        | None -> 
+                            match optionalIntoPat with 
                             | Some intoPat -> errorR(Error(FSComp.SR.tcIntoNeedsRestOfQuery(), intoPat.Range))
                             | None -> ()
                             dataCompAfterOp
 
-                        | Some contExpr ->
+                        | Some contExpr -> 
 
                                 // select a.Name into name; ...
                                 // distinct into d; ...
                                 //
                                 // Rebind the into pattern and process the rest of the clauses
-                                match optionalIntoPat with
-                                | Some intoPat ->
-                                    if not (customOperationAllowsInto nm) then
+                                match optionalIntoPat with 
+                                | Some intoPat -> 
+                                    if not (customOperationAllowsInto nm) then 
                                         error(Error(FSComp.SR.tcOperatorDoesntAcceptInto(nm.idText), intoPat.Range))
 
                                     // Rebind using either for ... or let!....
-                                    let rebind =
-                                        if maintainsVarSpaceUsingBind then
-                                            SynExpr.LetOrUseBang (NoDebugPointAtLetBinding, false, false, intoPat, dataCompAfterOp, [], contExpr, intoPat.Range)
-                                        else
+                                    let rebind = 
+                                        if maintainsVarSpaceUsingBind then 
+                                            SynExpr.LetOrUseBang (NoDebugPointAtLetBinding, false, false, intoPat, dataCompAfterOp, [], contExpr, intoPat.Range) 
+                                        else 
                                             SynExpr.ForEach (DebugPointAtFor.No, SeqExprOnly false, false, intoPat, dataCompAfterOp, contExpr, intoPat.Range)
 
                                     trans true q emptyVarSpace rebind id
@@ -8775,34 +8776,34 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                 // distinct; ...
                                 //
                                 // Process the rest of the clauses
-                                | None ->
+                                | None -> 
                                     if maintainsVarSpace || maintainsVarSpaceUsingBind then
                                         consumeCustomOpClauses q varSpace dataCompAfterOp contExpr maintainsVarSpaceUsingBind mClause
                                     else
                                         consumeCustomOpClauses q emptyVarSpace dataCompAfterOp contExpr false mClause
 
-                // No more custom operator clauses in compClausesExpr, but there may be clauses like join, yield etc.
+                // No more custom operator clauses in compClausesExpr, but there may be clauses like join, yield etc. 
                 // Bind/iterate the dataCompPrior and use compClausesExpr as the body.
-                | _ ->
+                | _ -> 
                     // Rebind using either for ... or let!....
-                    let rebind =
-                        if lastUsesBind then
-                            SynExpr.LetOrUseBang (NoDebugPointAtLetBinding, false, false, varSpacePat, dataCompPrior, [], compClausesExpr, compClausesExpr.Range)
-                        else
+                    let rebind = 
+                        if lastUsesBind then 
+                            SynExpr.LetOrUseBang (NoDebugPointAtLetBinding, false, false, varSpacePat, dataCompPrior, [], compClausesExpr, compClausesExpr.Range) 
+                        else 
                             SynExpr.ForEach (DebugPointAtFor.No, SeqExprOnly false, false, varSpacePat, dataCompPrior, compClausesExpr, compClausesExpr.Range)
-
+                    
                     trans true q varSpace rebind id
     and transNoQueryOps comp =
         trans true false emptyVarSpace comp id
 
-    and trans firstTry q varSpace comp translatedCtxt =
-        match tryTrans firstTry q varSpace comp translatedCtxt with
+    and trans firstTry q varSpace comp translatedCtxt = 
+        match tryTrans firstTry q varSpace comp translatedCtxt with 
         | Some e -> e
-        | None ->
+        | None -> 
             // This only occurs in final position in a sequence
-            match comp with
+            match comp with 
             // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided or as { let! () = expr in zero } otherwise
-            | SynExpr.DoBang (rhsExpr, m) ->
+            | SynExpr.DoBang (rhsExpr, m) -> 
                 let mUnit = rhsExpr.Range
                 let rhsExpr = mkSourceExpr rhsExpr
                 if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(), m))
@@ -8815,40 +8816,40 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
             // "expr;" in final position is treated as { expr; zero }
             // Suppress the sequence point on the "zero"
-            | _ ->
+            | _ -> 
                 // Check for 'where x > y' and other mis-applications of infix operators. If detected, give a good error message, and just ignore comp
-                if isQuery && checkForBinaryApp comp then
-                    trans true q varSpace (SynExpr.ImplicitZero comp.Range) translatedCtxt
+                if isQuery && checkForBinaryApp comp then 
+                    trans true q varSpace (SynExpr.ImplicitZero comp.Range) translatedCtxt 
                 else
-                    if isQuery && not comp.IsArbExprAndThusAlreadyReportedError then
-                        match comp with
+                    if isQuery && not comp.IsArbExprAndThusAlreadyReportedError then 
+                        match comp with 
                         | SynExpr.JoinIn _ -> () // an error will be reported later when we process innerComp1 as a sequential
                         | _ -> errorR(Error(FSComp.SR.tcUnrecognizedQueryOperator(), comp.RangeOfFirstPortion))
-                    trans true q varSpace (SynExpr.ImplicitZero comp.Range) (fun holeFill ->
-                        let fillExpr =
-                            if enableImplicitYield then
+                    trans true q varSpace (SynExpr.ImplicitZero comp.Range) (fun holeFill -> 
+                        let fillExpr = 
+                            if enableImplicitYield then 
                                 let implicitYieldExpr = mkSynCall "Yield" comp.Range [comp]
                                 SynExpr.SequentialOrImplicitYield(DebugPointAtSequential.ExprOnly, comp, holeFill, implicitYieldExpr, comp.Range)
                             else
                                 SynExpr.Sequential(DebugPointAtSequential.ExprOnly, true, comp, holeFill, comp.Range)
-                        translatedCtxt fillExpr)
+                        translatedCtxt fillExpr) 
 
-    and transBind q varSpace bindRange bindName bindArgs (consumePat: SynPat) spBind (innerComp: SynExpr) translatedCtxt =
-
+    and transBind q varSpace bindRange bindName bindArgs (consumePat: SynPat) spBind (innerComp: SynExpr) translatedCtxt = 
+        
         let innerRange = innerComp.Range
 
-        let innerCompReturn =
+        let innerCompReturn = 
             if cenv.g.langVersion.SupportsFeature LanguageFeature.AndBang then
                 convertSimpleReturnToExpr varSpace innerComp
             else None
 
-        match innerCompReturn with
-        | Some (innerExpr, customOpInfo) when
+        match innerCompReturn with 
+        | Some (innerExpr, customOpInfo) when 
               (let bindName = bindName + "Return"
                not (isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad bindName  builderTy))) ->
 
             let bindName = bindName + "Return"
-
+        
             // Build the `BindReturn` call
             let dataCompPriorToOp =
                 let consumeExpr = SynExpr.MatchLambda(false, consumePat.Range, [Clause(consumePat, None, innerExpr, innerRange, DebugPointForTarget.Yes)], spBind, innerRange)
@@ -8856,28 +8857,28 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 //dprintfn "BindReturn call:\n%A" bindCall
                 translatedCtxt bindCall
 
-            match customOpInfo with
+            match customOpInfo with 
             | None -> dataCompPriorToOp
-            | Some (innerComp, mClause) ->
+            | Some (innerComp, mClause) -> 
                 // If the `BindReturn` was forced by a custom operation, continue to process the clauses of the CustomOp
                 consumeCustomOpClauses q varSpace dataCompPriorToOp innerComp false mClause
 
-        | _ ->
+        | _ -> 
 
-            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad bindName builderTy) then
+            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env bindRange ad bindName  builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod(bindName), bindRange))
 
             // Build the `Bind` call
-            trans true q varSpace innerComp (fun holeFill ->
+            trans true q varSpace innerComp (fun holeFill -> 
                 let consumeExpr = SynExpr.MatchLambda(false, consumePat.Range, [Clause(consumePat, None, holeFill, innerRange, DebugPointForTarget.Yes)], spBind, innerRange)
                 translatedCtxt (mkSynCall bindName bindRange (bindArgs @ [consumeExpr])))
 
     and convertSimpleReturnToExpr varSpace innerComp =
-        match innerComp with
+        match innerComp with 
         | SynExpr.YieldOrReturn ((false, _), returnExpr, _) -> Some (returnExpr, None)
         | SynExpr.Match (spMatch, expr, clauses, m) ->
-            let clauses =
-                clauses |> List.map (fun (Clause(pat, cond, innerComp2, patm, sp)) ->
+            let clauses = 
+                clauses |> List.map (fun (Clause(pat, cond, innerComp2, patm, sp)) -> 
                     match convertSimpleReturnToExpr varSpace innerComp2 with
                     | None -> None // failure
                     | Some (_, Some _) -> None // custom op on branch = failure
@@ -8892,32 +8893,32 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             | None -> None
             | Some (_, Some _) -> None
             | Some (thenExpr, None) ->
-            let elseExprOptOpt  =
-                match elseCompOpt with
-                | None -> Some None
-                | Some elseComp ->
+            let elseExprOptOpt  = 
+                match elseCompOpt with 
+                | None -> Some None 
+                | Some elseComp -> 
                     match convertSimpleReturnToExpr varSpace elseComp with
                     | None -> None // failure
                     | Some (_, Some _) -> None // custom op on branch = failure
                     | Some (elseExpr, None) -> Some (Some elseExpr)
-            match elseExprOptOpt with
+            match elseExprOptOpt with 
             | None -> None
             | Some elseExprOpt -> Some (SynExpr.IfThenElse (guardExpr, thenExpr, elseExprOpt, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch), None)
 
         | SynExpr.LetOrUse (isRec, false, binds, innerComp, m) ->
             match convertSimpleReturnToExpr varSpace innerComp with
             | None -> None
-            | Some (_, Some _) -> None
+            | Some (_, Some _) -> None 
             | Some (innerExpr, None) -> Some (SynExpr.LetOrUse (isRec, false, binds, innerExpr, m), None)
 
-        | OptionalSequential (CustomOperationClause (nm, _, _, mClause, _), _) when customOperationMaintainsVarSpaceUsingBind nm ->
+        | OptionalSequential (CustomOperationClause (nm, _, _, mClause, _), _) when customOperationMaintainsVarSpaceUsingBind nm -> 
 
             let patvs, _env = varSpace.Force comp.Range
             let varSpaceExpr = mkExprForVarSpace mClause patvs
-
+            
             Some (varSpaceExpr, Some (innerComp, mClause))
 
-        | SynExpr.Sequential (sp, true, innerComp1, innerComp2, m) ->
+        | SynExpr.Sequential (sp, true, innerComp1, innerComp2, m) -> 
 
             // Check the first part isn't a computation expression construct
             if isSimpleExpr innerComp1 then
@@ -8933,7 +8934,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
     /// Check is an expression has no computation expression constructs
     and isSimpleExpr comp =
 
-        match comp with
+        match comp with 
         | ForEachThenJoinOrGroupJoinOrZipClause _ -> false
         | SynExpr.ForEach _ -> false
         | SynExpr.For _ -> false
@@ -8943,42 +8944,42 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
         | OptionalSequential (JoinOrGroupJoinOrZipClause _, _) -> false
         | OptionalSequential (CustomOperationClause _, _) -> false
         | SynExpr.Sequential (_, _, innerComp1, innerComp2, _) -> isSimpleExpr innerComp1 && isSimpleExpr innerComp2
-        | SynExpr.IfThenElse (_, thenComp, elseCompOpt, _, _, _, _) ->
+        | SynExpr.IfThenElse (_, thenComp, elseCompOpt, _, _, _, _) -> 
              isSimpleExpr thenComp && (match elseCompOpt with None -> true | Some c -> isSimpleExpr c)
         | SynExpr.LetOrUse (_, _, _, innerComp, _) -> isSimpleExpr innerComp
         | SynExpr.LetOrUseBang _ -> false
         | SynExpr.Match (_, _, clauses, _) ->
             clauses |> List.forall (fun (Clause(_, _, innerComp, _, _)) -> isSimpleExpr innerComp)
         | SynExpr.MatchBang _ -> false
-        | SynExpr.TryWith (innerComp, _, clauses, _, _, _, _) ->
-            isSimpleExpr innerComp &&
+        | SynExpr.TryWith (innerComp, _, clauses, _, _, _, _) -> 
+            isSimpleExpr innerComp && 
             clauses |> List.forall (fun (Clause(_, _, clauseComp, _, _)) -> isSimpleExpr clauseComp)
         | SynExpr.YieldOrReturnFrom _ -> false
         | SynExpr.YieldOrReturn _ -> false
         | SynExpr.DoBang _ -> false
         | _ -> true
 
-    let basicSynExpr =
-        trans true (hasCustomOperations ()) (LazyWithContext.NotLazy ([], env)) comp (fun holeFill -> holeFill)
+    let basicSynExpr = 
+        trans true (hasCustomOperations ()) (LazyWithContext.NotLazy ([], env)) comp (fun holeFill -> holeFill) 
 
-    let delayedExpr =
-        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Delay" builderTy with
+    let delayedExpr = 
+        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Delay" builderTy with 
         | [] -> basicSynExpr
         | _ -> mkSynCall "Delay" mBuilderVal [(mkSynDelay2 basicSynExpr)]
 
-    let quotedSynExpr =
-        if isAutoQuote then
-            SynExpr.Quote (mkSynIdGet (mBuilderVal.MakeSynthetic()) (CompileOpName "<@ @>"), (*isRaw=*)false, delayedExpr, (*isFromQueryExpression=*)true, mWhole)
+    let quotedSynExpr = 
+        if isAutoQuote then 
+            SynExpr.Quote (mkSynIdGet (mBuilderVal.MakeSynthetic()) (CompileOpName "<@ @>"), (*isRaw=*)false, delayedExpr, (*isFromQueryExpression=*)true, mWhole) 
         else delayedExpr
-
-    let runExpr =
-        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Run" builderTy with
+            
+    let runExpr = 
+        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Run" builderTy with 
         | [] -> quotedSynExpr
         | _ -> mkSynCall "Run" mBuilderVal [quotedSynExpr]
 
     // dprintfn "Tranlated CE to\n%A\n" runExpr
 
-    let lambdaExpr =
+    let lambdaExpr = 
         let mBuilderVal = mBuilderVal.MakeSynthetic()
         SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)], mBuilderVal), runExpr, mBuilderVal)
 
