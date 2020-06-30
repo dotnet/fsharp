@@ -898,7 +898,7 @@ module internal SymbolHelpers =
         | Item.AnonRecdField(anon, _argTys, i, _) -> anon.SortedNames.[i]
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef
         | Item.NewDef id -> id.idText
-        | Item.ILField finfo -> bufs (fun os -> NicePrint.outputILTypeRef finfo.IsValueType denv os finfo.ILTypeRef; bprintf os ".%s" finfo.FieldName)
+        | Item.ILField finfo -> bufs (fun os -> NicePrint.outputILTypeRef denv os finfo.ILTypeRef; bprintf os ".%s" finfo.FieldName)
         | Item.Event einfo -> bufs (fun os -> NicePrint.outputTyconRef denv os einfo.DeclaringTyconRef; bprintf os ".%s" einfo.EventName)
         | Item.Property(_, (pinfo :: _)) -> bufs (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
         | Item.CustomOperation (customOpName, _, _) -> customOpName
@@ -1135,7 +1135,7 @@ module internal SymbolHelpers =
         | Item.ILField finfo ->
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoField())) ^^
-                NicePrint.layoutILTypeRef finfo.IsValueType denv finfo.ILTypeRef ^^
+                NicePrint.layoutILTypeRef denv finfo.ILTypeRef ^^
                 SepL.dot ^^
                 wordL (tagField finfo.FieldName) ^^
                 RightL.colon ^^

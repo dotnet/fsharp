@@ -123,7 +123,7 @@ module private PrintIL =
     let fullySplitILTypeRef (tref: ILTypeRef) = 
         (List.collect IL.splitNamespace (tref.Enclosing @ [PrettyNaming.DemangleGenericTypeName tref.Name])) 
 
-    let layoutILTypeRefName isValueType denv path =
+    let layoutILTypeRefName denv path =
         let path = 
             match path with 
             | [ "System"; "Void" ] -> ["unit"]
@@ -146,15 +146,15 @@ module private PrintIL =
             | [ "System"; "Boolean"] -> ["bool"]
             | _ -> path
         let p2, n = List.frontAndBack path
-        let tagged = if isValueType then tagStruct n else tagClass n
+        let tagged = if n = "obj" || n = "string" then tagClass n else tagStruct n
         if denv.shortTypeNames then 
             wordL tagged
           else
             leftL (tagNamespace (trimPathByDisplayEnv denv p2)) ^^ wordL tagged
 
-    let layoutILTypeRef isValueType denv tref =
+    let layoutILTypeRef denv tref =
         let path = fullySplitILTypeRef tref
-        layoutILTypeRefName isValueType denv path
+        layoutILTypeRefName denv path
 
     /// this fixes up a name just like adjustILName but also handles F#
     /// operators
@@ -195,8 +195,8 @@ module private PrintIL =
         match ty with
         | ILType.Void -> WordL.structUnit // These are type-theoretically totally different type-theoretically `void` is Fin 0 and `unit` is Fin (S 0) ... but, this looks like as close as we can get.
         | ILType.Array (sh, t) -> layoutILType denv ilTyparSubst t ^^ layoutILArrayShape sh
-        | ILType.Value t -> layoutILTypeRef true denv t.TypeRef ^^ (t.GenericArgs |> List.map (layoutILType denv ilTyparSubst) |> paramsL)
-        | ILType.Boxed t -> layoutILTypeRef false denv t.TypeRef ^^ (t.GenericArgs |> List.map (layoutILType denv ilTyparSubst) |> paramsL)
+        | ILType.Value t -> layoutILTypeRef denv t.TypeRef ^^ (t.GenericArgs |> List.map (layoutILType denv ilTyparSubst) |> paramsL)
+        | ILType.Boxed t -> layoutILTypeRef denv t.TypeRef ^^ (t.GenericArgs |> List.map (layoutILType denv ilTyparSubst) |> paramsL)
         | ILType.Ptr t
         | ILType.Byref t -> layoutILType denv ilTyparSubst t
         | ILType.FunctionPointer t -> layoutILCallingSignature denv ilTyparSubst None t
@@ -215,7 +215,7 @@ module private PrintIL =
             | Some className -> 
                 let names = SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)
                 // special case for constructor return-type (viz., the class itself)
-                layoutILTypeRefName false denv names ^^ (pruneParams className ilTyparSubst |> paramsL) 
+                layoutILTypeRefName denv names ^^ (pruneParams className ilTyparSubst |> paramsL) 
             | None -> 
                 signature.ReturnType |> layoutILType denv ilTyparSubst
         
@@ -251,7 +251,7 @@ module private PrintIL =
             match cons with
             | Some className -> 
                 let names = SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)
-                layoutILTypeRefName false denv names ^^ (pruneParams className ilTyparSubst |> paramsL) 
+                layoutILTypeRefName denv names ^^ (pruneParams className ilTyparSubst |> paramsL) 
             | None -> retType |> layoutILType denv ilTyparSubst
         
         match parameters with
@@ -684,7 +684,7 @@ module private PrintTypes =
                     name
             let tref = ilMethRef.DeclaringTypeRef
             let tref = ILTypeRef.Create(scope= tref.Scope, enclosing=tref.Enclosing, name=trimmedName)
-            PrintIL.layoutILTypeRef true denv tref ++ argsL
+            PrintIL.layoutILTypeRef denv tref ++ argsL
         | FSAttrib vref -> 
             // REVIEW: this is not trimming "Attribute" 
             let _, _, _, rty, _ = GetTypeOfMemberInMemberForm denv.g vref
@@ -727,7 +727,7 @@ module private PrintTypes =
             LeftL.keywordTypeof ^^ SepL.leftAngle ^^ PrintIL.layoutILType denv [] ty ^^ RightL.rightAngle
         | ILAttribElem.Type None -> wordL (tagText "")
         | ILAttribElem.TypeRef (Some ty) -> 
-            LeftL.keywordTypedefof ^^ SepL.leftAngle ^^ PrintIL.layoutILTypeRef false denv ty ^^ RightL.rightAngle
+            LeftL.keywordTypedefof ^^ SepL.leftAngle ^^ PrintIL.layoutILTypeRef denv ty ^^ RightL.rightAngle
         | ILAttribElem.TypeRef None -> emptyL
 
     and layoutILAttrib denv (ty, args) = 
@@ -2192,9 +2192,9 @@ let stringOfParamData denv paramData = bufs (fun buf -> InfoMemberPrinting.forma
 
 let layoutOfParamData denv paramData = InfoMemberPrinting.layoutParamData denv paramData
 
-let outputILTypeRef isValueType denv os x = x |> PrintIL.layoutILTypeRef isValueType denv |> bufferL os
+let outputILTypeRef denv os x = x |> PrintIL.layoutILTypeRef denv |> bufferL os
 
-let layoutILTypeRef isValueType denv x = x |> PrintIL.layoutILTypeRef isValueType denv
+let layoutILTypeRef denv x = x |> PrintIL.layoutILTypeRef denv
 
 let outputExnDef denv os x = x |> TastDefinitionPrinting.layoutExnDefn denv |> bufferL os
 
