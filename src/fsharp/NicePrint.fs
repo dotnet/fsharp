@@ -1837,8 +1837,11 @@ module private TastDefinitionPrinting =
                     |> List.groupBy (fun md -> md.DisplayName)
                     |> List.collect (fun (_, group) -> shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun x xL -> (sortKey x, xL)) group)
 
+                let inline isDiscard (name: string) = name.StartsWith("_")
+
                 let fieldLs =
                     infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
+                    |> List.filter (fun fld -> not (isDiscard fld.FieldName))
                     |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), layoutILFieldInfo denv amap m x)
 
                 let staticValsLs =
@@ -1846,7 +1849,7 @@ module private TastDefinitionPrinting =
                         []
                     else
                         tycon.TrueFieldsAsList
-                        |> List.filter (fun f -> f.IsStatic)
+                        |> List.filter (fun f -> f.IsStatic && not (isDiscard f.Name))
                         |> List.map (fun f -> WordL.keywordStatic ^^ WordL.keywordVal ^^ layoutRecdField true denv f)
 
                 let instanceValsLs = 
@@ -1854,7 +1857,7 @@ module private TastDefinitionPrinting =
                         []
                     else
                         tycon.TrueFieldsAsList
-                        |> List.filter (fun f -> not f.IsStatic)
+                        |> List.filter (fun f -> not f.IsStatic && not (isDiscard f.Name))
                         |> List.map (fun f -> WordL.keywordVal ^^ layoutRecdField true denv f)
     
                 let propLs = 

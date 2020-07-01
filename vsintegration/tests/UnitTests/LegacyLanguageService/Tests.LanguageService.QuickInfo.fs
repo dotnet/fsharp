@@ -117,13 +117,6 @@ type UsingMSBuild() =
         MoveCursorToStartOfMarker(file, "(*M*)")
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
         AssertContainsInOrder(tooltip, expectedExactOrder)
-  
-    
-    [<Test>]
-    member public this.``EmptyTypeTooltipBody``() = 
-        let content = """
-        type X(*M*) = class end"""
-        this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker content "(*M*)" "="
 
     [<Test>]
     member public this.``NestedTypesOrder``() = 
@@ -274,16 +267,16 @@ type UsingMSBuild() =
         """
         let expectedTooltip = """
 type Async =
-  static member AsBeginEnd : computation:('Arg -> Async<'T>) -> ('Arg * AsyncCallback * obj -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit)
-  static member AwaitEvent : event:IEvent<'Del,'T> * ?cancelAction:(unit -> unit) -> Async<'T> (requires delegate and 'Del :> Delegate)
-  static member AwaitIAsyncResult : iar:IAsyncResult * ?millisecondsTimeout:int -> Async<bool>
-  static member AwaitTask : task:Task -> Async<unit>
-  static member AwaitTask : task:Task<'T> -> Async<'T>
-  static member AwaitWaitHandle : waitHandle:WaitHandle * ?millisecondsTimeout:int -> Async<bool>
+  static member AsBeginEnd<'Arg,'T> : computation: 'Arg -> Async<'T> -> ('Arg * AsyncCallback * obj -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit)
+  static member AwaitEvent<'Del,'T (requires delegate and 'Del :> Delegate)> : event: IEvent<'Del,'T> *?cancelAction: unit -> unit -> Async<'T>
+  static member AwaitIAsyncResult : iar: IAsyncResult *?millisecondsTimeout: int -> Async<bool>
+  static member AwaitTask<'T> : task: Task<'T> -> Async<'T> + 1 overload
+  static member AwaitWaitHandle : waitHandle: WaitHandle *?millisecondsTimeout: int -> Async<bool>
   static member CancelDefaultToken : unit -> unit
-  static member Catch : computation:Async<'T> -> Async<Choice<'T,exn>>
-  static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
-  static member FromBeginEnd : beginAction:(AsyncCallback * obj -> IAsyncResult) * endAction:(IAsyncResult -> 'T) * ?cancelAction:(unit -> unit) -> Async<'T>
+  static member CancellationToken : Async<CancellationToken> with get
+  static member Catch<'T> : computation: Async<'T> -> Async<Choice<'T,exn>>
+  static member Choice<'T> : computations: seq<Async<'T option>> -> Async<'T option>
+  static member DefaultCancellationToken : CancellationToken with get
   ...
 Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
@@ -385,7 +378,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\nFull name: N.T",
+         "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal with get\nFull name: N.T",
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
          
 
@@ -1029,7 +1022,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         this.AssertQuickInfoContainsAtEndOfMarker
           ("""let f x = x + 1 ""","let f","int")
         
-    [<Test>]
+    [<Test; Ignore(".NET classes are treated differently now. Should this be revisited? Probably not.")>]
     member public this.``FrameworkClass``() =
         let fileContent = """let l = new System.Collections.Generic.List<int>()"""
         let marker = "Generic.List"
@@ -1941,34 +1934,6 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
               "[Signature:M:System.String.Format(System.String,System.Object[])]";
              ]
             )
- 
-    [<Test>]
-    member public this.``Regression.MemberDefinition.DocComments.Bug5856_12``() =
-        this.AssertMemberDataTipContainsInOrder
-            ((*code *)
-              [
-               "System."
-               ] ,
-             (* marker *)
-             "System.",
-             (* completed item *)             
-             "Action", 
-             (* expect to see in order... *)
-             [
-              "type Action";
-              "  delegate of"
-              "[Filename:"; "mscorlib.dll]";
-              "[Signature:T:System.Action]"
-              "type Action<";
-              "  delegate of"
-              "[Filename:"; "mscorlib.dll]";
-              "[Signature:T:System.Action`1]"
-              "type Action<";
-              "  delegate of"
-              "[Filename:"; "mscorlib.dll]";
-              "[Signature:T:System.Action`2]"
-             ]
-            )    
 
     [<Test>]
     member public this.``Regression.MemberDefinition.DocComments.Bug5856_13``() =
@@ -2096,7 +2061,7 @@ query."
 
     /// Bug 4592: Check that ctors are displayed from C# classes, i.e. the "new" lines below.
     [<Test>]
-    member public this.``Regression.Class.Printing.CSharp.Classes.Only..Bug4592``() =
+    member public this.``Regression.Class.Printing.CSharp.Classes.Only.Bug4592``() =
         this.AssertMemberDataTipContainsInOrder
             ((*code *)
               ["#light";
@@ -2107,10 +2072,11 @@ query."
              "Random", 
              (* expect to see in order... *)
              ["type Random =";
-              "  new : unit -> Random + 1 overload";
+              "  new: unit -> unit +1 overload"
               "  member Next : unit -> int + 2 overloads";  
-              "  member NextBytes : buffer:byte[] -> unit"; (* methods sorted alpha *)
-              "  member NextDouble : unit -> float";]
+              "  member NextBytes : buffer:byte[] -> unit";
+              "  member NextDouble : unit -> float";
+              "  member Sample : unit -> float";]
             )
 
     [<Test>]
@@ -2145,14 +2111,14 @@ query."
              [ "type CodeConnectAccess =";
                "  new : allowScheme:string * allowPort:int -> CodeConnectAccess";
                "  member Equals : o:obj -> bool";
-               "  member GetHashCode : unit -> int";   (* method *)
-               "  member Port : int";
-               "  member Scheme : string";
-               "  static val DefaultPort : int";       (* static val after instance, but before static method *)
-               "  static val OriginPort : int";
-               "  static val OriginScheme : string";
-               "  static val AnyScheme : string";
-               "  static member CreateAnySchemeAccess : allowPort:int -> CodeConnectAccess";
+               "  member GetHashCode : unit -> int";
+               "  member IsAnyScheme : bool with get";
+               "  member IsDefaultPort : bool with get";
+               "  member IsOriginPort : bool with get";
+               "  member IsOriginPortScheme : bool with get";
+               "  member Port : int with get";
+               "  member Scheme : string with get";
+               "  member StrPort : string with get";
                "  ...";
              ])
 
@@ -2194,19 +2160,14 @@ query."
                "  inherit Form";
                "  interface IDisposable";
                "  new : unit -> F1";
+               "  static val x: F1";
                "  val x: F1";
-               "  abstract member AAA : int";
-               "  abstract member ZZZ : int";
-               "  abstract member AAA : bool with set";
-               "  member B : unit -> int";
-               "  member D : unit -> int";
-               "  member D : x:int -> int";
+               "  abstract member AAA : int with get, set";
+               "  abstract member B : unit -> int";
+               "  abstract member D: int";
+               "  abstract member ToString : unit -> string";
+               "  abstract member ZZZ : int with get";
                "  ...";
-               //"  member D : int";
-               //"  member D : int with set";
-               //"  static val x: F1";
-               //"  static member A : unit -> int";
-               //"  static member C : unit -> int";
              ])
 
 (*------------------------------------------IDE automation starts here -------------------------------------------------*)
@@ -2221,12 +2182,6 @@ query."
                                   internal new(x:int,y:int) = new Foo2()
                                   private new(x:int,y:int,z:int) = new Foo2()"""
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker*)", "type internal Foo2")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker*)", "private new : x:int * y:int * z:int -> Foo2")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker*)", "new : x:int * y:int -> Foo2")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker*)", "private new")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker*)", "member Prop1")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker*)", "member Prop2")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker*)", "member private Prop3")
 
     [<Test>]
     member public this.``Automation.Regression.AccessorsAndMutators.Bug4276``() =
@@ -2737,7 +2692,6 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3_1*)", "type IA =")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3_2*)", "type ClassIA =")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker4_1*)", "type GenericClass<'a (requires 'a :> IA)> =")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker4_1*)", "static member StaticMember : x:'a -> int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker4_2*)", "val genericClass : GenericClass<ClassIA>")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5_1*)", "type AbAttrName = AbstractClassAttribute")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5_2*)", "type AbAttrName = AbstractClassAttribute")
