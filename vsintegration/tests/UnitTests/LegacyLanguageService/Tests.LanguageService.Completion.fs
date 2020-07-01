@@ -3921,13 +3921,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ "map" ] // should not contain (let-bound value)
 
     [<Test>]
-    member public this.``OpenTypeNamespaceOrModule.CompletionOnlyContainsNamespaceOrModule.Case1``() =        
-        AssertAutoCompleteContains 
-            [ "open type System." ]
-            "." // marker
-            [ "Collections"; "Console"; "Int32" ] // should contain (namespace and two types)
-
-    [<Test>]
     member public this.``BY_DESIGN.CommonScenarioThatBegsTheQuestion.Bug73940``() =        
         AssertAutoCompleteContains 
             [ @"
