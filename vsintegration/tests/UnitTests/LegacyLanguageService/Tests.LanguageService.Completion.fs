@@ -3909,8 +3909,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertAutoCompleteContains 
             [ "open System." ]
             "." // marker
-            [ "Collections"; "Console" ] // should contain (namespace, static type)
-            [ "Int32" ] // should not contain (non-static type)
+            [ "Collections" ] // should contain (namespace)
+            [ ] // should not contain
 
     [<Test>]
     member public this.``OpenNamespaceOrModule.CompletionOnlyContainsNamespaceOrModule.Case2``() =        
@@ -3919,6 +3919,13 @@ let x = query { for bbbb in abbbbc(*D0*) do
             "Array." // marker
             [ "Parallel" ] // should contain (module)
             [ "map" ] // should not contain (let-bound value)
+
+    [<Test>]
+    member public this.``OpenTypeNamespaceOrModule.CompletionOnlyContainsNamespaceOrModule.Case1``() =        
+        AssertAutoCompleteContains 
+            [ "open type System." ]
+            "." // marker
+            [ "Collections"; "Console"; "Int32" ] // should contain (namespace and two types)
 
     [<Test>]
     member public this.``BY_DESIGN.CommonScenarioThatBegsTheQuestion.Bug73940``() =        
