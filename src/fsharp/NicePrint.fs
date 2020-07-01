@@ -1729,7 +1729,19 @@ module private TastDefinitionPrinting =
         staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL
        
     let private layoutPropInfo denv amap m (p: PropInfo) =
-        let staticL = if p.IsStatic then WordL.keywordStatic else emptyL
+        let modifierAndMember =
+            match p.ArbitraryValRef with
+            | Some v ->
+                match v.MemberInfo with
+                | Some info ->
+                    layoutMemberFlags info.MemberFlags
+                | None ->
+                    WordL.keywordMember
+            | None ->
+                if p.IsStatic then
+                    WordL.keywordStatic ^^ WordL.keywordMember
+                else
+                    WordL.keywordMember
         
         let propTag =
             let tag =
@@ -1758,7 +1770,7 @@ module private TastDefinitionPrinting =
             | (false, false) ->
                 emptyL
 
-        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL ^^ getterSetter
+        modifierAndMember ^^ nameL ^^ WordL.colon ^^ typL ^^ getterSetter
 
     let layoutTyconAux (denv: DisplayEnv) (infoReader: InfoReader) ad m lhsL ty (tycon: Tycon) simplified =
         match tycon.TypeAbbrev with

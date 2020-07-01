@@ -2072,7 +2072,7 @@ query."
              "Random", 
              (* expect to see in order... *)
              ["type Random =";
-              "  new: unit -> unit +1 overload"
+              "  new: unit -> unit + 1 overload"
               "  member Next : unit -> int + 2 overloads";  
               "  member NextBytes : buffer:byte[] -> unit";
               "  member NextDouble : unit -> float";
@@ -2109,7 +2109,7 @@ query."
              (* expect to see in order... *)
              // Pre fix output is mixed up
              [ "type CodeConnectAccess =";
-               "  new : allowScheme:string * allowPort:int -> CodeConnectAccess";
+               "  new : allowScheme:string * allowPort:int -> unit + 2 overloads";
                "  member Equals : o:obj -> bool";
                "  member GetHashCode : unit -> int";
                "  member IsAnyScheme : bool with get";
