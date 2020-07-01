@@ -1798,11 +1798,13 @@ module private TastDefinitionPrinting =
                     GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m ty
                     |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
 
+                // TODO - perhaps filter out interfaces 
                 let iimplsLs =
                     if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
                         []
                     else 
-                        GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty |> List.map (fun ity -> wordL (tagKeyword (if isInterfaceTy g ty then "inherit" else "interface")) --- layoutType denv ity)
+                        GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
+                        |> List.map (fun ity -> wordL (tagKeyword (if isInterfaceTy g ty then "inherit" else "interface")) --- layoutType denv ity)
 
                 let props =
                     GetImmediateIntrinsicPropInfosOfType (None, ad) g amap m ty
@@ -1810,7 +1812,7 @@ module private TastDefinitionPrinting =
 
                 let events = 
                     infoReader.GetEventInfosOfType(None, ad, m, ty)
-                    |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
+                    |> List.filter (fun v -> shouldShow v.ArbitraryValRef && typeEquiv g ty v.ApparentEnclosingType)
 
                 let impliedNames = 
                     try 

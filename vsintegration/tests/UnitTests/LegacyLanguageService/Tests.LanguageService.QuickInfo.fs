@@ -2767,26 +2767,16 @@ query."
                                 let genericClass(*Marker4_2*) = new GenericClass<ClassIA>()"""
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1_1*)", "type MyInt = int")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1_1*)", "Full name: NS.TypeAbbreviation.MyInt")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1_2*)", "val myInt : MyInt")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2_1*)", "type PairOfFloat = float * float")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2_1*)", "Full name: NS.TypeAbbreviation.PairOfFloat")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2_2*)", "val MySeq : seq<PairOfFloat>")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2_2*)", "Full name: NS.TypeAbbreviation.MySeq")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3_1*)", "type IA =")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3_1*)", "abstract member AbstractMember : int -> int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3_2*)", "type ClassIA =")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3_2*)", "Full name: NS.TypeAbbreviation.ClassIA")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3_2*)", "implements: IA")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker4_1*)", "type GenericClass<'a (requires 'a :> IA)> =")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker4_1*)", "static member StaticMember : x:'a -> int")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker4_1*)", "Full name: NS.TypeAbbreviation.GenericClass<_>")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker4_2*)", "val genericClass : GenericClass<ClassIA>")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker4_2*)", "Full name: NS.TypeAbbreviation.genericClass")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5_1*)", "type AbAttrName = AbstractClassAttribute")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5_1*)", "implements: System.Runtime.InteropServices._Attribute")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5_2*)", "type AbAttrName = AbstractClassAttribute")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker5_2*)", "implements: System.Runtime.InteropServices._Attribute")
 
     [<Test>]
     member public this.``Automation.Regression.TypeInferenceSenarios.Bug2362&3538``() =
