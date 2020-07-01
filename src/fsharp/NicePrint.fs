@@ -1798,10 +1798,13 @@ module private TastDefinitionPrinting =
                     GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m ty
                     |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
 
-                // TODO - perhaps filter out interfaces 
                 let iimplsLs =
                     if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
                         []
+                    elif isRecdTy g ty || isUnionTy g ty || tycon.IsStructOrEnumTycon then
+                        tycon.ImmediateInterfacesOfFSharpTycon
+                        |> List.filter (fun (_, compgen, _) -> not compgen)
+                        |> List.map (fun (ty, _, _) -> wordL (tagKeyword "interface") --- layoutType denv ty)
                     else 
                         GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
                         |> List.map (fun ity -> wordL (tagKeyword (if isInterfaceTy g ty then "inherit" else "interface")) --- layoutType denv ity)
@@ -1838,15 +1841,21 @@ module private TastDefinitionPrinting =
                     infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
                     |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), layoutILFieldInfo denv amap m x)
 
-                let staticValsLs = 
-                    tycon.TrueFieldsAsList
-                    |> List.filter (fun f -> f.IsStatic)
-                    |> List.map (fun f -> WordL.keywordStatic ^^ WordL.keywordVal ^^ layoutRecdField true denv f)
+                let staticValsLs =
+                    if isRecdTy g ty then
+                        []
+                    else
+                        tycon.TrueFieldsAsList
+                        |> List.filter (fun f -> f.IsStatic)
+                        |> List.map (fun f -> WordL.keywordStatic ^^ WordL.keywordVal ^^ layoutRecdField true denv f)
 
                 let instanceValsLs = 
-                    tycon.TrueFieldsAsList
-                    |> List.filter (fun f -> not f.IsStatic)
-                    |> List.map (fun f -> WordL.keywordVal ^^ layoutRecdField true denv f)
+                    if isRecdTy g ty then
+                        []
+                    else
+                        tycon.TrueFieldsAsList
+                        |> List.filter (fun f -> not f.IsStatic)
+                        |> List.map (fun f -> WordL.keywordVal ^^ layoutRecdField true denv f)
     
                 let propLs = 
                     props
@@ -1898,7 +1907,7 @@ module private TastDefinitionPrinting =
                         []
         
                 let decls = inherits @ iimplsLs @ ctorLs @ membLs @ nestedTypeLs @ erasedL
-                let stuff =
+                let declsL =
                     if isNil decls then
                         emptyL
                     else
@@ -1941,7 +1950,7 @@ module private TastDefinitionPrinting =
 
                         addMembersAsWithEnd (addReprAccessL layoutUnionCases)
                     | _ ->
-                        stuff
+                        declsL
 
                 let brk = not (isNil decls) || breakTypeDefnEqn tycon.TypeReprInfo
                 let brk = match tycon.TypeReprInfo with | TILObjectRepr _ -> true | _ -> brk
