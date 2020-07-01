@@ -186,6 +186,9 @@
   <data name="inputSequenceEmpty" xml:space="preserve">
     <value>The input sequence was empty.</value>
   </data>
+  <data name="inputSetEmpty" xml:space="preserve">
+    <value>The input set was empty.</value>
+  </data>
   <data name="invalidTupleTypes" xml:space="preserve">
     <value>This is not a valid tuple type for the F# reflection library.</value>
   </data>
@@ -518,6 +521,9 @@
   </data>
   <data name="inputSequenceTooLong" xml:space="preserve">
     <value>The input sequence contains more than one element.</value>
+  </data>
+  <data name="inputSetTooLong" xml:space="preserve">
+    <value>The input set contains more than one element.</value>
   </data>
   <data name="thenByError" xml:space="preserve">
     <value>'thenBy' and 'thenByDescending' may only be used with an ordered input</value>

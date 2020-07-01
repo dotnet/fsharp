@@ -334,3 +334,21 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The set with the elements of <c>set2</c> removed from <c>set1</c>.</returns>
         [<CompiledName("Difference")>]
         val difference: set1:Set<'T> -> set2:Set<'T> -> Set<'T>
+        
+        /// <summary>Returns the only element of the set.</summary>
+        ///
+        /// <param name="list">The input set.</param>
+        ///
+        /// <returns>The only element of the set.</returns>
+        ///        
+        /// <exception cref="System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
+        [<CompiledName("ExactlyOne")>]
+        val exactlyOne: set:Set<'T> -> 'T
+
+        /// <summary>Returns the only element of the set or <c>None</c> if it is empty or contains more than one element.</summary>
+        ///
+        /// <param name="list">The input set.</param>
+        ///
+        /// <returns>The only element of the set or None.</returns>
+        [<CompiledName("TryExactlyOne")>]
+        val tryExactlyOne: set:Set<'T> -> 'T option

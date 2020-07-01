@@ -507,6 +507,18 @@ module internal SetTree =
     let ofArray comparer l =
         Array.fold (fun acc k -> add comparer k acc) SetEmpty l 
 
+    let exactlyOne s =
+        match s with
+        | SetNode (_) -> invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
+        | SetOne x -> x
+        | SetEmpty -> invalidArg "source" (SR.GetString(SR.inputSetEmpty))
+    
+    let tryExactlyOne s =
+        match s with
+        | SetNode (_) -> None
+        | SetOne x -> Some x
+        | SetEmpty -> None
+
 [<Sealed>]
 [<CompiledName("FSharpSet`1")>]
 [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
@@ -678,6 +690,12 @@ type Set<[<EqualityConditionalOn>]'T when 'T: comparison >(comparer:IComparer<'T
 
     member x.IsProperSupersetOf(otherSet: Set<'T>) =
         SetTree.properSubset x.Comparer otherSet.Tree x.Tree
+
+    member x.ExactlyOne() =
+        SetTree.exactlyOne x.Tree
+
+    member x.TryExactlyOne() =
+        SetTree.tryExactlyOne x.Tree
 
     member x.ToList () = SetTree.toList x.Tree
 
@@ -870,6 +888,12 @@ module Set =
 
     [<CompiledName("MaxElement")>]
     let maxElement (set: Set<'T>) = set.MaximumElement
+    
+    [<CompiledName("ExactlyOne")>]
+    let exactlyOne (set: Set<'T>) = set.ExactlyOne()
+
+    [<CompiledName("TryExactlyOne")>]
+    let tryExactlyOne (set: Set<'T>) = set.TryExactlyOne()
 
 
 
