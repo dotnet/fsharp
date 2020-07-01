@@ -312,8 +312,8 @@ module TupleSRTP =
     let v2b =  (^T : (member get_Item2 : unit -> _ ) (System.Tuple<int,int>(1,3)))
     let v3b =  (^T : (member get_Item2 : unit -> _ ) ((1,3)))
     
-    let areEqualT8 = System.Tuple<_,_,_,_,_,_,_>  (1,2,3,4,5,6,7,System.Tuple<_,_>(8)  ) =  (1,2,3,4,5,6,7,8)
-    let areEqualT9 = System.Tuple<_,_,_,_,_,_,_,_>(1,2,3,4,5,6,7,System.Tuple<_,_>(8,9)) =  (1,2,3,4,5,6,7,8,9)
+    let areEqualT8 = System.Tuple<_,_,_,_,_,_,_,_>(1,2,3,4,5,6,7,System.Tuple<_>  (8)  ) = (1,2,3,4,5,6,7,8)
+    let areEqualT9 = System.Tuple<_,_,_,_,_,_,_,_>(1,2,3,4,5,6,7,System.Tuple<_,_>(8,9)) = (1,2,3,4,5,6,7,8,9)
 
 (*--------------------*)  
 
