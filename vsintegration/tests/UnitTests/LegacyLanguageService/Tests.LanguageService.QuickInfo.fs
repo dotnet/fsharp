@@ -1035,7 +1035,6 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
         let marker = "Generic.List"
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,marker,"member Capacity : int with get, set\n")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,marker,"member Clear : unit -> unit\n")
-        //this.AssertQuickInfoContainsAtEndOfMarker(fileContent,marker,"member Item : int -> 'T with get, set\n") // removed because quickinfo is now smaller
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent marker "get_Capacity"
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent marker "set_Capacity"
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent marker "get_Count"
@@ -2210,40 +2209,6 @@ query."
                //"  static member C : unit -> int";
              ])
 
-(* TODO why does this portion not work?  specifically, last assert fails 
-        printfn "changing file..."
-        ReplaceFileInMemory file1 ["#light"
-                                   "let xx = \"foo\""   // now x is string
-                                   "printfn \"hi\""]
-
-        // assert p1 xx is string
-        MoveCursorToEndOfMarker(file1,"let x")
-        TakeCoffeeBreak(this.VS) 
-        let tooltip = GetQuickInfoAtCursor file1
-        AssertContains(tooltip,"string")
-
-        // assert p2 yy is int
-        MoveCursorToEndOfMarker(file2,"let y")
-        let tooltip = GetQuickInfoAtCursor file2
-        AssertContains(tooltip,"int")
-
-        AssertNoErrorsOrWarnings(project1)
-        AssertNoErrorsOrWarnings(project2)
-
-        printfn "rebuilding dependent project..."
-        // (re)build p1 (with xx now string)
-        Build(project1) |> ignore
-        TakeCoffeeBreak(this.VS) 
-
-        AssertNoErrorsOrWarnings(project1)
-        AssertNoErrorsOrWarnings(project2)
-
-        // assert p2 yy is now string
-        MoveCursorToEndOfMarker(file2,"let y")
-        let tooltip = GetQuickInfoAtCursor file2
-        AssertContains(tooltip,"string")
-*)
-
 (*------------------------------------------IDE automation starts here -------------------------------------------------*)
     [<Test>]
     member public this.``Automation.Regression.AccessibilityOnTypeMembers.Bug4168``() =
@@ -2298,7 +2263,6 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1*)", "member X : int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1*)", "member Y : int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "type BitArray")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "member Length : int") // trimmed quick info doesn't contain all entries
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "member Count : int")
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker2*)" "get_Length"
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker2*)" "set_Length"
@@ -2834,8 +2798,6 @@ query."
   
                               let singleton(*MarkerLastLine*) k a = Branch(k,a,Nil,Nil)"""
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*MarkerType*)", "type PriorityQueue")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*MarkerType*)", "Full name: NS.PriorityQueue<_,_>")
-        //this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*MarkerType*)", "implements: IComparable")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*MarkerDataConstructor*)", "union case PriorityQueue.Nil: PriorityQueue<'k,'a>")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3*)", "module PriorityQueue")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*MarkerVal*)", "val pq : PriorityQueue<'a,'b>")
@@ -3157,7 +3119,6 @@ query."
                                             yield a.X(*Marker4*) }"""
         let queries =   [("(*Marker1*)", "val controlEventHandler : ControlEventHandler");
                          ("(*Marker2*)", "property MyDistance.Event: Event<string>");
-//                         ("(*Marker2*)", "DocComment: Event");        //Fail: due to DocComments
                          ("(*Marker3*)", "val newDelegate : ControlEventHandler");
                          ("(*Marker4*)", "property MyPoint.X: float");
                          ("(*Marker4*)", "Gets and sets X")]
@@ -3199,7 +3160,6 @@ query."
                                             yield a.X(*Marker4*) }"""
         let queries =  [("(*Marker1*)", "val controlEventHandler : ControlEventHandler");
                         ("(*Marker2*)", "property MyDistance.Event: Event<string>");
-//                        ("(*Marker2*)", "DocComment: Event");     //Fail: due to DocComments
                         ("(*Marker3*)", "val newDelegate : ControlEventHandler");
                         ("(*Marker4*)", "property MyPoint.X: float");
                         ("(*Marker4*)", "Gets and sets X");
@@ -3249,10 +3209,8 @@ query."
                                 | false -> tupley"""
         let queries =  [("(*Marker1*)", "val tuple1 : int * string * float * (int -> string * int)");
                         ("(*Marker2*)", "type MyEmployee");
-//                        ("(*Marker2*)", "DocComment: This is my record type.");       //Fail: due to DocComments
                         ("(*Marker2*)", "Full name: FSTestLib.MyEmployee");
                         ("(*Marker3*)", "type MyCar");
-//                        ("(*Marker3*)", "DocComment: This is my class type");         //Fail: due to DocComments
                         ("(*Marker3*)", "Full name: FSTestLib.MyCar");
                         ("(*Marker4*)", "val tuplex : 'a * string")
                         ]
