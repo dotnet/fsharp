@@ -447,7 +447,7 @@ List().
 [<Test>]
 let ``Completion for open contains namespaces and static types``() =
     let fileContents = """
-open System.Ma
+open type System.Ma
 """
     let expected = ["Management"; "Math"] // both namespace and static type
     VerifyCompletionList(fileContents, "System.Ma", expected, [])
