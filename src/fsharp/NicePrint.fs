@@ -1772,7 +1772,27 @@ module private TastDefinitionPrinting =
 
         modifierAndMember ^^ nameL ^^ WordL.colon ^^ typL ^^ getterSetter
 
-    let layoutTyconAux (denv: DisplayEnv) (infoReader: InfoReader) ad m lhsL ty (tycon: Tycon) simplified =
+    let layoutTycon (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tycon: Tycon) =
+        let g = denv.g
+        let _, ty = generalizeTyconRef (mkLocalTyconRef tycon) 
+        let name = 
+            let n = tycon.DisplayName
+            if isStructTy g ty then
+                tagStruct n
+            elif isInterfaceTy g ty then
+                tagInterface n
+            elif isClassTy g ty then
+                tagClass n
+            else
+                tagUnknownType n
+        let name = mkNav tycon.DefinitionRange name
+        let nameL = layoutAccessibility denv tycon.Accessibility (wordL name)
+        let denv = denv.AddAccessibility tycon.Accessibility 
+        let lhsL =
+            let tps = tycon.TyparsNoRange
+            let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
+            typewordL ^^ tpsL
+
         match tycon.TypeAbbrev with
         | Some a ->
             (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
@@ -1910,7 +1930,7 @@ module private TastDefinitionPrinting =
                         | _ -> []
 
                 let erasedL = 
-#if SHOW_ERASURE
+        #if SHOW_ERASURE
                     match tryTcrefOfAppTy g ty with
                     | ValueSome tcref ->
                         if tcref.IsProvidedErasedTycon then 
@@ -1918,9 +1938,9 @@ module private TastDefinitionPrinting =
                         else
                             []
                     | None ->
-#endif
+        #endif
                         []
-        
+
                 let decls = inherits @ iimplsLs @ ctorLs @ membLs @ nestedTypeLs @ erasedL
                 let declsL =
                     if isNil decls then
@@ -1946,14 +1966,14 @@ module private TastDefinitionPrinting =
                     match tycon.TypeReprInfo with
                     | TRecdRepr _ ->
                         let recdFieldRefL fld = layoutRecdField false denv fld
-            
+    
                         let recdL =
                             tycon.TrueFieldsAsList
                             |> List.map recdFieldRefL
                             |> applyMaxMembers denv.maxMembers
                             |> aboveListL
                             |> braceL
-            
+    
                         addMembersAsWithEnd (addReprAccessL recdL)
 
                     | TUnionRepr _ ->
@@ -1976,30 +1996,7 @@ module private TastDefinitionPrinting =
                         (lhsL ^^ WordL.equals) --- rhsL
 
                 layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs layout
-#endif
-
-    let layoutTycon (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tycon: Tycon) =
-        let g = denv.g
-        let _, ty = generalizeTyconRef (mkLocalTyconRef tycon) 
-        let name = 
-            let n = tycon.DisplayName
-            if isStructTy g ty then
-                tagStruct n
-            elif isInterfaceTy g ty then
-                tagInterface n
-            elif isClassTy g ty then
-                tagClass n
-            else
-                tagUnknownType n
-        let name = mkNav tycon.DefinitionRange name
-        let nameL = layoutAccessibility denv tycon.Accessibility (wordL name)
-        let denv = denv.AddAccessibility tycon.Accessibility 
-        let lhsL =
-            let tps = tycon.TyparsNoRange
-            let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
-            typewordL ^^ tpsL
-
-        layoutTyconAux denv infoReader ad m lhsL ty tycon simplified
+        #endif
 
     // Layout: exception definition
     let layoutExnDefn denv (exnc: Entity) =
