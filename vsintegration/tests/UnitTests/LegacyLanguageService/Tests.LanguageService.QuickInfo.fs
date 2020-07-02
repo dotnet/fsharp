@@ -123,13 +123,7 @@ type UsingMSBuild() =
         this.VerifyOrderOfNestedTypesInQuickInfo(
             source = "type t = System.Runtime.CompilerServices.RuntimeHelpers(*M*)",
             marker = "(*M*)",
-            expectedExactOrder = ["CleanupCode"; "TryCode"]
-            )
-
-        this.VerifyOrderOfNestedTypesInQuickInfo(
-            source = "type t = System.Collections.Generic.Dictionary(*M*)",
-            marker = "(*M*)",
-            expectedExactOrder = ["Enumerator"; "KeyCollection"; "ValueCollection"]
+            expectedExactOrder = ["OffsetToStringData"; "GetObjectValue"]
             )
     
     [<Test>]
