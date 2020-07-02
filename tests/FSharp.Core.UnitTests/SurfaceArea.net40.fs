@@ -245,6 +245,8 @@ Microsoft.FSharp.Collections.FSharpSet`1[T]: T MinimumElement
 Microsoft.FSharp.Collections.FSharpSet`1[T]: T get_MaximumElement()
 Microsoft.FSharp.Collections.FSharpSet`1[T]: T get_MinimumElement()
 Microsoft.FSharp.Collections.FSharpSet`1[T]: Void .ctor(System.Collections.Generic.IEnumerable`1[T])
+Microsoft.FSharp.Collections.FSharpSet`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] TryExactlyOne()
+Microsoft.FSharp.Collections.FSharpSet`1[T]: T ExactlyOne()
 Microsoft.FSharp.Collections.HashIdentity: System.Collections.Generic.IEqualityComparer`1[T] FromFunctions[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32], Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]])
 Microsoft.FSharp.Collections.HashIdentity: System.Collections.Generic.IEqualityComparer`1[T] LimitedStructural[T](Int32)
 Microsoft.FSharp.Collections.HashIdentity: System.Collections.Generic.IEqualityComparer`1[T] NonStructural[T]()
