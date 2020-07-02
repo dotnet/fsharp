@@ -2068,7 +2068,7 @@ query."
              ["type Random =";
               "  new : unit -> unit + 1 overload"
               "  member Next : unit -> int + 2 overloads";  
-              "  member NextBytes : buffer: byte[] -> unit";
+              "  member NextBytes : buffer: byte [] -> unit";
               "  member NextDouble : unit -> float";
               "  member Sample : unit -> float";]
             )
@@ -2109,7 +2109,7 @@ query."
                "  member IsAnyScheme : bool with get";
                "  member IsDefaultPort : bool with get";
                "  member IsOriginPort : bool with get";
-               "  member IsOriginPortScheme : bool with get";
+               "  member IsOriginScheme : bool with get";
                "  member Port : int with get";
                "  member Scheme : string with get";
                "  member StrPort : string with get";
