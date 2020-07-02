@@ -2829,7 +2829,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value.</param>
         /// <returns>The converted string.</returns>
         [<CompiledName("ToString")>]
-        val string  : value:'T -> string
+        val inline string  : value:'T -> string
 
         /// <summary>Converts the argument to System.Decimal using a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>UInt64.Parse()</c>  

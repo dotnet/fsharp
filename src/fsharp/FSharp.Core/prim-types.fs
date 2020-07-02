@@ -4459,7 +4459,7 @@ namespace Microsoft.FSharp.Core
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
         [<CompiledName("ToString")>]
-        let string (value: 'T) = 
+        let inline string (value: 'T) = 
              anyToString "" value
              when 'T : string     = (# "" value : string #)     // force no-op
 
