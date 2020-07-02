@@ -89,6 +89,17 @@ namespace Microsoft.FSharp.Collections
 
         /// <summary>Returns the highest element in the set according to the ordering being used for the set.</summary>
         member MaximumElement: 'T
+        
+        /// <summary>Returns the only element of the set.</summary>
+        /// <param name="list">The input set.</param>
+        /// <returns>The only element of the set.</returns>
+        /// <exception cref="System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
+        member ExactlyOne: unit -> 'T
+
+        /// <summary>Returns the only element of the set or <c>None</c> if it is empty or contains more than one element.</summary>
+        /// <param name="list">The input set.</param>
+        /// <returns>The only element of the set or None.</returns>
+        member TryExactlyOne: unit -> 'T option
 
         interface ICollection<'T> 
         interface IEnumerable<'T> 
