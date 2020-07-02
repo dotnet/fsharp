@@ -203,7 +203,7 @@ type UsingMSBuild() =
         this.AssertQuickInfoContainsAtStartOfMarker(
             fileContents,
             marker = "MembersTP(*Marker*)",
-            expected = "type HiddenBaseMembersTP =\n  inherit TPBaseTy\n  member ShowThisProp : unit",
+            expected = "type HiddenBaseMembersTP =\n  inherit TPBaseTy",
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
