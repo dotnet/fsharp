@@ -123,7 +123,7 @@ type UsingMSBuild() =
         this.VerifyOrderOfNestedTypesInQuickInfo(
             source = "type t = System.Runtime.CompilerServices.RuntimeHelpers(*M*)",
             marker = "(*M*)",
-            expectedExactOrder = ["OffsetToStringData"; "GetObjectValue"]
+            expectedExactOrder = ["GetObjectValue"; "OffsetToStringData"]
             )
     
     [<Test>]
@@ -2068,7 +2068,7 @@ query."
              ["type Random =";
               "  new : unit -> unit + 1 overload"
               "  member Next : unit -> int + 2 overloads";  
-              "  member NextBytes : buffer:byte[] -> unit";
+              "  member NextBytes : buffer: byte[] -> unit";
               "  member NextDouble : unit -> float";
               "  member Sample : unit -> float";]
             )
@@ -2104,7 +2104,7 @@ query."
              // Pre fix output is mixed up
              [ "type CodeConnectAccess =";
                "  new : allowScheme: string * allowPort: int -> unit + 2 overloads";
-               "  member Equals : o:obj -> bool";
+               "  member Equals : o: obj -> bool";
                "  member GetHashCode : unit -> int";
                "  member IsAnyScheme : bool with get";
                "  member IsDefaultPort : bool with get";
@@ -2158,7 +2158,7 @@ query."
                "  val x: F1";
                "  abstract member AAA : int with get, set";
                "  member B : unit -> int";
-               "  member D: int";
+               "  member D : int with get, set";
                "  member ToString : unit -> string";
                "  abstract member ZZZ : int with get";
                "  ...";
