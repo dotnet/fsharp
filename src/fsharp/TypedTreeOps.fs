@@ -2750,6 +2750,7 @@ type DisplayEnv =
       showConstraintTyparAnnotations: bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
+      shrinkOverloads: bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout : (Val -> layout option) }
@@ -2781,6 +2782,7 @@ type DisplayEnv =
         showTyparDefaultConstraints = false
         shortConstraints = false
         useColonForReturnType = false
+        shrinkOverloads = true
         g = tcGlobals
         contextAccessibility = taccessPublic
         generatedValueLayout = (fun _ -> None) }

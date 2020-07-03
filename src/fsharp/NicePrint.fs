@@ -1859,15 +1859,26 @@ module private TastDefinitionPrinting =
                                         yield e.RemoveMethod.DisplayName ]
                     with _ -> Set.empty
 
-                let ctorLs    = 
-                    ctors 
-                    |> shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun _ xL -> xL) 
+                let ctorLs =
+                    if denv.shrinkOverloads then
+                        ctors 
+                        |> shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun _ xL -> xL) 
+                    else
+                        ctors
+                        |> List.map (fun ctor -> InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv ctor)
+                    
 
                 let methLs = 
                     meths 
                     |> List.filter (fun md -> not (impliedNames.Contains md.DisplayName) && not md.IsConstructor)
                     |> List.groupBy (fun md -> md.DisplayName)
-                    |> List.collect (fun (_, group) -> shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun x xL -> (sortKey x, xL)) group)
+                    |> List.collect (fun (_, group) ->
+                        if denv.shrinkOverloads then
+                            shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun x xL -> (sortKey x, xL)) group
+                        else
+                            group
+                            |> List.sortBy sortKey
+                            |> List.map (fun methinfo -> ((not methinfo.IsConstructor, methinfo.IsInstance, methinfo.DisplayName, List.sum methinfo.NumArgs, methinfo.NumArgs.Length), InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv methinfo)))
 
                 let inline isDiscard (name: string) = name.StartsWith("_")
 
