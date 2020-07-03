@@ -8468,7 +8468,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 //dprintfn "discovered %A params for %s" ps meth.DisplayName
                 match ps with
                 // this is the case when an N-member is present, we assume it works for all sizes
-                | [ [ TType_var typar ] ] -> Some Int32.MaxValue
+                | [ [ TType_var _typar ] ] -> Some Int32.MaxValue
                 // this is a 'bind', ie a set of inputs that are tupled + a function that consumes them
                 | [ [TType_tuple(_info, types); TType_fun (TType_tuple(_, funDomainTypes), _range) ] ] when (List.length types) = (List.length funDomainTypes) -> Some (List.length types)
                 // this is a 'normal' call, like MergeSources4(a,b,c,d) that has 4 parameters applied
