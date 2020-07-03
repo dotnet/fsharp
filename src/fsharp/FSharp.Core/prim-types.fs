@@ -4471,21 +4471,21 @@ namespace Microsoft.FSharp.Core
              when 'T : BigInteger = let x = (# "" value : BigInteger #) in x.ToString(null, CultureInfo.InvariantCulture)
              
              // no IFormattable
-             when 'T : char       = let x = (# "" value : char #)       in x.ToString()
+             when 'T : char       = let x = (# "" value : 'T #)         in x.ToString()     // use 'T, because char can be an enum  
              when 'T : bool       = let x = (# "" value : bool #)       in x.ToString()
              when 'T : nativeint  = let x = (# "" value : nativeint #)  in x.ToString()
              when 'T : unativeint = let x = (# "" value : unativeint #) in x.ToString()
 
-             // For the int-types:
-             // It is not possible to distinguish statically between Enum and (any type of) int.
-             // This way we'll print their symbolic value, as opposed to their integral one 
-             // E.g.: 'string ConsoleKey.Backspace' gives "Backspace", rather than "8")
+             // Integral types can be enum:
+             // It is not possible to distinguish statically between Enum and (any type of) int. For signed types we have 
+             // to use IFormattable::ToString, as the minus sign can be overridden. Using boxing we'll print their symbolic
+             // value if it's an enum, e.g.: 'ConsoleKey.Backspace' gives "Backspace", rather than "8")
              when 'T : sbyte      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int16      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int32      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
              when 'T : int64      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
 
-             // unsigned integral types have equal behavior with ToString() vs IFormattable::ToString
+             // unsigned integral types have equal behavior with 'T::ToString() vs IFormattable::ToString
              // this allows us to issue the 'constrained' opcode with 'callvirt'
              when 'T : byte       = let x = (# "" value : 'T #) in x.ToString()
              when 'T : uint16     = let x = (# "" value : 'T #) in x.ToString()
