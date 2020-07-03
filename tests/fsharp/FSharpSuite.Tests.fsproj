@@ -50,6 +50,7 @@
     <Compile Include="Compiler\Language\HatDesugaringTests.fs" />
     <Compile Include="Compiler\Language\TypeAttributeTests.fs" />
     <Compile Include="Compiler\Language\ByrefTests.fs" />
+    <Compile Include="Compiler\Language\StringInterpolation.fs" />
     <Compile Include="Compiler\Language\AnonRecordTests.fs" />
     <Compile Include="Compiler\Language\OpenStaticClasses.fs" />
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />

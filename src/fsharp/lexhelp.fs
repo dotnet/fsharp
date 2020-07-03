@@ -56,6 +56,7 @@ type lexargs =
       lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger
       applyLineDirectives: bool
+      mutable interpolatedStringNesting: (int* LexerStringStyle) list
       pathMap: PathMap }
 
 /// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
@@ -66,13 +67,16 @@ type LongUnicodeLexResult =
     | Invalid
 
 let mkLexargs (_filename, defines, lightSyntaxStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
-    { defines = defines
+    { 
+      defines = defines
       ifdefStack= ifdefStack
       lightSyntaxStatus=lightSyntaxStatus
       resourceManager=resourceManager
       errorLogger=errorLogger
       applyLineDirectives=true
-      pathMap=pathMap }
+      interpolatedStringNesting = []
+      pathMap=pathMap
+    }
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f = 
@@ -95,20 +99,8 @@ let usingLexbufForParsing (lexbuf:UnicodeLexing.Lexbuf, filename) f =
 // Functions to manipulate lexer transient state
 //-----------------------------------------------------------------------
 
-let defaultStringFinisher = (fun _endm _b s -> STRING (Encoding.Unicode.GetString(s, 0, s.Length))) 
-
-let callStringFinisher fin (buf: ByteBuffer) endm b = fin endm b (buf.Close())
-
-let addUnicodeString (buf: ByteBuffer) (x:string) = buf.EmitBytes (Encoding.Unicode.GetBytes x)
-
-let addIntChar (buf: ByteBuffer) c = 
-    buf.EmitIntAsByte (c % 256)
-    buf.EmitIntAsByte (c / 256)
-
-let addUnicodeChar buf c = addIntChar buf (int c)
-let addByteChar buf (c:char) = addIntChar buf (int32 c % 256)
-
-let stringBufferAsString (buf: byte[]) =
+let stringBufferAsString (buf: ByteBuffer) =
+    let buf = buf.Close()
     if buf.Length % 2 <> 0 then failwith "Expected even number of bytes"
     let chars : char[] = Array.zeroCreate (buf.Length/2)
     for i = 0 to (buf.Length/2) - 1 do
@@ -126,6 +118,44 @@ let stringBufferAsString (buf: byte[]) =
 let stringBufferAsBytes (buf: ByteBuffer) = 
     let bytes = buf.Close()
     Array.init (bytes.Length / 2) (fun i -> bytes.[i*2]) 
+
+type LexerStringFinisher =
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> token)
+
+    member fin.Finish (buf: ByteBuffer) kind isPart =
+        let (LexerStringFinisher f)  = fin
+        f buf kind isPart
+
+    static member Default =
+        LexerStringFinisher (fun buf kind isPart ->
+            if kind.IsInterpolated then 
+                let s = stringBufferAsString buf
+                if kind.IsInterpolatedFirst then 
+                    if isPart then 
+                        INTERP_STRING_BEGIN_PART s
+                    else
+                        INTERP_STRING_BEGIN_END s
+                else
+                    if isPart then
+                        INTERP_STRING_PART s
+                    else
+                        INTERP_STRING_END s
+            elif kind.IsByteString then 
+                BYTEARRAY (stringBufferAsBytes buf)
+            else
+                STRING (stringBufferAsString buf)
+        ) 
+
+let addUnicodeString (buf: ByteBuffer) (x:string) =
+    buf.EmitBytes (Encoding.Unicode.GetBytes x)
+
+let addIntChar (buf: ByteBuffer) c = 
+    buf.EmitIntAsByte (c % 256)
+    buf.EmitIntAsByte (c / 256)
+
+let addUnicodeChar buf c = addIntChar buf (int c)
+
+let addByteChar buf (c:char) = addIntChar buf (int32 c % 256)
 
 /// Sanity check that high bytes are zeros. Further check each low byte <= 127 
 let stringBufferIsBytes (buf: ByteBuffer) = 
