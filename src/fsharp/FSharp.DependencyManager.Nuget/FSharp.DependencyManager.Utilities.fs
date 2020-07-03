@@ -126,12 +126,12 @@ module internal Utilities =
             | value when not (String.IsNullOrEmpty(value)) ->
                 Some value                           // Value set externally
             | _ ->
-                // Probe for netsdk install
+                // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
                 let dotnetLocation =
                     let dotnetApp =
                         let platform = Environment.OSVersion.Platform
                         if platform = PlatformID.Unix then "dotnet" else "dotnet.exe"
-                    let assemblyLocation = typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location
+                    let assemblyLocation = typeof<Int32>.GetTypeInfo().Assembly.Location
                     Path.Combine(assemblyLocation, "../../..", dotnetApp)
 
                 if File.Exists(dotnetLocation) then
