@@ -13,7 +13,7 @@
 //<Expects status="success">  --------------\^\^\^\^\^\^\^\^\^\^\^\^\^\^</Expects>
 //<Expects status="warning" id="FS0025">Incomplete pattern matches on this expression\. For example, the value 'None' may indicate a case not covered by the pattern\(s\)</Expects>
 //<Expects status="success">type Planet =</Expects>
-//<Expects status="success">  new : ipx:float \* ivx:float -> Planet</Expects>
+//<Expects status="success">  new : ipx: float \* ivx: float -> Planet</Expects>
 //<Expects status="success">  member VX : float with get, set</Expects>
 //<Expects status="success">  member X : float with get, set</Expects>
 //<Expects status="success">val paintObjects : Planet list</Expects>
