@@ -23,6 +23,49 @@ let internal exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
 
 [<AutoOpen>]
 module internal Utils = 
+    let getTempPath() = 
+        Path.Combine(Path.GetTempPath(), "ExprTests")
+
+    /// If it doesn't exists, create a folder 'ExprTests' in local user's %TEMP% folder
+    let createTempDir() = 
+        let tempPath = getTempPath()
+        do 
+            if Directory.Exists tempPath then ()
+            else Directory.CreateDirectory tempPath |> ignore
+
+    /// Returns the filename part of a temp file name created with Path.GetTempFileName().
+    let getTempFileName() =
+        let tempFileName = Path.GetTempFileName()
+        try
+            let tempFileName = Path.GetFileName(tempFileName)
+            tempFileName
+        finally
+            try 
+                // since Path.GetTempFileName() creates a *.tmp file in the %TEMP% folder, we want to clean it up
+                File.Delete tempFileName
+            with _ -> ()
+
+    /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing.
+    let cleanupTempFiles files =
+        for fileName in files do 
+            try
+                // cleanup: only the source file is written to the temp dir.
+                File.Delete fileName
+            with _ -> ()
+
+        try
+            // remove the dir when empty
+            let tempPath = getTempPath()
+            if Directory.GetFiles tempPath |> Array.isEmpty then
+                Directory.Delete tempPath
+        with _ -> ()
+
+
+    /// Given just a filename, returns it with changed extension located in %TEMP%\ExprTests
+    let getTempFilePathChangeExt tmp ext =
+        Path.Combine(getTempPath(), Path.ChangeExtension(tmp, ext))
+
+
     let rec printExpr low (e:FSharpExpr) = 
         match e with 
         | BasicPatterns.AddressOf(e1) -> "&"+printExpr 0 e1
@@ -281,11 +324,6 @@ module internal Utils =
 
 module internal Project1 = 
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let base2 = Path.GetTempFileName()
-    let fileName2 = Path.ChangeExtension(base2, ".fs")
-    let dllName = Path.ChangeExtension(base2, ".dll")
-    let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
 module M
 
@@ -540,7 +578,7 @@ let anonRecd = {| X = 1; Y = 2 |}
 let anonRecdGet = (anonRecd.X, anonRecd.Y)
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+
 
     let fileSource2 = """
 module N
@@ -573,11 +611,27 @@ let testMutableVar = mutableVar 1
 let testMutableConst = mutableConst ()
     """
 
-    File.WriteAllText(fileName2, fileSource2)
+    let createOptions() =
+        let temp1 = Utils.getTempFileName()
+        let temp2 = Utils.getTempFileName()
+        let fileName1 = Utils.getTempFilePathChangeExt temp1 ".fs"  // Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+        let fileName2 = Utils.getTempFilePathChangeExt temp2 ".fs" //Path.ChangeExtension(base2, ".fs")
+        let dllName = Utils.getTempFilePathChangeExt temp2 ".dll" //Path.ChangeExtension(base2, ".dll")
+        let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj" //Path.ChangeExtension(base2, ".fsproj")
 
-    let fileNames = [fileName1; fileName2]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        Utils.createTempDir()
+        File.WriteAllText(fileName1, fileSource1)
+        File.WriteAllText(fileName2, fileSource2)
+        let fileNames = [fileName1; fileName2]
+        let args = mkProjectCommandLineArgs (dllName, fileNames)
+        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+
+        [fileName1; fileName2; dllName; projFileName], options
+
+    let options = lazy createOptions()
+
+    
+
 
     let operatorTests = """
 module OperatorTests{0}
@@ -638,9 +692,9 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 
 """
 
-[<Test>]
+/// This test is run in unison with its optimized counterpart below
 let ``Test Unoptimized Declarations Project1`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd Project1.options.Value) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -769,19 +823,18 @@ let ``Test Unoptimized Declarations Project1`` () =
     printDeclarations None (List.ofSeq file1.Declarations) 
       |> Seq.toList 
       |> filterHack
-      |> shouldEqual (filterHack expected)
+      |> shouldPairwiseEqual (filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations) 
       |> Seq.toList 
       |> filterHack
-      |> shouldEqual (filterHack expected2)
+      |> shouldPairwiseEqual (filterHack expected2)
 
     ()
 
-
-[<Test>]
+/// This test is run in unison with its unoptimized counterpart below
 let ``Test Optimized Declarations Project1`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd Project1.options.Value) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -921,32 +974,35 @@ let ``Test Optimized Declarations Project1`` () =
 
     ()
 
+[<Test>]
+let ``Test Optimized and Unoptimized Declarations for Project1`` () =
+    let filenames = fst Project1.options.Value
+    try
+        ``Test Optimized Declarations Project1`` ()
+        ``Test Unoptimized Declarations Project1`` ()
+    finally
+        Utils.cleanupTempFiles filenames
+
 let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimized =
 
-    /// File is placed in local user's %TEMP%\ExprTests folder
-    let tempPath = Path.Combine(Path.GetTempPath(), "ExprTests")
-    do 
-        if Directory.Exists tempPath then ()
-        else Directory.CreateDirectory tempPath |> ignore
-
-    let tempFileName = Path.GetFileName(Path.GetTempFileName())
-    let basePath = Path.Combine(tempPath, tempFileName)
-    let fileName = Path.ChangeExtension(basePath, ".fs")
-    let dllName = Path.ChangeExtension(basePath, ".dll")
-    let projFileName = Path.ChangeExtension(basePath, ".fsproj")
+    let tempFileName = Utils.getTempFileName()
+    let filePath = Utils.getTempFilePathChangeExt tempFileName ".fs"
+    let dllPath =Utils.getTempFilePathChangeExt tempFileName ".dll"
+    let projFilePath = Utils.getTempFilePathChangeExt tempFileName ".fsproj"
 
     try
+        createTempDir()
         let source = System.String.Format(Project1.operatorTests, dnName, fsName)
         let replace (s:string) r = s.Replace("let " + r, "// let " + r)
         let fileSource = excludedTests |> List.fold replace source
-        File.WriteAllText(fileName, fileSource)
+        File.WriteAllText(filePath, fileSource)
 
         let args = [|
-            yield! mkProjectCommandLineArgsSilent (dllName, [fileName])
+            yield! mkProjectCommandLineArgsSilent (dllPath, [filePath])
             yield @"-r:System.Numerics.dll"         // needed for some tests
         |]
 
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFilePath, args)
 
         let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
@@ -973,13 +1029,7 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
         |> shouldPairwiseEqual expectedOptimized
 
     finally
-        try
-            // cleanup: only the source file is written to the temp dir.
-            File.Delete fileName
-            if Directory.GetFiles(tempPath) |> Array.isEmpty then
-                Directory.Delete tempPath
-
-        with _ -> ()
+        Utils.cleanupTempFiles [filePath; dllPath; projFilePath]
 
     ()
 
@@ -2760,10 +2810,6 @@ let ``Test Operator Declarations for String`` () =
 
 module internal ProjectStressBigExpressions = 
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let base2 = Path.GetTempFileName()
-    let dllName = Path.ChangeExtension(base2, ".dll")
-    let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
 module StressBigExpressions 
 
@@ -2951,16 +2997,30 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
 
     
     """
-    File.WriteAllText(fileName1, fileSource1)
-
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  exprChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 
-[<Test>]
+    let createOptions() =
+        let temp1 = Utils.getTempFileName()
+        let temp2 = Utils.getTempFileName()
+        let fileName1 = Utils.getTempFilePathChangeExt temp1 ".fs" //Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+        let dllName = Utils.getTempFilePathChangeExt temp2 ".dll" //Path.ChangeExtension(base2, ".dll")
+        let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj" //Path.ChangeExtension(base2, ".fsproj")
+
+        Utils.createTempDir()
+        File.WriteAllText(fileName1, fileSource1)
+
+        let fileNames = [fileName1]
+        let args = mkProjectCommandLineArgs (dllName, fileNames)
+        let options =  exprChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        
+        [fileName1; dllName; projFileName], options
+
+    let options = lazy createOptions()
+
+
+/// This test is run in unison with its optimized counterpart below
 let ``Test expressions of declarations stress big expressions`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(ProjectStressBigExpressions.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd ProjectStressBigExpressions.options.Value) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
@@ -2971,9 +3031,9 @@ let ``Test expressions of declarations stress big expressions`` () =
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
 
-[<Test>]
+/// This test is run in unison with its unoptimized counterpart below
 let ``Test expressions of optimized declarations stress big expressions`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(ProjectStressBigExpressions.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd ProjectStressBigExpressions.options.Value) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
@@ -2983,5 +3043,11 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
     // This should not stack overflow
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
-
-
+[<Test>]
+let ``Test expressions of both optimized and unoptimized declarations for StressTest Big Expressions`` () =
+    let filenames = fst ProjectStressBigExpressions.options.Value
+    try
+        ``Test expressions of optimized declarations stress big expressions`` ()
+        ``Test expressions of declarations stress big expressions`` ()
+    finally
+        Utils.cleanupTempFiles filenames
