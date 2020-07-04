@@ -8513,8 +8513,8 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                 let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (consumePat, None) 
                                 vspecs, envinner)
 
-                    let memberName = if hasNumericBindNReturn then numericBindNReturnName else bindNReturnName
-                    Some (transBind q varSpace bindRange memberName [bindNReturnTupleArg] consumePat letSpBind innerComp translatedCtxt)
+                    let memberName, args = if hasNumericBindNReturn then (numericBindNReturnName, sources) else (bindNReturnName, [bindNReturnTupleArg])
+                    Some (transBind q varSpace bindRange memberName args consumePat letSpBind innerComp translatedCtxt)
 
                 else
                     let bindNArities =
@@ -8542,8 +8542,8 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                     use _holder = TemporarilySuspendReportingTypecheckResultsToSink cenv.tcSink
                                     let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (consumePat, None) 
                                     vspecs, envinner)
-                        let memberName = if hasRequiredNumericBindN then numericBindNName else bindNName
-                        Some (transBind q varSpace bindRange memberName [bindNTupleArg] consumePat letSpBind innerComp translatedCtxt)
+                        let memberName, args = if hasRequiredNumericBindN then (numericBindNName, sources) else (bindNName, [bindNTupleArg])
+                        Some (transBind q varSpace bindRange memberName args consumePat letSpBind innerComp translatedCtxt)
                     else
                         let mergeSourcesName = "MergeSources"
                         let mergeSourcesNName = "MergeSourcesN"
