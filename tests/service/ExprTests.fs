@@ -714,7 +714,8 @@ let ``Test Unoptimized Declarations Project1`` () =
     let filterHack l = 
         l |> List.map (fun (s:string) -> 
             s.Replace("ILArrayShape [(Some 0, None)]", "ILArrayShapeFIX")
-             .Replace("ILArrayShape [(Some 0, null)]", "ILArrayShapeFIX"))
+             .Replace("ILArrayShape [(Some 0, null)]", "ILArrayShapeFIX")
+             .Replace("Operators.Hash<Microsoft.FSharp.Core.string> (x)", "x.GetHashCode()"))
 
     let expected = [
         "type M"; "type IntAbbrev"; "let boolEx1 = True @ (6,14--6,18)";
