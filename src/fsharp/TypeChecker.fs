@@ -8513,7 +8513,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                 let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (consumePat, None) 
                                 vspecs, envinner)
 
-                    let memberName, args = if hasNumericBindNReturn then (numericBindNReturnName, sources) else (bindNReturnName, [bindNReturnTupleArg])
+                    let memberName, args = if hasNumericBindNReturn then (numericBindNName, sources) else (bindNName, [bindNReturnTupleArg])
                     Some (transBind q varSpace bindRange memberName args consumePat letSpBind innerComp translatedCtxt)
 
                 else
