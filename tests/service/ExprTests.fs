@@ -65,6 +65,17 @@ module internal Utils =
     let getTempFilePathChangeExt tmp ext =
         Path.Combine(getTempPath(), Path.ChangeExtension(tmp, ext))
 
+    // This behaves slightly differently on Mono versions, 'null' is printed somethimes, 'None' other times
+    // Presumably this is very small differences in Mono reflection causing F# printing to change behaviour
+    // For now just disabling this test. See https://github.com/fsharp/FSharp.Compiler.Service/pull/766
+    let filterHack l = 
+        l |> List.map (fun (s:string) -> 
+            // potential difference on Mono
+            s.Replace("ILArrayShape [(Some 0, None)]", "ILArrayShape [(Some 0, null)]")
+             // spacing difference when run locally in VS
+             .Replace("I_ldelema (NormalAddress,false,ILArrayShape [(Some 0, null)],!0)]", "I_ldelema (NormalAddress, false, ILArrayShape [(Some 0, null)], !0)]")
+             // local VS IDE vs CI env difference
+             .Replace("Operators.Hash<Microsoft.FSharp.Core.string> (x)", "x.GetHashCode()"))
 
     let rec printExpr low (e:FSharpExpr) = 
         match e with 
@@ -708,15 +719,6 @@ let ``Test Unoptimized Declarations Project1`` () =
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
     let file2 = wholeProjectResults.AssemblyContents.ImplementationFiles.[1]
 
-    // This behaves slightly differently on Mono versions, 'null' is printed somethimes, 'None' other times
-    // Presumably this is very small differences in Mono reflection causing F# printing to change behavious
-    // For now just disabling this test. See https://github.com/fsharp/FSharp.Compiler.Service/pull/766
-    let filterHack l = 
-        l |> List.map (fun (s:string) -> 
-            s.Replace("ILArrayShape [(Some 0, None)]", "ILArrayShapeFIX")
-             .Replace("ILArrayShape [(Some 0, null)]", "ILArrayShapeFIX")
-             .Replace("Operators.Hash<Microsoft.FSharp.Core.string> (x)", "x.GetHashCode()"))
-
     let expected = [
         "type M"; "type IntAbbrev"; "let boolEx1 = True @ (6,14--6,18)";
         "let intEx1 = 1 @ (7,13--7,14)"; "let int64Ex1 = 1 @ (8,15--8,17)";
@@ -823,13 +825,13 @@ let ``Test Unoptimized Declarations Project1`` () =
 
     printDeclarations None (List.ofSeq file1.Declarations) 
       |> Seq.toList 
-      |> filterHack
-      |> shouldPairwiseEqual (filterHack expected)
+      |> Utils.filterHack
+      |> shouldPairwiseEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations) 
       |> Seq.toList 
-      |> filterHack
-      |> shouldPairwiseEqual (filterHack expected2)
+      |> Utils.filterHack
+      |> shouldPairwiseEqual (Utils.filterHack expected2)
 
     ()
 
@@ -848,16 +850,6 @@ let ``Test Optimized Declarations Project1`` () =
     wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 2
     let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
     let file2 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[1]
-
-    // This behaves slightly differently on Mono versions, 'null' is printed somethimes, 'None' other times
-    // Presumably this is very small differences in Mono reflection causing F# printing to change behaviour
-    // For now just disabling this test. See https://github.com/fsharp/FSharp.Compiler.Service/pull/766
-    let filterHack l = 
-        l |> List.map (fun (s:string) -> 
-            // potential difference on Mono
-            s.Replace("ILArrayShape [(Some 0, None)]", "ILArrayShape [(Some 0, null)]")
-             // spacing difference when run locally in VS
-             .Replace("I_ldelema (NormalAddress,false,ILArrayShape [(Some 0, null)],!0)]", "I_ldelema (NormalAddress, false, ILArrayShape [(Some 0, null)], !0)]"))
 
     let expected = [
         "type M"; "type IntAbbrev"; "let boolEx1 = True @ (6,14--6,18)";
@@ -967,13 +959,13 @@ let ``Test Optimized Declarations Project1`` () =
 
     printDeclarations None (List.ofSeq file1.Declarations) 
       |> Seq.toList 
-      |> filterHack
-      |> shouldPairwiseEqual (filterHack expected)
+      |> Utils.filterHack
+      |> shouldPairwiseEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations) 
       |> Seq.toList 
-      |> filterHack
-      |> shouldPairwiseEqual (filterHack expected2)
+      |> Utils.filterHack
+      |> shouldPairwiseEqual (Utils.filterHack expected2)
 
     ()
 
