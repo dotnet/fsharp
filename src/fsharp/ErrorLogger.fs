@@ -91,7 +91,12 @@ exception PossibleUnverifiableCode of range
 
 exception UnresolvedReferenceNoRange of (*assemblyName*) string 
 exception UnresolvedReferenceError of (*assemblyName*) string * range
-exception UnresolvedPathReferenceNoRange of (*assemblyName*) string * (*path*) string
+exception UnresolvedPathReferenceNoRange of (*assemblyName*) string * (*path*) string with
+    override this.Message =
+        match this :> exn with
+        | UnresolvedPathReferenceNoRange(assemblyName, path) -> sprintf "Assembly: %s, full path: %s" assemblyName path
+        | _ -> "impossible"
+
 exception UnresolvedPathReference of (*assemblyName*) string * (*path*) string * range
 
 
