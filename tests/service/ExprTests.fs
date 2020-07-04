@@ -13,6 +13,7 @@ open NUnit.Framework
 open FsUnit
 open System
 open System.IO
+open System.Text
 open System.Collections.Generic
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
@@ -929,32 +930,64 @@ let ``Test Optimized Declarations Project1`` () =
     ()
 
 let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimized =
-    let basePath = Path.GetTempFileName()
+
+    /// File is placed in local user's %TEMP%\ExprTests folder
+    let tempPath = Path.Combine(Path.GetTempPath(), "ExprTests")
+    do 
+        if Directory.Exists tempPath then ()
+        else Directory.CreateDirectory tempPath |> ignore
+
+    let tempFileName = Path.GetFileName(Path.GetTempFileName())
+    let basePath = Path.Combine(tempPath, tempFileName)
     let fileName = Path.ChangeExtension(basePath, ".fs")
     let dllName = Path.ChangeExtension(basePath, ".dll")
     let projFileName = Path.ChangeExtension(basePath, ".fsproj")
-    let source = System.String.Format(Project1.operatorTests, dnName, fsName)
-    let replace (s:string) r = s.Replace("let " + r, "// let " + r)
-    let fileSource = excludedTests |> List.fold replace source
-    File.WriteAllText(fileName, fileSource)
 
-    let args = mkProjectCommandLineArgsSilent (dllName, [fileName])
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    try
+        let source = System.String.Format(Project1.operatorTests, dnName, fsName)
+        let replace (s:string) r = s.Replace("let " + r, "// let " + r)
+        let fileSource = excludedTests |> List.fold replace source
+        File.WriteAllText(fileName, fileSource)
 
-    for e in wholeProjectResults.Errors do 
-        printfn "%s Operator Tests error: <<<%s>>>" dnName e.Message
+        let args = [|
+            yield! mkProjectCommandLineArgsSilent (dllName, [fileName])
+            yield @"-r:System.Numerics.dll"         // needed for some tests
+        |]
 
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
-    let fileUnoptimized = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
-    let fileOptimized = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
+        let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    printDeclarations None (List.ofSeq fileUnoptimized.Declarations)
-    |> Seq.toList |> shouldEqual expectedUnoptimized
+        for r in wholeProjectResults.ProjectContext.GetReferencedAssemblies() do
+            printfn "Referenced assembly %s: %O" r.QualifiedName r.FileName
 
-    printDeclarations None (List.ofSeq fileOptimized.Declarations)
-    |> Seq.toList |> shouldEqual expectedOptimized
+        let errors = StringBuilder()
+        for e in wholeProjectResults.Errors do 
+            printfn "%s Operator Tests error: <<<%s>>>" dnName e.Message
+            errors.AppendLine e.Message |> ignore
+
+        errors.ToString() |> shouldEqual ""
+        wholeProjectResults.Errors.Length |> shouldEqual 0
+
+        let fileUnoptimized = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
+        let fileOptimized = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
+
+        // fail test on first line that fails, show difference in output window
+        printDeclarations None (List.ofSeq fileUnoptimized.Declarations)
+        |> shouldPairwiseEqual expectedUnoptimized
+
+        // fail test on first line that fails, show difference in output window
+        printDeclarations None (List.ofSeq fileOptimized.Declarations)
+        |> shouldPairwiseEqual expectedOptimized
+
+    finally
+        try
+            // cleanup: only the source file is written to the temp dir.
+            File.Delete fileName
+            if Directory.GetFiles(tempPath) |> Array.isEmpty then
+                Directory.Delete tempPath
+
+        with _ -> ()
 
     ()
 
